@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0003",
-      "status": "todo",
-      "title": "Implement configuration persistence with directories and JSON",
-      "priority": "medium",
-      "tags": [
-        "config",
-        "persistence",
-        "cross-platform",
-        "serialization",
-        "json"
-      ],
-      "scope": [
-        "crates/config/Cargo.toml",
-        "crates/config/src/persistence.rs",
-        "crates/config/src/lib.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "Plan FLIGHT 3: Configuration Persistence",
-        "Establish permanence with cross-platform config storage",
-        "User feedback: JSON is more robust and safe than TOML for config persistence"
-      ],
-      "plan": [
-        "Modify crates/config/Cargo.toml: Add directories = \"6.0\" for cross-platform config paths. Add serde_json = { workspace = true } to dependencies (already in workspace, just reference it).",
-        "Create crates/config/src/persistence.rs: Implement PersistedState struct with Serialize/Deserialize derives (auto_refresh: bool, sort_column: String, sort_direction: String, last_search_query: Option<String>). Implement ConfigManager with load_or_default() using serde_json::from_str and save() using serde_json::to_string_pretty.",
-        "Modify crates/config/src/lib.rs: Export persistence types (PersistedState, ConfigManager).",
-        "Modify crates/tui/src/app.rs: Add UserConfig struct to state. Initialize App state (auto_refresh, sort) from loaded config.",
-        "Modify crates/tui/src/main.rs: Load config on startup via ConfigManager. Call ConfigManager::save on Action::Quit to persist state."
-      ],
-      "notes": [
-        "Ordnance: directories crate for cross-platform paths, serde_json for serialization (already in workspace).",
-        "Breaking: App::new() signature may require config injection.",
-        "JSON chosen over TOML for better safety, simpler dependency management (serde_json already in workspace), and clearer error messages."
-      ],
-      "request": "Review the RQ-0003 task and dependent tasks in the queue. I think using JSON for config persistence is a more robust and safe choice. If you agree, update the task and any dependent tasks.",
-      "created_at": "2025-01-19T00:00:00Z",
-      "updated_at": "2025-01-19T16:08:00Z",
-      "depends_on": [
-        "RQ-0002"
-      ]
-    },
-    {
       "id": "RQ-0004",
       "status": "todo",
       "title": "Implement async toast notifications with UUID tracking",

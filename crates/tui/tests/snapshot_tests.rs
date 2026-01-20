@@ -23,7 +23,7 @@ impl TuiHarness {
     fn new(width: u16, height: u16) -> Self {
         let backend = TestBackend::new(width, height);
         let terminal = Terminal::new(backend).expect("Failed to create terminal");
-        let app = App::new();
+        let app = App::new(None);
         Self { app, terminal }
     }
 

@@ -15,6 +15,7 @@ use ratatui::{
 };
 use serde_json::Value;
 use splunk_client::models::{ClusterInfo, Index, SearchJobStatus};
+use splunk_config::PersistedState;
 
 /// Layout constants for UI components.
 pub const HEADER_HEIGHT: u16 = 3;
@@ -40,11 +41,53 @@ pub enum SortColumn {
     Events,
 }
 
+impl SortColumn {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Sid => "sid",
+            Self::Status => "status",
+            Self::Duration => "duration",
+            Self::Results => "results",
+            Self::Events => "events",
+        }
+    }
+}
+
+/// Parse sort column from string (for deserialization).
+fn parse_sort_column(s: &str) -> SortColumn {
+    match s.to_lowercase().as_str() {
+        "sid" => SortColumn::Sid,
+        "status" => SortColumn::Status,
+        "duration" => SortColumn::Duration,
+        "results" => SortColumn::Results,
+        "events" => SortColumn::Events,
+        _ => SortColumn::Sid, // Default fallback
+    }
+}
+
 /// Sort direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortDirection {
     Asc,
     Desc,
+}
+
+impl SortDirection {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Asc => "asc",
+            Self::Desc => "desc",
+        }
+    }
+}
+
+/// Parse sort direction from string (for deserialization).
+fn parse_sort_direction(s: &str) -> SortDirection {
+    match s.to_lowercase().as_str() {
+        "asc" => SortDirection::Asc,
+        "desc" => SortDirection::Desc,
+        _ => SortDirection::Asc, // Default fallback
+    }
 }
 
 /// Sort state for jobs table.
@@ -120,21 +163,31 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        Self::new()
+        Self::new(None)
     }
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(persisted: Option<PersistedState>) -> Self {
         let mut indexes_state = ListState::default();
         indexes_state.select(Some(0));
 
         let mut jobs_state = TableState::default();
         jobs_state.select(Some(0));
 
+        let (auto_refresh, sort_column, sort_direction, last_search_query) = match persisted {
+            Some(state) => (
+                state.auto_refresh,
+                parse_sort_column(&state.sort_column),
+                parse_sort_direction(&state.sort_direction),
+                state.last_search_query,
+            ),
+            None => (false, SortColumn::Sid, SortDirection::Asc, None),
+        };
+
         Self {
             current_screen: CurrentScreen::Search,
-            search_input: String::new(),
+            search_input: last_search_query.unwrap_or_default(),
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
             search_scroll_offset: 0,
@@ -147,12 +200,31 @@ impl App {
             loading: false,
             progress: 0.0,
             error: None,
-            auto_refresh: false,
+            auto_refresh,
             popup: None,
             search_filter: None,
             is_filtering: false,
             filter_input: String::new(),
-            sort_state: SortState::new(),
+            sort_state: SortState {
+                column: sort_column,
+                direction: sort_direction,
+            },
+        }
+    }
+
+    /// Exports the current state for persistence.
+    pub fn get_persisted_state(&self) -> PersistedState {
+        PersistedState {
+            auto_refresh: self.auto_refresh,
+            sort_column: self.sort_state.column.as_str().to_string(),
+            sort_direction: self.sort_state.direction.as_str().to_string(),
+            last_search_query: if self.search_filter.is_some() {
+                self.search_filter.clone()
+            } else if !self.search_input.is_empty() {
+                Some(self.search_input.clone())
+            } else {
+                None
+            },
         }
     }
 

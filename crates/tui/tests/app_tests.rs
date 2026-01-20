@@ -32,7 +32,7 @@ fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
 
 #[test]
 fn test_popup_cancel_flow() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(1));
@@ -64,7 +64,7 @@ fn test_popup_cancel_flow() {
 
 #[test]
 fn test_popup_cancel_with_escape() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(1));
@@ -84,7 +84,7 @@ fn test_popup_cancel_with_escape() {
 
 #[test]
 fn test_popup_confirm_cancel_action() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(1));
@@ -103,7 +103,7 @@ fn test_popup_confirm_cancel_action() {
 
 #[test]
 fn test_popup_confirm_with_enter() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(1));
@@ -123,7 +123,7 @@ fn test_popup_confirm_with_enter() {
 
 #[test]
 fn test_popup_delete_confirm_action() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(2));
@@ -144,7 +144,7 @@ fn test_popup_delete_confirm_action() {
 
 #[test]
 fn test_jobs_loaded_preserves_selection() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(10));
     app.jobs_state.select(Some(7));
@@ -164,7 +164,7 @@ fn test_jobs_loaded_preserves_selection() {
 
 #[test]
 fn test_jobs_loaded_with_empty_list() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(5));
     app.jobs_state.select(Some(2));
@@ -183,7 +183,7 @@ fn test_jobs_loaded_with_empty_list() {
 
 #[test]
 fn test_tick_suppressed_during_popup() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.auto_refresh = true;
 
@@ -204,7 +204,7 @@ fn test_tick_suppressed_during_popup() {
 
 #[test]
 fn test_navigation_down_at_boundary() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(2)); // Already at last item
@@ -222,7 +222,7 @@ fn test_navigation_down_at_boundary() {
 
 #[test]
 fn test_navigation_up_at_boundary() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(0)); // Already at first item
@@ -240,7 +240,7 @@ fn test_navigation_up_at_boundary() {
 
 #[test]
 fn test_navigation_down_normal() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(5));
     app.jobs_state.select(Some(1));
@@ -253,7 +253,7 @@ fn test_navigation_down_normal() {
 
 #[test]
 fn test_navigation_up_normal() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(5));
     app.jobs_state.select(Some(3));
@@ -266,7 +266,7 @@ fn test_navigation_up_normal() {
 
 #[test]
 fn test_help_popup_open_close() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
 
     // Open help popup
@@ -300,7 +300,7 @@ fn test_help_popup_open_close() {
 
 #[test]
 fn test_page_down_navigation() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(25));
     app.jobs_state.select(Some(5));
@@ -318,7 +318,7 @@ fn test_page_down_navigation() {
 
 #[test]
 fn test_page_up_navigation() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(25));
     app.jobs_state.select(Some(20));
@@ -332,7 +332,7 @@ fn test_page_up_navigation() {
 
 #[test]
 fn test_go_to_top() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(10));
     app.jobs_state.select(Some(7));
@@ -349,7 +349,7 @@ fn test_go_to_top() {
 
 #[test]
 fn test_go_to_bottom() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(10));
     app.jobs_state.select(Some(2));
@@ -366,7 +366,7 @@ fn test_go_to_bottom() {
 
 #[test]
 fn test_toggle_auto_refresh() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
 
     // Auto-refresh should start as false
@@ -386,7 +386,7 @@ fn test_toggle_auto_refresh() {
 
 #[test]
 fn test_screen_navigation_with_number_keys() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
 
     // Navigate to Jobs with '4'
@@ -404,7 +404,7 @@ fn test_screen_navigation_with_number_keys() {
 
 #[test]
 fn test_quit_action() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
 
     // Press 'q' to quit
@@ -417,7 +417,7 @@ fn test_quit_action() {
 
 #[test]
 fn test_refresh_jobs_action() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
 
     // Press 'r' to refresh
@@ -430,7 +430,7 @@ fn test_refresh_jobs_action() {
 
 #[test]
 fn test_error_state_clears_on_loading() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.error = Some("Test error".to_string());
 
@@ -446,7 +446,7 @@ fn test_error_state_clears_on_loading() {
 
 #[test]
 fn test_progress_update() {
-    let mut app = App::new();
+    let mut app = App::new(None);
 
     // Update progress
     app.update(Action::Progress(0.75));
@@ -456,7 +456,7 @@ fn test_progress_update() {
 
 #[test]
 fn test_indexes_navigation() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Indexes;
     app.indexes = Some(vec![
         splunk_client::models::Index {
@@ -509,7 +509,7 @@ fn test_indexes_navigation() {
 
 #[test]
 fn test_job_inspection_flow() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = Some(create_mock_jobs(3));
     app.jobs_state.select(Some(1));
@@ -556,7 +556,7 @@ fn test_job_inspection_flow() {
 
 #[test]
 fn test_job_inspection_without_jobs() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
     app.jobs = None; // No jobs loaded
     app.jobs_state.select(Some(0));
@@ -580,7 +580,7 @@ fn test_job_inspection_without_jobs() {
 
 #[test]
 fn test_job_inspect_help_popup() {
-    let mut app = App::new();
+    let mut app = App::new(None);
     app.current_screen = CurrentScreen::JobInspect;
 
     // Open help popup with '?'

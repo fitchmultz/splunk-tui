@@ -22,7 +22,7 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use app::App;
 use splunk_client::SplunkClient;
-use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader};
+use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager};
 
 /// Shared client wrapper for async tasks.
 type SharedClient = Arc<Mutex<SplunkClient>>;
@@ -81,8 +81,12 @@ async fn main() -> Result<()> {
         }
     });
 
-    // Create app
-    let mut app = App::new();
+    // Load persisted configuration
+    let config_manager = ConfigManager::new()?;
+    let persisted_state = config_manager.load();
+
+    // Create app with persisted state
+    let mut app = App::new(Some(persisted_state));
 
     // Create auto-refresh interval (5 seconds)
     let mut refresh_interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
@@ -98,6 +102,11 @@ async fn main() -> Result<()> {
 
                 // Check for quit first
                 if matches!(action, Action::Quit) {
+                    // Save persisted state before quitting
+                    let state = app.get_persisted_state();
+                    if let Err(e) = config_manager.save(&state) {
+                        tracing::error!(error = %e, "Failed to save config");
+                    }
                     break;
                 }
 
