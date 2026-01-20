@@ -2,6 +2,53 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0037",
+      "status": "done",
+      "title": "Implement background health monitoring with status indicator",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "health",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/action.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "Health issues in Splunk may arise while the user is on other screens.",
+        "Proactive notification of health changes improves operational awareness."
+      ],
+      "plan": [
+        "Add a periodic background task in main.rs to fetch health status using the client.",
+        "Introduce a health status indicator (e.g., colored symbol) in the TUI header.",
+        "Show a toast notification if health status transitions from healthy to unhealthy."
+      ],
+      "notes": [
+        "Added SplunkHealth to imports in action.rs",
+        "Added Action::HealthStatusLoaded(Result<SplunkHealth, String>) variant to action.rs for background health check results",
+        "Added HealthState enum to app.rs with Unknown, Healthy, Unhealthy variants",
+        "Implemented HealthState::from_health_str(&str) to map Splunk health strings (green/red/yellow) to states",
+        "Added health_state: HealthState field to App struct",
+        "Updated App::new() to initialize health_state to HealthState::Unknown",
+        "Added set_health_state(&mut self, new_state: HealthState) method that updates state and emits toast on Healthy -> Unhealthy transition",
+        "Updated App::update() to handle Action::HealthLoaded (extracts health from HealthCheckOutput.splunkd_health) and Action::HealthStatusLoaded (maps result to HealthState, errors set to Unhealthy)",
+        "Updated header rendering to show health indicator: [+] green for healthy, [!] red for unhealthy, [?] yellow for unknown",
+        "Spawned background health check task in main.rs that runs every 60 seconds via tokio::time::interval",
+        "Added comprehensive unit tests: test_health_state_from_health_str, test_set_health_state_healthy_to_unhealthy_emits_toast, test_set_health_state_unknown_to_unhealthy_emits_no_toast, test_set_health_state_healthy_to_unknown_emits_no_toast, test_set_health_state_unhealthy_to_healthy_emits_no_toast, test_health_status_loaded_action_ok, test_health_status_loaded_action_err, test_health_loaded_action_with_splunkd_health",
+        "All 21 TUI tests pass and make ci completes successfully"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T22:43:39.282629000Z",
+      "completed_at": "2026-01-20T23:01:59Z",
+      "depends_on": [
+        "RQ-0025"
+      ],
+      "custom_fields": {}
+    },
+    {
       "id": "RQ-0022",
       "status": "done",
       "title": "Add --help/usage with examples to live test script",

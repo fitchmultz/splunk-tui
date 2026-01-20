@@ -89,6 +89,37 @@ async fn main() -> Result<()> {
     // Create app with persisted state
     let mut app = App::new(Some(persisted_state));
 
+    // Spawn background health monitoring task (60-second interval)
+    let tx_health = tx.clone();
+    let client_health = client.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+            let mut c = client_health.lock().await;
+            match c.get_health().await {
+                Ok(health) => {
+                    if tx_health
+                        .send(Action::HealthStatusLoaded(Ok(health)))
+                        .is_err()
+                    {
+                        // Channel closed, exit task
+                        break;
+                    }
+                }
+                Err(e) => {
+                    if tx_health
+                        .send(Action::HealthStatusLoaded(Err(e.to_string())))
+                        .is_err()
+                    {
+                        // Channel closed, exit task
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
     // Create UI tick interval for smooth animations (250ms)
     let mut tick_interval = tokio::time::interval(tokio::time::Duration::from_millis(250));
 

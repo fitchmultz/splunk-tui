@@ -19,6 +19,34 @@ use serde_json::Value;
 use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SearchJobStatus};
 use splunk_config::PersistedState;
 
+/// Health state of the Splunk instance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HealthState {
+    /// Health status is unknown (initial state or check pending)
+    Unknown,
+    /// Splunk is healthy
+    Healthy,
+    /// Splunk is unhealthy
+    Unhealthy,
+}
+
+impl HealthState {
+    /// Map Splunk health string to HealthState.
+    ///
+    /// Splunk returns "green", "yellow", or "red" for health status.
+    /// - "green" → Healthy
+    /// - "yellow" → Unknown (degraded but not failed)
+    /// - "red" → Unhealthy
+    /// - any other value → Unknown
+    pub fn from_health_str(health: &str) -> Self {
+        match health.to_lowercase().as_str() {
+            "green" => HealthState::Healthy,
+            "red" => HealthState::Unhealthy,
+            _ => HealthState::Unknown,
+        }
+    }
+}
+
 /// Layout constants for UI components.
 pub const HEADER_HEIGHT: u16 = 3;
 pub const FOOTER_HEIGHT: u16 = 3;
@@ -165,6 +193,9 @@ pub struct App {
 
     // Jobs sort state
     pub sort_state: SortState,
+
+    // Health monitoring state
+    pub health_state: HealthState,
 }
 
 impl Default for App {
@@ -217,6 +248,7 @@ impl App {
                 column: sort_column,
                 direction: sort_direction,
             },
+            health_state: HealthState::Unknown,
         }
     }
 
@@ -234,6 +266,16 @@ impl App {
                 None
             },
         }
+    }
+
+    /// Update the health state and emit a toast notification on transition to unhealthy.
+    pub fn set_health_state(&mut self, new_state: HealthState) {
+        // Only emit toast on Healthy -> Unhealthy transition
+        if self.health_state == HealthState::Healthy && new_state == HealthState::Unhealthy {
+            self.toasts
+                .push(Toast::warning("Splunk health status changed to unhealthy"));
+        }
+        self.health_state = new_state;
     }
 
     /// Handle keyboard input - returns Action if one should be dispatched.
@@ -632,14 +674,29 @@ impl App {
                 self.loading = false;
             }
             Action::HealthLoaded(boxed_result) => match *boxed_result {
-                Ok(info) => {
-                    self.health_info = Some(info);
+                Ok(ref info) => {
+                    self.health_info = Some(info.clone());
+                    // Update health state from splunkd_health if available
+                    if let Some(ref health) = info.splunkd_health {
+                        let new_state = HealthState::from_health_str(&health.health);
+                        self.set_health_state(new_state);
+                    }
                     self.loading = false;
                 }
                 Err(e) => {
                     self.toasts
                         .push(Toast::error(format!("Failed to load health info: {}", e)));
                     self.loading = false;
+                }
+            },
+            Action::HealthStatusLoaded(result) => match result {
+                Ok(health) => {
+                    let new_state = HealthState::from_health_str(&health.health);
+                    self.set_health_state(new_state);
+                }
+                Err(_) => {
+                    // Error getting health - mark as unhealthy
+                    self.set_health_state(HealthState::Unhealthy);
                 }
             },
             Action::SearchComplete(Ok((results, sid))) => {
@@ -936,6 +993,19 @@ impl App {
             .split(f.area());
 
         // Header
+        // Build health indicator span
+        let health_indicator = match self.health_state {
+            HealthState::Healthy => Span::styled("[+]", Style::default().fg(Color::Green)),
+            HealthState::Unhealthy => Span::styled("[!]", Style::default().fg(Color::Red)),
+            HealthState::Unknown => Span::styled("[?]", Style::default().fg(Color::Yellow)),
+        };
+
+        let health_label = match self.health_state {
+            HealthState::Healthy => "Healthy",
+            HealthState::Unhealthy => "Unhealthy",
+            HealthState::Unknown => "Unknown",
+        };
+
         let header = Paragraph::new(vec![Line::from(vec![
             Span::styled(
                 "Splunk TUI",
@@ -954,6 +1024,17 @@ impl App {
                     CurrentScreen::Health => "Health",
                 },
                 Style::default().fg(Color::Yellow),
+            ),
+            Span::raw(" | "),
+            health_indicator,
+            Span::raw(" "),
+            Span::styled(
+                health_label,
+                match self.health_state {
+                    HealthState::Healthy => Style::default().fg(Color::Green),
+                    HealthState::Unhealthy => Style::default().fg(Color::Red),
+                    HealthState::Unknown => Style::default().fg(Color::Yellow),
+                },
             ),
         ])])
         .block(Block::default().borders(Borders::ALL));
@@ -1125,5 +1206,136 @@ impl App {
                 f.render_widget(placeholder, area);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_health_state_from_health_str() {
+        // Test "green" maps to Healthy
+        assert_eq!(HealthState::from_health_str("green"), HealthState::Healthy);
+        assert_eq!(HealthState::from_health_str("GREEN"), HealthState::Healthy);
+        assert_eq!(HealthState::from_health_str("Green"), HealthState::Healthy);
+
+        // Test "red" maps to Unhealthy
+        assert_eq!(HealthState::from_health_str("red"), HealthState::Unhealthy);
+        assert_eq!(HealthState::from_health_str("RED"), HealthState::Unhealthy);
+        assert_eq!(HealthState::from_health_str("Red"), HealthState::Unhealthy);
+
+        // Test "yellow" and other values map to Unknown
+        assert_eq!(HealthState::from_health_str("yellow"), HealthState::Unknown);
+        assert_eq!(HealthState::from_health_str("YELLOW"), HealthState::Unknown);
+        assert_eq!(
+            HealthState::from_health_str("invalid"),
+            HealthState::Unknown
+        );
+        assert_eq!(HealthState::from_health_str(""), HealthState::Unknown);
+    }
+
+    #[test]
+    fn test_set_health_state_healthy_to_unhealthy_emits_toast() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Healthy;
+
+        // Set to unhealthy should emit a toast
+        app.set_health_state(HealthState::Unhealthy);
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+        assert_eq!(app.toasts.len(), 1);
+        assert_eq!(
+            app.toasts[0].message,
+            "Splunk health status changed to unhealthy"
+        );
+    }
+
+    #[test]
+    fn test_set_health_state_unknown_to_unhealthy_emits_no_toast() {
+        let mut app = App::new(None);
+        // Default state is Unknown
+        assert_eq!(app.health_state, HealthState::Unknown);
+
+        // Set to unhealthy from Unknown should not emit a toast
+        app.set_health_state(HealthState::Unhealthy);
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+        assert_eq!(app.toasts.len(), 0);
+    }
+
+    #[test]
+    fn test_set_health_state_healthy_to_unknown_emits_no_toast() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Healthy;
+
+        // Set to unknown should not emit a toast
+        app.set_health_state(HealthState::Unknown);
+
+        assert_eq!(app.health_state, HealthState::Unknown);
+        assert_eq!(app.toasts.len(), 0);
+    }
+
+    #[test]
+    fn test_set_health_state_unhealthy_to_healthy_emits_no_toast() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Unhealthy;
+
+        // Set to healthy should not emit a toast (only Healthy -> Unhealthy does)
+        app.set_health_state(HealthState::Healthy);
+
+        assert_eq!(app.health_state, HealthState::Healthy);
+        assert_eq!(app.toasts.len(), 0);
+    }
+
+    #[test]
+    fn test_health_status_loaded_action_ok() {
+        let mut app = App::new(None);
+
+        // Simulate receiving a healthy status
+        let health = splunk_client::models::SplunkHealth {
+            health: "green".to_string(),
+            features: std::collections::HashMap::new(),
+        };
+
+        app.update(Action::HealthStatusLoaded(Ok(health)));
+
+        assert_eq!(app.health_state, HealthState::Healthy);
+    }
+
+    #[test]
+    fn test_health_status_loaded_action_err() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Healthy;
+
+        // Simulate error - should set to unhealthy
+        app.update(Action::HealthStatusLoaded(Err(
+            "Connection failed".to_string()
+        )));
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+        // Should emit toast since we went from Healthy to Unhealthy
+        assert_eq!(app.toasts.len(), 1);
+    }
+
+    #[test]
+    fn test_health_loaded_action_with_splunkd_health() {
+        let mut app = App::new(None);
+
+        // Simulate receiving HealthCheckOutput with splunkd_health
+        let health_output = HealthCheckOutput {
+            server_info: None,
+            splunkd_health: Some(splunk_client::models::SplunkHealth {
+                health: "red".to_string(),
+                features: std::collections::HashMap::new(),
+            }),
+            license_usage: None,
+            kvstore_status: None,
+            log_parsing_health: None,
+        };
+
+        app.update(Action::HealthLoaded(Box::new(Ok(health_output))));
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
     }
 }

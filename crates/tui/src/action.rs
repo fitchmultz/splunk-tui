@@ -5,7 +5,7 @@
 
 use crossterm::event::KeyEvent;
 use serde_json::Value;
-use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SearchJobStatus};
+use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SearchJobStatus, SplunkHealth};
 
 use crate::ui::ToastLevel;
 
@@ -68,6 +68,8 @@ pub enum Action {
     ClusterInfoLoaded(Result<ClusterInfo, String>),
     /// Result of loading health check
     HealthLoaded(Box<Result<HealthCheckOutput, String>>),
+    /// Result of background health status check
+    HealthStatusLoaded(Result<SplunkHealth, String>),
     /// Result of a search completion (results, sid)
     SearchComplete(Result<(Vec<Value>, String), String>),
 
