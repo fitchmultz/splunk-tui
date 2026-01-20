@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0026",
-      "status": "todo",
-      "title": "Implement license usage monitoring API client",
-      "priority": "high",
-      "tags": [
-        "client",
-        "health",
-        "license"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/",
-        "crates/client/src/models.rs"
-      ],
-      "evidence": [
-        "Requested feature: Automated health checks include license usage monitoring.",
-        "License warnings and violations are critical health indicators."
-      ],
-      "plan": [
-        "Implement get_license_usage endpoint to fetch data from /services/license/usage.",
-        "Define models for license pools, stacks, and usage metrics.",
-        "Verify parsing with integration tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0027",
       "status": "todo",
       "title": "Implement KVStore status tracking API client",

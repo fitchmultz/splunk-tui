@@ -334,6 +334,35 @@ async fn test_get_cluster_info() {
 }
 
 #[tokio::test]
+async fn test_get_license_usage() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("license/get_usage.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/license/usage"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::get_license_usage(&client, &mock_server.uri(), "test-token", 3).await;
+
+    assert!(result.is_ok());
+    let usage = result.unwrap();
+    assert_eq!(usage.len(), 1);
+    assert_eq!(usage[0].quota, 53687091200);
+    assert_eq!(usage[0].used_bytes, 1610612736);
+    assert_eq!(usage[0].stack_id.as_deref(), Some("enterprise"));
+
+    let slaves = usage[0].slaves_usage_bytes.as_ref().unwrap();
+    assert_eq!(
+        slaves.get("00000000-0000-0000-0000-000000000000"),
+        Some(&1073741824)
+    );
+}
+
+#[tokio::test]
 async fn test_get_server_info() {
     let mock_server = MockServer::start().await;
 
@@ -834,4 +863,37 @@ async fn test_retry_fails_on_second_401() {
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+}
+
+#[tokio::test]
+async fn test_splunk_client_get_license_usage() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("license/get_usage.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/license/usage"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    use secrecy::SecretString;
+    use splunk_client::{AuthStrategy, SplunkClient};
+
+    let strategy = AuthStrategy::ApiToken {
+        token: SecretString::new("test-token".to_string().into()),
+    };
+
+    let mut client = SplunkClient::builder()
+        .base_url(mock_server.uri())
+        .auth_strategy(strategy)
+        .build()
+        .unwrap();
+
+    let result = client.get_license_usage().await;
+
+    assert!(result.is_ok());
+    let usage = result.unwrap();
+    assert_eq!(usage.len(), 1);
+    assert_eq!(usage[0].quota, 53687091200);
 }

@@ -221,6 +221,32 @@ pub struct SplunkHealth {
     pub features: HashMap<String, HealthFeature>,
 }
 
+/// License usage information.
+#[derive(Debug, Deserialize, Clone)]
+pub struct LicenseUsage {
+    pub quota: u64,
+    pub used_bytes: u64,
+    pub slaves_usage_bytes: Option<HashMap<String, u64>>,
+    pub stack_id: Option<String>,
+}
+
+/// License pool information.
+#[derive(Debug, Deserialize, Clone)]
+pub struct LicensePool {
+    pub quota: u64,
+    pub used_bytes: u64,
+    pub stack_id: String,
+    pub description: Option<String>,
+}
+
+/// License stack information.
+#[derive(Debug, Deserialize, Clone)]
+pub struct LicenseStack {
+    pub quota: u64,
+    pub type_name: String,
+    pub label: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

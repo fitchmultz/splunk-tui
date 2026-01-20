@@ -8,7 +8,8 @@ use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
 use crate::models::{
-    ClusterInfo, ClusterPeer, Index, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
+    ClusterInfo, ClusterPeer, Index, LicenseUsage, SearchJobResults, SearchJobStatus, ServerInfo,
+    SplunkHealth,
 };
 
 /// Builder for creating a new SplunkClient.
@@ -601,6 +602,37 @@ impl SplunkClient {
                 self.session_manager.clear_session();
                 let new_token = self.get_auth_token().await?;
                 endpoints::get_cluster_peers(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Get license usage information.
+    pub async fn get_license_usage(&mut self) -> Result<Vec<LicenseUsage>> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result =
+            endpoints::get_license_usage(&self.http, &self.base_url, &auth_token, self.max_retries)
+                .await;
+
+        match result {
+            Ok(usage) => Ok(usage),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::get_license_usage(
                     &self.http,
                     &self.base_url,
                     &new_token,
