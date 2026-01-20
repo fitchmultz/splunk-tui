@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::{Index, SearchJobStatus};
+use splunk_client::{ClusterPeer, Index, SearchJobStatus};
 
 /// Supported output formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,7 +43,39 @@ pub trait Formatter {
     fn format_jobs(&self, jobs: &[SearchJobStatus]) -> Result<String>;
 
     /// Format cluster info.
-    fn format_cluster_info(&self, cluster_info: &ClusterInfoOutput) -> Result<String>;
+    fn format_cluster_info(
+        &self,
+        cluster_info: &ClusterInfoOutput,
+        detailed: bool,
+    ) -> Result<String>;
+}
+
+/// Cluster peer output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClusterPeerOutput {
+    pub host: String,
+    pub port: u32,
+    pub id: String,
+    pub status: String,
+    pub peer_state: String,
+    pub label: Option<String>,
+    pub site: Option<String>,
+    pub is_captain: bool,
+}
+
+impl From<ClusterPeer> for ClusterPeerOutput {
+    fn from(peer: ClusterPeer) -> Self {
+        Self {
+            host: peer.host,
+            port: peer.port,
+            id: peer.id,
+            status: peer.status,
+            peer_state: peer.peer_state,
+            label: peer.label,
+            site: peer.site,
+            is_captain: peer.is_captain.unwrap_or(false),
+        }
+    }
 }
 
 /// Cluster info output structure.
@@ -56,6 +88,8 @@ pub struct ClusterInfoOutput {
     pub replication_factor: Option<u32>,
     pub search_factor: Option<u32>,
     pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub peers: Option<Vec<ClusterPeerOutput>>,
 }
 
 /// JSON formatter.
@@ -75,7 +109,11 @@ impl Formatter for JsonFormatter {
         Ok(serde_json::to_string_pretty(jobs)?)
     }
 
-    fn format_cluster_info(&self, cluster_info: &ClusterInfoOutput) -> Result<String> {
+    fn format_cluster_info(
+        &self,
+        cluster_info: &ClusterInfoOutput,
+        _detailed: bool,
+    ) -> Result<String> {
         Ok(serde_json::to_string_pretty(cluster_info)?)
     }
 }
@@ -199,8 +237,12 @@ impl Formatter for TableFormatter {
         Ok(output)
     }
 
-    fn format_cluster_info(&self, cluster_info: &ClusterInfoOutput) -> Result<String> {
-        Ok(format!(
+    fn format_cluster_info(
+        &self,
+        cluster_info: &ClusterInfoOutput,
+        detailed: bool,
+    ) -> Result<String> {
+        let mut output = format!(
             "Cluster Information:\n\
              ID: {}\n\
              Label: {}\n\
@@ -222,7 +264,31 @@ impl Formatter for TableFormatter {
                 .map(|v| v.to_string())
                 .unwrap_or_else(|| "N/A".to_string()),
             cluster_info.status.as_deref().unwrap_or("N/A")
-        ))
+        );
+
+        if detailed && let Some(peers) = &cluster_info.peers {
+            output.push_str(&format!("\nCluster Peers ({}):\n", peers.len()));
+            for peer in peers {
+                output.push_str(&format!(
+                    "\n  Host: {}:{}\n\
+                        ID: {}\n\
+                        Status: {}\n\
+                        State: {}\n",
+                    peer.host, peer.port, peer.id, peer.status, peer.peer_state
+                ));
+                if let Some(label) = &peer.label {
+                    output.push_str(&format!("    Label: {}\n", label));
+                }
+                if let Some(site) = &peer.site {
+                    output.push_str(&format!("    Site: {}\n", site));
+                }
+                if peer.is_captain {
+                    output.push_str("    Captain: Yes\n");
+                }
+            }
+        }
+
+        Ok(output)
     }
 }
 
@@ -372,7 +438,14 @@ impl Formatter for CsvFormatter {
         Ok(output)
     }
 
-    fn format_cluster_info(&self, cluster_info: &ClusterInfoOutput) -> Result<String> {
+    fn format_cluster_info(
+        &self,
+        cluster_info: &ClusterInfoOutput,
+        detailed: bool,
+    ) -> Result<String> {
+        let mut output = String::new();
+
+        // Cluster info row
         let fields = [
             escape_csv("ClusterInfo"),
             escape_csv(&cluster_info.id),
@@ -392,7 +465,28 @@ impl Formatter for CsvFormatter {
                     .unwrap_or_else(|| "N/A".to_string()),
             ),
         ];
-        Ok(format!("{}\n", fields.join(",")))
+        output.push_str(&fields.join(","));
+        output.push('\n');
+
+        // Peers rows (if detailed)
+        if detailed && let Some(peers) = &cluster_info.peers {
+            for peer in peers {
+                let peer_fields = [
+                    escape_csv("Peer"),
+                    escape_csv(&format!("{}:{}", peer.host, peer.port)),
+                    escape_csv(&peer.id),
+                    escape_csv(&peer.status),
+                    escape_csv(&peer.peer_state),
+                    escape_csv(peer.label.as_deref().unwrap_or("N/A")),
+                    escape_csv(peer.site.as_deref().unwrap_or("N/A")),
+                    escape_csv(if peer.is_captain { "Yes" } else { "No" }),
+                ];
+                output.push_str(&peer_fields.join(","));
+                output.push('\n');
+            }
+        }
+
+        Ok(output)
     }
 }
 
@@ -496,7 +590,11 @@ impl Formatter for XmlFormatter {
         Ok(xml)
     }
 
-    fn format_cluster_info(&self, cluster_info: &ClusterInfoOutput) -> Result<String> {
+    fn format_cluster_info(
+        &self,
+        cluster_info: &ClusterInfoOutput,
+        detailed: bool,
+    ) -> Result<String> {
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<cluster>\n");
         xml.push_str(&format!("  <id>{}</id>\n", escape_xml(&cluster_info.id)));
         if let Some(label) = &cluster_info.label {
@@ -527,6 +625,38 @@ impl Formatter for XmlFormatter {
         if let Some(status) = &cluster_info.status {
             xml.push_str(&format!("  <status>{}</status>\n", escape_xml(status)));
         }
+
+        // Add peers if detailed
+        if detailed && let Some(peers) = &cluster_info.peers {
+            xml.push_str("  <peers>\n");
+            for peer in peers {
+                xml.push_str("    <peer>\n");
+                xml.push_str(&format!("      <host>{}</host>\n", escape_xml(&peer.host)));
+                xml.push_str(&format!("      <port>{}</port>\n", peer.port));
+                xml.push_str(&format!("      <id>{}</id>\n", escape_xml(&peer.id)));
+                xml.push_str(&format!(
+                    "      <status>{}</status>\n",
+                    escape_xml(&peer.status)
+                ));
+                xml.push_str(&format!(
+                    "      <peerState>{}</peerState>\n",
+                    escape_xml(&peer.peer_state)
+                ));
+                if let Some(label) = &peer.label {
+                    xml.push_str(&format!("      <label>{}</label>\n", escape_xml(label)));
+                }
+                if let Some(site) = &peer.site {
+                    xml.push_str(&format!("      <site>{}</site>\n", escape_xml(site)));
+                }
+                xml.push_str(&format!(
+                    "      <isCaptain>{}</isCaptain>\n",
+                    peer.is_captain
+                ));
+                xml.push_str("    </peer>\n");
+            }
+            xml.push_str("  </peers>\n");
+        }
+
         xml.push_str("</cluster>");
         Ok(xml)
     }
@@ -943,5 +1073,180 @@ mod tests {
         assert!(output_basic.contains("\"coldDBPath\""));
         // Both should be identical since JSON ignores the detailed flag
         assert_eq!(output_basic, output_detailed);
+    }
+
+    #[test]
+    fn test_cluster_peers_json_formatting() {
+        let formatter = JsonFormatter;
+        let cluster_info = ClusterInfoOutput {
+            id: "cluster-1".to_string(),
+            label: Some("test-cluster".to_string()),
+            mode: "master".to_string(),
+            manager_uri: Some("https://master:8089".to_string()),
+            replication_factor: Some(3),
+            search_factor: Some(2),
+            status: Some("Enabled".to_string()),
+            peers: Some(vec![
+                ClusterPeerOutput {
+                    host: "peer1".to_string(),
+                    port: 8089,
+                    id: "peer-1".to_string(),
+                    status: "Up".to_string(),
+                    peer_state: "Ready".to_string(),
+                    label: Some("Peer 1".to_string()),
+                    site: Some("site1".to_string()),
+                    is_captain: true,
+                },
+                ClusterPeerOutput {
+                    host: "peer2".to_string(),
+                    port: 8089,
+                    id: "peer-2".to_string(),
+                    status: "Up".to_string(),
+                    peer_state: "Ready".to_string(),
+                    label: None,
+                    site: None,
+                    is_captain: false,
+                },
+            ]),
+        };
+        let output = formatter.format_cluster_info(&cluster_info, true).unwrap();
+        // Verify JSON structure includes peers array
+        assert!(output.contains("\"peers\""));
+        assert!(output.contains("\"host\""));
+        assert!(output.contains("\"peer1\""));
+        assert!(output.contains("\"peer2\""));
+        assert!(output.contains("\"is_captain\""));
+        assert!(output.contains("true"));
+        assert!(output.contains("false"));
+    }
+
+    #[test]
+    fn test_cluster_peers_csv_formatting() {
+        let formatter = CsvFormatter;
+        let cluster_info = ClusterInfoOutput {
+            id: "cluster-1".to_string(),
+            label: Some("test-cluster".to_string()),
+            mode: "master".to_string(),
+            manager_uri: Some("https://master:8089".to_string()),
+            replication_factor: Some(3),
+            search_factor: Some(2),
+            status: Some("Enabled".to_string()),
+            peers: Some(vec![ClusterPeerOutput {
+                host: "peer1".to_string(),
+                port: 8089,
+                id: "peer-1".to_string(),
+                status: "Up".to_string(),
+                peer_state: "Ready".to_string(),
+                label: Some("Peer,1".to_string()),
+                site: Some("site1".to_string()),
+                is_captain: true,
+            }]),
+        };
+        let output = formatter.format_cluster_info(&cluster_info, true).unwrap();
+        // Verify CSV has cluster info row and peer row
+        assert!(output.contains("ClusterInfo"));
+        assert!(output.contains("cluster-1"));
+        assert!(output.contains("Peer"));
+        assert!(output.contains("peer1:8089"));
+        // Verify CSV escaping for label with comma
+        assert!(output.contains("\"Peer,1\""));
+        assert!(output.contains("Yes"));
+    }
+
+    #[test]
+    fn test_cluster_peers_xml_formatting() {
+        let formatter = XmlFormatter;
+        let cluster_info = ClusterInfoOutput {
+            id: "cluster-1".to_string(),
+            label: Some("test-cluster".to_string()),
+            mode: "master".to_string(),
+            manager_uri: Some("https://master:8089".to_string()),
+            replication_factor: Some(3),
+            search_factor: Some(2),
+            status: Some("Enabled".to_string()),
+            peers: Some(vec![ClusterPeerOutput {
+                host: "peer1".to_string(),
+                port: 8089,
+                id: "peer-1".to_string(),
+                status: "Up".to_string(),
+                peer_state: "Ready".to_string(),
+                label: Some("Peer 1".to_string()),
+                site: Some("site1".to_string()),
+                is_captain: true,
+            }]),
+        };
+        let output = formatter.format_cluster_info(&cluster_info, true).unwrap();
+        // Verify XML structure
+        assert!(output.contains("<cluster>"));
+        assert!(output.contains("<id>cluster-1</id>"));
+        assert!(output.contains("<peers>"));
+        assert!(output.contains("<peer>"));
+        assert!(output.contains("<host>peer1</host>"));
+        assert!(output.contains("<port>8089</port>"));
+        assert!(output.contains("<isCaptain>true</isCaptain>"));
+        assert!(output.contains("</peers>"));
+        assert!(output.contains("</cluster>"));
+    }
+
+    #[test]
+    fn test_cluster_peers_table_formatting() {
+        let formatter = TableFormatter;
+        let cluster_info = ClusterInfoOutput {
+            id: "cluster-1".to_string(),
+            label: Some("test-cluster".to_string()),
+            mode: "master".to_string(),
+            manager_uri: Some("https://master:8089".to_string()),
+            replication_factor: Some(3),
+            search_factor: Some(2),
+            status: Some("Enabled".to_string()),
+            peers: Some(vec![ClusterPeerOutput {
+                host: "peer1".to_string(),
+                port: 8089,
+                id: "peer-1".to_string(),
+                status: "Up".to_string(),
+                peer_state: "Ready".to_string(),
+                label: Some("Peer 1".to_string()),
+                site: Some("site1".to_string()),
+                is_captain: true,
+            }]),
+        };
+        let output = formatter.format_cluster_info(&cluster_info, true).unwrap();
+        // Verify table structure includes peers
+        assert!(output.contains("Cluster Information:"));
+        assert!(output.contains("ID: cluster-1"));
+        assert!(output.contains("Cluster Peers (1)"));
+        assert!(output.contains("Host: peer1:8089"));
+        assert!(output.contains("Captain: Yes"));
+    }
+
+    #[test]
+    fn test_cluster_peers_not_shown_when_not_detailed() {
+        let formatter = TableFormatter;
+        let cluster_info = ClusterInfoOutput {
+            id: "cluster-1".to_string(),
+            label: Some("test-cluster".to_string()),
+            mode: "master".to_string(),
+            manager_uri: Some("https://master:8089".to_string()),
+            replication_factor: Some(3),
+            search_factor: Some(2),
+            status: Some("Enabled".to_string()),
+            peers: Some(vec![ClusterPeerOutput {
+                host: "peer1".to_string(),
+                port: 8089,
+                id: "peer-1".to_string(),
+                status: "Up".to_string(),
+                peer_state: "Ready".to_string(),
+                label: Some("Peer 1".to_string()),
+                site: Some("site1".to_string()),
+                is_captain: true,
+            }]),
+        };
+        let output = formatter.format_cluster_info(&cluster_info, false).unwrap();
+        // Verify basic cluster info is shown
+        assert!(output.contains("Cluster Information:"));
+        assert!(output.contains("ID: cluster-1"));
+        // Verify peers are NOT shown when detailed=false
+        assert!(!output.contains("Cluster Peers"));
+        assert!(!output.contains("Host: peer1"));
     }
 }

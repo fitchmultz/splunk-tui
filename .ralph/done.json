@@ -724,6 +724,48 @@
       "updated_at": "2025-01-19T20:30:00Z",
       "completed_at": "2025-01-19T20:30:00Z",
       "depends_on": []
+    },
+    {
+      "id": "RQ-0016",
+      "status": "done",
+      "title": "Make cluster --detailed output format-consistent",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "cluster",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/cluster.rs prints peers in plain text even when output_format is json/csv/xml.",
+        "This mixes human-readable output with structured output formats, breaking parsers."
+      ],
+      "plan": [
+        "Define a structured peers output type and extend formatters to render it in the selected output format.",
+        "Gate the peers output on the same formatter rather than println! text.",
+        "Add tests for the detailed mode in at least one structured format."
+      ],
+      "notes": [
+        "Added ClusterPeerOutput struct with fields: host, port, id, status, peer_state, label, site, is_captain.",
+        "Implemented From<ClusterPeer> for ClusterPeerOutput for easy conversion.",
+        "Updated ClusterInfoOutput to include optional peers: Option<Vec<ClusterPeerOutput>> field with skip_serializing_if attribute.",
+        "Updated Formatter trait format_cluster_info signature to accept detailed: bool parameter.",
+        "Updated JsonFormatter::format_cluster_info to serialize peers array if present (JSON always includes full data).",
+        "Updated TableFormatter::format_cluster_info to print peers in tabular format when detailed=true (similar to previous output but through formatter).",
+        "Updated CsvFormatter::format_cluster_info to output peers as separate rows with proper escaping when detailed=true.",
+        "Updated XmlFormatter::format_cluster_info to wrap peers in <peers><peer>...</peers> structure when detailed=true.",
+        "Removed println! loop from cluster.rs that bypassed formatters; peers now fetched and converted to ClusterPeerOutput, passed to formatter.",
+        "Added 5 new tests: test_cluster_peers_json_formatting, test_cluster_peers_csv_formatting, test_cluster_peers_xml_formatting, test_cluster_peers_table_formatting, test_cluster_peers_not_shown_when_not_detailed.",
+        "All 24 CLI formatter tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-19T23:35:00Z",
+      "completed_at": "2026-01-20T09:00:00Z",
+      "depends_on": []
     }
   ]
 }

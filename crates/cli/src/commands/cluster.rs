@@ -4,7 +4,7 @@ use anyhow::Result;
 use splunk_client::{AuthStrategy, SplunkClient};
 use tracing::{info, warn};
 
-use crate::formatters::{ClusterInfoOutput, OutputFormat, get_formatter};
+use crate::formatters::{ClusterInfoOutput, ClusterPeerOutput, OutputFormat, get_formatter};
 
 pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &str) -> Result<()> {
     info!("Fetching cluster information");
@@ -25,6 +25,19 @@ pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &
 
     match client.get_cluster_info().await {
         Ok(cluster_info) => {
+            // Fetch peers if detailed
+            let peers_output = if detailed {
+                match client.get_cluster_peers().await {
+                    Ok(peers) => Some(peers.into_iter().map(ClusterPeerOutput::from).collect()),
+                    Err(e) => {
+                        warn!("Could not fetch cluster peers: {}", e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
             let info = ClusterInfoOutput {
                 id: cluster_info.id,
                 label: cluster_info.label,
@@ -33,6 +46,7 @@ pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &
                 replication_factor: cluster_info.replication_factor,
                 search_factor: cluster_info.search_factor,
                 status: cluster_info.status,
+                peers: peers_output,
             };
 
             // Parse output format
@@ -40,35 +54,8 @@ pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &
             let formatter = get_formatter(format);
 
             // Format and print cluster info
-            let output = formatter.format_cluster_info(&info)?;
+            let output = formatter.format_cluster_info(&info, detailed)?;
             print!("{}", output);
-
-            if detailed {
-                match client.get_cluster_peers().await {
-                    Ok(peers) => {
-                        println!("\nCluster Peers ({}):\n", peers.len());
-                        for peer in peers {
-                            println!("  Host: {}:{}", peer.host, peer.port);
-                            println!("    ID: {}", peer.id);
-                            println!("    Status: {}", peer.status);
-                            println!("    State: {}", peer.peer_state);
-                            if let Some(label) = peer.label {
-                                println!("    Label: {}", label);
-                            }
-                            if let Some(site) = peer.site {
-                                println!("    Site: {}", site);
-                            }
-                            if peer.is_captain.unwrap_or(false) {
-                                println!("    Captain: Yes");
-                            }
-                            println!();
-                        }
-                    }
-                    Err(e) => {
-                        warn!("Could not fetch cluster peers: {}", e);
-                    }
-                }
-            }
         }
         Err(e) => {
             // Not all Splunk instances are clustered
