@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0030",
-      "status": "doing",
-      "title": "Create dedicated Health Check TUI screen",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "health",
-        "ui"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/health.rs"
-      ],
-      "evidence": [
-        "Requested feature: Automated health check feature in the TUI.",
-        "Users need a centralized view for monitoring environment health."
-      ],
-      "plan": [
-        "Add Health variant to CurrentScreen enum in app.rs.",
-        "Implement ui/screens/health.rs to display metrics (system health, license, KVStore, parsing errors).",
-        "Add navigation to the new screen (Key '5') and update help documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T22:19:47.685949000Z",
-      "depends_on": [
-        "RQ-0025",
-        "RQ-0026",
-        "RQ-0027",
-        "RQ-0028"
-      ],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0037",
       "status": "todo",
       "title": "Implement background health monitoring with status indicator",

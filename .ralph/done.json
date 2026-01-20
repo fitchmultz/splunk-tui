@@ -1228,6 +1228,60 @@
             "completed_at": "2026-01-20T22:18:39Z",
             "depends_on": [],
             "custom_fields": {}
+          },
+          {
+            "id": "RQ-0030",
+            "status": "done",
+            "title": "Create dedicated Health Check TUI screen",
+            "priority": "medium",
+            "tags": [
+              "tui",
+              "health",
+              "ui"
+            ],
+            "scope": [
+              "crates/tui/src/ui/screens/health.rs",
+              "crates/tui/src/action.rs",
+              "crates/tui/src/ui/screens/mod.rs",
+              "crates/tui/src/app.rs",
+              "crates/tui/src/main.rs",
+              "README.md"
+            ],
+            "evidence": [
+              "Requested feature: Automated health check feature in the TUI.",
+              "Users need a centralized view for monitoring environment health."
+            ],
+            "plan": [
+              "Add Health variant to CurrentScreen enum in app.rs.",
+              "Implement ui/screens/health.rs to display metrics (system health, license, KVStore, parsing errors).",
+              "Add navigation to the new screen (Key '5') and update help documentation."
+            ],
+            "notes": [
+              "Created new health screen module (crates/tui/src/ui/screens/health.rs) with render_health() function displaying comprehensive health metrics including server info, splunkd health, license usage, KVStore status, and log parsing health.",
+              "Updated Action enum with LoadHealth and HealthLoaded(Box<Result<HealthCheckOutput, String>>) variants (boxed to avoid large enum variant warning).",
+              "Integrated Health screen into App with navigation key '5', added health_info: Option<HealthCheckOutput> field to App struct, and implemented handle_health_input() method.",
+              "Implemented health loading side effect in main.rs that sequentially collects server info, splunkd health, license usage, KVStore status, and log parsing health.",
+              "Updated all screen input handlers (search, jobs, indexes, cluster) to include '5' key navigation to Health screen.",
+              "Updated header rendering to show 'Health' in the title bar when on Health screen.",
+              "Updated footer navigation to show '1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health' in both loading and non-loading states.",
+              "Added Health case to render_content() match statement calling health::render_health().",
+              "Added HealthLoaded action handling in update() method for both Ok and Err cases.",
+              "Updated all snapshot tests (21 files) to include '5:Health' in footer navigation.",
+              "Updated README.md to document Health screen, updated keybindings to include '5', added 'r' for refresh and '?' for help.",
+              "Added comprehensive unit tests in health.rs: test_format_bytes (7 assertions), test_percentage_text (4 assertions), test_health_color (5 assertions), test_build_health_text_empty (2 assertions), test_build_health_text_with_server_info (3 assertions), test_build_health_text_with_license (3 assertions), test_build_health_text_with_log_parsing (6 assertions).",
+              "All health screen unit tests pass and make ci completes successfully."
+            ],
+            "request": "scan finding",
+            "created_at": "2026-01-20T17:15:00Z",
+            "updated_at": "2026-01-20T22:19:47Z",
+            "completed_at": "2026-01-20T22:40:18Z",
+            "depends_on": [
+              "RQ-0025",
+              "RQ-0026",
+              "RQ-0027",
+              "RQ-0028"
+            ],
+            "custom_fields": {}
           }
         ]
       }
