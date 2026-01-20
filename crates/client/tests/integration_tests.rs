@@ -357,6 +357,30 @@ async fn test_get_server_info() {
     assert!(info.server_roles.contains(&"indexer".to_string()));
 }
 
+#[tokio::test]
+async fn test_get_health() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("server/get_health.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/server/health/splunkd"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::get_health(&client, &mock_server.uri(), "test-token", 3).await;
+
+    assert!(result.is_ok());
+    let health = result.unwrap();
+    assert_eq!(health.health, "green");
+    assert!(health.features.contains_key("KVStore"));
+    assert_eq!(health.features["KVStore"].health, "green");
+    assert_eq!(health.features["KVStore"].status, "enabled");
+    assert_eq!(health.features["SearchScheduler"].health, "green");
+}
+
 // Error path tests
 
 #[tokio::test]

@@ -989,9 +989,46 @@
       "request": "scan finding",
       "created_at": "2026-01-20T17:15:00Z",
       "updated_at": "2026-01-20T12:00:00Z",
-      "completed_at": "2026-01-20T12:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
-}
+            "completed_at": "2026-01-20T12:00:00Z",
+            "depends_on": [],
+            "custom_fields": {}
+          },
+          {
+            "id": "RQ-0025",
+            "status": "done",
+            "title": "Implement system-wide health check API client",
+            "priority": "high",
+            "tags": [
+              "client",
+              "health"
+            ],
+            "scope": [
+              "crates/client/src/endpoints/",
+              "crates/client/src/models.rs"
+            ],
+            "evidence": [
+              "Requested feature: Automated Splunk Health checks.",
+              "Splunk provides /services/server/health/splunkd for overall system health monitoring."
+            ],
+            "plan": [
+              "Implement get_health endpoint to fetch health status from /services/server/health/splunkd.",
+              "Add structured models for health components and their statuses.",
+              "Add integration tests with mock health responses."
+            ],
+            "notes": [
+              "Implemented get_health endpoint in crates/client/src/endpoints/server.rs targeting /services/server/health/splunkd.",
+              "Added SplunkHealth and HealthFeature models to crates/client/src/models.rs using HashMap for dynamic features.",
+              "Exposed get_health method on SplunkClient in crates/client/src/client.rs with session retry logic.",
+              "Added comprehensive integration test test_get_health with wiremock and JSON fixture.",
+              "Created crates/client/fixtures/server/get_health.json for testing.",
+              "make ci passed successfully (lint, type-check, tests, build)."
+            ],
+            "request": "scan finding",
+            "created_at": "2026-01-20T17:15:00Z",
+            "updated_at": "2026-01-20T17:45:00Z",
+            "completed_at": "2026-01-20T17:45:00Z",
+            "depends_on": []
+          }
+        ]
+      }
+      

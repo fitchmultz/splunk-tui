@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0025",
-      "status": "todo",
-      "title": "Implement system-wide health check API client",
-      "priority": "high",
-      "tags": [
-        "client",
-        "health"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/",
-        "crates/client/src/models.rs"
-      ],
-      "evidence": [
-        "Requested feature: Automated Splunk Health checks.",
-        "Splunk provides /services/server/health/splunkd for overall system health monitoring."
-      ],
-      "plan": [
-        "Implement get_health endpoint to fetch health status from /services/server/health/splunkd.",
-        "Add structured models for health components and their statuses.",
-        "Add integration tests with mock health responses."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0026",
       "status": "todo",
       "title": "Implement license usage monitoring API client",
