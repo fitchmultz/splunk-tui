@@ -32,6 +32,56 @@ pub enum Popup {
     Help,
 }
 
+/// Sort column for jobs table.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortColumn {
+    Sid,
+    Status,
+    Duration,
+    Results,
+    Events,
+}
+
+/// Sort direction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortDirection {
+    Asc,
+    Desc,
+}
+
+/// Sort state for jobs table.
+#[derive(Debug, Clone, Copy)]
+pub struct SortState {
+    pub column: SortColumn,
+    pub direction: SortDirection,
+}
+
+impl SortState {
+    pub fn new() -> Self {
+        Self {
+            column: SortColumn::Sid,
+            direction: SortDirection::Asc,
+        }
+    }
+
+    pub fn cycle(&mut self) {
+        self.column = match self.column {
+            SortColumn::Sid => SortColumn::Status,
+            SortColumn::Status => SortColumn::Duration,
+            SortColumn::Duration => SortColumn::Results,
+            SortColumn::Results => SortColumn::Events,
+            SortColumn::Events => SortColumn::Sid,
+        };
+    }
+
+    pub fn toggle_direction(&mut self) {
+        self.direction = match self.direction {
+            SortDirection::Asc => SortDirection::Desc,
+            SortDirection::Desc => SortDirection::Asc,
+        };
+    }
+}
+
 /// Main application state.
 pub struct App {
     pub current_screen: CurrentScreen,
@@ -54,6 +104,14 @@ pub struct App {
     pub error: Option<String>,
     pub auto_refresh: bool,
     pub popup: Option<Popup>,
+
+    // Jobs filter state
+    pub search_filter: Option<String>,
+    pub is_filtering: bool,
+    pub filter_input: String,
+
+    // Jobs sort state
+    pub sort_state: SortState,
 }
 
 impl App {
@@ -81,6 +139,10 @@ impl App {
             error: None,
             auto_refresh: false,
             popup: None,
+            search_filter: None,
+            is_filtering: false,
+            filter_input: String::new(),
+            sort_state: SortState::new(),
         }
     }
 
@@ -99,7 +161,7 @@ impl App {
 
     /// Handle periodic tick events - returns Action if one should be dispatched.
     pub fn handle_tick(&self) -> Option<Action> {
-        if self.current_screen == CurrentScreen::Jobs && self.auto_refresh && self.popup.is_none() {
+        if self.current_screen == CurrentScreen::Jobs && self.auto_refresh && self.popup.is_none() && !self.is_filtering {
             Some(Action::LoadJobs)
         } else {
             None
@@ -196,6 +258,38 @@ impl App {
 
     fn handle_jobs_input(&mut self, key: KeyEvent) -> Option<Action> {
         use crossterm::event::KeyCode;
+
+        // Handle filter mode input
+        if self.is_filtering {
+            return match key.code {
+                KeyCode::Esc => {
+                    self.is_filtering = false;
+                    self.filter_input.clear();
+                    Some(Action::ClearSearch)
+                }
+                KeyCode::Enter => {
+                    self.is_filtering = false;
+                    if !self.filter_input.is_empty() {
+                        self.search_filter = Some(self.filter_input.clone());
+                        self.filter_input.clear();
+                        Some(Action::ClearSearch) // Triggers re-render
+                    } else {
+                        Some(Action::ClearSearch)
+                    }
+                }
+                KeyCode::Backspace => {
+                    self.filter_input.pop();
+                    None
+                }
+                KeyCode::Char(c) => {
+                    self.filter_input.push(c);
+                    None
+                }
+                _ => None,
+            };
+        }
+
+        // Normal jobs screen input
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -239,6 +333,8 @@ impl App {
                 }
                 None
             }
+            KeyCode::Char('s') => Some(Action::CycleSortColumn),
+            KeyCode::Char('/') => Some(Action::EnterSearchMode),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::Help);
                 None
@@ -318,6 +414,22 @@ impl App {
             Action::PageUp => self.previous_page(),
             Action::GoToTop => self.go_to_top(),
             Action::GoToBottom => self.go_to_bottom(),
+            Action::EnterSearchMode => {
+                self.is_filtering = true;
+                self.filter_input.clear();
+            }
+            Action::SearchInput(c) => {
+                self.filter_input.push(c);
+            }
+            Action::ClearSearch => {
+                self.search_filter = None;
+            }
+            Action::CycleSortColumn => {
+                self.sort_state.cycle();
+            }
+            Action::ToggleSortDirection => {
+                self.sort_state.toggle_direction();
+            }
             Action::Loading(is_loading) => {
                 self.loading = is_loading;
                 if is_loading {
@@ -747,6 +859,17 @@ impl App {
             }
         };
 
-        jobs::render_jobs(f, area, jobs, &mut self.jobs_state, self.auto_refresh);
+        jobs::render_jobs(
+            f,
+            area,
+            jobs,
+            &mut self.jobs_state,
+            self.auto_refresh,
+            &self.search_filter,
+            &self.filter_input,
+            self.is_filtering,
+            self.sort_state.column,
+            self.sort_state.direction,
+        );
     }
 }

@@ -1,0 +1,267 @@
+//! Snapshot tests for UI rendering.
+//!
+//! Visual regression tests using insta to capture and verify TUI rendering.
+//! Tests cover:
+//! - Jobs screen with mock data
+//! - Each popup variant (Help, ConfirmCancel, ConfirmDelete)
+//! - Empty states (no jobs, no results)
+
+mod helpers;
+use helpers::*;
+
+use ratatui::{backend::TestBackend, Terminal};
+use splunk_client::models::SearchJobStatus;
+use splunk_tui::App;
+
+/// Test harness for TUI rendering with a mock terminal.
+struct TuiHarness {
+    pub app: App,
+    pub terminal: Terminal<TestBackend>,
+}
+
+impl TuiHarness {
+    /// Create a new test harness with the given terminal dimensions.
+    fn new(width: u16, height: u16) -> Self {
+        let backend = TestBackend::new(width, height);
+        let terminal = Terminal::new(backend).expect("Failed to create terminal");
+        let app = App::new();
+        Self { app, terminal }
+    }
+
+    /// Render the current app state and return the buffer contents.
+    fn render(&mut self) -> String {
+        self.terminal
+            .draw(|f| self.app.render(f))
+            .expect("Failed to render");
+        buffer_to_string(self.terminal.backend().buffer())
+    }
+}
+
+/// Convert a ratatui Buffer to a string for snapshot testing.
+fn buffer_to_string(buffer: &ratatui::buffer::Buffer) -> String {
+    let area = buffer.area();
+    let mut output = String::new();
+
+    for y in area.top()..area.bottom() {
+        for x in area.left()..area.right() {
+            let cell = &buffer[(x, y)];
+            output.push(cell.symbol().chars().next().unwrap_or(' '));
+        }
+        if y < area.bottom() - 1 {
+            output.push('\n');
+        }
+    }
+
+    output
+}
+
+/// Create mock job data for testing.
+fn create_mock_jobs() -> Vec<SearchJobStatus> {
+    vec![
+        SearchJobStatus {
+            sid: "scheduler_admin_search_1234567890".to_string(),
+            is_done: true,
+            is_finalized: false,
+            done_progress: 1.0,
+            run_duration: 5.23,
+            disk_usage: 2048,
+            scan_count: 1500,
+            event_count: 500,
+            result_count: 100,
+            cursor_time: Some("2024-01-15T10:30:00.000Z".to_string()),
+            priority: Some(5),
+            label: Some("Scheduled search".to_string()),
+        },
+        SearchJobStatus {
+            sid: "admin_search_9876543210".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.65,
+            run_duration: 12.45,
+            disk_usage: 5120,
+            scan_count: 5000,
+            event_count: 2000,
+            result_count: 450,
+            cursor_time: Some("2024-01-15T10:29:00.000Z".to_string()),
+            priority: Some(3),
+            label: Some("Ad-hoc search".to_string()),
+        },
+    ]
+}
+
+#[test]
+fn snapshot_jobs_screen_with_data() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_jobs_screen_empty() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = None;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_jobs_screen_loading() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = None;
+    harness.app.loading = true;
+    harness.app.progress = 0.5;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_jobs_screen_auto_refresh() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.auto_refresh = true;
+    harness.app.jobs_state.select(Some(1));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.popup = Some(splunk_tui::Popup::Help);
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_confirm_cancel_popup() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(0));
+    harness.app.popup = Some(splunk_tui::Popup::ConfirmCancel(
+        "scheduler_admin_search_1234567890".to_string(),
+    ));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_confirm_delete_popup() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(1));
+    harness.app.popup = Some(splunk_tui::Popup::ConfirmDelete(
+        "admin_search_9876543210".to_string(),
+    ));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_initial() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main".to_string();
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_with_results() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main ERROR".to_string();
+    harness.app.search_status = "Search complete: index=main ERROR".to_string();
+    harness.app.search_results = vec![
+        serde_json::json!({"_time": "2024-01-15T10:30:00.000Z", "level": "ERROR", "message": "Connection failed"}),
+        serde_json::json!({"_time": "2024-01-15T10:29:00.000Z", "level": "ERROR", "message": "Timeout error"}),
+    ];
+    harness.app.search_sid = Some("search_12345".to_string());
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_empty() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input.clear();
+    harness.app.search_results.clear();
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_indexes_screen_empty() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
+    harness.app.indexes = None;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_indexes_screen_loading() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
+    harness.app.indexes = None;
+    harness.app.loading = true;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_cluster_screen_empty() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Cluster;
+    harness.app.cluster_info = None;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_cluster_screen_loading() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Cluster;
+    harness.app.cluster_info = None;
+    harness.app.loading = true;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_error_state() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.error = Some("Connection failed: timeout".to_string());
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_wide_terminal() {
+    let mut harness = TuiHarness::new(120, 30);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_narrow_terminal() {
+    let mut harness = TuiHarness::new(60, 20);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}

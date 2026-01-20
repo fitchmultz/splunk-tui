@@ -32,6 +32,16 @@ pub enum Action {
     GoToTop,
     /// Jump to bottom of list
     GoToBottom,
+    /// Enter search/filter mode for jobs
+    EnterSearchMode,
+    /// Add a character to the search filter
+    SearchInput(char),
+    /// Clear the search filter
+    ClearSearch,
+    /// Cycle sort column for jobs
+    CycleSortColumn,
+    /// Toggle sort direction for jobs
+    ToggleSortDirection,
 
     // API Triggers
     /// Load the list of indexes

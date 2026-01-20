@@ -3,6 +3,10 @@ name = "splunk-tui"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "splunk_tui"
+path = "src/lib.rs"
+
 [[bin]]
 name = "splunk-tui"
 path = "src/main.rs"
@@ -28,3 +32,6 @@ anyhow = { workspace = true }
 # Logging
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+insta = { version = "1.39", features = ["filters"] }
