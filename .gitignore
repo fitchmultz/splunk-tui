@@ -24,3 +24,4 @@ Cargo.lock
 # Build artifacts
 /dist/
 .ralph/lock
+.ralph/cache
