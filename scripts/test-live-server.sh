@@ -8,7 +8,67 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Function to display help
+show_help() {
+    cat << EOF
+USAGE: $0 [--help]
+
+DESCRIPTION:
+  Test script for live Splunk server verification.
+  Runs integration tests against a live Splunk server using the installed splunk CLI.
+
+REQUIREMENTS:
+  - splunk CLI installed (run: make install)
+  - Splunk server credentials configured
+
+AUTHENTICATION:
+  Set environment variables or create .env file:
+    SPLUNK_BASE_URL      Splunk server URL (e.g., https://localhost:8089)
+    SPLUNK_API_TOKEN     API token for authentication (preferred)
+    SPLUNK_USERNAME      Username (for session-based auth)
+    SPLUNK_PASSWORD      Password (for session-based auth)
+    SPLUNK_SKIP_VERIFY   Skip TLS verification (set to "true" for self-signed certs)
+
+EXAMPLES:
+  # Using .env file
+  cp .env.test .env
+  $0
+
+  # Using environment variables
+  export SPLUNK_BASE_URL="https://localhost:8089"
+  export SPLUNK_API_TOKEN="your_token_here"
+  $0
+
+  # With TLS verification skipped (self-signed cert)
+  export SPLUNK_SKIP_VERIFY="true"
+  $0
+
+TESTS RUN:
+  1. Basic search query
+  2. List indexes
+  3. List search jobs
+  4. Cluster info (expected to fail on standalone instances)
+  5. Search with JSON output format
+EOF
+}
+
+# Parse arguments
+for arg in "$@"; do
+    case $arg in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Error: Unknown argument '$arg'${NC}"
+            echo "Run '$0 --help' for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 echo "=========================================="
 echo "Splunk TUI Live Server Test"

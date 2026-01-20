@@ -1,33 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0022",
-      "status": "todo",
-      "title": "Add --help/usage with examples to live test script",
-      "priority": "low",
-      "tags": [
-        "scripts",
-        "docs",
-        "workflow"
-      ],
-      "scope": [
-        "scripts/test-live-server.sh"
-      ],
-      "evidence": [
-        "scripts/test-live-server.sh is executable but does not handle --help or document usage/examples.",
-        "AGENTS.md requires executable scripts to provide a useful --help menu with examples."
-      ],
-      "plan": [
-        "Add argument parsing for --help and print usage with example commands.",
-        "Document required environment variables or prerequisites in the help output.",
-        "Add a small test or lint check (if available) to ensure help output stays in sync."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
-      "depends_on": []
-    }
-  ]
+  "tasks": []
 }
