@@ -14,6 +14,8 @@ use ratatui::{
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
+use crate::app::{FOOTER_HEIGHT, HEADER_HEIGHT};
+
 /// Severity level for toast notifications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)] // Public API for future use
@@ -225,10 +227,6 @@ fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect) {
 
     f.render_widget(paragraph, area);
 }
-
-/// Layout constants - must match app.rs
-const HEADER_HEIGHT: u16 = 3;
-const FOOTER_HEIGHT: u16 = 3;
 
 #[cfg(test)]
 mod tests {

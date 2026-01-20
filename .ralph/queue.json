@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0019",
-      "status": "todo",
-      "title": "Centralize layout constants for toast rendering",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "ui",
-        "consistency"
-      ],
-      "scope": [
-        "crates/tui/src/ui/toast.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/src/lib.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/toast.rs defines local HEADER_HEIGHT/FOOTER_HEIGHT constants that duplicate app.rs values.",
-        "app.rs exports HEADER_HEIGHT/FOOTER_HEIGHT via lib.rs, but toast.rs does not use them."
-      ],
-      "plan": [
-        "Use the shared layout constants from app.rs (via crate root) in toast rendering.",
-        "Remove the duplicated constants from toast.rs to avoid drift.",
-        "Run existing toast tests to confirm behavior is unchanged."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
-      "depends_on": []
-    },
-    {
       "id": "RQ-0020",
       "status": "todo",
       "title": "Fix lib.rs docs example to match App::new signature",
