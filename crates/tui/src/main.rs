@@ -2,20 +2,29 @@
 //!
 //! Interactive terminal interface for managing Splunk deployments and running searches.
 
+mod action;
 mod app;
-mod event;
+mod ui;
 
+use action::Action;
 use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
+use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
+use std::sync::Arc;
+use tokio::sync::{Mutex, mpsc::unbounded_channel};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use app::{App, AppState, CurrentScreen};
-use event::Event;
+use app::App;
+use splunk_client::SplunkClient;
+use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader};
+
+/// Shared client wrapper for async tasks.
+type SharedClient = Arc<Mutex<SplunkClient>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -25,6 +34,12 @@ async fn main() -> Result<()> {
         .with(fmt::layer())
         .init();
 
+    // Load config at startup
+    let config = load_config()?;
+
+    // Build and authenticate client
+    let client = Arc::new(Mutex::new(create_client(&config).await?));
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
@@ -32,11 +47,58 @@ async fn main() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // Create channel for actions
+    let (tx, mut rx) = unbounded_channel::<Action>();
+
+    // Spawn input stream task
+    let tx_input = tx.clone();
+    tokio::spawn(async move {
+        use crossterm::event::EventStream;
+
+        let mut reader = EventStream::new();
+        while let Some(event_result) = reader.next().await {
+            match event_result {
+                Ok(event) => {
+                    if let crossterm::event::Event::Key(key) = event {
+                        tx_input.send(Action::Input(key)).ok();
+                    }
+                    // Resize is handled automatically by ratatui on next draw
+                }
+                Err(_) => {
+                    // Stream error, exit loop
+                    break;
+                }
+            }
+        }
+    });
+
     // Create app
     let mut app = App::new();
 
-    // Run app
-    let res = run_app(&mut terminal, &mut app).await;
+    // Main event loop
+    loop {
+        terminal.draw(|f| app.render(f))?;
+
+        tokio::select! {
+            Some(action) = rx.recv() => {
+                // Check for quit first
+                if matches!(action, Action::Quit) {
+                    break;
+                }
+
+                // Handle input -> Action
+                if let Action::Input(key) = action {
+                    if let Some(a) = app.handle_input(key) {
+                        app.update(a.clone());
+                        handle_side_effects(a, client.clone(), tx.clone()).await;
+                    }
+                } else {
+                    app.update(action.clone());
+                    handle_side_effects(action, client.clone(), tx.clone()).await;
+                }
+            }
+        }
+    }
 
     // Restore terminal
     disable_raw_mode()?;
@@ -47,102 +109,217 @@ async fn main() -> Result<()> {
     )?;
     terminal.show_cursor()?;
 
-    if let Err(err) = res {
-        eprintln!("Error: {:?}", err);
-    }
-
     Ok(())
 }
 
-async fn run_app<B: ratatui::backend::Backend>(
-    terminal: &mut Terminal<B>,
-    app: &mut App,
-) -> Result<()> {
-    loop {
-        terminal.draw(|f| app.render(f))?;
+/// Load configuration from environment.
+fn load_config() -> Result<Config> {
+    ConfigLoader::new()
+        .load_dotenv()?
+        .from_env()?
+        .build()
+        .map_err(|e| anyhow::anyhow!("Failed to load config: {}", e))
+}
 
-        // Handle events with timeout
-        let timeout = tokio::time::Duration::from_millis(100);
-
-        let event = if let Ok(event) = crossterm::event::poll(timeout) {
-            if event {
-                if let Ok(crossterm::event::Event::Key(key)) = crossterm::event::read() {
-                    Event::Input(key)
-                } else {
-                    continue;
-                }
-            } else {
-                Event::Tick
+/// Create and authenticate a new Splunk client.
+async fn create_client(config: &Config) -> Result<SplunkClient> {
+    let auth_strategy = match &config.auth.strategy {
+        ConfigAuthStrategy::SessionToken { username, password } => {
+            splunk_client::AuthStrategy::SessionToken {
+                username: username.clone(),
+                password: password.clone(),
             }
-        } else {
-            Event::Tick
-        };
+        }
+        ConfigAuthStrategy::ApiToken { token } => splunk_client::AuthStrategy::ApiToken {
+            token: token.clone(),
+        },
+    };
 
-        // Handle event
-        if let Event::Input(key) = event {
-            match app.state {
-                AppState::Running => match app.current_screen {
-                    CurrentScreen::Search => match key.code {
-                        crossterm::event::KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        crossterm::event::KeyCode::Char('1') => {
-                            app.current_screen = CurrentScreen::Search;
-                        }
-                        crossterm::event::KeyCode::Char('2') => {
-                            app.current_screen = CurrentScreen::Indexes;
-                        }
-                        crossterm::event::KeyCode::Char('3') => {
-                            app.current_screen = CurrentScreen::Cluster;
-                        }
-                        crossterm::event::KeyCode::Enter => {
-                            if !app.search_input.is_empty() {
-                                app.search_status = format!("Running: {}", app.search_input);
+    let mut client = SplunkClient::builder()
+        .base_url(config.connection.base_url.clone())
+        .auth_strategy(auth_strategy)
+        .skip_verify(config.connection.skip_verify)
+        .timeout(config.connection.timeout)
+        .build()?;
+
+    // Login if using session token
+    if !client.is_api_token_auth() {
+        client.login().await?;
+    }
+
+    Ok(client)
+}
+
+/// Handle side effects (async API calls) for actions.
+async fn handle_side_effects(
+    action: Action,
+    client: SharedClient,
+    tx: tokio::sync::mpsc::UnboundedSender<Action>,
+) {
+    match action {
+        Action::LoadIndexes => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.list_indexes(None, None).await {
+                    Ok(indexes) => {
+                        tx.send(Action::IndexesLoaded(Ok(indexes))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::IndexesLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
+        Action::LoadJobs => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.list_jobs(None, None).await {
+                    Ok(jobs) => {
+                        tx.send(Action::JobsLoaded(Ok(jobs))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::JobsLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
+        Action::LoadClusterInfo => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.get_cluster_info().await {
+                    Ok(info) => {
+                        tx.send(Action::ClusterInfoLoaded(Ok(info))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::ClusterInfoLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
+        Action::RunSearch(query) => {
+            tx.send(Action::Loading(true)).ok();
+            tx.send(Action::Progress(0.1)).ok();
+
+            let tx_clone = tx.clone();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+
+                // Create the job
+                let sid = match c.create_search_job(&query, &Default::default()).await {
+                    Ok(s) => s,
+                    Err(e) => {
+                        tx_clone
+                            .send(Action::SearchComplete(Err(e.to_string())))
+                            .ok();
+                        return;
+                    }
+                };
+
+                tx_clone.send(Action::Progress(0.5)).ok();
+
+                // Wait for completion (simplified - in production would poll)
+                match tokio::time::timeout(
+                    tokio::time::Duration::from_secs(300),
+                    wait_for_job(&mut c, &sid, tx_clone.clone()),
+                )
+                .await
+                {
+                    Ok(Ok(())) => {
+                        // Get results
+                        match c.get_search_results(&sid, 1000, 0).await {
+                            Ok(results) => {
+                                tx_clone.send(Action::Progress(1.0)).ok();
+                                tx_clone
+                                    .send(Action::SearchComplete(Ok((results.results, sid))))
+                                    .ok();
+                            }
+                            Err(e) => {
+                                tx_clone
+                                    .send(Action::SearchComplete(Err(e.to_string())))
+                                    .ok();
                             }
                         }
-                        crossterm::event::KeyCode::Char(c) => {
-                            app.search_input.push(c);
-                        }
-                        crossterm::event::KeyCode::Backspace => {
-                            app.search_input.pop();
-                        }
-                        _ => {}
-                    },
-                    CurrentScreen::Indexes => match key.code {
-                        crossterm::event::KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        crossterm::event::KeyCode::Char('1') => {
-                            app.current_screen = CurrentScreen::Search;
-                        }
-                        crossterm::event::KeyCode::Char('2') => {
-                            app.current_screen = CurrentScreen::Indexes;
-                        }
-                        crossterm::event::KeyCode::Char('3') => {
-                            app.current_screen = CurrentScreen::Cluster;
-                        }
-                        _ => {}
-                    },
-                    CurrentScreen::Cluster => match key.code {
-                        crossterm::event::KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        crossterm::event::KeyCode::Char('1') => {
-                            app.current_screen = CurrentScreen::Search;
-                        }
-                        crossterm::event::KeyCode::Char('2') => {
-                            app.current_screen = CurrentScreen::Indexes;
-                        }
-                        crossterm::event::KeyCode::Char('3') => {
-                            app.current_screen = CurrentScreen::Cluster;
-                        }
-                        _ => {}
-                    },
-                },
-                AppState::Quitting => {
-                    return Ok(());
+                    }
+                    Ok(Err(e)) => {
+                        tx_clone
+                            .send(Action::SearchComplete(Err(e.to_string())))
+                            .ok();
+                    }
+                    Err(_) => {
+                        tx_clone
+                            .send(Action::SearchComplete(Err("Search timeout".to_string())))
+                            .ok();
+                    }
                 }
-            }
+            });
+        }
+        Action::CancelJob(sid) => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.cancel_job(&sid).await {
+                    Ok(_) => {
+                        tx.send(Action::JobOperationComplete(format!(
+                            "Cancelled job: {}",
+                            sid
+                        )))
+                        .ok();
+                        // Reload the job list
+                        tx.send(Action::LoadJobs).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::Error(format!("Failed to cancel job: {}", e)))
+                            .ok();
+                    }
+                }
+            });
+        }
+        Action::DeleteJob(sid) => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.delete_job(&sid).await {
+                    Ok(_) => {
+                        tx.send(Action::JobOperationComplete(format!(
+                            "Deleted job: {}",
+                            sid
+                        )))
+                        .ok();
+                        // Reload the job list
+                        tx.send(Action::LoadJobs).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::Error(format!("Failed to delete job: {}", e)))
+                            .ok();
+                    }
+                }
+            });
+        }
+        _ => {}
+    }
+}
+
+/// Wait for a job to complete by polling its status.
+async fn wait_for_job(
+    client: &mut SplunkClient,
+    sid: &str,
+    tx: tokio::sync::mpsc::UnboundedSender<Action>,
+) -> Result<()> {
+    use tokio::time::{Duration, sleep};
+
+    loop {
+        sleep(Duration::from_millis(500)).await;
+
+        let status = client.get_job_status(sid).await?;
+
+        // Update progress
+        tx.send(Action::Progress(status.done_progress as f32)).ok();
+
+        if status.is_done {
+            return Ok(());
         }
     }
 }

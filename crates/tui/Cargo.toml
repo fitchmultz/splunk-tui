@@ -13,10 +13,11 @@ splunk-config = { path = "../config" }
 
 # Async Runtime
 tokio = { workspace = true }
+futures-util = "0.3"
 
 # TUI
 ratatui = { workspace = true }
-crossterm = { workspace = true }
+crossterm = { workspace = true, features = ["event-stream"] }
 
 # Serialization
 serde_json = { workspace = true }
