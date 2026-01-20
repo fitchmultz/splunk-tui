@@ -953,6 +953,45 @@
       "updated_at": "2026-01-20T07:13:34Z",
       "completed_at": "2026-01-20T20:00:00Z",
       "depends_on": []
+    },
+    {
+      "id": "RQ-0024",
+      "status": "done",
+      "title": "Implement Splunk server info detection for environment identification",
+      "priority": "critical",
+      "tags": [
+        "client",
+        "health",
+        "infrastructure"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/",
+        "crates/client/src/models.rs",
+        "crates/client/src/client.rs"
+      ],
+      "evidence": [
+        "Cluster management endpoints in crates/client/src/endpoints/cluster.rs assume a cluster manager is present.",
+        "Splunk health checks require knowing the environment type (standalone, cluster manager, search head, etc.).",
+        "/services/server/info provides essential environment metadata."
+      ],
+      "plan": [
+        "Add get_server_info endpoint implementation to fetch /services/server/info.",
+        "Define ServerInfo and related models in client/src/models.rs.",
+        "Update SplunkClient to use server info for tailoring subsequent health checks and cluster operations."
+      ],
+      "notes": [
+        "Implemented get_server_info endpoint in crates/client/src/endpoints/server.rs.",
+        "Added ServerInfo struct to crates/client/src/models.rs.",
+        "Exposed get_server_info method on SplunkClient in crates/client/src/client.rs.",
+        "Added integration test test_get_server_info with wiremock.",
+        "Verified all tests and linting pass."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T12:00:00Z",
+      "completed_at": "2026-01-20T12:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

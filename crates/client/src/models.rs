@@ -190,6 +190,20 @@ pub struct AuthResponse {
     pub session_key: String,
 }
 
+/// Server information.
+#[derive(Debug, Deserialize, Clone)]
+pub struct ServerInfo {
+    #[serde(rename = "serverName")]
+    pub server_name: String,
+    pub version: String,
+    pub build: String,
+    pub mode: Option<String>,
+    #[serde(rename = "server_roles", default)]
+    pub server_roles: Vec<String>,
+    #[serde(rename = "os_name")]
+    pub os_name: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

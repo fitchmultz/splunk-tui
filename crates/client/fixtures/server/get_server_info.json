@@ -1,0 +1,42 @@
+{
+  "entry": [
+    {
+      "name": "server-info",
+      "id": "https://localhost:8089/services/server/info/server-info",
+      "updated": "2024-01-20T10:00:00-08:00",
+      "links": {},
+      "author": "splunk",
+      "content": {
+        "build": "123456",
+        "cpu_arch": "x86_64",
+        "guid": "D0845949-C461-4190-9538-48D3F9514742",
+        "isFree": false,
+        "isTrial": false,
+        "licenseKeys": [],
+        "licenseLabels": [],
+        "licenseSignature": "",
+        "licenseState": "OK",
+        "master_uri": "https://localhost:8089",
+        "mode": "standalone",
+        "os_build": "23C71",
+        "os_name": "Darwin",
+        "os_version": "14.2.1",
+        "product_type": "splunk",
+        "serverName": "splunk-local",
+        "server_roles": [
+          "indexer",
+          "license_master",
+          "search_head"
+        ],
+        "startup_time": "1705773600",
+        "version": "9.1.2"
+      }
+    }
+  ],
+  "paging": {
+    "total": 1,
+    "perPage": 30,
+    "offset": 0
+  },
+  "messages": []
+}

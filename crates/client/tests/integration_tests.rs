@@ -333,6 +333,30 @@ async fn test_get_cluster_info() {
     assert_eq!(info.search_factor, Some(2));
 }
 
+#[tokio::test]
+async fn test_get_server_info() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("server/get_server_info.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/server/info"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3).await;
+
+    assert!(result.is_ok());
+    let info = result.unwrap();
+    assert_eq!(info.server_name, "splunk-local");
+    assert_eq!(info.version, "9.1.2");
+    assert_eq!(info.mode.as_deref(), Some("standalone"));
+    assert!(info.server_roles.contains(&"search_head".to_string()));
+    assert!(info.server_roles.contains(&"indexer".to_string()));
+}
+
 // Error path tests
 
 #[tokio::test]
