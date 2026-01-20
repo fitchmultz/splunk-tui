@@ -1,0 +1,29 @@
+[package]
+name = "splunk-tui"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "splunk-tui"
+path = "src/main.rs"
+
+[dependencies]
+splunk-client = { path = "../client" }
+splunk-config = { path = "../config" }
+
+# Async Runtime
+tokio = { workspace = true }
+
+# TUI
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+
+# Serialization
+serde_json = { workspace = true }
+
+# Error Handling
+anyhow = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
