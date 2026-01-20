@@ -39,7 +39,7 @@ test-unit:
 
 # Run integration tests
 test-integration:
-	cargo test --test integration_tests
+	cargo test -p splunk-client --test integration_tests
 
 # Run live tests (requires Splunk server at 192.168.1.122:8089)
 test-live:
