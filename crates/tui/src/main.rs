@@ -315,6 +315,7 @@ async fn handle_side_effects(
                             format!("Failed to cancel job: {}", e),
                         ))
                         .ok();
+                        tx.send(Action::Loading(false)).ok();
                     }
                 }
             });
@@ -339,6 +340,7 @@ async fn handle_side_effects(
                             format!("Failed to delete job: {}", e),
                         ))
                         .ok();
+                        tx.send(Action::Loading(false)).ok();
                     }
                 }
             });

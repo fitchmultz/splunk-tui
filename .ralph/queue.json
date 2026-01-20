@@ -3,7 +3,7 @@
   "tasks": [
     {
       "id": "RQ-0021",
-      "status": "todo",
+      "status": "doing",
       "title": "Clear loading state on cancel/delete failures in TUI",
       "priority": "high",
       "tags": [
@@ -28,7 +28,7 @@
       "notes": [],
       "request": "scan finding",
       "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2025-01-19T23:15:00Z",
       "depends_on": []
     },
     {

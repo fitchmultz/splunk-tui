@@ -1113,3 +1113,61 @@ fn test_sort_changes_rebuild_indices() {
         "Should still have 2 items"
     );
 }
+
+// Regression tests for RQ-0021: loading state should be cleared on error
+
+#[test]
+fn test_cancel_job_error_clears_loading() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Simulate the sequence of actions when CancelJob fails:
+    // 1. Loading(true) is sent before the async operation
+    app.update(Action::Loading(true));
+    assert!(app.loading, "Loading should be true after Loading(true)");
+
+    // 2. Error notification is sent when operation fails
+    app.update(Action::Notify(
+        ToastLevel::Error,
+        "Failed to cancel job: connection error".to_string(),
+    ));
+
+    // 3. Loading(false) is sent to clear the loading state
+    app.update(Action::Loading(false));
+
+    assert!(!app.loading, "Loading should be false after Loading(false)");
+    assert_eq!(app.toasts.len(), 1, "Should have error toast");
+    assert_eq!(
+        app.toasts[0].level,
+        ToastLevel::Error,
+        "Toast should be Error level"
+    );
+}
+
+#[test]
+fn test_delete_job_error_clears_loading() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Simulate the sequence of actions when DeleteJob fails:
+    // 1. Loading(true) is sent before the async operation
+    app.update(Action::Loading(true));
+    assert!(app.loading, "Loading should be true after Loading(true)");
+
+    // 2. Error notification is sent when operation fails
+    app.update(Action::Notify(
+        ToastLevel::Error,
+        "Failed to delete job: not found".to_string(),
+    ));
+
+    // 3. Loading(false) is sent to clear the loading state
+    app.update(Action::Loading(false));
+
+    assert!(!app.loading, "Loading should be false after Loading(false)");
+    assert_eq!(app.toasts.len(), 1, "Should have error toast");
+    assert_eq!(
+        app.toasts[0].level,
+        ToastLevel::Error,
+        "Toast should be Error level"
+    );
+}
