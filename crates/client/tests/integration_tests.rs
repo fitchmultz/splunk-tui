@@ -12,7 +12,8 @@ use splunk_client::ClientError;
 
 /// Helper to load fixture files.
 fn load_fixture(fixture_path: &str) -> serde_json::Value {
-    let fixture_dir = std::path::Path::new("fixtures");
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let fixture_dir = manifest_dir.join("fixtures");
     let full_path = fixture_dir.join(fixture_path);
     let content = std::fs::read_to_string(&full_path)
         .unwrap_or_else(|_| panic!("Failed to load fixture: {}", full_path.display()));
