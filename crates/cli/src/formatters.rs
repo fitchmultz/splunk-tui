@@ -4,10 +4,9 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::{
-    ClusterPeer, Index, KvStoreStatus, LicenseUsage, LogParsingHealth, SearchJobStatus, ServerInfo,
-    SplunkHealth,
-};
+use splunk_client::{ClusterPeer, Index, SearchJobStatus};
+
+pub use splunk_client::HealthCheckOutput;
 
 /// Supported output formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,21 +53,6 @@ pub trait Formatter {
 
     /// Format health check results.
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String>;
-}
-
-/// Health check output aggregation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HealthCheckOutput {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub server_info: Option<ServerInfo>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub splunkd_health: Option<SplunkHealth>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub license_usage: Option<Vec<LicenseUsage>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kvstore_status: Option<KvStoreStatus>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub log_parsing_health: Option<LogParsingHealth>,
 }
 
 /// Cluster peer output structure.

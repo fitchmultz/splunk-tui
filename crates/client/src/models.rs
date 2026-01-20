@@ -299,6 +299,21 @@ pub struct LogParsingHealth {
     pub time_window: String,
 }
 
+/// Aggregated health check output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthCheckOutput {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub server_info: Option<ServerInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub splunkd_health: Option<SplunkHealth>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub license_usage: Option<Vec<LicenseUsage>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kvstore_status: Option<KvStoreStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_parsing_health: Option<LogParsingHealth>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
