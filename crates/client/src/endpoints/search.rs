@@ -43,6 +43,20 @@ pub enum OutputMode {
     Raw,
 }
 
+impl std::fmt::Display for OutputMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            OutputMode::Json => "json",
+            OutputMode::JsonCols => "json_cols",
+            OutputMode::JsonRows => "json_rows",
+            OutputMode::Xml => "xml",
+            OutputMode::Csv => "csv",
+            OutputMode::Raw => "raw",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 /// Create a new search job.
 pub async fn create_job(
     client: &Client,
@@ -80,7 +94,7 @@ pub async fn create_job(
         form_data.push(("max_count", max_count.to_string()));
     }
     if let Some(mode) = options.output_mode {
-        form_data.push(("output_mode", serde_json::to_string(&mode).unwrap()));
+        form_data.push(("output_mode", mode.to_string()));
     }
 
     let response = client
@@ -184,10 +198,8 @@ pub async fn get_results(
 
     let url = format!("{}/services/search/jobs/{}/results", base_url, sid);
 
-    let mut query_params: Vec<(String, String)> = vec![(
-        "output_mode".to_string(),
-        serde_json::to_string(&output_mode).unwrap(),
-    )];
+    let mut query_params: Vec<(String, String)> =
+        vec![("output_mode".to_string(), output_mode.to_string())];
 
     if let Some(c) = count {
         query_params.push(("count".to_string(), c.to_string()));

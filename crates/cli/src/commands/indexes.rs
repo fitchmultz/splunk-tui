@@ -4,11 +4,13 @@ use anyhow::Result;
 use splunk_client::{AuthStrategy, SplunkClient};
 use tracing::info;
 
+use crate::formatters::{OutputFormat, get_formatter};
+
 pub async fn run(
     config: splunk_config::Config,
-    detailed: bool,
+    _detailed: bool,
     count: usize,
-    _output_format: &str,
+    output_format: &str,
 ) -> Result<()> {
     info!("Listing indexes");
 
@@ -28,26 +30,13 @@ pub async fn run(
 
     let indexes = client.list_indexes(Some(count as u64), None).await?;
 
-    println!("Found {} indexes:\n", indexes.len());
+    // Parse output format
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
 
-    for index in indexes {
-        println!("  Name: {}", index.name);
-        if detailed {
-            println!("    Size: {} MB", index.current_db_size_mb);
-            println!("    Events: {}", index.total_event_count);
-            if let Some(max_size) = index.max_total_data_size_mb {
-                println!("    Max Size: {} MB", max_size);
-            }
-            if let Some(frozen_time) = index.frozen_time_period_in_secs {
-                let days = frozen_time / 86400;
-                println!("    Retention: {} days", days);
-            }
-            if let Some(home_path) = index.home_path {
-                println!("    Path: {}", home_path);
-            }
-        }
-        println!();
-    }
+    // Format and print indexes
+    let output = formatter.format_indexes(&indexes)?;
+    print!("{}", output);
 
     Ok(())
 }

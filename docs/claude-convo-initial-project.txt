@@ -1,0 +1,2113 @@
+
+╭─── Claude Code v2.1.12 ──────────────────────────────────────────────────────╮
+│                                 │ Tips for getting started                   │
+│          Welcome back!          │ Run /init to create a CLAUDE.md file with… │
+│                                 │ ────────────────────────────────────────── │
+│             ▐▛███▜▌             │ Recent activity                            │
+│            ▝▜█████▛▘            │ No recent activity                         │
+│              ▘▘ ▝▝              │                                            │
+│                                 │                                            │
+│   glm-4.7 · API Usage Billing   │                                            │
+│      ~/Projects/splunk-tui      │                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+  /model to try Opus 4.5
+
+❯ Implement the following plan:                                             
+                                                                            
+  # Implementation Plan: Splunk CLI and TUI (Rust)                          
+                                                                            
+  ## Overview                                                               
+  Build a robust Rust-based CLI and TUI tool for managing Splunk Enterprise 
+  v9+ deployments. Supports both standalone and clustered deployments with  
+  dual authentication methods (session token and API token).                
+                                                                            
+  **Scope**: CLI + Basic TUI                                                
+  **Priority Features**: Search & Results, Cluster Management, Index & Data 
+  **Language**: Rust                                                        
+                                                                            
+  ## Project Structure                                                      
+                                                                            
+  ```                                                                       
+  splunk-tui/                                                               
+  ├── Cargo.toml                    # Workspace root                        
+  ├── Cargo.lock                                                            
+  ├── Makefile                      # Build automation (required)           
+  ├── .env                          # Local config (gitignored)             
+  ├── .env.example                  # Template (committed)                  
+  ├── rust-toolchain.toml           # Pin toolchain                         
+  ├── .gitignore                                                            
+  ├── README.md                                                             
+  ├── AGENTS.md                     # Project philosophy                    
+  │                                                                         
+  ├── crates/                                                               
+  │   ├── cli/                      # Binary: CLI interface                 
+  │   │   ├── src/                                                          
+  │   │   │   ├── main.rs           # Entry point with clap                 
+  │   │   │   └── commands/                                                 
+  │   │   │       ├── search.rs                                             
+  │   │   │       ├── cluster.rs                                            
+  │   │   │       └── index.rs                                              
+  │   │   └── Cargo.toml                                                    
+  │   │                                                                     
+  │   ├── tui/                      # Binary: TUI interface                 
+  │   │   ├── src/                                                          
+  │   │   │   ├── main.rs                                                   
+  │   │   │   ├── app.rs                                                    
+  │   │   │   ├── event.rs                                                  
+  │   │   │   └── ui/                                                       
+  │   │   │       ├── screens.rs                                            
+  │   │   │       └── widgets.rs                                            
+  │   │   └── Cargo.toml                                                    
+  │   │                                                                     
+  │   ├── client/                   # Library: Splunk REST API client       
+  │   │   ├── src/                                                          
+  │   │   │   ├── lib.rs                                                    
+  │   │   │   ├── client.rs         # Main HTTP client                      
+  │   │   │   ├── auth.rs           # Session/API token auth                
+  │   │   │   ├── error.rs          # thiserror types                       
+  │   │   │   ├── models.rs         # Data models                           
+  │   │   │   └── endpoints/                                                
+  │   │   │       ├── auth.rs                                               
+  │   │   │       ├── search.rs                                             
+  │   │   │       ├── jobs.rs                                               
+  │   │   │       ├── indexes.rs                                            
+  │   │   │       └── cluster.rs                                            
+  │   │   └── Cargo.toml                                                    
+  │   │                                                                     
+  │   └── config/                   # Library: Configuration                
+  │       ├── src/                                                          
+  │       │   ├── lib.rs                                                    
+  │       │   ├── types.rs                                                  
+  │       │   └── loader.rs                                                 
+  │       └── Cargo.toml                                                    
+  │                                                                         
+  └── tests/                                                                
+  └── integration/                                                          
+  ```                                                                       
+                                                                            
+  ## Key Dependencies                                                       
+                                                                            
+  | Category | Crate | Purpose |                                            
+  |----------|-------|---------|                                            
+  | Async Runtime | tokio 1.42 | Async I/O |                                
+  | HTTP | reqwest 0.12 | REST API client |                                 
+  | CLI | clap 4.5 | Argument parsing |                                     
+  | TUI | ratatui 0.29 | Terminal UI |                                      
+  | TUI Input | crossterm 0.28 | Keyboard/events |                          
+  | Serialization | serde/serde_json | JSON handling |                      
+  | Error Handling | thiserror 2.0 | Structured errors (lib) |              
+  | Error Handling | anyhow 1.0 | Error propagation (app) |                 
+  | Secrets | secrecy 0.10 | Secure credential handling |                   
+  | Config | dotenvy 0.15 | .env file loading |                             
+  | Logging | tracing/tracing-subscriber | Structured logging |             
+                                                                            
+  ## Architecture                                                           
+                                                                            
+  ```                                                                       
+  ┌─────────────────────────────────────────┐                               
+  │         User Interface                  │                               
+  │  ┌──────────────┐  ┌──────────────┐    │                                
+  │  │ CLI (clap)   │  │ TUI (ratatui)│   │                                 
+  │  └──────┬───────┘  └──────┬───────┘    │                                
+  └─────────┼──────────────────┼───────────┘                                
+  └────────┬─────────┘                                                      
+  │                                                                         
+  ┌─────────────────────────────────────────┐                               
+  │      Application Logic Layer            │                               
+  │  Command Handlers / State Machine       │                               
+  └───────────────────┬─────────────────────┘                               
+  │                                                                         
+  ┌─────────────────────────────────────────┐                               
+  │         Splunk Client Layer             │                               
+  │  - Auth (session/API token)             │                               
+  │  - Search jobs & results                │                               
+  │  - Cluster management                   │                               
+  │  - Index operations                     │                               
+  └───────────────────┬─────────────────────┘                               
+  │                                                                         
+  ┌─────────────────────────────────────────┐                               
+  │       Configuration Layer               │                               
+  │  Environment, files, CLI args           │                               
+  └─────────────────────────────────────────┘                               
+  ```                                                                       
+                                                                            
+  ## Authentication Flow                                                    
+                                                                            
+  ```rust                                                                   
+  pub enum AuthStrategy {                                                   
+  SessionToken { username, password },                                      
+  ApiToken { token },                                                       
+  }                                                                         
+                                                                            
+  struct SessionManager {                                                   
+  auth_strategy: AuthStrategy,                                              
+  session_token: Option<SecretString>,                                      
+  token_expiry: Option<Instant>,                                            
+  }                                                                         
+                                                                            
+  // Auto-renewal on 401/403 responses                                      
+  ```                                                                       
+                                                                            
+  ## Critical Files to Create (in order)                                    
+                                                                            
+  ### Phase 1: Foundation                                                   
+  1. `Cargo.toml` - Workspace configuration                                 
+  2. `Makefile` - Build automation with targets: install, update, lint,     
+  type-check, format, clean, test, build, ci                                
+  3. `.env.example` - Configuration template                                
+  4. `rust-toolchain.toml` - Toolchain pin                                  
+  5. `AGENTS.md` - Project philosophy                                       
+                                                                            
+  ### Phase 2: Config Library                                               
+  6. `crates/config/Cargo.toml`                                             
+  7. `crates/config/src/lib.rs` - Docstring: "Configuration management for  
+  Splunk TUI"                                                               
+  8. `crates/config/src/types.rs` - Configuration structs with secrets      
+                                                                            
+  ### Phase 3: Client Library                                               
+  9. `crates/client/Cargo.toml`                                             
+  10. `crates/client/src/lib.rs` - Docstring: "Splunk REST API client"      
+  11. `crates/client/src/error.rs` - thiserror types (AuthFailed,           
+  HttpError, ApiError, SessionExpired)                                      
+  12. `crates/client/src/auth.rs` - AuthStrategy enum, SessionManager       
+  13. `crates/client/src/models.rs` - SplunkResponse, SearchJob, Index,     
+  ClusterInfo                                                               
+  14. `crates/client/src/client.rs` - Main SplunkClient with retry logic    
+  15. `crates/client/src/endpoints/mod.rs`                                  
+  16. `crates/client/src/endpoints/auth.rs` - login(), validate_session()   
+  17. `crates/client/src/endpoints/search.rs` - create_job(),               
+  wait_for_job(), get_results()                                             
+                                                                            
+  ### Phase 4: CLI Binary                                                   
+  18. `crates/cli/Cargo.toml`                                               
+  19. `crates/cli/src/main.rs` - clap CLI with search/indexes/cluster       
+  subcommands                                                               
+                                                                            
+  ### Phase 5: TUI Binary                                                   
+  20. `crates/tui/Cargo.toml`                                               
+  21. `crates/tui/src/main.rs` - ratatui TUI with tab navigation            
+                                                                            
+  ## Splunk REST API Endpoints                                              
+                                                                            
+  | Endpoint | Method | Purpose |                                           
+  |----------|--------|---------|                                           
+  | `/services/auth/login` | POST | Username/password login |               
+  | `/services/search/jobs` | POST | Create search job |                    
+  | `/services/search/jobs/{sid}` | GET | Get job status |                  
+  | `/services/search/jobs/{sid}/results` | GET | Get results |             
+  | `/services/data/indexes` | GET | List indexes |                         
+  | `/services/cluster/master/peers` | GET | Cluster peers |                
+                                                                            
+  ## Makefile Targets                                                       
+                                                                            
+  ```makefile                                                               
+  make install   # Install binaries to ~/.cargo/bin                         
+  make update    # Update dependencies                                      
+  make lint      # clippy (warnings as errors)                              
+  make type-check # cargo check                                             
+  make format    # rustfmt                                                  
+  make clean     # Remove artifacts                                         
+  make test      # Run all tests                                            
+  make build     # Release build                                            
+  make ci        # format → lint → type-check → test → build                
+  ```                                                                       
+                                                                            
+  ## Verification                                                           
+                                                                            
+  ### CLI Commands                                                          
+  ```bash                                                                   
+  splunk --base-url https://localhost:8089 --api-token TOKEN search "search 
+  index=main | head 10" --wait                                              
+  splunk indexes --detailed                                                 
+  splunk cluster --detailed                                                 
+  ```                                                                       
+                                                                            
+  ### TUI Features                                                          
+  - Tab navigation (Search, Indexes, Cluster)                               
+  - Search input with query editor                                          
+  - Results display with scrolling                                          
+  - Cluster health visualization                                            
+  - Press 'q' to quit                                                       
+                                                                            
+  ### CI Pipeline                                                           
+  ```bash                                                                   
+  make ci  # Must pass before completion                                    
+  ```                                                                       
+                                                                            
+  ## Testing Strategy                                                       
+  - Unit tests with mockito/wiremock for HTTP mocking                       
+  - Integration tests with assert_cmd for CLI                               
+  - Minimum 80% coverage for client library                                 
+  - All error paths tested                                                  
+                                                                            
+  ## Implementation Sequence                                                
+  1. Foundation (workspace, Makefile, .env)                                 
+  2. Config library (types, loader, validation)                             
+  3. Client library (auth, endpoints, models)                               
+  4. CLI binary (clap, commands, output formatting)                         
+  5. TUI binary (ratatui, screens, event handling)                          
+  6. Testing and documentation                                              
+                                                                            
+  **Important**: After adding dependencies to `Cargo.toml`, run `cargo      
+  update` to update all crates to their latest compatible versions before   
+  building. This prevents breakages from outdated transitive dependencies.  
+                                                                            
+                                                                            
+  If you need specific details from before exiting plan mode (like exact    
+  code snippets, error messages, or content you generated), read the full   
+  transcript at: /Users/mitchfultz/.claude/projects/-Users-mitchfultz-Proje 
+  cts-splunk-tui/139dc579-241d-4e84-a37f-c5b7496cc141.jsonl                 
+
+⏺ I'll implement this Splunk CLI and TUI project step by step. Let me start by creating a comprehensive todo list and then begin with the foundation.
+
+⏺ Let me start implementing the project. First, I'll create the workspace Cargo.toml and all the foundational files.
+
+⏺ Write(Cargo.toml)
+  ⎿  Wrote 55 lines to Cargo.toml                                          
+     [workspace]
+     resolver = "2"
+     members = ["crates/cli", "crates/tui", "crates/client",
+     "crates/config"]
+     [workspace.package]
+     version = "0.1.0"
+     edition = "2024"
+     authors = ["Splunk TUI Contributors"]
+     license = "MIT"
+     repository = "https://github.com/example/splunk-tui"
+     … +45 lines (ctrl+o to expand)
+
+⏺ Bash(mkdir -p crates/cli/src/commands crates/tui/src/ui/screens
+      crates/tui/src/ui/widgets crates/client/src/endpoints crates/config/src
+      tests/integration)
+  ⎿  (No content)
+
+⏺ Write(Makefile)
+  ⎿  Wrote 58 lines to Makefile                                            
+     .PHONY: install update lint type-check format clean test build ci help
+     # Default target
+     .DEFAULT_GOAL := help
+     # Install all dependencies and binaries to ~/.cargo/bin
+     install:
+       cargo install --path crates/cli --force
+       cargo install --path crates/tui --force
+     … +48 lines (ctrl+o to expand)
+
+⏺ Write(rust-toolchain.toml)
+  ⎿  Wrote 4 lines to rust-toolchain.toml          
+     [toolchain]
+     channel = "1.84"
+     components = ["rustfmt", "clippy", "rust-src"]
+
+⏺ Write(.gitignore)
+  ⎿  Wrote 26 lines to .gitignore  
+     # Rust
+     /target/
+     **/*.rs.bk
+     Cargo.lock
+     # IDE
+     .idea/
+     .vscode/
+     *.swp
+     *.swo
+     … +16 lines (ctrl+o to expand)
+
+⏺ Now let me create the config library with all its modules:
+
+⏺ Write(crates/config/src/loader.rs)
+  ⎿  Wrote 219 lines to crates/config/src/loader.rs                        
+     //! Configuration loader for environment variables and files.
+     use std::time::Duration;
+     use secrecy::SecretString;
+     use thiserror::Error;
+     use crate::types::{AuthConfig, AuthStrategy, Config,
+     ConnectionConfig};
+     /// Errors that can occur during configuration loading.
+     #[derive(Error, Debug)]
+     … +209 lines (ctrl+o to expand)
+
+⏺ Now let me create the client library. This is the largest part:
+
+⏺ Write(crates/client/src/auth.rs)
+  ⎿  Wrote 148 lines to crates/client/src/auth.rs         
+     //! Authentication strategies and session management.
+     use std::time::Instant;
+     use secrecy::{ExposeSecret, Secret, SecretString};
+     use crate::error::{ClientError, Result};
+     /// Strategy for authenticating with Splunk.
+     #[derive(Debug, Clone)]
+     pub enum AuthStrategy {
+     … +138 lines (ctrl+o to expand)
+
+⏺ Write(crates/client/src/models.rs)
+  ⎿  Wrote 215 lines to crates/client/src/models.rs
+     //! Data models for Splunk API responses.
+     use serde::Deserialize;
+     use time::OffsetDateTime;
+     /// Generic Splunk REST API response wrapper.
+     #[derive(Debug, Deserialize, Clone)]
+     pub struct SplunkResponse<T> {
+         pub entry: Vec<Entry<T>>,
+     }
+     … +205 lines (ctrl+o to expand)
+
+⏺ Write(crates/client/src/endpoints/search.rs)
+  ⎿  Wrote 255 lines to crates/client/src/endpoints/search.rs
+     //! Search job endpoints.
+     use reqwest::Client;
+     use secrecy::ExposeSecret;
+     use serde::{Deserialize, Serialize};
+     use tracing::debug;
+     use crate::error::{ClientError, Result};
+     use crate::models::{SearchJobResults, SearchJobStatus};
+     … +245 lines (ctrl+o to expand)
+
+⏺ Write(crates/client/src/endpoints/cluster.rs)
+  ⎿  Wrote 130 lines to crates/client/src/endpoints/cluster.rs
+     //! Cluster management endpoints.
+     use reqwest::Client;
+     use crate::error::{ClientError, Result};
+     use crate::models::{ClusterInfo, ClusterPeer};
+     /// Get cluster configuration/status.
+     pub async fn get_cluster_info(
+         client: &Client,
+     … +120 lines (ctrl+o to expand)
+
+⏺ Now let me create the main client file that ties everything together:
+
+⏺ Write(crates/client/src/client.rs)
+  ⎿  Wrote 357 lines to crates/client/src/client.rs                        
+     //! Main Splunk REST API client.
+     use std::time::Duration;
+     use secrecy::ExposeSecret;
+     use crate::auth::SessionManager;
+     use crate::endpoints;
+     use crate::error::{ClientError, Result};
+     use crate::models::{ClusterInfo, ClusterPeer, Index, SearchJobResults,
+     SearchJobStatus};
+
+     … +347 lines (ctrl+o to expand)
+
+⏺ Now let me create the CLI binary:
+
+⏺ Write(crates/cli/src/commands/mod.rs)
+  ⎿  Wrote 7 lines to crates/cli/src/commands/mod.rs
+     //! CLI command implementations.
+     pub mod cluster;
+     pub mod indexes;
+     pub mod jobs;
+     pub mod search;
+
+⏺ Write(crates/cli/src/commands/jobs.rs)
+  ⎿  Wrote 66 lines to crates/cli/src/commands/jobs.rs     
+     //! Jobs command implementation.
+     use anyhow::Result;
+     use splunk_client::{SplunkClient, auth::AuthStrategy};
+     use tracing::info;
+     pub async fn run(
+         config: splunk_config::Config,
+         list: bool,
+         cancel: Option<String>,
+     … +56 lines (ctrl+o to expand)
+
+⏺ Now let me create the TUI binary. Note: I'll keep the TUI simple and functional:
+
+⏺ Write(crates/tui/src/event.rs)
+  ⎿  Wrote 11 lines to crates/tui/src/event.rs                 
+     //! Event handling for the TUI.
+     use crossterm::event::{Event as CrosstermEvent, KeyEvent};
+     /// TUI events.
+     #[derive(Debug, Clone, Copy)]
+     pub enum Event {
+         Input(KeyEvent),
+         Tick,
+     }
+     … +1 line (ctrl+o to expand)
+
+⏺ Now let me create the README.md:
+
+⏺ Write(README.md)
+  ⎿  Wrote 205 lines to README.md                                          
+     # Splunk CLI and TUI
+     A robust Rust-based CLI and TUI tool for managing Splunk Enterprise
+     v9+ deployments. Supports both standalone and clustered deployments
+     with dual authentication methods (session token and API token).
+     ## Features
+     - **Dual Authentication**: Session token (username/password) and API
+     token support
+     - **Search Management**: Create, execute, and monitor search jobs
+     - **Index Operations**: List and inspect indexes with detailed
+     information
+     - **Cluster Support**: View cluster status and peer information
+     … +195 lines (ctrl+o to expand)
+
+⏺ Now let me run cargo update to sync dependencies and then verify the build:
+
+⏺ Bash(cargo update 2>&1)
+  ⎿      Updating crates.io index                           
+          Locking 262 packages to latest compatible versions
+           Adding crossterm v0.28.1 (available: v0.29.0)
+     … +4 lines (ctrl+o to expand)
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     error: unexpected closing delimiter: `}`
+       --> 
+     /Users/mitchfultz/Projects/splunk-tui/crates/cli/src/commands/search.rs:56:1
+        |
+     49 |             for (key, value) in obj {
+        |                                     - the nearest open delimiter
+     50 |                 println!("  {}: {}", key, value));
+        |                                                 - missing open `(` for 
+     this delimiter
+     ...
+
+
+     … +15 lines (ctrl+o to see all)
+
+⏺ I need to fix the syntax errors found by rustfmt. Let me fix them:
+
+⏺ Read(crates/cli/src/commands/search.rs)
+  ⎿  Read 57 lines
+
+⏺ Update(crates/cli/src/commands/search.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      47          println!("\n[Result {}]", i + 1);                      
+      48          if let Some(obj) = row.as_object() {                   
+      49              for (key, value) in obj {                          
+      50 -                println!("  {}: {}", key, value));             
+      50 +                println!("  {}: {}", key, value);              
+      51              }                                                  
+      52          }                                                      
+      53      }                                                          
+
+⏺ Now let me fix the models.rs file. The issue is with is captain which should be is_captain:
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 30 lines
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Added 2 lines, removed 1 line                                       
+      177      pub replication_count: Option<u32>,                       
+      178      pub replication_status: Option<String>,                   
+      179      pub bundle_replication_count: Option<u32>,                
+      180 -    pub is captain: Option<bool>,                             
+      180 +    #[serde(rename = "is_captain")]                           
+      181 +    pub is_captain: Option<bool>,                             
+      182  }                                                             
+      183                                                                
+      184  /// Authentication response from login.                       
+
+⏺ Now let me run make ci again to verify everything builds:
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+      Downloading crates ...
+       Downloaded tokio-test v0.4.5
+       Downloaded secrecy v0.10.3
+       Downloaded yoke-derive v0.8.1
+       Downloaded form_urlencoded v1.2.2
+       Downloaded percent-encoding v2.3.2
+       Downloaded tracing-serde v0.2.0
+     … +264 lines (ctrl+o to see all)
+
+⏺ I need to fix the secrecy API issues. The newer version has different requirements. Let me fix the config types:
+
+⏺ Read(crates/config/src/types.rs)
+  ⎿  Read 133 lines
+
+⏺ Write(crates/config/src/types.rs)
+  ⎿  Added 4 lines, removed 4 lines                                      
+       4  use std::time::Duration;                                       
+       5                                                                 
+       6  /// Strategy for authenticating with Splunk.                   
+       7 -#[derive(Debug, Clone, PartialEq, Eq)]                         
+       7 +#[derive(Debug, Clone)]                                        
+       8  pub enum AuthStrategy {                                        
+       9      /// Username and password authentication (creates session  
+          token)                                                         
+      10      SessionToken {                                             
+     ...
+      56              auth: AuthConfig {                                 
+      57                  strategy: AuthStrategy::SessionToken {         
+      58                      username: "admin".to_string(),             
+      59 -                    password:                                  
+         -SecretString::new("changeme".to_string()),                     
+      59 +                    password:                                  
+         +SecretString::new("changeme".to_string().into()),              
+      60                  },                                             
+      61              },                                                 
+      62          }                                                      
+     ...
+      108                                                                
+      109      #[test]                                                   
+      110      fn test_config_with_api_token() {                         
+      111 -        let token = SecretString::new("test-token".to_string()
+          -);                                                            
+      111 +        let token = SecretString::new("test-token".to_string()
+          +.into());                                                     
+      112          let config = Config::with_api_token("https://splunk.e 
+           xample.com:8089".to_string(), token);                         
+      113          assert!(matches!(                                     
+      114              config.auth.strategy,                             
+     ...
+      118                                                                
+      119      #[test]                                                   
+      120      fn test_config_with_session_token() {                     
+      121 -        let password =                                        
+          -SecretString::new("test-password".to_string());               
+      121 +        let password =                                        
+          +SecretString::new("test-password".to_string().into());        
+      122          let config = Config::with_session_token(              
+      123              "https://splunk.example.com:8089".to_string(),    
+      124              "admin".to_string(),                              
+
+⏺ Now let me fix the loader.rs file:
+
+⏺ Read(crates/config/src/loader.rs)
+  ⎿  Read 70 lines
+
+⏺ Update(crates/config/src/loader.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      57      }                                                          
+      58                                                                 
+      59      /// Load environment variables from .env file if present.  
+      60 -    pub fn load_dotenv(mut self) -> Result<Self, ConfigError> {
+      60 +    pub fn load_dotenv(self) -> Result<Self, ConfigError> {    
+      61          dotenvy::dotenv().ok();                                
+      62          Ok(self)                                               
+      63      }                                                          
+
+⏺ Update(crates/config/src/loader.rs)
+  ⎿  Added 2 lines, removed 2 lines                                      
+      71              self.username = Some(username);                    
+      72          }                                                      
+      73          if let Ok(password) = std::env::var("SPLUNK_PASSWORD") 
+           {                                                             
+      74 -            self.password = Some(SecretString::new(password)); 
+      74 +            self.password = Some(SecretString::new(password    
+         +.into()));                                                     
+      75          }                                                      
+      76          if let Ok(token) = std::env::var("SPLUNK_API_TOKEN") { 
+      77 -            self.api_token = Some(SecretString::new(token));   
+      77 +            self.api_token = Some(SecretString::new(token.into(
+         +)));                                                           
+      78          }                                                      
+      79          if let Ok(skip) = std::env::var("SPLUNK_SKIP_VERIFY")  
+          {                                                              
+      80              self.skip_verify = Some(skip.parse().map_err(|_|   
+          ConfigError::InvalidValue {                                    
+
+⏺ Update(crates/config/src/loader.rs)
+  ⎿  Added 2 lines, removed 2 lines                                      
+      112                                                                
+      113      /// Set the password.                                     
+      114      pub fn with_password(mut self, password: String) -> Self  
+           {                                                             
+      115 -        self.password = Some(SecretString::new(password));    
+      115 +        self.password = Some(SecretString::new(password.into( 
+          +)));                                                          
+      116          self                                                  
+      117      }                                                         
+      118                                                                
+      119      /// Set the API token.                                    
+      120      pub fn with_api_token(mut self, token: String) -> Self {  
+      121 -        self.api_token = Some(SecretString::new(token));      
+      121 +        self.api_token = Some(SecretString::new(token.into()))
+          +;                                                             
+      122          self                                                  
+      123      }                                                         
+      124                                                                
+
+⏺ Now I need to fix the tests in the loader.rs file as well. Let me check and fix those:
+
+⏺ Read(crates/config/src/loader.rs)
+  ⎿  Read 59 lines
+
+⏺ The tests should be fine now. Let me run make ci again to verify the build:
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking icu_locale_core v2.1.1
+         Checking icu_collections v2.1.1
+         Checking hyper v1.8.1
+         Checking rustls v0.23.36
+         Checking tower-http v0.6.8
+         Checking splunk-config v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/config)
+         Checking tracing-serde v0.2.0
+     … +15 lines (ctrl+o to see all)
+
+⏺ Update(crates/config/src/types.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      1  //! Configuration types for Splunk TUI.                         
+      2                                                                  
+      3 -use secrecy::{Secret, SecretString};                            
+      3 +use secrecy::SecretString;                                      
+      4  use std::time::Duration;                                        
+      5                                                                  
+      6  /// Strategy for authenticating with Splunk.                    
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking icu_provider v2.1.1
+         Checking hyper-util v0.1.19
+         Checking tokio-rustls v0.26.4
+         Checking splunk-config v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/config)
+        Compiling clap_derive v4.5.49
+         Checking assert-json-diff v2.0.2
+         Checking regex v1.12.2
+     … +248 lines (ctrl+o to see all)
+
+⏺ I need to fix several issues in the client library. Let me fix them:
+
+⏺ Read(crates/client/src/auth.rs)
+  ⎿  Read 10 lines
+
+⏺ Update(crates/client/src/auth.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      1  //! Authentication strategies and session management.           
+      2                                                                  
+      3 -use secrecy::{ExposeSecret, Secret, SecretString};              
+      3 +use secrecy::{ExposeSecret, SecretString};                      
+      4  use std::time::Instant;                                         
+      5                                                                  
+      6  use crate::error::{ClientError, Result};                        
+
+⏺ Read(crates/client/src/auth.rs)
+  ⎿  Read 40 lines
+
+⏺ Read(crates/client/src/auth.rs)
+  ⎿  Read 100 lines
+
+⏺ Write(crates/client/src/auth.rs)
+  ⎿  Added 7 lines, removed 7 lines                                      
+      23  #[derive(Debug)]                                               
+      24  pub struct SessionManager {                                    
+      25      auth_strategy: AuthStrategy,                               
+      26 -    session_token: Option<Secret<SessionToken>>,               
+      26 +    session_token: Option<SessionToken>,                       
+      27  }                                                              
+      28                                                                 
+      29  /// Session token with expiry information.                     
+     ...
+      80                                                                 
+      81      /// Set the session token (received from login response).  
+      82      pub fn set_session_token(&mut self, token: String,         
+          ttl_seconds: Option<u64>) {                                    
+      83 -        self.session_token = Some(Secret::new(                 
+         -SessionToken::new(                                             
+      84 -            SecretString::new(token),                          
+      83 +        self.session_token = Some(SessionToken::new(           
+      84 +            SecretString::new(token.into()),                   
+      85              ttl_seconds,                                       
+      86 -        )));                                                   
+      86 +        ));                                                    
+      87      }                                                          
+      88                                                                 
+      89      /// Check if the current session token is expired or will  
+          expire soon.                                                   
+     ...
+      110      #[test]                                                   
+      111      fn test_api_token_bypasses_session() {                    
+      112          let strategy = AuthStrategy::ApiToken {               
+      113 -            token: SecretString::new("test-token".to_string())
+          -,                                                             
+      113 +            token: SecretString::new("test-token".to_string() 
+          +.into()),                                                     
+      114          };                                                    
+      115          let manager = SessionManager::new(strategy);          
+      116          assert!(manager.is_api_token());                      
+     ...
+      122      fn test_session_token_without_ttl() {                     
+      123          let strategy = AuthStrategy::SessionToken {           
+      124              username: "admin".to_string(),                    
+      125 -            password: SecretString::new("pass".to_string()),  
+      125 +            password: SecretString::new("pass".to_string()    
+          +.into()),                                                     
+      126          };                                                    
+      127          let mut manager = SessionManager::new(strategy);      
+      128          assert!(!manager.is_api_token());                     
+     ...
+      139      fn test_session_token_with_ttl() {                        
+      140          let strategy = AuthStrategy::SessionToken {           
+      141              username: "admin".to_string(),                    
+      142 -            password: SecretString::new("pass".to_string()),  
+      142 +            password: SecretString::new("pass".to_string()    
+          +.into()),                                                     
+      143          };                                                    
+      144          let mut manager = SessionManager::new(strategy);      
+      145                                                                
+
+⏺ Now let me fix the endpoints/mod.rs to export the search module and types:
+
+⏺ Write(crates/client/src/endpoints/mod.rs)
+  ⎿  Added 4 lines, removed 4 lines                                      
+       4  mod cluster;                                                   
+       5  mod indexes;                                                   
+       6  mod jobs;                                                      
+       7 -mod search;                                                    
+       7 +pub mod search;                                                
+       8                                                                 
+       9  pub use auth::login;                                           
+      10 -pub use cluster::{get_cluster_info, get_cluster_peers};        
+      10 +pub use search::{create_job, get_results, wait_for_job,        
+         +CreateJobOptions, OutputMode};                                 
+      11 +pub use jobs::{get_job, list_jobs};                            
+      12  pub use indexes::list_indexes;                                 
+      13 -pub use jobs::{get_job, get_job_status, list_jobs};            
+      14 -pub use search::{create_job, get_results, wait_for_job};       
+      13 +pub use cluster::{get_cluster_info, get_cluster_peers};        
+
+⏺ Now let me fix the client.rs to remove the Clone derive and update the test SecretString::new calls:
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 20 lines
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 10 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      101  ///                                                           
+      102  /// This client provides methods for interacting with the     
+           Splunk Enterprise                                             
+      103  /// REST API. It automatically handles authentication and     
+           session management.                                           
+      104 -#[derive(Debug, Clone)]                                       
+      104 +#[derive(Debug)]                                              
+      105  pub struct SplunkClient {                                     
+      106      http: reqwest::Client,                                    
+      107      base_url: String,                                         
+
+⏺ Now let me fix the SecretString::new calls in the client.rs tests:
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 30 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 2 lines, removed 2 lines                                      
+      331      #[test]                                                   
+      332      fn test_client_builder_with_api_token() {                 
+      333          let strategy = AuthStrategy::ApiToken {               
+      334 -            token: SecretString::new("test-token".to_string())
+          -,                                                             
+      334 +            token: SecretString::new("test-token".to_string() 
+          +.into()),                                                     
+      335          };                                                    
+      336                                                                
+      337          let client = SplunkClient::builder()                  
+     ...
+      348      #[test]                                                   
+      349      fn test_client_builder_missing_base_url() {               
+      350          let strategy = AuthStrategy::ApiToken {               
+      351 -            token: SecretString::new("test-token".to_string())
+          -,                                                             
+      351 +            token: SecretString::new("test-token".to_string() 
+          +.into()),                                                     
+      352          };                                                    
+      353                                                                
+      354          let client =                                          
+           SplunkClient::builder().auth_strategy(strategy).build();      
+
+⏺ Now let me fix the unused variable warning in search.rs:
+
+⏺ Read(crates/client/src/endpoints/search.rs)
+  ⎿  Read 20 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      225                                                                
+      226      #[test]                                                   
+      227      fn test_create_job_options_serialization() {              
+      228 -        let options = CreateJobOptions {                      
+      228 +        let _options = CreateJobOptions {                     
+      229              wait: Some(true),                                 
+      230              exec_time: Some(60),                              
+      231              earliest_time: Some("-24h".to_string()),          
+
+⏺ Now let me run make ci again:
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking splunk-client v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/client)
+     error[E0603]: module `jobs` is private
+        --> crates/client/src/client.rs:251:20
+         |
+     251 |         endpoints::jobs::list_jobs(&self.http, &self.base_url, 
+     &auth_token, count, offset).await
+         |                    ^^^^ private module
+         |
+     … +269 lines (ctrl+o to see all)
+
+⏺ There are many issues to fix. Let me fix them systematically. First, let me update the endpoints mod.rs to export all needed functions:
+
+⏺ Write(crates/client/src/endpoints/mod.rs)
+  ⎿  Added 2 lines, removed 2 lines                                      
+       9  pub use auth::login;                                           
+      10  pub use cluster::{get_cluster_info, get_cluster_peers};        
+      11  pub use indexes::list_indexes;                                 
+      12 -pub use jobs::{get_job, list_jobs};                            
+      13 -pub use search::{CreateJobOptions, OutputMode, create_job,     
+         -get_results, wait_for_job};                                    
+      12 +pub use jobs::{cancel_job, delete_job, get_job, list_jobs};    
+      13 +pub use search::{create_job, get_results, wait_for_job,        
+         +CreateJobOptions, OutputMode};                                 
+
+⏺ Now let me fix the OutputMode enum to derive PartialEq:
+
+⏺ Read(crates/client/src/endpoints/search.rs)
+  ⎿  Read 15 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Removed 1 line                                                      
+      1  //! Search job endpoints.                                       
+      2                                                                  
+      3  use reqwest::Client;                                            
+      4 -use secrecy::ExposeSecret;                                      
+      4  use serde::{Deserialize, Serialize};                            
+      5  use tracing::debug;                                             
+      6                                                                  
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      31  }                                                              
+      32                                                                 
+      33  /// Output format for search results.                          
+      34 -#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)] 
+      34 +#[derive(Debug, Clone, Copy, PartialEq,                        
+         +Serialize, Deserialize, Default)]                              
+      35  #[serde(rename_all = "snake_case")]                            
+      36  pub enum OutputMode {                                          
+      37      #[default]                                                 
+
+⏺ Now let me fix the query parameters in indexes.rs:
+
+⏺ Read(crates/client/src/endpoints/indexes.rs)
+  ⎿  Read 48 lines
+
+⏺ Write(crates/client/src/endpoints/indexes.rs)
+  ⎿  Added 6 lines, removed 4 lines                                      
+      15  ) -> Result<Vec<Index>> {                                      
+      16      let url = format!("{}/services/data/indexes", base_url);   
+      17                                                                 
+      18 -    let mut query_params = vec![                               
+      18 +    let count_str = count.unwrap_or(30).to_string();           
+      19 +    let mut query_params: Vec<(&str, &str)> = vec![            
+      20          ("output_mode", "json"),                               
+      21 -        ("count", count.unwrap_or(30).to_string()),            
+      21 +        ("count", &count_str),                                 
+      22      ];                                                         
+      23                                                                 
+      24 -    if let Some(o) = offset {                                  
+      25 -        query_params.push(("offset", o.to_string()));          
+      24 +    if let Some(ref o) = offset {                              
+      25 +        let offset_str = o.to_string();                        
+      26 +        query_params.push(("offset", &offset_str));            
+      27      }                                                          
+      28                                                                 
+      29      let response = client                                      
+
+⏺ Now let me fix the jobs.rs file:
+
+⏺ Read(crates/client/src/endpoints/jobs.rs)
+  ⎿  Read 154 lines
+
+⏺ Write(crates/client/src/endpoints/jobs.rs)
+  ⎿  Added 11 lines, removed 9 lines                                     
+      47  ) -> Result<Vec<SearchJobStatus>> {                            
+      48      let url = format!("{}/services/search/jobs", base_url);    
+      49                                                                 
+      50 -    let mut query_params = vec![("output_mode", "json")];      
+      50 +    let mut query_params: Vec<(&str, &str)>                    
+         += vec![("output_mode", "json")];                               
+      51                                                                 
+      52 -    if let Some(c) = count {                                   
+      53 -        query_params.push(("count", c.to_string()));           
+      52 +    if let Some(ref c) = count {                               
+      53 +        let count_str = c.to_string();                         
+      54 +        query_params.push(("count", &count_str));              
+      55      }                                                          
+      56 -    if let Some(o) = offset {                                  
+      57 -        query_params.push(("offset", o.to_string()));          
+      56 +    if let Some(ref o) = offset {                              
+      57 +        let offset_str = o.to_string();                        
+      58 +        query_params.push(("offset", &offset_str));            
+      59      }                                                          
+      60                                                                 
+      61      let response = client                                      
+     ...
+      83              is_done: e.content.is_done,                        
+      84              is_finalized: e.content.is_finalized,              
+      85              done_progress: e.content.done_progress,            
+      86 -            run_duration: e.content.run_duration,              
+      86 +            run_duration: e.content.runDuration,               
+      87              cursor_time: None,                                 
+      88 -            scan_count: e.content.scan_count,                  
+      89 -            event_count: e.content.event_count,                
+      90 -            result_count: e.content.result_count,              
+      88 +            scan_count: e.content.scanCount,                   
+      89 +            event_count: e.content.eventCount,                 
+      90 +            result_count: e.content.resultCount,               
+      91              disk_usage: 0,                                     
+      92              priority: None,                                    
+      93              label: None,                                       
+
+⏺ Now let me fix the search.rs file:
+
+⏺ Read(crates/client/src/endpoints/search.rs)
+  ⎿  Read 100 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 2 lines, removed 1 line                                       
+      73          form_data.push(("max_count", &max_count.to_string())); 
+      74      }                                                          
+      75      if let Some(mode) = options.output_mode {                  
+      76 -        form_data.push(("output_mode",                         
+         -serde_json::to_string(&mode).unwrap()));                       
+      76 +        let mode_str = serde_json::to_string(&mode).unwrap();  
+      77 +        form_data.push(("output_mode", &mode_str));            
+      78      }                                                          
+      79                                                                 
+      80      let response = client                                      
+
+⏺ Read(crates/client/src/endpoints/search.rs)
+  ⎿  Read 70 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 8 lines, removed 6 lines                                      
+      178                                                                
+      179      let url = format!("{}/services/search/jobs/{}/results",   
+           base_url, sid);                                               
+      180                                                                
+      181 -    let mut query_params = vec![("output_mode",               
+          -serde_json::to_string(&output_mode).unwrap())];               
+      181 +    let mode_str =                                            
+          +serde_json::to_string(&output_mode).unwrap();                 
+      182 +    let mut query_params: Vec<(&str, &str)> =                 
+          +vec![("output_mode", &mode_str)];                             
+      183                                                                
+      184 -    if let Some(c) = count {                                  
+      185 -        query_params.push(("count", c.to_string()));          
+      184 +    if let Some(ref c) = count {                              
+      185 +        let count_str = c.to_string();                        
+      186 +        query_params.push(("count", &count_str));             
+      187      }                                                         
+      188 -    if let Some(o) = offset {                                 
+      189 -        query_params.push(("offset", o.to_string()));         
+      188 +    if let Some(ref o) = offset {                             
+      189 +        let offset_str = o.to_string();                       
+      190 +        query_params.push(("offset", &offset_str));           
+      191      }                                                         
+      192                                                                
+      193      let response = client                                     
+     ...
+      214                                                                
+           json["results"].as_array().unwrap_or(&vec![]).clone()         
+      215          },                                                    
+      216          preview: json["preview"].as_bool().unwrap_or(false),  
+      217 -        offset: offset,                                       
+      217          total: json["total"].as_u64(),                        
+      218      })                                                        
+      219  }                                                             
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 20 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 1 line                                                        
+      217                                                                
+           json["results"].as_array().unwrap_or(&vec![]).clone()         
+      218          },                                                    
+      219          preview: json["preview"].as_bool().unwrap_or(false),  
+      220 +        offset,                                               
+      221          total: json["total"].as_u64(),                        
+      222      })                                                        
+      223  }                                                             
+
+⏺ Now let me remove the unused imports:
+
+⏺ Read(crates/client/src/auth.rs)
+  ⎿  Read 10 lines
+
+⏺ Update(crates/client/src/auth.rs)
+  ⎿  Removed 2 lines                                                     
+      3  use secrecy::{ExposeSecret, SecretString};                      
+      4  use std::time::Instant;                                         
+      5                                                                  
+      6 -use crate::error::{ClientError, Result};                        
+      7 -                                                                
+      6  /// Strategy for authenticating with Splunk.                    
+      7  #[derive(Debug, Clone)]                                         
+      8  pub enum AuthStrategy {                                         
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 10 lines
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Removed 1 line                                                      
+      1  //! Data models for Splunk API responses.                       
+      2                                                                  
+      3  use serde::Deserialize;                                         
+      4 -use time::OffsetDateTime;                                       
+      4                                                                  
+      5  /// Generic Splunk REST API response wrapper.                   
+      6  #[derive(Debug, Deserialize, Clone)]                            
+
+⏺ Read(crates/client/src/endpoints/auth.rs)
+  ⎿  Read 15 lines
+
+⏺ Update(crates/client/src/endpoints/auth.rs)
+  ⎿  Removed 2 lines                                                     
+      1  //! Authentication endpoints.                                   
+      2                                                                  
+      3  use reqwest::Client;                                            
+      4 -use secrecy::ExposeSecret;                                      
+      4  use tracing::debug;                                             
+      5                                                                  
+      6  use crate::error::Result;                                       
+      7 -use crate::models::AuthResponse;                                
+      7                                                                  
+      8  /// Login to Splunk with username and password.                 
+      9  pub async fn login(                                             
+
+⏺ Now let me run make ci again to check the remaining issues:
+
+⏺ Bash(make ci 2>&1 | head -100) timeout: 5m 0s
+  ⎿ cargo fmt --all                                                        
+    cargo clippy --all-targets --all-features -- -D warnings
+        Checking splunk-client v0.1.0 (/Users/mitchfultz/Projects/splunk-tu
+    … +120 lines (ctrl+o to expand)
+
+
+⏺ I need to fix the client.rs to use the public re-exports from the endpoints module:
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 50 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      248      ) -> Result<Vec<SearchJobStatus>> {                       
+      249          let auth_token = self.get_auth_token().await?;        
+      250                                                                
+      251 -        endpoints::jobs::                                     
+          -list_jobs(&self.http, &self.base_url, &auth_token, count,     
+          -offset).await                                                 
+      251 +        endpoints::                                           
+          +list_jobs(&self.http, &self.base_url, &auth_token, count,     
+          +offset).await                                                 
+      252      }                                                         
+      253                                                                
+      254      /// Cancel a search job.                                  
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      255      pub async fn cancel_job(&mut self, sid: &str) ->          
+           Result<()> {                                                  
+      256          let auth_token = self.get_auth_token().await?;        
+      257                                                                
+      258 -        endpoints::jobs::                                     
+          -cancel_job(&self.http, &self.base_url, &auth_token, sid).await
+      258 +        endpoints::                                           
+          +cancel_job(&self.http, &self.base_url, &auth_token, sid).await
+      259      }                                                         
+      260                                                                
+      261      /// Delete a search job.                                  
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      262      pub async fn delete_job(&mut self, sid: &str) ->          
+           Result<()> {                                                  
+      263          let auth_token = self.get_auth_token().await?;        
+      264                                                                
+      265 -        endpoints::jobs::                                     
+          -delete_job(&self.http, &self.base_url, &auth_token, sid).await
+      265 +        endpoints::                                           
+          +delete_job(&self.http, &self.base_url, &auth_token, sid).await
+      266      }                                                         
+      267                                                                
+      268      /// List all indexes.                                     
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      273      ) -> Result<Vec<Index>> {                                 
+      274          let auth_token = self.get_auth_token().await?;        
+      275                                                                
+      276 -        endpoints::indexes::                                  
+          -list_indexes(&self.http, &self.base_url, &auth_token, count,  
+          -offset)                                                       
+      276 +        endpoints::                                           
+          +list_indexes(&self.http, &self.base_url, &auth_token, count,  
+          +offset)                                                       
+      277              .await                                            
+      278      }                                                         
+      279                                                                
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      281      pub async fn get_cluster_info(&mut self) ->               
+           Result<ClusterInfo> {                                         
+      282          let auth_token = self.get_auth_token().await?;        
+      283                                                                
+      284 -        endpoints::cluster::                                  
+          -get_cluster_info(&self.http, &self.base_url,                  
+          -&auth_token).await                                            
+      284 +        endpoints::                                           
+          +get_cluster_info(&self.http, &self.base_url,                  
+          +&auth_token).await                                            
+      285      }                                                         
+      286                                                                
+      287      /// Get cluster peer information.                         
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      288      pub async fn get_cluster_peers(&mut self) ->              
+           Result<Vec<ClusterPeer>> {                                    
+      289          let auth_token = self.get_auth_token().await?;        
+      290                                                                
+      291 -        endpoints::cluster::                                  
+          -get_cluster_peers(&self.http, &self.base_url,                 
+          -&auth_token).await                                            
+      291 +        endpoints::                                           
+          +get_cluster_peers(&self.http, &self.base_url,                 
+          +&auth_token).await                                            
+      292      }                                                         
+      293                                                                
+      294      /// Get the current authentication token, logging in if   
+           necessary.                                                    
+
+⏺ Now let me run make ci again:
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking splunk-client v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/client)
+     error[E0382]: use of moved value: `token`
+        --> crates/client/src/client.rs:158:16
+         |
+     147 |             let token = endpoints::login(
+         |                 ----- move occurs because `token` has type 
+     `std::string::String`, which does not implement the `Copy` trait
+     ...
+     … +151 lines (ctrl+o to see all)
+
+⏺ I need to fix several lifetime and ownership issues. Let me fix them:
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 20 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 2 lines, removed 1 line                                       
+      153              .await?;                                          
+      154                                                                
+      155              // Default session TTL is 1 hour                  
+      156 -            self.session_manager.set_session_token(token,     
+          -Some(3600));                                                  
+      156 +            let token_clone = token.clone();                  
+      157 +                                                              
+          +self.session_manager.set_session_token(token_clone,           
+          +Some(3600));                                                  
+      158                                                                
+      159              Ok(token)                                         
+      160          } else {                                              
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 30 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 3 lines, removed 2 lines                                      
+      184          let sid = self.create_search_job(query,               
+           &options).await?;                                             
+      185                                                                
+      186          if wait {                                             
+      187 -            endpoints::search::wait_for_job(                  
+      187 +            let auth_token = self.get_auth_token().await?;    
+      188 +            endpoints::wait_for_job(                          
+      189                  &self.http,                                   
+      190                  &self.base_url,                               
+      191 -                &self.get_auth_token().await?,                
+      191 +                &auth_token,                                  
+      192                  &sid,                                         
+      193                  500,                                          
+      194                  300,                                          
+
+⏺ Now let me fix the string lifetime issues in indexes.rs:
+
+⏺ Read(crates/client/src/endpoints/indexes.rs)
+  ⎿  Read 47 lines
+
+⏺ Write(crates/client/src/endpoints/indexes.rs)
+  ⎿  Added 6 lines, removed 5 lines                                      
+      15  ) -> Result<Vec<Index>> {                                      
+      16      let url = format!("{}/services/data/indexes", base_url);   
+      17                                                                 
+      18 -    let count_str = count.unwrap_or(30).to_string();           
+      19 -    let mut query_params: Vec<(&str, &str)> =                  
+         -vec![("output_mode", "json"), ("count", &count_str)];          
+      18 +    let mut query_params: Vec<(String, String)> = vec![        
+      19 +        ("output_mode".to_string(), "json".to_string()),       
+      20 +        ("count".to_string(),                                  
+         +count.unwrap_or(30).to_string()),                              
+      21 +    ];                                                         
+      22                                                                 
+      23 -    if let Some(ref o) = offset {                              
+      24 -        let offset_str = o.to_string();                        
+      25 -        query_params.push(("offset", &offset_str));            
+      23 +    if let Some(o) = offset {                                  
+      24 +        query_params.push(("offset".to_string(),               
+         +o.to_string()));                                               
+      25      }                                                          
+      26                                                                 
+      27      let response = client                                      
+
+⏺ Write(crates/client/src/endpoints/jobs.rs)
+  ⎿  Added 5 lines, removed 7 lines                                      
+      47  ) -> Result<Vec<SearchJobStatus>> {                            
+      48      let url = format!("{}/services/search/jobs", base_url);    
+      49                                                                 
+      50 -    let mut query_params: Vec<(&str, &str                      
+         -)> = vec![("output_mode", "json")];                            
+      50 +    let mut query_params: Vec<(String, String                  
+         +)> = vec![("output_mode".to_string(), "json".to_string())];    
+      51                                                                 
+      52 -    if let Some(ref c) = count {                               
+      53 -        let count_str = c.to_string();                         
+      54 -        query_params.push(("count", &count_str));              
+      52 +    if let Some(c) = count {                                   
+      53 +        query_params.push(("count".to_string(),                
+         +c.to_string()));                                               
+      54      }                                                          
+      55 -    if let Some(ref o) = offset {                              
+      56 -        let offset_str = o.to_string();                        
+      57 -        query_params.push(("offset", &offset_str));            
+      55 +    if let Some(o) = offset {                                  
+      56 +        query_params.push(("offset".to_string(),               
+         +o.to_string()));                                               
+      57      }                                                          
+      58                                                                 
+      59      let response = client                                      
+
+⏺ Now let me fix the search.rs file:
+
+⏺ Read(crates/client/src/endpoints/search.rs)
+  ⎿  Read 90 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 7 lines, removed 8 lines                                      
+      55                                                                 
+      56      let url = format!("{}/services/search/jobs", base_url);    
+      57                                                                 
+      58 -    let mut form_data = vec![("search", query)];               
+      58 +    let mut form_data: Vec<(&str, String)>                     
+         += vec![("search", query.to_string())];                         
+      59                                                                 
+      60      if let Some(wait) = options.wait {                         
+      61 -        form_data.push(("wait", if wait { "1" } else { "0" }));
+      61 +        form_data.push(("wait", if wait { "1".to_string()      
+         + } else { "0".to_string() }));                                 
+      62      }                                                          
+      63      if let Some(exec_time) = options.exec_time {               
+      64 -        form_data.push(("exec_time", &exec_time.to_string())); 
+      64 +        form_data.push(("exec_time", exec_time.to_string()));  
+      65      }                                                          
+      66      if let Some(earliest) = &options.earliest_time {           
+      67 -        form_data.push(("earliest_time", earliest));           
+      67 +        form_data.push(("earliest_time", earliest.clone()));   
+      68      }                                                          
+      69      if let Some(latest) = &options.latest_time {               
+      70 -        form_data.push(("latest_time", latest));               
+      70 +        form_data.push(("latest_time", latest.clone()));       
+      71      }                                                          
+      72      if let Some(max_count) = options.max_count {               
+      73 -        form_data.push(("max_count", &max_count.to_string())); 
+      73 +        form_data.push(("max_count", max_count.to_string()));  
+      74      }                                                          
+      75      if let Some(mode) = options.output_mode {                  
+      76 -        let mode_str = serde_json::to_string(&mode).unwrap();  
+      77 -        form_data.push(("output_mode", &mode_str));            
+      76 +        form_data.push(("output_mode",                         
+         +serde_json::to_string(&mode).unwrap()));                       
+      77      }                                                          
+      78                                                                 
+      79      let response = client                                      
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 7 lines, removed 8 lines                                      
+      177                                                                
+      178      let url = format!("{}/services/search/jobs/{}/results",   
+           base_url, sid);                                               
+      179                                                                
+      180 -    let mode_str =                                            
+          -serde_json::to_string(&output_mode).unwrap();                 
+      181 -    let mut query_params: Vec<(&str, &str)> =                 
+          -vec![("output_mode", &mode_str)];                             
+      180 +    let mut query_params: Vec<(String, String)> = vec![       
+      181 +        ("output_mode".to_string(),                           
+          +serde_json::to_string(&output_mode).unwrap()),                
+      182 +    ];                                                        
+      183                                                                
+      184 -    if let Some(ref c) = count {                              
+      185 -        let count_str = c.to_string();                        
+      186 -        query_params.push(("count", &count_str));             
+      184 +    if let Some(c) = count {                                  
+      185 +        query_params.push(("count".to_string(),               
+          +c.to_string()));                                              
+      186      }                                                         
+      187 -    if let Some(ref o) = offset {                             
+      188 -        let offset_str = o.to_string();                       
+      189 -        query_params.push(("offset", &offset_str));           
+      187 +    if let Some(o) = offset {                                 
+      188 +        query_params.push(("offset".to_string(),              
+          +o.to_string()));                                              
+      189      }                                                         
+      190                                                                
+      191      let response = client                                     
+
+⏺ Now let me fix the cluster.rs file:
+
+⏺ Read(crates/client/src/endpoints/cluster.rs)
+  ⎿  Read 30 lines
+
+⏺ Update(crates/client/src/endpoints/cluster.rs)
+  ⎿  Added 2 lines, removed 1 line                                       
+      72                                                                 
+      73      let resp: serde_json::Value = response.json().await?;      
+      74                                                                 
+      75 -    let entries = resp["entry"].as_array().unwrap_or(&vec![]); 
+      75 +    let empty = vec![];                                        
+      76 +    let entries = resp["entry"].as_array().unwrap_or(&empty);  
+      77                                                                 
+      78      entries                                                    
+      79          .iter()                                                
+
+⏺ Now let me run make ci again to check the remaining issues:
+
+⏺ Bash(make ci 2>&1 | head -150) timeout: 5m 0s
+  ⎿ cargo fmt --all                                                        
+    cargo clippy --all-targets --all-features -- -D warnings
+        Checking splunk-client v0.1.0 (/Users/mitchfultz/Projects/splunk-tu
+    … +166 lines (ctrl+o to expand)
+
+
+⏺ We're close! Let me fix the remaining clippy warnings:
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 25 lines
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Added 1 line                                                        
+      30                                                                 
+      31  /// Search job status information.                             
+      32  #[derive(Debug, Deserialize, Clone)]                           
+      33 +#[allow(non_snake_case)]                                       
+      34  pub struct SearchJob {                                         
+      35      pub sid: String,                                           
+      36      #[serde(default)]                                          
+
+⏺ Now let me add the same allowance to the JobEntry struct:
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 30 lines
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Added 1 line                                                        
+      60  }                                                              
+      61                                                                 
+      62  #[derive(Debug, Deserialize, Clone)]                           
+      63 +#[allow(non_snake_case)]                                       
+      64  pub struct JobContent {                                        
+      65      pub sid: String,                                           
+      66      #[serde(rename = "isDone", default)]                       
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 30 lines
+
+⏺ Now let me fix the collapsible if statements in client.rs and add allow for dead code:
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 25 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 10 lines, removed 8 lines                                     
+      102  /// This client provides methods for interacting with the     
+           Splunk Enterprise                                             
+      103  /// REST API. It automatically handles authentication and     
+           session management.                                           
+      104  #[derive(Debug)]                                              
+      105 +#[allow(dead_code)]                                           
+      106  pub struct SplunkClient {                                     
+      107      http: reqwest::Client,                                    
+      108      base_url: String,                                         
+     ...
+      118      /// Ensure we have an active authentication token.        
+      119      /// For API token auth, this is a no-op.                  
+      120      /// For session auth, this will login if needed or if the 
+            session is expired.                                          
+      121 +    #[allow(dead_code)]                                       
+      122      async fn ensure_authenticated(&self) -> Result<String> {  
+      123          // If using API token, we don't need to manage        
+           sessions                                                      
+      124 -        if self.session_manager.is_api_token() {              
+      125 -            if                                                
+          - let Some(token) = self.session_manager.get_bearer_token() {  
+      126 -                return Ok(token.to_string());                 
+      127 -            }                                                 
+      124 +        if self.session_manager.is_api_token()                
+      125 +            &&                                                
+          + let Some(token) = self.session_manager.get_bearer_token()    
+      126 +        {                                                     
+      127 +            return Ok(token.to_string());                     
+      128          }                                                     
+      129                                                                
+      130          // Check if we have a valid session token             
+      131 -        if let Some(token) =                                  
+          -self.session_manager.get_bearer_token() {                     
+      132 -            if !self.session_manager.is_session_expired() {   
+      133 -                return Ok(token.to_string());                 
+      134 -            }                                                 
+      131 +        if let Some(token) =                                  
+          +self.session_manager.get_bearer_token()                       
+      132 +            && !self.session_manager.is_session_expired()     
+      133 +        {                                                     
+      134 +            return Ok(token.to_string());                     
+      135          }                                                     
+      136                                                                
+      137          // Need to login - this requires mutable access to    
+           the session manager                                           
+
+⏺ Read(crates/client/src/client.rs)
+  ⎿  Read 20 lines
+
+⏺ Update(crates/client/src/client.rs)
+  ⎿  Added 4 lines, removed 4 lines                                      
+      291      /// Get the current authentication token, logging in if   
+           necessary.                                                    
+      292      async fn get_auth_token(&mut self) -> Result<String> {    
+      293          // For API token auth, just return the token          
+      294 -        if self.session_manager.is_api_token() {              
+      295 -            if                                                
+          - let Some(token) = self.session_manager.get_bearer_token() {  
+      296 -                return Ok(token.to_string());                 
+      297 -            }                                                 
+      294 +        if self.session_manager.is_api_token()                
+      295 +            &&                                                
+          + let Some(token) = self.session_manager.get_bearer_token()    
+      296 +        {                                                     
+      297 +            return Ok(token.to_string());                     
+      298          }                                                     
+      299                                                                
+      300          // For session auth, check if we need to login        
+
+⏺ Now let me add #[allow(dead_code)] to AuthResponse and fix the test:
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 15 lines
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Added 1 line                                                        
+      184                                                                
+      185  /// Authentication response from login.                       
+      186  #[derive(Debug, Deserialize, Clone)]                          
+      187 +#[allow(dead_code)]                                           
+      188  pub struct AuthResponse {                                     
+      189      #[serde(rename = "sessionKey")]                           
+      190      pub session_key: String,                                  
+
+⏺ Read(crates/client/src/endpoints/search.rs)
+  ⎿  Read 19 lines
+
+⏺ Update(crates/client/src/endpoints/search.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      242              ..Default::default()                              
+      243          };                                                    
+      244                                                                
+      245 -        let form_data = vec![                                 
+      245 +        let form_data = [                                     
+      246              ("search", "search index=main"),                  
+      247              ("wait", "1"),                                    
+      248              ("exec_time", "60"),                              
+
+⏺ Now let me run make ci again:
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking splunk-client v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/client)
+         Checking splunk-tui v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/tui)
+         Checking splunk-cli v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/cli)
+     error: unused imports: `Alignment`, `Text`, and `Wrap`
+      --> crates/tui/src/app.rs:6:14
+       |
+     6 |     layout::{Alignment, Constraint, Direction, Layout, Rect},
+     … +234 lines (ctrl+o to see all)
+
+⏺ Let me fix the CLI commands first to use the correct import:
+
+⏺ Update(crates/cli/src/commands/search.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      2                                                                  
+      3  use anyhow::Result;                                             
+      4  use secrecy::ExposeSecret;                                      
+      5 -use splunk_client::{SplunkClient, auth::AuthStrategy};          
+      5 +use splunk_client::{AuthStrategy, SplunkClient};                
+      6  use tracing::{error, info};                                     
+      7                                                                  
+      8  pub async fn run(                                               
+
+⏺ Now let me export AuthStrategy from the client lib.rs:
+
+⏺ Update(crates/client/src/lib.rs)
+  ⎿  Added 3 lines                                                       
+      12  pub mod endpoints;                                             
+      13                                                                 
+      14  pub use auth::{AuthStrategy, SessionManager};                  
+      15 +                                                               
+      16 +// Re-export commonly used types for convenience               
+      17  pub use client::SplunkClient;                                  
+      18 +pub use client::SplunkClient;                                  
+      19  pub use error::{ClientError, Result};                          
+      20  pub use models::{                                              
+      21      ClusterInfo, ClusterPeer, Index, IndexListResponse,        
+          SearchJob, SearchJobListResponse,                              
+
+⏺ Update(crates/client/src/lib.rs)
+  ⎿  Removed 3 lines                                                     
+      12  pub mod endpoints;                                             
+      13                                                                 
+      14  pub use auth::{AuthStrategy, SessionManager};                  
+      15 -                                                               
+      16 -// Re-export commonly used types for convenience               
+      15  pub use client::SplunkClient;                                  
+      16 -pub use client::SplunkClient;                                  
+      16  pub use error::{ClientError, Result};                          
+      17  pub use models::{                                              
+      18      ClusterInfo, ClusterPeer, Index, IndexListResponse,        
+          SearchJob, SearchJobListResponse,                              
+
+⏺ Update(crates/cli/src/commands/jobs.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      1  //! Jobs command implementation.                                
+      2                                                                  
+      3  use anyhow::Result;                                             
+      4 -use splunk_client::{SplunkClient, auth::AuthStrategy};          
+      4 +use splunk_client::{AuthStrategy, SplunkClient};                
+      5  use tracing::info;                                              
+      6                                                                  
+      7  pub async fn run(                                               
+
+⏺ Now let me fix the CLI main.rs:
+
+⏺ Read(crates/cli/src/main.rs)
+  ⎿  Read 40 lines
+
+⏺ Update(crates/cli/src/main.rs)
+  ⎿  Added 8 lines, removed 8 lines                                      
+      119      // Build configuration                                    
+      120      let mut loader = ConfigLoader::new().load_dotenv()?;      
+      121                                                                
+      122 -    if let Some(url) = cli.base_url {                         
+      123 -        loader = loader.with_base_url(url);                   
+      122 +    if let Some(ref url) = cli.base_url {                     
+      123 +        loader = loader.with_base_url(url.clone());           
+      124      }                                                         
+      125 -    if let Some(username) = cli.username {                    
+      126 -        loader = loader.with_username(username);              
+      125 +    if let Some(ref username) = cli.username {                
+      126 +        loader = loader.with_username(username.clone());      
+      127      }                                                         
+      128 -    if let Some(password) = cli.password {                    
+      129 -        loader = loader.with_password(password);              
+      128 +    if let Some(ref password) = cli.password {                
+      129 +        loader = loader.with_password(password.clone());      
+      130      }                                                         
+      131 -    if let Some(token) = cli.api_token {                      
+      132 -        loader = loader.with_api_token(token);                
+      131 +    if let Some(ref token) = cli.api_token {                  
+      132 +        loader = loader.with_api_token(token.clone());        
+      133      }                                                         
+      134      if cli.skip_verify {                                      
+      135          loader = loader.with_skip_verify(true);               
+
+⏺ Now let me fix the TUI issues:
+
+⏺ Read(crates/tui/src/event.rs)
+  ⎿  Read 11 lines
+
+⏺ Write(crates/tui/src/event.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+      1  //! Event handling for the TUI.                                 
+      2                                                                  
+      3 -use crossterm::event::{Event as CrosstermEvent, KeyEvent};      
+      3 +use crossterm::event::KeyEvent;                                 
+      4                                                                  
+      5  /// TUI events.                                                 
+      6  #[derive(Debug, Clone, Copy)]                                   
+
+⏺ Now let me fix the TUI app.rs:
+
+⏺ Read(crates/tui/src/app.rs)
+  ⎿  Read 167 lines
+
+⏺ Write(crates/tui/src/app.rs)
+  ⎿  Added 10 lines, removed 10 lines                                    
+       1  //! Application state and rendering.                           
+       2                                                                 
+       3  use ratatui::{                                                 
+       4 -    Frame,                                                     
+       4      backend::Backend,                                          
+       5 -    layout::{Alignment, Constraint, Direction, Layout, Rect},  
+       5 +    layout::{Constraint, Direction, Layout, Rect},             
+       6      style::{Color, Modifier, Style},                           
+       7 -    text::{Line, Span, Text},                                  
+       8 -    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+       7 +    text::Line,                                                
+       8 +    widgets::{Block, Borders, List, ListItem, Paragraph},      
+       9 +    Frame,                                                     
+      10  };                                                             
+      11                                                                 
+      12  /// Current active screen.                                     
+     ...
+      53          }                                                      
+      54      }                                                          
+      55                                                                 
+      56 -    pub fn render<B: Backend>(&mut self, f: &mut Frame<B>) {   
+      56 +    pub fn render(&mut self, f: &mut Frame) {                  
+      57          // Create layout                                       
+      58          let chunks = Layout::default()                         
+      59              .direction(Direction::Vertical)                    
+     ...
+      65                  ]                                              
+      66                  .as_ref(),                                     
+      67              )                                                  
+      68 -            .split(f.size());                                  
+      68 +            .split(f.area());                                  
+      69                                                                 
+      70          // Header                                              
+      71          let header = Paragraph::new(vec![Line::from(vec![      
+     ...
+      101          f.render_widget(footer, chunks[2]);                   
+      102      }                                                         
+      103                                                                
+      104 -    fn render_content<B: Backend>(&mut self, f: &mut Frame<B> 
+          -, area: Rect) {                                               
+      104 +    fn render_content(&mut self, f: &mut Frame, area: Rect) { 
+      105          match self.current_screen {                           
+      106              CurrentScreen::Search => self.render_search(f,    
+           area),                                                        
+      107              CurrentScreen::Indexes => self.render_indexes(f,  
+           area),                                                        
+     ...
+      109          }                                                     
+      110      }                                                         
+      111                                                                
+      112 -    fn render_search<B: Backend>(&mut self, f: &mut Frame<B>  
+          -, area: Rect) {                                               
+      112 +    fn render_search(&mut self, f: &mut Frame, area: Rect) {  
+      113          let chunks = Layout::default()                        
+      114              .direction(Direction::Vertical)                   
+      115              .constraints(                                     
+     ...
+      138          f.render_widget(results, chunks[2]);                  
+      139      }                                                         
+      140                                                                
+      141 -    fn render_indexes<B: Backend>(&mut self, f: &mut Frame<B> 
+          -, area: Rect) {                                               
+      141 +    fn render_indexes(&mut self, f: &mut Frame, area: Rect) { 
+      142          let items: Vec<ListItem> = self                       
+      143              .indexes                                          
+      144              .iter()                                           
+     ...
+      149          f.render_widget(list, area);                          
+      150      }                                                         
+      151                                                                
+      152 -    fn render_cluster<B: Backend>(&mut self, f: &mut Frame<B> 
+          -, area: Rect) {                                               
+      152 +    fn render_cluster(&mut self, f: &mut Frame, area: Rect) { 
+      153          let items: Vec<ListItem> = self                       
+      154              .cluster_info                                     
+      155              .iter()                                           
+
+⏺ Now let me fix the TUI main.rs:
+
+⏺ Read(crates/tui/src/main.rs)
+  ⎿  Read 162 lines
+
+⏺ Write(crates/tui/src/main.rs)
+  ⎿  Added 51 lines, removed 57 lines                                    
+       7                                                                 
+       8  use anyhow::Result;                                            
+       9  use crossterm::{                                               
+      10 -    event::{DisableMouseCapture, EnableMouseCapture},          
+      10 +    event::{DisableMouseCapture, EnableMouseCapture, KeyEvent},
+      11      execute,                                                   
+      12      terminal::{EnterAlternateScreen, LeaveAlternateScreen,     
+          disable_raw_mode, enable_raw_mode},                            
+      13  };                                                             
+     ...
+       83              match app.state {                                 
+       84                  AppState::Running => match app.current_screen 
+            {                                                            
+       85                      CurrentScreen::Search => {                
+       86 -                        if let                                
+          -crossterm::event::Event::Key(key) = key {                     
+       87 -                            match key.code {                  
+       88 -                                                              
+          -crossterm::event::KeyCode::Char('q') => {                     
+       89 -                                    return Ok(());            
+       86 +                        match key.code {                      
+       87 +                                                              
+          +crossterm::event::KeyCode::Char('q') => {                     
+       88 +                                return Ok(());                
+       89 +                            }                                 
+       90 +                                                              
+          +crossterm::event::KeyCode::Char('1') => {                     
+       91 +                                app.current_screen =          
+          +CurrentScreen::Search;                                        
+       92 +                            }                                 
+       93 +                                                              
+          +crossterm::event::KeyCode::Char('2') => {                     
+       94 +                                app.current_screen =          
+          +CurrentScreen::Indexes;                                       
+       95 +                            }                                 
+       96 +                                                              
+          +crossterm::event::KeyCode::Char('3') => {                     
+       97 +                                app.current_screen =          
+          +CurrentScreen::Cluster;                                       
+       98 +                            }                                 
+       99 +                            crossterm::event::KeyCode::Enter  
+          +=> {                                                          
+      100 +                                if                            
+          +!app.search_input.is_empty() {                                
+      101 +                                    app.search_status =       
+      102 +                                        format!("Running:     
+          +{}", app.search_input);                                       
+      103                                  }                             
+      104 -                                                              
+          -crossterm::event::KeyCode::Char('1') => {                     
+      105 -                                    app.current_screen =      
+          -CurrentScreen::Search;                                        
+      106 -                                }                             
+      107 -                                                              
+          -crossterm::event::KeyCode::Char('2') => {                     
+      108 -                                    app.current_screen =      
+          -CurrentScreen::Indexes;                                       
+      109 -                                }                             
+      110 -                                                              
+          -crossterm::event::KeyCode::Char('3') => {                     
+      111 -                                    app.current_screen =      
+          -CurrentScreen::Cluster;                                       
+      112 -                                }                             
+      113 -                                                              
+          -crossterm::event::KeyCode::Enter => {                         
+      114 -                                    if                        
+          -!app.search_input.is_empty() {                                
+      115 -                                        app.search_status =   
+      116 -                                            format!("Running: 
+          - {}", app.search_input);                                      
+      117 -                                    }                         
+      118 -                                }                             
+      119 -                                                              
+          -crossterm::event::KeyCode::Char(c) => {                       
+      120 -                                    app.search_input.push(c); 
+      121 -                                }                             
+      122 -                                                              
+          -crossterm::event::KeyCode::Backspace => {                     
+      123 -                                    app.search_input.pop();   
+      124 -                                }                             
+      125 -                                _ => {}                       
+      104                              }                                 
+      105 +                                                              
+          +crossterm::event::KeyCode::Char(c) => {                       
+      106 +                                app.search_input.push(c);     
+      107 +                            }                                 
+      108 +                                                              
+          +crossterm::event::KeyCode::Backspace => {                     
+      109 +                                app.search_input.pop();       
+      110 +                            }                                 
+      111 +                            _ => {}                           
+      112                          }                                     
+      113                      }                                         
+      114                      CurrentScreen::Indexes => {               
+      115 -                        if let                                
+          -crossterm::event::Event::Key(key) = key {                     
+      116 -                            match key.code {                  
+      117 -                                                              
+          -crossterm::event::KeyCode::Char('q') => {                     
+      118 -                                    return Ok(());            
+      119 -                                }                             
+      120 -                                                              
+          -crossterm::event::KeyCode::Char('1') => {                     
+      121 -                                    app.current_screen =      
+          -CurrentScreen::Search;                                        
+      122 -                                }                             
+      123 -                                                              
+          -crossterm::event::KeyCode::Char('2') => {                     
+      124 -                                    app.current_screen =      
+          -CurrentScreen::Indexes;                                       
+      125 -                                }                             
+      126 -                                                              
+          -crossterm::event::KeyCode::Char('3') => {                     
+      127 -                                    app.current_screen =      
+          -CurrentScreen::Cluster;                                       
+      128 -                                }                             
+      129 -                                _ => {}                       
+      115 +                        match key.code {                      
+      116 +                                                              
+          +crossterm::event::KeyCode::Char('q') => {                     
+      117 +                                return Ok(());                
+      118                              }                                 
+      119 +                                                              
+          +crossterm::event::KeyCode::Char('1') => {                     
+      120 +                                app.current_screen =          
+          +CurrentScreen::Search;                                        
+      121 +                            }                                 
+      122 +                                                              
+          +crossterm::event::KeyCode::Char('2') => {                     
+      123 +                                app.current_screen =          
+          +CurrentScreen::Indexes;                                       
+      124 +                            }                                 
+      125 +                                                              
+          +crossterm::event::KeyCode::Char('3') => {                     
+      126 +                                app.current_screen =          
+          +CurrentScreen::Cluster;                                       
+      127 +                            }                                 
+      128 +                            _ => {}                           
+      129                          }                                     
+      130                      }                                         
+      131                      CurrentScreen::Cluster => {               
+      132 -                        if let                                
+          -crossterm::event::Event::Key(key) = key {                     
+      133 -                            match key.code {                  
+      134 -                                                              
+          -crossterm::event::KeyCode::Char('q') => {                     
+      135 -                                    return Ok(());            
+      136 -                                }                             
+      137 -                                                              
+          -crossterm::event::KeyCode::Char('1') => {                     
+      138 -                                    app.current_screen =      
+          -CurrentScreen::Search;                                        
+      139 -                                }                             
+      140 -                                                              
+          -crossterm::event::KeyCode::Char('2') => {                     
+      141 -                                    app.current_screen =      
+          -CurrentScreen::Indexes;                                       
+      142 -                                }                             
+      143 -                                                              
+          -crossterm::event::KeyCode::Char('3') => {                     
+      144 -                                    app.current_screen =      
+          -CurrentScreen::Cluster;                                       
+      145 -                                }                             
+      146 -                                _ => {}                       
+      132 +                        match key.code {                      
+      133 +                                                              
+          +crossterm::event::KeyCode::Char('q') => {                     
+      134 +                                return Ok(());                
+      135                              }                                 
+      136 +                                                              
+          +crossterm::event::KeyCode::Char('1') => {                     
+      137 +                                app.current_screen =          
+          +CurrentScreen::Search;                                        
+      138 +                            }                                 
+      139 +                                                              
+          +crossterm::event::KeyCode::Char('2') => {                     
+      140 +                                app.current_screen =          
+          +CurrentScreen::Indexes;                                       
+      141 +                            }                                 
+      142 +                                                              
+          +crossterm::event::KeyCode::Char('3') => {                     
+      143 +                                app.current_screen =          
+          +CurrentScreen::Cluster;                                       
+      144 +                            }                                 
+      145 +                            _ => {}                           
+      146                          }                                     
+      147                      }                                         
+      148                  },                                            
+
+⏺ Now let me run make ci again to check the remaining issues:
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking splunk-client v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/client)
+         Checking splunk-cli v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/cli)
+         Checking splunk-tui v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/tui)
+     error: unused import: `secrecy::ExposeSecret`
+      --> crates/cli/src/commands/search.rs:4:5
+       |
+     4 | use secrecy::ExposeSecret;
+     … +126 lines (ctrl+o to see all)
+
+⏺ Let me fix the remaining issues:
+
+⏺ Update(crates/tui/src/app.rs)
+  ⎿  Error editing file
+
+⏺ Read(crates/tui/src/app.rs)
+  ⎿  Read 15 lines
+
+⏺ Update(crates/tui/src/app.rs)
+  ⎿  Added 2 lines, removed 3 lines                                      
+       1  //! Application state and rendering.                           
+       2                                                                 
+       3  use ratatui::{                                                 
+       4 -    Frame,                                                     
+       5 -    backend::Backend,                                          
+       4      layout::{Constraint, Direction, Layout, Rect},             
+       5      style::{Color, Modifier, Style},                           
+       6 -    text::Line,                                                
+       6 +    text::{Line, Span},                                        
+       7      widgets::{Block, Borders, List, ListItem, Paragraph},      
+       8 +    Frame,                                                     
+       9  };                                                             
+      10                                                                 
+      11  /// Current active screen.                                     
+
+⏺ Update(crates/cli/src/commands/search.rs)
+  ⎿  Added 1 line, removed 2 lines                                       
+      1  //! Search command implementation.                              
+      2                                                                  
+      3  use anyhow::Result;                                             
+      4 -use secrecy::ExposeSecret;                                      
+      4  use splunk_client::{AuthStrategy, SplunkClient};                
+      5 -use tracing::{error, info};                                     
+      5 +use tracing::info;                                              
+      6                                                                  
+      7  pub async fn run(                                               
+      8      config: splunk_config::Config,                              
+
+⏺ Read(crates/tui/src/main.rs)
+  ⎿  Read 20 lines
+
+⏺ Update(crates/tui/src/main.rs)
+  ⎿  Added 2 lines, removed 2 lines                                      
+      66                                                                 
+      67          let event = if let Ok(event) =                         
+          crossterm::event::poll(timeout) {                              
+      68              if event {                                         
+      69 -                if let Ok(key_event)                           
+         - = crossterm::event::read() {                                  
+      70 -                    Event::Input(key_event)                    
+      69 +                if let Ok(crossterm::event::Event::Key(key))   
+         + = crossterm::event::read() {                                  
+      70 +                    Event::Input(key)                          
+      71                  } else {                                       
+      72                      continue;                                  
+      73                  }                                              
+
+⏺ Update(crates/tui/src/main.rs)
+  ⎿  Added 1 line, removed 1 line                                        
+       7                                                                 
+       8  use anyhow::Result;                                            
+       9  use crossterm::{                                               
+      10 -    event::{DisableMouseCapture, EnableMouseCapture, KeyEvent},
+      10 +    event::{DisableMouseCapture, EnableMouseCapture},          
+      11      execute,                                                   
+      12      terminal::{EnterAlternateScreen, LeaveAlternateScreen,     
+          disable_raw_mode, enable_raw_mode},                            
+      13  };                                                             
+
+⏺ Now let me run make ci again:
+
+⏺ Bash(make ci 2>&1 | head -100) timeout: 5m 0s
+  ⎿ cargo fmt --all                                                        
+    cargo clippy --all-targets --all-features -- -D warnings
+        Checking splunk-tui v0.1.0 (/Users/mitchfultz/Projects/splunk-tui/c
+    … +23 lines (ctrl+o to expand)
+
+
+⏺ Update(crates/tui/src/app.rs)
+  ⎿  Added 1 line                                                        
+      18                                                                 
+      19  /// Application state.                                         
+      20  #[derive(Debug, Clone, Copy, PartialEq, Eq)]                   
+      21 +#[allow(dead_code)]                                            
+      22  pub enum AppState {                                            
+      23      Running,                                                   
+      24      Quitting,                                                  
+
+⏺ Bash(make ci 2>&1) timeout: 5m 0s
+  ⎿  Error: Exit code 2
+     cargo fmt --all
+     cargo clippy --all-targets --all-features -- -D warnings
+         Checking splunk-tui v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/tui)
+         Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.63s
+     cargo check --all-targets --all-features
+         Checking splunk-config v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/config)
+         Checking splunk-client v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/client)
+         Checking splunk-cli v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/cli)
+         Checking splunk-tui v0.1.0 
+     (/Users/mitchfultz/Projects/splunk-tui/crates/tui)
+     … +225 lines (ctrl+o to see all)
+
+⏺ I need to fix the SearchJobStatus struct to handle the camelCase field names from the Splunk API:
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 40 lines
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 20 lines
+
+⏺ Read(crates/client/src/models.rs)
+  ⎿  Read 15 lines
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Added 1 line                                                        
+      207              "sid": "test-sid",                                
+      208              "isDone": true,                                   
+      209              "doneProgress": 1.0,                              
+      210 +            "runDuration": 0.0,                               
+      211              "resultCount": 100                                
+      212          }"#;                                                  
+      213          let status: SearchJobStatus =                         
+           serde_json::from_str(json).unwrap();                          
+
+⏺ Bash(make ci 2>&1 | tail -50) timeout: 5m 0s
+  ⎿     Checking splunk-client v0.1.0 (/Users/mitchfultz/Projects/splunk-tu
+    i/crates/client)
+        Checking splunk-tui v0.1.0 (/Users/mitchfultz/Projects/splunk-tui/c
+    … +65 lines (ctrl+o to expand)
+
+
+
+⏺ Update(crates/client/src/models.rs)
+  ⎿  Added 4 lines, removed 1 line                                       
+      208              "isDone": true,                                   
+      209              "doneProgress": 1.0,                              
+      210              "runDuration": 0.0,                               
+      211 -            "resultCount": 100                                
+      211 +            "scanCount": 0,                                   
+      212 +            "eventCount": 0,                                  
+      213 +            "resultCount": 100,                               
+      214 +            "diskUsage": 0                                    
+      215          }"#;                                                  
+      216          let status: SearchJobStatus =                         
+           serde_json::from_str(json).unwrap();                          
+      217          assert_eq!(status.sid, "test-sid");                   
+
+
+

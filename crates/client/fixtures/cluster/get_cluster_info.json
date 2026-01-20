@@ -1,0 +1,16 @@
+{
+  "entry": [
+    {
+      "name": "cluster_config",
+      "content": {
+        "id": "cluster-01",
+        "label": "Production Cluster",
+        "mode": "peer",
+        "manager_uri": "https://cluster-manager:8089",
+        "replication_factor": 3,
+        "search_factor": 2,
+        "status": "enabled"
+      }
+    }
+  ]
+}

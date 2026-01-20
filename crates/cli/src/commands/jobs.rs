@@ -4,13 +4,15 @@ use anyhow::Result;
 use splunk_client::{AuthStrategy, SplunkClient};
 use tracing::info;
 
+use crate::formatters::{OutputFormat, get_formatter};
+
 pub async fn run(
     config: splunk_config::Config,
     list: bool,
     cancel: Option<String>,
     delete: Option<String>,
     count: usize,
-    _output_format: &str,
+    output_format: &str,
 ) -> Result<()> {
     let auth_strategy = match config.auth.strategy {
         splunk_config::AuthStrategy::SessionToken { username, password } => {
@@ -44,16 +46,13 @@ pub async fn run(
         info!("Listing search jobs");
         let jobs = client.list_jobs(Some(count as u64), None).await?;
 
-        println!("Found {} jobs:\n", jobs.len());
+        // Parse output format
+        let format = OutputFormat::from_str(output_format)?;
+        let formatter = get_formatter(format);
 
-        for job in jobs {
-            println!("  SID: {}", job.sid);
-            println!("    Done: {}", job.is_done);
-            println!("    Progress: {:.1}%", job.done_progress * 100.0);
-            println!("    Results: {}", job.result_count);
-            println!("    Events: {}", job.event_count);
-            println!();
-        }
+        // Format and print jobs
+        let output = formatter.format_jobs(&jobs)?;
+        print!("{}", output);
     }
 
     Ok(())

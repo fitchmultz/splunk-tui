@@ -4,6 +4,7 @@
 //! and managing indexes and clusters.
 
 mod commands;
+mod formatters;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -36,7 +37,7 @@ struct Cli {
     #[arg(long, global = true, env = "SPLUNK_SKIP_VERIFY")]
     skip_verify: bool,
 
-    /// Output format (json, table)
+    /// Output format (json, table, csv, xml)
     #[arg(short, long, global = true, default_value = "json")]
     output: String,
 

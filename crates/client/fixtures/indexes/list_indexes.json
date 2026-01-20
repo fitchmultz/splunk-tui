@@ -1,0 +1,55 @@
+{
+  "entry": [
+    {
+      "name": "main",
+      "content": {
+        "name": "main",
+        "maxTotalDataSizeMB": 500000,
+        "currentDBSizeMB": 1024,
+        "totalEventCount": 1000000,
+        "maxWarmDBCount": 300,
+        "maxHotBuckets": 10,
+        "frozenTimePeriodInSecs": 15552000,
+        "coldDBPath": "/splunk/main/colddb",
+        "homePath": "/splunk/main/db",
+        "thawedPath": "/splunk/main/thaweddb",
+        "primaryIndex": true
+      },
+      "acl": null
+    },
+    {
+      "name": "_internal",
+      "content": {
+        "name": "_internal",
+        "maxTotalDataSizeMB": 500000,
+        "currentDBSizeMB": 512,
+        "totalEventCount": 500000,
+        "maxWarmDBCount": 300,
+        "maxHotBuckets": 10,
+        "frozenTimePeriodInSecs": 15552000,
+        "coldDBPath": "/splunk/_internal/colddb",
+        "homePath": "/splunk/_internal/db",
+        "thawedPath": "/splunk/_internal/thaweddb",
+        "primaryIndex": false
+      },
+      "acl": null
+    },
+    {
+      "name": "_audit",
+      "content": {
+        "name": "_audit",
+        "maxTotalDataSizeMB": 500000,
+        "currentDBSizeMB": 256,
+        "totalEventCount": 250000,
+        "maxWarmDBCount": 300,
+        "maxHotBuckets": 10,
+        "frozenTimePeriodInSecs": 15552000,
+        "coldDBPath": "/splunk/_audit/colddb",
+        "homePath": "/splunk/_audit/db",
+        "thawedPath": "/splunk/_audit/thaweddb",
+        "primaryIndex": false
+      },
+      "acl": null
+    }
+  ]
+}

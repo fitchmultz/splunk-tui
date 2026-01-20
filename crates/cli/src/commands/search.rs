@@ -4,6 +4,8 @@ use anyhow::Result;
 use splunk_client::{AuthStrategy, SplunkClient};
 use tracing::info;
 
+use crate::formatters::{OutputFormat, get_formatter};
+
 pub async fn run(
     config: splunk_config::Config,
     query: String,
@@ -11,7 +13,7 @@ pub async fn run(
     earliest: Option<&str>,
     latest: Option<&str>,
     max_results: usize,
-    _output_format: &str,
+    output_format: &str,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -35,16 +37,13 @@ pub async fn run(
         .search(&query, wait, earliest, latest, Some(max_results as u64))
         .await?;
 
-    println!("Search completed. Found {} results.", results.len());
+    // Parse output format
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
 
-    for (i, row) in results.iter().enumerate() {
-        println!("\n[Result {}]", i + 1);
-        if let Some(obj) = row.as_object() {
-            for (key, value) in obj {
-                println!("  {}: {}", key, value);
-            }
-        }
-    }
+    // Format and print results
+    let output = formatter.format_search_results(&results)?;
+    print!("{}", output);
 
     Ok(())
 }

@@ -7,7 +7,7 @@
 mod auth;
 mod client;
 mod error;
-mod models;
+pub mod models;
 
 pub mod endpoints;
 

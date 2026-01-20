@@ -1,6 +1,6 @@
 //! Data models for Splunk API responses.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Generic Splunk REST API response wrapper.
 #[derive(Debug, Deserialize, Clone)]
@@ -76,7 +76,7 @@ pub struct JobContent {
 }
 
 /// Search job status (detailed).
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchJobStatus {
     pub sid: String,
     #[serde(default, rename = "isDone")]
@@ -113,7 +113,7 @@ pub struct SearchJobResults {
 }
 
 /// Index information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Index {
     pub name: String,
     #[serde(rename = "maxTotalDataSizeMB")]
