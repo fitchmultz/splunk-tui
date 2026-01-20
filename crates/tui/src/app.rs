@@ -27,6 +27,7 @@ pub enum CurrentScreen {
     Indexes,
     Cluster,
     Jobs,
+    JobInspect,
 }
 
 /// Sort column for jobs table.
@@ -165,6 +166,7 @@ impl App {
             CurrentScreen::Jobs => self.handle_jobs_input(key),
             CurrentScreen::Indexes => self.handle_indexes_input(key),
             CurrentScreen::Cluster => self.handle_cluster_input(key),
+            CurrentScreen::JobInspect => self.handle_job_inspect_input(key),
         }
     }
 
@@ -358,6 +360,7 @@ impl App {
             }
             KeyCode::Char('s') => Some(Action::CycleSortColumn),
             KeyCode::Char('/') => Some(Action::EnterSearchMode),
+            KeyCode::Enter => Some(Action::InspectJob),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -420,6 +423,18 @@ impl App {
                 Some(Action::LoadJobs)
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn handle_job_inspect_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Esc => Some(Action::ExitInspectMode),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -508,6 +523,16 @@ impl App {
             Action::SearchComplete(Err(e)) => {
                 self.error = Some(format!("Search failed: {}", e));
                 self.loading = false;
+            }
+            Action::InspectJob => {
+                // Transition to job inspect screen if we have jobs and a selection
+                if self.jobs.is_some() && self.jobs_state.selected().is_some() {
+                    self.current_screen = CurrentScreen::JobInspect;
+                }
+            }
+            Action::ExitInspectMode => {
+                // Return to jobs screen
+                self.current_screen = CurrentScreen::Jobs;
             }
             _ => {}
         }
@@ -655,6 +680,7 @@ impl App {
                     CurrentScreen::Indexes => "Indexes",
                     CurrentScreen::Cluster => "Cluster",
                     CurrentScreen::Jobs => "Jobs",
+                    CurrentScreen::JobInspect => "Job Details",
                 },
                 Style::default().fg(Color::Yellow),
             ),
@@ -708,6 +734,7 @@ impl App {
             CurrentScreen::Indexes => self.render_indexes(f, area),
             CurrentScreen::Cluster => self.render_cluster(f, area),
             CurrentScreen::Jobs => self.render_jobs(f, area),
+            CurrentScreen::JobInspect => self.render_job_details(f, area),
         }
     }
 
@@ -896,5 +923,27 @@ impl App {
                 sort_direction: self.sort_state.direction,
             },
         );
+    }
+
+    fn render_job_details(&mut self, f: &mut Frame, area: Rect) {
+        use crate::ui::screens::job_details;
+
+        // Get the selected job
+        let job = match (&self.jobs, self.jobs_state.selected()) {
+            (Some(jobs), Some(selected_idx)) => jobs.get(selected_idx),
+            _ => None,
+        };
+
+        match job {
+            Some(job) => {
+                job_details::render_details(f, area, job);
+            }
+            None => {
+                let placeholder = Paragraph::new("No job selected or jobs not loaded.")
+                    .block(Block::default().borders(Borders::ALL).title("Job Details"))
+                    .alignment(Alignment::Center);
+                f.render_widget(placeholder, area);
+            }
+        }
     }
 }

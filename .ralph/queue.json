@@ -2,53 +2,16 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0002",
-      "status": "todo",
-      "title": "Implement Job Inspection details view screen",
-      "priority": "high",
-      "tags": [
-        "ui",
-        "feature",
-        "inspection",
-        "state"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/job_details.rs",
-        "crates/tui/src/ui/screens/mod.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "Plan FLIGHT 2: Job Inspection (Details View)",
-        "Unlock data depth with detailed job inspection capability"
-      ],
-      "plan": [
-        "Create crates/tui/src/ui/screens/job_details.rs: Implement render_details(f: &mut Frame, job: &SearchJobStatus, area: Rect). Use List or Table to show all fields of SearchJobStatus.",
-        "Modify crates/tui/src/ui/screens/mod.rs: Export new job_details module.",
-        "Modify crates/tui/src/action.rs: Add InspectJob and ExitScreen actions. Remove dead_code warnings for SearchInput and ToggleSortDirection by implementing usage or removing unused variants.",
-        "Modify crates/tui/src/app.rs: Add JobDetails variant to CurrentScreen enum. Add selected_job: Option<SearchJobStatus> to App struct. In render(), route CurrentScreen::JobDetails to screens::job_details::render_details.",
-        "Modify crates/tui/src/ui/screens/jobs.rs: In handle_input, map Enter key to Action::InspectJob."
-      ],
-      "notes": [
-        "Depends on FLIGHT 1 completion for app.rs structure.",
-        "Extends screen state machine."
-      ],
-      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
-      "created_at": "2025-01-19T00:00:00Z",
-      "updated_at": "2025-01-19T00:00:00Z",
-      "depends_on": []
-    },
-    {
       "id": "RQ-0003",
       "status": "todo",
-      "title": "Implement configuration persistence with directories and TOML",
+      "title": "Implement configuration persistence with directories and JSON",
       "priority": "medium",
       "tags": [
         "config",
         "persistence",
         "cross-platform",
-        "serialization"
+        "serialization",
+        "json"
       ],
       "scope": [
         "crates/config/Cargo.toml",
@@ -59,22 +22,24 @@
       ],
       "evidence": [
         "Plan FLIGHT 3: Configuration Persistence",
-        "Establish permanence with cross-platform config storage"
+        "Establish permanence with cross-platform config storage",
+        "User feedback: JSON is more robust and safe than TOML for config persistence"
       ],
       "plan": [
-        "Modify crates/config/Cargo.toml: Add directories = \"6.0\" for cross-platform config paths. Promote toml from dev-dependencies to dependencies (version 0.8).",
-        "Create crates/config/src/persistence.rs: Implement PersistedState struct (auto_refresh: bool, sort_column: String, sort_direction: String, last_search_query: Option<String>). Implement ConfigManager with load_or_default() and save() methods.",
+        "Modify crates/config/Cargo.toml: Add directories = \"6.0\" for cross-platform config paths. Add serde_json = { workspace = true } to dependencies (already in workspace, just reference it).",
+        "Create crates/config/src/persistence.rs: Implement PersistedState struct with Serialize/Deserialize derives (auto_refresh: bool, sort_column: String, sort_direction: String, last_search_query: Option<String>). Implement ConfigManager with load_or_default() using serde_json::from_str and save() using serde_json::to_string_pretty.",
         "Modify crates/config/src/lib.rs: Export persistence types (PersistedState, ConfigManager).",
         "Modify crates/tui/src/app.rs: Add UserConfig struct to state. Initialize App state (auto_refresh, sort) from loaded config.",
         "Modify crates/tui/src/main.rs: Load config on startup via ConfigManager. Call ConfigManager::save on Action::Quit to persist state."
       ],
       "notes": [
-        "Ordnance: directories crate for cross-platform paths, TOML for serialization.",
-        "Breaking: App::new() signature may require config injection."
+        "Ordnance: directories crate for cross-platform paths, serde_json for serialization (already in workspace).",
+        "Breaking: App::new() signature may require config injection.",
+        "JSON chosen over TOML for better safety, simpler dependency management (serde_json already in workspace), and clearer error messages."
       ],
-      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "request": "Review the RQ-0003 task and dependent tasks in the queue. I think using JSON for config persistence is a more robust and safe choice. If you agree, update the task and any dependent tasks.",
       "created_at": "2025-01-19T00:00:00Z",
-      "updated_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2025-01-19T16:08:00Z",
       "depends_on": [
         "RQ-0002"
       ]

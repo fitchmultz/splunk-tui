@@ -2,4 +2,5 @@
 //!
 //! This module contains screen-specific rendering logic.
 
+pub mod job_details;
 pub mod jobs;

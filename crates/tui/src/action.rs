@@ -72,6 +72,10 @@ pub enum Action {
     DeleteJob(String),
     /// Job operation completed successfully
     JobOperationComplete(String),
+    /// Inspect the currently selected job
+    InspectJob,
+    /// Exit job inspection mode
+    ExitInspectMode,
 
     // Progress
     /// Update progress indicator (0.0 - 1.0)

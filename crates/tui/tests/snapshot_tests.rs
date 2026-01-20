@@ -270,3 +270,43 @@ fn snapshot_narrow_terminal() {
 
     insta::assert_snapshot!(harness.render());
 }
+
+#[test]
+fn snapshot_job_details_screen_with_job() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_job_details_screen_running_job() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(1)); // Select the running job
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_job_details_screen_no_job() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = None;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_job_details_screen_with_help_popup() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.jobs_state.select(Some(0));
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build());
+
+    insta::assert_snapshot!(harness.render());
+}

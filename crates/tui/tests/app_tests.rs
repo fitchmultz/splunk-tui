@@ -506,3 +506,93 @@ fn test_indexes_navigation() {
         "Should move to index 0"
     );
 }
+
+#[test]
+fn test_job_inspection_flow() {
+    let mut app = App::new();
+    app.current_screen = CurrentScreen::Jobs;
+    app.jobs = Some(create_mock_jobs(3));
+    app.jobs_state.select(Some(1));
+
+    // Press Enter to inspect job
+    let action = app.handle_input(enter_key());
+    assert!(
+        matches!(action, Some(Action::InspectJob)),
+        "Should return InspectJob action"
+    );
+
+    // Apply the action to transition screens
+    app.update(action.unwrap());
+
+    assert_eq!(
+        app.current_screen,
+        CurrentScreen::JobInspect,
+        "Should transition to JobInspect screen"
+    );
+
+    // Press Esc to exit inspect mode
+    let action = app.handle_input(esc_key());
+    assert!(
+        matches!(action, Some(Action::ExitInspectMode)),
+        "Should return ExitInspectMode action"
+    );
+
+    // Apply the action to transition back
+    app.update(action.unwrap());
+
+    assert_eq!(
+        app.current_screen,
+        CurrentScreen::Jobs,
+        "Should return to Jobs screen"
+    );
+
+    // Selection should be preserved
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(1),
+        "Selection should be preserved after returning from inspect"
+    );
+}
+
+#[test]
+fn test_job_inspection_without_jobs() {
+    let mut app = App::new();
+    app.current_screen = CurrentScreen::Jobs;
+    app.jobs = None; // No jobs loaded
+    app.jobs_state.select(Some(0));
+
+    // Press Enter with no jobs loaded
+    let action = app.handle_input(enter_key());
+    assert!(
+        matches!(action, Some(Action::InspectJob)),
+        "Should still return InspectJob action"
+    );
+
+    // Apply the action - should NOT transition since no jobs are loaded
+    app.update(action.unwrap());
+
+    assert_eq!(
+        app.current_screen,
+        CurrentScreen::Jobs,
+        "Should stay on Jobs screen when no jobs loaded"
+    );
+}
+
+#[test]
+fn test_job_inspect_help_popup() {
+    let mut app = App::new();
+    app.current_screen = CurrentScreen::JobInspect;
+
+    // Open help popup with '?'
+    let action = app.handle_input(key('?'));
+    assert!(action.is_none(), "Opening help should not return action");
+    assert!(
+        matches!(app.popup.as_ref().map(|p| &p.kind), Some(PopupType::Help)),
+        "Should open Help popup"
+    );
+
+    // Close with Esc
+    let action = app.handle_input(esc_key());
+    assert!(action.is_none(), "Closing help should not return action");
+    assert!(app.popup.is_none(), "Popup should be closed");
+}

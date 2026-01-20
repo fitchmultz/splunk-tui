@@ -110,8 +110,14 @@ Search Screen:
 Jobs Screen:
   r     Refresh jobs
   a     Toggle auto-refresh
+  s     Cycle sort column
+  /     Filter jobs
   c     Cancel job
   d     Delete job
+  Enter Inspect job
+
+Job Details Screen:
+  Esc   Back to jobs
             "#
                 .to_string(),
             ),
