@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0032",
-      "status": "todo",
-      "title": "Implement multi-profile configuration support",
-      "priority": "high",
-      "tags": [
-        "config",
-        "ux",
-        "multi-profile"
-      ],
-      "scope": [
-        "crates/config/src/"
-      ],
-      "evidence": [
-        "Current configuration in crates/config/src/loader.rs is heavily reliant on environment variables.",
-        "No simple mechanism exists to switch between multiple Splunk environments (e.g., dev vs prod)."
-      ],
-      "plan": [
-        "Define a configuration file structure (e.g., config.json or config.toml) that supports multiple named profiles.",
-        "Update ConfigLoader to read from standard locations (~/.config/splunk-tui/config.json).",
-        "Add logic to select the active profile via environment variable or CLI flag."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0033",
       "status": "todo",
       "title": "Optimize search result formatting cache in TUI",

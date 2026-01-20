@@ -83,7 +83,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T17:00:00Z",
       "completed_at": "2026-01-20T17:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0018",
@@ -124,7 +125,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T11:30:00Z",
       "completed_at": "2026-01-20T11:30:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0017",
@@ -164,7 +166,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T10:00:00Z",
       "completed_at": "2026-01-20T10:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0014",
@@ -202,7 +205,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-19T23:10:15Z",
       "completed_at": "2026-01-20T08:30:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0023",
@@ -241,7 +245,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T08:00:00Z",
       "completed_at": "2026-01-20T08:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0013",
@@ -281,7 +286,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T06:45:00Z",
       "completed_at": "2026-01-20T06:45:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0011",
@@ -317,7 +323,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T06:30:00Z",
       "completed_at": "2026-01-20T06:30:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0010",
@@ -353,7 +360,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T05:00:00Z",
       "completed_at": "2026-01-20T06:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0001",
@@ -406,7 +414,8 @@
       "created_at": "2025-01-19T00:00:00Z",
       "updated_at": "2026-01-19T00:00:00Z",
       "completed_at": "2026-01-19T00:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0002",
@@ -457,7 +466,8 @@
       "created_at": "2025-01-19T00:00:00Z",
       "updated_at": "2026-01-19T00:00:00Z",
       "completed_at": "2026-01-19T00:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0003",
@@ -513,7 +523,8 @@
       "completed_at": "2026-01-20T03:30:00Z",
       "depends_on": [
         "RQ-0002"
-      ]
+      ],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0004",
@@ -579,7 +590,8 @@
       "completed_at": "2026-01-20T04:00:00Z",
       "depends_on": [
         "RQ-0003"
-      ]
+      ],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0005",
@@ -623,7 +635,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T04:18:41Z",
       "completed_at": "2026-01-20T05:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0006",
@@ -663,7 +676,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T04:54:39.423691+00:00",
       "completed_at": "2026-01-20T04:54:39.423506+00:00",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0007",
@@ -702,7 +716,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T04:58:39Z",
       "completed_at": "2026-01-20T04:58:39Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0008",
@@ -737,7 +752,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T04:18:41Z",
       "completed_at": "2026-01-20T05:30:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0009",
@@ -783,7 +799,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T05:06:50Z",
       "completed_at": "2026-01-20T05:30:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0021",
@@ -814,7 +831,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T05:37:13.828305000Z",
       "completed_at": "2026-01-20T05:37:13.828305000Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0012",
@@ -849,7 +867,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T07:00:00Z",
       "completed_at": "2026-01-20T07:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0015",
@@ -888,7 +907,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2025-01-19T20:30:00Z",
       "completed_at": "2025-01-19T20:30:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0016",
@@ -930,7 +950,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-19T23:35:00Z",
       "completed_at": "2026-01-20T09:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0019",
@@ -966,7 +987,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T16:00:00Z",
       "completed_at": "2026-01-20T16:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0020",
@@ -999,7 +1021,8 @@
       "created_at": "2026-01-20T04:18:41Z",
       "updated_at": "2026-01-20T07:13:34Z",
       "completed_at": "2026-01-20T20:00:00Z",
-      "depends_on": []
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0024",
@@ -1036,299 +1059,333 @@
       "request": "scan finding",
       "created_at": "2026-01-20T17:15:00Z",
       "updated_at": "2026-01-20T12:00:00Z",
-            "completed_at": "2026-01-20T12:00:00Z",
-            "depends_on": [],
-            "custom_fields": {}
-          },
-          {
-            "id": "RQ-0025",
-            "status": "done",
-            "title": "Implement system-wide health check API client",
-            "priority": "high",
-            "tags": [
-              "client",
-              "health"
-            ],
-            "scope": [
-              "crates/client/src/endpoints/",
-              "crates/client/src/models.rs"
-            ],
-            "evidence": [
-              "Requested feature: Automated Splunk Health checks.",
-              "Splunk provides /services/server/health/splunkd for overall system health monitoring."
-            ],
-            "plan": [
-              "Implement get_health endpoint to fetch health status from /services/server/health/splunkd.",
-              "Add structured models for health components and their statuses.",
-              "Add integration tests with mock health responses."
-            ],
-            "notes": [
-              "Implemented get_health endpoint in crates/client/src/endpoints/server.rs targeting /services/server/health/splunkd.",
-              "Added SplunkHealth and HealthFeature models to crates/client/src/models.rs using HashMap for dynamic features.",
-              "Exposed get_health method on SplunkClient in crates/client/src/client.rs with session retry logic.",
-              "Added comprehensive integration test test_get_health with wiremock and JSON fixture.",
-              "Created crates/client/fixtures/server/get_health.json for testing.",
-              "make ci passed successfully (lint, type-check, tests, build)."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T17:45:00Z",
-            "completed_at": "2026-01-20T17:45:00Z",
-            "depends_on": []
-          },
-          {
-            "id": "RQ-0026",
-            "status": "done",
-            "title": "Implement license usage monitoring API client",
-            "priority": "high",
-            "tags": [
-              "client",
-              "health",
-              "license"
-            ],
-            "scope": [
-              "crates/client/src/endpoints/",
-              "crates/client/src/models.rs"
-            ],
-            "evidence": [
-              "Requested feature: Automated health checks include license usage monitoring.",
-              "License warnings and violations are critical health indicators."
-            ],
-            "plan": [
-              "Implement get_license_usage endpoint to fetch data from /services/license/usage.",
-              "Define models for license pools, stacks, and usage metrics.",
-              "Verify parsing with integration tests."
-            ],
-            "notes": [
-              "Implemented get_license_usage endpoint in crates/client/src/endpoints/license.rs targeting /services/license/usage.",
-              "Added LicenseUsage, LicensePool, and LicenseStack models to crates/client/src/models.rs.",
-              "Exposed get_license_usage method on SplunkClient in crates/client/src/client.rs with session retry logic.",
-              "Added integration test test_get_license_usage with wiremock and JSON fixture.",
-              "Created crates/client/fixtures/license/get_usage.json for testing.",
-              "make ci passed successfully."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T21:20:00Z",
-            "completed_at": "2026-01-20T21:20:00Z",
-            "depends_on": []
-          },
-          {
-            "id": "RQ-0027",
-            "status": "done",
-            "title": "Implement KVStore status tracking API client",
-            "priority": "medium",
-            "tags": [
-              "client",
-              "health",
-              "kvstore"
-            ],
-            "scope": [
-              "crates/client/src/endpoints/",
-              "crates/client/src/models.rs"
-            ],
-            "evidence": [
-              "Requested feature: Automated health checks include KVStore status.",
-              "KVStore failures impact many Splunk apps and search features."
-            ],
-            "plan": [
-              "Implement get_kvstore_status endpoint to fetch data from /services/kvstore/status.",
-              "Define models for KVStore replication and member status.",
-              "Add integration tests."
-            ],
-            "notes": [
-              "Implemented get_kvstore_status endpoint in crates/client/src/endpoints/kvstore.rs.",
-              "Added KvStoreStatus, KvStoreMember, and KvStoreReplicationStatus models to crates/client/src/models.rs.",
-              "Exposed get_kvstore_status method on SplunkClient in crates/client/src/client.rs with session retry logic.",
-              "Added integration tests test_get_kvstore_status and test_splunk_client_get_kvstore_status in integration_tests.rs.",
-              "Created crates/client/fixtures/kvstore/status.json for testing.",
-              "make ci passed successfully."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T22:30:00Z",
-            "completed_at": "2026-01-20T22:30:00Z",
-            "depends_on": []
-          },
-          {
-            "id": "RQ-0028",
-            "status": "done",
-            "title": "Implement automated log parsing error search",
-            "priority": "high",
-            "tags": [
-              "client",
-              "health",
-              "search"
-            ],
-            "scope": [
-              "crates/client/src/endpoints/parsing.rs",
-              "crates/client/src/models.rs",
-              "crates/client/src/client.rs",
-              "crates/client/tests/integration_tests.rs",
-              "crates/client/fixtures/parsing/check_health.json"
-            ],
-            "evidence": [
-              "Requested feature: Log source parsing checks.",
-              "Parsing errors are typically logged in _internal with specific components like TuningParser or DateParserVerbose."
-            ],
-            "plan": [
-              "Define a specialized search query for identifying parsing errors in _internal logs.",
-              "Implement a convenience method in SplunkClient to run this health search and parse results.",
-              "Add models to represent identified parsing issues (source, sourcetype, error message)."
-            ],
-            "notes": [
-              "Implemented check_log_parsing_health endpoint in crates/client/src/endpoints/parsing.rs that creates a search job targeting _internal index with parsing error components (TuningParser, DateParserVerbose, Parser).",
-              "Added LogParsingError and LogParsingHealth models to crates/client/src/models.rs with time, source, sourcetype, message, log_level, and component fields.",
-              "Exposed check_log_parsing_health method on SplunkClient in crates/client/src/client.rs with session retry logic.",
-              "Added 4 comprehensive integration tests: test_check_log_parsing_health (with errors), test_check_log_parsing_health_no_errors (healthy), test_splunk_client_check_log_parsing_health (API token), test_splunk_client_check_log_parsing_health_session_retry (session auth retry).",
-              "Created crates/client/fixtures/parsing/check_health.json for testing with sample parsing error entries.",
-              "Unit tests added to models.rs: test_deserialize_log_parsing_error, test_deserialize_log_parsing_health.",
-              "All 36 integration tests pass (including 4 new parsing health tests) and make ci completes successfully."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T23:00:00Z",
-            "completed_at": "2026-01-20T23:00:00Z",
-            "depends_on": []
-          },
-          {
-            "id": "RQ-0031",
-            "status": "done",
-            "title": "Implement splunk health CLI command",
-            "priority": "medium",
-            "tags": [
-              "cli",
-              "health"
-            ],
-            "scope": [
-              "crates/cli/src/main.rs",
-              "crates/cli/src/commands/health.rs"
-            ],
-            "evidence": [
-              "Requested feature: Automated health checks should be available via CLI for automation.",
-              "Existing CLI structure supports subcommands for specific resources."
-            ],
-            "plan": [
-              "Add health subcommand to crates/cli/src/main.rs.",
-              "Implement crates/cli/src/commands/health.rs to aggregate and display health data in various formats (JSON, Table).",
-              "Ensure it handles both standalone and distributed environments gracefully."
-            ],
-            "notes": [
-              "Added `splunk health` CLI command that aggregates data from server info, system health, license usage, KVStore status, and log parsing checks.",
-              "Implemented multi-format output (Table, JSON, CSV, XML) for the health command in `crates/cli/src/formatters.rs`.",
-              "Updated client models and crate exports to support health data serialization.",
-              "Added integration tests for `splunk health` verifying help output and connectivity behavior.",
-              "Updated Makefile `test-integration` to include all CLI integration tests.",
-              "Verified all tests and linting pass with `make ci`."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T21:15:00Z",
-            "completed_at": "2026-01-20T21:15:00Z",
-            "depends_on": [
-              "RQ-0024",
-              "RQ-0025",
-              "RQ-0026",
-              "RQ-0027",
-              "RQ-0028"
-            ],
-            "custom_fields": {}
-          },
-          {
-            "id": "RQ-0029",
-            "status": "done",
-            "title": "Refactor TUI screens from app.rs into ui/screens",
-            "priority": "medium",
-            "tags": [
-              "tui",
-              "refactor",
-              "ui"
-            ],
-            "scope": [
-              "crates/tui/src/app.rs",
-              "crates/tui/src/ui/screens/"
-            ],
-            "evidence": [
-              "crates/tui/src/app.rs contains rendering logic for Search, Indexes, and Cluster screens, making it overly large.",
-              "Jobs and JobDetails screens are already correctly separated into crates/tui/src/ui/screens/."
-            ],
-            "plan": [
-              "Move render_search to crates/tui/src/ui/screens/search.rs.",
-              "Move render_indexes to crates/tui/src/ui/screens/indexes.rs.",
-              "Move render_cluster to crates/tui/src/ui/screens/cluster.rs.",
-              "Update app.rs to call these new modules, maintaining clean state separation."
-            ],
-            "notes": [
-              "Created crates/tui/src/ui/screens/search.rs with SearchRenderConfig struct and render_search() function.",
-              "Created crates/tui/src/ui/screens/indexes.rs with IndexesRenderConfig struct and render_indexes() function.",
-              "Created crates/tui/src/ui/screens/cluster.rs with ClusterRenderConfig struct and render_cluster() function.",
-              "Updated crates/tui/src/ui/screens/mod.rs to export cluster, indexes, and search modules.",
-              "Updated crates/tui/src/app.rs: Added imports for new screen modules, removed unused ListItem import, added KeyEvent import.",
-              "Updated crates/tui/src/app.rs render_content() to call the new screen modules with their respective config structs.",
-              "Removed render_search, render_indexes, and render_cluster methods from app.rs (now in screen modules).",
-              "All modules follow the existing pattern: config struct for passing state, render function using ratatui Frame/Rect.",
-              "make ci passes all checks: 93 tests (unit + integration), linting, formatting, build successful."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T22:18:39Z",
-            "completed_at": "2026-01-20T22:18:39Z",
-            "depends_on": [],
-            "custom_fields": {}
-          },
-          {
-            "id": "RQ-0030",
-            "status": "done",
-            "title": "Create dedicated Health Check TUI screen",
-            "priority": "medium",
-            "tags": [
-              "tui",
-              "health",
-              "ui"
-            ],
-            "scope": [
-              "crates/tui/src/ui/screens/health.rs",
-              "crates/tui/src/action.rs",
-              "crates/tui/src/ui/screens/mod.rs",
-              "crates/tui/src/app.rs",
-              "crates/tui/src/main.rs",
-              "README.md"
-            ],
-            "evidence": [
-              "Requested feature: Automated health check feature in the TUI.",
-              "Users need a centralized view for monitoring environment health."
-            ],
-            "plan": [
-              "Add Health variant to CurrentScreen enum in app.rs.",
-              "Implement ui/screens/health.rs to display metrics (system health, license, KVStore, parsing errors).",
-              "Add navigation to the new screen (Key '5') and update help documentation."
-            ],
-            "notes": [
-              "Created new health screen module (crates/tui/src/ui/screens/health.rs) with render_health() function displaying comprehensive health metrics including server info, splunkd health, license usage, KVStore status, and log parsing health.",
-              "Updated Action enum with LoadHealth and HealthLoaded(Box<Result<HealthCheckOutput, String>>) variants (boxed to avoid large enum variant warning).",
-              "Integrated Health screen into App with navigation key '5', added health_info: Option<HealthCheckOutput> field to App struct, and implemented handle_health_input() method.",
-              "Implemented health loading side effect in main.rs that sequentially collects server info, splunkd health, license usage, KVStore status, and log parsing health.",
-              "Updated all screen input handlers (search, jobs, indexes, cluster) to include '5' key navigation to Health screen.",
-              "Updated header rendering to show 'Health' in the title bar when on Health screen.",
-              "Updated footer navigation to show '1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health' in both loading and non-loading states.",
-              "Added Health case to render_content() match statement calling health::render_health().",
-              "Added HealthLoaded action handling in update() method for both Ok and Err cases.",
-              "Updated all snapshot tests (21 files) to include '5:Health' in footer navigation.",
-              "Updated README.md to document Health screen, updated keybindings to include '5', added 'r' for refresh and '?' for help.",
-              "Added comprehensive unit tests in health.rs: test_format_bytes (7 assertions), test_percentage_text (4 assertions), test_health_color (5 assertions), test_build_health_text_empty (2 assertions), test_build_health_text_with_server_info (3 assertions), test_build_health_text_with_license (3 assertions), test_build_health_text_with_log_parsing (6 assertions).",
-              "All health screen unit tests pass and make ci completes successfully."
-            ],
-            "request": "scan finding",
-            "created_at": "2026-01-20T17:15:00Z",
-            "updated_at": "2026-01-20T22:19:47Z",
-            "completed_at": "2026-01-20T22:40:18Z",
-            "depends_on": [
-              "RQ-0025",
-              "RQ-0026",
-              "RQ-0027",
-              "RQ-0028"
-            ],
-            "custom_fields": {}
-          }
-        ]
-      }
+      "completed_at": "2026-01-20T12:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0025",
+      "status": "done",
+      "title": "Implement system-wide health check API client",
+      "priority": "high",
+      "tags": [
+        "client",
+        "health"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/",
+        "crates/client/src/models.rs"
+      ],
+      "evidence": [
+        "Requested feature: Automated Splunk Health checks.",
+        "Splunk provides /services/server/health/splunkd for overall system health monitoring."
+      ],
+      "plan": [
+        "Implement get_health endpoint to fetch health status from /services/server/health/splunkd.",
+        "Add structured models for health components and their statuses.",
+        "Add integration tests with mock health responses."
+      ],
+      "notes": [
+        "Implemented get_health endpoint in crates/client/src/endpoints/server.rs targeting /services/server/health/splunkd.",
+        "Added SplunkHealth and HealthFeature models to crates/client/src/models.rs using HashMap for dynamic features.",
+        "Exposed get_health method on SplunkClient in crates/client/src/client.rs with session retry logic.",
+        "Added comprehensive integration test test_get_health with wiremock and JSON fixture.",
+        "Created crates/client/fixtures/server/get_health.json for testing.",
+        "make ci passed successfully (lint, type-check, tests, build)."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T17:45:00Z",
+      "completed_at": "2026-01-20T17:45:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0026",
+      "status": "done",
+      "title": "Implement license usage monitoring API client",
+      "priority": "high",
+      "tags": [
+        "client",
+        "health",
+        "license"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/",
+        "crates/client/src/models.rs"
+      ],
+      "evidence": [
+        "Requested feature: Automated health checks include license usage monitoring.",
+        "License warnings and violations are critical health indicators."
+      ],
+      "plan": [
+        "Implement get_license_usage endpoint to fetch data from /services/license/usage.",
+        "Define models for license pools, stacks, and usage metrics.",
+        "Verify parsing with integration tests."
+      ],
+      "notes": [
+        "Implemented get_license_usage endpoint in crates/client/src/endpoints/license.rs targeting /services/license/usage.",
+        "Added LicenseUsage, LicensePool, and LicenseStack models to crates/client/src/models.rs.",
+        "Exposed get_license_usage method on SplunkClient in crates/client/src/client.rs with session retry logic.",
+        "Added integration test test_get_license_usage with wiremock and JSON fixture.",
+        "Created crates/client/fixtures/license/get_usage.json for testing.",
+        "make ci passed successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T21:20:00Z",
+      "completed_at": "2026-01-20T21:20:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0027",
+      "status": "done",
+      "title": "Implement KVStore status tracking API client",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "health",
+        "kvstore"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/",
+        "crates/client/src/models.rs"
+      ],
+      "evidence": [
+        "Requested feature: Automated health checks include KVStore status.",
+        "KVStore failures impact many Splunk apps and search features."
+      ],
+      "plan": [
+        "Implement get_kvstore_status endpoint to fetch data from /services/kvstore/status.",
+        "Define models for KVStore replication and member status.",
+        "Add integration tests."
+      ],
+      "notes": [
+        "Implemented get_kvstore_status endpoint in crates/client/src/endpoints/kvstore.rs.",
+        "Added KvStoreStatus, KvStoreMember, and KvStoreReplicationStatus models to crates/client/src/models.rs.",
+        "Exposed get_kvstore_status method on SplunkClient in crates/client/src/client.rs with session retry logic.",
+        "Added integration tests test_get_kvstore_status and test_splunk_client_get_kvstore_status in integration_tests.rs.",
+        "Created crates/client/fixtures/kvstore/status.json for testing.",
+        "make ci passed successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T22:30:00Z",
+      "completed_at": "2026-01-20T22:30:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0028",
+      "status": "done",
+      "title": "Implement automated log parsing error search",
+      "priority": "high",
+      "tags": [
+        "client",
+        "health",
+        "search"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/parsing.rs",
+        "crates/client/src/models.rs",
+        "crates/client/src/client.rs",
+        "crates/client/tests/integration_tests.rs",
+        "crates/client/fixtures/parsing/check_health.json"
+      ],
+      "evidence": [
+        "Requested feature: Log source parsing checks.",
+        "Parsing errors are typically logged in _internal with specific components like TuningParser or DateParserVerbose."
+      ],
+      "plan": [
+        "Define a specialized search query for identifying parsing errors in _internal logs.",
+        "Implement a convenience method in SplunkClient to run this health search and parse results.",
+        "Add models to represent identified parsing issues (source, sourcetype, error message)."
+      ],
+      "notes": [
+        "Implemented check_log_parsing_health endpoint in crates/client/src/endpoints/parsing.rs that creates a search job targeting _internal index with parsing error components (TuningParser, DateParserVerbose, Parser).",
+        "Added LogParsingError and LogParsingHealth models to crates/client/src/models.rs with time, source, sourcetype, message, log_level, and component fields.",
+        "Exposed check_log_parsing_health method on SplunkClient in crates/client/src/client.rs with session retry logic.",
+        "Added 4 comprehensive integration tests: test_check_log_parsing_health (with errors), test_check_log_parsing_health_no_errors (healthy), test_splunk_client_check_log_parsing_health (API token), test_splunk_client_check_log_parsing_health_session_retry (session auth retry).",
+        "Created crates/client/fixtures/parsing/check_health.json for testing with sample parsing error entries.",
+        "Unit tests added to models.rs: test_deserialize_log_parsing_error, test_deserialize_log_parsing_health.",
+        "All 36 integration tests pass (including 4 new parsing health tests) and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T23:00:00Z",
+      "completed_at": "2026-01-20T23:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0031",
+      "status": "done",
+      "title": "Implement splunk health CLI command",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "health"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/health.rs"
+      ],
+      "evidence": [
+        "Requested feature: Automated health checks should be available via CLI for automation.",
+        "Existing CLI structure supports subcommands for specific resources."
+      ],
+      "plan": [
+        "Add health subcommand to crates/cli/src/main.rs.",
+        "Implement crates/cli/src/commands/health.rs to aggregate and display health data in various formats (JSON, Table).",
+        "Ensure it handles both standalone and distributed environments gracefully."
+      ],
+      "notes": [
+        "Added `splunk health` CLI command that aggregates data from server info, system health, license usage, KVStore status, and log parsing checks.",
+        "Implemented multi-format output (Table, JSON, CSV, XML) for the health command in `crates/cli/src/formatters.rs`.",
+        "Updated client models and crate exports to support health data serialization.",
+        "Added integration tests for `splunk health` verifying help output and connectivity behavior.",
+        "Updated Makefile `test-integration` to include all CLI integration tests.",
+        "Verified all tests and linting pass with `make ci`."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T21:15:00Z",
+      "completed_at": "2026-01-20T21:15:00Z",
+      "depends_on": [
+        "RQ-0024",
+        "RQ-0025",
+        "RQ-0026",
+        "RQ-0027",
+        "RQ-0028"
+      ],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0029",
+      "status": "done",
+      "title": "Refactor TUI screens from app.rs into ui/screens",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "ui"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs contains rendering logic for Search, Indexes, and Cluster screens, making it overly large.",
+        "Jobs and JobDetails screens are already correctly separated into crates/tui/src/ui/screens/."
+      ],
+      "plan": [
+        "Move render_search to crates/tui/src/ui/screens/search.rs.",
+        "Move render_indexes to crates/tui/src/ui/screens/indexes.rs.",
+        "Move render_cluster to crates/tui/src/ui/screens/cluster.rs.",
+        "Update app.rs to call these new modules, maintaining clean state separation."
+      ],
+      "notes": [
+        "Created crates/tui/src/ui/screens/search.rs with SearchRenderConfig struct and render_search() function.",
+        "Created crates/tui/src/ui/screens/indexes.rs with IndexesRenderConfig struct and render_indexes() function.",
+        "Created crates/tui/src/ui/screens/cluster.rs with ClusterRenderConfig struct and render_cluster() function.",
+        "Updated crates/tui/src/ui/screens/mod.rs to export cluster, indexes, and search modules.",
+        "Updated crates/tui/src/app.rs: Added imports for new screen modules, removed unused ListItem import, added KeyEvent import.",
+        "Updated crates/tui/src/app.rs render_content() to call the new screen modules with their respective config structs.",
+        "Removed render_search, render_indexes, and render_cluster methods from app.rs (now in screen modules).",
+        "All modules follow the existing pattern: config struct for passing state, render function using ratatui Frame/Rect.",
+        "make ci passes all checks: 93 tests (unit + integration), linting, formatting, build successful."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T22:18:39Z",
+      "completed_at": "2026-01-20T22:18:39Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0030",
+      "status": "done",
+      "title": "Create dedicated Health Check TUI screen",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "health",
+        "ui"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/health.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/ui/screens/mod.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs",
+        "README.md"
+      ],
+      "evidence": [
+        "Requested feature: Automated health check feature in the TUI.",
+        "Users need a centralized view for monitoring environment health."
+      ],
+      "plan": [
+        "Add Health variant to CurrentScreen enum in app.rs.",
+        "Implement ui/screens/health.rs to display metrics (system health, license, KVStore, parsing errors).",
+        "Add navigation to the new screen (Key '5') and update help documentation."
+      ],
+      "notes": [
+        "Created new health screen module (crates/tui/src/ui/screens/health.rs) with render_health() function displaying comprehensive health metrics including server info, splunkd health, license usage, KVStore status, and log parsing health.",
+        "Updated Action enum with LoadHealth and HealthLoaded(Box<Result<HealthCheckOutput, String>>) variants (boxed to avoid large enum variant warning).",
+        "Integrated Health screen into App with navigation key '5', added health_info: Option<HealthCheckOutput> field to App struct, and implemented handle_health_input() method.",
+        "Implemented health loading side effect in main.rs that sequentially collects server info, splunkd health, license usage, KVStore status, and log parsing health.",
+        "Updated all screen input handlers (search, jobs, indexes, cluster) to include '5' key navigation to Health screen.",
+        "Updated header rendering to show 'Health' in the title bar when on Health screen.",
+        "Updated footer navigation to show '1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health' in both loading and non-loading states.",
+        "Added Health case to render_content() match statement calling health::render_health().",
+        "Added HealthLoaded action handling in update() method for both Ok and Err cases.",
+        "Updated all snapshot tests (21 files) to include '5:Health' in footer navigation.",
+        "Updated README.md to document Health screen, updated keybindings to include '5', added 'r' for refresh and '?' for help.",
+        "Added comprehensive unit tests in health.rs: test_format_bytes (7 assertions), test_percentage_text (4 assertions), test_health_color (5 assertions), test_build_health_text_empty (2 assertions), test_build_health_text_with_server_info (3 assertions), test_build_health_text_with_license (3 assertions), test_build_health_text_with_log_parsing (6 assertions).",
+        "All health screen unit tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T22:19:47Z",
+      "completed_at": "2026-01-20T22:40:18Z",
+      "depends_on": [
+        "RQ-0025",
+        "RQ-0026",
+        "RQ-0027",
+        "RQ-0028"
+      ],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0032",
+      "status": "done",
+      "title": "Implement multi-profile configuration support",
+      "priority": "high",
+      "tags": [
+        "config",
+        "ux",
+        "multi-profile"
+      ],
+      "scope": [
+        "crates/config/src/"
+      ],
+      "evidence": [
+        "Current configuration in crates/config/src/loader.rs is heavily reliant on environment variables.",
+        "No simple mechanism exists to switch between multiple Splunk environments (e.g., dev vs prod)."
+      ],
+      "plan": [
+        "Define a configuration file structure (e.g., config.json or config.toml) that supports multiple named profiles.",
+        "Update ConfigLoader to read from standard locations (~/.config/splunk-tui/config.json).",
+        "Add logic to select the active profile via environment variable or CLI flag."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-20T23:47:53.451025000Z",
+      "completed_at": "2026-01-20T23:47:53.451025000Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
+}
