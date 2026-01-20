@@ -2,6 +2,44 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0014",
+      "status": "done",
+      "title": "Improve CLI formatters to render non-string values and CSV escaping",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "formatting",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/formatters.rs",
+        "crates/cli/src/commands/"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters.rs uses value.as_str().unwrap_or(\"\") for table/csv/xml formatting, dropping numbers/booleans/objects.",
+        "CSV output is emitted without escaping commas or quotes, which can corrupt rows."
+      ],
+      "plan": [
+        "Convert serde_json::Value to strings using a consistent formatter (stringify scalars, JSON for objects/arrays).",
+        "Implement CSV escaping (quotes/double-quotes/newlines) for both headers and values.",
+        "Expand formatter tests to cover numeric/boolean values and escaping."
+      ],
+      "notes": [
+        "Added format_json_value() helper function to convert any JSON value to string representation (strings as-is, numbers/booleans to string, null to empty, arrays/objects to compact JSON).",
+        "Added escape_csv() helper function implementing RFC 4180 CSV escaping (quotes around fields with comma/quote/newline, double internal quotes).",
+        "Updated TableFormatter to use format_json_value() instead of value.as_str().unwrap_or(\"\").",
+        "Updated CsvFormatter to apply escape_csv() to all headers and values in format_search_results, format_indexes, format_jobs, and format_cluster_info.",
+        "Updated XmlFormatter to use format_json_value() before escape_xml() in format_search_results.",
+        "Added comprehensive test coverage: test_csv_escaping (quotes, commas, newlines), test_format_json_value (all value types), test_table_formatter_with_non_string_values, test_csv_formatter_with_non_string_values, test_xml_formatter_with_non_string_values, test_value_rendering (cross-formatter verification).",
+        "All 12 formatter tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-19T23:10:15Z",
+      "completed_at": "2026-01-20T08:30:00Z",
+      "depends_on": []
+    },
+    {
       "id": "RQ-0023",
       "status": "done",
       "title": "Align Makefile with required targets (generate + build install)",
