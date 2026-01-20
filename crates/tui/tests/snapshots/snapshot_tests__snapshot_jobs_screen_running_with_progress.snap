@@ -6,16 +6,16 @@ expression: harness.render()
 │Splunk TUI - Jobs                                                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Jobs───────────────────────────────────────────────────────────────────┐
-│                     No jobs loaded. Press 'r' to refresh.                    │
+│SID ↑                         Status          Duration   Results    Events    │
+│admin_search_with_progress    Running (73%)   15.50s     250        500       │
 │                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │
-│               ┌Help──────────────────────────────────────────┐               │
-│               │                                              │               │
-│               │                 Global Keys:                 │               │
-│               └──────────────────────────────────────────────┘               │
+│                                                                              │
+│                                                                              │
+│                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │

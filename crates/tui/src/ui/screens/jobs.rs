@@ -111,14 +111,12 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     let rows: Vec<Row> = display_jobs
         .iter()
         .map(|job| {
-            let status_text = if job.is_done {
-                "Done"
+            let status_text: String = if job.is_done {
+                "Done".to_string()
             } else if job.done_progress > 0.0 {
-                // Allocate formatted status text with enough lifetime
-                let status = format!("Running ({:.0}%)", job.done_progress * 100.0);
-                Box::leak(Box::new(status)) as &str
+                format!("Running ({:.0}%)", job.done_progress * 100.0)
             } else {
-                "Running"
+                "Running".to_string()
             };
 
             let status_style = if job.is_done {
@@ -129,15 +127,15 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
 
             // Highlight matching text if filter is active
             let sid_cell = if let Some(filter_str) = filter {
-                highlight_match(&job.sid, filter_str, Color::Cyan)
+                highlight_match(job.sid.clone(), filter_str, Color::Cyan)
             } else {
                 Cell::from(job.sid.clone())
             };
 
             let status_cell = if let Some(filter_str) = filter {
-                highlight_match(status_text, filter_str, Color::Cyan)
+                highlight_match(status_text.clone(), filter_str, Color::Cyan)
             } else {
-                Cell::from(status_text.to_string()).style(status_style)
+                Cell::from(status_text).style(status_style)
             };
 
             Row::new(vec![
@@ -224,14 +222,14 @@ fn compare_jobs(
 }
 
 /// Highlight matching text in the given string with the specified color.
-fn highlight_match<'a>(text: &'a str, pattern: &str, color: Color) -> Cell<'a> {
+fn highlight_match(text: String, pattern: &str, color: Color) -> Cell<'static> {
     let pattern_lower = pattern.to_lowercase();
     let text_lower = text.to_lowercase();
 
     if let Some(pos) = text_lower.find(&pattern_lower) {
-        let before = &text[..pos];
-        let matched = &text[pos..pos + pattern.len()];
-        let after = &text[pos + pattern.len()..];
+        let before = text[..pos].to_string();
+        let matched = text[pos..pos + pattern.len()].to_string();
+        let after = text[pos + pattern.len()..].to_string();
 
         let spans = vec![
             Span::raw(before),
@@ -240,6 +238,6 @@ fn highlight_match<'a>(text: &'a str, pattern: &str, color: Color) -> Cell<'a> {
         ];
         Cell::from(Line::from(spans))
     } else {
-        Cell::from(text.to_string())
+        Cell::from(text)
     }
 }

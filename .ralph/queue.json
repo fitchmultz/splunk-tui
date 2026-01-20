@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0010",
-      "status": "todo",
-      "title": "Remove Box::leak in jobs status rendering to avoid memory leaks",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ui",
-        "memory"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/screens/jobs.rs uses Box::leak to extend the lifetime of status text for table rows.",
-        "Box::leak leaks memory per render and can grow unbounded during UI usage."
-      ],
-      "plan": [
-        "Refactor status text construction to use owned Strings without leaking (e.g., build String and pass to Cell::from).",
-        "Ensure highlight logic still works with owned status strings.",
-        "Add a unit or snapshot test to validate the running status text formatting."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
-      "depends_on": []
-    },
-    {
       "id": "RQ-0021",
       "status": "todo",
       "title": "Clear loading state on cancel/delete failures in TUI",

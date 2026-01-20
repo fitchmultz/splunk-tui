@@ -7,8 +7,8 @@ expression: harness.render()
 └──────────────────────────────────────────────────────────┘
 ┌Search Jobs───────────────────────────────────────────────┐
 │SID ↑     Status          Duration   Results    Events    │
-│admin_sea Running (65%)   12.45s     450        2000      │
 │scheduler Done            5.23s      100        500       │
+│admin_sea Running (65%)   12.45s     450        2000      │
 │                                                          │
 │                                                          │
 │                                                          │
