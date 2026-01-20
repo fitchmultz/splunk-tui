@@ -2,6 +2,45 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0023",
+      "status": "done",
+      "title": "Align Makefile with required targets (generate + build install)",
+      "priority": "medium",
+      "tags": [
+        "workflow",
+        "makefile",
+        "contract"
+      ],
+      "scope": [
+        "Makefile"
+      ],
+      "evidence": [
+        "AGENTS.md requires Makefile targets including generate, but Makefile has no generate target.",
+        "AGENTS.md requires build to also install to ~/.local/bin when applicable, but Makefile build only runs cargo build --release.",
+        "AGENTS.md requires install to only fetch dependencies, not install binaries."
+      ],
+      "plan": [
+        "Add a generate target (no-op with a clear message if no codegen is needed yet).",
+        "Update build to install release binaries to ~/.local/bin or document why it cannot.",
+        "Update install to use cargo fetch instead of cargo install.",
+        "Ensure make ci includes generate when applicable and keep help output in sync."
+      ],
+      "notes": [
+        "Added generate target as no-op with message 'No code generation required for this project.'",
+        "Updated install target from cargo install to cargo fetch (fetch dependencies only).",
+        "Updated build target to install release binaries (splunk, splunk-tui) to ~/.local/bin after building.",
+        "Updated ci target to include install at start and generate after format: install format generate lint type-check test build",
+        "Updated help target to reflect new target descriptions and behaviors.",
+        "Added generate to .PHONY declaration.",
+        "All CI checks pass: make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T08:00:00Z",
+      "completed_at": "2026-01-20T08:00:00Z",
+      "depends_on": []
+    },
+    {
       "id": "RQ-0013",
       "status": "done",
       "title": "Move live tests into a workspace crate or add a runnable test harness",
