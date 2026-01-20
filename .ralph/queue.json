@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0028",
-      "status": "todo",
-      "title": "Implement automated log parsing error search",
-      "priority": "high",
-      "tags": [
-        "client",
-        "health",
-        "search"
-      ],
-      "scope": [
-        "crates/client/src/client.rs",
-        "crates/client/src/models.rs"
-      ],
-      "evidence": [
-        "Requested feature: Log source parsing checks.",
-        "Parsing errors are typically logged in _internal with specific components like TuningParser or DateParserVerbose."
-      ],
-      "plan": [
-        "Define a specialized search query for identifying parsing errors in _internal logs.",
-        "Implement a convenience method in SplunkClient to run this health search and parse results.",
-        "Add models to represent identified parsing issues (source, sourcetype, error message)."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0031",
       "status": "todo",
       "title": "Implement splunk health CLI command",

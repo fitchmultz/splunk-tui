@@ -8,8 +8,8 @@ use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
 use crate::models::{
-    ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicenseUsage, SearchJobResults,
-    SearchJobStatus, ServerInfo, SplunkHealth,
+    ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicenseUsage, LogParsingHealth,
+    SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
 };
 
 /// Builder for creating a new SplunkClient.
@@ -668,6 +668,45 @@ impl SplunkClient {
                 self.session_manager.clear_session();
                 let new_token = self.get_auth_token().await?;
                 endpoints::get_kvstore_status(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Check log parsing health by searching for parsing errors in internal logs.
+    ///
+    /// This method searches the `_internal` index for parsing-related errors
+    /// from specific components (TuningParser, DateParserVerbose, Parser) and
+    /// returns structured results about any issues found.
+    pub async fn check_log_parsing_health(&mut self) -> Result<LogParsingHealth> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::check_log_parsing_health(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(health) => Ok(health),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::check_log_parsing_health(
                     &self.http,
                     &self.base_url,
                     &new_token,

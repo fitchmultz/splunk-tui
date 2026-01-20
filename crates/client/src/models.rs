@@ -276,6 +276,29 @@ pub struct KvStoreStatus {
     pub replication_status: KvStoreReplicationStatus,
 }
 
+/// A single log parsing error entry.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct LogParsingError {
+    #[serde(rename = "_time")]
+    pub time: String,
+    pub source: String,
+    pub sourcetype: String,
+    pub message: String,
+    #[serde(default)]
+    pub log_level: String,
+    #[serde(default)]
+    pub component: String,
+}
+
+/// Health check result for log parsing errors.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct LogParsingHealth {
+    pub is_healthy: bool,
+    pub total_errors: usize,
+    pub errors: Vec<LogParsingError>,
+    pub time_window: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -303,5 +326,39 @@ mod tests {
         assert_eq!(status.sid, "test-sid");
         assert!(status.is_done);
         assert_eq!(status.result_count, 100);
+    }
+
+    #[test]
+    fn test_deserialize_log_parsing_error() {
+        let json = r#"{
+            "_time": "2025-01-20T10:30:00.000Z",
+            "source": "/opt/splunk/var/log/splunk/metrics.log",
+            "sourcetype": "splunkd",
+            "message": "Failed to parse timestamp",
+            "log_level": "ERROR",
+            "component": "DateParserVerbose"
+        }"#;
+        let error: LogParsingError = serde_json::from_str(json).unwrap();
+        assert_eq!(error.time, "2025-01-20T10:30:00.000Z");
+        assert_eq!(error.source, "/opt/splunk/var/log/splunk/metrics.log");
+        assert_eq!(error.sourcetype, "splunkd");
+        assert_eq!(error.message, "Failed to parse timestamp");
+        assert_eq!(error.log_level, "ERROR");
+        assert_eq!(error.component, "DateParserVerbose");
+    }
+
+    #[test]
+    fn test_deserialize_log_parsing_health() {
+        let json = r#"{
+            "is_healthy": false,
+            "total_errors": 5,
+            "errors": [],
+            "time_window": "-24h"
+        }"#;
+        let health: LogParsingHealth = serde_json::from_str(json).unwrap();
+        assert!(!health.is_healthy);
+        assert_eq!(health.total_errors, 5);
+        assert_eq!(health.time_window, "-24h");
+        assert!(health.errors.is_empty());
     }
 }
