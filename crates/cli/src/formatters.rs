@@ -37,7 +37,7 @@ pub trait Formatter {
     fn format_search_results(&self, results: &[serde_json::Value]) -> Result<String>;
 
     /// Format indexes list.
-    fn format_indexes(&self, indexes: &[Index]) -> Result<String>;
+    fn format_indexes(&self, indexes: &[Index], detailed: bool) -> Result<String>;
 
     /// Format jobs list.
     fn format_jobs(&self, jobs: &[SearchJobStatus]) -> Result<String>;
@@ -66,7 +66,8 @@ impl Formatter for JsonFormatter {
         Ok(serde_json::to_string_pretty(results)?)
     }
 
-    fn format_indexes(&self, indexes: &[Index]) -> Result<String> {
+    fn format_indexes(&self, indexes: &[Index], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full Index struct regardless of detailed flag
         Ok(serde_json::to_string_pretty(indexes)?)
     }
 
@@ -124,7 +125,7 @@ impl Formatter for TableFormatter {
         Ok(output)
     }
 
-    fn format_indexes(&self, indexes: &[Index]) -> Result<String> {
+    fn format_indexes(&self, indexes: &[Index], detailed: bool) -> Result<String> {
         let mut output = String::new();
 
         if indexes.is_empty() {
@@ -132,17 +133,43 @@ impl Formatter for TableFormatter {
         }
 
         // Header
-        output.push_str("Name\tSize (MB)\tEvents\tMax Size (MB)\n");
+        if detailed {
+            output.push_str("Name\tSize (MB)\tEvents\tMax Size (MB)\tRetention (s)\tHome Path\tCold Path\tThawed Path\n");
+        } else {
+            output.push_str("Name\tSize (MB)\tEvents\tMax Size (MB)\n");
+        }
 
         for index in indexes {
             let max_size = index
                 .max_total_data_size_mb
                 .map(|v: u64| v.to_string())
                 .unwrap_or_else(|| "N/A".to_string());
-            output.push_str(&format!(
-                "{}\t{}\t{}\t{}\n",
-                index.name, index.current_db_size_mb, index.total_event_count, max_size
-            ));
+
+            if detailed {
+                let retention = index
+                    .frozen_time_period_in_secs
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
+                let home_path = index.home_path.as_deref().unwrap_or("N/A");
+                let cold_path = index.cold_db_path.as_deref().unwrap_or("N/A");
+                let thawed_path = index.thawed_path.as_deref().unwrap_or("N/A");
+                output.push_str(&format!(
+                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+                    index.name,
+                    index.current_db_size_mb,
+                    index.total_event_count,
+                    max_size,
+                    retention,
+                    home_path,
+                    cold_path,
+                    thawed_path
+                ));
+            } else {
+                output.push_str(&format!(
+                    "{}\t{}\t{}\t{}\n",
+                    index.name, index.current_db_size_mb, index.total_event_count, max_size
+                ));
+            }
         }
 
         Ok(output)
@@ -248,7 +275,7 @@ impl Formatter for CsvFormatter {
         Ok(output)
     }
 
-    fn format_indexes(&self, indexes: &[Index]) -> Result<String> {
+    fn format_indexes(&self, indexes: &[Index], detailed: bool) -> Result<String> {
         let mut output = String::new();
 
         if indexes.is_empty() {
@@ -263,6 +290,16 @@ impl Formatter for CsvFormatter {
         output.push_str(&escape_csv("Events"));
         output.push(',');
         output.push_str(&escape_csv("MaxSizeMB"));
+        if detailed {
+            output.push(',');
+            output.push_str(&escape_csv("RetentionSecs"));
+            output.push(',');
+            output.push_str(&escape_csv("HomePath"));
+            output.push(',');
+            output.push_str(&escape_csv("ColdPath"));
+            output.push(',');
+            output.push_str(&escape_csv("ThawedPath"));
+        }
         output.push('\n');
 
         for index in indexes {
@@ -277,6 +314,23 @@ impl Formatter for CsvFormatter {
             output.push_str(&escape_csv(&index.total_event_count.to_string()));
             output.push(',');
             output.push_str(&escape_csv(&max_size));
+            if detailed {
+                let retention = index
+                    .frozen_time_period_in_secs
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
+                let home_path = index.home_path.as_deref().unwrap_or("N/A");
+                let cold_path = index.cold_db_path.as_deref().unwrap_or("N/A");
+                let thawed_path = index.thawed_path.as_deref().unwrap_or("N/A");
+                output.push(',');
+                output.push_str(&escape_csv(&retention));
+                output.push(',');
+                output.push_str(&escape_csv(home_path));
+                output.push(',');
+                output.push_str(&escape_csv(cold_path));
+                output.push(',');
+                output.push_str(&escape_csv(thawed_path));
+            }
             output.push('\n');
         }
 
@@ -368,7 +422,7 @@ impl Formatter for XmlFormatter {
         Ok(xml)
     }
 
-    fn format_indexes(&self, indexes: &[Index]) -> Result<String> {
+    fn format_indexes(&self, indexes: &[Index], detailed: bool) -> Result<String> {
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<indexes>\n");
 
         for index in indexes {
@@ -385,12 +439,32 @@ impl Formatter for XmlFormatter {
             if let Some(max_size) = index.max_total_data_size_mb {
                 xml.push_str(&format!("    <maxSizeMB>{}</maxSizeMB>\n", max_size));
             }
-            if let Some(frozen_time) = index.frozen_time_period_in_secs {
-                let days = frozen_time / 86400;
-                xml.push_str(&format!("    <retentionDays>{}</retentionDays>\n", days));
-            }
-            if let Some(home_path) = &index.home_path {
-                xml.push_str(&format!("    <path>{}</path>\n", escape_xml(home_path)));
+            // When detailed, include additional path and retention fields
+            if detailed {
+                if let Some(frozen_time) = index.frozen_time_period_in_secs {
+                    xml.push_str(&format!(
+                        "    <retentionSecs>{}</retentionSecs>\n",
+                        frozen_time
+                    ));
+                }
+                if let Some(home_path) = &index.home_path {
+                    xml.push_str(&format!(
+                        "    <homePath>{}</homePath>\n",
+                        escape_xml(home_path)
+                    ));
+                }
+                if let Some(cold_path) = &index.cold_db_path {
+                    xml.push_str(&format!(
+                        "    <coldPath>{}</coldPath>\n",
+                        escape_xml(cold_path)
+                    ));
+                }
+                if let Some(thawed_path) = &index.thawed_path {
+                    xml.push_str(&format!(
+                        "    <thawedPath>{}</thawedPath>\n",
+                        escape_xml(thawed_path)
+                    ));
+                }
             }
             xml.push_str("  </index>\n");
         }
@@ -676,5 +750,198 @@ mod tests {
         let xml_output = XmlFormatter.format_search_results(&results).unwrap();
         assert!(xml_output.contains("123"));
         assert!(xml_output.contains("false"));
+    }
+
+    #[test]
+    fn test_table_formatter_indexes_basic() {
+        let formatter = TableFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        let output = formatter.format_indexes(&indexes, false).unwrap();
+        assert!(output.contains("Name"));
+        assert!(output.contains("Size (MB)"));
+        assert!(output.contains("main"));
+        assert!(!output.contains("Home Path"));
+        assert!(!output.contains("Cold Path"));
+        assert!(!output.contains("Retention"));
+    }
+
+    #[test]
+    fn test_table_formatter_indexes_detailed() {
+        let formatter = TableFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        let output = formatter.format_indexes(&indexes, true).unwrap();
+        assert!(output.contains("Name"));
+        assert!(output.contains("Size (MB)"));
+        assert!(output.contains("main"));
+        assert!(output.contains("Home Path"));
+        assert!(output.contains("Cold Path"));
+        assert!(output.contains("Thawed Path"));
+        assert!(output.contains("Retention (s)"));
+        assert!(output.contains("2592000"));
+        assert!(output.contains("/opt/splunk/var/lib/splunk/main/db"));
+    }
+
+    #[test]
+    fn test_csv_formatter_indexes_basic() {
+        let formatter = CsvFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        let output = formatter.format_indexes(&indexes, false).unwrap();
+        assert!(output.contains("Name,SizeMB,Events,MaxSizeMB"));
+        assert!(!output.contains("HomePath"));
+        assert!(!output.contains("ColdPath"));
+    }
+
+    #[test]
+    fn test_csv_formatter_indexes_detailed() {
+        let formatter = CsvFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        let output = formatter.format_indexes(&indexes, true).unwrap();
+        assert!(
+            output.contains(
+                "Name,SizeMB,Events,MaxSizeMB,RetentionSecs,HomePath,ColdPath,ThawedPath"
+            )
+        );
+        assert!(output.contains("2592000"));
+        assert!(output.contains("/opt/splunk/var/lib/splunk/main/db"));
+    }
+
+    #[test]
+    fn test_xml_formatter_indexes_basic() {
+        let formatter = XmlFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        let output = formatter.format_indexes(&indexes, false).unwrap();
+        assert!(output.contains("<?xml"));
+        assert!(output.contains("<indexes>"));
+        assert!(output.contains("<name>main</name>"));
+        assert!(output.contains("<sizeMB>100</sizeMB>"));
+        assert!(output.contains("<maxSizeMB>500</maxSizeMB>"));
+        // Detailed fields should NOT be present
+        assert!(!output.contains("<homePath>"));
+        assert!(!output.contains("<coldPath>"));
+        assert!(!output.contains("<retentionSecs>"));
+    }
+
+    #[test]
+    fn test_xml_formatter_indexes_detailed() {
+        let formatter = XmlFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        let output = formatter.format_indexes(&indexes, true).unwrap();
+        assert!(output.contains("<?xml"));
+        assert!(output.contains("<indexes>"));
+        assert!(output.contains("<name>main</name>"));
+        assert!(output.contains("<sizeMB>100</sizeMB>"));
+        // Detailed fields SHOULD be present
+        assert!(output.contains("<homePath>/opt/splunk/var/lib/splunk/main/db</homePath>"));
+        assert!(output.contains("<coldPath>/opt/splunk/var/lib/splunk/main/colddb</coldPath>"));
+        assert!(
+            output.contains("<thawedPath>/opt/splunk/var/lib/splunk/main/thaweddb</thawedPath>")
+        );
+        assert!(output.contains("<retentionSecs>2592000</retentionSecs>"));
+    }
+
+    #[test]
+    fn test_json_formatter_indexes_always_detailed() {
+        let formatter = JsonFormatter;
+        let indexes = vec![Index {
+            name: "main".to_string(),
+            max_total_data_size_mb: Some(500),
+            current_db_size_mb: 100,
+            total_event_count: 1000,
+            max_warm_db_count: Some(300),
+            max_hot_buckets: Some(10),
+            frozen_time_period_in_secs: Some(2592000),
+            cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
+            home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
+            thawed_path: Some("/opt/splunk/var/lib/splunk/main/thaweddb".to_string()),
+            cold_to_frozen_dir: None,
+            primary_index: Some(true),
+        }];
+        // JSON always outputs all fields regardless of detailed flag
+        let output_basic = formatter.format_indexes(&indexes, false).unwrap();
+        let output_detailed = formatter.format_indexes(&indexes, true).unwrap();
+        // Check that the JSON contains the expected fields (using serde rename names)
+        assert!(output_basic.contains("\"name\""));
+        assert!(output_basic.contains("\"homePath\""));
+        assert!(output_basic.contains("\"coldDBPath\""));
+        // Both should be identical since JSON ignores the detailed flag
+        assert_eq!(output_basic, output_detailed);
     }
 }

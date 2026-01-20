@@ -685,6 +685,45 @@
       "updated_at": "2026-01-20T07:00:00Z",
       "completed_at": "2026-01-20T07:00:00Z",
       "depends_on": []
+    },
+    {
+      "id": "RQ-0015",
+      "status": "done",
+      "title": "Implement indexes --detailed flag or remove it",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "indexes",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/indexes.rs",
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/indexes.rs takes a _detailed flag but does not use it.",
+        "CLI exposes --detailed in help, but behavior is identical to non-detailed output."
+      ],
+      "plan": [
+        "Decide on detailed output fields (paths, retention, size limits) and implement them in the formatters.",
+        "Wire the detailed flag through to the formatter output.",
+        "Update CLI tests/help to reflect the detailed behavior."
+      ],
+      "notes": [
+        "Updated Formatter trait format_indexes signature to accept detailed: bool parameter.",
+        "Updated JsonFormatter::format_indexes to ignore detailed flag (always outputs full Index struct).",
+        "Updated TableFormatter::format_indexes to conditionally include Retention (s), Home Path, Cold Path, Thawed Path columns when detailed=true.",
+        "Updated CsvFormatter::format_indexes to conditionally include RetentionSecs, HomePath, ColdPath, ThawedPath columns when detailed=true.",
+        "Updated XmlFormatter::format_indexes to conditionally include retentionSecs, homePath, coldPath, thawedPath elements when detailed=true.",
+        "Updated indexes.rs to rename _detailed to detailed and pass it through to formatter.format_indexes().",
+        "Added 7 new tests: test_table_formatter_indexes_basic, test_table_formatter_indexes_detailed, test_csv_formatter_indexes_basic, test_csv_formatter_indexes_detailed, test_xml_formatter_indexes_basic, test_xml_formatter_indexes_detailed, test_json_formatter_indexes_always_detailed.",
+        "All 19 CLI formatter tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2025-01-19T20:30:00Z",
+      "completed_at": "2025-01-19T20:30:00Z",
+      "depends_on": []
     }
   ]
 }

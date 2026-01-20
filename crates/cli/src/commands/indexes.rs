@@ -8,7 +8,7 @@ use crate::formatters::{OutputFormat, get_formatter};
 
 pub async fn run(
     config: splunk_config::Config,
-    _detailed: bool,
+    detailed: bool,
     count: usize,
     output_format: &str,
 ) -> Result<()> {
@@ -35,7 +35,7 @@ pub async fn run(
     let formatter = get_formatter(format);
 
     // Format and print indexes
-    let output = formatter.format_indexes(&indexes)?;
+    let output = formatter.format_indexes(&indexes, detailed)?;
     print!("{}", output);
 
     Ok(())
