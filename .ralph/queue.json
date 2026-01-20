@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "RQ-0001",
+      "status": "todo",
+      "title": "Refactor popup UI to Builder pattern and add structured logging",
+      "priority": "high",
+      "tags": [
+        "ui",
+        "refactor",
+        "logging",
+        "foundation"
+      ],
+      "scope": [
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "Plan FLIGHT 1: Foundation Refactor (Popup Builder & Observability)",
+        "Objective: Execute architectural evolution to establish UI robustness"
+      ],
+      "plan": [
+        "Modify crates/tui/src/ui/popup.rs: Implement PopupBuilder with fluent API (title, content, style, build). Replace static helper functions with flexible render method accepting Popup state.",
+        "Modify crates/tui/src/app.rs: Define const values for UI layout (header height, footer height). Update Popup enum to use richer structure (Confirm {title, message, action}, Info {title, message}, Help) and integrate with Builder.",
+        "Modify crates/tui/src/main.rs: Initialize tracing with subscriber that logs to file (tui interferes with stdout). Add info! logs on Action receipt for observability.",
+        "Modify crates/tui/tests/snapshot_tests.rs: Update popup test fixtures to use new Builder syntax. Remove unused import: helpers::*."
+      ],
+      "notes": [
+        "Breaking change: Popup enum structure will completely change.",
+        "Remove hardcoded layout constraints, enforce tracing instead of println! debugging."
+      ],
+      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "created_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2025-01-19T00:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0002",
+      "status": "todo",
+      "title": "Implement Job Inspection details view screen",
+      "priority": "high",
+      "tags": [
+        "ui",
+        "feature",
+        "inspection",
+        "state"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/job_details.rs",
+        "crates/tui/src/ui/screens/mod.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/ui/screens/jobs.rs"
+      ],
+      "evidence": [
+        "Plan FLIGHT 2: Job Inspection (Details View)",
+        "Unlock data depth with detailed job inspection capability"
+      ],
+      "plan": [
+        "Create crates/tui/src/ui/screens/job_details.rs: Implement render_details(f: &mut Frame, job: &SearchJobStatus, area: Rect). Use List or Table to show all fields of SearchJobStatus.",
+        "Modify crates/tui/src/ui/screens/mod.rs: Export new job_details module.",
+        "Modify crates/tui/src/action.rs: Add InspectJob and ExitScreen actions. Remove dead_code warnings for SearchInput and ToggleSortDirection by implementing usage or removing unused variants.",
+        "Modify crates/tui/src/app.rs: Add JobDetails variant to CurrentScreen enum. Add selected_job: Option<SearchJobStatus> to App struct. In render(), route CurrentScreen::JobDetails to screens::job_details::render_details.",
+        "Modify crates/tui/src/ui/screens/jobs.rs: In handle_input, map Enter key to Action::InspectJob."
+      ],
+      "notes": [
+        "Depends on FLIGHT 1 completion for app.rs structure.",
+        "Extends screen state machine."
+      ],
+      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "created_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2025-01-19T00:00:00Z",
+      "depends_on": [
+        "RQ-0001"
+      ]
+    },
+    {
+      "id": "RQ-0003",
+      "status": "todo",
+      "title": "Implement configuration persistence with directories and TOML",
+      "priority": "medium",
+      "tags": [
+        "config",
+        "persistence",
+        "cross-platform",
+        "serialization"
+      ],
+      "scope": [
+        "crates/config/Cargo.toml",
+        "crates/config/src/persistence.rs",
+        "crates/config/src/lib.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "Plan FLIGHT 3: Configuration Persistence",
+        "Establish permanence with cross-platform config storage"
+      ],
+      "plan": [
+        "Modify crates/config/Cargo.toml: Add directories = \"6.0\" for cross-platform config paths. Promote toml from dev-dependencies to dependencies (version 0.8).",
+        "Create crates/config/src/persistence.rs: Implement PersistedState struct (auto_refresh: bool, sort_column: String, sort_direction: String, last_search_query: Option<String>). Implement ConfigManager with load_or_default() and save() methods.",
+        "Modify crates/config/src/lib.rs: Export persistence types (PersistedState, ConfigManager).",
+        "Modify crates/tui/src/app.rs: Add UserConfig struct to state. Initialize App state (auto_refresh, sort) from loaded config.",
+        "Modify crates/tui/src/main.rs: Load config on startup via ConfigManager. Call ConfigManager::save on Action::Quit to persist state."
+      ],
+      "notes": [
+        "Ordnance: directories crate for cross-platform paths, TOML for serialization.",
+        "Breaking: App::new() signature may require config injection."
+      ],
+      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "created_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2025-01-19T00:00:00Z",
+      "depends_on": [
+        "RQ-0002"
+      ]
+    },
+    {
+      "id": "RQ-0004",
+      "status": "todo",
+      "title": "Implement async toast notifications with UUID tracking",
+      "priority": "medium",
+      "tags": [
+        "ui",
+        "async",
+        "notifications",
+        "feedback"
+      ],
+      "scope": [
+        "crates/tui/Cargo.toml",
+        "crates/tui/src/ui/widgets/toast.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "Plan FLIGHT 4: Async Orchestration & Feedback",
+        "Refine user feedback with async notification system"
+      ],
+      "plan": [
+        "Modify crates/tui/Cargo.toml: Add uuid = { version = \"1.12\", features = [\"v4\"] } for unique async operation tracking.",
+        "Create crates/tui/src/ui/widgets/toast.rs: Implement ToastLevel enum (Info, Success, Error). Implement Toast struct (id: Uuid, message: String, level: ToastLevel, created_at: Instant, ttl: Duration). Implement rendering for toast stack (bottom-right overlay).",
+        "Modify crates/tui/src/action.rs: Add Notify(String, ToastLevel) action variant.",
+        "Modify crates/tui/src/app.rs: Add toasts: Vec<Toast> to App. Add update logic to prune expired toasts on handle_tick.",
+        "Modify crates/tui/src/main.rs: Update handle_side_effects. Instead of setting error: Option<String> directly, emit Action::Notify for async feedback."
+      ],
+      "notes": [
+        "Ordnance: uuid crate for unique operation tracking.",
+        "Replaces direct error state with event-driven notification system."
+      ],
+      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "created_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2025-01-19T00:00:00Z",
+      "depends_on": [
+        "RQ-0003"
+      ]
+    }
+  ]
+}
