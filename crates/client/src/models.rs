@@ -154,7 +154,7 @@ pub struct IndexEntry {
 }
 
 /// Cluster information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ClusterInfo {
     pub id: String,
     pub label: Option<String>,
@@ -166,7 +166,7 @@ pub struct ClusterInfo {
 }
 
 /// Cluster peer information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ClusterPeer {
     pub id: String,
     pub label: Option<String>,
@@ -192,7 +192,7 @@ pub struct AuthResponse {
 }
 
 /// Server information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServerInfo {
     #[serde(rename = "serverName")]
     pub server_name: String,
@@ -206,7 +206,7 @@ pub struct ServerInfo {
 }
 
 /// Health feature information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HealthFeature {
     pub health: String,
     pub status: String,
@@ -215,14 +215,14 @@ pub struct HealthFeature {
 }
 
 /// System-wide health information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SplunkHealth {
     pub health: String,
     pub features: HashMap<String, HealthFeature>,
 }
 
 /// License usage information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicenseUsage {
     pub quota: u64,
     pub used_bytes: u64,
@@ -231,7 +231,7 @@ pub struct LicenseUsage {
 }
 
 /// License pool information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicensePool {
     pub quota: u64,
     pub used_bytes: u64,
@@ -240,7 +240,7 @@ pub struct LicensePool {
 }
 
 /// License stack information.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicenseStack {
     pub quota: u64,
     pub type_name: String,

@@ -4,7 +4,10 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::{ClusterPeer, Index, SearchJobStatus};
+use splunk_client::{
+    ClusterPeer, Index, KvStoreStatus, LicenseUsage, LogParsingHealth, SearchJobStatus, ServerInfo,
+    SplunkHealth,
+};
 
 /// Supported output formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +51,24 @@ pub trait Formatter {
         cluster_info: &ClusterInfoOutput,
         detailed: bool,
     ) -> Result<String>;
+
+    /// Format health check results.
+    fn format_health(&self, health: &HealthCheckOutput) -> Result<String>;
+}
+
+/// Health check output aggregation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthCheckOutput {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub server_info: Option<ServerInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub splunkd_health: Option<SplunkHealth>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub license_usage: Option<Vec<LicenseUsage>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kvstore_status: Option<KvStoreStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_parsing_health: Option<LogParsingHealth>,
 }
 
 /// Cluster peer output structure.
@@ -115,6 +136,10 @@ impl Formatter for JsonFormatter {
         _detailed: bool,
     ) -> Result<String> {
         Ok(serde_json::to_string_pretty(cluster_info)?)
+    }
+
+    fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(health)?)
     }
 }
 
@@ -284,6 +309,113 @@ impl Formatter for TableFormatter {
                 }
                 if peer.is_captain {
                     output.push_str("    Captain: Yes\n");
+                }
+            }
+        }
+
+        Ok(output)
+    }
+
+    fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
+        let mut output = String::new();
+
+        if let Some(info) = &health.server_info {
+            output.push_str("--- Server Info ---\n");
+            output.push_str(&format!("Server Name: {}\n", info.server_name));
+            output.push_str(&format!("Version: {}\n", info.version));
+            output.push_str(&format!("Build: {}\n", info.build));
+            output.push_str(&format!(
+                "OS: {}\n",
+                info.os_name.as_deref().unwrap_or("N/A")
+            ));
+            output.push_str(&format!("Roles: {}\n", info.server_roles.join(", ")));
+            output.push('\n');
+        }
+
+        if let Some(sh) = &health.splunkd_health {
+            output.push_str("--- Splunkd Health ---\n");
+            output.push_str(&format!("Overall Status: {}\n", sh.health));
+            output.push_str("Features:\n");
+            let mut features: Vec<_> = sh.features.iter().collect();
+            features.sort_by_key(|(name, _)| *name);
+            for (name, feature) in features {
+                output.push_str(&format!(
+                    "  {}: {} (Status: {})\n",
+                    name, feature.health, feature.status
+                ));
+                for reason in &feature.reasons {
+                    output.push_str(&format!("    Reason: {}\n", reason));
+                }
+            }
+            output.push('\n');
+        }
+
+        if let Some(usage) = &health.license_usage {
+            output.push_str("--- License Usage ---\n");
+            if usage.is_empty() {
+                output.push_str("No license usage data available.\n");
+            } else {
+                for (i, u) in usage.iter().enumerate() {
+                    output.push_str(&format!(
+                        "Stack {}:\n",
+                        u.stack_id.as_deref().unwrap_or("N/A")
+                    ));
+                    output.push_str(&format!(
+                        "  Used: {} MB / Quota: {} MB\n",
+                        u.used_bytes / 1024 / 1024,
+                        u.quota / 1024 / 1024
+                    ));
+                    if let Some(slaves) = &u.slaves_usage_bytes
+                        && !slaves.is_empty()
+                    {
+                        output.push_str("  Slave Usage:\n");
+                        let mut slave_list: Vec<_> = slaves.iter().collect();
+                        slave_list.sort_by_key(|(name, _)| *name);
+                        for (name, bytes) in slave_list {
+                            output.push_str(&format!("    {}: {} MB\n", name, bytes / 1024 / 1024));
+                        }
+                    }
+                    if i < usage.len() - 1 {
+                        output.push('\n');
+                    }
+                }
+            }
+            output.push('\n');
+        }
+
+        if let Some(kv) = &health.kvstore_status {
+            output.push_str("--- KVStore Status ---\n");
+            output.push_str(&format!(
+                "Member: {}:{} ({})\n",
+                kv.current_member.host, kv.current_member.port, kv.current_member.status
+            ));
+            output.push_str(&format!("Replica Set: {}\n", kv.current_member.replica_set));
+            output.push_str(&format!(
+                "Oplog: Size {} MB / Used {:.2}%\n",
+                kv.replication_status.oplog_size, kv.replication_status.oplog_used
+            ));
+            output.push('\n');
+        }
+
+        if let Some(lp) = &health.log_parsing_health {
+            output.push_str("--- Log Parsing Health ---\n");
+            output.push_str(&format!(
+                "Status: {}\n",
+                if lp.is_healthy {
+                    "Healthy"
+                } else {
+                    "Unhealthy"
+                }
+            ));
+            output.push_str(&format!("Total Errors: {}\n", lp.total_errors));
+            output.push_str(&format!("Time Window: {}\n", lp.time_window));
+            if !lp.errors.is_empty() {
+                output.push_str("Recent Errors:\n");
+                for err in &lp.errors {
+                    output.push_str(&format!(
+                        "  [{}] {} ({}): {}\n",
+                        err.time, err.sourcetype, err.log_level, err.message
+                    ));
                 }
             }
         }
@@ -488,6 +620,84 @@ impl Formatter for CsvFormatter {
 
         Ok(output)
     }
+
+    fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        let header = [
+            "server_name",
+            "version",
+            "health_status",
+            "license_used_mb",
+            "license_quota_mb",
+            "kvstore_status",
+            "log_parsing_healthy",
+            "log_parsing_errors",
+        ];
+        let escaped_header: Vec<String> = header.iter().map(|h| escape_csv(h)).collect();
+        output.push_str(&escaped_header.join(","));
+        output.push('\n');
+
+        // Data row
+        let server_name = health
+            .server_info
+            .as_ref()
+            .map(|i| i.server_name.as_str())
+            .unwrap_or("N/A");
+        let version = health
+            .server_info
+            .as_ref()
+            .map(|i| i.version.as_str())
+            .unwrap_or("N/A");
+        let health_status = health
+            .splunkd_health
+            .as_ref()
+            .map(|h| h.health.as_str())
+            .unwrap_or("N/A");
+
+        let (used, quota) = if let Some(usage) = &health.license_usage {
+            let used: u64 = usage.iter().map(|u| u.used_bytes).sum();
+            let quota: u64 = usage.iter().map(|u| u.quota).sum();
+            (
+                (used / 1024 / 1024).to_string(),
+                (quota / 1024 / 1024).to_string(),
+            )
+        } else {
+            ("N/A".to_string(), "N/A".to_string())
+        };
+
+        let kv_status = health
+            .kvstore_status
+            .as_ref()
+            .map(|kv| kv.current_member.status.as_str())
+            .unwrap_or("N/A");
+        let parsing_healthy = health
+            .log_parsing_health
+            .as_ref()
+            .map(|lp| if lp.is_healthy { "Yes" } else { "No" })
+            .unwrap_or("N/A");
+        let parsing_errors = health
+            .log_parsing_health
+            .as_ref()
+            .map(|lp| lp.total_errors.to_string())
+            .unwrap_or_else(|| "N/A".to_string());
+
+        let row = [
+            escape_csv(server_name),
+            escape_csv(version),
+            escape_csv(health_status),
+            escape_csv(&used),
+            escape_csv(&quota),
+            escape_csv(kv_status),
+            escape_csv(parsing_healthy),
+            escape_csv(&parsing_errors),
+        ];
+        output.push_str(&row.join(","));
+        output.push('\n');
+
+        Ok(output)
+    }
 }
 
 /// XML formatter.
@@ -658,6 +868,157 @@ impl Formatter for XmlFormatter {
         }
 
         xml.push_str("</cluster>");
+        Ok(xml)
+    }
+
+    fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<health>\n");
+
+        if let Some(info) = &health.server_info {
+            xml.push_str("  <serverInfo>\n");
+            xml.push_str(&format!(
+                "    <serverName>{}</serverName>\n",
+                escape_xml(&info.server_name)
+            ));
+            xml.push_str(&format!(
+                "    <version>{}</version>\n",
+                escape_xml(&info.version)
+            ));
+            xml.push_str(&format!("    <build>{}</build>\n", escape_xml(&info.build)));
+            if let Some(os) = &info.os_name {
+                xml.push_str(&format!("    <osName>{}</osName>\n", escape_xml(os)));
+            }
+            xml.push_str("    <roles>\n");
+            for role in &info.server_roles {
+                xml.push_str(&format!("      <role>{}</role>\n", escape_xml(role)));
+            }
+            xml.push_str("    </roles>\n");
+            xml.push_str("  </serverInfo>\n");
+        }
+
+        if let Some(sh) = &health.splunkd_health {
+            xml.push_str("  <splunkdHealth>\n");
+            xml.push_str(&format!(
+                "    <status>{}</status>\n",
+                escape_xml(&sh.health)
+            ));
+            xml.push_str("    <features>\n");
+            for (name, feature) in &sh.features {
+                xml.push_str(&format!("      <feature name=\"{}\">\n", escape_xml(name)));
+                xml.push_str(&format!(
+                    "        <health>{}</health>\n",
+                    escape_xml(&feature.health)
+                ));
+                xml.push_str(&format!(
+                    "        <status>{}</status>\n",
+                    escape_xml(&feature.status)
+                ));
+                xml.push_str("        <reasons>\n");
+                for reason in &feature.reasons {
+                    xml.push_str(&format!(
+                        "          <reason>{}</reason>\n",
+                        escape_xml(reason)
+                    ));
+                }
+                xml.push_str("        </reasons>\n");
+                xml.push_str("      </feature>\n");
+            }
+            xml.push_str("    </features>\n");
+            xml.push_str("  </splunkdHealth>\n");
+        }
+
+        if let Some(usage) = &health.license_usage {
+            xml.push_str("  <licenseUsage>\n");
+            for u in usage {
+                xml.push_str("    <stack>\n");
+                if let Some(stack_id) = &u.stack_id {
+                    xml.push_str(&format!(
+                        "      <stackId>{}</stackId>\n",
+                        escape_xml(stack_id)
+                    ));
+                }
+                xml.push_str(&format!("      <usedBytes>{}</usedBytes>\n", u.used_bytes));
+                xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", u.quota));
+                if let Some(slaves) = &u.slaves_usage_bytes {
+                    xml.push_str("      <slaves>\n");
+                    for (name, bytes) in slaves {
+                        xml.push_str(&format!(
+                            "        <slave name=\"{}\">{}</slave>\n",
+                            escape_xml(name),
+                            bytes
+                        ));
+                    }
+                    xml.push_str("      </slaves>\n");
+                }
+                xml.push_str("    </stack>\n");
+            }
+            xml.push_str("  </licenseUsage>\n");
+        }
+
+        if let Some(kv) = &health.kvstore_status {
+            xml.push_str("  <kvstoreStatus>\n");
+            xml.push_str("    <currentMember>\n");
+            xml.push_str(&format!(
+                "      <host>{}</host>\n",
+                escape_xml(&kv.current_member.host)
+            ));
+            xml.push_str(&format!("      <port>{}</port>\n", kv.current_member.port));
+            xml.push_str(&format!(
+                "      <status>{}</status>\n",
+                escape_xml(&kv.current_member.status)
+            ));
+            xml.push_str(&format!(
+                "      <replicaSet>{}</replicaSet>\n",
+                escape_xml(&kv.current_member.replica_set)
+            ));
+            xml.push_str("    </currentMember>\n");
+            xml.push_str("    <replicationStatus>\n");
+            xml.push_str(&format!(
+                "      <oplogSize>{}</oplogSize>\n",
+                kv.replication_status.oplog_size
+            ));
+            xml.push_str(&format!(
+                "      <oplogUsed>{:.2}</oplogUsed>\n",
+                kv.replication_status.oplog_used
+            ));
+            xml.push_str("    </replicationStatus>\n");
+            xml.push_str("  </kvstoreStatus>\n");
+        }
+
+        if let Some(lp) = &health.log_parsing_health {
+            xml.push_str("  <logParsingHealth>\n");
+            xml.push_str(&format!("    <isHealthy>{}</isHealthy>\n", lp.is_healthy));
+            xml.push_str(&format!(
+                "    <totalErrors>{}</totalErrors>\n",
+                lp.total_errors
+            ));
+            xml.push_str(&format!(
+                "    <timeWindow>{}</timeWindow>\n",
+                escape_xml(&lp.time_window)
+            ));
+            xml.push_str("    <errors>\n");
+            for err in &lp.errors {
+                xml.push_str("      <error>\n");
+                xml.push_str(&format!("        <time>{}</time>\n", escape_xml(&err.time)));
+                xml.push_str(&format!(
+                    "        <sourcetype>{}</sourcetype>\n",
+                    escape_xml(&err.sourcetype)
+                ));
+                xml.push_str(&format!(
+                    "        <logLevel>{}</logLevel>\n",
+                    escape_xml(&err.log_level)
+                ));
+                xml.push_str(&format!(
+                    "        <message>{}</message>\n",
+                    escape_xml(&err.message)
+                ));
+                xml.push_str("      </error>\n");
+            }
+            xml.push_str("    </errors>\n");
+            xml.push_str("  </logParsingHealth>\n");
+        }
+
+        xml.push_str("</health>");
         Ok(xml)
     }
 }

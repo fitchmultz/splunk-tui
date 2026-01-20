@@ -105,6 +105,9 @@ enum Commands {
         #[arg(short, long, default_value = "50")]
         count: usize,
     },
+
+    /// Perform a comprehensive system health check
+    Health,
 }
 
 #[tokio::main]
@@ -175,6 +178,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
             count,
         } => {
             commands::jobs::run(config, list, cancel, delete, count, &cli.output).await?;
+        }
+        Commands::Health => {
+            commands::health::run(config, &cli.output).await?;
         }
     }
 

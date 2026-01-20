@@ -1143,6 +1143,49 @@
             "updated_at": "2026-01-20T23:00:00Z",
             "completed_at": "2026-01-20T23:00:00Z",
             "depends_on": []
+          },
+          {
+            "id": "RQ-0031",
+            "status": "done",
+            "title": "Implement splunk health CLI command",
+            "priority": "medium",
+            "tags": [
+              "cli",
+              "health"
+            ],
+            "scope": [
+              "crates/cli/src/main.rs",
+              "crates/cli/src/commands/health.rs"
+            ],
+            "evidence": [
+              "Requested feature: Automated health checks should be available via CLI for automation.",
+              "Existing CLI structure supports subcommands for specific resources."
+            ],
+            "plan": [
+              "Add health subcommand to crates/cli/src/main.rs.",
+              "Implement crates/cli/src/commands/health.rs to aggregate and display health data in various formats (JSON, Table).",
+              "Ensure it handles both standalone and distributed environments gracefully."
+            ],
+            "notes": [
+              "Added `splunk health` CLI command that aggregates data from server info, system health, license usage, KVStore status, and log parsing checks.",
+              "Implemented multi-format output (Table, JSON, CSV, XML) for the health command in `crates/cli/src/formatters.rs`.",
+              "Updated client models and crate exports to support health data serialization.",
+              "Added integration tests for `splunk health` verifying help output and connectivity behavior.",
+              "Updated Makefile `test-integration` to include all CLI integration tests.",
+              "Verified all tests and linting pass with `make ci`."
+            ],
+            "request": "scan finding",
+            "created_at": "2026-01-20T17:15:00Z",
+            "updated_at": "2026-01-20T21:15:00Z",
+            "completed_at": "2026-01-20T21:15:00Z",
+            "depends_on": [
+              "RQ-0024",
+              "RQ-0025",
+              "RQ-0026",
+              "RQ-0027",
+              "RQ-0028"
+            ],
+            "custom_fields": {}
           }
         ]
       }
