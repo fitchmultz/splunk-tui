@@ -8,6 +8,7 @@ A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployme
 - **Search Management**: Create, execute, and monitor search jobs
 - **Index Operations**: List and inspect indexes with detailed information
 - **Cluster Support**: View cluster status and peer information
+- **Health Monitoring**: Comprehensive health checks including server info, splunkd health, license usage, KVStore status, and log parsing health
 - **Interactive TUI**: Terminal user interface with tab navigation
 - **Secure**: Credentials handled with the `secrecy` crate
 
@@ -112,13 +113,19 @@ splunk-tui
 - `1` - Switch to Search screen
 - `2` - Switch to Indexes screen
 - `3` - Switch to Cluster screen
+- `4` - Switch to Jobs screen
+- `5` - Switch to Health screen
 - `q` - Quit
+- `r` - Refresh current screen data
+- `?` - Show help popup
 
 ### Screens
 
 **Search**: Enter SPL queries and view results
 **Indexes**: Browse and inspect indexes
 **Cluster**: View cluster status and peer information
+**Jobs**: Monitor and manage search jobs (cancel, delete, inspect)
+**Health**: Comprehensive health monitoring including server info, splunkd health, license usage, KVStore status, and log parsing health
 
 ## Development
 

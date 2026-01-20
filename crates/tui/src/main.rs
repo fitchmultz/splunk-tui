@@ -22,7 +22,7 @@ use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use app::App;
-use splunk_client::SplunkClient;
+use splunk_client::{SplunkClient, models::HealthCheckOutput};
 use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager};
 
 /// Shared client wrapper for async tasks.
@@ -342,6 +342,74 @@ async fn handle_side_effects(
                         .ok();
                         tx.send(Action::Loading(false)).ok();
                     }
+                }
+            });
+        }
+        Action::LoadHealth => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+
+                // Construct the HealthCheckOutput
+                let mut health_output = HealthCheckOutput {
+                    server_info: None,
+                    splunkd_health: None,
+                    license_usage: None,
+                    kvstore_status: None,
+                    log_parsing_health: None,
+                };
+
+                let mut has_error = false;
+                let mut error_messages = Vec::new();
+
+                // Collect health info sequentially (due to &mut self requirement)
+                match c.get_server_info().await {
+                    Ok(info) => health_output.server_info = Some(info),
+                    Err(e) => {
+                        has_error = true;
+                        error_messages.push(format!("Server info: {}", e));
+                    }
+                }
+
+                match c.get_health().await {
+                    Ok(health) => health_output.splunkd_health = Some(health),
+                    Err(e) => {
+                        has_error = true;
+                        error_messages.push(format!("Splunkd health: {}", e));
+                    }
+                }
+
+                match c.get_license_usage().await {
+                    Ok(license) => health_output.license_usage = Some(license),
+                    Err(e) => {
+                        has_error = true;
+                        error_messages.push(format!("License usage: {}", e));
+                    }
+                }
+
+                match c.get_kvstore_status().await {
+                    Ok(kvstore) => health_output.kvstore_status = Some(kvstore),
+                    Err(e) => {
+                        has_error = true;
+                        error_messages.push(format!("KVStore status: {}", e));
+                    }
+                }
+
+                match c.check_log_parsing_health().await {
+                    Ok(log_parsing) => health_output.log_parsing_health = Some(log_parsing),
+                    Err(e) => {
+                        has_error = true;
+                        error_messages.push(format!("Log parsing health: {}", e));
+                    }
+                }
+
+                if has_error {
+                    let combined_error = error_messages.join("; ");
+                    tx.send(Action::HealthLoaded(Box::new(Err(combined_error))))
+                        .ok();
+                } else {
+                    tx.send(Action::HealthLoaded(Box::new(Ok(health_output))))
+                        .ok();
                 }
             });
         }

@@ -6,7 +6,7 @@
 use crate::action::Action;
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
-use crate::ui::screens::{cluster, indexes, search};
+use crate::ui::screens::{cluster, health, indexes, search};
 use crossterm::event::KeyEvent;
 use ratatui::{
     Frame,
@@ -16,7 +16,7 @@ use ratatui::{
     widgets::{Block, Borders, ListState, Paragraph, TableState},
 };
 use serde_json::Value;
-use splunk_client::models::{ClusterInfo, Index, SearchJobStatus};
+use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SearchJobStatus};
 use splunk_config::PersistedState;
 
 /// Layout constants for UI components.
@@ -31,6 +31,7 @@ pub enum CurrentScreen {
     Cluster,
     Jobs,
     JobInspect,
+    Health,
 }
 
 /// Sort column for jobs table.
@@ -146,6 +147,7 @@ pub struct App {
     pub jobs: Option<Vec<SearchJobStatus>>,
     pub jobs_state: TableState,
     pub cluster_info: Option<ClusterInfo>,
+    pub health_info: Option<HealthCheckOutput>,
 
     // UI State
     pub loading: bool,
@@ -201,6 +203,7 @@ impl App {
             jobs: None,
             jobs_state,
             cluster_info: None,
+            health_info: None,
             loading: false,
             progress: 0.0,
             toasts: Vec::new(),
@@ -244,6 +247,7 @@ impl App {
             CurrentScreen::Indexes => self.handle_indexes_input(key),
             CurrentScreen::Cluster => self.handle_cluster_input(key),
             CurrentScreen::JobInspect => self.handle_job_inspect_input(key),
+            CurrentScreen::Health => self.handle_health_input(key),
         }
     }
 
@@ -322,6 +326,10 @@ impl App {
             KeyCode::Char('4') => {
                 self.current_screen = CurrentScreen::Jobs;
                 Some(Action::LoadJobs)
+            }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
             }
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -409,6 +417,10 @@ impl App {
                 self.current_screen = CurrentScreen::Jobs;
                 Some(Action::LoadJobs)
             }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
             KeyCode::Char('r') => Some(Action::LoadJobs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -463,6 +475,10 @@ impl App {
                 self.current_screen = CurrentScreen::Jobs;
                 Some(Action::LoadJobs)
             }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
             KeyCode::Char('r') => Some(Action::LoadIndexes),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -496,6 +512,10 @@ impl App {
                 self.current_screen = CurrentScreen::Jobs;
                 Some(Action::LoadJobs)
             }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
@@ -509,6 +529,39 @@ impl App {
         use crossterm::event::KeyCode;
         match key.code {
             KeyCode::Esc => Some(Action::ExitInspectMode),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn handle_health_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Char('q') => Some(Action::Quit),
+            KeyCode::Char('1') => {
+                self.current_screen = CurrentScreen::Search;
+                None
+            }
+            KeyCode::Char('2') => {
+                self.current_screen = CurrentScreen::Indexes;
+                Some(Action::LoadIndexes)
+            }
+            KeyCode::Char('3') => {
+                self.current_screen = CurrentScreen::Cluster;
+                Some(Action::LoadClusterInfo)
+            }
+            KeyCode::Char('4') => {
+                self.current_screen = CurrentScreen::Jobs;
+                Some(Action::LoadJobs)
+            }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
+            KeyCode::Char('r') => Some(Action::LoadHealth),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -578,6 +631,17 @@ impl App {
                 self.cluster_info = Some(info);
                 self.loading = false;
             }
+            Action::HealthLoaded(boxed_result) => match *boxed_result {
+                Ok(info) => {
+                    self.health_info = Some(info);
+                    self.loading = false;
+                }
+                Err(e) => {
+                    self.toasts
+                        .push(Toast::error(format!("Failed to load health info: {}", e)));
+                    self.loading = false;
+                }
+            },
             Action::SearchComplete(Ok((results, sid))) => {
                 self.search_results = results;
                 self.search_sid = Some(sid);
@@ -887,6 +951,7 @@ impl App {
                     CurrentScreen::Cluster => "Cluster",
                     CurrentScreen::Jobs => "Jobs",
                     CurrentScreen::JobInspect => "Job Details",
+                    CurrentScreen::Health => "Health",
                 },
                 Style::default().fg(Color::Yellow),
             ),
@@ -905,13 +970,13 @@ impl App {
                     Style::default().fg(Color::Yellow),
                 ),
                 Span::raw("|"),
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs "),
+                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
         } else {
             vec![Line::from(vec![
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs "),
+                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
@@ -965,6 +1030,16 @@ impl App {
             }
             CurrentScreen::Jobs => self.render_jobs(f, area),
             CurrentScreen::JobInspect => self.render_job_details(f, area),
+            CurrentScreen::Health => {
+                health::render_health(
+                    f,
+                    area,
+                    health::HealthRenderConfig {
+                        loading: self.loading,
+                        health_info: self.health_info.as_ref(),
+                    },
+                );
+            }
         }
     }
 
