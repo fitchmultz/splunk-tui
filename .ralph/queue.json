@@ -1,45 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0004",
-      "status": "todo",
-      "title": "Implement async toast notifications with UUID tracking",
-      "priority": "medium",
-      "tags": [
-        "ui",
-        "async",
-        "notifications",
-        "feedback"
-      ],
-      "scope": [
-        "crates/tui/Cargo.toml",
-        "crates/tui/src/ui/widgets/toast.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "Plan FLIGHT 4: Async Orchestration & Feedback",
-        "Refine user feedback with async notification system"
-      ],
-      "plan": [
-        "Modify crates/tui/Cargo.toml: Add uuid = { version = \"1.12\", features = [\"v4\"] } for unique async operation tracking.",
-        "Create crates/tui/src/ui/widgets/toast.rs: Implement ToastLevel enum (Info, Success, Error). Implement Toast struct (id: Uuid, message: String, level: ToastLevel, created_at: Instant, ttl: Duration). Implement rendering for toast stack (bottom-right overlay).",
-        "Modify crates/tui/src/action.rs: Add Notify(String, ToastLevel) action variant.",
-        "Modify crates/tui/src/app.rs: Add toasts: Vec<Toast> to App. Add update logic to prune expired toasts on handle_tick.",
-        "Modify crates/tui/src/main.rs: Update handle_side_effects. Instead of setting error: Option<String> directly, emit Action::Notify for async feedback."
-      ],
-      "notes": [
-        "Ordnance: uuid crate for unique operation tracking.",
-        "Replaces direct error state with event-driven notification system."
-      ],
-      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
-      "created_at": "2025-01-19T00:00:00Z",
-      "updated_at": "2025-01-19T00:00:00Z",
-      "depends_on": [
-        "RQ-0003"
-      ]
-    }
-  ]
+  "tasks": []
 }

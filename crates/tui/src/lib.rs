@@ -23,3 +23,4 @@ pub mod ui;
 pub use action::Action;
 pub use app::{App, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT};
 pub use ui::popup::{Popup, PopupType};
+pub use ui::toast::{Toast, ToastLevel};

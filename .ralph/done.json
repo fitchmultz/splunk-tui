@@ -160,6 +160,72 @@
       "depends_on": [
         "RQ-0002"
       ]
+    },
+    {
+      "id": "RQ-0004",
+      "status": "done",
+      "title": "Implement async toast notifications with UUID tracking",
+      "priority": "medium",
+      "tags": [
+        "ui",
+        "async",
+        "notifications",
+        "feedback"
+      ],
+      "scope": [
+        "crates/tui/Cargo.toml",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/ui/mod.rs",
+        "crates/tui/src/lib.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/tests/app_tests.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "Plan FLIGHT 4: Async Orchestration & Feedback",
+        "Refine user feedback with async notification system"
+      ],
+      "plan": [
+        "Modify crates/tui/Cargo.toml: Add uuid = { version = \"1.11\", features = [\"v4\"] } for unique async operation tracking.",
+        "Create crates/tui/src/ui/toast.rs: Implement ToastLevel enum (Info, Success, Warning, Error). Implement Toast struct (id: Uuid, message: String, level: ToastLevel, created_at: Instant, ttl: Duration). Implement render_toasts() function for bottom-right overlay rendering.",
+        "Modify crates/tui/src/ui/mod.rs: Export toast module and re-export Toast, ToastLevel.",
+        "Modify crates/tui/src/lib.rs: Re-export Toast and ToastLevel at crate root.",
+        "Modify crates/tui/src/action.rs: Add Notify(ToastLevel, String) and Tick action variants. Remove Error(String) variant.",
+        "Modify crates/tui/src/app.rs: Replace error: Option<String> with toasts: Vec<Toast>. Add TTL pruning logic in Tick handler. Update render() to call render_toasts() and remove error footer display.",
+        "Modify crates/tui/src/main.rs: Change tick interval from 1s to 250ms for smooth animations. Separate data refresh (5s) from UI tick (250ms). Update handle_side_effects to emit Action::Notify instead of Action::Error.",
+        "Modify crates/tui/tests/app_tests.rs: Update error test to use toasts. Add test_notify_adds_toast and test_tick_prunes_expired_toasts tests.",
+        "Modify crates/tui/tests/snapshot_tests.rs: Update snapshot_error_state to use Toast::error() instead of error field."
+      ],
+      "notes": [
+        "Added uuid = { version = \"1.11\", features = [\"v4\"] } dependency to crates/tui/Cargo.toml.",
+        "Created crates/tui/src/ui/toast.rs with ToastLevel enum (Info, Success, Warning, Error), Toast struct with UUID/ttl/created_at fields, and render_toasts() function.",
+        "Toast TTL by level: Info/Success/Warning = 5 seconds, Error = 10 seconds.",
+        "Implemented Toast constructors: info(), success(), warning(), error().",
+        "Added #[allow(dead_code)] attributes for public API methods not yet used (remaining, info, success, warning, from_str, non-Error ToastLevel variants).",
+        "Exported toast module from ui/mod.rs and re-exported Toast, ToastLevel from lib.rs.",
+        "Added Notify(ToastLevel, String) and Tick actions to action.rs. Removed Error(String) variant.",
+        "Replaced App.error field with App.toasts: Vec<Toast>.",
+        "Added Tick handler to prune expired toasts using retain().",
+        "Updated all error handling to push Toast::error() instead of setting error field.",
+        "Changed main loop tick interval from 1s to 250ms for smooth UI animations and TTL pruning.",
+        "Decoupled data refresh (5s interval) from UI tick (250ms interval) for responsive UI.",
+        "Updated handle_side_effects to emit Action::Notify(ToastLevel::Error, ...) for cancel/delete job failures.",
+        "Updated footer rendering to remove error display (now shown as toasts).",
+        "Added render_toasts() call in App::render() after footer, before popup (toasts render below popups).",
+        "Updated tests: test_error_state_clears_on_loading -> test_notify_adds_toast, added test_tick_prunes_expired_toasts.",
+        "Updated snapshot_error_state to use Toast::error() with bottom-right overlay rendering.",
+        "Fixed clippy warnings: added #[allow(clippy::should_implement_trait)] for from_str, used std::iter::repeat_n() instead of repeat().take().",
+        "All tests pass (5 toast tests + existing tests) and make ci completes successfully."
+      ],
+      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "created_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2026-01-20T04:00:00Z",
+      "completed_at": "2026-01-20T04:00:00Z",
+      "depends_on": [
+        "RQ-0003"
+      ]
     }
   ]
 }

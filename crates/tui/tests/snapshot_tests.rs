@@ -246,7 +246,9 @@ fn snapshot_cluster_screen_loading() {
 fn snapshot_error_state() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
-    harness.app.error = Some("Connection failed: timeout".to_string());
+    harness.app.toasts.push(splunk_tui::Toast::error(
+        "Connection failed: timeout".to_string(),
+    ));
 
     insta::assert_snapshot!(harness.render());
 }

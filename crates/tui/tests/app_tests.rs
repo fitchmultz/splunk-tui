@@ -9,7 +9,8 @@
 mod helpers;
 use helpers::*;
 use splunk_client::models::SearchJobStatus;
-use splunk_tui::{CurrentScreen, Popup, PopupType, action::Action, app::App};
+use splunk_tui::{CurrentScreen, Popup, PopupType, Toast, ToastLevel, action::Action, app::App};
+use std::time::Duration;
 
 fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
     (0..count)
@@ -429,19 +430,41 @@ fn test_refresh_jobs_action() {
 }
 
 #[test]
-fn test_error_state_clears_on_loading() {
+fn test_notify_adds_toast() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.error = Some("Test error".to_string());
 
-    // Set loading state
-    app.update(Action::Loading(true));
+    // Add a toast notification
+    app.update(Action::Notify(ToastLevel::Error, "Test error".to_string()));
 
-    assert!(
-        app.error.is_none(),
-        "Error should be cleared when loading starts"
+    assert_eq!(app.toasts.len(), 1, "Should have one toast");
+    assert_eq!(
+        app.toasts[0].message, "Test error",
+        "Toast message should match"
     );
-    assert!(app.loading, "Should be in loading state");
+    assert_eq!(
+        app.toasts[0].level,
+        ToastLevel::Error,
+        "Toast level should be Error"
+    );
+}
+
+#[test]
+fn test_tick_prunes_expired_toasts() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Add a toast
+    app.toasts.push(Toast::error("Test".to_string()));
+
+    // Manually expire it
+    app.toasts[0].ttl = Duration::from_millis(1);
+    std::thread::sleep(Duration::from_millis(10));
+
+    // Tick should prune expired toasts
+    app.update(Action::Tick);
+
+    assert!(app.toasts.is_empty(), "Expired toasts should be pruned");
 }
 
 #[test]

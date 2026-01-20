@@ -4,6 +4,7 @@
 //! and rendering logic for the TUI.
 
 use crate::action::Action;
+use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::KeyEvent;
 use ratatui::{
@@ -148,7 +149,7 @@ pub struct App {
     // UI State
     pub loading: bool,
     pub progress: f32,
-    pub error: Option<String>,
+    pub toasts: Vec<Toast>,
     pub auto_refresh: bool,
     pub popup: Option<Popup>,
 
@@ -199,7 +200,7 @@ impl App {
             cluster_info: None,
             loading: false,
             progress: 0.0,
-            error: None,
+            toasts: Vec::new(),
             auto_refresh,
             popup: None,
             search_filter: None,
@@ -542,16 +543,16 @@ impl App {
             }
             Action::Loading(is_loading) => {
                 self.loading = is_loading;
-                if is_loading {
-                    self.error = None;
-                }
             }
             Action::Progress(p) => {
                 self.progress = p;
             }
-            Action::Error(e) => {
-                self.error = Some(e);
-                self.loading = false;
+            Action::Notify(level, message) => {
+                self.toasts.push(Toast::new(message, level));
+            }
+            Action::Tick => {
+                // Prune expired toasts
+                self.toasts.retain(|t| !t.is_expired());
             }
             Action::IndexesLoaded(Ok(indexes)) => {
                 self.indexes = Some(indexes);
@@ -581,19 +582,23 @@ impl App {
                 self.loading = false;
             }
             Action::IndexesLoaded(Err(e)) => {
-                self.error = Some(format!("Failed to load indexes: {}", e));
+                self.toasts
+                    .push(Toast::error(format!("Failed to load indexes: {}", e)));
                 self.loading = false;
             }
             Action::JobsLoaded(Err(e)) => {
-                self.error = Some(format!("Failed to load jobs: {}", e));
+                self.toasts
+                    .push(Toast::error(format!("Failed to load jobs: {}", e)));
                 self.loading = false;
             }
             Action::ClusterInfoLoaded(Err(e)) => {
-                self.error = Some(format!("Failed to load cluster info: {}", e));
+                self.toasts
+                    .push(Toast::error(format!("Failed to load cluster info: {}", e)));
                 self.loading = false;
             }
             Action::SearchComplete(Err(e)) => {
-                self.error = Some(format!("Search failed: {}", e));
+                self.toasts
+                    .push(Toast::error(format!("Search failed: {}", e)));
                 self.loading = false;
             }
             Action::InspectJob => {
@@ -763,17 +768,8 @@ impl App {
         // Main content
         self.render_content(f, chunks[1]);
 
-        // Footer with status or error
-        let footer_text = if let Some(err) = &self.error {
-            vec![Line::from(vec![
-                Span::styled(
-                    format!(" ERROR: {} ", err),
-                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-                ),
-                Span::raw("|"),
-                Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
-            ])]
-        } else if self.loading {
+        // Footer with status
+        let footer_text = if self.loading {
             vec![Line::from(vec![
                 Span::styled(
                     format!(" Loading... {:.0}% ", self.progress * 100.0),
@@ -794,7 +790,10 @@ impl App {
         let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::ALL));
         f.render_widget(footer, chunks[2]);
 
-        // Render popup if active
+        // Render toasts
+        crate::ui::toast::render_toasts(f, &self.toasts);
+
+        // Render popup if active (on top of toasts)
         if let Some(ref popup) = self.popup {
             crate::ui::popup::render_popup(f, popup);
         }

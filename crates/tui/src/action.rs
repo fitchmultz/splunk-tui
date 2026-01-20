@@ -7,6 +7,8 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::models::{ClusterInfo, Index, SearchJobStatus};
 
+use crate::ui::ToastLevel;
+
 /// Unified action type for async TUI event handling.
 ///
 /// Actions flow through a channel from input handlers and async tasks
@@ -82,6 +84,10 @@ pub enum Action {
     Progress(f32),
     /// Set loading state
     Loading(bool),
-    /// Display an error message
-    Error(String),
+
+    // Notifications
+    /// Display a toast notification
+    Notify(ToastLevel, String),
+    /// Tick event for periodic updates (TTL pruning, animations)
+    Tick,
 }

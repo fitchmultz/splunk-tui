@@ -6,6 +6,7 @@ mod action;
 mod app;
 mod ui;
 
+use crate::ui::ToastLevel;
 use action::Action;
 use anyhow::Result;
 use crossterm::{
@@ -88,7 +89,10 @@ async fn main() -> Result<()> {
     // Create app with persisted state
     let mut app = App::new(Some(persisted_state));
 
-    // Create auto-refresh interval (5 seconds)
+    // Create UI tick interval for smooth animations (250ms)
+    let mut tick_interval = tokio::time::interval(tokio::time::Duration::from_millis(250));
+
+    // Create data refresh interval (5 seconds, decoupled from UI tick)
     let mut refresh_interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
 
     // Main event loop
@@ -121,7 +125,12 @@ async fn main() -> Result<()> {
                     handle_side_effects(action, client.clone(), tx.clone()).await;
                 }
             }
+            _ = tick_interval.tick() => {
+                // Always process tick for TTL pruning and animations
+                app.update(Action::Tick);
+            }
             _ = refresh_interval.tick() => {
+                // Data refresh is separate from UI tick
                 if let Some(a) = app.handle_tick() {
                     app.update(a.clone());
                     handle_side_effects(a, client.clone(), tx.clone()).await;
@@ -301,8 +310,11 @@ async fn handle_side_effects(
                         tx.send(Action::LoadJobs).ok();
                     }
                     Err(e) => {
-                        tx.send(Action::Error(format!("Failed to cancel job: {}", e)))
-                            .ok();
+                        tx.send(Action::Notify(
+                            ToastLevel::Error,
+                            format!("Failed to cancel job: {}", e),
+                        ))
+                        .ok();
                     }
                 }
             });
@@ -322,8 +334,11 @@ async fn handle_side_effects(
                         tx.send(Action::LoadJobs).ok();
                     }
                     Err(e) => {
-                        tx.send(Action::Error(format!("Failed to delete job: {}", e)))
-                            .ok();
+                        tx.send(Action::Notify(
+                            ToastLevel::Error,
+                            format!("Failed to delete job: {}", e),
+                        ))
+                        .ok();
                     }
                 }
             });
