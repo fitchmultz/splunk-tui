@@ -8,7 +8,7 @@ use crate::formatters::{OutputFormat, get_formatter};
 
 pub async fn run(
     config: splunk_config::Config,
-    list: bool,
+    mut list: bool,
     cancel: Option<String>,
     delete: Option<String>,
     count: usize,
@@ -27,6 +27,11 @@ pub async fn run(
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
         .build()?;
+
+    // If cancel or delete action is specified, don't list jobs
+    if cancel.is_some() || delete.is_some() {
+        list = false;
+    }
 
     if let Some(sid) = cancel {
         info!("Canceling job: {}", sid);

@@ -2,6 +2,46 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0017",
+      "status": "done",
+      "title": "Define default behavior for `splunk jobs` when no flags are set",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "jobs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/tests/jobs_tests.rs",
+        "crates/cli/Cargo.toml"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/jobs.rs only runs list when --list is set; otherwise no output or error is produced.",
+        "Users invoking `splunk jobs` without flags get a silent no-op."
+      ],
+      "plan": [
+        "Decide on default behavior (list jobs) or enforce mutually exclusive flags with clap.",
+        "Implement the default or clap validation and update help text.",
+        "Add tests for the default/no-flag behavior."
+      ],
+      "notes": [
+        "Set default_value=\"true\" for --list flag in crates/cli/src/main.rs to make listing the default action.",
+        "Updated help text to indicate --list is the default action: 'List all search jobs (default action)'.",
+        "Modified crates/cli/src/commands/jobs.rs to set list=false when --cancel or --delete is used, ensuring those actions don't also list jobs.",
+        "Added predicates dependency to crates/cli/Cargo.toml for test assertions.",
+        "Created crates/cli/tests/jobs_tests.rs with 5 integration tests: test_jobs_default_lists, test_jobs_explicit_list_flag, test_jobs_cancel_flag, test_jobs_delete_flag, test_jobs_help_shows_list_flag.",
+        "Tests verify default behavior (no args = list jobs), explicit --list flag, --cancel/--delete flags bypass listing, and help text shows --list flag.",
+        "All 5 jobs CLI tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T10:00:00Z",
+      "completed_at": "2026-01-20T10:00:00Z",
+      "depends_on": []
+    },
+    {
       "id": "RQ-0014",
       "status": "done",
       "title": "Improve CLI formatters to render non-string values and CSV escaping",

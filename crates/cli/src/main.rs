@@ -89,8 +89,8 @@ enum Commands {
 
     /// Manage search jobs
     Jobs {
-        /// List all search jobs
-        #[arg(long)]
+        /// List all search jobs (default action)
+        #[arg(long, default_value = "true")]
         list: bool,
 
         /// Cancel a specific job by SID
