@@ -30,6 +30,7 @@ tracing = { workspace = true }
 time = { workspace = true }
 
 [dev-dependencies]
+dotenvy = { workspace = true }
 mockito = { workspace = true }
 wiremock = { workspace = true }
 tokio-test = "0.4"

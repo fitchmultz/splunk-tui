@@ -43,7 +43,7 @@ test-integration:
 
 # Run live tests (requires Splunk server at 192.168.1.122:8089)
 test-live:
-	cargo test --test live_tests -- --ignored
+	cargo test -p splunk-client --test live_tests -- --ignored
 
 # Manual live server test script
 test-live-manual:
