@@ -1,10 +1,12 @@
 //! Configuration loader for environment variables and files.
 
 use secrecy::SecretString;
+use std::path::PathBuf;
 use std::time::Duration;
 use thiserror::Error;
 
-use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
+use crate::persistence::{ConfigFileError, default_config_path, read_config_file};
+use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig};
 
 /// Errors that can occur during configuration loading.
 #[derive(Error, Debug)]
@@ -21,11 +23,32 @@ pub enum ConfigError {
     #[error("Authentication configuration is required (either username/password or API token)")]
     MissingAuth,
 
+    #[error("Unable to determine config directory: {0}")]
+    ConfigDirUnavailable(String),
+
+    #[error("Failed to read config file at {path}")]
+    ConfigFileRead { path: PathBuf },
+
+    #[error("Failed to parse config file at {path}")]
+    ConfigFileParse { path: PathBuf },
+
+    #[error("Profile '{0}' not found in config file")]
+    ProfileNotFound(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
 
-/// Configuration loader that builds config from environment variables.
+impl From<ConfigFileError> for ConfigError {
+    fn from(error: ConfigFileError) -> Self {
+        match error {
+            ConfigFileError::Read { path, .. } => ConfigError::ConfigFileRead { path },
+            ConfigFileError::Parse { path, .. } => ConfigError::ConfigFileParse { path },
+        }
+    }
+}
+
+/// Configuration loader that builds config from environment variables and profiles.
 pub struct ConfigLoader {
     base_url: Option<String>,
     username: Option<String>,
@@ -34,6 +57,9 @@ pub struct ConfigLoader {
     skip_verify: Option<bool>,
     timeout: Option<Duration>,
     max_retries: Option<usize>,
+    profile_name: Option<String>,
+    profile_missing: Option<String>,
+    config_path: Option<PathBuf>,
 }
 
 impl Default for ConfigLoader {
@@ -53,6 +79,9 @@ impl ConfigLoader {
             skip_verify: None,
             timeout: None,
             max_retries: None,
+            profile_name: None,
+            profile_missing: None,
+            config_path: None,
         }
     }
 
@@ -62,7 +91,81 @@ impl ConfigLoader {
         Ok(self)
     }
 
+    /// Set the active profile name to load from the config file.
+    pub fn with_profile_name(mut self, name: String) -> Self {
+        self.profile_name = Some(name);
+        self
+    }
+
+    /// Override the config file path (primarily for testing).
+    pub fn with_config_path(mut self, path: PathBuf) -> Self {
+        self.config_path = Some(path);
+        self
+    }
+
+    /// Read configuration from a profile in the config file.
+    ///
+    /// If the profile is not found, this records the missing profile name
+    /// for later error handling in `build()`.
+    pub fn from_profile(mut self) -> Result<Self, ConfigError> {
+        let profile_name = match &self.profile_name {
+            Some(name) => name.clone(),
+            None => return Ok(self),
+        };
+
+        let config_path = if let Some(path) = &self.config_path {
+            path.clone()
+        } else {
+            default_config_path().map_err(|e| ConfigError::ConfigDirUnavailable(e.to_string()))?
+        };
+
+        if !config_path.exists() {
+            self.profile_missing = Some(profile_name);
+            return Ok(self);
+        }
+
+        let config_file = read_config_file(&config_path)?;
+
+        let profile = match config_file.profiles.get(&profile_name) {
+            Some(p) => p,
+            None => {
+                self.profile_missing = Some(profile_name);
+                return Ok(self);
+            }
+        };
+
+        self.apply_profile(profile);
+        Ok(self)
+    }
+
+    /// Apply profile configuration to the loader.
+    fn apply_profile(&mut self, profile: &ProfileConfig) {
+        if let Some(url) = &profile.base_url {
+            self.base_url = Some(url.clone());
+        }
+        if let Some(username) = &profile.username {
+            self.username = Some(username.clone());
+        }
+        if let Some(password) = &profile.password {
+            self.password = Some(password.clone());
+        }
+        if let Some(token) = &profile.api_token {
+            self.api_token = Some(token.clone());
+        }
+        if let Some(skip) = profile.skip_verify {
+            self.skip_verify = Some(skip);
+        }
+        if let Some(secs) = profile.timeout_seconds {
+            self.timeout = Some(Duration::from_secs(secs));
+        }
+        if let Some(retries) = profile.max_retries {
+            self.max_retries = Some(retries);
+        }
+    }
+
     /// Read configuration from environment variables.
+    ///
+    /// Environment variables take precedence over profile settings.
     pub fn from_env(mut self) -> Result<Self, ConfigError> {
         if let Ok(url) = std::env::var("SPLUNK_BASE_URL") {
             self.base_url = Some(url);
@@ -142,6 +245,18 @@ impl ConfigLoader {
 
     /// Build the final configuration.
     pub fn build(self) -> Result<Config, ConfigError> {
+        // Check for missing profile first
+        if let Some(profile_name) = self.profile_missing {
+            // Only error if we don't have overrides from env/CLI
+            if self.base_url.is_none()
+                && self.username.is_none()
+                && self.password.is_none()
+                && self.api_token.is_none()
+            {
+                return Err(ConfigError::ProfileNotFound(profile_name));
+            }
+        }
+
         let base_url = self.base_url.ok_or(ConfigError::MissingBaseUrl)?;
 
         // Determine auth strategy - API token takes precedence
@@ -168,6 +283,45 @@ impl ConfigLoader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::SecretString;
+    use serde_json::json;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    fn create_test_config_file(dir: &Path) -> PathBuf {
+        let config_path = dir.join("config.json");
+        use secrecy::ExposeSecret;
+        let password = SecretString::new("test-password".to_string().into());
+
+        let config = json!({
+            "profiles": {
+                "dev": {
+                    "base_url": "https://dev.splunk.com:8089",
+                    "username": "dev_user",
+                    "password": password.expose_secret(),
+                    "skip_verify": true,
+                    "timeout_seconds": 60,
+                    "max_retries": 5
+                },
+                "prod": {
+                    "base_url": "https://prod.splunk.com:8089",
+                    "api_token": "prod-token-123"
+                }
+            },
+            "state": {
+                "auto_refresh": true,
+                "sort_column": "sid",
+                "sort_direction": "asc"
+            }
+        });
+
+        let mut file = File::create(&config_path).unwrap();
+        writeln!(file, "{}", config).unwrap();
+
+        config_path
+    }
 
     #[test]
     fn test_loader_with_api_token() {
@@ -223,5 +377,68 @@ mod tests {
             config.auth.strategy,
             AuthStrategy::ApiToken { .. }
         ));
+    }
+
+    #[test]
+    fn test_loader_from_profile_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        let loader = ConfigLoader::new()
+            .with_profile_name("dev".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap();
+
+        let config = loader.build().unwrap();
+        assert_eq!(config.connection.base_url, "https://dev.splunk.com:8089");
+        assert!(config.connection.skip_verify);
+        assert_eq!(config.connection.timeout, Duration::from_secs(60));
+        assert_eq!(config.connection.max_retries, 5);
+    }
+
+    #[test]
+    fn test_profile_missing_errors_without_overrides() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap();
+
+        let result = loader.build();
+        assert!(matches!(result, Err(ConfigError::ProfileNotFound(_))));
+    }
+
+    #[test]
+    fn test_env_overrides_profile() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Set env var to override profile
+        unsafe {
+            std::env::set_var("SPLUNK_BASE_URL", "https://override.splunk.com:8089");
+        }
+
+        let loader = ConfigLoader::new()
+            .with_profile_name("dev".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .from_env()
+            .unwrap();
+
+        let config = loader.build().unwrap();
+        // Env var should take precedence over profile
+        assert_eq!(
+            config.connection.base_url,
+            "https://override.splunk.com:8089"
+        );
+
+        unsafe {
+            std::env::remove_var("SPLUNK_BASE_URL");
+        }
     }
 }

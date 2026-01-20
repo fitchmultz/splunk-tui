@@ -37,6 +37,10 @@ struct Cli {
     #[arg(long, global = true, env = "SPLUNK_SKIP_VERIFY")]
     skip_verify: bool,
 
+    /// Profile name to load from config file
+    #[arg(long, global = true, env = "SPLUNK_PROFILE")]
+    profile: Option<String>,
+
     /// Output format (json, table, csv, xml)
     #[arg(short, long, global = true, default_value = "json")]
     output: String,
@@ -122,6 +126,13 @@ async fn main() -> Result<()> {
 
     // Build configuration
     let mut loader = ConfigLoader::new().load_dotenv()?;
+
+    // Load from profile if specified
+    if let Some(ref profile_name) = cli.profile {
+        loader = loader
+            .with_profile_name(profile_name.clone())
+            .from_profile()?;
+    }
 
     if let Some(ref url) = cli.base_url {
         loader = loader.with_base_url(url.clone());

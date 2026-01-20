@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
     });
 
     // Load persisted configuration
-    let config_manager = ConfigManager::new()?;
+    let mut config_manager = ConfigManager::new()?;
     let persisted_state = config_manager.load();
 
     // Create app with persisted state
@@ -182,10 +182,16 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-/// Load configuration from environment.
+/// Load configuration from environment and profile.
 fn load_config() -> Result<Config> {
-    ConfigLoader::new()
-        .load_dotenv()?
+    let mut loader = ConfigLoader::new().load_dotenv()?;
+
+    // Load from profile if SPLUNK_PROFILE is set
+    if let Ok(profile_name) = std::env::var("SPLUNK_PROFILE") {
+        loader = loader.with_profile_name(profile_name).from_profile()?;
+    }
+
+    loader
         .from_env()?
         .build()
         .map_err(|e| anyhow::anyhow!("Failed to load config: {}", e))

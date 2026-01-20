@@ -9,4 +9,4 @@ mod types;
 
 pub use loader::ConfigLoader;
 pub use persistence::{ConfigManager, PersistedState};
-pub use types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
+pub use types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig};
