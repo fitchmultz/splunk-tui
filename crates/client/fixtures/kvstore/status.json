@@ -1,0 +1,20 @@
+{
+  "entry": [
+    {
+      "name": "status",
+      "content": {
+        "currentMember": {
+          "guid": "5C2E74B8-B64F-4C9D-A3D9-9A76E87A5B0F",
+          "host": "splunk-idx-01",
+          "port": 8191,
+          "replicaSet": "kvstore_replica_set",
+          "status": "ready"
+        },
+        "replicationStatus": {
+          "oplogSize": 1024,
+          "oplogUsed": 0.5
+        }
+      }
+    }
+  ]
+}

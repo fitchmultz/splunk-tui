@@ -15,6 +15,7 @@ pub use auth::{AuthStrategy, SessionManager};
 pub use client::SplunkClient;
 pub use error::{ClientError, Result};
 pub use models::{
-    ClusterInfo, ClusterPeer, Index, IndexListResponse, SearchJob, SearchJobListResponse,
-    SearchJobResults, SearchJobStatus, SplunkResponse,
+    ClusterInfo, ClusterPeer, Index, IndexListResponse, KvStoreMember, KvStoreReplicationStatus,
+    KvStoreStatus, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,
+    SplunkResponse,
 };

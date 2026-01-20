@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0027",
-      "status": "todo",
-      "title": "Implement KVStore status tracking API client",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "health",
-        "kvstore"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/",
-        "crates/client/src/models.rs"
-      ],
-      "evidence": [
-        "Requested feature: Automated health checks include KVStore status.",
-        "KVStore failures impact many Splunk apps and search features."
-      ],
-      "plan": [
-        "Implement get_kvstore_status endpoint to fetch data from /services/kvstore/status.",
-        "Define models for KVStore replication and member status.",
-        "Add integration tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0028",
       "status": "todo",
       "title": "Implement automated log parsing error search",

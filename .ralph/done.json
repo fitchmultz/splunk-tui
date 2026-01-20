@@ -1065,6 +1065,43 @@
             "updated_at": "2026-01-20T21:20:00Z",
             "completed_at": "2026-01-20T21:20:00Z",
             "depends_on": []
+          },
+          {
+            "id": "RQ-0027",
+            "status": "done",
+            "title": "Implement KVStore status tracking API client",
+            "priority": "medium",
+            "tags": [
+              "client",
+              "health",
+              "kvstore"
+            ],
+            "scope": [
+              "crates/client/src/endpoints/",
+              "crates/client/src/models.rs"
+            ],
+            "evidence": [
+              "Requested feature: Automated health checks include KVStore status.",
+              "KVStore failures impact many Splunk apps and search features."
+            ],
+            "plan": [
+              "Implement get_kvstore_status endpoint to fetch data from /services/kvstore/status.",
+              "Define models for KVStore replication and member status.",
+              "Add integration tests."
+            ],
+            "notes": [
+              "Implemented get_kvstore_status endpoint in crates/client/src/endpoints/kvstore.rs.",
+              "Added KvStoreStatus, KvStoreMember, and KvStoreReplicationStatus models to crates/client/src/models.rs.",
+              "Exposed get_kvstore_status method on SplunkClient in crates/client/src/client.rs with session retry logic.",
+              "Added integration tests test_get_kvstore_status and test_splunk_client_get_kvstore_status in integration_tests.rs.",
+              "Created crates/client/fixtures/kvstore/status.json for testing.",
+              "make ci passed successfully."
+            ],
+            "request": "scan finding",
+            "created_at": "2026-01-20T17:15:00Z",
+            "updated_at": "2026-01-20T22:30:00Z",
+            "completed_at": "2026-01-20T22:30:00Z",
+            "depends_on": []
           }
         ]
       }
