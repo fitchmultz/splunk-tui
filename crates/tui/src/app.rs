@@ -668,7 +668,10 @@ impl App {
     fn next_page(&mut self) {
         match self.current_screen {
             CurrentScreen::Search => {
-                self.search_scroll_offset = self.search_scroll_offset.saturating_add(10);
+                // Clamp offset to prevent scrolling past the end
+                let max_offset = self.search_results.len().saturating_sub(1);
+                self.search_scroll_offset =
+                    self.search_scroll_offset.saturating_add(10).min(max_offset);
             }
             CurrentScreen::Jobs => {
                 let len = self.filtered_jobs_len();
@@ -692,6 +695,7 @@ impl App {
     fn previous_page(&mut self) {
         match self.current_screen {
             CurrentScreen::Search => {
+                // saturating_sub already prevents going below 0
                 self.search_scroll_offset = self.search_scroll_offset.saturating_sub(10);
             }
             CurrentScreen::Jobs => {
@@ -725,6 +729,12 @@ impl App {
 
     fn go_to_bottom(&mut self) {
         match self.current_screen {
+            CurrentScreen::Search => {
+                // Scroll to the last valid page (offset such that at least one result is visible)
+                if !self.search_results.is_empty() {
+                    self.search_scroll_offset = self.search_results.len().saturating_sub(1);
+                }
+            }
             CurrentScreen::Jobs => {
                 let len = self.filtered_jobs_len();
                 if len > 0 {

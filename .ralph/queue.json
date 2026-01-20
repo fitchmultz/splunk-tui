@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0018",
-      "status": "todo",
-      "title": "Enable search results scrolling in the TUI search screen",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "search",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/tests/app_tests.rs",
-        "crates/tui/tests/snapshot_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs maintains search_scroll_offset but navigation helpers only update Jobs/Indexes selection, not search results.",
-        "Search screen accepts PageUp/PageDown actions but search_scroll_offset is never updated."
-      ],
-      "plan": [
-        "Add scroll handling for search results (PageUp/PageDown/Home/End) that updates search_scroll_offset with bounds checks.",
-        "Update help text or footer hints to indicate scrolling controls on the Search screen.",
-        "Add tests to cover search scrolling and rendering with offsets."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
-      "depends_on": []
-    },
-    {
       "id": "RQ-0019",
       "status": "todo",
       "title": "Centralize layout constants for toast rendering",

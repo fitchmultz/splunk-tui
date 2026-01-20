@@ -360,3 +360,28 @@ fn snapshot_job_details_screen_with_help_popup() {
 
     insta::assert_snapshot!(harness.render());
 }
+
+#[test]
+fn snapshot_search_screen_scrolled() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main".to_string();
+    harness.app.search_status = "Search complete: index=main".to_string();
+    harness.app.search_sid = Some("search_12345".to_string());
+
+    // Create many results to test scrolling - 20 results
+    harness.app.search_results = (0..20)
+        .map(|i| {
+            serde_json::json!({
+                "_time": format!("2024-01-15T10:{:02}:00.000Z", i),
+                "level": if i % 2 == 0 { "ERROR" } else { "WARN" },
+                "message": format!("Event message number {}", i),
+            })
+        })
+        .collect();
+
+    // Scroll to offset 10 (should show results 10-19)
+    harness.app.search_scroll_offset = 10;
+
+    insta::assert_snapshot!(harness.render());
+}

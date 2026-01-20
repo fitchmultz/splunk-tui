@@ -106,6 +106,10 @@ Global Keys:
 Search Screen:
   Enter Run search
   j/k   Navigate results
+  PgDn  Page down
+  PgUp  Page up
+  Home  Go to top
+  End   Go to bottom
 
 Jobs Screen:
   r     Refresh jobs
