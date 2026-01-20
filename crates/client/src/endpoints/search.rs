@@ -231,11 +231,18 @@ pub async fn get_results(
     let json: serde_json::Value = response.json().await?;
 
     Ok(SearchJobResults {
-        results: if output_mode == OutputMode::Json {
-            json.as_array().unwrap_or(&vec![]).clone()
-        } else {
-            // For non-JSON modes, parse the structured response
-            json["results"].as_array().unwrap_or(&vec![]).clone()
+        results: match output_mode {
+            OutputMode::Json => {
+                // Handle both array and object-wrapped responses
+                if let Some(arr) = json.as_array() {
+                    arr.clone()
+                } else if let Some(arr) = json["results"].as_array() {
+                    arr.clone()
+                } else {
+                    vec![]
+                }
+            }
+            _ => json["results"].as_array().unwrap_or(&vec![]).clone(),
         },
         preview: json["preview"].as_bool().unwrap_or(false),
         offset,

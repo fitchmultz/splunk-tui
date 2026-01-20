@@ -131,6 +131,46 @@ async fn test_get_search_results() {
 }
 
 #[tokio::test]
+async fn test_get_search_results_object_style() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/get_results_object.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid/results"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::get_results(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "test-sid",
+        Some(10),
+        Some(0),
+        endpoints::OutputMode::Json,
+        3,
+    )
+    .await;
+
+    if let Err(ref e) = result {
+        eprintln!("Get results error: {:?}", e);
+    }
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert_eq!(results.results.len(), 1);
+    assert_eq!(
+        results.results[0]["message"],
+        "Test event from object response"
+    );
+    assert!(!results.preview);
+    assert_eq!(results.total, Some(1));
+}
+
+#[tokio::test]
 async fn test_get_job_status() {
     let mock_server = MockServer::start().await;
 

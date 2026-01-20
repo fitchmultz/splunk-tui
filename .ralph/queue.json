@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0007",
-      "status": "todo",
-      "title": "Fix OutputMode::Json parsing for search results and add object-response coverage",
-      "priority": "high",
-      "tags": [
-        "client",
-        "search",
-        "parsing"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search.rs",
-        "crates/client/fixtures/search/",
-        "crates/client/tests/integration_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/search.rs uses json.as_array() for OutputMode::Json and json[\"results\"] only for non-json modes.",
-        "crates/client/fixtures/search/get_results.json is an array fixture, so object responses are not covered."
-      ],
-      "plan": [
-        "Update get_results parsing to accept either an array or an object with a results field for OutputMode::Json.",
-        "Add a second fixture representing the object response and cover it in integration tests.",
-        "Keep preview/total fields consistent with the object response when present."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
-      "depends_on": []
-    },
-    {
       "id": "RQ-0008",
       "status": "todo",
       "title": "Fix jobs filter apply/clear flow so filters persist after Enter",

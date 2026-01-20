@@ -1,0 +1,16 @@
+{
+  "preview": false,
+  "init_offset": 0,
+  "messages": [],
+  "results": [
+    {
+      "_time": "2024-01-15T10:30:00.000-05:00",
+      "_raw": "2024-01-15 10:30:00 INFO Object style event",
+      "_sourcetype": "test_sourcetype",
+      "_index": "main",
+      "message": "Test event from object response",
+      "count": "1"
+    }
+  ],
+  "total": 1
+}
