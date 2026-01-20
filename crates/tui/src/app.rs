@@ -4,6 +4,7 @@
 //! and rendering logic for the TUI.
 
 use crate::action::Action;
+use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::KeyEvent;
 use ratatui::{
     Frame,
@@ -15,6 +16,10 @@ use ratatui::{
 use serde_json::Value;
 use splunk_client::models::{ClusterInfo, Index, SearchJobStatus};
 
+/// Layout constants for UI components.
+pub const HEADER_HEIGHT: u16 = 3;
+pub const FOOTER_HEIGHT: u16 = 3;
+
 /// Current active screen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CurrentScreen {
@@ -22,14 +27,6 @@ pub enum CurrentScreen {
     Indexes,
     Cluster,
     Jobs,
-}
-
-/// Modal popup types.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Popup {
-    ConfirmCancel(String),
-    ConfirmDelete(String),
-    Help,
 }
 
 /// Sort column for jobs table.
@@ -54,6 +51,12 @@ pub enum SortDirection {
 pub struct SortState {
     pub column: SortColumn,
     pub direction: SortDirection,
+}
+
+impl Default for SortState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SortState {
@@ -114,6 +117,12 @@ pub struct App {
     pub sort_state: SortState,
 }
 
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl App {
     pub fn new() -> Self {
         let mut indexes_state = ListState::default();
@@ -161,7 +170,11 @@ impl App {
 
     /// Handle periodic tick events - returns Action if one should be dispatched.
     pub fn handle_tick(&self) -> Option<Action> {
-        if self.current_screen == CurrentScreen::Jobs && self.auto_refresh && self.popup.is_none() && !self.is_filtering {
+        if self.current_screen == CurrentScreen::Jobs
+            && self.auto_refresh
+            && self.popup.is_none()
+            && !self.is_filtering
+        {
             Some(Action::LoadJobs)
         } else {
             None
@@ -171,21 +184,29 @@ impl App {
     /// Handle keyboard input when a popup is active.
     fn handle_popup_input(&mut self, key: KeyEvent) -> Option<Action> {
         use crossterm::event::KeyCode;
-        match (&self.popup, key.code) {
-            (Some(Popup::Help), KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('?')) => {
+        match (self.popup.as_ref().map(|p| &p.kind), key.code) {
+            (Some(PopupType::Help), KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('?')) => {
                 self.popup = None;
                 None
             }
-            (Some(Popup::ConfirmCancel(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let sid = if let Some(Popup::ConfirmCancel(s)) = self.popup.take() {
+            (Some(PopupType::ConfirmCancel(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let sid = if let Some(Popup {
+                    kind: PopupType::ConfirmCancel(s),
+                    ..
+                }) = self.popup.take()
+                {
                     s
                 } else {
                     unreachable!()
                 };
                 Some(Action::CancelJob(sid))
             }
-            (Some(Popup::ConfirmDelete(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let sid = if let Some(Popup::ConfirmDelete(s)) = self.popup.take() {
+            (Some(PopupType::ConfirmDelete(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let sid = if let Some(Popup {
+                    kind: PopupType::ConfirmDelete(s),
+                    ..
+                }) = self.popup.take()
+                {
                     s
                 } else {
                     unreachable!()
@@ -193,7 +214,7 @@ impl App {
                 Some(Action::DeleteJob(sid))
             }
             (
-                Some(Popup::ConfirmCancel(_) | Popup::ConfirmDelete(_)),
+                Some(PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_)),
                 KeyCode::Char('n') | KeyCode::Esc,
             ) => {
                 self.popup = None;
@@ -245,7 +266,7 @@ impl App {
             KeyCode::Home => Some(Action::GoToTop),
             KeyCode::End => Some(Action::GoToBottom),
             KeyCode::Char('?') => {
-                self.popup = Some(Popup::Help);
+                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             KeyCode::Char(c) => {
@@ -321,7 +342,8 @@ impl App {
                 if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs)
                     && let Some(job) = jobs.get(state)
                 {
-                    self.popup = Some(Popup::ConfirmCancel(job.sid.clone()));
+                    self.popup =
+                        Some(Popup::builder(PopupType::ConfirmCancel(job.sid.clone())).build());
                 }
                 None
             }
@@ -329,14 +351,15 @@ impl App {
                 if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs)
                     && let Some(job) = jobs.get(state)
                 {
-                    self.popup = Some(Popup::ConfirmDelete(job.sid.clone()));
+                    self.popup =
+                        Some(Popup::builder(PopupType::ConfirmDelete(job.sid.clone())).build());
                 }
                 None
             }
             KeyCode::Char('s') => Some(Action::CycleSortColumn),
             KeyCode::Char('/') => Some(Action::EnterSearchMode),
             KeyCode::Char('?') => {
-                self.popup = Some(Popup::Help);
+                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -369,7 +392,7 @@ impl App {
             KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Char('?') => {
-                self.popup = Some(Popup::Help);
+                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -398,7 +421,7 @@ impl App {
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('?') => {
-                self.popup = Some(Popup::Help);
+                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -609,9 +632,9 @@ impl App {
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Length(3), // Header
-                    Constraint::Min(0),    // Main content
-                    Constraint::Length(3), // Footer
+                    Constraint::Length(HEADER_HEIGHT),
+                    Constraint::Min(0),
+                    Constraint::Length(FOOTER_HEIGHT),
                 ]
                 .as_ref(),
             )
@@ -675,7 +698,7 @@ impl App {
 
         // Render popup if active
         if let Some(ref popup) = self.popup {
-            crate::ui::popup::render_popup(f, self, popup);
+            crate::ui::popup::render_popup(f, popup);
         }
     }
 
@@ -862,14 +885,16 @@ impl App {
         jobs::render_jobs(
             f,
             area,
-            jobs,
-            &mut self.jobs_state,
-            self.auto_refresh,
-            &self.search_filter,
-            &self.filter_input,
-            self.is_filtering,
-            self.sort_state.column,
-            self.sort_state.direction,
+            jobs::JobsRenderConfig {
+                jobs,
+                state: &mut self.jobs_state,
+                auto_refresh: self.auto_refresh,
+                filter: &self.search_filter,
+                filter_input: &self.filter_input,
+                is_filtering: self.is_filtering,
+                sort_column: self.sort_state.column,
+                sort_direction: self.sort_state.direction,
+            },
         );
     }
 }

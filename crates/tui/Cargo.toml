@@ -32,6 +32,7 @@ anyhow = { workspace = true }
 # Logging
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+tracing-appender = "0.2"
 
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }

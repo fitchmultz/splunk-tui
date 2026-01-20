@@ -9,7 +9,7 @@
 mod helpers;
 use helpers::*;
 use splunk_client::models::SearchJobStatus;
-use splunk_tui::{app::App, action::Action, CurrentScreen, Popup};
+use splunk_tui::{CurrentScreen, Popup, PopupType, action::Action, app::App};
 
 fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
     (0..count)
@@ -41,7 +41,13 @@ fn test_popup_cancel_flow() {
     let action = app.handle_input(key('c'));
     assert!(action.is_none(), "Opening popup should not return action");
     assert!(app.popup.is_some(), "Popup should be open");
-    assert!(matches!(app.popup, Some(Popup::ConfirmCancel(_))), "Should be ConfirmCancel popup");
+    assert!(
+        matches!(
+            app.popup.as_ref().map(|p| &p.kind),
+            Some(PopupType::ConfirmCancel(_))
+        ),
+        "Should be ConfirmCancel popup"
+    );
 
     // Press 'n' to cancel
     let action = app.handle_input(key('n'));
@@ -49,7 +55,11 @@ fn test_popup_cancel_flow() {
     assert!(app.popup.is_none(), "Popup should be closed");
 
     // Verify selection is preserved
-    assert_eq!(app.jobs_state.selected(), Some(1), "Selection should be preserved");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(1),
+        "Selection should be preserved"
+    );
 }
 
 #[test]
@@ -65,7 +75,10 @@ fn test_popup_cancel_with_escape() {
 
     // Press Esc to cancel
     let action = app.handle_input(esc_key());
-    assert!(action.is_none(), "Canceling with Esc should not return action");
+    assert!(
+        action.is_none(),
+        "Canceling with Esc should not return action"
+    );
     assert!(app.popup.is_none(), "Popup should be closed");
 }
 
@@ -101,7 +114,10 @@ fn test_popup_confirm_with_enter() {
 
     // Press Enter to confirm
     let action = app.handle_input(enter_key());
-    assert!(action.is_some(), "Confirming with Enter should return action");
+    assert!(
+        action.is_some(),
+        "Confirming with Enter should return action"
+    );
     assert!(matches!(action, Some(Action::CancelJob(sid)) if sid == expected_sid));
 }
 
@@ -115,7 +131,10 @@ fn test_popup_delete_confirm_action() {
 
     // Open delete popup by pressing 'd'
     app.handle_input(key('d'));
-    assert!(matches!(app.popup, Some(Popup::ConfirmDelete(_))));
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ConfirmDelete(_))
+    ));
 
     // Press 'y' to confirm
     let action = app.handle_input(key('y'));
@@ -135,7 +154,11 @@ fn test_jobs_loaded_preserves_selection() {
     app.update(Action::JobsLoaded(Ok(new_jobs)));
 
     // Selection should be clamped to max valid index
-    assert_eq!(app.jobs_state.selected(), Some(4), "Selection should be clamped to 4 (len - 1)");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(4),
+        "Selection should be clamped to 4 (len - 1)"
+    );
     assert!(app.jobs.is_some(), "Jobs should still be loaded");
 }
 
@@ -151,7 +174,11 @@ fn test_jobs_loaded_with_empty_list() {
     app.update(Action::JobsLoaded(Ok(new_jobs)));
 
     // Selection should be set to 0 even though list is empty
-    assert_eq!(app.jobs_state.selected(), Some(0), "Selection should be 0 for empty list");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(0),
+        "Selection should be 0 for empty list"
+    );
 }
 
 #[test]
@@ -162,10 +189,13 @@ fn test_tick_suppressed_during_popup() {
 
     // Without popup, tick should return LoadJobs action
     let action = app.handle_tick();
-    assert!(matches!(action, Some(Action::LoadJobs)), "Tick should return LoadJobs when no popup");
+    assert!(
+        matches!(action, Some(Action::LoadJobs)),
+        "Tick should return LoadJobs when no popup"
+    );
 
     // Open a popup
-    app.popup = Some(Popup::Help);
+    app.popup = Some(Popup::builder(PopupType::Help).build());
 
     // With popup, tick should return None
     let action = app.handle_tick();
@@ -183,7 +213,11 @@ fn test_navigation_down_at_boundary() {
     app.update(Action::NavigateDown);
 
     // Should stay at last item (index 2)
-    assert_eq!(app.jobs_state.selected(), Some(2), "Should stay at last item");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(2),
+        "Should stay at last item"
+    );
 }
 
 #[test]
@@ -197,7 +231,11 @@ fn test_navigation_up_at_boundary() {
     app.update(Action::NavigateUp);
 
     // Should stay at first item (index 0)
-    assert_eq!(app.jobs_state.selected(), Some(0), "Should stay at first item");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(0),
+        "Should stay at first item"
+    );
 }
 
 #[test]
@@ -234,7 +272,10 @@ fn test_help_popup_open_close() {
     // Open help popup
     let action = app.handle_input(key('?'));
     assert!(action.is_none(), "Opening help should not return action");
-    assert!(matches!(app.popup, Some(Popup::Help)), "Should open Help popup");
+    assert!(
+        matches!(app.popup.as_ref().map(|p| &p.kind), Some(PopupType::Help)),
+        "Should open Help popup"
+    );
 
     // Close with Esc
     let action = app.handle_input(esc_key());
@@ -243,11 +284,17 @@ fn test_help_popup_open_close() {
 
     // Reopen with '?'
     app.handle_input(key('?'));
-    assert!(matches!(app.popup, Some(Popup::Help)));
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::Help)
+    ));
 
     // Close with 'q'
     let action = app.handle_input(key('q'));
-    assert!(action.is_none(), "Closing help with 'q' should not return action");
+    assert!(
+        action.is_none(),
+        "Closing help with 'q' should not return action"
+    );
     assert!(app.popup.is_none(), "Popup should be closed");
 }
 
@@ -262,7 +309,11 @@ fn test_page_down_navigation() {
     app.update(Action::PageDown);
 
     // Should move to index 15 (5 + 10)
-    assert_eq!(app.jobs_state.selected(), Some(15), "Should page down by 10");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(15),
+        "Should page down by 10"
+    );
 }
 
 #[test]
@@ -289,7 +340,11 @@ fn test_go_to_top() {
     // Go to top
     app.update(Action::GoToTop);
 
-    assert_eq!(app.jobs_state.selected(), Some(0), "Should go to top (index 0)");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(0),
+        "Should go to top (index 0)"
+    );
 }
 
 #[test]
@@ -302,7 +357,11 @@ fn test_go_to_bottom() {
     // Go to bottom
     app.update(Action::GoToBottom);
 
-    assert_eq!(app.jobs_state.selected(), Some(9), "Should go to bottom (last index)");
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(9),
+        "Should go to bottom (last index)"
+    );
 }
 
 #[test]
@@ -319,7 +378,10 @@ fn test_toggle_auto_refresh() {
 
     // Press 'a' again to toggle back
     app.handle_input(key('a'));
-    assert!(!app.auto_refresh, "Auto-refresh should be false after second toggle");
+    assert!(
+        !app.auto_refresh,
+        "Auto-refresh should be false after second toggle"
+    );
 }
 
 #[test]
@@ -329,8 +391,15 @@ fn test_screen_navigation_with_number_keys() {
 
     // Navigate to Jobs with '4'
     let action = app.handle_input(key('4'));
-    assert!(matches!(action, Some(Action::LoadJobs)), "Should trigger LoadJobs");
-    assert_eq!(app.current_screen, CurrentScreen::Jobs, "Should switch to Jobs screen");
+    assert!(
+        matches!(action, Some(Action::LoadJobs)),
+        "Should trigger LoadJobs"
+    );
+    assert_eq!(
+        app.current_screen,
+        CurrentScreen::Jobs,
+        "Should switch to Jobs screen"
+    );
 }
 
 #[test]
@@ -340,7 +409,10 @@ fn test_quit_action() {
 
     // Press 'q' to quit
     let action = app.handle_input(key('q'));
-    assert!(matches!(action, Some(Action::Quit)), "Should return Quit action");
+    assert!(
+        matches!(action, Some(Action::Quit)),
+        "Should return Quit action"
+    );
 }
 
 #[test]
@@ -350,7 +422,10 @@ fn test_refresh_jobs_action() {
 
     // Press 'r' to refresh
     let action = app.handle_input(key('r'));
-    assert!(matches!(action, Some(Action::LoadJobs)), "Should return LoadJobs action");
+    assert!(
+        matches!(action, Some(Action::LoadJobs)),
+        "Should return LoadJobs action"
+    );
 }
 
 #[test]
@@ -362,7 +437,10 @@ fn test_error_state_clears_on_loading() {
     // Set loading state
     app.update(Action::Loading(true));
 
-    assert!(app.error.is_none(), "Error should be cleared when loading starts");
+    assert!(
+        app.error.is_none(),
+        "Error should be cleared when loading starts"
+    );
     assert!(app.loading, "Should be in loading state");
 }
 
@@ -414,9 +492,17 @@ fn test_indexes_navigation() {
 
     // Navigate down
     app.update(Action::NavigateDown);
-    assert_eq!(app.indexes_state.selected(), Some(1), "Should move to index 1");
+    assert_eq!(
+        app.indexes_state.selected(),
+        Some(1),
+        "Should move to index 1"
+    );
 
     // Navigate up
     app.update(Action::NavigateUp);
-    assert_eq!(app.indexes_state.selected(), Some(0), "Should move to index 0");
+    assert_eq!(
+        app.indexes_state.selected(),
+        Some(0),
+        "Should move to index 0"
+    );
 }

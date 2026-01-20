@@ -3,6 +3,8 @@
 //! Provides utility functions for simulating keyboard input and creating
 //! test fixtures for the TUI application.
 
+#![allow(dead_code)]
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 /// Create a character key event.

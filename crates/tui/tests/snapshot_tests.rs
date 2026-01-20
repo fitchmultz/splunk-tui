@@ -7,11 +7,10 @@
 //! - Empty states (no jobs, no results)
 
 mod helpers;
-use helpers::*;
 
-use ratatui::{backend::TestBackend, Terminal};
+use ratatui::{Terminal, backend::TestBackend};
 use splunk_client::models::SearchJobStatus;
-use splunk_tui::App;
+use splunk_tui::{App, Popup, PopupType};
 
 /// Test harness for TUI rendering with a mock terminal.
 struct TuiHarness {
@@ -134,7 +133,7 @@ fn snapshot_jobs_screen_auto_refresh() {
 fn snapshot_help_popup() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
-    harness.app.popup = Some(splunk_tui::Popup::Help);
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build());
 
     insta::assert_snapshot!(harness.render());
 }
@@ -145,9 +144,12 @@ fn snapshot_confirm_cancel_popup() {
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
     harness.app.jobs = Some(create_mock_jobs());
     harness.app.jobs_state.select(Some(0));
-    harness.app.popup = Some(splunk_tui::Popup::ConfirmCancel(
-        "scheduler_admin_search_1234567890".to_string(),
-    ));
+    harness.app.popup = Some(
+        Popup::builder(PopupType::ConfirmCancel(
+            "scheduler_admin_search_1234567890".to_string(),
+        ))
+        .build(),
+    );
 
     insta::assert_snapshot!(harness.render());
 }
@@ -158,9 +160,12 @@ fn snapshot_confirm_delete_popup() {
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
     harness.app.jobs = Some(create_mock_jobs());
     harness.app.jobs_state.select(Some(1));
-    harness.app.popup = Some(splunk_tui::Popup::ConfirmDelete(
-        "admin_search_9876543210".to_string(),
-    ));
+    harness.app.popup = Some(
+        Popup::builder(PopupType::ConfirmDelete(
+            "admin_search_9876543210".to_string(),
+        ))
+        .build(),
+    );
 
     insta::assert_snapshot!(harness.render());
 }

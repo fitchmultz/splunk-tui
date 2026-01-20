@@ -15,32 +15,45 @@ use ratatui::{
 use splunk_client::models::SearchJobStatus;
 use std::cmp::Ordering;
 
+/// Configuration for rendering the jobs table.
+pub struct JobsRenderConfig<'a> {
+    /// The list of jobs to display
+    pub jobs: &'a [SearchJobStatus],
+    /// The current table selection state
+    pub state: &'a mut TableState,
+    /// Whether auto-refresh is enabled
+    pub auto_refresh: bool,
+    /// Optional filter string for filtering jobs
+    pub filter: &'a Option<String>,
+    /// Current filter input (for display when filtering)
+    pub filter_input: &'a str,
+    /// Whether the user is currently in filter mode
+    pub is_filtering: bool,
+    /// Current sort column
+    pub sort_column: SortColumn,
+    /// Current sort direction
+    pub sort_direction: SortDirection,
+}
+
 /// Render the jobs table.
 ///
 /// # Arguments
 ///
 /// * `f` - The frame to render to
 /// * `area` - The area to render within
-/// * `jobs` - The list of jobs to display
-/// * `state` - The current table selection state
-/// * `auto_refresh` - Whether auto-refresh is enabled
-/// * `filter` - Optional filter string for filtering jobs
-/// * `filter_input` - Current filter input (for display when filtering)
-/// * `is_filtering` - Whether the user is currently in filter mode
-/// * `sort_column` - Current sort column
-/// * `sort_direction` - Current sort direction
-pub fn render_jobs(
-    f: &mut Frame,
-    area: Rect,
-    jobs: &[SearchJobStatus],
-    state: &mut TableState,
-    auto_refresh: bool,
-    filter: &Option<String>,
-    filter_input: &str,
-    is_filtering: bool,
-    sort_column: SortColumn,
-    sort_direction: SortDirection,
-) {
+/// * `config` - Configuration for rendering
+pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
+    let JobsRenderConfig {
+        jobs,
+        state,
+        auto_refresh,
+        filter,
+        filter_input,
+        is_filtering,
+        sort_column,
+        sort_direction,
+    } = config;
+
     // If filtering, show the filter input at the top
     let (table_area, filter_area) = if is_filtering || filter.is_some() {
         let chunks = Layout::default()
@@ -73,9 +86,9 @@ pub fn render_jobs(
         let filter_lower = filter_str.to_lowercase();
         jobs.iter()
             .filter(|job| {
-                job.sid.to_lowercase().contains(&filter_lower) ||
-                (job.is_done && "done".contains(&filter_lower)) ||
-                (!job.is_done && "running".contains(&filter_lower))
+                job.sid.to_lowercase().contains(&filter_lower)
+                    || (job.is_done && "done".contains(&filter_lower))
+                    || (!job.is_done && "running".contains(&filter_lower))
             })
             .collect()
     } else {
@@ -83,7 +96,7 @@ pub fn render_jobs(
     };
 
     // Sort the filtered jobs by the selected column and direction
-    filtered_jobs.sort_by(|a, b| compare_jobs(a, b, sort_column, sort_direction));
+    filtered_jobs.sort_by(|a, b| compare_jobs(a, b, &sort_column, &sort_direction));
 
     // Create header with sort indicators
     let sort_indicator = match sort_direction {
@@ -94,8 +107,16 @@ pub fn render_jobs(
     let header_cells: Vec<Cell> = vec![
         header_cell("SID", sort_column == SortColumn::Sid, sort_indicator),
         header_cell("Status", sort_column == SortColumn::Status, sort_indicator),
-        header_cell("Duration", sort_column == SortColumn::Duration, sort_indicator),
-        header_cell("Results", sort_column == SortColumn::Results, sort_indicator),
+        header_cell(
+            "Duration",
+            sort_column == SortColumn::Duration,
+            sort_indicator,
+        ),
+        header_cell(
+            "Results",
+            sort_column == SortColumn::Results,
+            sort_indicator,
+        ),
         header_cell("Events", sort_column == SortColumn::Events, sort_indicator),
     ];
 
@@ -179,7 +200,12 @@ fn header_cell<'a>(text: &'a str, is_sorted: bool, indicator: &str) -> Cell<'a> 
 }
 
 /// Compare two jobs based on the specified column and direction.
-fn compare_jobs(a: &SearchJobStatus, b: &SearchJobStatus, column: SortColumn, direction: SortDirection) -> Ordering {
+fn compare_jobs(
+    a: &SearchJobStatus,
+    b: &SearchJobStatus,
+    column: &SortColumn,
+    direction: &SortDirection,
+) -> Ordering {
     let ordering = match column {
         SortColumn::Sid => a.sid.cmp(&b.sid),
         SortColumn::Status => {
@@ -187,10 +213,16 @@ fn compare_jobs(a: &SearchJobStatus, b: &SearchJobStatus, column: SortColumn, di
             match (a.is_done, b.is_done) {
                 (true, false) => Ordering::Less,
                 (false, true) => Ordering::Greater,
-                _ => a.done_progress.partial_cmp(&b.done_progress).unwrap_or(Ordering::Equal),
+                _ => a
+                    .done_progress
+                    .partial_cmp(&b.done_progress)
+                    .unwrap_or(Ordering::Equal),
             }
         }
-        SortColumn::Duration => a.run_duration.partial_cmp(&b.run_duration).unwrap_or(Ordering::Equal),
+        SortColumn::Duration => a
+            .run_duration
+            .partial_cmp(&b.run_duration)
+            .unwrap_or(Ordering::Equal),
         SortColumn::Results => a.result_count.cmp(&b.result_count),
         SortColumn::Events => a.event_count.cmp(&b.event_count),
     };

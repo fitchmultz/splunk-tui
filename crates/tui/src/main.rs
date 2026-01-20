@@ -17,6 +17,7 @@ use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::unbounded_channel};
+use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use app::App;
@@ -28,11 +29,19 @@ type SharedClient = Arc<Mutex<SplunkClient>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging
+    // Create logs directory if it doesn't exist
+    std::fs::create_dir_all("logs")?;
+
+    // Initialize file-based logging
+    let file_appender = tracing_appender::rolling::daily("logs", "splunk-tui.log");
+    let (non_blocking, _guard) = non_blocking(file_appender);
+
     tracing_subscriber::registry()
         .with(EnvFilter::from_default_env())
-        .with(fmt::layer())
+        .with(fmt::layer().with_writer(non_blocking))
         .init();
+
+    // Note: _guard must live for entire main() duration to ensure logs are flushed
 
     // Load config at startup
     let config = load_config()?;
@@ -84,6 +93,9 @@ async fn main() -> Result<()> {
 
         tokio::select! {
             Some(action) = rx.recv() => {
+                // Log action for observability
+                tracing::info!(?action, "Handling action");
+
                 // Check for quit first
                 if matches!(action, Action::Quit) {
                     break;

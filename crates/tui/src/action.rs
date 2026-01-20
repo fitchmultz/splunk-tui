@@ -35,12 +35,14 @@ pub enum Action {
     /// Enter search/filter mode for jobs
     EnterSearchMode,
     /// Add a character to the search filter
+    #[allow(dead_code)]
     SearchInput(char),
     /// Clear the search filter
     ClearSearch,
     /// Cycle sort column for jobs
     CycleSortColumn,
     /// Toggle sort direction for jobs
+    #[allow(dead_code)]
     ToggleSortDirection,
 
     // API Triggers

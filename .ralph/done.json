@@ -1,4 +1,58 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0001",
+      "status": "done",
+      "title": "Refactor popup UI to Builder pattern and add structured logging",
+      "priority": "high",
+      "tags": [
+        "ui",
+        "refactor",
+        "logging",
+        "foundation"
+      ],
+      "scope": [
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "crates/tui/tests/app_tests.rs",
+        "crates/tui/src/lib.rs",
+        "crates/tui/Cargo.toml",
+        "crates/tui/src/ui/screens/jobs.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/tests/helpers.rs"
+      ],
+      "evidence": [
+        "Plan FLIGHT 1: Foundation Refactor (Popup Builder & Observability)",
+        "Objective: Execute architectural evolution to establish UI robustness"
+      ],
+      "plan": [
+        "Modify crates/tui/src/ui/popup.rs: Implement PopupBuilder with fluent API (title, content, style, build). Replace static helper functions with flexible render method accepting Popup state.",
+        "Modify crates/tui/src/app.rs: Define const values for UI layout (header height, footer height). Update Popup enum to use richer structure (Confirm {title, message, action}, Info {title, message}, Help) and integrate with Builder.",
+        "Modify crates/tui/src/main.rs: Initialize tracing with subscriber that logs to file (tui interferes with stdout). Add info! logs on Action receipt for observability.",
+        "Modify crates/tui/tests/snapshot_tests.rs: Update popup test fixtures to use new Builder syntax. Remove unused import: helpers::*."
+      ],
+      "notes": [
+        "Added PopupType enum (Help, ConfirmCancel(String), ConfirmDelete(String)) and Popup struct with title, content, kind fields.",
+        "Implemented PopupBuilder with fluent API (title(), content(), build()).",
+        "Added layout constants: HEADER_HEIGHT = 3, FOOTER_HEIGHT = 3, POPUP_WIDTH_PERCENT = 60, POPUP_HEIGHT_PERCENT = 20.",
+        "Refactored render_popup() to use Popup struct instead of enum, extracting kind field for pattern matching.",
+        "Updated all popup creation sites to use Builder pattern: Popup::builder(PopupType::Help).build().",
+        "Added file-based logging with tracing-appender: logs/splunk-tui.log with daily rotation.",
+        "Added action logging in main loop: tracing::info!(?action, \"Handling action\").",
+        "Updated lib.rs to re-export Popup, PopupType, HEADER_HEIGHT, FOOTER_HEIGHT.",
+        "Updated all tests to use new Builder API and match on popup.kind field.",
+        "Added Default implementations for SortState and App (clippy requirements).",
+        "Refactored render_jobs() to use JobsRenderConfig struct to fix clippy too_many_arguments warning.",
+        "Fixed all clippy warnings (dead_code, new_without_default, too_many_arguments)."
+      ],
+      "request": "Read /tmp/plan.md and build out the task queue based on the plan provided.",
+      "created_at": "2025-01-19T00:00:00Z",
+      "updated_at": "2026-01-19T00:00:00Z",
+      "completed_at": "2026-01-19T00:00:00Z",
+      "depends_on": []
+    }
+  ]
 }

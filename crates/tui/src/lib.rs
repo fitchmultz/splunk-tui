@@ -21,4 +21,5 @@ pub mod ui;
 
 // Re-export commonly used types at the crate root
 pub use action::Action;
-pub use app::{App, CurrentScreen, Popup};
+pub use app::{App, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT};
+pub use ui::popup::{Popup, PopupType};
