@@ -157,6 +157,8 @@ pub struct App {
     pub search_filter: Option<String>,
     pub is_filtering: bool,
     pub filter_input: String,
+    /// Maps filtered view index → original jobs list index
+    pub filtered_job_indices: Vec<usize>,
 
     // Jobs sort state
     pub sort_state: SortState,
@@ -206,6 +208,7 @@ impl App {
             search_filter: None,
             is_filtering: false,
             filter_input: String::new(),
+            filtered_job_indices: Vec::new(),
             sort_state: SortState {
                 column: sort_column,
                 direction: sort_direction,
@@ -368,7 +371,8 @@ impl App {
                     if !self.filter_input.is_empty() {
                         self.search_filter = Some(self.filter_input.clone());
                         self.filter_input.clear();
-                        None // Don't ClearSearch - we just applied a filter
+                        self.rebuild_filtered_indices(); // Rebuild indices after filter is applied
+                        None
                     } else {
                         Some(Action::ClearSearch) // Empty input clears the filter
                     }
@@ -414,18 +418,14 @@ impl App {
             KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Char('c') => {
-                if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs)
-                    && let Some(job) = jobs.get(state)
-                {
+                if let Some(job) = self.get_selected_job() {
                     self.popup =
                         Some(Popup::builder(PopupType::ConfirmCancel(job.sid.clone())).build());
                 }
                 None
             }
             KeyCode::Char('d') => {
-                if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs)
-                    && let Some(job) = jobs.get(state)
-                {
+                if let Some(job) = self.get_selected_job() {
                     self.popup =
                         Some(Popup::builder(PopupType::ConfirmDelete(job.sid.clone())).build());
                 }
@@ -534,12 +534,15 @@ impl App {
             }
             Action::ClearSearch => {
                 self.search_filter = None;
+                self.rebuild_filtered_indices();
             }
             Action::CycleSortColumn => {
                 self.sort_state.cycle();
+                self.rebuild_filtered_indices();
             }
             Action::ToggleSortDirection => {
                 self.sort_state.toggle_direction();
+                self.rebuild_filtered_indices();
             }
             Action::Loading(is_loading) => {
                 self.loading = is_loading;
@@ -560,12 +563,15 @@ impl App {
             }
             Action::JobsLoaded(Ok(jobs)) => {
                 let sel = self.jobs_state.selected();
-                let jobs_len = jobs.len();
                 self.jobs = Some(jobs);
                 self.loading = false;
-                // Restore selection clamped to new bounds
-                self.jobs_state
-                    .select(sel.map(|i| i.min(jobs_len.saturating_sub(1))).or(Some(0)));
+                // Rebuild filtered indices and restore selection clamped to new bounds
+                self.rebuild_filtered_indices();
+                let filtered_len = self.filtered_jobs_len();
+                self.jobs_state.select(
+                    sel.map(|i| i.min(filtered_len.saturating_sub(1)))
+                        .or(Some(0)),
+                );
             }
             Action::ClusterInfoLoaded(Ok(info)) => {
                 self.cluster_info = Some(info);
@@ -603,7 +609,9 @@ impl App {
             }
             Action::InspectJob => {
                 // Transition to job inspect screen if we have jobs and a selection
-                if self.jobs.is_some() && self.jobs_state.selected().is_some() {
+                if self.jobs.as_ref().map(|j| !j.is_empty()).unwrap_or(false)
+                    && self.jobs_state.selected().is_some()
+                {
                     self.current_screen = CurrentScreen::JobInspect;
                 }
             }
@@ -619,9 +627,10 @@ impl App {
     fn next_item(&mut self) {
         match self.current_screen {
             CurrentScreen::Jobs => {
-                if let Some(jobs) = &self.jobs {
+                let len = self.filtered_jobs_len();
+                if len > 0 {
                     let i = self.jobs_state.selected().unwrap_or(0);
-                    if i < jobs.len().saturating_sub(1) {
+                    if i < len.saturating_sub(1) {
                         self.jobs_state.select(Some(i + 1));
                     }
                 }
@@ -662,10 +671,11 @@ impl App {
                 self.search_scroll_offset = self.search_scroll_offset.saturating_add(10);
             }
             CurrentScreen::Jobs => {
-                if let Some(jobs) = &self.jobs {
+                let len = self.filtered_jobs_len();
+                if len > 0 {
                     let i = self.jobs_state.selected().unwrap_or(0);
                     self.jobs_state
-                        .select(Some((i.saturating_add(10)).min(jobs.len() - 1)));
+                        .select(Some((i.saturating_add(10)).min(len - 1)));
                 }
             }
             CurrentScreen::Indexes => {
@@ -702,7 +712,9 @@ impl App {
                 self.search_scroll_offset = 0;
             }
             CurrentScreen::Jobs => {
-                self.jobs_state.select(Some(0));
+                if self.filtered_jobs_len() > 0 {
+                    self.jobs_state.select(Some(0));
+                }
             }
             CurrentScreen::Indexes => {
                 self.indexes_state.select(Some(0));
@@ -714,8 +726,9 @@ impl App {
     fn go_to_bottom(&mut self) {
         match self.current_screen {
             CurrentScreen::Jobs => {
-                if let Some(jobs) = &self.jobs {
-                    self.jobs_state.select(Some(jobs.len().saturating_sub(1)));
+                let len = self.filtered_jobs_len();
+                if len > 0 {
+                    self.jobs_state.select(Some(len.saturating_sub(1)));
                 }
             }
             CurrentScreen::Indexes => {
@@ -726,6 +739,111 @@ impl App {
             }
             _ => {}
         }
+    }
+
+    /// Rebuild the filtered job indices based on the current filter and jobs.
+    /// The indices are sorted according to the current sort settings.
+    fn rebuild_filtered_indices(&mut self) {
+        let Some(jobs) = &self.jobs else {
+            self.filtered_job_indices.clear();
+            return;
+        };
+
+        // First filter the jobs
+        let mut filtered_and_sorted: Vec<usize> = if let Some(filter) = &self.search_filter {
+            let lower_filter = filter.to_lowercase();
+            jobs.iter()
+                .enumerate()
+                .filter(|(_, job)| {
+                    job.sid.to_lowercase().contains(&lower_filter)
+                        || (job.is_done && "done".contains(&lower_filter))
+                        || (!job.is_done && "running".contains(&lower_filter))
+                })
+                .map(|(i, _)| i)
+                .collect()
+        } else {
+            // No filter: all jobs are visible
+            (0..jobs.len()).collect()
+        };
+
+        // Then sort the filtered indices using the same comparison logic as jobs.rs
+        filtered_and_sorted.sort_by(|&a, &b| {
+            let job_a = &jobs[a];
+            let job_b = &jobs[b];
+            self.compare_jobs_for_sort(job_a, job_b)
+        });
+
+        self.filtered_job_indices = filtered_and_sorted;
+
+        // Clamp selection to filtered list length
+        let filtered_len = self.filtered_job_indices.len();
+        if let Some(selected) = self.jobs_state.selected() {
+            if filtered_len == 0 {
+                self.jobs_state.select(None);
+            } else if selected >= filtered_len {
+                self.jobs_state.select(Some(filtered_len - 1));
+            }
+        }
+    }
+
+    /// Compare two jobs for sorting based on current sort settings.
+    /// Matches the logic in jobs.rs::compare_jobs.
+    fn compare_jobs_for_sort(
+        &self,
+        a: &SearchJobStatus,
+        b: &SearchJobStatus,
+    ) -> std::cmp::Ordering {
+        let ordering = match self.sort_state.column {
+            SortColumn::Sid => a.sid.cmp(&b.sid),
+            SortColumn::Status => {
+                // Sort by is_done first, then by progress
+                match (a.is_done, b.is_done) {
+                    (true, false) => std::cmp::Ordering::Less,
+                    (false, true) => std::cmp::Ordering::Greater,
+                    _ => a
+                        .done_progress
+                        .partial_cmp(&b.done_progress)
+                        .unwrap_or(std::cmp::Ordering::Equal),
+                }
+            }
+            SortColumn::Duration => a
+                .run_duration
+                .partial_cmp(&b.run_duration)
+                .unwrap_or(std::cmp::Ordering::Equal),
+            SortColumn::Results => a.result_count.cmp(&b.result_count),
+            SortColumn::Events => a.event_count.cmp(&b.event_count),
+        };
+
+        match self.sort_state.direction {
+            SortDirection::Asc => ordering,
+            SortDirection::Desc => ordering.reverse(),
+        }
+    }
+
+    /// Get the currently selected job, accounting for any active filter.
+    pub fn get_selected_job(&self) -> Option<&SearchJobStatus> {
+        let selected = self.jobs_state.selected()?;
+        let original_idx = self.filtered_job_indices.get(selected)?;
+        self.jobs.as_ref()?.get(*original_idx)
+    }
+
+    /// Get the filtered and sorted list of jobs (references into the original list).
+    /// NOTE: Currently unused directly as render_jobs accesses filtered_job_indices.
+    /// Kept for potential future use or testing.
+    #[allow(dead_code)]
+    pub fn get_filtered_jobs(&self) -> Vec<&SearchJobStatus> {
+        let Some(jobs) = &self.jobs else {
+            return Vec::new();
+        };
+        self.filtered_job_indices
+            .iter()
+            .filter_map(|&i| jobs.get(i))
+            .collect()
+    }
+
+    /// Get the length of the filtered jobs list.
+    fn filtered_jobs_len(&self) -> usize {
+        self.filtered_job_indices.len()
     }
 
     pub fn render(&mut self, f: &mut Frame) {
@@ -980,11 +1098,18 @@ impl App {
             }
         };
 
+        // Get the filtered and sorted jobs (computed by App for selection consistency)
+        let filtered_jobs: Vec<&SearchJobStatus> = self
+            .filtered_job_indices
+            .iter()
+            .filter_map(|&i| jobs.get(i))
+            .collect();
+
         jobs::render_jobs(
             f,
             area,
             jobs::JobsRenderConfig {
-                jobs,
+                jobs: &filtered_jobs,
                 state: &mut self.jobs_state,
                 auto_refresh: self.auto_refresh,
                 filter: &self.search_filter,
@@ -999,11 +1124,8 @@ impl App {
     fn render_job_details(&mut self, f: &mut Frame, area: Rect) {
         use crate::ui::screens::job_details;
 
-        // Get the selected job
-        let job = match (&self.jobs, self.jobs_state.selected()) {
-            (Some(jobs), Some(selected_idx)) => jobs.get(selected_idx),
-            _ => None,
-        };
+        // Get the selected job (accounting for filter/sort)
+        let job = self.get_selected_job();
 
         match job {
             Some(job) => {

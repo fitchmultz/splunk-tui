@@ -384,6 +384,52 @@
       "updated_at": "2026-01-20T04:18:41Z",
       "depends_on": [],
       "completed_at": "2026-01-20T05:30:00Z"
+    },
+    {
+      "id": "RQ-0009",
+      "status": "done",
+      "title": "Align jobs selection and inspect behavior with filtered list",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "jobs",
+        "selection"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/jobs.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/jobs.rs renders filtered_jobs while selection state remains tied to the unfiltered jobs list.",
+        "crates/tui/src/app.rs InspectJob uses jobs_state.selected() index against the unfiltered jobs list, which can mismatch the filtered view."
+      ],
+      "plan": [
+        "Track filtered indices or compute a selection mapping so the highlighted row and inspect target are consistent.",
+        "Ensure selection is cleared when the filtered list is empty to avoid pointing at invalid rows.",
+        "Add tests for inspect behavior while a filter is active and for empty filtered results."
+      ],
+      "notes": [
+        "Added filtered_job_indices: Vec<usize> field to App struct that maps filtered view index → original jobs list index.",
+        "Implemented rebuild_filtered_indices() helper that filters and sorts jobs according to current search_filter and sort settings.",
+        "Updated JobsLoaded, ClearSearch, CycleSortColumn, and ToggleSortDirection actions to call rebuild_filtered_indices().",
+        "Updated filter input handling (Enter key) to call rebuild_filtered_indices() after setting search_filter.",
+        "Added get_selected_job() helper that correctly maps filtered index to original job via filtered_job_indices.",
+        "Updated InspectJob, cancel popup, and delete popup handlers to use get_selected_job() for correct job selection.",
+        "Updated render_job_details() to use get_selected_job() instead of direct jobs list access.",
+        "Updated all navigation helpers (next_item, previous_item, next_page, previous_page, go_to_top, go_to_bottom) to use filtered_jobs_len() for boundary checks.",
+        "Fixed InspectJob handler to check jobs list is non-empty before transitioning to JobInspect screen.",
+        "Updated jobs.rs JobsRenderConfig to accept &[&SearchJobStatus] instead of &[SearchJobStatus] to receive pre-filtered/sorted data from App.",
+        "Removed duplicate filtering/sorting logic from jobs.rs render_jobs() since App now provides pre-filtered data.",
+        "Added 6 comprehensive tests: test_filtered_job_selection_inspect, test_filtered_job_selection_cancel, test_filtered_job_selection_delete, test_filtered_navigation_respects_bounds, test_clear_filter_rebuilds_indices, test_sort_changes_rebuild_indices.",
+        "Fixed existing tests to use JobsLoaded action instead of directly setting jobs (required for filtered_job_indices initialization).",
+        "All 37 app tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T05:06:50Z",
+      "depends_on": [],
+      "completed_at": "2026-01-20T05:30:00Z"
     }
   ]
 }

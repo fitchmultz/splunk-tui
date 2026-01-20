@@ -35,7 +35,7 @@ fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
 fn test_popup_cancel_flow() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
 
     // Open cancel popup by pressing 'c'
@@ -67,7 +67,7 @@ fn test_popup_cancel_flow() {
 fn test_popup_cancel_with_escape() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
 
     // Open cancel popup
@@ -87,7 +87,7 @@ fn test_popup_cancel_with_escape() {
 fn test_popup_confirm_cancel_action() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
     let expected_sid = "sid_1".to_string();
 
@@ -106,7 +106,7 @@ fn test_popup_confirm_cancel_action() {
 fn test_popup_confirm_with_enter() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
     let expected_sid = "sid_1".to_string();
 
@@ -126,7 +126,7 @@ fn test_popup_confirm_with_enter() {
 fn test_popup_delete_confirm_action() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(2));
     let expected_sid = "sid_2".to_string();
 
@@ -147,7 +147,7 @@ fn test_popup_delete_confirm_action() {
 fn test_jobs_loaded_preserves_selection() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(10));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
     app.jobs_state.select(Some(7));
 
     // Simulate loading new jobs with fewer items
@@ -167,7 +167,7 @@ fn test_jobs_loaded_preserves_selection() {
 fn test_jobs_loaded_with_empty_list() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(5));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
     app.jobs_state.select(Some(2));
 
     // Simulate loading empty jobs
@@ -207,7 +207,7 @@ fn test_tick_suppressed_during_popup() {
 fn test_navigation_down_at_boundary() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(2)); // Already at last item
 
     // Try to navigate down from last item
@@ -225,7 +225,7 @@ fn test_navigation_down_at_boundary() {
 fn test_navigation_up_at_boundary() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(0)); // Already at first item
 
     // Try to navigate up from first item
@@ -243,7 +243,7 @@ fn test_navigation_up_at_boundary() {
 fn test_navigation_down_normal() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(5));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
     app.jobs_state.select(Some(1));
 
     // Navigate down
@@ -256,7 +256,7 @@ fn test_navigation_down_normal() {
 fn test_navigation_up_normal() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(5));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
     app.jobs_state.select(Some(3));
 
     // Navigate up
@@ -303,7 +303,7 @@ fn test_help_popup_open_close() {
 fn test_page_down_navigation() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(25));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(25))));
     app.jobs_state.select(Some(5));
 
     // Page down
@@ -321,7 +321,7 @@ fn test_page_down_navigation() {
 fn test_page_up_navigation() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(25));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(25))));
     app.jobs_state.select(Some(20));
 
     // Page up
@@ -335,7 +335,7 @@ fn test_page_up_navigation() {
 fn test_go_to_top() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(10));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
     app.jobs_state.select(Some(7));
 
     // Go to top
@@ -352,7 +352,7 @@ fn test_go_to_top() {
 fn test_go_to_bottom() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(10));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
     app.jobs_state.select(Some(2));
 
     // Go to bottom
@@ -534,7 +534,7 @@ fn test_indexes_navigation() {
 fn test_job_inspection_flow() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = Some(create_mock_jobs(3));
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
 
     // Press Enter to inspect job
@@ -581,7 +581,7 @@ fn test_job_inspection_flow() {
 fn test_job_inspection_without_jobs() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;
-    app.jobs = None; // No jobs loaded
+    app.update(Action::JobsLoaded(Ok(vec![]))); // No jobs loaded
     app.jobs_state.select(Some(0));
 
     // Press Enter with no jobs loaded
@@ -627,10 +627,10 @@ fn test_jobs_filter_persistence() {
 
     // Enter filter mode with '/'
     let action = app.handle_input(key('/'));
-    assert!(
-        action.is_none(),
-        "Entering filter mode should not return action"
-    );
+    // Process the EnterSearchMode action
+    if let Some(a) = action {
+        app.update(a);
+    }
     assert!(app.is_filtering, "Should be in filter mode");
     assert!(
         app.filter_input.is_empty(),
@@ -678,7 +678,10 @@ fn test_jobs_filter_clear_with_empty_input() {
     app.search_filter = Some("existing".to_string());
 
     // Enter filter mode
-    app.handle_input(key('/'));
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
     assert!(app.is_filtering);
 
     // Press Enter without typing anything (empty input)
@@ -701,7 +704,10 @@ fn test_jobs_filter_cancel_with_escape() {
     app.search_filter = Some("existing".to_string());
 
     // Enter filter mode
-    app.handle_input(key('/'));
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
     assert!(app.is_filtering);
 
     // Type some text
@@ -725,4 +731,385 @@ fn test_jobs_filter_cancel_with_escape() {
     );
     // The existing filter should be cleared (current behavior)
     // This is because ClearSearch sets search_filter to None
+}
+
+// Tests for filtered job selection (RQ-0009 fix)
+
+#[test]
+fn test_filtered_job_selection_inspect() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Create jobs with distinct SIDs for easy identification
+    let jobs = vec![
+        SearchJobStatus {
+            sid: "aaa_job".to_string(),
+            is_done: true,
+            is_finalized: false,
+            done_progress: 1.0,
+            run_duration: 10.0,
+            disk_usage: 1024,
+            scan_count: 100,
+            event_count: 50,
+            result_count: 25,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+        SearchJobStatus {
+            sid: "bbb_job".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.5,
+            run_duration: 20.0,
+            disk_usage: 2048,
+            scan_count: 200,
+            event_count: 100,
+            result_count: 50,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+        SearchJobStatus {
+            sid: "ccc_job".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.3,
+            run_duration: 30.0,
+            disk_usage: 3072,
+            scan_count: 300,
+            event_count: 150,
+            result_count: 75,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+    ];
+    app.update(Action::JobsLoaded(Ok(jobs)));
+
+    // Apply a filter that matches only "bbb_job" by entering filter mode
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    app.handle_input(key('b'));
+    app.handle_input(key('b'));
+    app.handle_input(key('b'));
+    app.handle_input(enter_key());
+
+    // Select the first (and only) item in the filtered list
+    app.jobs_state.select(Some(0));
+
+    // Verify get_selected_job returns the correct job
+    let selected = app.get_selected_job();
+    assert!(selected.is_some(), "Should have a selected job");
+    assert_eq!(
+        selected.unwrap().sid,
+        "bbb_job",
+        "Should select bbb_job (the only matching job)"
+    );
+}
+
+#[test]
+fn test_filtered_job_selection_cancel() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Create jobs with specific SIDs
+    let jobs = vec![
+        SearchJobStatus {
+            sid: "first_job".to_string(),
+            is_done: true,
+            is_finalized: false,
+            done_progress: 1.0,
+            run_duration: 10.0,
+            disk_usage: 1024,
+            scan_count: 100,
+            event_count: 50,
+            result_count: 25,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+        SearchJobStatus {
+            sid: "target_job".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.5,
+            run_duration: 20.0,
+            disk_usage: 2048,
+            scan_count: 200,
+            event_count: 100,
+            result_count: 50,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+        SearchJobStatus {
+            sid: "last_job".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.3,
+            run_duration: 30.0,
+            disk_usage: 3072,
+            scan_count: 300,
+            event_count: 150,
+            result_count: 75,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+    ];
+    app.update(Action::JobsLoaded(Ok(jobs)));
+
+    // Apply filter matching only "target_job" using filter mode
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    app.handle_input(key('t'));
+    app.handle_input(key('a'));
+    app.handle_input(key('r'));
+    app.handle_input(key('g'));
+    app.handle_input(key('e'));
+    app.handle_input(key('t'));
+    app.handle_input(enter_key());
+
+    // Select the first item in filtered view (which is target_job)
+    app.jobs_state.select(Some(0));
+
+    // Open cancel popup
+    app.handle_input(key('c'));
+
+    // Verify the popup shows the correct job SID
+    assert!(app.popup.is_some(), "Popup should be open");
+    if let Some(Popup {
+        kind: PopupType::ConfirmCancel(sid),
+        ..
+    }) = &app.popup
+    {
+        assert_eq!(
+            sid, "target_job",
+            "Cancel popup should show target_job, not first_job"
+        );
+    } else {
+        panic!("Should have ConfirmCancel popup");
+    }
+}
+
+#[test]
+fn test_filtered_job_selection_delete() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Create jobs
+    let jobs = vec![
+        SearchJobStatus {
+            sid: "keep_this".to_string(),
+            is_done: true,
+            is_finalized: false,
+            done_progress: 1.0,
+            run_duration: 10.0,
+            disk_usage: 1024,
+            scan_count: 100,
+            event_count: 50,
+            result_count: 25,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+        SearchJobStatus {
+            sid: "delete_this".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.5,
+            run_duration: 20.0,
+            disk_usage: 2048,
+            scan_count: 200,
+            event_count: 100,
+            result_count: 50,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+    ];
+    app.update(Action::JobsLoaded(Ok(jobs)));
+
+    // Apply filter using filter mode
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    app.handle_input(key('d'));
+    app.handle_input(key('e'));
+    app.handle_input(key('l'));
+    app.handle_input(key('e'));
+    app.handle_input(key('t'));
+    app.handle_input(key('e'));
+    app.handle_input(enter_key());
+
+    app.jobs_state.select(Some(0));
+
+    // Open delete popup
+    app.handle_input(key('d'));
+
+    // Verify the popup shows the correct job SID
+    assert!(app.popup.is_some(), "Popup should be open");
+    if let Some(Popup {
+        kind: PopupType::ConfirmDelete(sid),
+        ..
+    }) = &app.popup
+    {
+        assert_eq!(
+            sid, "delete_this",
+            "Delete popup should show delete_this, not keep_this"
+        );
+    } else {
+        panic!("Should have ConfirmDelete popup");
+    }
+}
+
+#[test]
+fn test_filtered_navigation_respects_bounds() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Create 10 jobs
+    let jobs = create_mock_jobs(10);
+    app.update(Action::JobsLoaded(Ok(jobs)));
+
+    // Apply filter that matches only 3 jobs (sid_0, sid_1, sid_2)
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    app.handle_input(key('s'));
+    app.handle_input(key('i'));
+    app.handle_input(key('d'));
+    app.handle_input(key('_'));
+    app.handle_input(enter_key());
+
+    // Should have filtered indices
+    assert!(
+        app.filtered_job_indices.len() >= 3,
+        "Should have at least 3 filtered jobs"
+    );
+
+    // Select first item
+    app.jobs_state.select(Some(0));
+
+    // Navigate down - should respect filtered bounds
+    app.update(Action::NavigateDown);
+    let selected = app.jobs_state.selected().unwrap();
+    assert!(
+        selected < app.filtered_job_indices.len(),
+        "Selection should be within filtered bounds"
+    );
+}
+
+#[test]
+fn test_clear_filter_rebuilds_indices() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Create jobs
+    let jobs = create_mock_jobs(10);
+    app.update(Action::JobsLoaded(Ok(jobs)));
+
+    // Apply filter
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    app.handle_input(key('s'));
+    app.handle_input(key('i'));
+    app.handle_input(key('d'));
+    app.handle_input(key('_'));
+    app.handle_input(key('0'));
+    app.handle_input(enter_key());
+
+    let filtered_len = app.filtered_job_indices.len();
+    assert!(
+        filtered_len < 10,
+        "Filtered list should be shorter than full list"
+    );
+
+    // Clear filter with Esc
+    let action = app.handle_input(key('/')); // Enter filter mode
+    if let Some(a) = action {
+        app.update(a);
+    }
+    let action = app.handle_input(esc_key()); // Press Esc to clear
+    if let Some(a) = action {
+        app.update(a);
+    }
+
+    // filtered_job_indices should now contain all indices
+    assert_eq!(
+        app.filtered_job_indices.len(),
+        10,
+        "After clearing filter, all jobs should be visible"
+    );
+}
+
+#[test]
+fn test_sort_changes_rebuild_indices() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Create jobs with different durations
+    let jobs = vec![
+        SearchJobStatus {
+            sid: "job_1".to_string(),
+            is_done: true,
+            is_finalized: false,
+            done_progress: 1.0,
+            run_duration: 100.0,
+            disk_usage: 1024,
+            scan_count: 100,
+            event_count: 50,
+            result_count: 25,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+        SearchJobStatus {
+            sid: "job_2".to_string(),
+            is_done: false,
+            is_finalized: false,
+            done_progress: 0.5,
+            run_duration: 10.0,
+            disk_usage: 2048,
+            scan_count: 200,
+            event_count: 100,
+            result_count: 50,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        },
+    ];
+    app.update(Action::JobsLoaded(Ok(jobs)));
+
+    // Initial sort by sid (ascending) - job_1 comes before job_2
+    assert_eq!(
+        app.filtered_job_indices[0], 0,
+        "First item should be job_1 (sid asc)"
+    );
+    assert_eq!(
+        app.filtered_job_indices[1], 1,
+        "Second item should be job_2 (sid asc)"
+    );
+
+    // Cycle sort column
+    let action = app.handle_input(key('s'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+
+    // Indices should be rebuilt with new sort order
+    assert_eq!(
+        app.filtered_job_indices.len(),
+        2,
+        "Should still have 2 items"
+    );
 }

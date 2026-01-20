@@ -17,8 +17,8 @@ use std::cmp::Ordering;
 
 /// Configuration for rendering the jobs table.
 pub struct JobsRenderConfig<'a> {
-    /// The list of jobs to display
-    pub jobs: &'a [SearchJobStatus],
+    /// The list of jobs to display (already filtered and sorted by the App)
+    pub jobs: &'a [&'a SearchJobStatus],
     /// The current table selection state
     pub state: &'a mut TableState,
     /// Whether auto-refresh is enabled
@@ -81,22 +81,9 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
         f.render_widget(filter_paragraph, filter_area);
     }
 
-    // Filter jobs based on filter string
-    let mut filtered_jobs: Vec<&SearchJobStatus> = if let Some(filter_str) = filter {
-        let filter_lower = filter_str.to_lowercase();
-        jobs.iter()
-            .filter(|job| {
-                job.sid.to_lowercase().contains(&filter_lower)
-                    || (job.is_done && "done".contains(&filter_lower))
-                    || (!job.is_done && "running".contains(&filter_lower))
-            })
-            .collect()
-    } else {
-        jobs.iter().collect()
-    };
-
-    // Sort the filtered jobs by the selected column and direction
-    filtered_jobs.sort_by(|a, b| compare_jobs(a, b, &sort_column, &sort_direction));
+    // The jobs are already filtered and sorted by the App, so we can use them directly.
+    // We just need to convert from &[&SearchJobStatus] to Vec<&SearchJobStatus> for compatibility.
+    let display_jobs: Vec<&SearchJobStatus> = jobs.to_vec();
 
     // Create header with sort indicators
     let sort_indicator = match sort_direction {
@@ -121,7 +108,7 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     ];
 
     // Create rows with highlighting
-    let rows: Vec<Row> = filtered_jobs
+    let rows: Vec<Row> = display_jobs
         .iter()
         .map(|job| {
             let status_text = if job.is_done {
@@ -200,6 +187,9 @@ fn header_cell<'a>(text: &'a str, is_sorted: bool, indicator: &str) -> Cell<'a> 
 }
 
 /// Compare two jobs based on the specified column and direction.
+/// NOTE: No longer used as filtering/sorting is done in the App.
+/// Kept for reference/potential future use.
+#[allow(dead_code)]
 fn compare_jobs(
     a: &SearchJobStatus,
     b: &SearchJobStatus,
