@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::models::{ClusterInfo, ClusterPeer};
 
@@ -10,15 +11,15 @@ pub async fn get_cluster_info(
     client: &Client,
     base_url: &str,
     auth_token: &str,
+    max_retries: usize,
 ) -> Result<ClusterInfo> {
     let url = format!("{}/services/cluster/master/config", base_url);
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&[("output_mode", "json")])
-        .send()
-        .await?;
+        .query(&[("output_mode", "json")]);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
@@ -50,15 +51,15 @@ pub async fn get_cluster_peers(
     client: &Client,
     base_url: &str,
     auth_token: &str,
+    max_retries: usize,
 ) -> Result<Vec<ClusterPeer>> {
     let url = format!("{}/services/cluster/master/peers", base_url);
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&[("output_mode", "json")])
-        .send()
-        .await?;
+        .query(&[("output_mode", "json")]);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 

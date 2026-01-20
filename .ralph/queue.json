@@ -1,4 +1,528 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0006",
+      "status": "todo",
+      "title": "Retry on 401/403 by clearing session and re-authenticating",
+      "priority": "high",
+      "tags": [
+        "client",
+        "auth",
+        "session"
+      ],
+      "scope": [
+        "crates/client/src/client.rs",
+        "crates/client/src/auth.rs",
+        "crates/client/src/endpoints/"
+      ],
+      "evidence": [
+        "crates/client/src/client.rs get_auth_token only checks session expiry; endpoints return ApiError on 401/403 without re-login.",
+        "crates/client/src/auth.rs has clear_session() but it is not used by request paths."
+      ],
+      "plan": [
+        "Add a request wrapper that detects 401/403 for session auth, clears the session, logs in, and retries once.",
+        "Ensure API token auth does not attempt re-login and surfaces the error.",
+        "Add integration tests that return 401 then success and assert the retry path."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0007",
+      "status": "todo",
+      "title": "Fix OutputMode::Json parsing for search results and add object-response coverage",
+      "priority": "high",
+      "tags": [
+        "client",
+        "search",
+        "parsing"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs",
+        "crates/client/fixtures/search/",
+        "crates/client/tests/integration_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/search.rs uses json.as_array() for OutputMode::Json and json[\"results\"] only for non-json modes.",
+        "crates/client/fixtures/search/get_results.json is an array fixture, so object responses are not covered."
+      ],
+      "plan": [
+        "Update get_results parsing to accept either an array or an object with a results field for OutputMode::Json.",
+        "Add a second fixture representing the object response and cover it in integration tests.",
+        "Keep preview/total fields consistent with the object response when present."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0008",
+      "status": "todo",
+      "title": "Fix jobs filter apply/clear flow so filters persist after Enter",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "jobs",
+        "filter"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs handle_jobs_input sets search_filter then returns Action::ClearSearch on Enter, but update() clears search_filter on ClearSearch.",
+        "Action::ClearSearch is used for both clearing and applying filters, so applying a filter immediately clears it."
+      ],
+      "plan": [
+        "Introduce a dedicated ApplyFilter action or change ClearSearch semantics to avoid clearing on Enter when a filter is set.",
+        "Update update() to apply the new action and keep search_filter set.",
+        "Add tests to assert filters persist after Enter and are cleared only on Esc/explicit clear."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0009",
+      "status": "todo",
+      "title": "Align jobs selection and inspect behavior with filtered list",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "jobs",
+        "selection"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/jobs.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/jobs.rs renders filtered_jobs while selection state remains tied to the unfiltered jobs list.",
+        "crates/tui/src/app.rs InspectJob uses jobs_state.selected() index against the unfiltered jobs list, which can mismatch the filtered view."
+      ],
+      "plan": [
+        "Track filtered indices or compute a selection mapping so the highlighted row and inspect target are consistent.",
+        "Ensure selection is cleared when the filtered list is empty to avoid pointing at invalid rows.",
+        "Add tests for inspect behavior while a filter is active and for empty filtered results."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0010",
+      "status": "todo",
+      "title": "Remove Box::leak in jobs status rendering to avoid memory leaks",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ui",
+        "memory"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/jobs.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/jobs.rs uses Box::leak to extend the lifetime of status text for table rows.",
+        "Box::leak leaks memory per render and can grow unbounded during UI usage."
+      ],
+      "plan": [
+        "Refactor status text construction to use owned Strings without leaking (e.g., build String and pass to Cell::from).",
+        "Ensure highlight logic still works with owned status strings.",
+        "Add a unit or snapshot test to validate the running status text formatting."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0021",
+      "status": "todo",
+      "title": "Clear loading state on cancel/delete failures in TUI",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "jobs",
+        "state"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs sends Action::Loading(true) for CancelJob/DeleteJob but on error only sends Action::Notify.",
+        "crates/tui/src/app.rs does not clear loading on Action::Notify, so loading can remain true after failures."
+      ],
+      "plan": [
+        "Send Action::Loading(false) or a failure action when cancel/delete fails.",
+        "Update App::update to clear loading for the failure path.",
+        "Add tests covering cancel/delete error flows to ensure loading resets."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0011",
+      "status": "todo",
+      "title": "Fix client integration test fixture path to be manifest-relative",
+      "priority": "high",
+      "tags": [
+        "tests",
+        "client",
+        "fixtures"
+      ],
+      "scope": [
+        "crates/client/tests/integration_tests.rs",
+        "crates/client/fixtures/"
+      ],
+      "evidence": [
+        "crates/client/tests/integration_tests.rs loads fixtures from Path::new(\"fixtures\"), but fixtures live under crates/client/fixtures.",
+        "There is no top-level fixtures directory at repo root, so tests will fail when run from workspace root."
+      ],
+      "plan": [
+        "Use CARGO_MANIFEST_DIR to build an absolute path to crates/client/fixtures.",
+        "Update load_fixture to reference the correct fixture base path.",
+        "Run integration tests to ensure fixtures resolve from workspace root."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0013",
+      "status": "todo",
+      "title": "Move live tests into a workspace crate or add a runnable test harness",
+      "priority": "high",
+      "tags": [
+        "tests",
+        "workflow",
+        "live"
+      ],
+      "scope": [
+        "tests/live_tests.rs",
+        "crates/client/tests/",
+        "Makefile"
+      ],
+      "evidence": [
+        "tests/live_tests.rs lives at workspace root, but Cargo.toml is a virtual workspace with no root package to host integration tests.",
+        "Makefile test-live targets a root test that is not discoverable in the workspace layout."
+      ],
+      "plan": [
+        "Relocate live_tests.rs into a specific crate (likely crates/client/tests) or add a minimal root package to host it.",
+        "Adjust dotenv path usage to reflect the new test location.",
+        "Update Makefile test-live to point at the new test target."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0012",
+      "status": "todo",
+      "title": "Fix Makefile test targets to run real workspace integration tests",
+      "priority": "high",
+      "tags": [
+        "workflow",
+        "makefile",
+        "tests"
+      ],
+      "scope": [
+        "Makefile"
+      ],
+      "evidence": [
+        "Makefile test-integration runs `cargo test --test integration_tests`, but this workspace has no root integration_tests target.",
+        "Makefile test-live runs `cargo test --test live_tests`, which will not resolve in a virtual workspace root."
+      ],
+      "plan": [
+        "Update test-integration to run the integration tests for the correct crate(s) via `cargo test -p ... --test ...`.",
+        "Update test-live to reference the crate and test target where live tests live.",
+        "Verify `make test` runs unit + integration without missing targets."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0023",
+      "status": "todo",
+      "title": "Align Makefile with required targets (generate + build install)",
+      "priority": "medium",
+      "tags": [
+        "workflow",
+        "makefile",
+        "contract"
+      ],
+      "scope": [
+        "Makefile"
+      ],
+      "evidence": [
+        "AGENTS.md requires Makefile targets including generate, but Makefile has no generate target.",
+        "AGENTS.md requires build to also install to ~/.local/bin when applicable, but Makefile build only runs cargo build --release."
+      ],
+      "plan": [
+        "Add a generate target (no-op with a clear message if no codegen is needed yet).",
+        "Update build to install release binaries to ~/.local/bin or document why it cannot.",
+        "Ensure make ci includes generate when applicable and keep help output in sync."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0014",
+      "status": "todo",
+      "title": "Improve CLI formatters to render non-string values and CSV escaping",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "formatting",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/formatters.rs",
+        "crates/cli/src/commands/"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters.rs uses value.as_str().unwrap_or(\"\") for table/csv/xml formatting, dropping numbers/booleans/objects.",
+        "CSV output is emitted without escaping commas or quotes, which can corrupt rows."
+      ],
+      "plan": [
+        "Convert serde_json::Value to strings using a consistent formatter (stringify scalars, JSON for objects/arrays).",
+        "Implement CSV escaping (quotes/double-quotes/newlines) for both headers and values.",
+        "Expand formatter tests to cover numeric/boolean values and escaping."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0015",
+      "status": "todo",
+      "title": "Implement indexes --detailed flag or remove it",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "indexes",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/indexes.rs",
+        "crates/cli/src/main.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/indexes.rs takes a _detailed flag but does not use it.",
+        "CLI exposes --detailed in help, but behavior is identical to non-detailed output."
+      ],
+      "plan": [
+        "Decide on detailed output fields (paths, retention, size limits) and implement them in the formatters.",
+        "Wire the detailed flag through to the formatter output.",
+        "Update CLI tests/help to reflect the detailed behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0016",
+      "status": "todo",
+      "title": "Make cluster --detailed output format-consistent",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "cluster",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/cluster.rs prints peers in plain text even when output_format is json/csv/xml.",
+        "This mixes human-readable output with structured output formats, breaking parsers."
+      ],
+      "plan": [
+        "Define a structured peers output type and extend formatters to render it in the selected output format.",
+        "Gate the peers output on the same formatter rather than println! text.",
+        "Add tests for the detailed mode in at least one structured format."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0017",
+      "status": "todo",
+      "title": "Define default behavior for `splunk jobs` when no flags are set",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "jobs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/jobs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/jobs.rs only runs list when --list is set; otherwise no output or error is produced.",
+        "Users invoking `splunk jobs` without flags get a silent no-op."
+      ],
+      "plan": [
+        "Decide on default behavior (list jobs) or enforce mutually exclusive flags with clap.",
+        "Implement the default or clap validation and update help text.",
+        "Add tests for the default/no-flag behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0018",
+      "status": "todo",
+      "title": "Enable search results scrolling in the TUI search screen",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "search",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs maintains search_scroll_offset but navigation helpers only update Jobs/Indexes selection, not search results.",
+        "Search screen accepts PageUp/PageDown actions but search_scroll_offset is never updated."
+      ],
+      "plan": [
+        "Add scroll handling for search results (PageUp/PageDown/Home/End) that updates search_scroll_offset with bounds checks.",
+        "Update help text or footer hints to indicate scrolling controls on the Search screen.",
+        "Add tests to cover search scrolling and rendering with offsets."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0019",
+      "status": "todo",
+      "title": "Centralize layout constants for toast rendering",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "ui",
+        "consistency"
+      ],
+      "scope": [
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/lib.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/toast.rs defines local HEADER_HEIGHT/FOOTER_HEIGHT constants that duplicate app.rs values.",
+        "app.rs exports HEADER_HEIGHT/FOOTER_HEIGHT via lib.rs, but toast.rs does not use them."
+      ],
+      "plan": [
+        "Use the shared layout constants from app.rs (via crate root) in toast rendering.",
+        "Remove the duplicated constants from toast.rs to avoid drift.",
+        "Run existing toast tests to confirm behavior is unchanged."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0020",
+      "status": "todo",
+      "title": "Fix lib.rs docs example to match App::new signature",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/lib.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/lib.rs docs example calls App::new() but App::new takes an Option<PersistedState> parameter.",
+        "Only Default is implemented, so the example as written does not compile."
+      ],
+      "plan": [
+        "Update the example to use App::new(None) or App::default().",
+        "Run doc tests (or add a compile test) to ensure the example compiles.",
+        "Confirm documentation remains accurate after the change."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    },
+    {
+      "id": "RQ-0022",
+      "status": "todo",
+      "title": "Add --help/usage with examples to live test script",
+      "priority": "low",
+      "tags": [
+        "scripts",
+        "docs",
+        "workflow"
+      ],
+      "scope": [
+        "scripts/test-live-server.sh"
+      ],
+      "evidence": [
+        "scripts/test-live-server.sh is executable but does not handle --help or document usage/examples.",
+        "AGENTS.md requires executable scripts to provide a useful --help menu with examples."
+      ],
+      "plan": [
+        "Add argument parsing for --help and print usage with example commands.",
+        "Document required environment variables or prerequisites in the help output.",
+        "Add a small test or lint check (if available) to ensure help output stays in sync."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": []
+    }
+  ]
 }

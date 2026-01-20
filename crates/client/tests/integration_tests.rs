@@ -32,7 +32,7 @@ async fn test_login_success() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::login(&client, &mock_server.uri(), "admin", "testpassword").await;
+    let result = endpoints::login(&client, &mock_server.uri(), "admin", "testpassword", 3).await;
 
     if let Err(ref e) = result {
         eprintln!("Login error: {:?}", e);
@@ -54,7 +54,7 @@ async fn test_login_invalid_credentials() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::login(&client, &mock_server.uri(), "admin", "wrongpassword").await;
+    let result = endpoints::login(&client, &mock_server.uri(), "admin", "wrongpassword", 3).await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -86,6 +86,7 @@ async fn test_create_search_job() {
         "test-token",
         "search index=main",
         &options,
+        3,
     )
     .await;
 
@@ -116,6 +117,7 @@ async fn test_get_search_results() {
         Some(10),
         Some(0),
         endpoints::OutputMode::Json,
+        3,
     )
     .await;
 
@@ -158,7 +160,8 @@ async fn test_get_job_status() {
 
     let client = Client::new();
     let result =
-        endpoints::get_job_status(&client, &mock_server.uri(), "test-token", "test-sid-123").await;
+        endpoints::get_job_status(&client, &mock_server.uri(), "test-token", "test-sid-123", 3)
+            .await;
 
     assert!(result.is_ok());
     let status = result.unwrap();
@@ -180,8 +183,15 @@ async fn test_list_indexes() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::list_indexes(&client, &mock_server.uri(), "test-token", Some(10), Some(0)).await;
+    let result = endpoints::list_indexes(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(0),
+        3,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("List indexes error: {:?}", e);
@@ -207,8 +217,15 @@ async fn test_list_jobs() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::list_jobs(&client, &mock_server.uri(), "test-token", Some(10), Some(0)).await;
+    let result = endpoints::list_jobs(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(0),
+        3,
+    )
+    .await;
 
     assert!(result.is_ok());
     let jobs = result.unwrap();
@@ -228,7 +245,8 @@ async fn test_cancel_job() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::cancel_job(&client, &mock_server.uri(), "test-token", "test-sid").await;
+    let result =
+        endpoints::cancel_job(&client, &mock_server.uri(), "test-token", "test-sid", 3).await;
 
     assert!(result.is_ok());
 }
@@ -244,7 +262,8 @@ async fn test_delete_job() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::delete_job(&client, &mock_server.uri(), "test-token", "test-sid").await;
+    let result =
+        endpoints::delete_job(&client, &mock_server.uri(), "test-token", "test-sid", 3).await;
 
     assert!(result.is_ok());
 }
@@ -262,7 +281,7 @@ async fn test_get_cluster_info() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token").await;
+    let result = endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3).await;
 
     assert!(result.is_ok());
     let info = result.unwrap();
@@ -294,6 +313,7 @@ async fn test_unauthorized_access() {
         "invalid-token",
         Some(10),
         Some(0),
+        3,
     )
     .await;
 
@@ -315,7 +335,7 @@ async fn test_forbidden_access() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token").await;
+    let result = endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3).await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -341,6 +361,7 @@ async fn test_internal_server_error() {
         "test-token",
         "search index=main",
         &Default::default(),
+        3,
     )
     .await;
 
@@ -360,8 +381,15 @@ async fn test_malformed_json_response() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::list_indexes(&client, &mock_server.uri(), "test-token", Some(10), Some(0)).await;
+    let result = endpoints::list_indexes(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(0),
+        3,
+    )
+    .await;
 
     assert!(result.is_err());
 }
@@ -394,9 +422,90 @@ async fn test_timeout_handling() {
         Some(10),
         Some(0),
         endpoints::OutputMode::Json,
+        3,
     )
     .await;
 
     // The request should timeout or return an error
     assert!(result.is_err());
+}
+
+// Retry behavior tests
+
+#[tokio::test]
+async fn test_retry_on_429_success() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // Use wiremock's sequence feature to return 429 twice, then 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(429).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Rate limited"}]
+        })))
+        .up_to_n_times(2)
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3, // max_retries
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    // Should succeed after retries
+    assert!(result.is_ok());
+    let sid = result.unwrap();
+    assert!(sid.contains("scheduler__admin__search"));
+
+    // Should have taken at least 1 + 2 = 3 seconds (exponential backoff: 1s, 2s)
+    // Note: timing assertions can be flaky, so we use a generous threshold
+    assert!(elapsed >= std::time::Duration::from_secs(2));
+}
+
+#[tokio::test]
+async fn test_retry_on_429_exhaustion() {
+    let mock_server = MockServer::start().await;
+
+    // Always return 429
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid"))
+        .respond_with(ResponseTemplate::new(429).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Rate limited"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let start = std::time::Instant::now();
+    let result =
+        endpoints::get_job_status(&client, &mock_server.uri(), "test-token", "test-sid", 2).await;
+    let elapsed = start.elapsed();
+
+    // Should fail after exhausting retries
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::MaxRetriesExceeded(3))); // 2 retries + 1 initial attempt = 3 total
+
+    // Should have taken at least 1 + 2 = 3 seconds (exponential backoff: 1s, 2s)
+    assert!(elapsed >= std::time::Duration::from_secs(2));
 }

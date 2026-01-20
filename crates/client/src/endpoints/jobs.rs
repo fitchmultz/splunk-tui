@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::models::{SearchJobListResponse, SearchJobStatus};
 
@@ -11,15 +12,15 @@ pub async fn get_job(
     base_url: &str,
     auth_token: &str,
     sid: &str,
+    max_retries: usize,
 ) -> Result<SearchJobStatus> {
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&[("output_mode", "json")])
-        .send()
-        .await?;
+        .query(&[("output_mode", "json")]);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
@@ -44,6 +45,7 @@ pub async fn list_jobs(
     auth_token: &str,
     count: Option<u64>,
     offset: Option<u64>,
+    max_retries: usize,
 ) -> Result<Vec<SearchJobStatus>> {
     let url = format!("{}/services/search/jobs", base_url);
 
@@ -57,12 +59,11 @@ pub async fn list_jobs(
         query_params.push(("offset".to_string(), o.to_string()));
     }
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&query_params)
-        .send()
-        .await?;
+        .query(&query_params);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
@@ -102,15 +103,15 @@ pub async fn cancel_job(
     base_url: &str,
     auth_token: &str,
     sid: &str,
+    max_retries: usize,
 ) -> Result<()> {
     let url = format!("{}/services/search/jobs/{}/control", base_url, sid);
 
-    let response = client
+    let builder = client
         .post(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .form(&[("action", "cancel")])
-        .send()
-        .await?;
+        .form(&[("action", "cancel")]);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
@@ -131,14 +132,14 @@ pub async fn delete_job(
     base_url: &str,
     auth_token: &str,
     sid: &str,
+    max_retries: usize,
 ) -> Result<()> {
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
-    let response = client
+    let builder = client
         .delete(&url)
-        .header("Authorization", format!("Bearer {}", auth_token))
-        .send()
-        .await?;
+        .header("Authorization", format!("Bearer {}", auth_token));
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 

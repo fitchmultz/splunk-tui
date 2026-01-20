@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::models::{Index, IndexListResponse};
 
@@ -12,6 +13,7 @@ pub async fn list_indexes(
     auth_token: &str,
     count: Option<u64>,
     offset: Option<u64>,
+    max_retries: usize,
 ) -> Result<Vec<Index>> {
     let url = format!("{}/services/data/indexes", base_url);
 
@@ -24,12 +26,11 @@ pub async fn list_indexes(
         query_params.push(("offset".to_string(), o.to_string()));
     }
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&query_params)
-        .send()
-        .await?;
+        .query(&query_params);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 

@@ -151,6 +151,7 @@ impl SplunkClient {
                 &self.base_url,
                 username,
                 password.expose_secret(),
+                self.max_retries,
             )
             .await?;
 
@@ -188,8 +189,16 @@ impl SplunkClient {
 
         if wait {
             let auth_token = self.get_auth_token().await?;
-            endpoints::wait_for_job(&self.http, &self.base_url, &auth_token, &sid, 500, 300)
-                .await?;
+            endpoints::wait_for_job(
+                &self.http,
+                &self.base_url,
+                &auth_token,
+                &sid,
+                500,
+                300,
+                self.max_retries,
+            )
+            .await?;
         }
 
         let results = self
@@ -207,7 +216,15 @@ impl SplunkClient {
     ) -> Result<String> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::search::create_job(&self.http, &self.base_url, &auth_token, query, options).await
+        endpoints::search::create_job(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            query,
+            options,
+            self.max_retries,
+        )
+        .await
     }
 
     /// Get results from a search job.
@@ -227,6 +244,7 @@ impl SplunkClient {
             Some(count),
             Some(offset),
             endpoints::search::OutputMode::Json,
+            self.max_retries,
         )
         .await
     }
@@ -235,7 +253,14 @@ impl SplunkClient {
     pub async fn get_job_status(&mut self, sid: &str) -> Result<SearchJobStatus> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::search::get_job_status(&self.http, &self.base_url, &auth_token, sid).await
+        endpoints::search::get_job_status(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            sid,
+            self.max_retries,
+        )
+        .await
     }
 
     /// List all search jobs.
@@ -246,21 +271,43 @@ impl SplunkClient {
     ) -> Result<Vec<SearchJobStatus>> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::list_jobs(&self.http, &self.base_url, &auth_token, count, offset).await
+        endpoints::list_jobs(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            count,
+            offset,
+            self.max_retries,
+        )
+        .await
     }
 
     /// Cancel a search job.
     pub async fn cancel_job(&mut self, sid: &str) -> Result<()> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::cancel_job(&self.http, &self.base_url, &auth_token, sid).await
+        endpoints::cancel_job(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            sid,
+            self.max_retries,
+        )
+        .await
     }
 
     /// Delete a search job.
     pub async fn delete_job(&mut self, sid: &str) -> Result<()> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::delete_job(&self.http, &self.base_url, &auth_token, sid).await
+        endpoints::delete_job(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            sid,
+            self.max_retries,
+        )
+        .await
     }
 
     /// List all indexes.
@@ -271,21 +318,30 @@ impl SplunkClient {
     ) -> Result<Vec<Index>> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::list_indexes(&self.http, &self.base_url, &auth_token, count, offset).await
+        endpoints::list_indexes(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            count,
+            offset,
+            self.max_retries,
+        )
+        .await
     }
 
     /// Get cluster information.
     pub async fn get_cluster_info(&mut self) -> Result<ClusterInfo> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::get_cluster_info(&self.http, &self.base_url, &auth_token).await
+        endpoints::get_cluster_info(&self.http, &self.base_url, &auth_token, self.max_retries).await
     }
 
     /// Get cluster peer information.
     pub async fn get_cluster_peers(&mut self) -> Result<Vec<ClusterPeer>> {
         let auth_token = self.get_auth_token().await?;
 
-        endpoints::get_cluster_peers(&self.http, &self.base_url, &auth_token).await
+        endpoints::get_cluster_peers(&self.http, &self.base_url, &auth_token, self.max_retries)
+            .await
     }
 
     /// Get the current authentication token, logging in if necessary.

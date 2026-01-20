@@ -226,6 +226,50 @@
       "depends_on": [
         "RQ-0003"
       ]
+    },
+    {
+      "id": "RQ-0005",
+      "status": "done",
+      "title": "Add 429 retry with exponential backoff to client requests",
+      "priority": "high",
+      "tags": [
+        "client",
+        "reliability",
+        "retry"
+      ],
+      "scope": [
+        "crates/client/src/client.rs",
+        "crates/client/src/endpoints/",
+        "crates/client/tests/integration_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client.rs defines max_retries on SplunkClient but no retry logic is used by endpoint calls.",
+        "crates/client/src/endpoints/* perform a single reqwest call and return ApiError on non-success without retries."
+      ],
+      "plan": [
+        "Introduce a shared request helper (client or endpoints) that wraps reqwest calls and retries 429 responses with 1s/2s/4s backoff up to max_retries.",
+        "Route endpoint functions through the helper so all API calls consistently retry on 429.",
+        "Add wiremock tests that return 429 twice then 200 to assert backoff + retry behavior."
+      ],
+      "notes": [
+        "Created crates/client/src/endpoints/request.rs with send_request_with_retry() function that wraps reqwest calls with retry logic.",
+        "Implemented exponential backoff: 2^attempt seconds (1s, 2s, 4s) for retries on HTTP 429 responses.",
+        "Added tracing::debug logging for retry attempts with attempt number, max_retries, and backoff duration.",
+        "Returns MaxRetriesExceeded error when retries are exhausted, propagates other reqwest errors immediately.",
+        "Uses RequestBuilder::try_clone() for retries, falls back to single attempt if cloning fails.",
+        "Exported send_request_with_retry from endpoints/mod.rs.",
+        "Updated all endpoint functions to accept max_retries parameter: login(), get_job(), list_jobs(), cancel_job(), delete_job(), create_job(), get_job_status(), wait_for_job(), get_results(), get_cluster_info(), get_cluster_peers(), list_indexes().",
+        "Updated SplunkClient to pass self.max_retries to all endpoint calls.",
+        "Added #[allow(clippy::too_many_arguments)] to get_results() function.",
+        "Added two integration tests: test_retry_on_429_success (mock returns 429 twice then 200), test_retry_on_429_exhaustion (mock always returns 429).",
+        "Updated all existing integration tests to pass max_retries=3 parameter.",
+        "All 17 integration tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "completed_at": "2026-01-20T05:00:00Z",
+      "depends_on": []
     }
   ]
 }

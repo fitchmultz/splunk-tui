@@ -3,6 +3,7 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 
 /// Login to Splunk with username and password.
@@ -11,15 +12,15 @@ pub async fn login(
     base_url: &str,
     username: &str,
     password: &str,
+    max_retries: usize,
 ) -> Result<String> {
     debug!("Logging in to Splunk as {}", username);
 
     let url = format!("{}/services/auth/login", base_url);
-    let response = client
+    let builder = client
         .post(&url)
-        .form(&[("username", username), ("password", password)])
-        .send()
-        .await?;
+        .form(&[("username", username), ("password", password)]);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 

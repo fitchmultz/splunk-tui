@@ -4,6 +4,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
+use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::models::{SearchJobResults, SearchJobStatus};
 
@@ -64,6 +65,7 @@ pub async fn create_job(
     auth_token: &str,
     query: &str,
     options: &CreateJobOptions,
+    max_retries: usize,
 ) -> Result<String> {
     debug!("Creating search job: {}", query);
 
@@ -97,12 +99,11 @@ pub async fn create_job(
         form_data.push(("output_mode", mode.to_string()));
     }
 
-    let response = client
+    let builder = client
         .post(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .form(&form_data)
-        .send()
-        .await?;
+        .form(&form_data);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
@@ -128,17 +129,17 @@ pub async fn get_job_status(
     base_url: &str,
     auth_token: &str,
     sid: &str,
+    max_retries: usize,
 ) -> Result<SearchJobStatus> {
     debug!("Getting status for job: {}", sid);
 
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&[("output_mode", "json")])
-        .send()
-        .await?;
+        .query(&[("output_mode", "json")]);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
@@ -164,12 +165,13 @@ pub async fn wait_for_job(
     sid: &str,
     poll_interval_ms: u64,
     max_wait_secs: u64,
+    max_retries: usize,
 ) -> Result<SearchJobStatus> {
     let start = std::time::Instant::now();
     let max_wait = std::time::Duration::from_secs(max_wait_secs);
 
     loop {
-        let status = get_job_status(client, base_url, auth_token, sid).await?;
+        let status = get_job_status(client, base_url, auth_token, sid, max_retries).await?;
 
         if status.is_done {
             debug!("Job {} completed", sid);
@@ -185,6 +187,7 @@ pub async fn wait_for_job(
 }
 
 /// Get results from a search job.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_results(
     client: &Client,
     base_url: &str,
@@ -193,6 +196,7 @@ pub async fn get_results(
     count: Option<u64>,
     offset: Option<u64>,
     output_mode: OutputMode,
+    max_retries: usize,
 ) -> Result<SearchJobResults> {
     debug!("Getting results for job: {}", sid);
 
@@ -208,12 +212,11 @@ pub async fn get_results(
         query_params.push(("offset".to_string(), o.to_string()));
     }
 
-    let response = client
+    let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&query_params)
-        .send()
-        .await?;
+        .query(&query_params);
+    let response = send_request_with_retry(builder, max_retries).await?;
 
     let status = response.status().as_u16();
 
