@@ -9,7 +9,7 @@
 //! use splunk_tui::{App, Action};
 //! use crossterm::event::KeyEvent;
 //!
-//! let mut app = App::new();
+//! let mut app = App::default();
 //! if let Some(action) = app.handle_input(KeyEvent::from(crossterm::event::KeyCode::Char('q'))) {
 //!     // Handle action
 //! }
