@@ -1186,6 +1186,48 @@
               "RQ-0028"
             ],
             "custom_fields": {}
+          },
+          {
+            "id": "RQ-0029",
+            "status": "done",
+            "title": "Refactor TUI screens from app.rs into ui/screens",
+            "priority": "medium",
+            "tags": [
+              "tui",
+              "refactor",
+              "ui"
+            ],
+            "scope": [
+              "crates/tui/src/app.rs",
+              "crates/tui/src/ui/screens/"
+            ],
+            "evidence": [
+              "crates/tui/src/app.rs contains rendering logic for Search, Indexes, and Cluster screens, making it overly large.",
+              "Jobs and JobDetails screens are already correctly separated into crates/tui/src/ui/screens/."
+            ],
+            "plan": [
+              "Move render_search to crates/tui/src/ui/screens/search.rs.",
+              "Move render_indexes to crates/tui/src/ui/screens/indexes.rs.",
+              "Move render_cluster to crates/tui/src/ui/screens/cluster.rs.",
+              "Update app.rs to call these new modules, maintaining clean state separation."
+            ],
+            "notes": [
+              "Created crates/tui/src/ui/screens/search.rs with SearchRenderConfig struct and render_search() function.",
+              "Created crates/tui/src/ui/screens/indexes.rs with IndexesRenderConfig struct and render_indexes() function.",
+              "Created crates/tui/src/ui/screens/cluster.rs with ClusterRenderConfig struct and render_cluster() function.",
+              "Updated crates/tui/src/ui/screens/mod.rs to export cluster, indexes, and search modules.",
+              "Updated crates/tui/src/app.rs: Added imports for new screen modules, removed unused ListItem import, added KeyEvent import.",
+              "Updated crates/tui/src/app.rs render_content() to call the new screen modules with their respective config structs.",
+              "Removed render_search, render_indexes, and render_cluster methods from app.rs (now in screen modules).",
+              "All modules follow the existing pattern: config struct for passing state, render function using ratatui Frame/Rect.",
+              "make ci passes all checks: 93 tests (unit + integration), linting, formatting, build successful."
+            ],
+            "request": "scan finding",
+            "created_at": "2026-01-20T17:15:00Z",
+            "updated_at": "2026-01-20T22:18:39Z",
+            "completed_at": "2026-01-20T22:18:39Z",
+            "depends_on": [],
+            "custom_fields": {}
           }
         ]
       }

@@ -6,13 +6,14 @@
 use crate::action::Action;
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
+use crate::ui::screens::{cluster, indexes, search};
 use crossterm::event::KeyEvent;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, TableState},
+    widgets::{Block, Borders, ListState, Paragraph, TableState},
 };
 use serde_json::Value;
 use splunk_client::models::{ClusterInfo, Index, SearchJobStatus};
@@ -929,141 +930,42 @@ impl App {
 
     fn render_content(&mut self, f: &mut Frame, area: Rect) {
         match self.current_screen {
-            CurrentScreen::Search => self.render_search(f, area),
-            CurrentScreen::Indexes => self.render_indexes(f, area),
-            CurrentScreen::Cluster => self.render_cluster(f, area),
+            CurrentScreen::Search => {
+                search::render_search(
+                    f,
+                    area,
+                    search::SearchRenderConfig {
+                        search_input: &self.search_input,
+                        search_status: &self.search_status,
+                        search_results: &self.search_results,
+                        search_scroll_offset: self.search_scroll_offset,
+                    },
+                );
+            }
+            CurrentScreen::Indexes => {
+                indexes::render_indexes(
+                    f,
+                    area,
+                    indexes::IndexesRenderConfig {
+                        loading: self.loading,
+                        indexes: self.indexes.as_deref(),
+                        state: &mut self.indexes_state,
+                    },
+                );
+            }
+            CurrentScreen::Cluster => {
+                cluster::render_cluster(
+                    f,
+                    area,
+                    cluster::ClusterRenderConfig {
+                        loading: self.loading,
+                        cluster_info: self.cluster_info.as_ref(),
+                    },
+                );
+            }
             CurrentScreen::Jobs => self.render_jobs(f, area),
             CurrentScreen::JobInspect => self.render_job_details(f, area),
         }
-    }
-
-    fn render_search(&mut self, f: &mut Frame, area: Rect) {
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Length(3), // Search input
-                    Constraint::Length(3), // Status
-                    Constraint::Min(0),    // Results
-                ]
-                .as_ref(),
-            )
-            .split(area);
-
-        // Search input
-        let input = Paragraph::new(self.search_input.as_str())
-            .block(Block::default().borders(Borders::ALL).title("Search Query"));
-        f.render_widget(input, chunks[0]);
-
-        // Status
-        let status = Paragraph::new(self.search_status.as_str())
-            .block(Block::default().borders(Borders::ALL).title("Status"));
-        f.render_widget(status, chunks[1]);
-
-        // Results
-        if self.search_results.is_empty() {
-            let placeholder = Paragraph::new("No results. Enter a search query and press Enter.")
-                .block(Block::default().borders(Borders::ALL).title("Results"))
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, chunks[2]);
-        } else {
-            let results_text: Vec<Line> = self
-                .search_results
-                .iter()
-                .skip(self.search_scroll_offset)
-                .map(|v| {
-                    Line::from(
-                        serde_json::to_string_pretty(v).unwrap_or_else(|_| "<invalid>".to_string()),
-                    )
-                })
-                .collect();
-
-            let results = Paragraph::new(results_text)
-                .block(Block::default().borders(Borders::ALL).title("Results"));
-            f.render_widget(results, chunks[2]);
-        }
-    }
-
-    fn render_indexes(&mut self, f: &mut Frame, area: Rect) {
-        if self.loading && self.indexes.is_none() {
-            let loading = Paragraph::new("Loading indexes...")
-                .block(Block::default().borders(Borders::ALL).title("Indexes"))
-                .alignment(Alignment::Center);
-            f.render_widget(loading, area);
-            return;
-        }
-
-        let indexes = match &self.indexes {
-            Some(i) => i,
-            None => {
-                let placeholder = Paragraph::new("No indexes loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Indexes"))
-                    .alignment(Alignment::Center);
-                f.render_widget(placeholder, area);
-                return;
-            }
-        };
-
-        let items: Vec<ListItem> = indexes
-            .iter()
-            .map(|i| {
-                ListItem::new(format!(
-                    "{} - {} events, {} MB",
-                    i.name, i.total_event_count, i.current_db_size_mb
-                ))
-            })
-            .collect();
-
-        let list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("Indexes"))
-            .highlight_style(Style::default().fg(Color::Yellow));
-        f.render_stateful_widget(list, area, &mut self.indexes_state);
-    }
-
-    fn render_cluster(&mut self, f: &mut Frame, area: Rect) {
-        if self.loading && self.cluster_info.is_none() {
-            let loading = Paragraph::new("Loading cluster info...")
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Cluster Information"),
-                )
-                .alignment(Alignment::Center);
-            f.render_widget(loading, area);
-            return;
-        }
-
-        let info = match &self.cluster_info {
-            Some(i) => i,
-            None => {
-                let placeholder = Paragraph::new("No cluster info loaded. Press 'r' to refresh.")
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Cluster Information"),
-                    )
-                    .alignment(Alignment::Center);
-                f.render_widget(placeholder, area);
-                return;
-            }
-        };
-
-        let items: Vec<ListItem> = vec![
-            ListItem::new(format!("ID: {}", info.id)),
-            ListItem::new(format!("Mode: {}", info.mode)),
-            ListItem::new(format!("Label: {:?}", info.label)),
-            ListItem::new(format!("Manager URI: {:?}", info.manager_uri)),
-            ListItem::new(format!("Replication Factor: {:?}", info.replication_factor)),
-            ListItem::new(format!("Search Factor: {:?}", info.search_factor)),
-            ListItem::new(format!("Status: {:?}", info.status)),
-        ];
-
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Cluster Information"),
-        );
-        f.render_widget(list, area);
     }
 
     fn render_jobs(&mut self, f: &mut Frame, area: Rect) {
