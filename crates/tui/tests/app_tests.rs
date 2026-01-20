@@ -619,3 +619,110 @@ fn test_job_inspect_help_popup() {
     assert!(action.is_none(), "Closing help should not return action");
     assert!(app.popup.is_none(), "Popup should be closed");
 }
+
+#[test]
+fn test_jobs_filter_persistence() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Enter filter mode with '/'
+    let action = app.handle_input(key('/'));
+    assert!(
+        action.is_none(),
+        "Entering filter mode should not return action"
+    );
+    assert!(app.is_filtering, "Should be in filter mode");
+    assert!(
+        app.filter_input.is_empty(),
+        "Filter input should start empty"
+    );
+    assert!(
+        app.search_filter.is_none(),
+        "No filter should be applied yet"
+    );
+
+    // Type filter text "foo"
+    app.handle_input(key('f'));
+    app.handle_input(key('o'));
+    app.handle_input(key('o'));
+    assert_eq!(app.filter_input, "foo", "Filter input should be 'foo'");
+
+    // Press Enter to apply filter
+    let action = app.handle_input(enter_key());
+
+    // Should NOT return ClearSearch (which would wipe the filter)
+    assert!(
+        action.is_none(),
+        "Applying filter should not return ClearSearch action"
+    );
+
+    // Verify final state
+    assert!(!app.is_filtering, "Should exit filter mode");
+    assert_eq!(
+        app.search_filter,
+        Some("foo".to_string()),
+        "Filter should persist after Enter"
+    );
+    assert!(
+        app.filter_input.is_empty(),
+        "Filter input should be cleared after apply"
+    );
+}
+
+#[test]
+fn test_jobs_filter_clear_with_empty_input() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Set an existing filter
+    app.search_filter = Some("existing".to_string());
+
+    // Enter filter mode
+    app.handle_input(key('/'));
+    assert!(app.is_filtering);
+
+    // Press Enter without typing anything (empty input)
+    let action = app.handle_input(enter_key());
+
+    // Empty input should return ClearSearch to clear the filter
+    assert!(
+        matches!(action, Some(Action::ClearSearch)),
+        "Empty input should return ClearSearch"
+    );
+    assert!(!app.is_filtering, "Should exit filter mode");
+}
+
+#[test]
+fn test_jobs_filter_cancel_with_escape() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Set an existing filter
+    app.search_filter = Some("existing".to_string());
+
+    // Enter filter mode
+    app.handle_input(key('/'));
+    assert!(app.is_filtering);
+
+    // Type some text
+    app.handle_input(key('f'));
+    app.handle_input(key('o'));
+    app.handle_input(key('o'));
+    assert_eq!(app.filter_input, "foo");
+
+    // Press Esc to cancel without applying
+    let action = app.handle_input(esc_key());
+
+    // Esc should return ClearSearch
+    assert!(
+        matches!(action, Some(Action::ClearSearch)),
+        "Esc should return ClearSearch"
+    );
+    assert!(!app.is_filtering, "Should exit filter mode");
+    assert!(
+        app.filter_input.is_empty(),
+        "Filter input should be cleared"
+    );
+    // The existing filter should be cleared (current behavior)
+    // This is because ClearSearch sets search_filter to None
+}

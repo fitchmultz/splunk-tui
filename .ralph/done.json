@@ -349,6 +349,41 @@
       "updated_at": "2026-01-20T04:58:39Z",
       "depends_on": [],
       "completed_at": "2026-01-20T04:58:39Z"
+    },
+    {
+      "id": "RQ-0008",
+      "status": "done",
+      "title": "Fix jobs filter apply/clear flow so filters persist after Enter",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "jobs",
+        "filter"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs handle_jobs_input sets search_filter then returns Action::ClearSearch on Enter, but update() clears search_filter on ClearSearch.",
+        "Action::ClearSearch is used for both clearing and applying filters, so applying a filter immediately clears it."
+      ],
+      "plan": [
+        "Introduce a dedicated ApplyFilter action or change ClearSearch semantics to avoid clearing on Enter when a filter is set.",
+        "Update update() to apply the new action and keep search_filter set.",
+        "Add tests to assert filters persist after Enter and are cleared only on Esc/explicit clear."
+      ],
+      "notes": [
+        "Fixed crates/tui/src/app.rs handle_jobs_input() Enter key handling: returns None instead of Action::ClearSearch when applying a non-empty filter, so search_filter persists.",
+        "Empty input on Enter still returns Action::ClearSearch to clear the existing filter.",
+        "Added 3 regression tests in crates/tui/tests/app_tests.rs: test_jobs_filter_persistence (verifies filter persists after Enter), test_jobs_filter_clear_with_empty_input (verifies empty input clears filter), test_jobs_filter_cancel_with_escape (verifies Esc returns ClearSearch).",
+        "All tests pass and make ci completes successfully."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T04:18:41Z",
+      "updated_at": "2026-01-20T04:18:41Z",
+      "depends_on": [],
+      "completed_at": "2026-01-20T05:30:00Z"
     }
   ]
 }

@@ -368,9 +368,9 @@ impl App {
                     if !self.filter_input.is_empty() {
                         self.search_filter = Some(self.filter_input.clone());
                         self.filter_input.clear();
-                        Some(Action::ClearSearch) // Triggers re-render
+                        None // Don't ClearSearch - we just applied a filter
                     } else {
-                        Some(Action::ClearSearch)
+                        Some(Action::ClearSearch) // Empty input clears the filter
                     }
                 }
                 KeyCode::Backspace => {

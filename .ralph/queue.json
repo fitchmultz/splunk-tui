@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0008",
-      "status": "todo",
-      "title": "Fix jobs filter apply/clear flow so filters persist after Enter",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "jobs",
-        "filter"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs handle_jobs_input sets search_filter then returns Action::ClearSearch on Enter, but update() clears search_filter on ClearSearch.",
-        "Action::ClearSearch is used for both clearing and applying filters, so applying a filter immediately clears it."
-      ],
-      "plan": [
-        "Introduce a dedicated ApplyFilter action or change ClearSearch semantics to avoid clearing on Enter when a filter is set.",
-        "Update update() to apply the new action and keep search_filter set.",
-        "Add tests to assert filters persist after Enter and are cleared only on Esc/explicit clear."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T04:18:41Z",
-      "updated_at": "2026-01-20T04:18:41Z",
-      "depends_on": []
-    },
-    {
       "id": "RQ-0009",
       "status": "todo",
       "title": "Align jobs selection and inspect behavior with filtered list",
