@@ -75,6 +75,9 @@ async fn main() -> Result<()> {
     // Create app
     let mut app = App::new();
 
+    // Create auto-refresh interval (5 seconds)
+    let mut refresh_interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
+
     // Main event loop
     loop {
         terminal.draw(|f| app.render(f))?;
@@ -95,6 +98,12 @@ async fn main() -> Result<()> {
                 } else {
                     app.update(action.clone());
                     handle_side_effects(action, client.clone(), tx.clone()).await;
+                }
+            }
+            _ = refresh_interval.tick() => {
+                if let Some(a) = app.handle_tick() {
+                    app.update(a.clone());
+                    handle_side_effects(a, client.clone(), tx.clone()).await;
                 }
             }
         }

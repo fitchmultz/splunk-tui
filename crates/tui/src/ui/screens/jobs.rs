@@ -18,7 +18,14 @@ use splunk_client::models::SearchJobStatus;
 /// * `area` - The area to render within
 /// * `jobs` - The list of jobs to display
 /// * `state` - The current table selection state
-pub fn render_jobs(f: &mut Frame, area: Rect, jobs: &[SearchJobStatus], state: &mut TableState) {
+/// * `auto_refresh` - Whether auto-refresh is enabled
+pub fn render_jobs(
+    f: &mut Frame,
+    area: Rect,
+    jobs: &[SearchJobStatus],
+    state: &mut TableState,
+    auto_refresh: bool,
+) {
     let rows: Vec<Row> = jobs
         .iter()
         .map(|job| {
@@ -62,7 +69,15 @@ pub fn render_jobs(f: &mut Frame, area: Rect, jobs: &[SearchJobStatus], state: &
         ])
         .style(Style::default().fg(Color::Cyan)),
     )
-    .block(Block::default().title("Search Jobs").borders(Borders::ALL))
+    .block(
+        Block::default()
+            .title(if auto_refresh {
+                "Search Jobs [AUTO]"
+            } else {
+                "Search Jobs"
+            })
+            .borders(Borders::ALL),
+    )
     .row_highlight_style(Style::default().bg(Color::DarkGray).fg(Color::Yellow))
     .column_spacing(1);
 

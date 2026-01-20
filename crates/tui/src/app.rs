@@ -24,6 +24,14 @@ pub enum CurrentScreen {
     Jobs,
 }
 
+/// Modal popup types.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Popup {
+    ConfirmCancel(String),
+    ConfirmDelete(String),
+    Help,
+}
+
 /// Main application state.
 pub struct App {
     pub current_screen: CurrentScreen,
@@ -44,6 +52,8 @@ pub struct App {
     pub loading: bool,
     pub progress: f32,
     pub error: Option<String>,
+    pub auto_refresh: bool,
+    pub popup: Option<Popup>,
 }
 
 impl App {
@@ -69,16 +79,65 @@ impl App {
             loading: false,
             progress: 0.0,
             error: None,
+            auto_refresh: false,
+            popup: None,
         }
     }
 
     /// Handle keyboard input - returns Action if one should be dispatched.
     pub fn handle_input(&mut self, key: KeyEvent) -> Option<Action> {
+        if self.popup.is_some() {
+            return self.handle_popup_input(key);
+        }
         match self.current_screen {
             CurrentScreen::Search => self.handle_search_input(key),
             CurrentScreen::Jobs => self.handle_jobs_input(key),
             CurrentScreen::Indexes => self.handle_indexes_input(key),
             CurrentScreen::Cluster => self.handle_cluster_input(key),
+        }
+    }
+
+    /// Handle periodic tick events - returns Action if one should be dispatched.
+    pub fn handle_tick(&self) -> Option<Action> {
+        if self.current_screen == CurrentScreen::Jobs && self.auto_refresh && self.popup.is_none() {
+            Some(Action::LoadJobs)
+        } else {
+            None
+        }
+    }
+
+    /// Handle keyboard input when a popup is active.
+    fn handle_popup_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match (&self.popup, key.code) {
+            (Some(Popup::Help), KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('?')) => {
+                self.popup = None;
+                None
+            }
+            (Some(Popup::ConfirmCancel(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let sid = if let Some(Popup::ConfirmCancel(s)) = self.popup.take() {
+                    s
+                } else {
+                    unreachable!()
+                };
+                Some(Action::CancelJob(sid))
+            }
+            (Some(Popup::ConfirmDelete(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let sid = if let Some(Popup::ConfirmDelete(s)) = self.popup.take() {
+                    s
+                } else {
+                    unreachable!()
+                };
+                Some(Action::DeleteJob(sid))
+            }
+            (
+                Some(Popup::ConfirmCancel(_) | Popup::ConfirmDelete(_)),
+                KeyCode::Char('n') | KeyCode::Esc,
+            ) => {
+                self.popup = None;
+                None
+            }
+            _ => None,
         }
     }
 
@@ -123,6 +182,10 @@ impl App {
             KeyCode::PageUp => Some(Action::PageUp),
             KeyCode::Home => Some(Action::GoToTop),
             KeyCode::End => Some(Action::GoToBottom),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::Help);
+                None
+            }
             KeyCode::Char(c) => {
                 self.search_input.push(c);
                 None
@@ -152,23 +215,33 @@ impl App {
                 Some(Action::LoadJobs)
             }
             KeyCode::Char('r') => Some(Action::LoadJobs),
+            KeyCode::Char('a') => {
+                self.auto_refresh = !self.auto_refresh;
+                None
+            }
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Char('c') => {
-                if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs) {
-                    jobs.get(state).map(|j| Action::CancelJob(j.sid.clone()))
-                } else {
-                    None
+                if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs)
+                    && let Some(job) = jobs.get(state)
+                {
+                    self.popup = Some(Popup::ConfirmCancel(job.sid.clone()));
                 }
+                None
             }
             KeyCode::Char('d') => {
-                if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs) {
-                    jobs.get(state).map(|j| Action::DeleteJob(j.sid.clone()))
-                } else {
-                    None
+                if let (Some(state), Some(jobs)) = (self.jobs_state.selected(), &self.jobs)
+                    && let Some(job) = jobs.get(state)
+                {
+                    self.popup = Some(Popup::ConfirmDelete(job.sid.clone()));
                 }
+                None
+            }
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::Help);
+                None
             }
             _ => None,
         }
@@ -199,6 +272,10 @@ impl App {
             KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Up => Some(Action::NavigateUp),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::Help);
+                None
+            }
             _ => None,
         }
     }
@@ -224,6 +301,10 @@ impl App {
                 Some(Action::LoadJobs)
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::Help);
+                None
+            }
             _ => None,
         }
     }
@@ -255,10 +336,13 @@ impl App {
                 self.loading = false;
             }
             Action::JobsLoaded(Ok(jobs)) => {
+                let sel = self.jobs_state.selected();
+                let jobs_len = jobs.len();
                 self.jobs = Some(jobs);
                 self.loading = false;
-                // Reset selection
-                self.jobs_state.select(Some(0));
+                // Restore selection clamped to new bounds
+                self.jobs_state
+                    .select(sel.map(|i| i.min(jobs_len.saturating_sub(1))).or(Some(0)));
             }
             Action::ClusterInfoLoaded(Ok(info)) => {
                 self.cluster_info = Some(info);
@@ -476,6 +560,11 @@ impl App {
         };
         let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::ALL));
         f.render_widget(footer, chunks[2]);
+
+        // Render popup if active
+        if let Some(ref popup) = self.popup {
+            crate::ui::popup::render_popup(f, self, popup);
+        }
     }
 
     fn render_content(&mut self, f: &mut Frame, area: Rect) {
@@ -621,7 +710,15 @@ impl App {
 
         if self.loading && self.jobs.is_none() {
             let loading = Paragraph::new("Loading jobs...")
-                .block(Block::default().borders(Borders::ALL).title("Search Jobs"))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(if self.auto_refresh {
+                            "Search Jobs [AUTO]"
+                        } else {
+                            "Search Jobs"
+                        }),
+                )
                 .alignment(Alignment::Center);
             f.render_widget(loading, area);
             return;
@@ -630,14 +727,26 @@ impl App {
         let jobs = match &self.jobs {
             Some(j) => j,
             None => {
-                let placeholder = Paragraph::new("No jobs loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Search Jobs"))
-                    .alignment(Alignment::Center);
+                let placeholder = Paragraph::new(if self.auto_refresh {
+                    "No jobs loaded. Press 'r' to refresh, 'a' to toggle auto-refresh."
+                } else {
+                    "No jobs loaded. Press 'r' to refresh."
+                })
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(if self.auto_refresh {
+                            "Search Jobs [AUTO]"
+                        } else {
+                            "Search Jobs"
+                        }),
+                )
+                .alignment(Alignment::Center);
                 f.render_widget(placeholder, area);
                 return;
             }
         };
 
-        jobs::render_jobs(f, area, jobs, &mut self.jobs_state);
+        jobs::render_jobs(f, area, jobs, &mut self.jobs_state, self.auto_refresh);
     }
 }
