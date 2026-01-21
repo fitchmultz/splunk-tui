@@ -1386,6 +1386,44 @@
       "completed_at": "2026-01-20T23:47:53.451025000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0041",
+      "status": "done",
+      "title": "Create user-facing usage and configuration documentation",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "ux",
+        "config"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "AGENTS.md",
+        "crates/config/src/types.rs",
+        "crates/cli/src/main.rs"
+      ],
+      "evidence": [
+        "User request: \"Create docs that accurately reflect the usage and configurable values of this app... these docs need to be updated as the commands, usage, and configs change.\""
+      ],
+      "plan": [
+        "Identify all configurable parameters in the config crate.",
+        "Document CLI usage and TUI shortcuts for end-users without technical jargon.",
+        "Create or update docs/usage.md with the gathered information.",
+        "Add a policy to AGENTS.md requiring documentation updates whenever commands or configurations are modified."
+      ],
+      "notes": [
+        "Created comprehensive user-facing documentation in docs/usage.md",
+        "Updated AGENTS.md with a policy to maintain documentation",
+        "Verified documentation accuracy against CLI, TUI, and config implementations",
+        "Confirmed all tests pass via make ci"
+      ],
+      "request": "Create docs that accurately reflect the usage and configurable values of this app. No need to get into the technical details. More user facing documentation than design decisions. These docs need to be updated as the commands, usage, and configs change. Make a note about maintaining docs in AGENTS.md",
+      "created_at": "2026-01-21T12:00:00Z",
+      "updated_at": "2026-01-21T18:19:52.345597000Z",
+      "completed_at": "2026-01-21T18:19:52.345597000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
