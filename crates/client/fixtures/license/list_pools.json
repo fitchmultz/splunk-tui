@@ -1,0 +1,13 @@
+{
+  "entry": [
+    {
+      "name": "pool_enterprise",
+      "content": {
+        "quota": 53687091200,
+        "used_bytes": 1610612736,
+        "stack_id": "enterprise",
+        "description": "Enterprise License Pool"
+      }
+    }
+  ]
+}

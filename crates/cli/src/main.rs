@@ -115,6 +115,9 @@ enum Commands {
 
     /// Show KVStore status
     Kvstore,
+
+    /// Show license information
+    License(commands::license::LicenseArgs),
 }
 
 #[tokio::main]
@@ -198,6 +201,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::Kvstore => {
             commands::kvstore::run(config, &cli.output).await?;
+        }
+        Commands::License(args) => {
+            commands::license::run(config, &args).await?;
         }
     }
 

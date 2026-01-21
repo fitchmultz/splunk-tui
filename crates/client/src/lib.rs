@@ -16,7 +16,7 @@ pub use client::SplunkClient;
 pub use error::{ClientError, Result};
 pub use models::{
     ClusterInfo, ClusterPeer, HealthCheckOutput, Index, IndexListResponse, KvStoreMember,
-    KvStoreReplicationStatus, KvStoreStatus, LicenseUsage, LogParsingHealth, SearchJob,
-    SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
-    SplunkResponse,
+    KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    LogParsingHealth, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,
+    ServerInfo, SplunkHealth, SplunkResponse,
 };

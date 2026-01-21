@@ -115,6 +115,13 @@ Show detailed KVStore status.
 splunk kvstore
 ```
 
+#### `license`
+Show license information, including usage, pools, and stacks.
+```bash
+splunk license
+```
+- `-f, --format <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
+
 ---
 
 ## Terminal User Interface (TUI)

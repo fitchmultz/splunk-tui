@@ -8,8 +8,8 @@ use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
 use crate::models::{
-    ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicenseUsage, LogParsingHealth,
-    SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
+    ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    LogParsingHealth, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
 };
 
 /// Builder for creating a new SplunkClient.
@@ -633,6 +633,76 @@ impl SplunkClient {
                 self.session_manager.clear_session();
                 let new_token = self.get_auth_token().await?;
                 endpoints::get_license_usage(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// List all license pools.
+    pub async fn list_license_pools(&mut self) -> Result<Vec<LicensePool>> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::list_license_pools(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(pools) => Ok(pools),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::list_license_pools(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// List all license stacks.
+    pub async fn list_license_stacks(&mut self) -> Result<Vec<LicenseStack>> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::list_license_stacks(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(stacks) => Ok(stacks),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::list_license_stacks(
                     &self.http,
                     &self.base_url,
                     &new_token,

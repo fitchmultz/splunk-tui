@@ -1,0 +1,53 @@
+//! License command implementation.
+
+use anyhow::Result;
+use clap::Args;
+use splunk_client::{AuthStrategy, SplunkClient};
+use tracing::info;
+
+use crate::formatters::{LicenseInfoOutput, OutputFormat, get_formatter};
+
+/// Display license information.
+#[derive(Args, Debug)]
+pub struct LicenseArgs {
+    /// Output format (json, table, csv, xml).
+    #[arg(short, long, default_value = "table")]
+    pub format: String,
+}
+
+/// Run the license command.
+pub async fn run(config: splunk_config::Config, args: &LicenseArgs) -> Result<()> {
+    info!("Fetching license information...");
+
+    let auth_strategy = match config.auth.strategy {
+        splunk_config::AuthStrategy::SessionToken { username, password } => {
+            AuthStrategy::SessionToken { username, password }
+        }
+        splunk_config::AuthStrategy::ApiToken { token } => AuthStrategy::ApiToken { token },
+    };
+
+    let mut client = SplunkClient::builder()
+        .base_url(config.connection.base_url)
+        .auth_strategy(auth_strategy)
+        .skip_verify(config.connection.skip_verify)
+        .timeout(config.connection.timeout)
+        .build()?;
+
+    let usage = client.get_license_usage().await?;
+    let pools = client.list_license_pools().await?;
+    let stacks = client.list_license_stacks().await?;
+
+    let output = LicenseInfoOutput {
+        usage,
+        pools,
+        stacks,
+    };
+
+    let format = OutputFormat::from_str(&args.format)?;
+    let formatter = get_formatter(format);
+    let formatted = formatter.format_license(&output)?;
+
+    println!("{}", formatted);
+
+    Ok(())
+}

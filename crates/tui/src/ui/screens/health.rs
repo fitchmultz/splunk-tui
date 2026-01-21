@@ -265,6 +265,7 @@ mod tests {
             server_info: None,
             splunkd_health: None,
             license_usage: Some(vec![LicenseUsage {
+                name: "test_license".to_string(),
                 quota: 1024 * 1024 * 1024,     // 1 GB
                 used_bytes: 512 * 1024 * 1024, // 512 MB
                 slaves_usage_bytes: None,

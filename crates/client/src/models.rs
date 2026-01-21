@@ -238,6 +238,8 @@ pub struct SplunkHealth {
 /// License usage information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicenseUsage {
+    #[serde(default)]
+    pub name: String,
     pub quota: u64,
     pub used_bytes: u64,
     pub slaves_usage_bytes: Option<HashMap<String, u64>>,
@@ -247,6 +249,8 @@ pub struct LicenseUsage {
 /// License pool information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicensePool {
+    #[serde(default)]
+    pub name: String,
     pub quota: u64,
     pub used_bytes: u64,
     pub stack_id: String,
@@ -256,7 +260,10 @@ pub struct LicensePool {
 /// License stack information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicenseStack {
+    #[serde(default)]
+    pub name: String,
     pub quota: u64,
+    #[serde(rename = "type")]
     pub type_name: String,
     pub label: String,
 }

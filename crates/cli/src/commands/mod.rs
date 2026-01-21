@@ -5,4 +5,5 @@ pub mod health;
 pub mod indexes;
 pub mod jobs;
 pub mod kvstore;
+pub mod license;
 pub mod search;

@@ -16,7 +16,7 @@ pub use cluster::{get_cluster_info, get_cluster_peers};
 pub use indexes::list_indexes;
 pub use jobs::{cancel_job, delete_job, get_job, list_jobs};
 pub use kvstore::get_kvstore_status;
-pub use license::get_license_usage;
+pub use license::{get_license_usage, list_license_pools, list_license_stacks};
 pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
 pub use search::{

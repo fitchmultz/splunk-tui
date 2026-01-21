@@ -4,7 +4,9 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::{ClusterPeer, Index, KvStoreStatus, SearchJobStatus};
+use splunk_client::{
+    ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SearchJobStatus,
+};
 
 pub use splunk_client::HealthCheckOutput;
 
@@ -33,6 +35,14 @@ impl OutputFormat {
     }
 }
 
+/// License information output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LicenseInfoOutput {
+    pub usage: Vec<LicenseUsage>,
+    pub pools: Vec<LicensePool>,
+    pub stacks: Vec<LicenseStack>,
+}
+
 /// Formatter trait for different output types.
 pub trait Formatter {
     /// Format search results.
@@ -56,6 +66,9 @@ pub trait Formatter {
 
     /// Format KVStore status.
     fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String>;
+
+    /// Format license information.
+    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -131,6 +144,10 @@ impl Formatter for JsonFormatter {
 
     fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
         Ok(serde_json::to_string_pretty(status)?)
+    }
+
+    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(license)?)
     }
 }
 
@@ -438,6 +455,73 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("--- License Usage ---\n");
+        if license.usage.is_empty() {
+            output.push_str("No license usage data available.\n");
+        } else {
+            output.push_str("Name\tStack ID\tUsed (MB)\tQuota (MB)\t% Used\tAlert\n");
+            for u in &license.usage {
+                let used_mb = u.used_bytes / 1024 / 1024;
+                let quota_mb = u.quota / 1024 / 1024;
+                let pct = if u.quota > 0 {
+                    (u.used_bytes as f64 / u.quota as f64) * 100.0
+                } else {
+                    0.0
+                };
+                let alert = if pct > 90.0 { "!" } else { "" };
+                output.push_str(&format!(
+                    "{}\t{}\t{}\t{}\t{:.1}%\t{}\n",
+                    u.name,
+                    u.stack_id.as_deref().unwrap_or("N/A"),
+                    used_mb,
+                    quota_mb,
+                    pct,
+                    alert
+                ));
+            }
+        }
+        output.push('\n');
+
+        output.push_str("--- License Pools ---\n");
+        if license.pools.is_empty() {
+            output.push_str("No license pools found.\n");
+        } else {
+            output.push_str("Name\tStack ID\tUsed (MB)\tQuota (MB)\tDescription\n");
+            for p in &license.pools {
+                output.push_str(&format!(
+                    "{}\t{}\t{}\t{}\t{}\n",
+                    p.name,
+                    p.stack_id,
+                    p.used_bytes / 1024 / 1024,
+                    p.quota / 1024 / 1024,
+                    p.description.as_deref().unwrap_or("N/A")
+                ));
+            }
+        }
+        output.push('\n');
+
+        output.push_str("--- License Stacks ---\n");
+        if license.stacks.is_empty() {
+            output.push_str("No license stacks found.\n");
+        } else {
+            output.push_str("Name\tLabel\tType\tQuota (MB)\n");
+            for s in &license.stacks {
+                output.push_str(&format!(
+                    "{}\t{}\t{}\t{}\n",
+                    s.name,
+                    s.label,
+                    s.type_name,
+                    s.quota / 1024 / 1024
+                ));
+            }
+        }
+
+        Ok(output)
+    }
 }
 
 /// CSV formatter.
@@ -742,6 +826,55 @@ impl Formatter for CsvFormatter {
         ];
         output.push_str(&row.join(","));
         output.push('\n');
+
+        Ok(output)
+    }
+
+    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str("Type,Name,StackID,UsedMB,QuotaMB,PctUsed,Label,Type_Name,Description\n");
+
+        // Usage
+        for u in &license.usage {
+            let pct = if u.quota > 0 {
+                (u.used_bytes as f64 / u.quota as f64) * 100.0
+            } else {
+                0.0
+            };
+            output.push_str(&format!(
+                "Usage,{},{},{},{},{:.2},,, \n",
+                escape_csv(&u.name),
+                escape_csv(u.stack_id.as_deref().unwrap_or("N/A")),
+                u.used_bytes / 1024 / 1024,
+                u.quota / 1024 / 1024,
+                pct
+            ));
+        }
+
+        // Pools
+        for p in &license.pools {
+            output.push_str(&format!(
+                "Pool,{},{},{},{},,,,{}\n",
+                escape_csv(&p.name),
+                escape_csv(&p.stack_id),
+                p.used_bytes / 1024 / 1024,
+                p.quota / 1024 / 1024,
+                escape_csv(p.description.as_deref().unwrap_or("N/A"))
+            ));
+        }
+
+        // Stacks
+        for s in &license.stacks {
+            output.push_str(&format!(
+                "Stack,{},,0,{},,{},{}, \n",
+                escape_csv(&s.name),
+                s.quota / 1024 / 1024,
+                escape_csv(&s.label),
+                escape_csv(&s.type_name)
+            ));
+        }
 
         Ok(output)
     }
@@ -1100,6 +1233,63 @@ impl Formatter for XmlFormatter {
         ));
         xml.push_str("  </replicationStatus>\n");
         xml.push_str("</kvstoreStatus>");
+        Ok(xml)
+    }
+
+    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<licenseInfo>\n");
+
+        xml.push_str("  <usage>\n");
+        for u in &license.usage {
+            xml.push_str("    <entry>\n");
+            xml.push_str(&format!("      <name>{}</name>\n", escape_xml(&u.name)));
+            if let Some(stack_id) = &u.stack_id {
+                xml.push_str(&format!(
+                    "      <stackId>{}</stackId>\n",
+                    escape_xml(stack_id)
+                ));
+            }
+            xml.push_str(&format!("      <usedBytes>{}</usedBytes>\n", u.used_bytes));
+            xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", u.quota));
+            xml.push_str("    </entry>\n");
+        }
+        xml.push_str("  </usage>\n");
+
+        xml.push_str("  <pools>\n");
+        for p in &license.pools {
+            xml.push_str("    <pool>\n");
+            xml.push_str(&format!("      <name>{}</name>\n", escape_xml(&p.name)));
+            xml.push_str(&format!(
+                "      <stackId>{}</stackId>\n",
+                escape_xml(&p.stack_id)
+            ));
+            xml.push_str(&format!("      <usedBytes>{}</usedBytes>\n", p.used_bytes));
+            xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", p.quota));
+            if let Some(desc) = &p.description {
+                xml.push_str(&format!(
+                    "      <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            xml.push_str("    </pool>\n");
+        }
+        xml.push_str("  </pools>\n");
+
+        xml.push_str("  <stacks>\n");
+        for s in &license.stacks {
+            xml.push_str("    <stack>\n");
+            xml.push_str(&format!("      <name>{}</name>\n", escape_xml(&s.name)));
+            xml.push_str(&format!("      <label>{}</label>\n", escape_xml(&s.label)));
+            xml.push_str(&format!(
+                "      <type>{}</type>\n",
+                escape_xml(&s.type_name)
+            ));
+            xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", s.quota));
+            xml.push_str("    </stack>\n");
+        }
+        xml.push_str("  </stacks>\n");
+
+        xml.push_str("</licenseInfo>");
         Ok(xml)
     }
 }
@@ -1748,5 +1938,59 @@ mod tests {
         assert!(output.contains("<host>localhost</host>"));
         assert!(output.contains("<port>8089</port>"));
         assert!(output.contains("<oplogUsed>1.50</oplogUsed>"));
+    }
+
+    #[test]
+    fn test_format_license_table() {
+        let formatter = TableFormatter;
+        let license = LicenseInfoOutput {
+            usage: vec![LicenseUsage {
+                name: "daily_usage".to_string(),
+                quota: 100 * 1024 * 1024,
+                used_bytes: 50 * 1024 * 1024,
+                slaves_usage_bytes: None,
+                stack_id: Some("enterprise".to_string()),
+            }],
+            pools: vec![LicensePool {
+                name: "pool1".to_string(),
+                quota: 50 * 1024 * 1024,
+                used_bytes: 25 * 1024 * 1024,
+                stack_id: "enterprise".to_string(),
+                description: Some("Test pool".to_string()),
+            }],
+            stacks: vec![LicenseStack {
+                name: "enterprise".to_string(),
+                quota: 100 * 1024 * 1024,
+                type_name: "enterprise".to_string(),
+                label: "Enterprise".to_string(),
+            }],
+        };
+
+        let output = formatter.format_license(&license).unwrap();
+        assert!(output.contains("daily_usage"));
+        assert!(output.contains("50.0%"));
+        assert!(output.contains("pool1"));
+        assert!(output.contains("Test pool"));
+        assert!(output.contains("Enterprise"));
+    }
+
+    #[test]
+    fn test_format_license_csv() {
+        let formatter = CsvFormatter;
+        let license = LicenseInfoOutput {
+            usage: vec![LicenseUsage {
+                name: "daily_usage".to_string(),
+                quota: 100 * 1024 * 1024,
+                used_bytes: 50 * 1024 * 1024,
+                slaves_usage_bytes: None,
+                stack_id: Some("enterprise".to_string()),
+            }],
+            pools: vec![],
+            stacks: vec![],
+        };
+
+        let output = formatter.format_license(&license).unwrap();
+        assert!(output.contains("Type,Name,StackID,UsedMB,QuotaMB,PctUsed"));
+        assert!(output.contains("Usage,daily_usage,enterprise,50,100,50.00"));
     }
 }

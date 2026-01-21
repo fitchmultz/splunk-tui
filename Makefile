@@ -47,6 +47,7 @@ test-integration:
 	cargo test -p splunk-cli --test health_tests
 	cargo test -p splunk-cli --test jobs_tests
 	cargo test -p splunk-cli --test kvstore_tests
+	cargo test -p splunk-cli --test license_tests
 	cargo test -p splunk-tui --test app_tests
 	cargo test -p splunk-tui --test snapshot_tests
 

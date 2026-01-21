@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0044",
-      "status": "todo",
-      "title": "Implement a dedicated License command in the CLI",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "license"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/license.rs"
-      ],
-      "evidence": [
-        "License usage is a key metric but is currently bundled only in the health command.",
-        "Standalone license monitoring is useful for capacity planning scripts."
-      ],
-      "plan": [
-        "Add a 'license' subcommand to the CLI.",
-        "Implement crates/cli/src/commands/license.rs to fetch license usage.",
-        "Support detailed output showing pools, stacks, and quota alerts."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:32:00Z",
-      "updated_at": "2026-01-21T19:32:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0045",
       "status": "todo",
       "title": "Add a 'Saved Searches' screen to the TUI",
