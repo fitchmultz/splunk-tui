@@ -1628,6 +1628,42 @@
       "completed_at": "2026-01-21T19:12:02.271141000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0040",
+      "status": "done",
+      "title": "Add user documentation guide for TUI and CLI",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "ux"
+      ],
+      "scope": [
+        "docs/user-guide.md",
+        "README.md"
+      ],
+      "evidence": [
+        "The project lacks a comprehensive guide for users to discover TUI shortcuts and CLI advanced usage.",
+        "README.md is basic and does not cover all available features."
+      ],
+      "plan": [
+        "Create docs/user-guide.md with sections for TUI navigation, shortcuts, search syntax, and CLI command examples.",
+        "Link to the guide from README.md.",
+        "Include a troubleshooting section with common API error explanations."
+      ],
+      "notes": [
+        "Created docs/user-guide.md with comprehensive TUI and CLI instructions",
+        "Added troubleshooting section for common API errors",
+        "Included TUI shortcut reference and search syntax tips",
+        "Updated README.md to link to the new documentation",
+        "Verified TUI mouse support implementation matches documentation"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-21T19:14:35.414099000Z",
+      "completed_at": "2026-01-21T19:14:35.414099000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
