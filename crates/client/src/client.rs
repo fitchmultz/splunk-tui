@@ -9,7 +9,7 @@ use crate::endpoints;
 use crate::error::{ClientError, Result};
 use crate::models::{
     ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
-    LogParsingHealth, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
+    LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
 };
 
 /// Builder for creating a new SplunkClient.
@@ -492,6 +492,41 @@ impl SplunkClient {
                     &new_token,
                     count,
                     offset,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// List all saved searches.
+    pub async fn list_saved_searches(&mut self) -> Result<Vec<SavedSearch>> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::list_saved_searches(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(searches) => Ok(searches),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::list_saved_searches(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
                     self.max_retries,
                 )
                 .await

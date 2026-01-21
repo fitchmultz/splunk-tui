@@ -20,6 +20,7 @@ pub use license::{get_license_usage, list_license_pools, list_license_stacks};
 pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
 pub use search::{
-    CreateJobOptions, OutputMode, create_job, get_job_status, get_results, wait_for_job,
+    CreateJobOptions, OutputMode, create_job, get_job_status, get_results, list_saved_searches,
+    wait_for_job,
 };
 pub use server::{get_health, get_server_info};

@@ -279,6 +279,21 @@ async fn handle_side_effects(
                 }
             });
         }
+        Action::LoadSavedSearches => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.list_saved_searches().await {
+                    Ok(searches) => {
+                        tx.send(Action::SavedSearchesLoaded(Ok(searches))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::SavedSearchesLoaded(Err(e.to_string())))
+                            .ok();
+                    }
+                }
+            });
+        }
         Action::RunSearch(query) => {
             tx.send(Action::Loading(true)).ok();
             tx.send(Action::Progress(0.1)).ok();

@@ -6,7 +6,7 @@ use tracing::debug;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
-use crate::models::{SearchJobResults, SearchJobStatus};
+use crate::models::{SavedSearchListResponse, SearchJobResults, SearchJobStatus};
 
 /// Options for creating a search job.
 #[derive(Debug, Clone, Serialize, Default)]
@@ -218,6 +218,38 @@ pub async fn get_results(
         offset,
         total: json["total"].as_u64(),
     })
+}
+
+/// List saved searches.
+pub async fn list_saved_searches(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    max_retries: usize,
+) -> Result<Vec<crate::models::SavedSearch>> {
+    debug!("Listing saved searches");
+
+    let url = format!("{}/services/saved/searches", base_url);
+
+    let builder = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json"), ("count", "0")]);
+    let response = send_request_with_retry(builder, max_retries).await?;
+
+    let resp: SavedSearchListResponse = response.json().await.map_err(|e| {
+        ClientError::InvalidResponse(format!("Failed to parse saved searches response: {}", e))
+    })?;
+
+    Ok(resp
+        .entry
+        .into_iter()
+        .map(|e| {
+            let mut s = e.content;
+            s.name = e.name;
+            s
+        })
+        .collect())
 }
 
 #[cfg(test)]

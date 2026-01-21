@@ -276,6 +276,68 @@ async fn test_list_jobs() {
 }
 
 #[tokio::test]
+async fn test_list_saved_searches() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/list_saved_searches.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/saved/searches"))
+        .and(query_param("output_mode", "json"))
+        .and(query_param("count", "0"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_saved_searches(&client, &mock_server.uri(), "test-token", 3).await;
+
+    assert!(result.is_ok());
+    let searches = result.unwrap();
+    assert_eq!(searches.len(), 2);
+    assert_eq!(searches[0].name, "Errors in the last 24 hours");
+    assert_eq!(
+        searches[0].search,
+        "index=_internal sourcetype=splunkd log_level=ERROR | head 100"
+    );
+    assert_eq!(searches[1].name, "Disabled Search");
+    assert!(searches[1].disabled);
+}
+
+#[tokio::test]
+async fn test_splunk_client_list_saved_searches() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/list_saved_searches.json");
+
+    Mock::given(method("GET"))
+        .and(path("/services/saved/searches"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    use secrecy::SecretString;
+    use splunk_client::{AuthStrategy, SplunkClient};
+
+    let strategy = AuthStrategy::ApiToken {
+        token: SecretString::new("test-token".to_string().into()),
+    };
+
+    let mut client = SplunkClient::builder()
+        .base_url(mock_server.uri())
+        .auth_strategy(strategy)
+        .build()
+        .unwrap();
+
+    let result = client.list_saved_searches().await;
+
+    assert!(result.is_ok());
+    let searches = result.unwrap();
+    assert_eq!(searches.len(), 2);
+    assert_eq!(searches[0].name, "Errors in the last 24 hours");
+}
+
+#[tokio::test]
 async fn test_cancel_job() {
     let mock_server = MockServer::start().await;
 

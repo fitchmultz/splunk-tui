@@ -17,6 +17,6 @@ pub use error::{ClientError, Result};
 pub use models::{
     ClusterInfo, ClusterPeer, HealthCheckOutput, Index, IndexListResponse, KvStoreMember,
     KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
-    LogParsingHealth, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,
-    ServerInfo, SplunkHealth, SplunkResponse,
+    LogParsingHealth, SavedSearch, SearchJob, SearchJobListResponse, SearchJobResults,
+    SearchJobStatus, ServerInfo, SplunkHealth, SplunkResponse,
 };

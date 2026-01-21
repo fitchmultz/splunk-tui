@@ -1772,6 +1772,37 @@
       "completed_at": "2026-01-21T20:08:37.394304000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0045",
+      "status": "done",
+      "title": "Add a 'Saved Searches' screen to the TUI",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "feature",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/saved_searches.rs",
+        "crates/client/src/endpoints/search.rs"
+      ],
+      "evidence": [
+        "Users often run the same searches repeatedly.",
+        "Accessing Splunk 'Saved Searches' directly in the TUI would improve workflow."
+      ],
+      "plan": [
+        "Implement a new client endpoint to list saved searches.",
+        "Add a 'Saved Searches' variant to CurrentScreen.",
+        "Create the UI screen to list and select saved searches to run them."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:33:00Z",
+      "updated_at": "2026-01-21T20:36:34.130198000Z",
+      "completed_at": "2026-01-21T20:36:34.130198000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

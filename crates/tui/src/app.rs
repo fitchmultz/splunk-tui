@@ -6,7 +6,7 @@
 use crate::action::{Action, ExportFormat};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
-use crate::ui::screens::{cluster, health, indexes, search};
+use crate::ui::screens::{cluster, health, indexes, saved_searches, search};
 use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
     Frame,
@@ -16,7 +16,7 @@ use ratatui::{
     widgets::{Block, Borders, ListState, Paragraph, TableState},
 };
 use serde_json::Value;
-use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SearchJobStatus};
+use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SavedSearch, SearchJobStatus};
 use splunk_config::PersistedState;
 
 /// Health state of the Splunk instance.
@@ -60,6 +60,7 @@ pub enum CurrentScreen {
     Jobs,
     JobInspect,
     Health,
+    SavedSearches,
 }
 
 /// Sort column for jobs table.
@@ -175,6 +176,8 @@ pub struct App {
     pub indexes_state: ListState,
     pub jobs: Option<Vec<SearchJobStatus>>,
     pub jobs_state: TableState,
+    pub saved_searches: Option<Vec<SavedSearch>>,
+    pub saved_searches_state: ListState,
     pub cluster_info: Option<ClusterInfo>,
     pub health_info: Option<HealthCheckOutput>,
 
@@ -225,6 +228,9 @@ impl App {
         let mut jobs_state = TableState::default();
         jobs_state.select(Some(0));
 
+        let mut saved_searches_state = ListState::default();
+        saved_searches_state.select(Some(0));
+
         let (auto_refresh, sort_column, sort_direction, last_search_query, search_history) =
             match persisted {
                 Some(state) => (
@@ -249,6 +255,8 @@ impl App {
             indexes_state,
             jobs: None,
             jobs_state,
+            saved_searches: None,
+            saved_searches_state,
             cluster_info: None,
             health_info: None,
             loading: false,
@@ -346,6 +354,7 @@ impl App {
             CurrentScreen::Cluster => self.handle_cluster_input(key),
             CurrentScreen::JobInspect => self.handle_job_inspect_input(key),
             CurrentScreen::Health => self.handle_health_input(key),
+            CurrentScreen::SavedSearches => self.handle_saved_searches_input(key),
         }
     }
 
@@ -394,16 +403,20 @@ impl App {
         } else if col > offset + 20 && col <= offset + 30 {
             self.current_screen = CurrentScreen::Cluster;
             Some(Action::LoadClusterInfo)
-        // Tab 4: " 4:Jobs " (7 chars) -> Indices 30..37
-        } else if col > offset + 30 && col <= offset + 37 {
+        // Tab 4: " 4:Jobs " (8 chars) -> Indices 30..38
+        } else if col > offset + 30 && col <= offset + 38 {
             self.current_screen = CurrentScreen::Jobs;
             Some(Action::LoadJobs)
-        // Tab 5: " 5:Health " (10 chars) -> Indices 37..47
-        } else if col > offset + 37 && col <= offset + 47 {
+        // Tab 5: " 5:Health " (10 chars) -> Indices 38..48
+        } else if col > offset + 38 && col <= offset + 48 {
             self.current_screen = CurrentScreen::Health;
             Some(Action::LoadHealth)
-        // Tab 6: " q:Quit " (8 chars) -> After "|" at index 47
-        } else if col > offset + 48 && col <= offset + 56 {
+        // Tab 6: " 6:Saved " (9 chars) -> Indices 48..57
+        } else if col > offset + 48 && col <= offset + 57 {
+            self.current_screen = CurrentScreen::SavedSearches;
+            Some(Action::LoadSavedSearches)
+        // Tab q: " q:Quit " (8 chars) -> After "|" at index 57
+        } else if col > offset + 58 && col <= offset + 66 {
             Some(Action::Quit)
         } else {
             None
@@ -618,6 +631,10 @@ impl App {
                 self.current_screen = CurrentScreen::Health;
                 Some(Action::LoadHealth)
             }
+            KeyCode::Char('6') if key.modifiers.is_empty() => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
             KeyCode::Enter => {
                 if !self.search_input.is_empty() {
                     let query = self.search_input.clone();
@@ -748,6 +765,10 @@ impl App {
                 self.current_screen = CurrentScreen::Health;
                 Some(Action::LoadHealth)
             }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
             KeyCode::Char('r') => Some(Action::LoadJobs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -806,6 +827,10 @@ impl App {
                 self.current_screen = CurrentScreen::Health;
                 Some(Action::LoadHealth)
             }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
             KeyCode::Char('r') => Some(Action::LoadIndexes),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -842,6 +867,10 @@ impl App {
             KeyCode::Char('5') => {
                 self.current_screen = CurrentScreen::Health;
                 Some(Action::LoadHealth)
+            }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('?') => {
@@ -888,7 +917,66 @@ impl App {
                 self.current_screen = CurrentScreen::Health;
                 Some(Action::LoadHealth)
             }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
             KeyCode::Char('r') => Some(Action::LoadHealth),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn handle_saved_searches_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Char('q') => Some(Action::Quit),
+            KeyCode::Char('1') => {
+                self.current_screen = CurrentScreen::Search;
+                None
+            }
+            KeyCode::Char('2') => {
+                self.current_screen = CurrentScreen::Indexes;
+                Some(Action::LoadIndexes)
+            }
+            KeyCode::Char('3') => {
+                self.current_screen = CurrentScreen::Cluster;
+                Some(Action::LoadClusterInfo)
+            }
+            KeyCode::Char('4') => {
+                self.current_screen = CurrentScreen::Jobs;
+                Some(Action::LoadJobs)
+            }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
+            KeyCode::Char('r') => Some(Action::LoadSavedSearches),
+            KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
+            KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
+            KeyCode::Enter => {
+                let query = self.saved_searches.as_ref().and_then(|searches| {
+                    self.saved_searches_state.selected().and_then(|selected| {
+                        searches.get(selected).map(|search| search.search.clone())
+                    })
+                });
+
+                if let Some(query) = query {
+                    self.search_input = query.clone();
+                    self.current_screen = CurrentScreen::Search;
+                    self.add_to_history(query.clone());
+                    self.search_status = format!("Running: {}", query);
+                    return Some(Action::RunSearch(query));
+                }
+                None
+            }
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -954,6 +1042,10 @@ impl App {
                         .or(Some(0)),
                 );
             }
+            Action::SavedSearchesLoaded(Ok(searches)) => {
+                self.saved_searches = Some(searches);
+                self.loading = false;
+            }
             Action::ClusterInfoLoaded(Ok(info)) => {
                 self.cluster_info = Some(info);
                 self.loading = false;
@@ -1002,6 +1094,13 @@ impl App {
             Action::JobsLoaded(Err(e)) => {
                 self.toasts
                     .push(Toast::error(format!("Failed to load jobs: {}", e)));
+                self.loading = false;
+            }
+            Action::SavedSearchesLoaded(Err(e)) => {
+                self.toasts.push(Toast::error(format!(
+                    "Failed to load saved searches: {}",
+                    e
+                )));
                 self.loading = false;
             }
             Action::ClusterInfoLoaded(Err(e)) => {
@@ -1058,6 +1157,14 @@ impl App {
                     }
                 }
             }
+            CurrentScreen::SavedSearches => {
+                if let Some(searches) = &self.saved_searches {
+                    let i = self.saved_searches_state.selected().unwrap_or(0);
+                    if i < searches.len().saturating_sub(1) {
+                        self.saved_searches_state.select(Some(i + 1));
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -1077,6 +1184,12 @@ impl App {
                 let i = self.indexes_state.selected().unwrap_or(0);
                 if i > 0 {
                     self.indexes_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::SavedSearches => {
+                let i = self.saved_searches_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.saved_searches_state.select(Some(i - 1));
                 }
             }
             _ => {}
@@ -1106,6 +1219,13 @@ impl App {
                         .select(Some((i.saturating_add(10)).min(indexes.len() - 1)));
                 }
             }
+            CurrentScreen::SavedSearches => {
+                if let Some(searches) = &self.saved_searches {
+                    let i = self.saved_searches_state.selected().unwrap_or(0);
+                    self.saved_searches_state
+                        .select(Some((i.saturating_add(10)).min(searches.len() - 1)));
+                }
+            }
             _ => {}
         }
     }
@@ -1124,6 +1244,10 @@ impl App {
                 let i = self.indexes_state.selected().unwrap_or(0);
                 self.indexes_state.select(Some(i.saturating_sub(10)));
             }
+            CurrentScreen::SavedSearches => {
+                let i = self.saved_searches_state.selected().unwrap_or(0);
+                self.saved_searches_state.select(Some(i.saturating_sub(10)));
+            }
             _ => {}
         }
     }
@@ -1140,6 +1264,9 @@ impl App {
             }
             CurrentScreen::Indexes => {
                 self.indexes_state.select(Some(0));
+            }
+            CurrentScreen::SavedSearches => {
+                self.saved_searches_state.select(Some(0));
             }
             _ => {}
         }
@@ -1165,6 +1292,12 @@ impl App {
                 if let Some(indexes) = &self.indexes {
                     self.indexes_state
                         .select(Some(indexes.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::SavedSearches => {
+                if let Some(searches) = &self.saved_searches {
+                    self.saved_searches_state
+                        .select(Some(searches.len().saturating_sub(1)));
                 }
             }
             _ => {}
@@ -1322,6 +1455,7 @@ impl App {
                     CurrentScreen::Jobs => "Jobs",
                     CurrentScreen::JobInspect => "Job Details",
                     CurrentScreen::Health => "Health",
+                    CurrentScreen::SavedSearches => "Saved Searches",
                 },
                 Style::default().fg(Color::Yellow),
             ),
@@ -1351,13 +1485,13 @@ impl App {
                     Style::default().fg(Color::Yellow),
                 ),
                 Span::raw("|"),
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health "),
+                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
         } else {
             vec![Line::from(vec![
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health "),
+                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
@@ -1418,6 +1552,17 @@ impl App {
                     health::HealthRenderConfig {
                         loading: self.loading,
                         health_info: self.health_info.as_ref(),
+                    },
+                );
+            }
+            CurrentScreen::SavedSearches => {
+                saved_searches::render_saved_searches(
+                    f,
+                    area,
+                    saved_searches::SavedSearchesRenderConfig {
+                        loading: self.loading,
+                        saved_searches: self.saved_searches.as_deref(),
+                        state: &mut self.saved_searches_state,
                     },
                 );
             }

@@ -7,4 +7,5 @@ pub mod health;
 pub mod indexes;
 pub mod job_details;
 pub mod jobs;
+pub mod saved_searches;
 pub mod search;
