@@ -112,6 +112,9 @@ enum Commands {
 
     /// Perform a comprehensive system health check
     Health,
+
+    /// Show KVStore status
+    Kvstore,
 }
 
 #[tokio::main]
@@ -192,6 +195,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::Health => {
             commands::health::run(config, &cli.output).await?;
+        }
+        Commands::Kvstore => {
+            commands::kvstore::run(config, &cli.output).await?;
         }
     }
 

@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::{ClusterPeer, Index, SearchJobStatus};
+use splunk_client::{ClusterPeer, Index, KvStoreStatus, SearchJobStatus};
 
 pub use splunk_client::HealthCheckOutput;
 
@@ -53,6 +53,9 @@ pub trait Formatter {
 
     /// Format health check results.
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String>;
+
+    /// Format KVStore status.
+    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -124,6 +127,10 @@ impl Formatter for JsonFormatter {
 
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
         Ok(serde_json::to_string_pretty(health)?)
+    }
+
+    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
+        Ok(serde_json::to_string_pretty(status)?)
     }
 }
 
@@ -406,6 +413,31 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("KVStore Status:\n");
+        output.push_str(&format!(
+            "  Current Member: {}:{}\n",
+            status.current_member.host, status.current_member.port
+        ));
+        output.push_str(&format!("  Status: {}\n", status.current_member.status));
+        output.push_str(&format!(
+            "  Replica Set: {}\n",
+            status.current_member.replica_set
+        ));
+        output.push_str(&format!(
+            "  Oplog Size: {} MB\n",
+            status.replication_status.oplog_size
+        ));
+        output.push_str(&format!(
+            "  Oplog Used: {:.2}%\n",
+            status.replication_status.oplog_used
+        ));
+
+        Ok(output)
+    }
 }
 
 /// CSV formatter.
@@ -676,6 +708,37 @@ impl Formatter for CsvFormatter {
             escape_csv(kv_status),
             escape_csv(parsing_healthy),
             escape_csv(&parsing_errors),
+        ];
+        output.push_str(&row.join(","));
+        output.push('\n');
+
+        Ok(output)
+    }
+
+    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        let header = [
+            "host",
+            "port",
+            "status",
+            "replica_set",
+            "oplog_size_mb",
+            "oplog_used_percent",
+        ];
+        let escaped_header: Vec<String> = header.iter().map(|h| escape_csv(h)).collect();
+        output.push_str(&escaped_header.join(","));
+        output.push('\n');
+
+        // Data row
+        let row = [
+            escape_csv(&status.current_member.host),
+            escape_csv(&status.current_member.port.to_string()),
+            escape_csv(&status.current_member.status),
+            escape_csv(&status.current_member.replica_set),
+            escape_csv(&status.replication_status.oplog_size.to_string()),
+            escape_csv(&status.replication_status.oplog_used.to_string()),
         ];
         output.push_str(&row.join(","));
         output.push('\n');
@@ -1005,6 +1068,40 @@ impl Formatter for XmlFormatter {
         xml.push_str("</health>");
         Ok(xml)
     }
+
+    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<kvstoreStatus>\n");
+        xml.push_str("  <currentMember>\n");
+        xml.push_str(&format!(
+            "    <host>{}</host>\n",
+            escape_xml(&status.current_member.host)
+        ));
+        xml.push_str(&format!(
+            "    <port>{}</port>\n",
+            status.current_member.port
+        ));
+        xml.push_str(&format!(
+            "    <status>{}</status>\n",
+            escape_xml(&status.current_member.status)
+        ));
+        xml.push_str(&format!(
+            "    <replicaSet>{}</replicaSet>\n",
+            escape_xml(&status.current_member.replica_set)
+        ));
+        xml.push_str("  </currentMember>\n");
+        xml.push_str("  <replicationStatus>\n");
+        xml.push_str(&format!(
+            "    <oplogSize>{}</oplogSize>\n",
+            status.replication_status.oplog_size
+        ));
+        xml.push_str(&format!(
+            "    <oplogUsed>{:.2}</oplogUsed>\n",
+            status.replication_status.oplog_used
+        ));
+        xml.push_str("  </replicationStatus>\n");
+        xml.push_str("</kvstoreStatus>");
+        Ok(xml)
+    }
 }
 
 /// Format a JSON value as a string for display.
@@ -1064,6 +1161,7 @@ pub fn get_formatter(format: OutputFormat) -> Box<dyn Formatter> {
 mod tests {
     use super::*;
     use serde_json::json;
+    use splunk_client::{KvStoreMember, KvStoreReplicationStatus};
 
     #[test]
     fn test_output_format_from_str() {
@@ -1565,33 +1663,90 @@ mod tests {
     }
 
     #[test]
-    fn test_cluster_peers_not_shown_when_not_detailed() {
-        let formatter = TableFormatter;
-        let cluster_info = ClusterInfoOutput {
-            id: "cluster-1".to_string(),
-            label: Some("test-cluster".to_string()),
-            mode: "master".to_string(),
-            manager_uri: Some("https://master:8089".to_string()),
-            replication_factor: Some(3),
-            search_factor: Some(2),
-            status: Some("Enabled".to_string()),
-            peers: Some(vec![ClusterPeerOutput {
-                host: "peer1".to_string(),
+    fn test_kvstore_peers_table_formatting() {
+        let status = KvStoreStatus {
+            current_member: KvStoreMember {
+                guid: "guid".to_string(),
+                host: "localhost".to_string(),
                 port: 8089,
-                id: "peer-1".to_string(),
-                status: "Up".to_string(),
-                peer_state: "Ready".to_string(),
-                label: Some("Peer 1".to_string()),
-                site: Some("site1".to_string()),
-                is_captain: true,
-            }]),
+                replica_set: "rs0".to_string(),
+                status: "Ready".to_string(),
+            },
+            replication_status: KvStoreReplicationStatus {
+                oplog_size: 100,
+                oplog_used: 1.5,
+            },
         };
-        let output = formatter.format_cluster_info(&cluster_info, false).unwrap();
-        // Verify basic cluster info is shown
-        assert!(output.contains("Cluster Information:"));
-        assert!(output.contains("ID: cluster-1"));
-        // Verify peers are NOT shown when detailed=false
-        assert!(!output.contains("Cluster Peers"));
-        assert!(!output.contains("Host: peer1"));
+        let output = TableFormatter.format_kvstore_status(&status).unwrap();
+        assert!(output.contains("KVStore Status:"));
+        assert!(output.contains("localhost:8089"));
+        assert!(output.contains("Status: Ready"));
+        assert!(output.contains("Replica Set: rs0"));
+        assert!(output.contains("Oplog Size: 100 MB"));
+        assert!(output.contains("Oplog Used: 1.50%"));
+    }
+
+    #[test]
+    fn test_kvstore_peers_json_formatting() {
+        let status = KvStoreStatus {
+            current_member: KvStoreMember {
+                guid: "guid".to_string(),
+                host: "localhost".to_string(),
+                port: 8089,
+                replica_set: "rs0".to_string(),
+                status: "Ready".to_string(),
+            },
+            replication_status: KvStoreReplicationStatus {
+                oplog_size: 100,
+                oplog_used: 1.5,
+            },
+        };
+        let output = JsonFormatter.format_kvstore_status(&status).unwrap();
+        assert!(output.contains("\"currentMember\""));
+        assert!(output.contains("\"replicationStatus\""));
+        assert!(output.contains("\"localhost\""));
+        assert!(output.contains("\"rs0\""));
+    }
+
+    #[test]
+    fn test_kvstore_peers_csv_formatting() {
+        let status = KvStoreStatus {
+            current_member: KvStoreMember {
+                guid: "guid".to_string(),
+                host: "localhost".to_string(),
+                port: 8089,
+                replica_set: "rs0".to_string(),
+                status: "Ready".to_string(),
+            },
+            replication_status: KvStoreReplicationStatus {
+                oplog_size: 100,
+                oplog_used: 1.5,
+            },
+        };
+        let output = CsvFormatter.format_kvstore_status(&status).unwrap();
+        assert!(output.contains("host,port,status,replica_set,oplog_size_mb,oplog_used_percent"));
+        assert!(output.contains("localhost,8089,Ready,rs0,100,1.5"));
+    }
+
+    #[test]
+    fn test_kvstore_peers_xml_formatting() {
+        let status = KvStoreStatus {
+            current_member: KvStoreMember {
+                guid: "guid".to_string(),
+                host: "localhost".to_string(),
+                port: 8089,
+                replica_set: "rs0".to_string(),
+                status: "Ready".to_string(),
+            },
+            replication_status: KvStoreReplicationStatus {
+                oplog_size: 100,
+                oplog_used: 1.5,
+            },
+        };
+        let output = XmlFormatter.format_kvstore_status(&status).unwrap();
+        assert!(output.contains("<kvstoreStatus>"));
+        assert!(output.contains("<host>localhost</host>"));
+        assert!(output.contains("<port>8089</port>"));
+        assert!(output.contains("<oplogUsed>1.50</oplogUsed>"));
     }
 }

@@ -109,6 +109,12 @@ Perform a comprehensive system health check.
 splunk health
 ```
 
+#### `kvstore`
+Show detailed KVStore status.
+```bash
+splunk kvstore
+```
+
 ---
 
 ## Terminal User Interface (TUI)
