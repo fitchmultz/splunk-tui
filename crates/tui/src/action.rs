@@ -22,6 +22,8 @@ pub enum Action {
     // Input
     /// Raw keyboard input event
     Input(KeyEvent),
+    /// Raw mouse input event
+    Mouse(crossterm::event::MouseEvent),
     /// Navigate down in current list/table
     NavigateDown,
     /// Navigate up in current list/table

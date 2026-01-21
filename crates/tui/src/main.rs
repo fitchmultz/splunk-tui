@@ -68,12 +68,15 @@ async fn main() -> Result<()> {
         let mut reader = EventStream::new();
         while let Some(event_result) = reader.next().await {
             match event_result {
-                Ok(event) => {
-                    if let crossterm::event::Event::Key(key) = event {
+                Ok(event) => match event {
+                    crossterm::event::Event::Key(key) => {
                         tx_input.send(Action::Input(key)).ok();
                     }
-                    // Resize is handled automatically by ratatui on next draw
-                }
+                    crossterm::event::Event::Mouse(mouse) => {
+                        tx_input.send(Action::Mouse(mouse)).ok();
+                    }
+                    _ => {}
+                },
                 Err(_) => {
                     // Stream error, exit loop
                     break;
@@ -148,6 +151,11 @@ async fn main() -> Result<()> {
                 // Handle input -> Action
                 if let Action::Input(key) = action {
                     if let Some(a) = app.handle_input(key) {
+                        app.update(a.clone());
+                        handle_side_effects(a, client.clone(), tx.clone()).await;
+                    }
+                } else if let Action::Mouse(mouse) = action {
+                    if let Some(a) = app.handle_mouse(mouse) {
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone()).await;
                     }
