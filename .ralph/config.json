@@ -10,12 +10,13 @@
   "agent": {
     "runner": "gemini",
     "model": "gemini-3-flash-preview",
-    "reasoning_effort": "medium",
+    "reasoning_effort": "high",
     "codex_bin": "codex",
     "opencode_bin": "opencode",
     "gemini_bin": "gemini",
     "claude_bin": "claude",
     "claude_permission_mode": "bypass_permissions",
-    "require_repoprompt": false
+    "require_repoprompt": false,
+    "phases": 3
   }
 }
