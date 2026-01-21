@@ -8,14 +8,13 @@
     "id_width": 4
   },
   "agent": {
-    "runner": "codex",
-    "model": "gpt-5.2-codex",
+    "runner": "gemini",
+    "model": "gemini-3-flash-preview",
     "reasoning_effort": "medium",
     "codex_bin": "codex",
     "opencode_bin": "opencode",
     "gemini_bin": "gemini",
     "claude_bin": "claude",
-    "two_pass_plan": true,
     "claude_permission_mode": "bypass_permissions"
   }
 }
