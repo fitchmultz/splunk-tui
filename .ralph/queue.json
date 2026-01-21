@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0039",
-      "status": "todo",
-      "title": "Add comprehensive linting and formatting enforcement to CI",
-      "priority": "low",
-      "tags": [
-        "workflow",
-        "ci",
-        "quality"
-      ],
-      "scope": [
-        "Makefile"
-      ],
-      "evidence": [
-        "AGENTS.md requires make ci to catch ALL potential issues.",
-        "Makefile's lint target currently runs only cargo clippy without strict settings."
-      ],
-      "plan": [
-        "Update make lint to include cargo clippy -- -D warnings and cargo fmt --check.",
-        "Ensure all crates adhere to the project's formatting standards.",
-        "Add clippy to the CI pipeline to block regressions."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0040",
       "status": "todo",
       "title": "Add user documentation guide for TUI and CLI",

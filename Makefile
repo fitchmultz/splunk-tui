@@ -15,13 +15,14 @@ install:
 update:
 	cargo update
 
-# Run clippy with warnings as errors
+# Run clippy and format check
 lint:
-	cargo clippy --all-targets --all-features -- -D warnings
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
+	cargo fmt --all --check
 
 # Type check all crates
 type-check:
-	cargo check --all-targets --all-features
+	cargo check --workspace --all-targets --all-features
 
 # Format code with rustfmt (write mode)
 format:
@@ -81,7 +82,7 @@ help:
 	@echo ""
 	@echo "  make install          - Fetch all dependencies"
 	@echo "  make update           - Update all dependencies to latest stable versions"
-	@echo "  make lint             - Run clippy (warnings as errors)"
+	@echo "  make lint             - Run clippy (warnings as errors) and format check"
 	@echo "  make type-check       - Run cargo check"
 	@echo "  make format           - Format code with rustfmt (write mode)"
 	@echo "  make clean            - Remove build artifacts and lock files"
