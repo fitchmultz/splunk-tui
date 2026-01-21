@@ -15,6 +15,7 @@
     "opencode_bin": "opencode",
     "gemini_bin": "gemini",
     "claude_bin": "claude",
-    "claude_permission_mode": "bypass_permissions"
+    "claude_permission_mode": "bypass_permissions",
+    "require_repoprompt": false
   }
 }
