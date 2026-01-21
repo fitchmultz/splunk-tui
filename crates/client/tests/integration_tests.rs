@@ -548,6 +548,67 @@ async fn test_timeout_handling() {
     assert!(result.is_err());
 }
 
+#[tokio::test]
+async fn test_api_error_details() {
+    let mock_server = MockServer::start().await;
+    let request_id = "test-request-id-999";
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/indexes"))
+        .respond_with(
+            ResponseTemplate::new(404)
+                .insert_header("X-Splunk-Request-Id", request_id)
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Not Found"}]
+                })),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_indexes(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(0),
+        3,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    if let ClientError::ApiError {
+        status,
+        url,
+        message,
+        request_id: rid,
+    } = err
+    {
+        assert_eq!(status, 404);
+        assert!(url.contains("/services/data/indexes"));
+        assert!(message.contains("Not Found"));
+        assert_eq!(rid, Some(request_id.to_string()));
+
+        // Check if Display implementation includes details
+        let display = format!(
+            "{}",
+            ClientError::ApiError {
+                status,
+                url: url.clone(),
+                message: message.clone(),
+                request_id: rid,
+            }
+        );
+        assert!(display.contains("404"));
+        assert!(display.contains(&url));
+        assert!(display.contains(&message));
+        assert!(display.contains(request_id));
+    } else {
+        panic!("Expected ApiError, got {:?}", err);
+    }
+}
+
 // Retry behavior tests
 
 #[tokio::test]

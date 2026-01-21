@@ -22,16 +22,6 @@ pub async fn get_job(
         .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
 
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
-
     let resp: serde_json::Value = response.json().await?;
 
     serde_json::from_value(resp["entry"][0]["content"].clone())
@@ -64,16 +54,6 @@ pub async fn list_jobs(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
     let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
 
     let resp: SearchJobListResponse = response.json().await?;
 
@@ -111,17 +91,7 @@ pub async fn cancel_job(
         .post(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .form(&[("action", "cancel")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
+    let _response = send_request_with_retry(builder, max_retries).await?;
 
     Ok(())
 }
@@ -139,17 +109,7 @@ pub async fn delete_job(
     let builder = client
         .delete(&url)
         .header("Authorization", format!("Bearer {}", auth_token));
-    let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
+    let _response = send_request_with_retry(builder, max_retries).await?;
 
     Ok(())
 }

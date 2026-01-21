@@ -22,16 +22,6 @@ pub async fn login(
         .form(&[("username", username), ("password", password)]);
     let response = send_request_with_retry(builder, max_retries).await?;
 
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(crate::error::ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
-
     let splunk_resp: serde_json::Value = response.json().await?;
 
     splunk_resp["entry"][0]["content"]["sessionKey"]

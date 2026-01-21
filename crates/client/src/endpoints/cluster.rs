@@ -3,7 +3,7 @@
 use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
-use crate::error::{ClientError, Result};
+use crate::error::Result;
 use crate::models::{ClusterInfo, ClusterPeer};
 
 /// Get cluster configuration/status.
@@ -20,16 +20,6 @@ pub async fn get_cluster_info(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -60,16 +50,6 @@ pub async fn get_cluster_peers(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
 
     let resp: serde_json::Value = response.json().await?;
 

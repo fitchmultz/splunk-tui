@@ -105,16 +105,6 @@ pub async fn create_job(
         .form(&form_data);
     let response = send_request_with_retry(builder, max_retries).await?;
 
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
-
     let resp: serde_json::Value = response.json().await?;
 
     resp["entry"][0]["content"]["sid"]
@@ -140,16 +130,6 @@ pub async fn get_job_status(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -217,16 +197,6 @@ pub async fn get_results(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
     let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
 
     let json: serde_json::Value = response.json().await?;
 

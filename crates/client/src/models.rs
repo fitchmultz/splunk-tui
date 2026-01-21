@@ -29,6 +29,20 @@ pub struct Perms {
     pub write: Vec<String>,
 }
 
+/// A single message from Splunk (usually in error responses).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SplunkMessage {
+    #[serde(rename = "type")]
+    pub message_type: String,
+    pub text: String,
+}
+
+/// A collection of messages from Splunk.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SplunkMessages {
+    pub messages: Vec<SplunkMessage>,
+}
+
 /// Search job status information.
 #[derive(Debug, Deserialize, Clone)]
 #[allow(non_snake_case)]
@@ -375,5 +389,21 @@ mod tests {
         assert_eq!(health.total_errors, 5);
         assert_eq!(health.time_window, "-24h");
         assert!(health.errors.is_empty());
+    }
+
+    #[test]
+    fn test_deserialize_splunk_messages() {
+        let json = r#"{
+            "messages": [
+                {
+                    "type": "ERROR",
+                    "text": "Invalid username or password"
+                }
+            ]
+        }"#;
+        let msgs: SplunkMessages = serde_json::from_str(json).unwrap();
+        assert_eq!(msgs.messages.len(), 1);
+        assert_eq!(msgs.messages[0].message_type, "ERROR");
+        assert_eq!(msgs.messages[0].text, "Invalid username or password");
     }
 }

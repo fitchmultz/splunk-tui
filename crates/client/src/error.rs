@@ -18,8 +18,13 @@ pub enum ClientError {
     HttpError(#[from] reqwest::Error),
 
     /// API error response from Splunk.
-    #[error("API error ({status}): {message}")]
-    ApiError { status: u16, message: String },
+    #[error("API error ({status}) at {url}: {message}{}", .request_id.as_ref().map(|id| format!(" [Request ID: {id}]")).unwrap_or_default())]
+    ApiError {
+        status: u16,
+        url: String,
+        message: String,
+        request_id: Option<String>,
+    },
 
     /// Session expired and could not be renewed.
     #[error("Session expired, please re-authenticate")]

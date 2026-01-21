@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0035",
-      "status": "todo",
-      "title": "Enhance CLI error reporting with request IDs and URIs",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "client",
-        "dx"
-      ],
-      "scope": [
-        "crates/client/src/error.rs",
-        "crates/client/src/endpoints/request.rs"
-      ],
-      "evidence": [
-        "Current ApiError in crates/client/src/error.rs only captures status and message.",
-        "Troubleshooting Splunk API issues is difficult without the request ID (X-Splunk-Request-Id) and the specific URI that failed."
-      ],
-      "plan": [
-        "Expand ClientError::ApiError to include url and request_id fields.",
-        "Update send_request_with_retry in request.rs to extract these details from the response and headers on failure.",
-        "Update CLI formatters to display these details when an error occurs."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0038",
       "status": "todo",
       "title": "Implement make release target for optimized builds",

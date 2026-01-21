@@ -21,16 +21,6 @@ pub async fn get_server_info(
         .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
 
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
-
     let resp: serde_json::Value = response.json().await?;
 
     // Extract content from the first entry
@@ -63,16 +53,6 @@ pub async fn get_health(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
-
-    let status = response.status().as_u16();
-
-    if !response.status().is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(ClientError::ApiError {
-            status,
-            message: body,
-        });
-    }
 
     let resp: serde_json::Value = response.json().await?;
 

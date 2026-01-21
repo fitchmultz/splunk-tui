@@ -8,6 +8,7 @@ use reqwest::{RequestBuilder, Response};
 use tracing::debug;
 
 use crate::error::{ClientError, Result};
+use crate::models::SplunkMessages;
 
 /// Maximum number of retry attempts for rate-limited requests.
 const DEFAULT_MAX_RETRIES: usize = 3;
@@ -86,11 +87,44 @@ pub async fn send_request_with_retry(
                 }
             }
             Ok(response) => {
-                // Successful response or non-429 error
-                if attempt > 0 {
-                    debug!(attempt = attempt + 1, "Request succeeded after retry");
+                if response.status().is_success() {
+                    // Successful response
+                    if attempt > 0 {
+                        debug!(attempt = attempt + 1, "Request succeeded after retry");
+                    }
+                    return Ok(response);
+                } else {
+                    // Handle non-success status codes
+                    let status = response.status().as_u16();
+                    let url = response.url().to_string();
+                    let request_id = response
+                        .headers()
+                        .get("X-Splunk-Request-Id")
+                        .and_then(|h| h.to_str().ok())
+                        .map(|s| s.to_string());
+                    let body = response
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "Could not read error response body".to_string());
+
+                    // Try to parse Splunk error messages for a cleaner display
+                    let message = if let Ok(m) = serde_json::from_str::<SplunkMessages>(&body) {
+                        m.messages
+                            .iter()
+                            .map(|msg| format!("{}: {}", msg.message_type, msg.text))
+                            .collect::<Vec<_>>()
+                            .join("; ")
+                    } else {
+                        body
+                    };
+
+                    return Err(ClientError::ApiError {
+                        status,
+                        url,
+                        message,
+                        request_id,
+                    });
                 }
-                return Ok(response);
             }
             Err(e) => {
                 // For non-429 errors, propagate immediately
