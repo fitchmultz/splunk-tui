@@ -25,6 +25,7 @@ crossterm = { workspace = true, features = ["event-stream"] }
 
 # Serialization
 serde_json = { workspace = true }
+csv = { workspace = true }
 
 # Error Handling
 anyhow = { workspace = true }
@@ -39,3 +40,4 @@ uuid = { version = "1.11", features = ["v4"] }
 
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }
+tempfile = "3.10"

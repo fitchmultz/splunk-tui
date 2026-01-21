@@ -132,6 +132,7 @@ Launch the TUI by running `splunk-tui`.
 
 #### Search Screen
 - `Enter`: Execute the search query typed in the input box (adds to history)
+- `e`: Export current search results to a file (JSON or CSV)
 - `Up` / `Down`: Navigate through search history
 - `Ctrl+j` / `Ctrl+k`: Scroll search results by one line
 - `Backspace`: Delete character in the search input

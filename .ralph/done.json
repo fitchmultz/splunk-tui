@@ -1664,6 +1664,46 @@
       "completed_at": "2026-01-21T19:14:35.414099000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0042",
+      "status": "done",
+      "title": "Add export functionality to Search screen in TUI",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "search",
+        "export",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs"
+      ],
+      "evidence": [
+        "Users can currently only view search results within the TUI.",
+        "Exporting to CSV/JSON is a common requirement for data analysis."
+      ],
+      "plan": [
+        "Add an Action::ExportSearchResults(PathBuf, ExportFormat) variant.",
+        "Implement a popup in the Search screen to prompt for filename and format.",
+        "Add logic in main loop or app to write search_results to the specified file.",
+        "Show a success toast when the export completes."
+      ],
+      "notes": [
+        "Added export functionality (JSON/CSV) to Search screen",
+        "Created dedicated export module with robust CSV header discovery",
+        "Implemented interactive export popup with auto-extension toggling",
+        "Refactored main.rs to properly use library crate modules",
+        "Added comprehensive unit and integration tests for export flow"
+      ],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:30:00Z",
+      "updated_at": "2026-01-21T19:39:27.875109000Z",
+      "completed_at": "2026-01-21T19:39:27.875109000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

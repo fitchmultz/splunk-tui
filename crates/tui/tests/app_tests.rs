@@ -9,7 +9,10 @@
 mod helpers;
 use helpers::*;
 use splunk_client::models::SearchJobStatus;
-use splunk_tui::{CurrentScreen, Popup, PopupType, Toast, ToastLevel, action::Action, app::App};
+use splunk_tui::{
+    CurrentScreen, Popup, PopupType, Toast, ToastLevel, action::Action, action::ExportFormat,
+    app::App,
+};
 use std::time::Duration;
 
 fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
@@ -1428,4 +1431,86 @@ fn test_search_result_scrolling_by_line() {
     assert!(matches!(action, Some(Action::NavigateUp)));
     app.update(action.unwrap());
     assert_eq!(app.search_scroll_offset, 0);
+}
+
+#[test]
+fn test_export_search_popup_flow() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+    app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
+
+    // Press 'e' to open export popup
+    app.handle_input(key('e'));
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ExportSearch)
+    ));
+    assert_eq!(app.export_input, "results.json");
+    assert_eq!(app.export_format, ExportFormat::Json);
+
+    // Press Tab to toggle format
+    app.handle_input(tab_key());
+    assert_eq!(app.export_format, ExportFormat::Csv);
+    assert_eq!(app.export_input, "results.csv");
+
+    // Toggle back to Json
+    app.handle_input(tab_key());
+    assert_eq!(app.export_format, ExportFormat::Json);
+    assert_eq!(app.export_input, "results.json");
+
+    // Toggle back to Csv for further testing
+    app.handle_input(tab_key());
+    assert_eq!(app.export_format, ExportFormat::Csv);
+    assert_eq!(app.export_input, "results.csv");
+
+    // Backspace and type new filename
+    for _ in 0..12 {
+        app.handle_input(backspace_key());
+    }
+    app.handle_input(key('d'));
+    app.handle_input(key('a'));
+    app.handle_input(key('t'));
+    app.handle_input(key('a'));
+    app.handle_input(key('.'));
+    app.handle_input(key('c'));
+    app.handle_input(key('s'));
+    app.handle_input(key('v'));
+    assert_eq!(app.export_input, "data.csv");
+
+    // Press Enter to confirm export
+    let action = app.handle_input(enter_key());
+    assert!(action.is_some());
+    if let Some(Action::ExportSearchResults(results, path, format)) = action {
+        assert_eq!(results.len(), 1);
+        assert_eq!(path.to_str().unwrap(), "data.csv");
+        assert_eq!(format, ExportFormat::Csv);
+    } else {
+        panic!("Should return ExportSearchResults action");
+    }
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_export_search_disabled_when_no_results() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+    app.search_results = Vec::new();
+
+    // Press 'e' - should not open popup
+    app.handle_input(key('e'));
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_export_search_cancel_with_esc() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+    app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
+
+    app.handle_input(key('e'));
+    assert!(app.popup.is_some());
+
+    app.handle_input(esc_key());
+    assert!(app.popup.is_none());
 }

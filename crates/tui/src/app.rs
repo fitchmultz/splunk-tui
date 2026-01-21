@@ -3,7 +3,7 @@
 //! This module contains the main application state, input handling,
 //! and rendering logic for the TUI.
 
-use crate::action::Action;
+use crate::action::{Action, ExportFormat};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
 use crate::ui::screens::{cluster, health, indexes, search};
@@ -203,6 +203,10 @@ pub struct App {
     pub history_index: Option<usize>,
     pub saved_search_input: String,
 
+    // Export state
+    pub export_input: String,
+    pub export_format: ExportFormat,
+
     // Layout tracking
     pub last_area: Rect,
 }
@@ -264,6 +268,8 @@ impl App {
             search_history,
             history_index: None,
             saved_search_input: String::new(),
+            export_input: String::new(),
+            export_format: ExportFormat::Json,
             last_area: Rect::default(),
         }
     }
@@ -497,6 +503,54 @@ impl App {
                 };
                 Some(Action::DeleteJob(sid))
             }
+            (Some(PopupType::ExportSearch), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::ExportSearch), KeyCode::Enter) => {
+                if !self.export_input.is_empty() && !self.search_results.is_empty() {
+                    let path = std::path::PathBuf::from(&self.export_input);
+                    let format = self.export_format;
+                    let results = self.search_results.clone();
+                    self.popup = None;
+                    Some(Action::ExportSearchResults(results, path, format))
+                } else {
+                    None
+                }
+            }
+            (Some(PopupType::ExportSearch), KeyCode::Tab) => {
+                self.export_format = match self.export_format {
+                    ExportFormat::Json => ExportFormat::Csv,
+                    ExportFormat::Csv => ExportFormat::Json,
+                };
+                // Automatically update extension if it matches the previous format
+                match self.export_format {
+                    ExportFormat::Json => {
+                        if self.export_input.ends_with(".csv") {
+                            self.export_input.truncate(self.export_input.len() - 4);
+                            self.export_input.push_str(".json");
+                        }
+                    }
+                    ExportFormat::Csv => {
+                        if self.export_input.ends_with(".json") {
+                            self.export_input.truncate(self.export_input.len() - 5);
+                            self.export_input.push_str(".csv");
+                        }
+                    }
+                }
+                self.update_export_popup();
+                None
+            }
+            (Some(PopupType::ExportSearch), KeyCode::Backspace) => {
+                self.export_input.pop();
+                self.update_export_popup();
+                None
+            }
+            (Some(PopupType::ExportSearch), KeyCode::Char(c)) => {
+                self.export_input.push(c);
+                self.update_export_popup();
+                None
+            }
             (
                 Some(PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_)),
                 KeyCode::Char('n') | KeyCode::Esc,
@@ -505,6 +559,28 @@ impl App {
                 None
             }
             _ => None,
+        }
+    }
+
+    /// Refresh the export popup content based on current input and format.
+    fn update_export_popup(&mut self) {
+        if let Some(Popup {
+            kind: PopupType::ExportSearch,
+            ..
+        }) = &mut self.popup
+        {
+            let format_str = match self.export_format {
+                ExportFormat::Json => "JSON",
+                ExportFormat::Csv => "CSV",
+            };
+            let popup = Popup::builder(PopupType::ExportSearch)
+                .title("Export Search Results")
+                .content(format!(
+                    "File: {}\nFormat: {} (Tab to toggle)\n\nPress Enter to export, Esc to cancel",
+                    self.export_input, format_str
+                ))
+                .build();
+            self.popup = Some(popup);
         }
     }
 
@@ -595,6 +671,15 @@ impl App {
             KeyCode::End => Some(Action::GoToBottom),
             KeyCode::Char('?') if key.modifiers.is_empty() => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            KeyCode::Char('e') if key.modifiers.is_empty() => {
+                if !self.search_results.is_empty() {
+                    self.export_input = "results.json".to_string();
+                    self.export_format = ExportFormat::Json;
+                    self.popup = Some(Popup::builder(PopupType::ExportSearch).build());
+                    self.update_export_popup();
+                }
                 None
             }
             KeyCode::Char(c) => {

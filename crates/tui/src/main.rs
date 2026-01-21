@@ -2,12 +2,6 @@
 //!
 //! Interactive terminal interface for managing Splunk deployments and running searches.
 
-mod action;
-mod app;
-mod ui;
-
-use crate::ui::ToastLevel;
-use action::Action;
 use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
@@ -16,12 +10,14 @@ use crossterm::{
 };
 use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
+use splunk_tui::action::Action;
+use splunk_tui::app::App;
+use splunk_tui::ui::ToastLevel;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::unbounded_channel};
 use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use app::App;
 use splunk_client::{SplunkClient, models::HealthCheckOutput};
 use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager};
 
@@ -455,6 +451,28 @@ async fn handle_side_effects(
                 } else {
                     tx.send(Action::HealthLoaded(Box::new(Ok(health_output))))
                         .ok();
+                }
+            });
+        }
+        Action::ExportSearchResults(results, path, format) => {
+            tokio::spawn(async move {
+                let result = splunk_tui::export::export_results(&results, &path, format);
+
+                match result {
+                    Ok(_) => {
+                        tx.send(Action::Notify(
+                            ToastLevel::Info,
+                            format!("Exported to {}", path.display()),
+                        ))
+                        .ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::Notify(
+                            ToastLevel::Error,
+                            format!("Export failed: {}", e),
+                        ))
+                        .ok();
+                    }
                 }
             });
         }

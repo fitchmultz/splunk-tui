@@ -57,6 +57,11 @@ pub fn backspace_key() -> KeyEvent {
     KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE)
 }
 
+/// Create a Tab key event.
+pub fn tab_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE)
+}
+
 /// Create a Ctrl+char key event.
 pub fn ctrl_key(c: char) -> KeyEvent {
     KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)

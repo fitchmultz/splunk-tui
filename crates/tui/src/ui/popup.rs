@@ -24,6 +24,8 @@ pub enum PopupType {
     ConfirmCancel(String),
     /// Confirm delete job (holds search ID)
     ConfirmDelete(String),
+    /// Export search results
+    ExportSearch,
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -134,6 +136,10 @@ Job Details Screen:
                 "Confirm Delete".to_string(),
                 format!("Delete job {sid}? (y/n)"),
             ),
+            PopupType::ExportSearch => (
+                "Export Search Results".to_string(),
+                "Enter filename: results.json\nFormat: JSON (Tab to toggle)".to_string(),
+            ),
         };
 
         Popup {
@@ -158,13 +164,13 @@ pub fn render_popup(f: &mut Frame, popup: &Popup) {
 
     // Determine border color based on popup type
     let border_color = match &popup.kind {
-        PopupType::Help => Color::Cyan,
+        PopupType::Help | PopupType::ExportSearch => Color::Cyan,
         PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_) => Color::Red,
     };
 
     // Determine wrapping behavior based on popup type
     let wrap_mode = match &popup.kind {
-        PopupType::Help => Wrap { trim: false },
+        PopupType::Help | PopupType::ExportSearch => Wrap { trim: false },
         PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_) => Wrap { trim: true },
     };
 

@@ -6,8 +6,18 @@
 use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SearchJobStatus, SplunkHealth};
+use std::path::PathBuf;
 
 use crate::ui::ToastLevel;
+
+/// Supported export formats for search results.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportFormat {
+    /// JSON format
+    Json,
+    /// CSV format
+    Csv,
+}
 
 /// Unified action type for async TUI event handling.
 ///
@@ -60,6 +70,8 @@ pub enum Action {
     LoadHealth,
     /// Run a search with the given query
     RunSearch(String),
+    /// Export search results to a file
+    ExportSearchResults(Vec<Value>, PathBuf, ExportFormat),
 
     // API Results
     /// Result of loading indexes
