@@ -3,7 +3,7 @@
   "tasks": [
     {
       "id": "RQ-0041",
-      "status": "todo",
+      "status": "doing",
       "title": "Create user-facing usage and configuration documentation",
       "priority": "medium",
       "tags": [
@@ -29,7 +29,7 @@
       "notes": [],
       "request": "Create docs that accurately reflect the usage and configurable values of this app. No need to get into the technical details. More user facing documentation than design decisions. These docs need to be updated as the commands, usage, and configs change. Make a note about maintaining docs in AGENTS.md",
       "created_at": "2026-01-21T12:00:00Z",
-      "updated_at": "2026-01-21T12:00:00Z",
+      "updated_at": "2026-01-21T18:16:27.059026000Z",
       "depends_on": [],
       "custom_fields": {}
     },

@@ -62,7 +62,10 @@
 1. **Feature Development**: Start with types/models, then client, then UI
 2. **Testing**: Write tests alongside code. Use mockito for HTTP mocking.
 3. **CI Pipeline**: `make ci` must pass before any commit
-4. **Documentation**: Update CLI help (`--help`) when adding commands
+4. **Documentation**: 
+    - Update CLI help (`--help`) when adding commands.
+    - Any changes to CLI commands, configuration parameters, or TUI keyboard shortcuts MUST be reflected in `docs/usage.md` before the task is considered complete.
+    - The CLI `--help` menu must be kept in sync with the actual implementation and `docs/usage.md`.
 
 ## Common Patterns
 

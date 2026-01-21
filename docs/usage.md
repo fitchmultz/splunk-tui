@@ -1,0 +1,152 @@
+# Usage Guide
+
+Splunk TUI provides a terminal-based interface (TUI) and a command-line interface (CLI) for interacting with Splunk Enterprise.
+
+## Configuration
+
+`splunk-tui` can be configured using environment variables, command-line arguments, or a configuration file.
+
+### Configuration File
+
+The configuration file is stored in a platform-specific directory:
+- Linux/macOS: `~/.config/splunk-tui/config.json`
+- Windows: `%AppData%\splunk-tui\config.json`
+
+The file uses JSON format and can contain multiple named profiles:
+
+```json
+{
+  "profiles": {
+    "default": {
+      "base_url": "https://localhost:8089",
+      "username": "admin",
+      "password": "changeme",
+      "skip_verify": true
+    },
+    "production": {
+      "base_url": "https://splunk.example.com:8089",
+      "api_token": "your-secret-api-token",
+      "timeout_seconds": 60,
+      "max_retries": 5
+    }
+  }
+}
+```
+
+### Environment Variables
+
+Environment variables take precedence over the configuration file:
+
+| Variable | Description |
+|----------|-------------|
+| `SPLUNK_BASE_URL` | Base URL of the Splunk server (e.g., `https://localhost:8089`) |
+| `SPLUNK_USERNAME` | Username for session authentication |
+| `SPLUNK_PASSWORD` | Password for session authentication |
+| `SPLUNK_API_TOKEN` | API token for bearer authentication (preferred over username/password) |
+| `SPLUNK_SKIP_VERIFY` | Skip TLS verification (`true` or `false`) |
+| `SPLUNK_TIMEOUT` | Connection timeout in seconds |
+| `SPLUNK_MAX_RETRIES` | Maximum number of retries for failed requests |
+| `SPLUNK_PROFILE` | Name of the profile to load from the configuration file |
+
+---
+
+## Command Line Interface (CLI)
+
+The CLI tool is named `splunk`.
+
+### Global Options
+
+- `-b, --base-url <URL>`: Splunk base URL
+- `-u, --username <NAME>`: Username for session auth
+- `-p, --password <PASS>`: Password for session auth
+- `-t, --api-token <TOKEN>`: API token for bearer auth
+- `--skip-verify`: Skip TLS certificate verification
+- `--profile <NAME>`: Config profile name to load
+- `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `json`]
+
+### Commands
+
+#### `search`
+Execute a search query and return results.
+```bash
+splunk search "index=main | head 10" --wait --earliest "-24h"
+```
+- `<query>`: The SPL search query
+- `--wait`: Wait for the search to complete before returning results
+- `-e, --earliest <TIME>`: Earliest time (e.g., `-24h`, `2024-01-01T00:00:00`)
+- `-l, --latest <TIME>`: Latest time (e.g., `now`)
+- `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
+
+#### `indexes`
+List and manage Splunk indexes.
+```bash
+splunk indexes --detailed
+```
+- `-d, --detailed`: Show detailed information about each index
+- `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 30]
+
+#### `cluster`
+Show cluster status and configuration.
+```bash
+splunk cluster --detailed
+```
+- `-d, --detailed`: Show detailed cluster information
+
+#### `jobs`
+Manage search jobs.
+```bash
+splunk jobs --list
+splunk jobs --cancel "1705852800.123"
+```
+- `--list`: List all search jobs (default)
+- `--cancel <SID>`: Cancel a specific job by SID
+- `--delete <SID>`: Delete a specific job by SID
+- `-c, --count <NUMBER>`: Maximum number of jobs to list [default: 50]
+
+#### `health`
+Perform a comprehensive system health check.
+```bash
+splunk health
+```
+
+---
+
+## Terminal User Interface (TUI)
+
+Launch the TUI by running `splunk-tui`.
+
+### Navigation
+
+- `1`-`5`: Switch between screens:
+  1. **Search**: Execute and view search results
+  2. **Indexes**: View index status and metrics
+  3. **Cluster**: View cluster information
+  4. **Jobs**: Manage active and historical search jobs
+  5. **Health**: View system health status
+- `j` / `Down Arrow`: Move selection down
+- `k` / `Up Arrow`: Move selection up
+- `?`: Show help popup
+- `q`: Quit the application
+
+### Screen Specific Shortcuts
+
+#### Search Screen
+- `Enter`: Execute the search query typed in the input box
+- `Backspace`: Delete character in the search input
+- `PageUp` / `PageDown`: Scroll through search results
+- `Home` / `End`: Jump to top or bottom of results
+
+#### Jobs Screen
+- `Enter`: View details for the selected job (Inspect mode)
+- `r`: Refresh the list of jobs manually
+- `a`: Toggle auto-refresh (polls every 5 seconds)
+- `s`: Cycle through sort columns (SID, Status, Duration, Results, Events)
+- `/`: Enter filter mode to search for specific jobs by SID or status
+- `c`: Cancel the selected job (requires confirmation)
+- `d`: Delete the selected job (requires confirmation)
+
+#### Indexes / Cluster / Health Screens
+- `r`: Refresh the data for the current screen
+
+#### Job Details (Inspect) Screen
+- `Esc`: Return to the main Jobs list
