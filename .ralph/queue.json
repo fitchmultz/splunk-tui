@@ -3,7 +3,7 @@
   "tasks": [
     {
       "id": "RQ-0038",
-      "status": "todo",
+      "status": "doing",
       "title": "Implement make release target for optimized builds",
       "priority": "high",
       "tags": [
@@ -26,7 +26,7 @@
       "notes": [],
       "request": "scan finding",
       "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-21T19:02:18.265944000Z",
       "depends_on": [],
       "custom_fields": {}
     },

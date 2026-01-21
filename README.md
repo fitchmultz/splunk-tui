@@ -17,11 +17,11 @@ A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployme
 ### From Source
 
 ```bash
-# Install dependencies
+# Fetch dependencies
 make install
 
-# Or build release binaries
-make build
+# Build and install optimized release binaries to ~/.local/bin
+make release
 ```
 
 ### Binaries
@@ -189,14 +189,15 @@ API token authentication is preferred for automation as it doesn't require sessi
 
 | Target | Description |
 |--------|-------------|
-| `make install` | Install binaries to ~/.cargo/bin |
-| `make update` | Update dependencies |
-| `make lint` | Run clippy |
+| `make install` | Fetch all dependencies |
+| `make update` | Update dependencies to latest stable versions |
+| `make lint` | Run clippy (warnings as errors) |
 | `make type-check` | Run cargo check |
 | `make format` | Format code with rustfmt |
-| `make clean` | Remove build artifacts |
-| `make test` | Run tests |
-| `make build` | Release build |
+| `make clean` | Remove build artifacts and lock files |
+| `make test` | Run all tests (unit + integration) |
+| `make release` | Optimized release build and install to ~/.local/bin |
+| `make build` | Alias for release |
 | `make ci` | Full CI pipeline |
 
 ## Contributing
