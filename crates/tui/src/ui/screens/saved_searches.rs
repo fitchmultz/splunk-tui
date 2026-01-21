@@ -11,6 +11,8 @@ use ratatui::{
 };
 use splunk_client::models::SavedSearch;
 
+use crate::ui::syntax::highlight_spl;
+
 /// Configuration for rendering the saved searches screen.
 pub struct SavedSearchesRenderConfig<'a> {
     /// Whether data is currently loading
@@ -90,50 +92,30 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
     // Preview area
     let selected_search = state.selected().and_then(|i| searches.get(i));
     let preview_content = if let Some(s) = selected_search {
-        let mut lines = vec![
-            Line::from(vec![
-                Span::styled("Name: ", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(&s.name),
-            ]),
-            Line::from(vec![
-                Span::styled("Disabled: ", Style::default().add_modifier(Modifier::BOLD)),
-                Span::styled(
-                    if s.disabled { "Yes" } else { "No" },
-                    if s.disabled {
-                        Style::default().fg(Color::Red)
-                    } else {
-                        Style::default().fg(Color::Green)
-                    },
-                ),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Search Query:",
-                Style::default().add_modifier(Modifier::BOLD),
-            )),
-            Line::from(Span::styled(&s.search, Style::default().fg(Color::Cyan))),
-        ];
+        let mut details = vec![Line::from(vec![Span::styled(
+            "Search Query:",
+            Style::default().add_modifier(Modifier::BOLD),
+        )])];
+        details.extend(highlight_spl(&s.search).lines);
 
         if let Some(desc) = &s.description {
-            lines.insert(
-                2,
-                Line::from(vec![
-                    Span::styled(
-                        "Description: ",
-                        Style::default().add_modifier(Modifier::BOLD),
-                    ),
-                    Span::raw(desc),
-                ]),
-            );
+            details.push(Line::from(""));
+            details.push(Line::from(vec![
+                Span::styled(
+                    "Description: ",
+                    Style::default().add_modifier(Modifier::BOLD),
+                ),
+                Span::raw(desc),
+            ]));
         }
 
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
+        details.push(Line::from(""));
+        details.push(Line::from(Span::styled(
             "Press Enter to run this search",
             Style::default().fg(Color::Yellow),
         )));
 
-        lines
+        details
     } else {
         vec![Line::from("Select a saved search to see details")]
     };

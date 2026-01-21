@@ -8,6 +8,8 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
+use crate::ui::syntax::highlight_spl;
+
 /// Configuration for rendering the search screen.
 pub struct SearchRenderConfig<'a> {
     /// The current search input text
@@ -48,7 +50,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         .split(area);
 
     // Search input
-    let input = Paragraph::new(search_input)
+    let input = Paragraph::new(highlight_spl(search_input))
         .block(Block::default().borders(Borders::ALL).title("Search Query"));
     f.render_widget(input, chunks[0]);
 

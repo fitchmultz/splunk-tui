@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0046",
-      "status": "todo",
-      "title": "Implement SPL syntax highlighting in the TUI search input",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "search"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/search.rs"
-      ],
-      "evidence": [
-        "The current search input is plain text.",
-        "Highlighting SPL keywords (search, index, pipe, etc.) makes complex queries easier to read."
-      ],
-      "plan": [
-        "Create a simple SPL tokenizer in the TUI crate.",
-        "Update render_search to use Span with different styles for keywords, strings, and operators.",
-        "Ensure performance remains high during rapid typing."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:34:00Z",
-      "updated_at": "2026-01-21T19:34:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0047",
       "status": "todo",
       "title": "Add support for secure credential storage using 'keyring' crate",
