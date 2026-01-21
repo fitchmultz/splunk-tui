@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0038",
-      "status": "doing",
-      "title": "Implement make release target for optimized builds",
-      "priority": "high",
-      "tags": [
-        "workflow",
-        "makefile",
-        "build"
-      ],
-      "scope": [
-        "Makefile"
-      ],
-      "evidence": [
-        "The Makefile lacks a standard release target that produces fully optimized, stripped binaries.",
-        "Current build target installs release binaries to ~/.local/bin but may not be optimized for maximum performance or minimum size."
-      ],
-      "plan": [
-        "Add a release target to the Makefile that runs cargo build --release with LTO and symbols stripped.",
-        "Ensure it also handles installation of the optimized binaries.",
-        "Update CI target to use release builds where appropriate."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-21T19:02:18.265944000Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0039",
       "status": "todo",
       "title": "Add comprehensive linting and formatting enforcement to CI",
