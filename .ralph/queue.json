@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0047",
-      "status": "todo",
-      "title": "Add support for secure credential storage using 'keyring' crate",
-      "priority": "high",
-      "tags": [
-        "security",
-        "config"
-      ],
-      "scope": [
-        "crates/config/src/persistence.rs",
-        "crates/config/Cargo.toml"
-      ],
-      "evidence": [
-        "Currently, passwords and API tokens are stored in plain text in config.json.",
-        "Using the system keyring is a security best practice for CLI tools."
-      ],
-      "plan": [
-        "Add the 'keyring' crate to crates/config dependencies.",
-        "Modify PersistedState to optionally store a key identifier instead of the secret.",
-        "Implement logic to fetch/store secrets in the system keyring (macOS Keychain, Windows Credential Vault, etc.)."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:35:00Z",
-      "updated_at": "2026-01-21T19:35:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0048",
       "status": "todo",
       "title": "Implement 'Tail Internal Logs' command/screen",

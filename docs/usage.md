@@ -33,6 +33,26 @@ The file uses JSON format and can contain multiple named profiles:
 }
 ```
 
+### Secure Credential Storage
+
+`splunk-tui` supports storing sensitive credentials (passwords and API tokens) in your system's secure keyring (e.g., macOS Keychain, Windows Credential Locker, or Linux Secret Service).
+
+In the `config.json` file, you can specify that a value should be fetched from the keyring instead of being stored in plain text:
+
+```json
+{
+  "profiles": {
+    "default": {
+      "base_url": "https://localhost:8089",
+      "username": "admin",
+      "password": { "keyring_account": "splunk-default-admin" }
+    }
+  }
+}
+```
+
+When configured this way, `splunk-tui` will look up the password for the account `splunk-default-admin` under the service `splunk-tui`.
+
 ### Environment Variables
 
 Environment variables take precedence over the configuration file:

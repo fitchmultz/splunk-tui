@@ -26,31 +26,6 @@ mod secret_string {
     }
 }
 
-/// Module for serializing Option<SecretString> as optional strings.
-mod secret_string_opt {
-    use secrecy::{ExposeSecret, SecretString};
-    use serde::{Deserialize as DeserializeTrait, Serialize as SerializeTrait};
-    use serde::{Deserializer, Serializer};
-
-    pub fn serialize<S>(secret: &Option<SecretString>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match secret {
-            Some(s) => s.expose_secret().serialize(serializer),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<SecretString>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let opt = Option::<String>::deserialize(deserializer)?;
-        Ok(opt.map(|s| SecretString::new(s.into())))
-    }
-}
-
 /// Strategy for authenticating with Splunk.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -122,6 +97,39 @@ pub struct Config {
     pub auth: AuthConfig,
 }
 
+/// Service name used for keyring storage.
+pub const KEYRING_SERVICE: &str = "splunk-tui";
+
+/// A value that can be stored either in plain text or in the system keyring.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SecureValue {
+    /// Value stored in the system keyring.
+    Keyring {
+        /// The account name in the keyring.
+        keyring_account: String,
+    },
+    /// Value stored in plain text (as a SecretString).
+    #[serde(with = "secret_string")]
+    Plain(SecretString),
+}
+
+impl SecureValue {
+    /// Resolve the secure value to a SecretString.
+    ///
+    /// If the value is stored in the keyring, it will be fetched.
+    pub fn resolve(&self) -> Result<SecretString, keyring::Error> {
+        match self {
+            Self::Plain(secret) => Ok(secret.clone()),
+            Self::Keyring { keyring_account } => {
+                let entry = keyring::Entry::new(KEYRING_SERVICE, keyring_account)?;
+                let password = entry.get_password()?;
+                Ok(SecretString::new(password.into()))
+            }
+        }
+    }
+}
+
 /// Profile configuration for storing named connection profiles.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -131,11 +139,9 @@ pub struct ProfileConfig {
     /// Username for session authentication
     pub username: Option<String>,
     /// Password for session authentication
-    #[serde(with = "secret_string_opt")]
-    pub password: Option<SecretString>,
+    pub password: Option<SecureValue>,
     /// API token for bearer authentication
-    #[serde(with = "secret_string_opt")]
-    pub api_token: Option<SecretString>,
+    pub api_token: Option<SecureValue>,
     /// Whether to skip TLS verification
     pub skip_verify: Option<bool>,
     /// Connection timeout in seconds
@@ -263,7 +269,7 @@ mod tests {
         let original = ProfileConfig {
             base_url: Some("https://splunk.example.com:8089".to_string()),
             username: Some("admin".to_string()),
-            password: Some(password),
+            password: Some(SecureValue::Plain(password)),
             api_token: None,
             skip_verify: Some(true),
             timeout_seconds: Some(60),
@@ -276,5 +282,52 @@ mod tests {
         assert_eq!(deserialized.base_url, original.base_url);
         assert_eq!(deserialized.username, original.username);
         assert_eq!(deserialized.skip_verify, original.skip_verify);
+        assert!(matches!(deserialized.password, Some(SecureValue::Plain(_))));
+    }
+
+    #[test]
+    fn test_profile_config_backward_compatibility() {
+        let json = r#"{
+            "base_url": "https://localhost:8089",
+            "password": "old-password"
+        }"#;
+        let deserialized: ProfileConfig = serde_json::from_str(json).unwrap();
+
+        match deserialized.password {
+            Some(SecureValue::Plain(s)) => {
+                use secrecy::ExposeSecret;
+                assert_eq!(s.expose_secret(), "old-password");
+            }
+            _ => panic!("Expected SecureValue::Plain"),
+        }
+    }
+
+    #[test]
+
+    fn test_profile_config_keyring_serde() {
+        let json = r#"{
+
+                "password": { "keyring_account": "splunk-admin" }
+
+            }"#;
+
+        let deserialized: ProfileConfig = serde_json::from_str(json).unwrap();
+
+        match deserialized.password {
+            Some(SecureValue::Keyring { keyring_account }) => {
+                assert_eq!(keyring_account, "splunk-admin");
+            }
+
+            _ => panic!("Expected SecureValue::Keyring"),
+        }
+    }
+
+    #[test]
+    fn test_secure_value_resolve_plain() {
+        use secrecy::ExposeSecret;
+        let secret = SecretString::new("test-secret".to_string().into());
+        let val = SecureValue::Plain(secret.clone());
+        let resolved = val.resolve().unwrap();
+        assert_eq!(resolved.expose_secret(), secret.expose_secret());
     }
 }

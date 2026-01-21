@@ -35,6 +35,9 @@ pub enum ConfigError {
     #[error("Profile '{0}' not found in config file")]
     ProfileNotFound(String),
 
+    #[error("Keyring error: {0}")]
+    Keyring(#[from] keyring::Error),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -134,12 +137,12 @@ impl ConfigLoader {
             }
         };
 
-        self.apply_profile(profile);
+        self.apply_profile(profile)?;
         Ok(self)
     }
 
     /// Apply profile configuration to the loader.
-    fn apply_profile(&mut self, profile: &ProfileConfig) {
+    fn apply_profile(&mut self, profile: &ProfileConfig) -> Result<(), ConfigError> {
         if let Some(url) = &profile.base_url {
             self.base_url = Some(url.clone());
         }
@@ -147,10 +150,10 @@ impl ConfigLoader {
             self.username = Some(username.clone());
         }
         if let Some(password) = &profile.password {
-            self.password = Some(password.clone());
+            self.password = Some(password.resolve()?);
         }
         if let Some(token) = &profile.api_token {
-            self.api_token = Some(token.clone());
+            self.api_token = Some(token.resolve()?);
         }
         if let Some(skip) = profile.skip_verify {
             self.skip_verify = Some(skip);
@@ -161,6 +164,7 @@ impl ConfigLoader {
         if let Some(retries) = profile.max_retries {
             self.max_retries = Some(retries);
         }
+        Ok(())
     }
 
     /// Read configuration from environment variables.

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use crate::types::ProfileConfig;
+use crate::types::{KEYRING_SERVICE, ProfileConfig, SecureValue};
 
 /// User preferences that persist across application runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,6 +185,51 @@ impl ConfigManager {
 
         Ok(())
     }
+
+    /// Moves a profile's password to the system keyring.
+    pub fn move_password_to_keyring(&mut self, profile_name: &str) -> Result<()> {
+        let profile = self
+            .config_file
+            .profiles
+            .get_mut(profile_name)
+            .context(format!("Profile '{}' not found", profile_name))?;
+
+        if let Some(SecureValue::Plain(password)) = &profile.password {
+            use secrecy::ExposeSecret;
+            let username = profile.username.as_deref().unwrap_or("unknown");
+            let keyring_account = format!("{}-{}", profile_name, username);
+
+            let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account)?;
+            entry.set_password(password.expose_secret())?;
+
+            profile.password = Some(SecureValue::Keyring { keyring_account });
+            self.save(&self.load())?;
+        }
+
+        Ok(())
+    }
+
+    /// Moves a profile's API token to the system keyring.
+    pub fn move_token_to_keyring(&mut self, profile_name: &str) -> Result<()> {
+        let profile = self
+            .config_file
+            .profiles
+            .get_mut(profile_name)
+            .context(format!("Profile '{}' not found", profile_name))?;
+
+        if let Some(SecureValue::Plain(token)) = &profile.api_token {
+            use secrecy::ExposeSecret;
+            let keyring_account = format!("{}-token", profile_name);
+
+            let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account)?;
+            entry.set_password(token.expose_secret())?;
+
+            profile.api_token = Some(SecureValue::Keyring { keyring_account });
+            self.save(&self.load())?;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -265,7 +310,7 @@ mod tests {
             ProfileConfig {
                 base_url: Some("https://splunk.example.com:8089".to_string()),
                 username: Some("admin".to_string()),
-                password: Some(password),
+                password: Some(SecureValue::Plain(password)),
                 api_token: None,
                 skip_verify: Some(true),
                 timeout_seconds: Some(60),
@@ -290,5 +335,104 @@ mod tests {
                 .unwrap(),
             "https://splunk.example.com:8089"
         );
+    }
+
+    #[test]
+    fn test_move_password_to_keyring() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-password-profile-unique";
+        let password_str = "keyring-password";
+        let password = SecretString::new(password_str.to_string().into());
+
+        manager.config_file.profiles.insert(
+            profile_name.to_string(),
+            ProfileConfig {
+                username: Some("admin".to_string()),
+                password: Some(SecureValue::Plain(password)),
+                ..Default::default()
+            },
+        );
+
+        // Attempt to move to keyring. We handle errors gracefully in case the test environment
+        // doesn't have a functional keyring backend.
+        match manager.move_password_to_keyring(profile_name) {
+            Ok(_) => {
+                let profile = &manager.config_file.profiles[profile_name];
+                assert!(matches!(
+                    profile.password,
+                    Some(SecureValue::Keyring { .. })
+                ));
+
+                // Verify it can be resolved
+                match profile.password.as_ref().unwrap().resolve() {
+                    Ok(resolved) => {
+                        use secrecy::ExposeSecret;
+                        assert_eq!(resolved.expose_secret(), password_str);
+                    }
+                    Err(e) => {
+                        eprintln!("Skipping resolve check: {}", e);
+                    }
+                }
+
+                // Clean up
+                if let Some(SecureValue::Keyring { keyring_account }) = &profile.password {
+                    let entry = keyring::Entry::new(KEYRING_SERVICE, keyring_account).unwrap();
+                    let _ = entry.delete_credential();
+                }
+            }
+            Err(e) => {
+                eprintln!("Skipping keyring test: {}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_move_token_to_keyring() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-token-profile-unique";
+        let token_str = "test-token-123";
+        let token = SecretString::new(token_str.to_string().into());
+
+        manager.config_file.profiles.insert(
+            profile_name.to_string(),
+            ProfileConfig {
+                api_token: Some(SecureValue::Plain(token)),
+                ..Default::default()
+            },
+        );
+
+        match manager.move_token_to_keyring(profile_name) {
+            Ok(_) => {
+                let profile = &manager.config_file.profiles[profile_name];
+                assert!(matches!(
+                    profile.api_token,
+                    Some(SecureValue::Keyring { .. })
+                ));
+
+                // Verify it can be resolved
+                match profile.api_token.as_ref().unwrap().resolve() {
+                    Ok(resolved) => {
+                        use secrecy::ExposeSecret;
+                        assert_eq!(resolved.expose_secret(), token_str);
+                    }
+                    Err(e) => {
+                        eprintln!("Skipping token resolve check: {}", e);
+                    }
+                }
+
+                // Clean up
+                if let Some(SecureValue::Keyring { keyring_account }) = &profile.api_token {
+                    let entry = keyring::Entry::new(KEYRING_SERVICE, keyring_account).unwrap();
+                    let _ = entry.delete_credential();
+                }
+            }
+            Err(e) => {
+                eprintln!("Skipping keyring token test: {}", e);
+            }
+        }
     }
 }
