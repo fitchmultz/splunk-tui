@@ -127,6 +127,12 @@ splunk-tui
 **Jobs**: Monitor and manage search jobs (cancel, delete, inspect)
 **Health**: Comprehensive health monitoring including server info, splunkd health, license usage, KVStore status, and log parsing health
 
+## Documentation
+
+- [User Guide](docs/user-guide.md) - Task-oriented guide for CLI and TUI
+- [Usage Guide](docs/usage.md) - Detailed technical reference and configuration
+- [Development Guide](docs/splunk-test-environment.md) - Setting up a local Splunk environment
+
 ## Development
 
 ### Prerequisites
