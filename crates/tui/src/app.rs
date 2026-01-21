@@ -1106,6 +1106,9 @@ impl App {
             }
             Action::Loading(is_loading) => {
                 self.loading = is_loading;
+                if is_loading {
+                    self.progress = 0.0;
+                }
             }
             Action::Progress(p) => {
                 self.progress = p;
@@ -1657,6 +1660,8 @@ impl App {
                     search::SearchRenderConfig {
                         search_input: &self.search_input,
                         search_status: &self.search_status,
+                        loading: self.loading,
+                        progress: self.progress,
                         search_results: &self.search_results_formatted,
                         search_scroll_offset: self.search_scroll_offset,
                     },

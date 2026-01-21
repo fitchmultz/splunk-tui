@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0049",
-      "status": "todo",
-      "title": "Add search progress bar to the TUI Search screen",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "search",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/search.rs",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "Long-running searches in the TUI provide no visual feedback on progress.",
-        "Splunk provides search job progress via the REST API."
-      ],
-      "plan": [
-        "Modify the search execution to periodically poll for job status while running.",
-        "Update App state with the current progress percentage.",
-        "Render a Gauge widget in the Search screen's status area."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:37:00Z",
-      "updated_at": "2026-01-21T19:37:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0050",
       "status": "todo",
       "title": "Implement multi-selection in the Jobs screen for batch actions",

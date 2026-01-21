@@ -218,6 +218,18 @@ fn snapshot_search_screen_initial() {
 }
 
 #[test]
+fn snapshot_search_screen_loading() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main | stats count".to_string();
+    harness.app.search_status = "Running search...".to_string();
+    harness.app.loading = true;
+    harness.app.progress = 0.45;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
 fn snapshot_search_screen_with_results() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
