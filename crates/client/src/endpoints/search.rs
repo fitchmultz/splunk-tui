@@ -29,6 +29,28 @@ pub struct CreateJobOptions {
     /// Output format for results.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_mode: Option<OutputMode>,
+    /// Search mode (normal or realtime).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub search_mode: Option<SearchMode>,
+}
+
+/// Search mode for search jobs.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SearchMode {
+    #[default]
+    Normal,
+    Realtime,
+}
+
+impl std::fmt::Display for SearchMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            SearchMode::Normal => "normal",
+            SearchMode::Realtime => "realtime",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 /// Output format for search results.
@@ -97,6 +119,9 @@ pub async fn create_job(
     }
     if let Some(mode) = options.output_mode {
         form_data.push(("output_mode", mode.to_string()));
+    }
+    if let Some(mode) = options.search_mode {
+        form_data.push(("search_mode", mode.to_string()));
     }
 
     let builder = client

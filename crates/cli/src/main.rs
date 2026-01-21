@@ -118,6 +118,21 @@ enum Commands {
 
     /// Show license information
     License(commands::license::LicenseArgs),
+
+    /// Show internal logs (index=_internal)
+    Logs {
+        /// Maximum number of log entries to show
+        #[arg(short, long, default_value = "50")]
+        count: usize,
+
+        /// Earliest time for logs (e.g., '-24h', '2024-01-01T00:00:00')
+        #[arg(short, long, default_value = "-15m")]
+        earliest: String,
+
+        /// Follow the logs in real-time
+        #[arg(short, long)]
+        tail: bool,
+    },
 }
 
 #[tokio::main]
@@ -204,6 +219,13 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::License(args) => {
             commands::license::run(config, &args).await?;
+        }
+        Commands::Logs {
+            count,
+            earliest,
+            tail,
+        } => {
+            commands::logs::run(config, count, earliest, tail, &cli.output).await?;
         }
     }
 

@@ -16,7 +16,9 @@ use ratatui::{
     widgets::{Block, Borders, ListState, Paragraph, TableState},
 };
 use serde_json::Value;
-use splunk_client::models::{ClusterInfo, HealthCheckOutput, Index, SavedSearch, SearchJobStatus};
+use splunk_client::models::{
+    ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch, SearchJobStatus,
+};
 use splunk_config::PersistedState;
 
 /// Health state of the Splunk instance.
@@ -61,6 +63,7 @@ pub enum CurrentScreen {
     JobInspect,
     Health,
     SavedSearches,
+    InternalLogs,
 }
 
 /// Sort column for jobs table.
@@ -178,6 +181,8 @@ pub struct App {
     pub jobs_state: TableState,
     pub saved_searches: Option<Vec<SavedSearch>>,
     pub saved_searches_state: ListState,
+    pub internal_logs: Option<Vec<LogEntry>>,
+    pub internal_logs_state: TableState,
     pub cluster_info: Option<ClusterInfo>,
     pub health_info: Option<HealthCheckOutput>,
 
@@ -231,6 +236,9 @@ impl App {
         let mut saved_searches_state = ListState::default();
         saved_searches_state.select(Some(0));
 
+        let mut internal_logs_state = TableState::default();
+        internal_logs_state.select(Some(0));
+
         let (auto_refresh, sort_column, sort_direction, last_search_query, search_history) =
             match persisted {
                 Some(state) => (
@@ -257,6 +265,8 @@ impl App {
             jobs_state,
             saved_searches: None,
             saved_searches_state,
+            internal_logs: None,
+            internal_logs_state,
             cluster_info: None,
             health_info: None,
             loading: false,
@@ -355,6 +365,7 @@ impl App {
             CurrentScreen::JobInspect => self.handle_job_inspect_input(key),
             CurrentScreen::Health => self.handle_health_input(key),
             CurrentScreen::SavedSearches => self.handle_saved_searches_input(key),
+            CurrentScreen::InternalLogs => self.handle_internal_logs_input(key),
         }
     }
 
@@ -415,8 +426,12 @@ impl App {
         } else if col > offset + 48 && col <= offset + 57 {
             self.current_screen = CurrentScreen::SavedSearches;
             Some(Action::LoadSavedSearches)
-        // Tab q: " q:Quit " (8 chars) -> After "|" at index 57
-        } else if col > offset + 58 && col <= offset + 66 {
+        // Tab 7: " 7:Logs " (8 chars) -> Indices 57..65
+        } else if col > offset + 57 && col <= offset + 65 {
+            self.current_screen = CurrentScreen::InternalLogs;
+            Some(Action::LoadInternalLogs)
+        // Tab q: " q:Quit " (8 chars) -> After "|" at index 65
+        } else if col > offset + 66 && col <= offset + 74 {
             Some(Action::Quit)
         } else {
             None
@@ -479,6 +494,11 @@ impl App {
             && !self.is_filtering
         {
             Some(Action::LoadJobs)
+        } else if self.current_screen == CurrentScreen::InternalLogs
+            && self.auto_refresh
+            && self.popup.is_none()
+        {
+            Some(Action::LoadInternalLogs)
         } else {
             None
         }
@@ -635,6 +655,10 @@ impl App {
                 self.current_screen = CurrentScreen::SavedSearches;
                 Some(Action::LoadSavedSearches)
             }
+            KeyCode::Char('7') if key.modifiers.is_empty() => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
             KeyCode::Enter => {
                 if !self.search_input.is_empty() {
                     let query = self.search_input.clone();
@@ -769,6 +793,10 @@ impl App {
                 self.current_screen = CurrentScreen::SavedSearches;
                 Some(Action::LoadSavedSearches)
             }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
             KeyCode::Char('r') => Some(Action::LoadJobs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -831,6 +859,10 @@ impl App {
                 self.current_screen = CurrentScreen::SavedSearches;
                 Some(Action::LoadSavedSearches)
             }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
             KeyCode::Char('r') => Some(Action::LoadIndexes),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -871,6 +903,10 @@ impl App {
             KeyCode::Char('6') => {
                 self.current_screen = CurrentScreen::SavedSearches;
                 Some(Action::LoadSavedSearches)
+            }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('?') => {
@@ -921,6 +957,10 @@ impl App {
                 self.current_screen = CurrentScreen::SavedSearches;
                 Some(Action::LoadSavedSearches)
             }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
             KeyCode::Char('r') => Some(Action::LoadHealth),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
@@ -958,6 +998,10 @@ impl App {
                 self.current_screen = CurrentScreen::SavedSearches;
                 Some(Action::LoadSavedSearches)
             }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
             KeyCode::Char('r') => Some(Action::LoadSavedSearches),
             KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
@@ -977,6 +1021,53 @@ impl App {
                 }
                 None
             }
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn handle_internal_logs_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Char('q') => Some(Action::Quit),
+            KeyCode::Char('1') => {
+                self.current_screen = CurrentScreen::Search;
+                None
+            }
+            KeyCode::Char('2') => {
+                self.current_screen = CurrentScreen::Indexes;
+                Some(Action::LoadIndexes)
+            }
+            KeyCode::Char('3') => {
+                self.current_screen = CurrentScreen::Cluster;
+                Some(Action::LoadClusterInfo)
+            }
+            KeyCode::Char('4') => {
+                self.current_screen = CurrentScreen::Jobs;
+                Some(Action::LoadJobs)
+            }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
+            KeyCode::Char('r') => Some(Action::LoadInternalLogs),
+            KeyCode::Char('a') => {
+                self.auto_refresh = !self.auto_refresh;
+                None
+            }
+            KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
+            KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -1046,6 +1137,15 @@ impl App {
                 self.saved_searches = Some(searches);
                 self.loading = false;
             }
+            Action::InternalLogsLoaded(Ok(logs)) => {
+                let sel = self.internal_logs_state.selected();
+                self.internal_logs = Some(logs);
+                self.loading = false;
+                if let Some(logs) = &self.internal_logs {
+                    self.internal_logs_state
+                        .select(sel.map(|i| i.min(logs.len().saturating_sub(1))).or(Some(0)));
+                }
+            }
             Action::ClusterInfoLoaded(Ok(info)) => {
                 self.cluster_info = Some(info);
                 self.loading = false;
@@ -1101,6 +1201,11 @@ impl App {
                     "Failed to load saved searches: {}",
                     e
                 )));
+                self.loading = false;
+            }
+            Action::InternalLogsLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load internal logs: {}", e)));
                 self.loading = false;
             }
             Action::ClusterInfoLoaded(Err(e)) => {
@@ -1165,6 +1270,14 @@ impl App {
                     }
                 }
             }
+            CurrentScreen::InternalLogs => {
+                if let Some(logs) = &self.internal_logs {
+                    let i = self.internal_logs_state.selected().unwrap_or(0);
+                    if i < logs.len().saturating_sub(1) {
+                        self.internal_logs_state.select(Some(i + 1));
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -1190,6 +1303,12 @@ impl App {
                 let i = self.saved_searches_state.selected().unwrap_or(0);
                 if i > 0 {
                     self.saved_searches_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::InternalLogs => {
+                let i = self.internal_logs_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.internal_logs_state.select(Some(i - 1));
                 }
             }
             _ => {}
@@ -1226,6 +1345,13 @@ impl App {
                         .select(Some((i.saturating_add(10)).min(searches.len() - 1)));
                 }
             }
+            CurrentScreen::InternalLogs => {
+                if let Some(logs) = &self.internal_logs {
+                    let i = self.internal_logs_state.selected().unwrap_or(0);
+                    self.internal_logs_state
+                        .select(Some((i.saturating_add(10)).min(logs.len() - 1)));
+                }
+            }
             _ => {}
         }
     }
@@ -1248,6 +1374,10 @@ impl App {
                 let i = self.saved_searches_state.selected().unwrap_or(0);
                 self.saved_searches_state.select(Some(i.saturating_sub(10)));
             }
+            CurrentScreen::InternalLogs => {
+                let i = self.internal_logs_state.selected().unwrap_or(0);
+                self.internal_logs_state.select(Some(i.saturating_sub(10)));
+            }
             _ => {}
         }
     }
@@ -1267,6 +1397,9 @@ impl App {
             }
             CurrentScreen::SavedSearches => {
                 self.saved_searches_state.select(Some(0));
+            }
+            CurrentScreen::InternalLogs => {
+                self.internal_logs_state.select(Some(0));
             }
             _ => {}
         }
@@ -1298,6 +1431,12 @@ impl App {
                 if let Some(searches) = &self.saved_searches {
                     self.saved_searches_state
                         .select(Some(searches.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::InternalLogs => {
+                if let Some(logs) = &self.internal_logs {
+                    self.internal_logs_state
+                        .select(Some(logs.len().saturating_sub(1)));
                 }
             }
             _ => {}
@@ -1456,6 +1595,7 @@ impl App {
                     CurrentScreen::JobInspect => "Job Details",
                     CurrentScreen::Health => "Health",
                     CurrentScreen::SavedSearches => "Saved Searches",
+                    CurrentScreen::InternalLogs => "Internal Logs",
                 },
                 Style::default().fg(Color::Yellow),
             ),
@@ -1485,13 +1625,13 @@ impl App {
                     Style::default().fg(Color::Yellow),
                 ),
                 Span::raw("|"),
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved "),
+                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
         } else {
             vec![Line::from(vec![
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved "),
+                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
@@ -1566,6 +1706,7 @@ impl App {
                     },
                 );
             }
+            CurrentScreen::InternalLogs => self.render_internal_logs(f, area),
         }
     }
 
@@ -1651,6 +1792,21 @@ impl App {
                 f.render_widget(placeholder, area);
             }
         }
+    }
+
+    fn render_internal_logs(&mut self, f: &mut Frame, area: Rect) {
+        use crate::ui::screens::internal_logs;
+
+        internal_logs::render_internal_logs(
+            f,
+            area,
+            internal_logs::InternalLogsRenderConfig {
+                loading: self.loading,
+                logs: self.internal_logs.as_deref(),
+                state: &mut self.internal_logs_state,
+                auto_refresh: self.auto_refresh,
+            },
+        );
     }
 }
 

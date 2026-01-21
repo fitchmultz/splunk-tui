@@ -335,6 +335,19 @@ pub struct LogParsingError {
     pub component: String,
 }
 
+/// A generic internal log entry.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct LogEntry {
+    #[serde(rename = "_time")]
+    pub time: String,
+    #[serde(rename = "log_level", default)]
+    pub level: String,
+    #[serde(default)]
+    pub component: String,
+    #[serde(rename = "_raw")]
+    pub message: String,
+}
+
 /// Health check result for log parsing errors.
 #[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct LogParsingHealth {
@@ -436,5 +449,20 @@ mod tests {
         assert_eq!(msgs.messages.len(), 1);
         assert_eq!(msgs.messages[0].message_type, "ERROR");
         assert_eq!(msgs.messages[0].text, "Invalid username or password");
+    }
+
+    #[test]
+    fn test_deserialize_log_entry() {
+        let json = r#"{
+            "_time": "2025-01-20T10:30:00.000Z",
+            "log_level": "INFO",
+            "component": "Metrics",
+            "_raw": "some log message"
+        }"#;
+        let entry: LogEntry = serde_json::from_str(json).unwrap();
+        assert_eq!(entry.time, "2025-01-20T10:30:00.000Z");
+        assert_eq!(entry.level, "INFO");
+        assert_eq!(entry.component, "Metrics");
+        assert_eq!(entry.message, "some log message");
     }
 }

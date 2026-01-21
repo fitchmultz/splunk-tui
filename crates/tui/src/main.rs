@@ -294,6 +294,21 @@ async fn handle_side_effects(
                 }
             });
         }
+        Action::LoadInternalLogs => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                // Default to last 15 minutes of logs, 100 entries
+                match c.get_internal_logs(100, Some("-15m")).await {
+                    Ok(logs) => {
+                        tx.send(Action::InternalLogsLoaded(Ok(logs))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::InternalLogsLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
         Action::RunSearch(query) => {
             tx.send(Action::Loading(true)).ok();
             tx.send(Action::Progress(0.1)).ok();

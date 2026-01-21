@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use splunk_client::models::LogEntry;
 use splunk_client::{
     ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SearchJobStatus,
 };
@@ -69,6 +70,9 @@ pub trait Formatter {
 
     /// Format license information.
     fn format_license(&self, license: &LicenseInfoOutput) -> Result<String>;
+
+    /// Format internal logs.
+    fn format_logs(&self, logs: &[LogEntry]) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -148,6 +152,10 @@ impl Formatter for JsonFormatter {
 
     fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
         Ok(serde_json::to_string_pretty(license)?)
+    }
+
+    fn format_logs(&self, logs: &[LogEntry]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(logs)?)
     }
 }
 
@@ -522,6 +530,26 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_logs(&self, logs: &[LogEntry]) -> Result<String> {
+        let mut output = String::new();
+
+        if logs.is_empty() {
+            return Ok("No logs found.".to_string());
+        }
+
+        // Header
+        output.push_str("Time\tLevel\tComponent\tMessage\n");
+
+        for log in logs {
+            output.push_str(&format!(
+                "{}\t{}\t{}\t{}\n",
+                log.time, log.level, log.component, log.message
+            ));
+        }
+
+        Ok(output)
+    }
 }
 
 /// CSV formatter.
@@ -873,6 +901,29 @@ impl Formatter for CsvFormatter {
                 s.quota / 1024 / 1024,
                 escape_csv(&s.label),
                 escape_csv(&s.type_name)
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn format_logs(&self, logs: &[LogEntry]) -> Result<String> {
+        let mut output = String::new();
+
+        if logs.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Header
+        output.push_str("Time,Level,Component,Message\n");
+
+        for log in logs {
+            output.push_str(&format!(
+                "{},{},{},{}\n",
+                escape_csv(&log.time),
+                escape_csv(&log.level),
+                escape_csv(&log.component),
+                escape_csv(&log.message)
             ));
         }
 
@@ -1290,6 +1341,28 @@ impl Formatter for XmlFormatter {
         xml.push_str("  </stacks>\n");
 
         xml.push_str("</licenseInfo>");
+        Ok(xml)
+    }
+
+    fn format_logs(&self, logs: &[LogEntry]) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logs>\n");
+
+        for log in logs {
+            xml.push_str("  <log>\n");
+            xml.push_str(&format!("    <time>{}</time>\n", escape_xml(&log.time)));
+            xml.push_str(&format!("    <level>{}</level>\n", escape_xml(&log.level)));
+            xml.push_str(&format!(
+                "    <component>{}</component>\n",
+                escape_xml(&log.component)
+            ));
+            xml.push_str(&format!(
+                "    <message>{}</message>\n",
+                escape_xml(&log.message)
+            ));
+            xml.push_str("  </log>\n");
+        }
+
+        xml.push_str("</logs>");
         Ok(xml)
     }
 }

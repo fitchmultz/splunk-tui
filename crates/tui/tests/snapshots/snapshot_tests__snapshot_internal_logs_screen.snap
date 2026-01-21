@@ -3,12 +3,12 @@ source: crates/tui/tests/snapshot_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Splunk TUI - Jobs | [?] Unknown                                               │
+│Splunk TUI - Internal Logs | [?] Unknown                                      │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Search Jobs───────────────────────────────────────────────────────────────────┐
-│SID ↑                         Status          Duration   Results    Events    │
-│admin_search_with_progress    Running (73%)   15.50s     250        500       │
-│                                                                              │
+┌Internal Logs (_internal)─────────────────────────────────────────────────────┐
+│   Time       Level      Component    Message                                 │
+│>> 2024-01-15 INFO       Metrics      some metrics log message                │
+│   2024-01-15 ERROR      DateParser   failed to parse date                    │
 │                                                                              │
 │                                                                              │
 │                                                                              │

@@ -362,27 +362,24 @@ fn snapshot_job_details_screen_with_help_popup() {
 }
 
 #[test]
-fn snapshot_search_screen_scrolled() {
+fn snapshot_internal_logs_screen() {
     let mut harness = TuiHarness::new(80, 24);
-    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
-    harness.app.search_status = "Search complete: index=main".to_string();
-    harness.app.search_sid = Some("search_12345".to_string());
-
-    // Create many results to test scrolling - 20 results
-    let results = (0..20)
-        .map(|i| {
-            serde_json::json!({
-                "_time": format!("2024-01-15T10:{:02}:00.000Z", i),
-                "level": if i % 2 == 0 { "ERROR" } else { "WARN" },
-                "message": format!("Event message number {}", i),
-            })
-        })
-        .collect();
-    harness.app.set_search_results(results);
-
-    // Scroll to offset 10 (should show results 10-19)
-    harness.app.search_scroll_offset = 10;
+    harness.app.current_screen = splunk_tui::CurrentScreen::InternalLogs;
+    harness.app.internal_logs = Some(vec![
+        splunk_client::models::LogEntry {
+            time: "2024-01-15T10:30:00.000Z".to_string(),
+            level: "INFO".to_string(),
+            component: "Metrics".to_string(),
+            message: "some metrics log message".to_string(),
+        },
+        splunk_client::models::LogEntry {
+            time: "2024-01-15T10:29:00.000Z".to_string(),
+            level: "ERROR".to_string(),
+            component: "DateParser".to_string(),
+            message: "failed to parse date".to_string(),
+        },
+    ]);
+    harness.app.internal_logs_state.select(Some(0));
 
     insta::assert_snapshot!(harness.render());
 }

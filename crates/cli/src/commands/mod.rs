@@ -6,4 +6,5 @@ pub mod indexes;
 pub mod jobs;
 pub mod kvstore;
 pub mod license;
+pub mod logs;
 pub mod search;
