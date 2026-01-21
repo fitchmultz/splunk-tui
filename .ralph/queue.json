@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0034",
-      "status": "doing",
-      "title": "Add mouse support to TUI for navigation and selection",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "mouse"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "TUI is currently keyboard-only, which can be less efficient for some users.",
-        "Ratatui supports mouse events, but they are not enabled or handled in the current implementation."
-      ],
-      "plan": [
-        "Enable mouse capture in crates/tui/src/main.rs using crossterm.",
-        "Handle MouseEvent in App::handle_input.",
-        "Implement clicking on tab headers to switch screens and clicking list/table items for selection."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-20T17:15:00Z",
-      "updated_at": "2026-01-21T18:41:04.086755000Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0035",
       "status": "todo",
       "title": "Enhance CLI error reporting with request IDs and URIs",
