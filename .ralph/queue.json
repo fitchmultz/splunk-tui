@@ -1,4 +1,450 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0042",
+      "status": "todo",
+      "title": "Add export functionality to Search screen in TUI",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "search",
+        "export",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs"
+      ],
+      "evidence": [
+        "Users can currently only view search results within the TUI.",
+        "Exporting to CSV/JSON is a common requirement for data analysis."
+      ],
+      "plan": [
+        "Add an Action::ExportSearchResults(PathBuf, ExportFormat) variant.",
+        "Implement a popup in the Search screen to prompt for filename and format.",
+        "Add logic in main loop or app to write search_results to the specified file.",
+        "Show a success toast when the export completes."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:30:00Z",
+      "updated_at": "2026-01-21T19:30:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0043",
+      "status": "todo",
+      "title": "Implement a dedicated KVStore command in the CLI",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "kvstore"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/kvstore.rs"
+      ],
+      "evidence": [
+        "The client library already has get_kvstore_status but it's only exposed via the health command.",
+        "A dedicated command allows for more specific monitoring of KVStore components."
+      ],
+      "plan": [
+        "Add a 'kvstore' subcommand to the CLI.",
+        "Implement crates/cli/src/commands/kvstore.rs to fetch and display KVStore status.",
+        "Add tabular and JSON output formats for the KVStore data."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:31:00Z",
+      "updated_at": "2026-01-21T19:31:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0044",
+      "status": "todo",
+      "title": "Implement a dedicated License command in the CLI",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "license"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/license.rs"
+      ],
+      "evidence": [
+        "License usage is a key metric but is currently bundled only in the health command.",
+        "Standalone license monitoring is useful for capacity planning scripts."
+      ],
+      "plan": [
+        "Add a 'license' subcommand to the CLI.",
+        "Implement crates/cli/src/commands/license.rs to fetch license usage.",
+        "Support detailed output showing pools, stacks, and quota alerts."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:32:00Z",
+      "updated_at": "2026-01-21T19:32:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0045",
+      "status": "todo",
+      "title": "Add a 'Saved Searches' screen to the TUI",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "feature",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/saved_searches.rs",
+        "crates/client/src/endpoints/search.rs"
+      ],
+      "evidence": [
+        "Users often run the same searches repeatedly.",
+        "Accessing Splunk 'Saved Searches' directly in the TUI would improve workflow."
+      ],
+      "plan": [
+        "Implement a new client endpoint to list saved searches.",
+        "Add a 'Saved Searches' variant to CurrentScreen.",
+        "Create the UI screen to list and select saved searches to run them."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:33:00Z",
+      "updated_at": "2026-01-21T19:33:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0046",
+      "status": "todo",
+      "title": "Implement SPL syntax highlighting in the TUI search input",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs"
+      ],
+      "evidence": [
+        "The current search input is plain text.",
+        "Highlighting SPL keywords (search, index, pipe, etc.) makes complex queries easier to read."
+      ],
+      "plan": [
+        "Create a simple SPL tokenizer in the TUI crate.",
+        "Update render_search to use Span with different styles for keywords, strings, and operators.",
+        "Ensure performance remains high during rapid typing."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:34:00Z",
+      "updated_at": "2026-01-21T19:34:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0047",
+      "status": "todo",
+      "title": "Add support for secure credential storage using 'keyring' crate",
+      "priority": "high",
+      "tags": [
+        "security",
+        "config"
+      ],
+      "scope": [
+        "crates/config/src/persistence.rs",
+        "crates/config/Cargo.toml"
+      ],
+      "evidence": [
+        "Currently, passwords and API tokens are stored in plain text in config.json.",
+        "Using the system keyring is a security best practice for CLI tools."
+      ],
+      "plan": [
+        "Add the 'keyring' crate to crates/config dependencies.",
+        "Modify PersistedState to optionally store a key identifier instead of the secret.",
+        "Implement logic to fetch/store secrets in the system keyring (macOS Keychain, Windows Credential Vault, etc.)."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:35:00Z",
+      "updated_at": "2026-01-21T19:35:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0048",
+      "status": "todo",
+      "title": "Implement 'Tail Internal Logs' command/screen",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "cli",
+        "debug"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/internal_logs.rs",
+        "crates/cli/src/commands/logs.rs"
+      ],
+      "evidence": [
+        "Administrators often need to monitor Splunk's own logs for troubleshooting.",
+        "A 'tail -f' like experience for index=_internal would be highly valuable."
+      ],
+      "plan": [
+        "Implement a streaming search client that polls for new results in real-time.",
+        "Add a CLI command 'splunk logs --tail'.",
+        "Add a TUI screen that shows a live-updating list of internal logs."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:36:00Z",
+      "updated_at": "2026-01-21T19:36:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0049",
+      "status": "todo",
+      "title": "Add search progress bar to the TUI Search screen",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "search",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "Long-running searches in the TUI provide no visual feedback on progress.",
+        "Splunk provides search job progress via the REST API."
+      ],
+      "plan": [
+        "Modify the search execution to periodically poll for job status while running.",
+        "Update App state with the current progress percentage.",
+        "Render a Gauge widget in the Search screen's status area."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:37:00Z",
+      "updated_at": "2026-01-21T19:37:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0050",
+      "status": "todo",
+      "title": "Implement multi-selection in the Jobs screen for batch actions",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "jobs",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/jobs.rs"
+      ],
+      "evidence": [
+        "Users can only cancel or delete one job at a time.",
+        "Batch operations are much faster for clearing many orphaned jobs."
+      ],
+      "plan": [
+        "Add a selected_jobs: HashSet<String> to track multiple SIDs.",
+        "Implement spacebar toggling for selection in the Jobs table.",
+        "Update 'c' and 'd' actions to apply to all selected jobs with a single confirmation."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:38:00Z",
+      "updated_at": "2026-01-21T19:38:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0051",
+      "status": "todo",
+      "title": "Add a configuration management command ('splunk config')",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "config"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs",
+        "crates/config/src/loader.rs"
+      ],
+      "evidence": [
+        "Managing profiles currently requires manual editing of config.json.",
+        "A CLI command to list, set, and delete profiles would be more user-friendly."
+      ],
+      "plan": [
+        "Add a 'config' subcommand with 'list', 'set', and 'delete' actions.",
+        "Implement logic to update the JSON configuration file safely.",
+        "Add interactive prompts for sensitive values like passwords."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:39:00Z",
+      "updated_at": "2026-01-21T19:39:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0052",
+      "status": "todo",
+      "title": "Enhance TUI error reporting for search failures",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/toast.rs"
+      ],
+      "evidence": [
+        "Search errors in the TUI are often truncated or generic.",
+        "Splunk returns detailed error messages and warnings in the job results."
+      ],
+      "plan": [
+        "Capture full error details from the Splunk API when a search fails.",
+        "Implement an 'Error Details' popup to show the full JSON error response.",
+        "Improve toast notifications to handle multi-line error messages."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:40:00Z",
+      "updated_at": "2026-01-21T19:40:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0053",
+      "status": "todo",
+      "title": "Implement result virtualization/paging in TUI to handle large datasets",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "performance",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "Rendering thousands of search results in a Paragraph is slow and memory-intensive.",
+        "Virtualization would only render the visible portion of the results."
+      ],
+      "plan": [
+        "Replace the simple Paragraph with a custom widget or List that only processes visible results.",
+        "Implement on-demand formatting of JSON results as the user scrolls.",
+        "Add support for fetching more results from Splunk as the user reaches the end of the list."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:41:00Z",
+      "updated_at": "2026-01-21T19:41:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0054",
+      "status": "todo",
+      "title": "Add 'App Management' screen to TUI",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "feature"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/apps.rs",
+        "crates/client/src/endpoints/server.rs"
+      ],
+      "evidence": [
+        "Users may want to see which apps are installed and their versions.",
+        "Splunk provides an endpoint for listing installed apps."
+      ],
+      "plan": [
+        "Implement a client endpoint for /services/apps/local.",
+        "Create a new TUI screen to list apps and their status.",
+        "Add navigation and refresh support."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:42:00Z",
+      "updated_at": "2026-01-21T19:42:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0055",
+      "status": "todo",
+      "title": "Add 'User/Role Management' screen to TUI (Basic list)",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "feature",
+        "admin"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/users.rs",
+        "crates/client/src/endpoints/server.rs"
+      ],
+      "evidence": [
+        "Basic user and role visibility is useful for administrators.",
+        "This can be a read-only list for now to minimize security risks."
+      ],
+      "plan": [
+        "Implement client endpoints for /services/authentication/users.",
+        "Add a 'Users' variant to CurrentScreen.",
+        "Render a table of users, their roles, and last login times."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:43:00Z",
+      "updated_at": "2026-01-21T19:43:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0056",
+      "status": "todo",
+      "title": "Improve CLI output for CSV/XML formats with better nesting handling",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "formatting"
+      ],
+      "scope": [
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "Flattening complex JSON objects for CSV/XML can lead to data loss or confusing output.",
+        "Better handling of nested structures would improve the utility of these formats for scripts."
+      ],
+      "plan": [
+        "Implement a recursive flattener for nested JSON objects in the CsvFormatter.",
+        "Use dot-notation for nested keys (e.g., 'user.name').",
+        "Improve XML structure for complex nested fields."
+      ],
+      "notes": [],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:44:00Z",
+      "updated_at": "2026-01-21T19:44:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
