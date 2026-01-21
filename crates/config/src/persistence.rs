@@ -21,6 +21,9 @@ pub struct PersistedState {
     pub sort_direction: String,
     /// Last search query used for filtering jobs.
     pub last_search_query: Option<String>,
+    /// Search history for the search screen.
+    #[serde(default)]
+    pub search_history: Vec<String>,
 }
 
 impl Default for PersistedState {
@@ -30,6 +33,7 @@ impl Default for PersistedState {
             sort_column: "sid".to_string(),
             sort_direction: "asc".to_string(),
             last_search_query: None,
+            search_history: Vec::new(),
         }
     }
 }
@@ -197,6 +201,7 @@ mod tests {
         assert_eq!(state.sort_column, "sid");
         assert_eq!(state.sort_direction, "asc");
         assert!(state.last_search_query.is_none());
+        assert!(state.search_history.is_empty());
     }
 
     #[test]
@@ -206,6 +211,7 @@ mod tests {
             sort_column: "status".to_string(),
             sort_direction: "desc".to_string(),
             last_search_query: Some("test query".to_string()),
+            search_history: vec!["query1".to_string(), "query2".to_string()],
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -218,6 +224,7 @@ mod tests {
             deserialized.last_search_query,
             Some("test query".to_string())
         );
+        assert_eq!(deserialized.search_history, vec!["query1", "query2"]);
     }
 
     #[test]
@@ -228,6 +235,7 @@ mod tests {
             sort_column: "status".to_string(),
             sort_direction: "desc".to_string(),
             last_search_query: Some("legacy query".to_string()),
+            search_history: Vec::new(),
         };
 
         writeln!(

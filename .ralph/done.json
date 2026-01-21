@@ -1454,6 +1454,43 @@
       "completed_at": "2026-01-21T18:34:10.144454000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0036",
+      "status": "done",
+      "title": "Implement search query history in TUI",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/config/src/persistence.rs"
+      ],
+      "evidence": [
+        "Users frequently reuse or slightly modify previous search queries.",
+        "Current search screen does not persist or provide access to previous queries beyond the last one."
+      ],
+      "plan": [
+        "Add a search_history: Vec<String> field to PersistedState.",
+        "Capture queries on successful search execution and store them in history (with a size limit).",
+        "Add a TUI mechanism (e.g., a popup or up/down arrows in search field) to browse and select from history."
+      ],
+      "notes": [
+        "Implemented search query history with persistence in crates/config and crates/tui.",
+        "Added Up/Down arrow navigation for history in Search screen.",
+        "Added Ctrl+j/k for result scrolling while in search input.",
+        "Added comprehensive unit tests in app_tests.rs covering history navigation and deduplication.",
+        "Updated help popup and docs/usage.md with new shortcuts."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-21T18:40:54.905224000Z",
+      "completed_at": "2026-01-21T18:40:54.905224000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

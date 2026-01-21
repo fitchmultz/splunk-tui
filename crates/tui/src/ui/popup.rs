@@ -99,17 +99,18 @@ impl PopupBuilder {
                 "Help".to_string(),
                 r#"
 Global Keys:
-  1-4   Navigate screens
+  1-5   Navigate screens
   ?     Help
   q     Quit
 
 Search Screen:
-  Enter Run search
-  j/k   Navigate results
-  PgDn  Page down
-  PgUp  Page up
-  Home  Go to top
-  End   Go to bottom
+  Enter     Run search
+  Up/Down   History navigation
+  Ctrl+j/k  Navigate results
+  PgDn      Page down
+  PgUp      Page up
+  Home      Go to top
+  End       Go to bottom
 
 Jobs Screen:
   r     Refresh jobs

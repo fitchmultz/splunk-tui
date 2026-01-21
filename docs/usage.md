@@ -123,18 +123,21 @@ Launch the TUI by running `splunk-tui`.
   3. **Cluster**: View cluster information
   4. **Jobs**: Manage active and historical search jobs
   5. **Health**: View system health status
-- `j` / `Down Arrow`: Move selection down
-- `k` / `Up Arrow`: Move selection up
+- `j` / `Down Arrow`: Move selection down (use `Ctrl+j` in Search screen)
+- `k` / `Up Arrow`: Move selection up (use `Ctrl+k` in Search screen)
 - `?`: Show help popup
 - `q`: Quit the application
 
 ### Screen Specific Shortcuts
 
 #### Search Screen
-- `Enter`: Execute the search query typed in the input box
+- `Enter`: Execute the search query typed in the input box (adds to history)
+- `Up` / `Down`: Navigate through search history
+- `Ctrl+j` / `Ctrl+k`: Scroll search results by one line
 - `Backspace`: Delete character in the search input
 - `PageUp` / `PageDown`: Scroll through search results
 - `Home` / `End`: Jump to top or bottom of results
+- `j`, `k`, and other characters can be typed directly into the search input
 
 #### Jobs Screen
 - `Enter`: View details for the selected job (Inspect mode)

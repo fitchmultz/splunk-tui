@@ -51,3 +51,13 @@ pub fn home_key() -> KeyEvent {
 pub fn end_key() -> KeyEvent {
     KeyEvent::new(KeyCode::End, KeyModifiers::NONE)
 }
+
+/// Create a Backspace key event.
+pub fn backspace_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE)
+}
+
+/// Create a Ctrl+char key event.
+pub fn ctrl_key(c: char) -> KeyEvent {
+    KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
+}

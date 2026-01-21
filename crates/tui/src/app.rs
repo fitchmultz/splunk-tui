@@ -197,6 +197,11 @@ pub struct App {
 
     // Health monitoring state
     pub health_state: HealthState,
+
+    // Search history
+    pub search_history: Vec<String>,
+    pub history_index: Option<usize>,
+    pub saved_search_input: String,
 }
 
 impl Default for App {
@@ -213,15 +218,17 @@ impl App {
         let mut jobs_state = TableState::default();
         jobs_state.select(Some(0));
 
-        let (auto_refresh, sort_column, sort_direction, last_search_query) = match persisted {
-            Some(state) => (
-                state.auto_refresh,
-                parse_sort_column(&state.sort_column),
-                parse_sort_direction(&state.sort_direction),
-                state.last_search_query,
-            ),
-            None => (false, SortColumn::Sid, SortDirection::Asc, None),
-        };
+        let (auto_refresh, sort_column, sort_direction, last_search_query, search_history) =
+            match persisted {
+                Some(state) => (
+                    state.auto_refresh,
+                    parse_sort_column(&state.sort_column),
+                    parse_sort_direction(&state.sort_direction),
+                    state.last_search_query,
+                    state.search_history,
+                ),
+                None => (false, SortColumn::Sid, SortDirection::Asc, None, Vec::new()),
+            };
 
         Self {
             current_screen: CurrentScreen::Search,
@@ -251,6 +258,9 @@ impl App {
                 direction: sort_direction,
             },
             health_state: HealthState::Unknown,
+            search_history,
+            history_index: None,
+            saved_search_input: String::new(),
         }
     }
 
@@ -267,6 +277,7 @@ impl App {
             } else {
                 None
             },
+            search_history: self.search_history.clone(),
         }
     }
 
@@ -289,6 +300,28 @@ impl App {
         self.search_results = results;
         // Reset scroll offset when new results arrive
         self.search_scroll_offset = 0;
+    }
+
+    /// Add a query to history, moving it to front if it exists, and truncating to max 50 items.
+    fn add_to_history(&mut self, query: String) {
+        if query.trim().is_empty() {
+            return;
+        }
+
+        // Remove if already exists to move to front
+        if let Some(pos) = self.search_history.iter().position(|h| h == &query) {
+            self.search_history.remove(pos);
+        }
+
+        self.search_history.insert(0, query);
+
+        // Truncate to 50 items
+        if self.search_history.len() > 50 {
+            self.search_history.truncate(50);
+        }
+
+        // Reset history navigation
+        self.history_index = None;
     }
 
     /// Handle keyboard input - returns Action if one should be dispatched.
@@ -363,34 +396,43 @@ impl App {
     }
 
     fn handle_search_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Handle Ctrl+j/k for result navigation while in input
+        if key.modifiers.contains(KeyModifiers::CONTROL) {
+            match key.code {
+                KeyCode::Char('j') => return Some(Action::NavigateDown),
+                KeyCode::Char('k') => return Some(Action::NavigateUp),
+                _ => {}
+            }
+        }
+
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
+            KeyCode::Char('q') if key.modifiers.is_empty() => Some(Action::Quit),
+            KeyCode::Char('1') if key.modifiers.is_empty() => {
                 self.current_screen = CurrentScreen::Search;
                 None
             }
-            KeyCode::Char('2') => {
+            KeyCode::Char('2') if key.modifiers.is_empty() => {
                 self.current_screen = CurrentScreen::Indexes;
                 Some(Action::LoadIndexes)
             }
-            KeyCode::Char('3') => {
+            KeyCode::Char('3') if key.modifiers.is_empty() => {
                 self.current_screen = CurrentScreen::Cluster;
                 Some(Action::LoadClusterInfo)
             }
-            KeyCode::Char('4') => {
+            KeyCode::Char('4') if key.modifiers.is_empty() => {
                 self.current_screen = CurrentScreen::Jobs;
                 Some(Action::LoadJobs)
             }
-            KeyCode::Char('5') => {
+            KeyCode::Char('5') if key.modifiers.is_empty() => {
                 self.current_screen = CurrentScreen::Health;
                 Some(Action::LoadHealth)
             }
-            KeyCode::Char('j') => Some(Action::NavigateDown),
-            KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Enter => {
                 if !self.search_input.is_empty() {
                     let query = self.search_input.clone();
+                    self.add_to_history(query.clone());
                     self.search_status = format!("Running: {}", query);
                     Some(Action::RunSearch(query))
                 } else {
@@ -398,20 +440,52 @@ impl App {
                 }
             }
             KeyCode::Backspace => {
+                self.history_index = None;
                 self.search_input.pop();
                 None
             }
-            KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Up => Some(Action::NavigateUp),
+            KeyCode::Down => {
+                if let Some(curr) = self.history_index {
+                    if curr > 0 {
+                        self.history_index = Some(curr - 1);
+                        self.search_input = self.search_history[curr - 1].clone();
+                    } else {
+                        self.history_index = None;
+                        self.search_input = self.saved_search_input.clone();
+                    }
+                }
+                None
+            }
+            KeyCode::Up => {
+                if self.search_history.is_empty() {
+                    return None;
+                }
+
+                if self.history_index.is_none() {
+                    self.saved_search_input = self.search_input.clone();
+                    self.history_index = Some(0);
+                } else {
+                    let curr = self.history_index.unwrap();
+                    if curr < self.search_history.len().saturating_sub(1) {
+                        self.history_index = Some(curr + 1);
+                    }
+                }
+
+                if let Some(idx) = self.history_index {
+                    self.search_input = self.search_history[idx].clone();
+                }
+                None
+            }
             KeyCode::PageDown => Some(Action::PageDown),
             KeyCode::PageUp => Some(Action::PageUp),
             KeyCode::Home => Some(Action::GoToTop),
             KeyCode::End => Some(Action::GoToBottom),
-            KeyCode::Char('?') => {
+            KeyCode::Char('?') if key.modifiers.is_empty() => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             KeyCode::Char(c) => {
+                self.history_index = None;
                 self.search_input.push(c);
                 None
             }
@@ -761,6 +835,14 @@ impl App {
     // Navigation helpers
     fn next_item(&mut self) {
         match self.current_screen {
+            CurrentScreen::Search => {
+                if !self.search_results.is_empty() {
+                    let max_offset = self.search_results.len().saturating_sub(1);
+                    if self.search_scroll_offset < max_offset {
+                        self.search_scroll_offset += 1;
+                    }
+                }
+            }
             CurrentScreen::Jobs => {
                 let len = self.filtered_jobs_len();
                 if len > 0 {
@@ -784,6 +866,9 @@ impl App {
 
     fn previous_item(&mut self) {
         match self.current_screen {
+            CurrentScreen::Search => {
+                self.search_scroll_offset = self.search_scroll_offset.saturating_sub(1);
+            }
             CurrentScreen::Jobs => {
                 let i = self.jobs_state.selected().unwrap_or(0);
                 if i > 0 {
