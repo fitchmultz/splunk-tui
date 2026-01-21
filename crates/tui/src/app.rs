@@ -166,6 +166,7 @@ pub struct App {
     pub search_input: String,
     pub search_status: String,
     pub search_results: Vec<Value>,
+    pub search_results_formatted: Vec<String>,
     pub search_scroll_offset: usize,
     pub search_sid: Option<String>,
 
@@ -227,6 +228,7 @@ impl App {
             search_input: last_search_query.unwrap_or_default(),
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
+            search_results_formatted: Vec::new(),
             search_scroll_offset: 0,
             search_sid: None,
             indexes: None,
@@ -276,6 +278,17 @@ impl App {
                 .push(Toast::warning("Splunk health status changed to unhealthy"));
         }
         self.health_state = new_state;
+    }
+
+    /// Set search results and pre-format them for rendering.
+    pub fn set_search_results(&mut self, results: Vec<Value>) {
+        self.search_results_formatted = results
+            .iter()
+            .map(|v| serde_json::to_string_pretty(v).unwrap_or_else(|_| "<invalid>".to_string()))
+            .collect();
+        self.search_results = results;
+        // Reset scroll offset when new results arrive
+        self.search_scroll_offset = 0;
     }
 
     /// Handle keyboard input - returns Action if one should be dispatched.
@@ -700,7 +713,7 @@ impl App {
                 }
             },
             Action::SearchComplete(Ok((results, sid))) => {
-                self.search_results = results;
+                self.set_search_results(results);
                 self.search_sid = Some(sid);
                 self.search_status = format!("Search complete: {}", self.search_input);
                 self.loading = false;
@@ -855,6 +868,8 @@ impl App {
                 // Scroll to the last valid page (offset such that at least one result is visible)
                 if !self.search_results.is_empty() {
                     self.search_scroll_offset = self.search_results.len().saturating_sub(1);
+                } else {
+                    self.search_scroll_offset = 0;
                 }
             }
             CurrentScreen::Jobs => {
@@ -1083,7 +1098,7 @@ impl App {
                     search::SearchRenderConfig {
                         search_input: &self.search_input,
                         search_status: &self.search_status,
-                        search_results: &self.search_results,
+                        search_results: &self.search_results_formatted,
                         search_scroll_offset: self.search_scroll_offset,
                     },
                 );

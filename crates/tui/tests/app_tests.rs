@@ -1178,7 +1178,7 @@ fn test_delete_job_error_clears_loading() {
 fn test_search_page_down_scrolls_by_10() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..25).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 0;
 
     // Page down
@@ -1191,7 +1191,7 @@ fn test_search_page_down_scrolls_by_10() {
 fn test_search_page_up_scrolls_back() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..25).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 20;
 
     // Page up
@@ -1207,7 +1207,7 @@ fn test_search_page_up_scrolls_back() {
 fn test_search_page_down_clamps_at_end() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..15).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..15).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 5;
 
     // Page down from offset 5 with 15 results
@@ -1224,7 +1224,7 @@ fn test_search_page_down_clamps_at_end() {
 fn test_search_page_up_clamps_at_zero() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..25).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 5;
 
     // Page up from offset 5
@@ -1238,7 +1238,7 @@ fn test_search_page_up_clamps_at_zero() {
 fn test_search_page_up_from_zero_stays_at_zero() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..25).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 0;
 
     // Page up from offset 0
@@ -1251,7 +1251,7 @@ fn test_search_page_up_from_zero_stays_at_zero() {
 fn test_search_go_to_top() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..25).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 20;
 
     // Go to top
@@ -1264,7 +1264,7 @@ fn test_search_go_to_top() {
 fn test_search_go_to_bottom() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..25).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 5;
 
     // Go to bottom
@@ -1281,7 +1281,7 @@ fn test_search_go_to_bottom() {
 fn test_search_go_to_bottom_with_empty_results() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results.clear();
+    app.set_search_results(Vec::new());
     app.search_scroll_offset = 5;
 
     // Go to bottom with no results - should stay at 0
@@ -1297,7 +1297,7 @@ fn test_search_go_to_bottom_with_empty_results() {
 fn test_search_scroll_with_single_result() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = vec![serde_json::json!(1)];
+    app.set_search_results(vec![serde_json::json!(1)]);
     app.search_scroll_offset = 0;
 
     // Try to page down with only 1 result
@@ -1314,7 +1314,7 @@ fn test_search_scroll_with_single_result() {
 fn test_search_go_to_top_from_bottom() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
-    app.search_results = (0..50).map(|i| serde_json::json!(i)).collect();
+    app.set_search_results((0..50).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 49;
 
     // Go to top from bottom

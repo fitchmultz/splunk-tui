@@ -7,7 +7,6 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     widgets::{Block, Borders, Paragraph},
 };
-use serde_json::Value;
 
 /// Configuration for rendering the search screen.
 pub struct SearchRenderConfig<'a> {
@@ -15,8 +14,8 @@ pub struct SearchRenderConfig<'a> {
     pub search_input: &'a str,
     /// The current search status message
     pub search_status: &'a str,
-    /// The search results to display
-    pub search_results: &'a Vec<Value>,
+    /// The search results to display (pre-formatted JSON strings)
+    pub search_results: &'a [String],
     /// The scroll offset for displaying results
     pub search_scroll_offset: usize,
 }
@@ -68,11 +67,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         let results_text: Vec<ratatui::text::Line> = search_results
             .iter()
             .skip(search_scroll_offset)
-            .map(|v| {
-                ratatui::text::Line::from(
-                    serde_json::to_string_pretty(v).unwrap_or_else(|_| "<invalid>".to_string()),
-                )
-            })
+            .map(|s| ratatui::text::Line::from(s.as_str()))
             .collect();
 
         let results = Paragraph::new(results_text)

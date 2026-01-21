@@ -223,10 +223,10 @@ fn snapshot_search_screen_with_results() {
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
     harness.app.search_input = "index=main ERROR".to_string();
     harness.app.search_status = "Search complete: index=main ERROR".to_string();
-    harness.app.search_results = vec![
+    harness.app.set_search_results(vec![
         serde_json::json!({"_time": "2024-01-15T10:30:00.000Z", "level": "ERROR", "message": "Connection failed"}),
         serde_json::json!({"_time": "2024-01-15T10:29:00.000Z", "level": "ERROR", "message": "Timeout error"}),
-    ];
+    ]);
     harness.app.search_sid = Some("search_12345".to_string());
 
     insta::assert_snapshot!(harness.render());
@@ -237,7 +237,7 @@ fn snapshot_search_screen_empty() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
     harness.app.search_input.clear();
-    harness.app.search_results.clear();
+    harness.app.set_search_results(Vec::new());
 
     insta::assert_snapshot!(harness.render());
 }
@@ -370,7 +370,7 @@ fn snapshot_search_screen_scrolled() {
     harness.app.search_sid = Some("search_12345".to_string());
 
     // Create many results to test scrolling - 20 results
-    harness.app.search_results = (0..20)
+    let results = (0..20)
         .map(|i| {
             serde_json::json!({
                 "_time": format!("2024-01-15T10:{:02}:00.000Z", i),
@@ -379,6 +379,7 @@ fn snapshot_search_screen_scrolled() {
             })
         })
         .collect();
+    harness.app.set_search_results(results);
 
     // Scroll to offset 10 (should show results 10-19)
     harness.app.search_scroll_offset = 10;

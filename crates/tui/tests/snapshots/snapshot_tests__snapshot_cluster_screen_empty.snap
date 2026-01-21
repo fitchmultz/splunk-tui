@@ -3,7 +3,7 @@ source: crates/tui/tests/snapshot_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Splunk TUI - Cluster                                                          │
+│Splunk TUI - Cluster | [?] Unknown                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Cluster Information───────────────────────────────────────────────────────────┐
 │                 No cluster info loaded. Press 'r' to refresh.                │
@@ -24,5 +24,5 @@ expression: harness.render()
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health | q:Quit                                 │
+│ 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health | q:Quit                        │
 └──────────────────────────────────────────────────────────────────────────────┘

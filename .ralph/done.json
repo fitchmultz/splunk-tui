@@ -1424,6 +1424,36 @@
       "completed_at": "2026-01-21T18:19:52.345597000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0033",
+      "status": "done",
+      "title": "Optimize search result formatting cache in TUI",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "performance",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs:608 calls serde_json::to_string_pretty() on every frame for visible search results.",
+        "This causes unnecessary CPU load and can impact scroll smoothness for large result sets."
+      ],
+      "plan": [
+        "Add a search results cache (e.g., Vec<String>) to App state to store pre-formatted JSON strings.",
+        "Update the cache only when new results are loaded.",
+        "Modify render_search to use the cached strings."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-20T17:15:00Z",
+      "updated_at": "2026-01-21T18:34:10.144454000Z",
+      "completed_at": "2026-01-21T18:34:10.144454000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
