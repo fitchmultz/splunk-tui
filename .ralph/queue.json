@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0051",
-      "status": "todo",
-      "title": "Add a configuration management command ('splunk-cli config')",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "config"
-      ],
-      "scope": [
-        "crates/cli/src/commands/config.rs",
-        "crates/config/src/loader.rs"
-      ],
-      "evidence": [
-        "Managing profiles currently requires manual editing of config.json.",
-        "A CLI command to list, set, and delete profiles would be more user-friendly."
-      ],
-      "plan": [
-        "Add a 'config' subcommand with 'list', 'set', and 'delete' actions.",
-        "Implement logic to update the JSON configuration file safely.",
-        "Add interactive prompts for sensitive values like passwords."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:39:00Z",
-      "updated_at": "2026-01-21T19:39:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0052",
       "status": "todo",
       "title": "Enhance TUI error reporting for search failures",

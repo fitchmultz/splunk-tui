@@ -4,9 +4,9 @@
 //! configuration from environment variables and files.
 
 mod loader;
-mod persistence;
-mod types;
+pub mod persistence;
+pub mod types;
 
 pub use loader::ConfigLoader;
 pub use persistence::{ConfigManager, PersistedState};
-pub use types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig};
+pub use types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig, SecureValue};

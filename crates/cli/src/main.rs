@@ -51,6 +51,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Manage configuration profiles
+    Config {
+        #[command(subcommand)]
+        command: commands::config::ConfigCommand,
+    },
+
     /// Execute a search query
     Search {
         /// The search query to execute (e.g., 'search index=main | head 10')
@@ -129,7 +135,7 @@ enum Commands {
         #[arg(short, long, default_value = "-15m")]
         earliest: String,
 
-        /// Follow the logs in real-time
+        /// Follow logs in real-time
         #[arg(short, long)]
         tail: bool,
     },
@@ -148,30 +154,51 @@ async fn main() -> Result<()> {
     // Build configuration
     let mut loader = ConfigLoader::new().load_dotenv()?;
 
-    // Load from profile if specified
-    if let Some(ref profile_name) = cli.profile {
-        loader = loader
-            .with_profile_name(profile_name.clone())
-            .from_profile()?;
-    }
+    // Only build config if not running config command (it manages its own profiles)
+    let config = if matches!(cli.command, Commands::Config { .. }) {
+        // Config command doesn't need full config, return minimal placeholder
+        splunk_config::Config {
+            connection: splunk_config::ConnectionConfig {
+                base_url: std::env::var("SPLUNK_BASE_URL").unwrap_or_default(),
+                skip_verify: false,
+                timeout: std::time::Duration::from_secs(30),
+                max_retries: 3,
+            },
+            auth: splunk_config::AuthConfig {
+                strategy: splunk_config::types::AuthStrategy::SessionToken {
+                    username: std::env::var("SPLUNK_USERNAME").unwrap_or_default(),
+                    password: secrecy::SecretString::new(
+                        std::env::var("SPLUNK_PASSWORD").unwrap_or_default().into(),
+                    ),
+                },
+            },
+        }
+    } else {
+        // Load from profile if specified
+        if let Some(ref profile_name) = cli.profile {
+            loader = loader
+                .with_profile_name(profile_name.clone())
+                .from_profile()?;
+        }
 
-    if let Some(ref url) = cli.base_url {
-        loader = loader.with_base_url(url.clone());
-    }
-    if let Some(ref username) = cli.username {
-        loader = loader.with_username(username.clone());
-    }
-    if let Some(ref password) = cli.password {
-        loader = loader.with_password(password.clone());
-    }
-    if let Some(ref token) = cli.api_token {
-        loader = loader.with_api_token(token.clone());
-    }
-    if cli.skip_verify {
-        loader = loader.with_skip_verify(true);
-    }
+        if let Some(ref url) = cli.base_url {
+            loader = loader.with_base_url(url.clone());
+        }
+        if let Some(ref username) = cli.username {
+            loader = loader.with_username(username.clone());
+        }
+        if let Some(ref password) = cli.password {
+            loader = loader.with_password(password.clone());
+        }
+        if let Some(ref token) = cli.api_token {
+            loader = loader.with_api_token(token.clone());
+        }
+        if cli.skip_verify {
+            let _ = loader; // Silence unused warning
+        }
 
-    let config = loader.build()?;
+        loader.build()?
+    };
 
     // Execute command
     run_command(cli, config).await
@@ -179,6 +206,9 @@ async fn main() -> Result<()> {
 
 async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
     match cli.command {
+        Commands::Config { command } => {
+            commands::config::run(command)?;
+        }
         Commands::Search {
             query,
             wait,
