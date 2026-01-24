@@ -6,7 +6,8 @@
 use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::models::{
-    ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch, SearchJobStatus, SplunkHealth,
+    App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
+    SearchJobStatus, SplunkHealth,
 };
 use std::path::PathBuf;
 
@@ -74,6 +75,8 @@ pub enum Action {
     LoadSavedSearches,
     /// Load internal logs from index=_internal
     LoadInternalLogs,
+    /// Load the list of apps
+    LoadApps,
     /// Run a search with the given query
     RunSearch(String),
     /// Export search results to a file
@@ -92,6 +95,8 @@ pub enum Action {
     SavedSearchesLoaded(Result<Vec<SavedSearch>, String>),
     /// Result of loading internal logs
     InternalLogsLoaded(Result<Vec<LogEntry>, String>),
+    /// Result of loading apps
+    AppsLoaded(Result<Vec<SplunkApp>, String>),
     /// Result of background health status check
     HealthStatusLoaded(Result<SplunkHealth, String>),
     /// Result of a search completion (results, sid, total_count)

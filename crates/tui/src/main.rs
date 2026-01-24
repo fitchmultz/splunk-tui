@@ -317,6 +317,20 @@ async fn handle_side_effects(
                 }
             });
         }
+        Action::LoadApps => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.list_apps(None, None).await {
+                    Ok(apps) => {
+                        tx.send(Action::AppsLoaded(Ok(apps))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::AppsLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
         Action::RunSearch(query) => {
             tx.send(Action::Loading(true)).ok();
             tx.send(Action::Progress(0.1)).ok();

@@ -183,12 +183,15 @@ Launch the TUI by running `splunk-tui`.
 
 ### Navigation
 
-- `1`-`5`: Switch between screens:
+- `1`-`8`: Switch between screens:
   1. **Search**: Execute and view search results
   2. **Indexes**: View index status and metrics
   3. **Cluster**: View cluster information
   4. **Jobs**: Manage active and historical search jobs
   5. **Health**: View system health status
+  6. **Saved Searches**: View and run saved searches
+  7. **Internal Logs**: View internal Splunk logs
+  8. **Apps**: View installed Splunk apps
 - `j` / `Down Arrow`: Move selection down (use `Ctrl+j` in Search screen)
 - `k` / `Up Arrow`: Move selection up (use `Ctrl+k` in Search screen)
 - `?`: Show help popup
@@ -217,6 +220,11 @@ Launch the TUI by running `splunk-tui`.
 - `d`: Delete selected job(s). If multiple jobs are selected, deletes all at once (requires confirmation). If none selected, deletes the job under cursor.
 
 #### Indexes / Cluster / Health Screens
+- `r`: Refresh the data for the current screen
+
+#### Apps Screen
+- `r`: Refresh the list of installed apps
+- Displays: App name, label, version, and disabled status
 
 ### Error Handling
 

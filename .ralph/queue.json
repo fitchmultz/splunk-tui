@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0054",
-      "status": "todo",
-      "title": "Add 'App Management' screen to TUI",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "feature"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/apps.rs",
-        "crates/client/src/endpoints/server.rs"
-      ],
-      "evidence": [
-        "Users may want to see which apps are installed and their versions.",
-        "Splunk provides an endpoint for listing installed apps."
-      ],
-      "plan": [
-        "Implement a client endpoint for /services/apps/local.",
-        "Create a new TUI screen to list apps and their status.",
-        "Add navigation and refresh support."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:42:00Z",
-      "updated_at": "2026-01-21T19:42:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0055",
       "status": "todo",
       "title": "Add 'User/Role Management' screen to TUI (Basic list)",

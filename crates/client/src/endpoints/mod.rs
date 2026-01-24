@@ -25,4 +25,4 @@ pub use search::{
     CreateJobOptions, OutputMode, create_job, get_job_status, get_results, list_saved_searches,
     wait_for_job,
 };
-pub use server::{get_health, get_server_info};
+pub use server::{get_health, get_server_info, list_apps};

@@ -2,6 +2,7 @@
 //!
 //! This module contains screen-specific rendering logic.
 
+pub mod apps;
 pub mod cluster;
 pub mod health;
 pub mod indexes;

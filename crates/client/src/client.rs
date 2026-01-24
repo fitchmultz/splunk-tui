@@ -8,7 +8,7 @@ use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
 use crate::models::{
-    ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    App, ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     LogEntry, LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo,
     SplunkHealth,
 };
@@ -528,6 +528,45 @@ impl SplunkClient {
                     &self.http,
                     &self.base_url,
                     &new_token,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// List all installed apps.
+    pub async fn list_apps(&mut self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::list_apps(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            count,
+            offset,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(apps) => Ok(apps),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::list_apps(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    count,
+                    offset,
                     self.max_retries,
                 )
                 .await
