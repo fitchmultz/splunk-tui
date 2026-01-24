@@ -19,7 +19,8 @@ pub async fn login(
     let url = format!("{}/services/auth/login", base_url);
     let builder = client
         .post(&url)
-        .form(&[("username", username), ("password", password)]);
+        .form(&[("username", username), ("password", password)])
+        .query(&[("output_mode", "json")]);
     let response = send_request_with_retry(builder, max_retries).await?;
 
     let splunk_resp: serde_json::Value = response.json().await?;

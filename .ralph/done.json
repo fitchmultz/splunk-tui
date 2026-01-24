@@ -2301,6 +2301,41 @@
       "completed_at": "2026-01-24T17:05:34.428505000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0060",
+      "status": "done",
+      "title": "Force JSON output in auth login endpoint",
+      "priority": "high",
+      "tags": [
+        "client",
+        "auth",
+        "bug"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/auth.rs",
+        "crates/client/tests/integration_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/auth.rs posts to /services/auth/login without output_mode but then parses response with response.json()."
+      ],
+      "plan": [
+        "Include output_mode=json (query or form) or an Accept header on the login request.",
+        "Update integration tests to assert JSON mode is requested and parsing succeeds.",
+        "Run client integration tests to verify login behavior."
+      ],
+      "notes": [
+        "Fixed auth.rs login endpoint to send output_mode=json via .query() builder method",
+        "Fixed blast radius issue: create_job in search.rs now defaults output_mode to JSON when not specified",
+        "Updated integration tests to assert output_mode=json is sent for all login endpoint tests (7 assertions added)",
+        "All 258 CI tests pass"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T17:24:27.120467000Z",
+      "completed_at": "2026-01-24T17:24:27.120467000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

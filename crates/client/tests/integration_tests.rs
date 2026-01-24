@@ -28,6 +28,7 @@ async fn test_login_success() {
 
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -50,6 +51,7 @@ async fn test_login_invalid_credentials() {
 
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(ResponseTemplate::new(401).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -815,6 +817,7 @@ async fn test_retry_on_401_session_auth() {
     // Mock login endpoint - returns fresh session key
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(move |_: &wiremock::Request| {
             login_count_clone.fetch_add(1, Ordering::SeqCst);
             ResponseTemplate::new(200).set_body_json(&login_fixture)
@@ -882,6 +885,7 @@ async fn test_retry_on_403_session_auth() {
     // Mock login endpoint
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(move |_: &wiremock::Request| {
             login_count_clone.fetch_add(1, Ordering::SeqCst);
             ResponseTemplate::new(200).set_body_json(&login_fixture)
@@ -957,6 +961,7 @@ async fn test_no_retry_on_401_api_token() {
     // Should never be called for API token auth
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "sessionKey": "should-not-be-called"
         })))
@@ -994,6 +999,7 @@ async fn test_retry_fails_on_second_401() {
     // Mock login endpoint
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&login_fixture))
         .mount(&mock_server)
         .await;
@@ -1376,6 +1382,7 @@ async fn test_splunk_client_check_log_parsing_health_session_retry() {
     // Mock login endpoint
     Mock::given(method("POST"))
         .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
         .respond_with(move |_: &wiremock::Request| {
             login_count_clone.fetch_add(1, Ordering::SeqCst);
             ResponseTemplate::new(200).set_body_json(&login_fixture)

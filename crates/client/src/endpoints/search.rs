@@ -95,6 +95,10 @@ pub async fn create_job(
 
     let mut form_data: Vec<(&str, String)> = vec![("search", query.to_string())];
 
+    // Default to JSON output if not specified
+    let output_mode = options.output_mode.unwrap_or_default();
+    form_data.push(("output_mode", output_mode.to_string()));
+
     if let Some(wait) = options.wait {
         form_data.push((
             "wait",
@@ -116,9 +120,6 @@ pub async fn create_job(
     }
     if let Some(max_count) = options.max_count {
         form_data.push(("max_count", max_count.to_string()));
-    }
-    if let Some(mode) = options.output_mode {
-        form_data.push(("output_mode", mode.to_string()));
     }
     if let Some(mode) = options.search_mode {
         form_data.push(("search_mode", mode.to_string()));

@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0060",
-      "status": "todo",
-      "title": "Force JSON output in auth login endpoint",
-      "priority": "high",
-      "tags": [
-        "client",
-        "auth",
-        "bug"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/auth.rs",
-        "crates/client/tests/integration_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/auth.rs posts to /services/auth/login without output_mode but then parses response with response.json()."
-      ],
-      "plan": [
-        "Include output_mode=json (query or form) or an Accept header on the login request.",
-        "Update integration tests to assert JSON mode is requested and parsing succeeds.",
-        "Run client integration tests to verify login behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0061",
       "status": "todo",
       "title": "Run config CLI integration tests in make test/ci",
