@@ -1486,3 +1486,205 @@ async fn test_client_with_trailing_slash_base_url() {
     // wiremock would see //services/auth/login instead of /services/auth/login
     assert!(result.is_ok());
 }
+
+// Retry-After header tests
+
+#[tokio::test]
+async fn test_retry_respects_retry_after_header() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // First response returns 429 with Retry-After: 3
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "3")
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Rate limited"}]
+                })),
+        )
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    assert!(result.is_ok());
+
+    // Should have waited at least 3 seconds (Retry-After value), not just 1s
+    assert!(elapsed >= std::time::Duration::from_secs(3));
+}
+
+#[tokio::test]
+async fn test_retry_with_max_of_backoff_and_retry_after() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // First two responses return 429 with Retry-After: 1 (less than exponential backoff of 2 on second retry)
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "1")
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Rate limited"}]
+                })),
+        )
+        .up_to_n_times(2)
+        .mount(&mock_server)
+        .await;
+
+    // Third response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    assert!(result.is_ok());
+
+    // First retry: max(backoff=1, retry_after=1) = 1 second
+    // Second retry: max(backoff=2, retry_after=1) = 2 seconds
+    // Total wait time should be at least 3 seconds
+    assert!(elapsed >= std::time::Duration::from_secs(3));
+}
+
+#[tokio::test]
+async fn test_retry_falls_back_to_exponential_backoff() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // First response returns 429 WITHOUT Retry-After header
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(429).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Rate limited"}]
+        })))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    assert!(result.is_ok());
+
+    // Should use exponential backoff (1 second for first retry)
+    assert!(elapsed >= std::time::Duration::from_secs(1));
+    // But less than 2 seconds (since we only retried once with 1s backoff)
+    assert!(elapsed < std::time::Duration::from_secs(2));
+}
+
+#[tokio::test]
+async fn test_retry_with_invalid_retry_after_header() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // First response returns 429 with invalid Retry-After header
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "invalid-date")
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Rate limited"}]
+                })),
+        )
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+
+    // Should still succeed, falling back to exponential backoff
+    assert!(result.is_ok());
+}

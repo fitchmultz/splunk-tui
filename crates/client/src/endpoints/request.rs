@@ -3,8 +3,14 @@
 //! This module provides functionality to automatically retry HTTP requests
 //! that fail with HTTP 429 (Too Many Requests) status codes, using
 //! exponential backoff between retry attempts.
+//!
+//! The retry logic respects the `Retry-After` response header when present,
+//! using the maximum of the calculated exponential backoff and the server's
+//! suggested delay. Currently, only the delay-seconds format is supported
+//! (e.g., "120" for 120 seconds). HTTP-date format is not currently implemented.
 
 use reqwest::{RequestBuilder, Response};
+use std::time::Duration;
 use tracing::debug;
 
 use crate::error::{ClientError, Result};
@@ -13,11 +19,42 @@ use crate::models::SplunkMessages;
 /// Maximum number of retry attempts for rate-limited requests.
 const DEFAULT_MAX_RETRIES: usize = 3;
 
+/// Parses the Retry-After header from an HTTP response.
+///
+/// Supports delay-seconds format according to RFC 7231: a decimal integer
+/// number of seconds to delay before retrying (e.g., "120").
+///
+/// Returns `None` if the header is not present, cannot be parsed, is zero,
+/// or uses an unsupported format (e.g., HTTP-date).
+fn parse_retry_after(response: &Response) -> Option<Duration> {
+    response
+        .headers()
+        .get("retry-after")
+        .and_then(|header_value| header_value.to_str().ok())
+        .and_then(|header_str| {
+            // Try delay-seconds format (e.g., "120")
+            // This is the most common format for rate limiting
+            if header_str.chars().all(|c| c.is_ascii_digit()) {
+                header_str
+                    .parse::<u64>()
+                    .ok()
+                    .filter(|&secs| secs > 0)
+                    .map(Duration::from_secs)
+            } else {
+                // HTTP-date format not currently supported
+                // This format is rarely used for rate limiting scenarios
+                None
+            }
+        })
+}
+
 /// Sends an HTTP request with automatic retry logic for HTTP 429 responses.
 ///
 /// This function wraps a `reqwest::RequestBuilder` with retry logic that:
 /// - Detects HTTP 429 (Too Many Requests) status codes
 /// - Implements exponential backoff (1s, 2s, 4s = 2^attempt)
+/// - Respects the `Retry-After` header when present, using the maximum of
+///   the calculated backoff and the server's suggested delay
 /// - Respects the `max_retries` parameter
 /// - Logs retry attempts with `tracing::debug`
 /// - Returns `MaxRetriesExceeded` error when retries are exhausted
@@ -70,14 +107,34 @@ pub async fn send_request_with_retry(
                 if attempt < max_retries {
                     // Calculate exponential backoff: 2^attempt seconds
                     let backoff_secs = 2u64.pow(attempt as u32);
-                    debug!(
-                        attempt = attempt + 1,
-                        max_retries = max_retries + 1,
-                        backoff_secs = backoff_secs,
-                        "Rate limited (HTTP 429), retrying with exponential backoff"
-                    );
 
-                    tokio::time::sleep(tokio::time::Duration::from_secs(backoff_secs)).await;
+                    // Check for Retry-After header
+                    let retry_after = parse_retry_after(&response);
+
+                    let sleep_duration = if let Some(retry_after_duration) = retry_after {
+                        let retry_after_secs = retry_after_duration.as_secs();
+                        // Use the larger of exponential backoff or Retry-After value
+                        let sleep_secs = backoff_secs.max(retry_after_secs);
+                        debug!(
+                            attempt = attempt + 1,
+                            max_retries = max_retries + 1,
+                            backoff_secs = backoff_secs,
+                            retry_after_secs = retry_after_secs,
+                            sleep_secs = sleep_secs,
+                            "Rate limited (HTTP 429), using max of backoff and Retry-After"
+                        );
+                        sleep_secs
+                    } else {
+                        debug!(
+                            attempt = attempt + 1,
+                            max_retries = max_retries + 1,
+                            backoff_secs = backoff_secs,
+                            "Rate limited (HTTP 429), retrying with exponential backoff (no Retry-After header)"
+                        );
+                        backoff_secs
+                    };
+
+                    tokio::time::sleep(tokio::time::Duration::from_secs(sleep_duration)).await;
                 } else {
                     debug!(
                         attempts = attempt + 1,

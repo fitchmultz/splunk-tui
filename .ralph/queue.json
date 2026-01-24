@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0065",
-      "status": "todo",
-      "title": "Respect Retry-After header in retry helper",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "http",
-        "resilience"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/request.rs",
-        "crates/client/tests/integration_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/request.rs uses fixed exponential backoff and does not inspect Retry-After headers on 429 responses."
-      ],
-      "plan": [
-        "Parse Retry-After header when present and use it as the sleep duration (or max of backoff and header).",
-        "Add wiremock tests covering 429 with Retry-After and without.",
-        "Ensure MaxRetriesExceeded accounting stays correct."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0066",
       "status": "todo",
       "title": "Fix CLI log tail cursor to avoid dropping events",
