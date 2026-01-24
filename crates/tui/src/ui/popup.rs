@@ -24,6 +24,10 @@ pub enum PopupType {
     ConfirmCancel(String),
     /// Confirm delete job (holds search ID)
     ConfirmDelete(String),
+    /// Confirm batch cancel (holds list of SIDs)
+    ConfirmCancelBatch(Vec<String>),
+    /// Confirm batch delete (holds list of SIDs)
+    ConfirmDeleteBatch(Vec<String>),
     /// Export search results
     ExportSearch,
 }
@@ -119,8 +123,9 @@ Jobs Screen:
   a     Toggle auto-refresh
   s     Cycle sort column
   /     Filter jobs
-  c     Cancel job
-  d     Delete job
+  Space Toggle job selection
+  c     Cancel selected job(s)
+  d     Delete selected job(s)
   Enter Inspect job
 
 Job Details Screen:
@@ -135,6 +140,14 @@ Job Details Screen:
             PopupType::ConfirmDelete(sid) => (
                 "Confirm Delete".to_string(),
                 format!("Delete job {sid}? (y/n)"),
+            ),
+            PopupType::ConfirmCancelBatch(sids) => (
+                "Confirm Batch Cancel".to_string(),
+                format!("Cancel {} job(s)? (y/n)", sids.len()),
+            ),
+            PopupType::ConfirmDeleteBatch(sids) => (
+                "Confirm Batch Delete".to_string(),
+                format!("Delete {} job(s)? (y/n)", sids.len()),
             ),
             PopupType::ExportSearch => (
                 "Export Search Results".to_string(),
@@ -165,13 +178,19 @@ pub fn render_popup(f: &mut Frame, popup: &Popup) {
     // Determine border color based on popup type
     let border_color = match &popup.kind {
         PopupType::Help | PopupType::ExportSearch => Color::Cyan,
-        PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_) => Color::Red,
+        PopupType::ConfirmCancel(_)
+        | PopupType::ConfirmDelete(_)
+        | PopupType::ConfirmCancelBatch(_)
+        | PopupType::ConfirmDeleteBatch(_) => Color::Red,
     };
 
     // Determine wrapping behavior based on popup type
     let wrap_mode = match &popup.kind {
         PopupType::Help | PopupType::ExportSearch => Wrap { trim: false },
-        PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_) => Wrap { trim: true },
+        PopupType::ConfirmCancel(_)
+        | PopupType::ConfirmDelete(_)
+        | PopupType::ConfirmCancelBatch(_)
+        | PopupType::ConfirmDeleteBatch(_) => Wrap { trim: true },
     };
 
     let p = Paragraph::new(popup.content.as_str())

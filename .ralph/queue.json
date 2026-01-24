@@ -3,7 +3,7 @@
   "tasks": [
     {
       "id": "RQ-0050",
-      "status": "todo",
+      "status": "doing",
       "title": "Implement multi-selection in the Jobs screen for batch actions",
       "priority": "medium",
       "tags": [
@@ -27,14 +27,14 @@
       "notes": [],
       "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
       "created_at": "2026-01-21T19:38:00Z",
-      "updated_at": "2026-01-21T19:38:00Z",
+      "updated_at": "2026-01-24T01:45:40.330243000Z",
       "depends_on": [],
       "custom_fields": {}
     },
     {
       "id": "RQ-0051",
       "status": "todo",
-      "title": "Add a configuration management command ('splunk config')",
+      "title": "Add a configuration management command ('splunk-cli config')",
       "priority": "medium",
       "tags": [
         "cli",

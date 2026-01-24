@@ -6,8 +6,8 @@ expression: harness.render()
 │Splunk TUI - Jobs | [?] Unknown                                               │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Jobs───────────────────────────────────────────────────────────────────┐
-│SID ↑                         Status          Duration   Results    Events    │
-│admin_search_with_progress    Running (73%)   15.50s     250        500       │
+│Sel  SID ↑                    Status          Duration   Results    Events    │
+│[ ]  admin_search_with_progre Running (73%)   15.50s     250        500       │
 │                                                                              │
 │                                                                              │
 │                                                                              │

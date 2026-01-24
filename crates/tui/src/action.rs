@@ -102,9 +102,13 @@ pub enum Action {
     CancelJob(String),
     /// Delete a job by SID
     DeleteJob(String),
+    /// Cancel multiple jobs by SID
+    CancelJobsBatch(Vec<String>),
+    /// Delete multiple jobs by SID
+    DeleteJobsBatch(Vec<String>),
     /// Job operation completed successfully
     JobOperationComplete(String),
-    /// Inspect the currently selected job
+    /// Inspect currently selected job
     InspectJob,
     /// Exit job inspection mode
     ExitInspectMode,

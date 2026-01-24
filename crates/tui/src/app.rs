@@ -20,6 +20,7 @@ use splunk_client::models::{
     ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch, SearchJobStatus,
 };
 use splunk_config::PersistedState;
+use std::collections::HashSet;
 
 /// Health state of the Splunk instance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -203,6 +204,9 @@ pub struct App {
     // Jobs sort state
     pub sort_state: SortState,
 
+    // Multi-selection state for batch job operations
+    pub selected_jobs: HashSet<String>,
+
     // Health monitoring state
     pub health_state: HealthState,
 
@@ -282,6 +286,7 @@ impl App {
                 column: sort_column,
                 direction: sort_direction,
             },
+            selected_jobs: HashSet::new(),
             health_state: HealthState::Unknown,
             search_history,
             history_index: None,
@@ -536,6 +541,16 @@ impl App {
                 };
                 Some(Action::DeleteJob(sid))
             }
+            (Some(PopupType::ConfirmCancelBatch(sids)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let sids = sids.clone();
+                self.popup = None;
+                Some(Action::CancelJobsBatch(sids))
+            }
+            (Some(PopupType::ConfirmDeleteBatch(sids)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let sids = sids.clone();
+                self.popup = None;
+                Some(Action::DeleteJobsBatch(sids))
+            }
             (Some(PopupType::ExportSearch), KeyCode::Esc) => {
                 self.popup = None;
                 None
@@ -585,7 +600,12 @@ impl App {
                 None
             }
             (
-                Some(PopupType::ConfirmCancel(_) | PopupType::ConfirmDelete(_)),
+                Some(
+                    PopupType::ConfirmCancel(_)
+                    | PopupType::ConfirmDelete(_)
+                    | PopupType::ConfirmCancelBatch(_)
+                    | PopupType::ConfirmDeleteBatch(_),
+                ),
                 KeyCode::Char('n') | KeyCode::Esc,
             ) => {
                 self.popup = None;
@@ -807,14 +827,28 @@ impl App {
             KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Char('c') => {
-                if let Some(job) = self.get_selected_job() {
+                if !self.selected_jobs.is_empty() {
+                    self.popup = Some(
+                        Popup::builder(PopupType::ConfirmCancelBatch(
+                            self.selected_jobs.iter().cloned().collect(),
+                        ))
+                        .build(),
+                    );
+                } else if let Some(job) = self.get_selected_job() {
                     self.popup =
                         Some(Popup::builder(PopupType::ConfirmCancel(job.sid.clone())).build());
                 }
                 None
             }
             KeyCode::Char('d') => {
-                if let Some(job) = self.get_selected_job() {
+                if !self.selected_jobs.is_empty() {
+                    self.popup = Some(
+                        Popup::builder(PopupType::ConfirmDeleteBatch(
+                            self.selected_jobs.iter().cloned().collect(),
+                        ))
+                        .build(),
+                    );
+                } else if let Some(job) = self.get_selected_job() {
                     self.popup =
                         Some(Popup::builder(PopupType::ConfirmDelete(job.sid.clone())).build());
                 }
@@ -825,6 +859,17 @@ impl App {
             KeyCode::Enter => Some(Action::InspectJob),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            KeyCode::Char(' ') => {
+                if let Some(job) = self.get_selected_job() {
+                    let sid = job.sid.clone();
+                    if self.selected_jobs.contains(&sid) {
+                        self.selected_jobs.remove(&sid);
+                    } else {
+                        self.selected_jobs.insert(sid);
+                    }
+                }
                 None
             }
             _ => None,
@@ -1186,6 +1231,7 @@ impl App {
                 self.loading = false;
             }
             Action::JobOperationComplete(msg) => {
+                self.selected_jobs.clear();
                 self.search_status = msg;
                 self.loading = false;
             }
@@ -1776,6 +1822,7 @@ impl App {
                 is_filtering: self.is_filtering,
                 sort_column: self.sort_state.column,
                 sort_direction: self.sort_state.direction,
+                selected_jobs: &self.selected_jobs,
             },
         );
     }

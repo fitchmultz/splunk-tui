@@ -175,12 +175,13 @@ Launch the TUI by running `splunk-tui`.
 
 #### Jobs Screen
 - `Enter`: View details for the selected job (Inspect mode)
-- `r`: Refresh the list of jobs manually
+- `Space`: Toggle selection for the job under cursor (multi-selection mode)
+- `r`: Refresh list of jobs manually
 - `a`: Toggle auto-refresh (polls every 5 seconds)
 - `s`: Cycle through sort columns (SID, Status, Duration, Results, Events)
 - `/`: Enter filter mode to search for specific jobs by SID or status
-- `c`: Cancel the selected job (requires confirmation)
-- `d`: Delete the selected job (requires confirmation)
+- `c`: Cancel selected job(s). If multiple jobs are selected, cancels all at once (requires confirmation). If none selected, cancels the job under cursor.
+- `d`: Delete selected job(s). If multiple jobs are selected, deletes all at once (requires confirmation). If none selected, deletes the job under cursor.
 
 #### Indexes / Cluster / Health Screens
 - `r`: Refresh the data for the current screen

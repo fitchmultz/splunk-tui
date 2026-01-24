@@ -416,6 +416,76 @@ async fn handle_side_effects(
                 }
             });
         }
+        Action::CancelJobsBatch(sids) => {
+            tx.send(Action::Loading(true)).ok();
+            let tx_clone = tx.clone();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                let mut success_count = 0;
+                let mut error_messages = Vec::new();
+
+                for sid in sids {
+                    match c.cancel_job(&sid).await {
+                        Ok(_) => {
+                            success_count += 1;
+                        }
+                        Err(e) => {
+                            error_messages.push(format!("{}: {}", sid, e));
+                        }
+                    }
+                }
+
+                let msg = if success_count > 0 {
+                    format!("Cancelled {} job(s)", success_count)
+                } else {
+                    "No jobs cancelled".to_string()
+                };
+
+                if !error_messages.is_empty() {
+                    for err in error_messages {
+                        tx_clone.send(Action::Notify(ToastLevel::Error, err)).ok();
+                    }
+                }
+
+                tx_clone.send(Action::JobOperationComplete(msg)).ok();
+                tx_clone.send(Action::LoadJobs).ok();
+            });
+        }
+        Action::DeleteJobsBatch(sids) => {
+            tx.send(Action::Loading(true)).ok();
+            let tx_clone = tx.clone();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                let mut success_count = 0;
+                let mut error_messages = Vec::new();
+
+                for sid in sids {
+                    match c.delete_job(&sid).await {
+                        Ok(_) => {
+                            success_count += 1;
+                        }
+                        Err(e) => {
+                            error_messages.push(format!("{}: {}", sid, e));
+                        }
+                    }
+                }
+
+                let msg = if success_count > 0 {
+                    format!("Deleted {} job(s)", success_count)
+                } else {
+                    "No jobs deleted".to_string()
+                };
+
+                if !error_messages.is_empty() {
+                    for err in error_messages {
+                        tx_clone.send(Action::Notify(ToastLevel::Error, err)).ok();
+                    }
+                }
+
+                tx_clone.send(Action::JobOperationComplete(msg)).ok();
+                tx_clone.send(Action::LoadJobs).ok();
+            });
+        }
         Action::LoadHealth => {
             tx.send(Action::Loading(true)).ok();
             tokio::spawn(async move {

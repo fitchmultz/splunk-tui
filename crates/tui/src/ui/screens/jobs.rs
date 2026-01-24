@@ -14,6 +14,7 @@ use ratatui::{
 };
 use splunk_client::models::SearchJobStatus;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 /// Configuration for rendering the jobs table.
 pub struct JobsRenderConfig<'a> {
@@ -33,6 +34,8 @@ pub struct JobsRenderConfig<'a> {
     pub sort_column: SortColumn,
     /// Current sort direction
     pub sort_direction: SortDirection,
+    /// Selected job SIDs for multi-selection
+    pub selected_jobs: &'a HashSet<String>,
 }
 
 /// Render the jobs table.
@@ -52,6 +55,7 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
         is_filtering,
         sort_column,
         sort_direction,
+        selected_jobs,
     } = config;
 
     // If filtering, show the filter input at the top
@@ -92,6 +96,7 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     };
 
     let header_cells: Vec<Cell> = vec![
+        header_cell("Sel", false, ""),
         header_cell("SID", sort_column == SortColumn::Sid, sort_indicator),
         header_cell("Status", sort_column == SortColumn::Status, sort_indicator),
         header_cell(
@@ -111,6 +116,12 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     let rows: Vec<Row> = display_jobs
         .iter()
         .map(|job| {
+            let selection_indicator = if selected_jobs.contains(&job.sid) {
+                "[x]"
+            } else {
+                "[ ]"
+            };
+
             let status_text: String = if job.is_done {
                 "Done".to_string()
             } else if job.done_progress > 0.0 {
@@ -139,6 +150,7 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
             };
 
             Row::new(vec![
+                Cell::from(selection_indicator),
                 sid_cell,
                 status_cell,
                 Cell::from(format!("{:.2}s", job.run_duration)),
@@ -151,7 +163,8 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     let table = Table::new(
         rows,
         &[
-            // SID, Status, Duration, Results, Events
+            // Sel, SID, Status, Duration, Results, Events
+            Constraint::Length(4),
             Constraint::Max(40),
             Constraint::Length(15),
             Constraint::Length(10),
