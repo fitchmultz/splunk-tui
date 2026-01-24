@@ -400,12 +400,23 @@ pub struct LogParsingError {
 pub struct LogEntry {
     #[serde(rename = "_time")]
     pub time: String,
+    #[serde(rename = "_indextime", default)]
+    pub index_time: String,
+    #[serde(rename = "_serial", default)]
+    pub serial: Option<u64>,
     #[serde(rename = "log_level", default)]
     pub level: String,
     #[serde(default)]
     pub component: String,
     #[serde(rename = "_raw")]
     pub message: String,
+}
+
+impl LogEntry {
+    /// Returns a cursor key combining time, index_time, and serial for uniqueness.
+    pub fn cursor_key(&self) -> (&str, &str, Option<u64>) {
+        (&self.time, &self.index_time, self.serial)
+    }
 }
 
 /// Health check result for log parsing errors.
@@ -524,6 +535,36 @@ mod tests {
         assert_eq!(entry.level, "INFO");
         assert_eq!(entry.component, "Metrics");
         assert_eq!(entry.message, "some log message");
+        // index_time defaults to empty string when missing
+        assert_eq!(entry.index_time, "");
+        assert_eq!(entry.serial, None);
+    }
+
+    #[test]
+    fn test_deserialize_log_entry_with_cursor_fields() {
+        let json = r#"{
+            "_time": "2025-01-20T10:30:00.000Z",
+            "_indextime": "2025-01-20T10:30:01.000Z",
+            "_serial": 42,
+            "log_level": "INFO",
+            "component": "Metrics",
+            "_raw": "some log message"
+        }"#;
+        let entry: LogEntry = serde_json::from_str(json).unwrap();
+        assert_eq!(entry.time, "2025-01-20T10:30:00.000Z");
+        assert_eq!(entry.index_time, "2025-01-20T10:30:01.000Z");
+        assert_eq!(entry.serial, Some(42));
+        assert_eq!(entry.level, "INFO");
+        assert_eq!(entry.component, "Metrics");
+        assert_eq!(entry.message, "some log message");
+        assert_eq!(
+            entry.cursor_key(),
+            (
+                "2025-01-20T10:30:00.000Z",
+                "2025-01-20T10:30:01.000Z",
+                Some(42)
+            )
+        );
     }
 
     #[test]

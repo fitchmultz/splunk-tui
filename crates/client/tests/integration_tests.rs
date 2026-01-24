@@ -4,7 +4,7 @@ use reqwest::Client;
 use splunk_client::endpoints;
 use wiremock::{
     Mock, MockServer, ResponseTemplate,
-    matchers::{method, path, query_param},
+    matchers::{method, path, path_regex, query_param},
 };
 
 // Re-export commonly used types for test convenience
@@ -1687,4 +1687,82 @@ async fn test_retry_with_invalid_retry_after_header() {
 
     // Should still succeed, falling back to exponential backoff
     assert!(result.is_ok());
+}
+
+// Internal logs tests with deterministic sorting
+
+#[tokio::test]
+async fn test_get_internal_logs_with_sorting() {
+    let mock_server = MockServer::start().await;
+
+    let create_job_fixture = serde_json::json!({
+        "entry": [{
+            "content": {
+                "sid": "test-logs-sid"
+            }
+        }]
+    });
+
+    let results_fixture = serde_json::json!([
+        {
+            "_time": "2025-01-24T12:00:05.000Z",
+            "_indextime": "2025-01-24T12:00:06.000Z",
+            "_serial": 103,
+            "log_level": "INFO",
+            "component": "ComponentA",
+            "_raw": "Third log"
+        },
+        {
+            "_time": "2025-01-24T12:00:05.000Z",
+            "_indextime": "2025-01-24T12:00:05.500Z",
+            "_serial": 102,
+            "log_level": "INFO",
+            "component": "ComponentA",
+            "_raw": "Second log (same time)"
+        },
+        {
+            "_time": "2025-01-24T12:00:05.000Z",
+            "_indextime": "2025-01-24T12:00:05.000Z",
+            "_serial": 101,
+            "log_level": "INFO",
+            "component": "ComponentA",
+            "_raw": "First log (same time)"
+        }
+    ]);
+
+    // Mock create job - accept any search query
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&create_job_fixture))
+        .mount(&mock_server)
+        .await;
+
+    // Mock results
+    Mock::given(method("GET"))
+        .and(path_regex(r"/services/search/jobs/[^/]+/results"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&results_fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result =
+        endpoints::get_internal_logs(&client, &mock_server.uri(), "test-token", 10, None, 3).await;
+
+    assert!(result.is_ok());
+    let logs = result.unwrap();
+    assert_eq!(logs.len(), 3);
+
+    // Verify ordering is deterministic (descending by time, then index_time, then serial)
+    assert_eq!(logs[0].serial, Some(103));
+    assert_eq!(logs[1].serial, Some(102));
+    assert_eq!(logs[2].serial, Some(101));
+
+    // Verify all have the same _time (first sort key)
+    assert_eq!(logs[0].time, "2025-01-24T12:00:05.000Z");
+    assert_eq!(logs[1].time, "2025-01-24T12:00:05.000Z");
+    assert_eq!(logs[2].time, "2025-01-24T12:00:05.000Z");
+
+    // Verify _indextime is descending (second sort key)
+    assert!(logs[0].index_time >= logs[1].index_time);
+    assert!(logs[1].index_time >= logs[2].index_time);
 }

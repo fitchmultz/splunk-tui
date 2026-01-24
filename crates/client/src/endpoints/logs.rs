@@ -18,7 +18,10 @@ pub async fn get_internal_logs(
 ) -> Result<Vec<LogEntry>> {
     debug!("Fetching internal logs (count={})", count);
 
-    let query = format!("search index=_internal | head {}", count);
+    let query = format!(
+        "search index=_internal | sort -_time, -_indextime, -_serial | head {}",
+        count
+    );
 
     let options = CreateJobOptions {
         earliest_time: earliest.map(|s| s.to_string()),

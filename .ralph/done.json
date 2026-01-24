@@ -2518,6 +2518,43 @@
       "completed_at": "2026-01-24T18:58:49.391830000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0066",
+      "status": "done",
+      "title": "Fix CLI log tail cursor to avoid dropping events",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "logs",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/commands/logs.rs",
+        "crates/client/src/endpoints/logs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/logs.rs sets last_seen_time to the first log and filters with '>' so same-timestamp events can be skipped.",
+        "Tailing uses earliest=current_earliest without deterministic ordering, risking duplicates or gaps."
+      ],
+      "plan": [
+        "Track the max timestamp (or _indextime) and include a secondary cursor to avoid drops.",
+        "Update the query or sorting to return deterministic order before cursoring.",
+        "Add unit tests for tail cursor logic with same-timestamp entries."
+      ],
+      "notes": [
+        "Fixed CLI log tail cursor bug by implementing multi-field comparison (time, index_time, serial)",
+        "Added deterministic sorting to logs query: sort -_time, -_indextime, -_serial",
+        "Implemented LogCursor struct with proper is_after() comparison logic",
+        "Added 7 unit tests, 1 integration test, and 2 model tests covering all edge cases",
+        "Cursor updates to newest entry to prevent both drops and duplicates"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T19:19:04.555189000Z",
+      "completed_at": "2026-01-24T19:19:04.555189000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

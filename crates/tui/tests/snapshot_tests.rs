@@ -413,12 +413,16 @@ fn snapshot_internal_logs_screen() {
     harness.app.internal_logs = Some(vec![
         splunk_client::models::LogEntry {
             time: "2024-01-15T10:30:00.000Z".to_string(),
+            index_time: "2024-01-15T10:30:01.000Z".to_string(),
+            serial: Some(1),
             level: "INFO".to_string(),
             component: "Metrics".to_string(),
             message: "some metrics log message".to_string(),
         },
         splunk_client::models::LogEntry {
             time: "2024-01-15T10:29:00.000Z".to_string(),
+            index_time: "2024-01-15T10:29:01.000Z".to_string(),
+            serial: Some(2),
             level: "ERROR".to_string(),
             component: "DateParser".to_string(),
             message: "failed to parse date".to_string(),
