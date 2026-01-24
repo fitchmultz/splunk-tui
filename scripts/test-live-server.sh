@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Test script for live Splunk server verification
-# This script tests the splunk CLI against a live Splunk server
+# This script tests the splunk-cli CLI against a live Splunk server
 
 set -e
 
@@ -18,10 +18,10 @@ USAGE: $0 [--help]
 
 DESCRIPTION:
   Test script for live Splunk server verification.
-  Runs integration tests against a live Splunk server using the installed splunk CLI.
+  Runs integration tests against a live Splunk server using the installed splunk-cli CLI.
 
 REQUIREMENTS:
-  - splunk CLI installed (run: make install)
+  - splunk-cli CLI installed (run: make install)
   - Splunk server credentials configured
 
 AUTHENTICATION:
@@ -75,16 +75,16 @@ echo "Splunk TUI Live Server Test"
 echo "=========================================="
 echo ""
 
-# Check if splunk CLI is installed
-if ! command -v splunk &> /dev/null; then
-    echo -e "${RED}Error: splunk CLI not found${NC}"
+# Check if splunk-cli CLI is installed
+if ! command -v splunk-cli &> /dev/null; then
+    echo -e "${RED}Error: splunk-cli CLI not found${NC}"
     echo "Please run: make install"
     exit 1
 fi
 
 # Test 1: Search command with basic query
 echo -e "${YELLOW}Test 1: Search command with basic query${NC}"
-if splunk search "index=main | head 1" --wait --count 1 &> /dev/null; then
+if splunk-cli search "index=main | head 1" --wait --count 1 &> /dev/null; then
     echo -e "${GREEN}✓ Search command succeeded${NC}"
 else
     echo -e "${RED}✗ Search command failed${NC}"
@@ -94,7 +94,7 @@ echo ""
 
 # Test 2: List indexes
 echo -e "${YELLOW}Test 2: List indexes${NC}"
-if splunk indexes --detailed --count 10 &> /dev/null; then
+if splunk-cli indexes --detailed --count 10 &> /dev/null; then
     echo -e "${GREEN}✓ List indexes succeeded${NC}"
 else
     echo -e "${RED}✗ List indexes failed${NC}"
@@ -104,7 +104,7 @@ echo ""
 
 # Test 3: List jobs
 echo -e "${YELLOW}Test 3: List jobs${NC}"
-if splunk jobs --list --count 10 &> /dev/null; then
+if splunk-cli jobs --list --count 10 &> /dev/null; then
     echo -e "${GREEN}✓ List jobs succeeded${NC}"
 else
     echo -e "${RED}✗ List jobs failed${NC}"
@@ -114,7 +114,7 @@ echo ""
 
 # Test 4: Cluster info (may fail on standalone instance)
 echo -e "${YELLOW}Test 4: Get cluster info${NC}"
-if splunk cluster &> /dev/null; then
+if splunk-cli cluster &> /dev/null; then
     echo -e "${GREEN}✓ Cluster info succeeded (clustered instance)${NC}"
 else
     echo -e "${YELLOW}⚠ Cluster info failed (expected on standalone instance)${NC}"
@@ -123,7 +123,7 @@ echo ""
 
 # Test 5: Search with output formats
 echo -e "${YELLOW}Test 5: Search with JSON output${NC}"
-if splunk search "index=main | head 1" --output json --count 1 &> /dev/null; then
+if splunk-cli search "index=main | head 1" --output json --count 1 &> /dev/null; then
     echo -e "${GREEN}✓ Search with JSON output succeeded${NC}"
 else
     echo -e "${RED}✗ Search with JSON output failed${NC}"

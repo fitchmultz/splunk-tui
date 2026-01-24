@@ -27,7 +27,7 @@ make release
 ### Binaries
 
 Two binaries are installed:
-- `splunk` - Command-line interface
+- `splunk-cli` - Command-line interface
 - `splunk-tui` - Interactive terminal interface
 
 ## Configuration
@@ -55,49 +55,49 @@ Copy `.env.example` to `.env` and configure as needed.
 
 ```bash
 # Execute a search and wait for results
-splunk search "search index=main | head 10" --wait
+splunk-cli search "search index=main | head 10" --wait
 
 # Search with time range
-splunk search "search index=main ERROR" \
+splunk-cli search "search index=main ERROR" \
   --earliest "-24h" \
   --latest "now" \
   --wait
 
 # Maximum results
-splunk search "search index=main" --count 1000 --wait
+splunk-cli search "search index=main" --count 1000 --wait
 ```
 
 ### Indexes
 
 ```bash
 # List all indexes
-splunk indexes
+splunk-cli indexes
 
 # Detailed information
-splunk indexes --detailed
+splunk-cli indexes --detailed
 ```
 
 ### Cluster
 
 ```bash
 # Show cluster status
-splunk cluster
+splunk-cli cluster
 
 # Detailed cluster information including peers
-splunk cluster --detailed
+splunk-cli cluster --detailed
 ```
 
 ### Jobs
 
 ```bash
 # List all search jobs
-splunk jobs --list
+splunk-cli jobs --list
 
 # Cancel a job
-splunk jobs --cancel 123456789.123456789
+splunk-cli jobs --cancel 123456789.123456789
 
 # Delete a job
-splunk jobs --delete 123456789.123456789
+splunk-cli jobs --delete 123456789.123456789
 ```
 
 ## TUI Usage

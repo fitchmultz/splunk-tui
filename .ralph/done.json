@@ -1936,6 +1936,53 @@
       "completed_at": "2026-01-21T21:45:32.361749000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0057",
+      "status": "done",
+      "title": "Rename CLI command from 'splunk' to 'splunk-cli'",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "refactor",
+        "naming"
+      ],
+      "scope": [
+        "crates/cli/Cargo.toml",
+        "crates/cli/src/main.rs",
+        "Makefile",
+        "scripts/test-live-server.sh",
+        "README.md",
+        "docs/usage.md",
+        "docs/user-guide.md",
+        "crates/cli/tests/"
+      ],
+      "evidence": [
+        "User request: The CLI command 'splunk' needs renamed to 'splunk-cli' to not clash with the real 'splunk' binary",
+        "Search found 618 matches for 'splunk', many of which refer to the CLI command name."
+      ],
+      "plan": [
+        "Update crates/cli/Cargo.toml to set [[bin]] name to 'splunk-cli'.",
+        "Update crates/cli/src/main.rs to set #[command(name = 'splunk-cli')].",
+        "Update Makefile to set BINS := splunk-cli splunk-tui.",
+        "Update scripts/test-live-server.sh to use 'splunk-cli' instead of 'splunk'.",
+        "Update all examples in README.md, docs/usage.md, and docs/user-guide.md.",
+        "Update integration tests in crates/cli/tests/ to use 'splunk-cli' binary.",
+        "Verify changes by running 'make ci'."
+      ],
+      "notes": [
+        "Binary renamed: splunk → splunk-cli",
+        "All scope files updated correctly",
+        "All 261 tests pass (make ci)",
+        "Documentation examples updated (34 total)",
+        "Integration tests updated (26 invocations)"
+      ],
+      "request": "The CLI command 'splunk' needs renamed to 'splunk-cli' to not clash with the real 'splunk' binary",
+      "created_at": "2026-01-21T21:49:25Z",
+      "updated_at": "2026-01-24T01:45:04.014107000Z",
+      "completed_at": "2026-01-24T01:45:04.014107000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

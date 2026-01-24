@@ -28,7 +28,7 @@ Welcome to the comprehensive user guide for Splunk TUI and CLI. This guide is de
 ## Introduction
 
 Splunk TUI provides two main ways to interact with your Splunk environment:
-- **`splunk`**: A powerful CLI for automation, quick checks, and piping data to other tools.
+- **`splunk-cli`**: A powerful CLI for automation, quick checks, and piping data to other tools.
 - **`splunk-tui`**: A terminal-based dashboard for real-time monitoring, interactive searching, and job management.
 
 Both tools share a common configuration and support modern Splunk authentication (Session and API Tokens).
@@ -56,7 +56,7 @@ Refer to the [README](../README.md) for full installation instructions.
 
 ## CLI Deep Dive
 
-The `splunk` command is your primary tool for non-interactive tasks.
+The `splunk-cli` command is your primary tool for non-interactive tasks.
 
 ### Searching Splunk
 
@@ -64,24 +64,24 @@ Execute searches directly and get results in various formats.
 
 **Basic search (returns results immediately):**
 ```bash
-splunk search "index=main | head 5"
+splunk-cli search "index=main | head 5"
 ```
 
 **Wait for search completion:**
 By default, searches are asynchronous. Use `--wait` to block until completion.
 ```bash
-splunk search "index=main error | stats count by host" --wait
+splunk-cli search "index=main error | stats count by host" --wait
 ```
 
 **Specifying time ranges:**
 ```bash
-splunk search "index=_internal" --earliest "-15m" --latest "now" --wait
+splunk-cli search "index=_internal" --earliest "-15m" --latest "now" --wait
 ```
 
 **Output formatting:**
 Use `-o` or `--output` to switch between `json`, `table`, `csv`, and `xml`.
 ```bash
-splunk search "index=main | head 5" -o table
+splunk-cli search "index=main | head 5" -o table
 ```
 
 ### Managing Jobs
@@ -90,37 +90,37 @@ View and control your search jobs.
 
 **List recent jobs:**
 ```bash
-splunk jobs --list
+splunk-cli jobs --list
 ```
 
 **Cancel or Delete a job:**
 ```bash
-splunk jobs --cancel 1705852800.123
-splunk jobs --delete 1705852800.123
+splunk-cli jobs --cancel 1705852800.123
+splunk-cli jobs --delete 1705852800.123
 ```
 
 ### Inspecting Indexes
 
 **List all indexes:**
 ```bash
-splunk indexes
+splunk-cli indexes
 ```
 
 **Get detailed index metrics:**
 ```bash
-splunk indexes --detailed
+splunk-cli indexes --detailed
 ```
 
 ### Cluster & Health Monitoring
 
 **Check overall system health:**
 ```bash
-splunk health
+splunk-cli health
 ```
 
 **View cluster peer status:**
 ```bash
-splunk cluster --detailed
+splunk-cli cluster --detailed
 ```
 
 ### Configuration Profiles
@@ -138,7 +138,7 @@ If you manage multiple Splunk environments, use profiles in `~/.config/splunk-tu
 
 Switch profiles using the `--profile` flag:
 ```bash
-splunk --profile prod search "index=security | head 1"
+splunk-cli --profile prod search "index=security | head 1"
 ```
 
 ---

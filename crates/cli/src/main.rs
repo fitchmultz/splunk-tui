@@ -13,7 +13,7 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use splunk_config::ConfigLoader;
 
 #[derive(Parser)]
-#[command(name = "splunk")]
+#[command(name = "splunk-cli")]
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
 #[command(version)]
 struct Cli {

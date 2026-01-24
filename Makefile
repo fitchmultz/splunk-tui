@@ -1,7 +1,7 @@
 .PHONY: install update lint type-check format clean test build release generate ci help
 
 # Binaries and Installation
-BINS := splunk splunk-tui
+BINS := splunk-cli splunk-tui
 INSTALL_DIR := ~/.local/bin
 
 # Default target

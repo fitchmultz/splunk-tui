@@ -72,7 +72,7 @@ Environment variables take precedence over the configuration file:
 
 ## Command Line Interface (CLI)
 
-The CLI tool is named `splunk`.
+The CLI tool is named `splunk-cli`.
 
 ### Global Options
 
@@ -89,7 +89,7 @@ The CLI tool is named `splunk`.
 #### `search`
 Execute a search query and return results.
 ```bash
-splunk search "index=main | head 10" --wait --earliest "-24h"
+splunk-cli search "index=main | head 10" --wait --earliest "-24h"
 ```
 - `<query>`: The SPL search query
 - `--wait`: Wait for the search to complete before returning results
@@ -100,7 +100,7 @@ splunk search "index=main | head 10" --wait --earliest "-24h"
 #### `indexes`
 List and manage Splunk indexes.
 ```bash
-splunk indexes --detailed
+splunk-cli indexes --detailed
 ```
 - `-d, --detailed`: Show detailed information about each index
 - `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 30]
@@ -108,15 +108,15 @@ splunk indexes --detailed
 #### `cluster`
 Show cluster status and configuration.
 ```bash
-splunk cluster --detailed
+splunk-cli cluster --detailed
 ```
 - `-d, --detailed`: Show detailed cluster information
 
 #### `jobs`
 Manage search jobs.
 ```bash
-splunk jobs --list
-splunk jobs --cancel "1705852800.123"
+splunk-cli jobs --list
+splunk-cli jobs --cancel "1705852800.123"
 ```
 - `--list`: List all search jobs (default)
 - `--cancel <SID>`: Cancel a specific job by SID
@@ -126,19 +126,19 @@ splunk jobs --cancel "1705852800.123"
 #### `health`
 Perform a comprehensive system health check.
 ```bash
-splunk health
+splunk-cli health
 ```
 
 #### `kvstore`
 Show detailed KVStore status.
 ```bash
-splunk kvstore
+splunk-cli kvstore
 ```
 
 #### `license`
 Show license information, including usage, pools, and stacks.
 ```bash
-splunk license
+splunk-cli license
 ```
 - `-f, --format <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
 

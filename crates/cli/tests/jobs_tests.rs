@@ -1,4 +1,4 @@
-//! Integration tests for `splunk jobs` command.
+//! Integration tests for `splunk-cli jobs` command.
 //!
 //! Tests cover:
 //! - Default behavior (no args = list jobs)
@@ -7,10 +7,10 @@
 
 use predicates::prelude::*;
 
-/// Test that `splunk jobs` with no arguments defaults to listing jobs.
+/// Test that `splunk-cli jobs` with no arguments defaults to listing jobs.
 #[test]
 fn test_jobs_default_lists() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk");
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     // The command should fail because we don't have a real Splunk server,
@@ -24,10 +24,10 @@ fn test_jobs_default_lists() {
         .stderr(predicate::str::contains("Connection refused"));
 }
 
-/// Test that `splunk jobs --list` explicitly lists jobs.
+/// Test that `splunk-cli jobs --list` explicitly lists jobs.
 #[test]
 fn test_jobs_explicit_list_flag() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk");
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     // Explicit --list flag
@@ -39,10 +39,10 @@ fn test_jobs_explicit_list_flag() {
         .stderr(predicate::str::contains("Connection refused"));
 }
 
-/// Test that `splunk jobs --cancel <sid>` cancels a job without listing.
+/// Test that `splunk-cli jobs --cancel <sid>` cancels a job without listing.
 #[test]
 fn test_jobs_cancel_flag() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk");
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     // --cancel flag with a SID
@@ -54,10 +54,10 @@ fn test_jobs_cancel_flag() {
         .stderr(predicate::str::contains("Connection refused"));
 }
 
-/// Test that `splunk jobs --delete <sid>` deletes a job without listing.
+/// Test that `splunk-cli jobs --delete <sid>` deletes a job without listing.
 #[test]
 fn test_jobs_delete_flag() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk");
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     // --delete flag with a SID
@@ -72,7 +72,7 @@ fn test_jobs_delete_flag() {
 /// Test that `--list` flag is shown in help text.
 #[test]
 fn test_jobs_help_shows_list_flag() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk");
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
 
     // The help should show --list flag
     cmd.args(["jobs", "--help"]).assert().success().stdout(
