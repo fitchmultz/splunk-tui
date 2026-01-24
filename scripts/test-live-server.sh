@@ -21,7 +21,7 @@ DESCRIPTION:
   Runs integration tests against a live Splunk server using the installed splunk-cli CLI.
 
 REQUIREMENTS:
-  - splunk-cli CLI installed (run: make install)
+  - splunk-cli CLI installed (run: make release or make build)
   - Splunk server credentials configured
 
 AUTHENTICATION:
@@ -77,8 +77,10 @@ echo ""
 
 # Check if splunk-cli CLI is installed
 if ! command -v splunk-cli &> /dev/null; then
-    echo -e "${RED}Error: splunk-cli CLI not found${NC}"
-    echo "Please run: make install"
+    echo -e "${RED}Error: splunk-cli CLI not found on PATH${NC}"
+    echo "Please run: make release (or make build)"
+    echo "Then ensure ~/.local/bin is on your PATH:"
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
     exit 1
 fi
 
