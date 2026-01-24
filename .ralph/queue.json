@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0050",
-      "status": "doing",
-      "title": "Implement multi-selection in the Jobs screen for batch actions",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "jobs",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "Users can only cancel or delete one job at a time.",
-        "Batch operations are much faster for clearing many orphaned jobs."
-      ],
-      "plan": [
-        "Add a selected_jobs: HashSet<String> to track multiple SIDs.",
-        "Implement spacebar toggling for selection in the Jobs table.",
-        "Update 'c' and 'd' actions to apply to all selected jobs with a single confirmation."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:38:00Z",
-      "updated_at": "2026-01-24T01:45:40.330243000Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0051",
       "status": "todo",
       "title": "Add a configuration management command ('splunk-cli config')",
