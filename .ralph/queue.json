@@ -1,4 +1,449 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0058",
+      "status": "todo",
+      "title": "Fix CLI config loading to honor .env/env and skip_verify",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "config",
+        "env",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/config/src/loader.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs parses CLI args before calling ConfigLoader::load_dotenv, so .env values cannot populate clap env defaults.",
+        "crates/cli/src/main.rs never calls ConfigLoader::from_env, leaving SPLUNK_TIMEOUT/SPLUNK_MAX_RETRIES unused.",
+        "crates/cli/src/main.rs has `if cli.skip_verify { let _ = loader; }`, so the flag is ignored."
+      ],
+      "plan": [
+        "Load dotenv before Cli::parse and then apply ConfigLoader::from_env so env-only fields are honored.",
+        "Apply cli.skip_verify via ConfigLoader::with_skip_verify and keep CLI overrides highest priority.",
+        "Add CLI integration tests that assert .env/env and skip_verify/timeout/max_retries are applied."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0059",
+      "status": "todo",
+      "title": "Ignore empty auth env values in ConfigLoader",
+      "priority": "high",
+      "tags": [
+        "config",
+        "auth",
+        "bug"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs",
+        ".env.example"
+      ],
+      "evidence": [
+        "crates/config/src/loader.rs sets api_token from std::env::var without filtering empty strings.",
+        ".env.example defines SPLUNK_API_TOKEN as empty, which becomes Some() and forces API token auth."
+      ],
+      "plan": [
+        "Treat empty env values for SPLUNK_API_TOKEN/SPLUNK_USERNAME/SPLUNK_PASSWORD as None.",
+        "Add unit tests that empty env vars do not override valid session auth.",
+        "Update docs/examples if needed to reflect empty-value handling."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0060",
+      "status": "todo",
+      "title": "Force JSON output in auth login endpoint",
+      "priority": "high",
+      "tags": [
+        "client",
+        "auth",
+        "bug"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/auth.rs",
+        "crates/client/tests/integration_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/auth.rs posts to /services/auth/login without output_mode but then parses response with response.json()."
+      ],
+      "plan": [
+        "Include output_mode=json (query or form) or an Accept header on the login request.",
+        "Update integration tests to assert JSON mode is requested and parsing succeeds.",
+        "Run client integration tests to verify login behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0061",
+      "status": "todo",
+      "title": "Run config CLI integration tests in make test/ci",
+      "priority": "high",
+      "tags": [
+        "build",
+        "tests",
+        "ci"
+      ],
+      "scope": [
+        "Makefile",
+        "crates/cli/tests/config_tests.rs"
+      ],
+      "evidence": [
+        "Makefile test-integration omits cargo test -p splunk-cli --test config_tests even though crates/cli/tests/config_tests.rs exists."
+      ],
+      "plan": [
+        "Add config_tests to test-integration (and thus make test/ci).",
+        "Confirm make test runs the config tests locally.",
+        "Update any docs mentioning test coverage if needed."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0062",
+      "status": "todo",
+      "title": "Honor SPLUNK_CONFIG_PATH in TUI config loading",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "config",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/config/src/persistence.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs uses ConfigLoader::new() and ConfigManager::new() with default paths only.",
+        "crates/cli/src/commands/config.rs respects SPLUNK_CONFIG_PATH, so TUI and CLI can diverge."
+      ],
+      "plan": [
+        "Check for SPLUNK_CONFIG_PATH in TUI load_config and ConfigManager initialization.",
+        "Plumb the path into ConfigLoader::with_config_path and ConfigManager::new_with_path.",
+        "Add tests (unit or integration) to ensure TUI uses the override path."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0063",
+      "status": "todo",
+      "title": "Normalize base_url to avoid double slashes",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "config",
+        "bug"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs",
+        "crates/client/src/client.rs"
+      ],
+      "evidence": [
+        "Multiple endpoints build URLs by concatenating base_url with /services/... (e.g., crates/client/src/endpoints/indexes.rs).",
+        "ConfigLoader passes base_url through without trimming trailing slashes."
+      ],
+      "plan": [
+        "Trim trailing '/' from base_url during config build or client builder.",
+        "Add tests covering base_url with and without trailing slash.",
+        "Verify no behavior regressions in existing client tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0064",
+      "status": "todo",
+      "title": "Validate mutually exclusive jobs flags",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "jobs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/jobs.rs accepts both cancel and delete; cancel wins and delete is ignored without error."
+      ],
+      "plan": [
+        "Use clap ArgGroup or manual validation to enforce mutual exclusivity of --cancel/--delete/--list.",
+        "Add CLI tests that conflicting flags return a clear error.",
+        "Update docs/usage if help text changes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0065",
+      "status": "todo",
+      "title": "Respect Retry-After header in retry helper",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "http",
+        "resilience"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs",
+        "crates/client/tests/integration_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/request.rs uses fixed exponential backoff and does not inspect Retry-After headers on 429 responses."
+      ],
+      "plan": [
+        "Parse Retry-After header when present and use it as the sleep duration (or max of backoff and header).",
+        "Add wiremock tests covering 429 with Retry-After and without.",
+        "Ensure MaxRetriesExceeded accounting stays correct."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0066",
+      "status": "todo",
+      "title": "Fix CLI log tail cursor to avoid dropping events",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "logs",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/commands/logs.rs",
+        "crates/client/src/endpoints/logs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/logs.rs sets last_seen_time to the first log and filters with '>' so same-timestamp events can be skipped.",
+        "Tailing uses earliest=current_earliest without deterministic ordering, risking duplicates or gaps."
+      ],
+      "plan": [
+        "Track the max timestamp (or _indextime) and include a secondary cursor to avoid drops.",
+        "Update the query or sorting to return deterministic order before cursoring.",
+        "Add unit tests for tail cursor logic with same-timestamp entries."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0067",
+      "status": "todo",
+      "title": "Improve TUI pagination when total is missing",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "search",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs sets search_has_more_results only when total.is_some(), so pagination stops if total is None.",
+        "SearchJobResults.total is Option<u64> and can be missing in some Splunk responses."
+      ],
+      "plan": [
+        "If total is None, infer has_more when the fetched page is full (count == page_size).",
+        "Propagate page_size into pagination checks where needed.",
+        "Add tests for pagination behavior with total None."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0068",
+      "status": "todo",
+      "title": "Expose CLI flags for timeout and max retries",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "config",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs lacks CLI args for timeout/max_retries even though config types and .env support them."
+      ],
+      "plan": [
+        "Add global CLI options for --timeout and --max-retries.",
+        "Wire them into ConfigLoader overrides with correct precedence.",
+        "Add CLI tests and update usage docs."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0069",
+      "status": "todo",
+      "title": "Align live test script with build/install targets",
+      "priority": "medium",
+      "tags": [
+        "scripts",
+        "docs",
+        "build"
+      ],
+      "scope": [
+        "scripts/test-live-server.sh",
+        "Makefile",
+        "README.md"
+      ],
+      "evidence": [
+        "scripts/test-live-server.sh instructs make install for splunk-cli, but Makefile install only runs cargo fetch.",
+        "README.md shows make install for deps and make release for binaries, so the script guidance is inconsistent."
+      ],
+      "plan": [
+        "Update script help/output to reference make build/release for binary install.",
+        "Adjust README (if needed) to keep instructions consistent.",
+        "Run a quick script dry-run to confirm messaging."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0070",
+      "status": "todo",
+      "title": "Update usage docs for API token short flag",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "cli"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/cli/src/main.rs"
+      ],
+      "evidence": [
+        "docs/usage.md lists -t for api-token, but clap derives short -a from field name api_token in crates/cli/src/main.rs."
+      ],
+      "plan": [
+        "Update docs/usage.md to reflect the actual short flag.",
+        "Verify CLI --help output matches documentation.",
+        "Check other docs for the same flag reference."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0071",
+      "status": "todo",
+      "title": "Update user guide screen keybindings",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "tui"
+      ],
+      "scope": [
+        "docs/user-guide.md",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "docs/user-guide.md lists only screens 1-5, while crates/tui/src/app.rs handles keys 1-9 for additional screens."
+      ],
+      "plan": [
+        "Update the keybinding list and screen descriptions to include Saved Searches, Internal Logs, Apps, and Users.",
+        "Cross-check with the TUI help popup for consistency.",
+        "Proofread for any other outdated shortcuts."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0072",
+      "status": "todo",
+      "title": "Remove duplicate validation block in config set",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "config",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/config.rs contains the same password-required validation block twice in run_set."
+      ],
+      "plan": [
+        "Remove the redundant validation block and keep a single source of truth.",
+        "Ensure existing config_tests cover the error path.",
+        "Run CLI tests for config command."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T12:36:07Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
