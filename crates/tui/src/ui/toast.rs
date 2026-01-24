@@ -146,7 +146,7 @@ impl Toast {
 ///
 /// * `f` - The frame to render into
 /// * `toasts` - Slice of toasts to render (will be filtered for non-expired)
-pub fn render_toasts(f: &mut Frame, toasts: &[Toast]) {
+pub fn render_toasts(f: &mut Frame, toasts: &[Toast], has_error: bool) {
     // Filter out expired toasts
     let active: Vec<_> = toasts.iter().filter(|t| !t.is_expired()).collect();
 
@@ -155,7 +155,7 @@ pub fn render_toasts(f: &mut Frame, toasts: &[Toast]) {
     }
 
     // Calculate total height needed
-    let toast_height = 3; // Each toast is 3 lines tall
+    let toast_height = 4; // Each toast is 4 lines tall (for 'e' hint)
     let total_height = active.len() as u16 * toast_height;
     let toast_width = 60;
 
@@ -187,12 +187,12 @@ pub fn render_toasts(f: &mut Frame, toasts: &[Toast]) {
 
     // Render each toast
     for (toast, chunk) in active.iter().zip(chunks.iter()) {
-        render_single_toast(f, toast, *chunk);
+        render_single_toast(f, toast, *chunk, has_error);
     }
 }
 
 /// Renders a single toast notification.
-fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect) {
+fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool) {
     let level = toast.level;
     let color = level.color();
     let label = level.label();
@@ -205,18 +205,55 @@ fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect) {
         toast.message.clone()
     };
 
+    // Replace the truncation logic with line wrapping for multi-line support
+    let max_lines = 2;
+    let chars: Vec<char> = toast.message.chars().collect();
+    let wrapped_text: Vec<String> = chars
+        .chunks(max_width)
+        .take(max_lines)
+        .map(|c| c.iter().collect())
+        .collect();
+
     // Create the toast content
-    let content = vec![Line::from(vec![
+    let mut content_lines = vec![Line::from(vec![
         Span::styled(
             format!(" {} ", label),
             Style::default()
                 .fg(color)
                 .add_modifier(ratatui::style::Modifier::BOLD),
         ),
-        Span::raw(&message),
+        Span::raw(if wrapped_text.is_empty() {
+            &message
+        } else {
+            &wrapped_text[0]
+        }),
     ])];
 
-    let paragraph = Paragraph::new(content)
+    // Add wrapped lines (excluding first which is already in the label line)
+    for line in wrapped_text.iter().skip(1) {
+        content_lines.push(Line::from(vec![
+            Span::styled(" ", Style::default().fg(color)),
+            Span::raw(line),
+        ]));
+    }
+
+    // Add truncation indicator if message was longer than what we can show
+    if chars.len() > max_width * max_lines {
+        content_lines.push(Line::from(vec![
+            Span::styled(" ", Style::default().fg(color)),
+            Span::styled("...", Style::default().fg(Color::Gray)),
+        ]));
+    }
+
+    // Add hint to press 'e' for error details
+    if has_error && toast.level == ToastLevel::Error {
+        content_lines.push(Line::from(vec![
+            Span::styled(" ", Style::default().fg(color)),
+            Span::styled("Press 'e' for details", Style::default().fg(Color::Gray)),
+        ]));
+    }
+
+    let paragraph = Paragraph::new(content_lines)
         .block(
             Block::default()
                 .borders(Borders::ALL)

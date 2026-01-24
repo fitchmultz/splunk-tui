@@ -124,4 +124,10 @@ pub enum Action {
     Notify(ToastLevel, String),
     /// Tick event for periodic updates (TTL pruning, animations)
     Tick,
+
+    // Error handling
+    /// Display error details popup
+    ShowErrorDetails(crate::error_details::ErrorDetails),
+    /// Clear current error details (when popup is dismissed)
+    ClearErrorDetails,
 }

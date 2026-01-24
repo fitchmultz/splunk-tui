@@ -17,11 +17,13 @@
 
 pub mod action;
 pub mod app;
+pub mod error_details;
 pub mod export;
 pub mod ui;
 
 // Re-export commonly used types at the crate root
 pub use action::Action;
 pub use app::{App, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT};
+pub use error_details::ErrorDetails;
 pub use ui::popup::{Popup, PopupType};
 pub use ui::toast::{Toast, ToastLevel};

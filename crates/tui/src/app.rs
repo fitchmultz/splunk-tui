@@ -219,6 +219,10 @@ pub struct App {
     pub export_input: String,
     pub export_format: ExportFormat,
 
+    // Error state
+    pub current_error: Option<crate::error_details::ErrorDetails>,
+    pub error_scroll_offset: usize,
+
     // Layout tracking
     pub last_area: Rect,
 }
@@ -293,6 +297,8 @@ impl App {
             saved_search_input: String::new(),
             export_input: String::new(),
             export_format: ExportFormat::Json,
+            current_error: None,
+            error_scroll_offset: 0,
             last_area: Rect::default(),
         }
     }
@@ -597,6 +603,29 @@ impl App {
             (Some(PopupType::ExportSearch), KeyCode::Char(c)) => {
                 self.export_input.push(c);
                 self.update_export_popup();
+                None
+            }
+            (
+                Some(PopupType::ErrorDetails),
+                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('e'),
+            ) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::ErrorDetails), KeyCode::Char('j') | KeyCode::Down) => {
+                self.error_scroll_offset = self.error_scroll_offset.saturating_add(1);
+                None
+            }
+            (Some(PopupType::ErrorDetails), KeyCode::Char('k') | KeyCode::Up) => {
+                self.error_scroll_offset = self.error_scroll_offset.saturating_sub(1);
+                None
+            }
+            (Some(PopupType::ErrorDetails), KeyCode::PageDown) => {
+                self.error_scroll_offset = self.error_scroll_offset.saturating_add(10);
+                None
+            }
+            (Some(PopupType::ErrorDetails), KeyCode::PageUp) => {
+                self.error_scroll_offset = self.error_scroll_offset.saturating_sub(10);
                 None
             }
             (
@@ -1263,9 +1292,18 @@ impl App {
                 self.loading = false;
             }
             Action::SearchComplete(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Search failed: {}", e)));
+                let details = crate::error_details::ErrorDetails::from_error_string(&e);
+                self.current_error = Some(details.clone());
+                self.toasts.push(Toast::error(details.to_summary()));
                 self.loading = false;
+            }
+            Action::ShowErrorDetails(details) => {
+                self.current_error = Some(details);
+                self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+            }
+            Action::ClearErrorDetails => {
+                self.current_error = None;
+                self.popup = None;
             }
             Action::InspectJob => {
                 // Transition to job inspect screen if we have jobs and a selection
@@ -1689,11 +1727,21 @@ impl App {
         f.render_widget(footer, chunks[2]);
 
         // Render toasts
-        crate::ui::toast::render_toasts(f, &self.toasts);
+        crate::ui::toast::render_toasts(f, &self.toasts, self.current_error.is_some());
 
         // Render popup if active (on top of toasts)
         if let Some(ref popup) = self.popup {
             crate::ui::popup::render_popup(f, popup);
+        }
+
+        // Render error details popup if active
+        if let Some(Popup {
+            kind: PopupType::ErrorDetails,
+            ..
+        }) = &self.popup
+            && let Some(error) = &self.current_error
+        {
+            crate::ui::error_details::render_error_details(f, error, self);
         }
     }
 

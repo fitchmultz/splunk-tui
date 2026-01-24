@@ -314,13 +314,22 @@ async fn handle_side_effects(
             tx.send(Action::Progress(0.1)).ok();
 
             let tx_clone = tx.clone();
+            let query_clone = query.clone();
             tokio::spawn(async move {
                 let mut c = client.lock().await;
 
-                // Create the job
-                let sid = match c.create_search_job(&query, &Default::default()).await {
+                // Create search job
+                let sid = match c.create_search_job(&query_clone, &Default::default()).await {
                     Ok(s) => s,
                     Err(e) => {
+                        let mut details =
+                            splunk_tui::error_details::ErrorDetails::from_client_error(&e);
+                        details.add_context("query".to_string(), query_clone);
+                        details
+                            .add_context("operation".to_string(), "create_search_job".to_string());
+                        tx_clone
+                            .send(Action::ShowErrorDetails(details.clone()))
+                            .ok();
                         tx_clone
                             .send(Action::SearchComplete(Err(e.to_string())))
                             .ok();
@@ -347,6 +356,17 @@ async fn handle_side_effects(
                                     .ok();
                             }
                             Err(e) => {
+                                let mut details =
+                                    splunk_tui::error_details::ErrorDetails::from_client_error(&e);
+                                details.add_context("query".to_string(), query_clone);
+                                details.add_context("sid".to_string(), sid.clone());
+                                details.add_context(
+                                    "operation".to_string(),
+                                    "get_search_results".to_string(),
+                                );
+                                tx_clone
+                                    .send(Action::ShowErrorDetails(details.clone()))
+                                    .ok();
                                 tx_clone
                                     .send(Action::SearchComplete(Err(e.to_string())))
                                     .ok();
@@ -354,11 +374,31 @@ async fn handle_side_effects(
                         }
                     }
                     Ok(Err(e)) => {
+                        let mut details =
+                            splunk_tui::error_details::ErrorDetails::from_error_string(
+                                &e.to_string(),
+                            );
+                        details.add_context("query".to_string(), query_clone);
+                        details.add_context("sid".to_string(), sid.clone());
+                        details.add_context("operation".to_string(), "wait_for_job".to_string());
+                        tx_clone
+                            .send(Action::ShowErrorDetails(details.clone()))
+                            .ok();
                         tx_clone
                             .send(Action::SearchComplete(Err(e.to_string())))
                             .ok();
                     }
                     Err(_) => {
+                        let mut details =
+                            splunk_tui::error_details::ErrorDetails::from_error_string(
+                                "Search timeout",
+                            );
+                        details.add_context("query".to_string(), query_clone);
+                        details.add_context("sid".to_string(), sid.clone());
+                        details.add_context("operation".to_string(), "wait_for_job".to_string());
+                        tx_clone
+                            .send(Action::ShowErrorDetails(details.clone()))
+                            .ok();
                         tx_clone
                             .send(Action::SearchComplete(Err("Search timeout".to_string())))
                             .ok();

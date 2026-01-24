@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0052",
-      "status": "todo",
-      "title": "Enhance TUI error reporting for search failures",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "search"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/toast.rs"
-      ],
-      "evidence": [
-        "Search errors in the TUI are often truncated or generic.",
-        "Splunk returns detailed error messages and warnings in the job results."
-      ],
-      "plan": [
-        "Capture full error details from the Splunk API when a search fails.",
-        "Implement an 'Error Details' popup to show the full JSON error response.",
-        "Improve toast notifications to handle multi-line error messages."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:40:00Z",
-      "updated_at": "2026-01-21T19:40:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0053",
       "status": "todo",
       "title": "Implement result virtualization/paging in TUI to handle large datasets",

@@ -30,6 +30,8 @@ pub enum PopupType {
     ConfirmDeleteBatch(Vec<String>),
     /// Export search results
     ExportSearch,
+    /// Show full error details with structured information
+    ErrorDetails,
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -153,6 +155,10 @@ Job Details Screen:
                 "Export Search Results".to_string(),
                 "Enter filename: results.json\nFormat: JSON (Tab to toggle)".to_string(),
             ),
+            PopupType::ErrorDetails => (
+                "Error Details".to_string(),
+                "Press Esc or q to close".to_string(),
+            ),
         };
 
         Popup {
@@ -177,7 +183,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup) {
 
     // Determine border color based on popup type
     let border_color = match &popup.kind {
-        PopupType::Help | PopupType::ExportSearch => Color::Cyan,
+        PopupType::Help | PopupType::ExportSearch | PopupType::ErrorDetails => Color::Cyan,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -186,7 +192,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup) {
 
     // Determine wrapping behavior based on popup type
     let wrap_mode = match &popup.kind {
-        PopupType::Help | PopupType::ExportSearch => Wrap { trim: false },
+        PopupType::Help | PopupType::ExportSearch | PopupType::ErrorDetails => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

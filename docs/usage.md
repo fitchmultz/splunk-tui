@@ -217,7 +217,27 @@ Launch the TUI by running `splunk-tui`.
 - `d`: Delete selected job(s). If multiple jobs are selected, deletes all at once (requires confirmation). If none selected, deletes the job under cursor.
 
 #### Indexes / Cluster / Health Screens
-- `r`: Refresh the data for the current screen
+
+### Error Handling
+
+When a search fails, you will see an error toast in the bottom-right corner:
+- Errors show a brief summary of the issue
+- Press `e` when an error toast is visible to see full details
+- Error details popup shows:
+  - HTTP status code
+  - Request URL
+  - Splunk request ID (for support)
+  - Structured error messages from Splunk
+  - Raw error response body
+
+Navigate error details popup:
+- `j` / `↓` - Scroll down
+- `k` / `↑` - Scroll up
+- `PageDown` - Page down
+- `PageUp` - Page up
+- `Esc` / `q` - Close popup
 
 #### Job Details (Inspect) Screen
 - `Esc`: Return to the main Jobs list
+
+- `r`: Refresh the data for the current screen
