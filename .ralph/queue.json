@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0058",
-      "status": "todo",
-      "title": "Fix CLI config loading to honor .env/env and skip_verify",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "config",
-        "env",
-        "bug"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/config/src/loader.rs",
-        "crates/cli/tests"
-      ],
-      "evidence": [
-        "crates/cli/src/main.rs parses CLI args before calling ConfigLoader::load_dotenv, so .env values cannot populate clap env defaults.",
-        "crates/cli/src/main.rs never calls ConfigLoader::from_env, leaving SPLUNK_TIMEOUT/SPLUNK_MAX_RETRIES unused.",
-        "crates/cli/src/main.rs has `if cli.skip_verify { let _ = loader; }`, so the flag is ignored."
-      ],
-      "plan": [
-        "Load dotenv before Cli::parse and then apply ConfigLoader::from_env so env-only fields are honored.",
-        "Apply cli.skip_verify via ConfigLoader::with_skip_verify and keep CLI overrides highest priority.",
-        "Add CLI integration tests that assert .env/env and skip_verify/timeout/max_retries are applied."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0059",
       "status": "todo",
       "title": "Ignore empty auth env values in ConfigLoader",

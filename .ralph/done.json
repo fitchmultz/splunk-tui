@@ -2224,6 +2224,46 @@
       "completed_at": "2026-01-24T07:24:45.898007000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0058",
+      "status": "done",
+      "title": "Fix CLI config loading to honor .env/env and skip_verify",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "config",
+        "env",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/config/src/loader.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs parses CLI args before calling ConfigLoader::load_dotenv, so .env values cannot populate clap env defaults.",
+        "crates/cli/src/main.rs never calls ConfigLoader::from_env, leaving SPLUNK_TIMEOUT/SPLUNK_MAX_RETRIES unused.",
+        "crates/cli/src/main.rs has `if cli.skip_verify { let _ = loader; }`, so the flag is ignored."
+      ],
+      "plan": [
+        "Load dotenv before Cli::parse and then apply ConfigLoader::from_env so env-only fields are honored.",
+        "Apply cli.skip_verify via ConfigLoader::with_skip_verify and keep CLI overrides highest priority.",
+        "Add CLI integration tests that assert .env/env and skip_verify/timeout/max_retries are applied."
+      ],
+      "notes": [
+        "Fixed .env loading before CLI parsing",
+        "Added from_env() call for SPLUNK_TIMEOUT/SPLUNK_MAX_RETRIES",
+        "Fixed skip_verify to properly apply via with_skip_verify()",
+        "Added 12 integration tests for config loading",
+        "All 393 CI tests pass, no regressions"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T16:13:50.387091000Z",
+      "completed_at": "2026-01-24T16:13:50.387091000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

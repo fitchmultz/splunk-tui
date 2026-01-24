@@ -143,6 +143,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load .env file BEFORE CLI parsing so clap env defaults can read .env values
+    ConfigLoader::new().load_dotenv()?;
+
     let cli = Cli::parse();
 
     // Initialize logging
@@ -152,7 +155,7 @@ async fn main() -> Result<()> {
         .init();
 
     // Build configuration
-    let mut loader = ConfigLoader::new().load_dotenv()?;
+    let mut loader = ConfigLoader::new();
 
     // Only build config if not running config command (it manages its own profiles)
     let config = if matches!(cli.command, Commands::Config { .. }) {
@@ -174,13 +177,17 @@ async fn main() -> Result<()> {
             },
         }
     } else {
-        // Load from profile if specified
+        // Load from profile if specified (lowest priority)
         if let Some(ref profile_name) = cli.profile {
             loader = loader
                 .with_profile_name(profile_name.clone())
                 .from_profile()?;
         }
 
+        // Apply environment variable overrides (medium priority)
+        loader = loader.from_env()?;
+
+        // Apply CLI overrides (highest priority)
         if let Some(ref url) = cli.base_url {
             loader = loader.with_base_url(url.clone());
         }
@@ -194,7 +201,7 @@ async fn main() -> Result<()> {
             loader = loader.with_api_token(token.clone());
         }
         if cli.skip_verify {
-            let _ = loader; // Silence unused warning
+            loader = loader.with_skip_verify(true);
         }
 
         loader.build()?
