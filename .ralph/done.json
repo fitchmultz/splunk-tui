@@ -2336,6 +2336,40 @@
       "completed_at": "2026-01-24T17:24:27.120467000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0061",
+      "status": "done",
+      "title": "Run config CLI integration tests in make test/ci",
+      "priority": "high",
+      "tags": [
+        "build",
+        "tests",
+        "ci"
+      ],
+      "scope": [
+        "Makefile",
+        "crates/cli/tests/config_tests.rs"
+      ],
+      "evidence": [
+        "Makefile test-integration omits cargo test -p splunk-cli --test config_tests even though crates/cli/tests/config_tests.rs exists."
+      ],
+      "plan": [
+        "Add config_tests to test-integration (and thus make test/ci).",
+        "Confirm make test runs the config tests locally.",
+        "Update any docs mentioning test coverage if needed."
+      ],
+      "notes": [
+        "Already completed - config_tests and config_loading_tests were added to test-integration target in commit ef4338e (RQ-0058)",
+        "Verification: make test ran successfully - all 274 tests passed, including 15 config_tests and 12 config_loading_tests",
+        "No code or documentation changes needed - tests are already part of CI pipeline via test-integration target"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T17:40:31.575756000Z",
+      "completed_at": "2026-01-24T17:40:31.575756000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

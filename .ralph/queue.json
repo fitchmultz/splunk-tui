@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0061",
-      "status": "todo",
-      "title": "Run config CLI integration tests in make test/ci",
-      "priority": "high",
-      "tags": [
-        "build",
-        "tests",
-        "ci"
-      ],
-      "scope": [
-        "Makefile",
-        "crates/cli/tests/config_tests.rs"
-      ],
-      "evidence": [
-        "Makefile test-integration omits cargo test -p splunk-cli --test config_tests even though crates/cli/tests/config_tests.rs exists."
-      ],
-      "plan": [
-        "Add config_tests to test-integration (and thus make test/ci).",
-        "Confirm make test runs the config tests locally.",
-        "Update any docs mentioning test coverage if needed."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0062",
       "status": "todo",
       "title": "Honor SPLUNK_CONFIG_PATH in TUI config loading",
