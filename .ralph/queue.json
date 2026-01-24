@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0070",
-      "status": "todo",
-      "title": "Update usage docs for API token short flag",
-      "priority": "low",
-      "tags": [
-        "docs",
-        "cli"
-      ],
-      "scope": [
-        "docs/usage.md",
-        "crates/cli/src/main.rs"
-      ],
-      "evidence": [
-        "docs/usage.md lists -t for api-token, but clap derives short -a from field name api_token in crates/cli/src/main.rs."
-      ],
-      "plan": [
-        "Update docs/usage.md to reflect the actual short flag.",
-        "Verify CLI --help output matches documentation.",
-        "Check other docs for the same flag reference."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0071",
       "status": "todo",
       "title": "Update user guide screen keybindings",
