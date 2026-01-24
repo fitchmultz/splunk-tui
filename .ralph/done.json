@@ -2264,6 +2264,43 @@
       "completed_at": "2026-01-24T16:13:50.387091000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0059",
+      "status": "done",
+      "title": "Ignore empty auth env values in ConfigLoader",
+      "priority": "high",
+      "tags": [
+        "config",
+        "auth",
+        "bug"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs",
+        ".env.example"
+      ],
+      "evidence": [
+        "crates/config/src/loader.rs sets api_token from std::env::var without filtering empty strings.",
+        ".env.example defines SPLUNK_API_TOKEN as empty, which becomes Some() and forces API token auth."
+      ],
+      "plan": [
+        "Treat empty env values for SPLUNK_API_TOKEN/SPLUNK_USERNAME/SPLUNK_PASSWORD as None.",
+        "Add unit tests that empty env vars do not override valid session auth.",
+        "Update docs/examples if needed to reflect empty-value handling."
+      ],
+      "notes": [
+        "Added env_var_or_none() helper to filter empty env vars for auth variables",
+        "Empty SPLUNK_API_TOKEN now correctly allows session auth instead of forcing API token mode",
+        "Added 3 comprehensive unit tests covering empty string filtering and whitespace edge case",
+        "Updated .env.example with clarifying comment about empty value behavior",
+        "Updated docs/usage.md with documentation of empty-value handling"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T17:05:34.428505000Z",
+      "completed_at": "2026-01-24T17:05:34.428505000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
