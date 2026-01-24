@@ -1451,3 +1451,38 @@ async fn test_splunk_client_check_log_parsing_health_session_retry() {
     // Should have called login twice (initial + retry)
     assert_eq!(login_count.load(Ordering::SeqCst), 2);
 }
+
+#[tokio::test]
+async fn test_client_with_trailing_slash_base_url() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("auth/login_success.json");
+
+    // Verify the endpoint path is exactly /services/auth/login (not //services/auth/login)
+    Mock::given(method("POST"))
+        .and(path("/services/auth/login"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let strategy = splunk_client::AuthStrategy::SessionToken {
+        username: "admin".to_string(),
+        password: secrecy::SecretString::new("testpassword".to_string().into()),
+    };
+
+    // Build client with trailing slash in base_url
+    let mut client = splunk_client::SplunkClient::builder()
+        .base_url(format!("{}/", mock_server.uri())) // Add trailing slash
+        .auth_strategy(strategy)
+        .skip_verify(true)
+        .build()
+        .unwrap();
+
+    // Login should succeed (URL should be normalized, no double slash)
+    let result = client.login().await;
+
+    // If base_url wasn't normalized, this would fail with 404 because
+    // wiremock would see //services/auth/login instead of /services/auth/login
+    assert!(result.is_ok());
+}

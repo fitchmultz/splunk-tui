@@ -70,11 +70,23 @@ impl SplunkClientBuilder {
         self
     }
 
+    /// Normalize a base URL by removing trailing slashes.
+    ///
+    /// This prevents double slashes when concatenating with endpoint paths.
+    /// Examples:
+    /// - "https://localhost:8089/" -> "https://localhost:8089"
+    /// - "https://localhost:8089" -> "https://localhost:8089"
+    /// - "https://example.com:8089//" -> "https://example.com:8089"
+    fn normalize_base_url(url: String) -> String {
+        url.trim_end_matches('/').to_string()
+    }
+
     /// Build the client.
     pub fn build(self) -> Result<SplunkClient> {
         let base_url = self
             .base_url
             .ok_or_else(|| ClientError::InvalidUrl("base_url is required".to_string()))?;
+        let base_url = Self::normalize_base_url(base_url);
 
         let auth_strategy = self
             .auth_strategy
@@ -1012,5 +1024,41 @@ mod tests {
         let client = SplunkClient::builder().auth_strategy(strategy).build();
 
         assert!(matches!(client.unwrap_err(), ClientError::InvalidUrl(_)));
+    }
+
+    #[test]
+    fn test_normalize_base_url_trailing_slash() {
+        let input = "https://localhost:8089/".to_string();
+        let expected = "https://localhost:8089";
+        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
+    }
+
+    #[test]
+    fn test_normalize_base_url_no_trailing_slash() {
+        let input = "https://localhost:8089".to_string();
+        let expected = "https://localhost:8089";
+        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
+    }
+
+    #[test]
+    fn test_normalize_base_url_multiple_trailing_slashes() {
+        let input = "https://example.com:8089//".to_string();
+        let expected = "https://example.com:8089";
+        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
+    }
+
+    #[test]
+    fn test_client_builder_normalizes_base_url() {
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("test-token".to_string().into()),
+        };
+
+        let client = SplunkClient::builder()
+            .base_url("https://localhost:8089/".to_string())
+            .auth_strategy(strategy)
+            .build()
+            .unwrap();
+
+        assert_eq!(client.base_url(), "https://localhost:8089");
     }
 }

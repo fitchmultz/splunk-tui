@@ -2408,6 +2408,43 @@
       "completed_at": "2026-01-24T18:23:40.043201000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0063",
+      "status": "done",
+      "title": "Normalize base_url to avoid double slashes",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "config",
+        "bug"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs",
+        "crates/client/src/client.rs"
+      ],
+      "evidence": [
+        "Multiple endpoints build URLs by concatenating base_url with /services/... (e.g., crates/client/src/endpoints/indexes.rs).",
+        "ConfigLoader passes base_url through without trimming trailing slashes."
+      ],
+      "plan": [
+        "Trim trailing '/' from base_url during config build or client builder.",
+        "Add tests covering base_url with and without trailing slash.",
+        "Verify no behavior regressions in existing client tests."
+      ],
+      "notes": [
+        "Added normalize_base_url() helper to SplunkClientBuilder",
+        "Applied normalization in build() method (line 89)",
+        "Added 4 unit tests for normalization edge cases",
+        "Added integration test verifying no double slashes in HTTP requests",
+        "All 250+ tests pass with no regressions"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T18:33:57.066413000Z",
+      "completed_at": "2026-01-24T18:33:57.066413000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
