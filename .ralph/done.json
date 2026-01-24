@@ -2189,6 +2189,41 @@
       "completed_at": "2026-01-24T07:04:02.786724000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0056",
+      "status": "done",
+      "title": "Improve CLI output for CSV/XML formats with better nesting handling",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "formatting"
+      ],
+      "scope": [
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "Flattening complex JSON objects for CSV/XML can lead to data loss or confusing output.",
+        "Better handling of nested structures would improve the utility of these formats for scripts."
+      ],
+      "plan": [
+        "Implement a recursive flattener for nested JSON objects in the CsvFormatter.",
+        "Use dot-notation for nested keys (e.g., 'user.name').",
+        "Improve XML structure for complex nested fields."
+      ],
+      "notes": [
+        "Implemented recursive JSON flattening for CSV with dot-notation (e.g., user.name, tags.0)",
+        "Implemented hierarchical XML structure preserving nested objects as elements",
+        "Added comprehensive test coverage: 10+ tests for nested structure handling",
+        "Updated docs/usage.md with nested structure handling documentation",
+        "All 43 formatters tests pass, full CI passes"
+      ],
+      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
+      "created_at": "2026-01-21T19:44:00Z",
+      "updated_at": "2026-01-24T07:24:45.898007000Z",
+      "completed_at": "2026-01-24T07:24:45.898007000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

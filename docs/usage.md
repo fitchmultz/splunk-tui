@@ -83,6 +83,9 @@ The CLI tool is named `splunk-cli`.
 - `--skip-verify`: Skip TLS certificate verification
 - `--profile <NAME>`: Config profile name to load
 - `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `json`]
+  - **Note**: For CSV and XML formats, nested JSON structures are automatically handled:
+    - **CSV**: Nested objects are flattened using dot-notation (e.g., `user.address.city`). Arrays use indexed notation (e.g., `tags.0`, `tags.1`).
+    - **XML**: Nested structures are preserved as hierarchical elements. Arrays become container elements with `<item>` children.
 
 ### Commands
 

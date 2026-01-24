@@ -159,6 +159,133 @@ impl Formatter for JsonFormatter {
     }
 }
 
+/// Flatten a JSON object into a map of dot-notation keys to string values.
+///
+/// # Arguments
+/// * `value` - The JSON value to flatten
+/// * `prefix` - The current key prefix (for nested recursion)
+/// * `output` - The output map to populate
+///
+/// # Flattening Rules
+/// - Primitive values (string, number, bool, null): stored as-is with string conversion
+/// - Nested objects: keys are prefixed with parent key and dot (e.g., `user.name`)
+/// - Arrays: each element gets indexed key (e.g., `tags.0`, `tags.1`)
+/// - Nested arrays within objects: combined notation (e.g., `users.0.name`)
+fn flatten_json_object(
+    value: &serde_json::Value,
+    prefix: &str,
+    output: &mut std::collections::BTreeMap<String, String>,
+) {
+    match value {
+        serde_json::Value::Null => {
+            output.insert(prefix.to_string(), String::new());
+        }
+        serde_json::Value::Bool(b) => {
+            output.insert(prefix.to_string(), b.to_string());
+        }
+        serde_json::Value::Number(n) => {
+            output.insert(prefix.to_string(), n.to_string());
+        }
+        serde_json::Value::String(s) => {
+            output.insert(prefix.to_string(), s.clone());
+        }
+        serde_json::Value::Array(arr) => {
+            for (i, item) in arr.iter().enumerate() {
+                let new_key = format!("{}.{}", prefix, i);
+                flatten_json_object(item, &new_key, output);
+            }
+        }
+        serde_json::Value::Object(obj) => {
+            for (key, val) in obj {
+                let new_key = if prefix.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{}.{}", prefix, key)
+                };
+                flatten_json_object(val, &new_key, output);
+            }
+        }
+    }
+}
+
+/// Extract all flattened keys from a slice of JSON results.
+///
+/// Returns a sorted list of all unique dot-notation keys across all results.
+fn get_all_flattened_keys(results: &[serde_json::Value]) -> Vec<String> {
+    let mut all_keys: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for result in results {
+        let mut flat = std::collections::BTreeMap::new();
+        flatten_json_object(result, "", &mut flat);
+        all_keys.extend(flat.into_keys());
+    }
+    all_keys.into_iter().collect()
+}
+
+/// Convert a JSON value to nested XML element(s).
+///
+/// Returns a vector of XML element strings. For primitive values, returns
+/// a single element. For arrays and objects, returns multiple nested elements.
+fn value_to_xml_elements(name: &str, value: &serde_json::Value, indent: &str) -> Vec<String> {
+    match value {
+        serde_json::Value::Null => {
+            vec![format!(
+                "{}<{}></{}>",
+                indent,
+                escape_xml(name),
+                escape_xml(name)
+            )]
+        }
+        serde_json::Value::Bool(b) => {
+            vec![format!(
+                "{}<{}>{}</{}>",
+                indent,
+                escape_xml(name),
+                b,
+                escape_xml(name)
+            )]
+        }
+        serde_json::Value::Number(n) => {
+            vec![format!(
+                "{}<{}>{}</{}>",
+                indent,
+                escape_xml(name),
+                n,
+                escape_xml(name)
+            )]
+        }
+        serde_json::Value::String(s) => {
+            vec![format!(
+                "{}<{}>{}</{}>",
+                indent,
+                escape_xml(name),
+                escape_xml(s),
+                escape_xml(name)
+            )]
+        }
+        serde_json::Value::Array(arr) => {
+            let mut elems = vec![format!("{}<{}>", indent, escape_xml(name))];
+            for item in arr.iter() {
+                let item_name = "item";
+                elems.extend(value_to_xml_elements(
+                    item_name,
+                    item,
+                    &format!("{}  ", indent),
+                ));
+            }
+            elems.push(format!("{}</{}>", indent, escape_xml(name)));
+            elems
+        }
+        serde_json::Value::Object(obj) => {
+            let mut elems = vec![format!("{}<{}>", indent, escape_xml(name))];
+            for (key, val) in obj {
+                elems.extend(value_to_xml_elements(key, val, &format!("{}  ", indent)));
+            }
+            elems.push(format!("{}</{}>", indent, escape_xml(name)));
+            elems
+        }
+    }
+}
+
 /// Table formatter.
 pub struct TableFormatter;
 
@@ -563,39 +690,28 @@ impl Formatter for CsvFormatter {
 
         let mut output = String::new();
 
-        // Get all unique keys from all results
-        let mut all_keys: Vec<String> = Vec::new();
-        for result in results {
-            if let Some(obj) = result.as_object() {
-                for key in obj.keys() {
-                    if !all_keys.contains(key) {
-                        all_keys.push(key.clone());
-                    }
-                }
-            }
-        }
-
-        // Sort keys for consistent output
-        all_keys.sort();
+        // Get all unique flattened keys from all results (sorted)
+        let all_keys = get_all_flattened_keys(results);
 
         // Print header (escaped)
         let header: Vec<String> = all_keys.iter().map(|k| escape_csv(k)).collect();
         output.push_str(&header.join(","));
         output.push('\n');
 
-        // Print rows
+        // Print rows with flattened values
         for result in results {
-            if let Some(obj) = result.as_object() {
-                let row: Vec<String> = all_keys
-                    .iter()
-                    .map(|key| {
-                        let value = obj.get(key).map(format_json_value).unwrap_or_default();
-                        escape_csv(&value)
-                    })
-                    .collect();
-                output.push_str(&row.join(","));
-                output.push('\n');
-            }
+            let mut flat = std::collections::BTreeMap::new();
+            flatten_json_object(result, "", &mut flat);
+
+            let row: Vec<String> = all_keys
+                .iter()
+                .map(|key| {
+                    let value = flat.get(key).cloned().unwrap_or_default();
+                    escape_csv(&value)
+                })
+                .collect();
+            output.push_str(&row.join(","));
+            output.push('\n');
         }
 
         Ok(output)
@@ -938,19 +1054,11 @@ impl Formatter for XmlFormatter {
     fn format_search_results(&self, results: &[serde_json::Value]) -> Result<String> {
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<results>\n");
 
-        for (i, result) in results.iter().enumerate() {
-            xml.push_str(&format!("  <result index=\"{}\">\n", i));
-            if let Some(obj) = result.as_object() {
-                for (key, value) in obj {
-                    let value_str = format_json_value(value);
-                    xml.push_str(&format!(
-                        "    <field name=\"{}\">{}</field>\n",
-                        escape_xml(key),
-                        escape_xml(&value_str)
-                    ));
-                }
-            }
-            xml.push_str("  </result>\n");
+        for result in results {
+            // Use nested XML structure instead of flat fields
+            let nested = value_to_xml_elements("result", result, "  ");
+            xml.push_str(&nested.join("\n"));
+            xml.push('\n');
         }
 
         xml.push_str("</results>");
@@ -1523,7 +1631,9 @@ mod tests {
         let output = formatter.format_search_results(&results).unwrap();
         assert!(output.contains("<?xml"));
         assert!(output.contains("<results>"));
-        assert!(output.contains("<field name=\"name\">test</field>"));
+        // New format uses nested elements instead of field attributes
+        assert!(output.contains("<name>test</name>"));
+        assert!(output.contains("<value>123</value>"));
         assert!(output.contains("</results>"));
     }
 
@@ -1557,14 +1667,16 @@ mod tests {
         let results =
             vec![json!({"name": "test", "count": 42, "active": true, "nested": {"key": "value"}})];
         let output = formatter.format_search_results(&results).unwrap();
-        // Numbers should be rendered
-        assert!(output.contains("<field name=\"count\">42</field>"));
+        // Numbers should be rendered in nested elements
+        assert!(output.contains("<count>42</count>"));
         // Booleans should be rendered
-        assert!(output.contains("<field name=\"active\">true</field>"));
-        // Objects should be rendered as compact JSON (with XML-escaped quotes)
-        assert!(
-            output.contains("<field name=\"nested\">{&quot;key&quot;:&quot;value&quot;}</field>")
-        );
+        assert!(output.contains("<active>true</active>"));
+        // Nested objects should be properly nested, not JSON-escaped
+        assert!(output.contains("<nested>"));
+        assert!(output.contains("<key>value</key>"));
+        assert!(output.contains("</nested>"));
+        // Should NOT contain JSON serialization
+        assert!(!output.contains("{&quot;"));
     }
 
     #[test]
@@ -2065,5 +2177,201 @@ mod tests {
         let output = formatter.format_license(&license).unwrap();
         assert!(output.contains("Type,Name,StackID,UsedMB,QuotaMB,PctUsed"));
         assert!(output.contains("Usage,daily_usage,enterprise,50,100,50.00"));
+    }
+
+    // === RQ-0056: Tests for flattening nested JSON structures ===
+
+    #[test]
+    fn test_flatten_simple_object() {
+        let value = json!({"name": "Alice", "age": 30});
+        let mut flat = std::collections::BTreeMap::new();
+        flatten_json_object(&value, "", &mut flat);
+        assert_eq!(flat.get("name"), Some(&"Alice".to_string()));
+        assert_eq!(flat.get("age"), Some(&"30".to_string()));
+    }
+
+    #[test]
+    fn test_flatten_nested_object() {
+        let value = json!({"user": {"name": "Bob", "address": {"city": "NYC"}}});
+        let mut flat = std::collections::BTreeMap::new();
+        flatten_json_object(&value, "", &mut flat);
+        assert_eq!(flat.get("user.name"), Some(&"Bob".to_string()));
+        assert_eq!(flat.get("user.address.city"), Some(&"NYC".to_string()));
+    }
+
+    #[test]
+    fn test_flatten_array() {
+        let value = json!({"tags": ["foo", "bar", "baz"]});
+        let mut flat = std::collections::BTreeMap::new();
+        flatten_json_object(&value, "", &mut flat);
+        assert_eq!(flat.get("tags.0"), Some(&"foo".to_string()));
+        assert_eq!(flat.get("tags.1"), Some(&"bar".to_string()));
+        assert_eq!(flat.get("tags.2"), Some(&"baz".to_string()));
+    }
+
+    #[test]
+    fn test_flatten_array_of_objects() {
+        let value = json!({"users": [{"name": "Alice"}, {"name": "Bob"}]});
+        let mut flat = std::collections::BTreeMap::new();
+        flatten_json_object(&value, "", &mut flat);
+        assert_eq!(flat.get("users.0.name"), Some(&"Alice".to_string()));
+        assert_eq!(flat.get("users.1.name"), Some(&"Bob".to_string()));
+    }
+
+    #[test]
+    fn test_flatten_null_values() {
+        let value = json!({"name": "Test", "optional": null});
+        let mut flat = std::collections::BTreeMap::new();
+        flatten_json_object(&value, "", &mut flat);
+        assert_eq!(flat.get("name"), Some(&"Test".to_string()));
+        assert_eq!(flat.get("optional"), Some(&"".to_string())); // null becomes empty string
+    }
+
+    #[test]
+    fn test_get_all_flattened_keys() {
+        let results = vec![
+            json!({"user": {"name": "Alice"}}),
+            json!({"user": {"age": 30}, "status": "active"}),
+        ];
+        let keys = get_all_flattened_keys(&results);
+        // Should include all unique keys in sorted order
+        assert!(keys.contains(&"status".to_string()));
+        assert!(keys.contains(&"user.age".to_string()));
+        assert!(keys.contains(&"user.name".to_string()));
+    }
+
+    #[test]
+    fn test_csv_formatter_nested_objects() {
+        let formatter = CsvFormatter;
+        let results = vec![
+            json!({"user": {"name": "Alice", "age": 30}, "status": "active"}),
+            json!({"user": {"name": "Bob"}, "status": "inactive"}),
+        ];
+        let output = formatter.format_search_results(&results).unwrap();
+
+        // Headers should include dot-notation keys
+        assert!(output.contains("status"));
+        assert!(output.contains("user.age"));
+        assert!(output.contains("user.name"));
+
+        // First row - Alice has all fields
+        assert!(output.contains("active"));
+        assert!(output.contains("30"));
+        assert!(output.contains("Alice"));
+
+        // Second row - Bob is missing age field - should be empty
+        assert!(output.contains("inactive"));
+        assert!(output.contains("Bob"));
+    }
+
+    #[test]
+    fn test_csv_formatter_deeply_nested() {
+        let formatter = CsvFormatter;
+        let results = vec![json!({
+            "location": {
+                "address": {
+                    "city": "NYC",
+                    "zip": "10001"
+                }
+            }
+        })];
+        let output = formatter.format_search_results(&results).unwrap();
+        assert!(output.contains("location.address.city"));
+        assert!(output.contains("location.address.zip"));
+        assert!(output.contains("NYC"));
+        assert!(output.contains("10001"));
+    }
+
+    #[test]
+    fn test_csv_formatter_arrays() {
+        let formatter = CsvFormatter;
+        let results = vec![json!({"tags": ["foo", "bar"], "count": 2})];
+        let output = formatter.format_search_results(&results).unwrap();
+        assert!(output.contains("count"));
+        assert!(output.contains("tags.0"));
+        assert!(output.contains("tags.1"));
+        assert!(output.contains("foo"));
+        assert!(output.contains("bar"));
+    }
+
+    #[test]
+    fn test_xml_formatter_nested_structure() {
+        let formatter = XmlFormatter;
+        let results = vec![json!({"user": {"name": "Alice", "age": 30}})];
+        let output = formatter.format_search_results(&results).unwrap();
+
+        // Should have proper nesting, not escaped JSON
+        assert!(output.contains("<user>"));
+        assert!(output.contains("<name>Alice</name>"));
+        assert!(output.contains("<age>30</age>"));
+        assert!(output.contains("</user>"));
+
+        // Should NOT contain JSON serialization
+        assert!(!output.contains("{&quot;"));
+    }
+
+    #[test]
+    fn test_xml_formatter_arrays() {
+        let formatter = XmlFormatter;
+        let results = vec![json!({"tags": ["foo", "bar"]})];
+        let output = formatter.format_search_results(&results).unwrap();
+
+        assert!(output.contains("<tags>"));
+        assert!(output.contains("<item>foo</item>"));
+        assert!(output.contains("<item>bar</item>"));
+        assert!(output.contains("</tags>"));
+    }
+
+    #[test]
+    fn test_xml_formatter_complex_nesting() {
+        let formatter = XmlFormatter;
+        let results = vec![json!({
+            "user": {
+                "name": "Bob",
+                "roles": ["admin", "user"]
+            }
+        })];
+        let output = formatter.format_search_results(&results).unwrap();
+
+        assert!(output.contains("<user>"));
+        assert!(output.contains("<name>Bob</name>"));
+        assert!(output.contains("<roles>"));
+        assert!(output.contains("<item>admin</item>"));
+        assert!(output.contains("<item>user</item>"));
+        assert!(output.contains("</roles>"));
+        assert!(output.contains("</user>"));
+    }
+
+    #[test]
+    fn test_xml_formatter_null_values() {
+        let formatter = XmlFormatter;
+        let results = vec![json!({"name": "test", "optional": null})];
+        let output = formatter.format_search_results(&results).unwrap();
+
+        // Null values should produce empty elements
+        assert!(output.contains("<name>test</name>"));
+        assert!(output.contains("<optional></optional>"));
+    }
+
+    #[test]
+    fn test_xml_formatter_deep_nesting() {
+        let formatter = XmlFormatter;
+        let results = vec![json!({
+            "location": {
+                "address": {
+                    "city": "NYC",
+                    "zip": "10001"
+                }
+            }
+        })];
+        let output = formatter.format_search_results(&results).unwrap();
+
+        // Should have deeply nested structure
+        assert!(output.contains("<location>"));
+        assert!(output.contains("<address>"));
+        assert!(output.contains("<city>NYC</city>"));
+        assert!(output.contains("<zip>10001</zip>"));
+        assert!(output.contains("</address>"));
+        assert!(output.contains("</location>"));
     }
 }
