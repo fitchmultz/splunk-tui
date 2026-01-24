@@ -171,9 +171,13 @@ pub struct App {
     pub search_input: String,
     pub search_status: String,
     pub search_results: Vec<Value>,
-    pub search_results_formatted: Vec<String>,
     pub search_scroll_offset: usize,
     pub search_sid: Option<String>,
+
+    // Pagination state for search results
+    pub search_results_total_count: Option<u64>,
+    pub search_results_page_size: u64,
+    pub search_has_more_results: bool,
 
     // Real data (Option for loading state)
     pub indexes: Option<Vec<Index>>,
@@ -264,9 +268,11 @@ impl App {
             search_input: last_search_query.unwrap_or_default(),
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
-            search_results_formatted: Vec::new(),
             search_scroll_offset: 0,
             search_sid: None,
+            search_results_total_count: None,
+            search_results_page_size: 100,
+            search_has_more_results: false,
             indexes: None,
             indexes_state,
             jobs: None,
@@ -330,15 +336,46 @@ impl App {
         self.health_state = new_state;
     }
 
-    /// Set search results and pre-format them for rendering.
+    /// Set search results (virtualization: formatting is deferred to render time).
     pub fn set_search_results(&mut self, results: Vec<Value>) {
-        self.search_results_formatted = results
-            .iter()
-            .map(|v| serde_json::to_string_pretty(v).unwrap_or_else(|_| "<invalid>".to_string()))
-            .collect();
         self.search_results = results;
+        self.search_results_total_count = Some(self.search_results.len() as u64);
+        self.search_has_more_results = false;
         // Reset scroll offset when new results arrive
         self.search_scroll_offset = 0;
+    }
+
+    /// Append more search results (for pagination, virtualization: no eager formatting).
+    pub fn append_search_results(&mut self, mut results: Vec<Value>, total: Option<u64>) {
+        self.search_results.append(&mut results);
+        self.search_results_total_count = total;
+        self.search_has_more_results =
+            total.is_some_and(|t| (self.search_results.len() as u64) < t);
+        // Note: No pre-formatting - results are formatted on-demand during rendering
+    }
+
+    /// Check if we should load more results based on scroll position.
+    /// Returns the LoadMoreSearchResults action if needed.
+    pub fn maybe_fetch_more_results(&self) -> Option<Action> {
+        // Only fetch if we have a SID, more results exist, and we're not already loading
+        if self.search_sid.is_none() || !self.search_has_more_results || self.loading {
+            return None;
+        }
+
+        // Trigger fetch when user is within 10 items of the end
+        let threshold = 10;
+        let loaded_count = self.search_results.len();
+        let visible_end = self.search_scroll_offset.saturating_add(threshold);
+
+        if visible_end >= loaded_count {
+            Some(Action::LoadMoreSearchResults {
+                sid: self.search_sid.clone()?,
+                offset: loaded_count as u64,
+                count: self.search_results_page_size,
+            })
+        } else {
+            None
+        }
     }
 
     /// Add a query to history, moving it to front if it exists, and truncating to max 50 items.
@@ -1253,10 +1290,23 @@ impl App {
                     self.set_health_state(HealthState::Unhealthy);
                 }
             },
-            Action::SearchComplete(Ok((results, sid))) => {
+            Action::SearchComplete(Ok((results, sid, total))) => {
                 self.set_search_results(results);
                 self.search_sid = Some(sid);
+                // Set pagination state from initial search results
+                self.search_results_total_count = total;
+                self.search_has_more_results =
+                    total.is_some_and(|t| (self.search_results.len() as u64) < t);
                 self.search_status = format!("Search complete: {}", self.search_input);
+                self.loading = false;
+            }
+            Action::MoreSearchResultsLoaded(Ok((results, _offset, total))) => {
+                self.append_search_results(results, total);
+                self.loading = false;
+            }
+            Action::MoreSearchResultsLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load more results: {}", e)));
                 self.loading = false;
             }
             Action::JobOperationComplete(msg) => {
@@ -1756,8 +1806,10 @@ impl App {
                         search_status: &self.search_status,
                         loading: self.loading,
                         progress: self.progress,
-                        search_results: &self.search_results_formatted,
+                        search_results: &self.search_results,
                         search_scroll_offset: self.search_scroll_offset,
+                        search_results_total_count: self.search_results_total_count,
+                        search_has_more_results: self.search_has_more_results,
                     },
                 );
             }

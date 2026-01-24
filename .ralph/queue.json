@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0053",
-      "status": "todo",
-      "title": "Implement result virtualization/paging in TUI to handle large datasets",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "performance",
-        "search"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/search.rs",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "Rendering thousands of search results in a Paragraph is slow and memory-intensive.",
-        "Virtualization would only render the visible portion of the results."
-      ],
-      "plan": [
-        "Replace the simple Paragraph with a custom widget or List that only processes visible results.",
-        "Implement on-demand formatting of JSON results as the user scrolls.",
-        "Add support for fetching more results from Splunk as the user reaches the end of the list."
-      ],
-      "notes": [],
-      "request": "Audit the current list of features in the project and identify the next series of opportunities for improvement. Add 10-15 tasks based on your findings.",
-      "created_at": "2026-01-21T19:41:00Z",
-      "updated_at": "2026-01-21T19:41:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0054",
       "status": "todo",
       "title": "Add 'App Management' screen to TUI",

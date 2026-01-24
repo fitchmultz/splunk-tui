@@ -1872,3 +1872,288 @@ fn test_batch_confirm_with_enter() {
     );
     assert!(app.popup.is_none(), "Popup should be closed after confirm");
 }
+
+// ============================================================================
+// Pagination Tests
+// ============================================================================
+
+/// Helper to create mock search result JSON values
+fn create_mock_search_results(count: usize) -> Vec<serde_json::Value> {
+    (0..count)
+        .map(|i| {
+            serde_json::json!({
+                "_time": format!("2024-01-15T10:{:02}:00.000Z", i),
+                "level": "INFO",
+                "message": format!("Test message {}", i),
+            })
+        })
+        .collect()
+}
+
+#[test]
+fn test_search_complete_sets_pagination_state() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate search completion with total count
+    let results = create_mock_search_results(50);
+    let sid = "test_sid_123".to_string();
+    let total = Some(200);
+
+    app.update(Action::SearchComplete(Ok((
+        results.clone(),
+        sid.clone(),
+        total,
+    ))));
+
+    // Verify basic results are set
+    assert_eq!(app.search_results.len(), 50);
+    assert_eq!(app.search_sid.as_ref(), Some(&sid));
+
+    // Verify pagination state is set correctly
+    assert_eq!(app.search_results_total_count, Some(200));
+    assert!(
+        app.search_has_more_results,
+        "Should have more results when loaded < total"
+    );
+    assert!(
+        !app.loading,
+        "Loading should be false after search complete"
+    );
+}
+
+#[test]
+fn test_search_complete_with_no_total() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate search completion without total count (API doesn't always provide it)
+    let results = create_mock_search_results(10);
+    let sid = "test_sid_456".to_string();
+
+    app.update(Action::SearchComplete(Ok((
+        results.clone(),
+        sid.clone(),
+        None,
+    ))));
+
+    assert_eq!(app.search_results.len(), 10);
+    assert_eq!(app.search_results_total_count, None);
+    assert!(
+        !app.search_has_more_results,
+        "Should not have more when total is None"
+    );
+}
+
+#[test]
+fn test_search_complete_when_all_results_loaded() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate search completion where loaded == total (all results)
+    let results = create_mock_search_results(100);
+    let sid = "test_sid_789".to_string();
+    let total = Some(100);
+
+    app.update(Action::SearchComplete(Ok((
+        results.clone(),
+        sid.clone(),
+        total,
+    ))));
+
+    assert_eq!(app.search_results.len(), 100);
+    assert_eq!(app.search_results_total_count, Some(100));
+    assert!(
+        !app.search_has_more_results,
+        "Should not have more results when loaded == total"
+    );
+}
+
+#[test]
+fn test_append_search_results_increases_results() {
+    let mut app = App::new(None);
+
+    // Initial state: 100 results loaded, 500 total
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(500);
+    app.search_has_more_results = true;
+
+    // Append 100 more results
+    let more_results = create_mock_search_results(100);
+    app.update(Action::MoreSearchResultsLoaded(Ok((
+        more_results,
+        100,
+        Some(500),
+    ))));
+
+    assert_eq!(app.search_results.len(), 200);
+    assert_eq!(app.search_results_total_count, Some(500));
+    assert!(
+        app.search_has_more_results,
+        "Should still have more results"
+    );
+}
+
+#[test]
+fn test_append_search_results_reaches_total() {
+    let mut app = App::new(None);
+
+    // Initial state: 400 results loaded, 500 total
+    app.search_results = create_mock_search_results(400);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(500);
+    app.search_has_more_results = true;
+
+    // Append final 100 results
+    let more_results = create_mock_search_results(100);
+    app.update(Action::MoreSearchResultsLoaded(Ok((
+        more_results,
+        400,
+        Some(500),
+    ))));
+
+    assert_eq!(app.search_results.len(), 500);
+    assert_eq!(app.search_results_total_count, Some(500));
+    assert!(
+        !app.search_has_more_results,
+        "Should not have more results when reaching total"
+    );
+}
+
+#[test]
+fn test_maybe_fetch_more_results_returns_action_when_needed() {
+    let mut app = App::new(None);
+
+    // Setup: 100 results loaded, 1000 total, scroll at position 90 (within threshold)
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(1000);
+    app.search_has_more_results = true;
+    app.search_scroll_offset = 90;
+    app.loading = false;
+
+    let action = app.maybe_fetch_more_results();
+
+    assert!(
+        action.is_some(),
+        "Should return LoadMoreSearchResults action when near end"
+    );
+    if let Some(Action::LoadMoreSearchResults { sid, offset, count }) = action {
+        assert_eq!(sid, "test_sid");
+        assert_eq!(offset, 100);
+        assert_eq!(count, 100); // default page size
+    } else {
+        panic!("Expected LoadMoreSearchResults action");
+    }
+}
+
+#[test]
+fn test_maybe_fetch_more_results_returns_none_when_not_near_end() {
+    let mut app = App::new(None);
+
+    // Setup: 100 results loaded, scroll at position 50 (not within threshold)
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(1000);
+    app.search_has_more_results = true;
+    app.search_scroll_offset = 50;
+    app.loading = false;
+
+    let action = app.maybe_fetch_more_results();
+
+    assert!(
+        action.is_none(),
+        "Should not return action when not near end of results"
+    );
+}
+
+#[test]
+fn test_maybe_fetch_more_results_returns_none_when_no_more_results() {
+    let mut app = App::new(None);
+
+    // Setup: All results loaded (search_has_more_results = false)
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(100);
+    app.search_has_more_results = false;
+    app.search_scroll_offset = 95;
+    app.loading = false;
+
+    let action = app.maybe_fetch_more_results();
+
+    assert!(
+        action.is_none(),
+        "Should not return action when no more results available"
+    );
+}
+
+#[test]
+fn test_maybe_fetch_more_results_returns_none_when_already_loading() {
+    let mut app = App::new(None);
+
+    // Setup: loading = true prevents duplicate fetches
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(1000);
+    app.search_has_more_results = true;
+    app.search_scroll_offset = 95;
+    app.loading = true; // Already loading
+
+    let action = app.maybe_fetch_more_results();
+
+    assert!(
+        action.is_none(),
+        "Should not return action when already loading"
+    );
+}
+
+#[test]
+fn test_maybe_fetch_more_results_returns_none_when_no_sid() {
+    let mut app = App::new(None);
+
+    // Setup: no search SID (no active search)
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = None; // No SID
+    app.search_results_total_count = Some(1000);
+    app.search_has_more_results = true;
+    app.search_scroll_offset = 95;
+    app.loading = false;
+
+    let action = app.maybe_fetch_more_results();
+
+    assert!(action.is_none(), "Should not return action when no SID");
+}
+
+#[test]
+fn test_more_search_results_loaded_error_handling() {
+    let mut app = App::new(None);
+
+    // Setup initial state
+    app.search_results = create_mock_search_results(50);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = Some(500);
+    app.search_has_more_results = true;
+    app.loading = true;
+
+    // Simulate error loading more results
+    app.update(Action::MoreSearchResultsLoaded(Err(
+        "Connection timeout".to_string()
+    )));
+
+    // Results should be unchanged
+    assert_eq!(app.search_results.len(), 50);
+    assert_eq!(app.search_results_total_count, Some(500));
+
+    // Loading should be cleared
+    assert!(!app.loading);
+
+    // Error toast should be added
+    assert!(!app.toasts.is_empty(), "Should have error toast");
+    let toast = &app.toasts[0];
+    assert_eq!(toast.level, ToastLevel::Error);
+    assert!(
+        toast.message.contains("Failed to load more results"),
+        "Toast should mention loading failure"
+    );
+}

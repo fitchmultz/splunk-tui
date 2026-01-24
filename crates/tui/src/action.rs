@@ -94,8 +94,16 @@ pub enum Action {
     InternalLogsLoaded(Result<Vec<LogEntry>, String>),
     /// Result of background health status check
     HealthStatusLoaded(Result<SplunkHealth, String>),
-    /// Result of a search completion (results, sid)
-    SearchComplete(Result<(Vec<Value>, String), String>),
+    /// Result of a search completion (results, sid, total_count)
+    SearchComplete(Result<(Vec<Value>, String, Option<u64>), String>),
+    /// Load more results for the current search (pagination)
+    LoadMoreSearchResults {
+        sid: String,
+        offset: u64,
+        count: u64,
+    },
+    /// Result of loading more results
+    MoreSearchResultsLoaded(Result<(Vec<Value>, u64, Option<u64>), String>),
 
     // Job Operations
     /// Cancel a job by SID

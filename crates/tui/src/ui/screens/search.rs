@@ -6,6 +6,7 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
+    text::Line,
     widgets::{Block, Borders, Gauge, Paragraph},
 };
 
@@ -21,10 +22,14 @@ pub struct SearchRenderConfig<'a> {
     pub loading: bool,
     /// Progress of the current search (0.0 to 1.0)
     pub progress: f32,
-    /// The search results to display (pre-formatted JSON strings)
-    pub search_results: &'a [String],
+    /// The search results to display (raw JSON values)
+    pub search_results: &'a [serde_json::Value],
     /// The scroll offset for displaying results
     pub search_scroll_offset: usize,
+    /// Total number of results available (if known)
+    pub search_results_total_count: Option<u64>,
+    /// Whether more results can be loaded
+    pub search_has_more_results: bool,
 }
 
 /// Render the search screen.
@@ -42,6 +47,8 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         progress,
         search_results,
         search_scroll_offset,
+        search_results_total_count,
+        search_has_more_results,
     } = config;
 
     let chunks = Layout::default()
@@ -80,6 +87,9 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         f.render_widget(status, chunks[1]);
     }
 
+    // Calculate actual viewport height from available area
+    let available_height = chunks[2].height.saturating_sub(2) as usize; // Account for borders
+
     // Results
     if search_results.is_empty() {
         let placeholder = Paragraph::new("No results. Enter a search query and press Enter.")
@@ -87,14 +97,50 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             .alignment(Alignment::Center);
         f.render_widget(placeholder, chunks[2]);
     } else {
-        let results_text: Vec<ratatui::text::Line> = search_results
+        // Virtualization: Only format and render visible results
+        let visible_end = (search_scroll_offset + available_height).min(search_results.len());
+
+        let results_text: Vec<Line> = search_results
             .iter()
+            .enumerate()
             .skip(search_scroll_offset)
-            .map(|s| ratatui::text::Line::from(s.as_str()))
+            .take_while(|(i, _)| *i < visible_end)
+            .flat_map(|(_, v)| {
+                // Format each result on-demand
+                let formatted =
+                    serde_json::to_string_pretty(v).unwrap_or_else(|_| "<invalid>".to_string());
+
+                // Split multi-line JSON into separate Lines
+                formatted
+                    .lines()
+                    .map(|line| Line::from(line.to_string()))
+                    .collect::<Vec<_>>()
+            })
             .collect();
 
-        let results = Paragraph::new(results_text)
-            .block(Block::default().borders(Borders::ALL).title("Results"));
+        // Build title with pagination info
+        let title = if let Some(total) = search_results_total_count {
+            if search_has_more_results {
+                format!(
+                    "Results ({}-{} / {} total, loading...)",
+                    search_scroll_offset + 1,
+                    visible_end,
+                    total
+                )
+            } else {
+                format!(
+                    "Results ({}-{} / {} total)",
+                    search_scroll_offset + 1,
+                    visible_end,
+                    total
+                )
+            }
+        } else {
+            format!("Results ({} loaded)", search_results.len())
+        };
+
+        let results =
+            Paragraph::new(results_text).block(Block::default().borders(Borders::ALL).title(title));
         f.render_widget(results, chunks[2]);
     }
 }

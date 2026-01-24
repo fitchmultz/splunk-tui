@@ -149,11 +149,19 @@ async fn main() -> Result<()> {
                     if let Some(a) = app.handle_input(key) {
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone()).await;
+                        // Check if we need to load more results after navigation
+                        if let Some(load_action) = app.maybe_fetch_more_results() {
+                            handle_side_effects(load_action, client.clone(), tx.clone()).await;
+                        }
                     }
                 } else if let Action::Mouse(mouse) = action {
                     if let Some(a) = app.handle_mouse(mouse) {
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone()).await;
+                        // Check if we need to load more results after navigation
+                        if let Some(load_action) = app.maybe_fetch_more_results() {
+                            handle_side_effects(load_action, client.clone(), tx.clone()).await;
+                        }
                     }
                 } else {
                     app.update(action.clone());
@@ -352,7 +360,11 @@ async fn handle_side_effects(
                             Ok(results) => {
                                 tx_clone.send(Action::Progress(1.0)).ok();
                                 tx_clone
-                                    .send(Action::SearchComplete(Ok((results.results, sid))))
+                                    .send(Action::SearchComplete(Ok((
+                                        results.results,
+                                        sid,
+                                        results.total,
+                                    ))))
                                     .ok();
                             }
                             Err(e) => {
@@ -401,6 +413,26 @@ async fn handle_side_effects(
                             .ok();
                         tx_clone
                             .send(Action::SearchComplete(Err("Search timeout".to_string())))
+                            .ok();
+                    }
+                }
+            });
+        }
+        Action::LoadMoreSearchResults { sid, offset, count } => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.get_search_results(&sid, count, offset).await {
+                    Ok(results) => {
+                        tx.send(Action::MoreSearchResultsLoaded(Ok((
+                            results.results,
+                            offset,
+                            results.total,
+                        ))))
+                        .ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::MoreSearchResultsLoaded(Err(e.to_string())))
                             .ok();
                     }
                 }
