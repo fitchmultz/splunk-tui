@@ -90,6 +90,7 @@ fn test_config_set_creates_profile() {
 
     cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -126,6 +127,7 @@ fn test_config_set_updates_existing() {
     // Create initial profile
     cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -143,6 +145,7 @@ fn test_config_set_updates_existing() {
     // Update profile
     cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -173,6 +176,7 @@ fn test_config_list_json_format() {
 
     cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -205,6 +209,7 @@ fn test_config_list_table_format() {
 
     cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -240,6 +245,7 @@ fn test_config_delete_profile() {
     // Create a profile
     cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -288,6 +294,35 @@ fn test_config_delete_nonexistent() {
         .stderr(predicate::str::contains("not found"));
 }
 
+/// Test error when username is provided without password or token
+#[test]
+fn test_config_set_username_without_password_error() {
+    let (_temp_dir, config_path) = setup_temp_config();
+
+    cargo_bin_cmd!("splunk-cli")
+        .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
+        .env_remove("SPLUNK_PASSWORD")
+        .env_remove("SPLUNK_API_TOKEN")
+        .env_remove("SPLUNK_USERNAME")
+        .env_remove("SPLUNK_BASE_URL")
+        .args([
+            "config",
+            "set",
+            "test-profile",
+            "--base-url",
+            "https://splunk.example.com:8089",
+            "--username",
+            "admin",
+            // No --password or --api-token
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Either --password or --api-token must be provided when using username",
+        ));
+}
+
 /// Test error for invalid output format.
 #[test]
 fn test_config_set_invalid_output_format() {
@@ -310,6 +345,7 @@ fn test_config_set_with_keyring() {
 
     let output = cargo_bin_cmd!("splunk-cli")
         .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([

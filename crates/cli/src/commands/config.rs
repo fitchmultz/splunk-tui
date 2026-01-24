@@ -240,58 +240,28 @@ fn run_set(
     }
 
     // Validate auth requirements BEFORE prompting to avoid interactive prompts in test environments
-    // Check if we need auth (no existing auth and no CLI-provided auth)
-    let needs_password_prompt = password.is_none() && profile.password.is_none();
-    let needs_token_prompt = api_token.is_none() && profile.api_token.is_none();
+    // Check if we have auth from CLI args or existing profile
+    let has_password = password.is_some() || profile.password.is_some();
+    let has_token = api_token.is_some() || profile.api_token.is_some();
 
-    // Ensure at least one auth method is provided or exists in profile
-    if needs_password_prompt && needs_token_prompt {
+    // If username is set (CLI or profile), password or token must also be set
+    if (username.is_some() || profile.username.is_some()) && !has_password && !has_token {
         anyhow::bail!(
-            "Either --password or --api-token must be provided. Use one for authentication"
+            "Either --password or --api-token must be provided when using username. Use one for authentication"
         );
     }
 
-    // If username is set (CLI or profile), password must also be set
-    if (username.is_some() || profile.username.is_some())
-        && needs_password_prompt
-        && needs_token_prompt
-    {
-        anyhow::bail!(
-            "Password is required when username is provided. Use --password or enter it interactively"
-        );
-    }
+    // Resolve password: CLI arg → existing profile → interactive prompt
+    let password = password
+        .map(|pw| SecureValue::Plain(secrecy::SecretString::new(pw.into())))
+        .or_else(|| profile.password.clone())
+        .or_else(|| prompt_for_secret("Password", &None));
 
-    // If username is set (CLI or profile), password must also be set
-    if (username.is_some() || profile.username.is_some())
-        && needs_password_prompt
-        && needs_token_prompt
-    {
-        anyhow::bail!(
-            "Password is required when username is provided. Use --password or enter it interactively"
-        );
-    }
-
-    // Only prompt for secrets if not provided via CLI and validation allows it
-    let password = if !needs_password_prompt {
-        if let Some(pw) = password {
-            Some(SecureValue::Plain(secrecy::SecretString::new(pw.into())))
-        } else {
-            prompt_for_secret("Password", &profile.password)
-        }
-    } else {
-        password.map(|pw| SecureValue::Plain(secrecy::SecretString::new(pw.into())))
-    };
-
-    // Only prompt for token if not provided via CLI and validation allows it
-    let api_token = if !needs_token_prompt {
-        if let Some(token) = api_token {
-            Some(SecureValue::Plain(secrecy::SecretString::new(token.into())))
-        } else {
-            prompt_for_secret("API Token", &profile.api_token)
-        }
-    } else {
-        api_token.map(|token| SecureValue::Plain(secrecy::SecretString::new(token.into())))
-    };
+    // Resolve API token: CLI arg → existing profile → interactive prompt
+    let api_token = api_token
+        .map(|token| SecureValue::Plain(secrecy::SecretString::new(token.into())))
+        .or_else(|| profile.api_token.clone())
+        .or_else(|| prompt_for_secret("API Token", &None));
 
     let mut profile_config = ProfileConfig {
         base_url,
@@ -301,18 +271,6 @@ fn run_set(
         max_retries: max_retries.or(profile.max_retries),
         ..Default::default()
     };
-
-    // If username is set, password must also be set (for session auth)
-    if (username.is_some() || profile.username.is_some())
-        && password.is_none()
-        && api_token.is_none()
-        && profile.password.is_none()
-        && profile.api_token.is_none()
-    {
-        anyhow::bail!(
-            "Password is required when username is provided. Use --password or enter it interactively"
-        );
-    }
 
     // If use_keyring flag is set, store credentials in keyring BEFORE first save
     // This ensures plaintext secrets are never written to disk

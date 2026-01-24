@@ -1,33 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0072",
-      "status": "todo",
-      "title": "Remove duplicate validation block in config set",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "config",
-        "cleanup"
-      ],
-      "scope": [
-        "crates/cli/src/commands/config.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/config.rs contains the same password-required validation block twice in run_set."
-      ],
-      "plan": [
-        "Remove the redundant validation block and keep a single source of truth.",
-        "Ensure existing config_tests cover the error path.",
-        "Run CLI tests for config command."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }

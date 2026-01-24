@@ -2733,6 +2733,40 @@
       "completed_at": "2026-01-24T20:33:08.538475000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0072",
+      "status": "done",
+      "title": "Remove duplicate validation block in config set",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "config",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/config.rs contains the same password-required validation block twice in run_set."
+      ],
+      "plan": [
+        "Remove the redundant validation block and keep a single source of truth.",
+        "Ensure existing config_tests cover the error path.",
+        "Run CLI tests for config command."
+      ],
+      "notes": [
+        "Removed 3 duplicate validation blocks in run_set()",
+        "Simplified password/token resolution to clean .map().or_else().or_else() pattern",
+        "Added regression test for username-without-password error",
+        "Added DOTENV_DISABLED env var for test isolation"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T20:54:14.072202000Z",
+      "completed_at": "2026-01-24T20:54:14.072202000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

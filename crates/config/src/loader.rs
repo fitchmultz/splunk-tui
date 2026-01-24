@@ -89,8 +89,15 @@ impl ConfigLoader {
     }
 
     /// Load environment variables from .env file if present.
+    ///
+    /// If `DOTENV_DISABLED` environment variable is set to "true" or "1",
+    /// the .env file will not be loaded (useful for testing).
     pub fn load_dotenv(self) -> Result<Self, ConfigError> {
-        dotenvy::dotenv().ok();
+        if std::env::var("DOTENV_DISABLED").ok().as_deref() != Some("true")
+            && std::env::var("DOTENV_DISABLED").ok().as_deref() != Some("1")
+        {
+            dotenvy::dotenv().ok();
+        }
         Ok(self)
     }
 
