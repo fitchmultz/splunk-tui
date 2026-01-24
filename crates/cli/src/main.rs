@@ -33,6 +33,14 @@ struct Cli {
     #[arg(short, long, global = true, env = "SPLUNK_API_TOKEN")]
     api_token: Option<String>,
 
+    /// Connection timeout in seconds
+    #[arg(long, global = true, env = "SPLUNK_TIMEOUT")]
+    timeout: Option<u64>,
+
+    /// Maximum number of retries for failed requests
+    #[arg(long, global = true, env = "SPLUNK_MAX_RETRIES")]
+    max_retries: Option<usize>,
+
     /// Skip TLS certificate verification (for self-signed certificates)
     #[arg(long, global = true, env = "SPLUNK_SKIP_VERIFY")]
     skip_verify: bool,
@@ -199,6 +207,12 @@ async fn main() -> Result<()> {
         }
         if let Some(ref token) = cli.api_token {
             loader = loader.with_api_token(token.clone());
+        }
+        if let Some(timeout_secs) = cli.timeout {
+            loader = loader.with_timeout(std::time::Duration::from_secs(timeout_secs));
+        }
+        if let Some(retries) = cli.max_retries {
+            loader = loader.with_max_retries(retries);
         }
         if cli.skip_verify {
             loader = loader.with_skip_verify(true);

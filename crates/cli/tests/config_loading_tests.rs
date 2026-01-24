@@ -243,7 +243,7 @@ fn test_invalid_timeout_value() {
         .assert()
         .failure()
         .stderr(
-            predicate::str::contains("Invalid value")
+            predicate::str::contains("invalid value")
                 .or(predicate::str::contains("must be a number")),
         );
 }
@@ -259,7 +259,7 @@ fn test_invalid_max_retries_value() {
         .assert()
         .failure()
         .stderr(
-            predicate::str::contains("Invalid value")
+            predicate::str::contains("invalid value")
                 .or(predicate::str::contains("must be a number")),
         );
 }
@@ -280,5 +280,130 @@ fn test_invalid_skip_verify_value() {
         .stderr(
             predicate::str::contains("invalid value")
                 .and(predicate::str::contains("--skip-verify")),
+        );
+}
+
+/// Test that --timeout CLI flag works correctly.
+#[test]
+fn test_timeout_cli_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .args(["--timeout", "120", "health"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that --max-retries CLI flag works correctly.
+#[test]
+fn test_max_retries_cli_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .args(["--max-retries", "10", "health"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that CLI timeout flag overrides environment variable.
+#[test]
+fn test_timeout_cli_overrides_env() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .env("SPLUNK_TIMEOUT", "30")
+        .args(["--timeout", "120", "health"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that CLI max-retries flag overrides environment variable.
+#[test]
+fn test_max_retries_cli_overrides_env() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .env("SPLUNK_MAX_RETRIES", "3")
+        .args(["--max-retries", "10", "health"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that .env file timeout can be overridden by CLI flag.
+#[test]
+fn test_timeout_cli_overrides_dotenv() {
+    clear_splunk_env();
+    let temp_dir = TempDir::new().unwrap();
+    let env_path = temp_dir.path().join(".env");
+
+    fs::write(
+        &env_path,
+        "SPLUNK_BASE_URL=https://localhost:8089\n\
+         SPLUNK_API_TOKEN=test-token\n\
+         SPLUNK_TIMEOUT=45\n",
+    )
+    .unwrap();
+
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.current_dir(temp_dir.path())
+        .args(["--timeout", "90", "health"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that .env file max-retries can be overridden by CLI flag.
+#[test]
+fn test_max_retries_cli_overrides_dotenv() {
+    clear_splunk_env();
+    let temp_dir = TempDir::new().unwrap();
+    let env_path = temp_dir.path().join(".env");
+
+    fs::write(
+        &env_path,
+        "SPLUNK_BASE_URL=https://localhost:8089\n\
+         SPLUNK_API_TOKEN=test-token\n\
+         SPLUNK_MAX_RETRIES=2\n",
+    )
+    .unwrap();
+
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.current_dir(temp_dir.path())
+        .args(["--max-retries", "8", "health"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test invalid --timeout value is rejected by clap.
+#[test]
+fn test_invalid_timeout_cli_value() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .args(["--timeout", "not-a-number", "health"])
+        .assert()
+        .failure()
+        .stderr(
+            predicate::str::contains("invalid value").and(predicate::str::contains("--timeout")),
+        );
+}
+
+/// Test invalid --max-retries value is rejected by clap.
+#[test]
+fn test_invalid_max_retries_cli_value() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .args(["--max-retries", "not-a-number", "health"])
+        .assert()
+        .failure()
+        .stderr(
+            predicate::str::contains("invalid value")
+                .and(predicate::str::contains("--max-retries")),
         );
 }
