@@ -79,3 +79,41 @@ fn test_jobs_help_shows_list_flag() {
         predicate::str::contains("--list").and(predicate::str::contains("List all search jobs")),
     );
 }
+
+/// Test that --cancel and --delete cannot be used together.
+#[test]
+fn test_jobs_cancel_and_delete_mutually_exclusive() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+
+    // Both flags should cause a clap error (before any network activity)
+    cmd.args(["jobs", "--cancel", "sid-123", "--delete", "sid-456"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+}
+
+/// Test that --cancel with --list still works (list is just ignored).
+#[test]
+fn test_jobs_cancel_with_list_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    // --cancel with --list should still cancel (list gets disabled in code)
+    cmd.args(["jobs", "--cancel", "test-sid", "--list"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that --delete with --list still works.
+#[test]
+fn test_jobs_delete_with_list_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    // --delete with --list should still delete
+    cmd.args(["jobs", "--delete", "test-sid", "--list"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}

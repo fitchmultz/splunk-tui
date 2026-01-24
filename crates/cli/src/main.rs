@@ -104,11 +104,11 @@ enum Commands {
         list: bool,
 
         /// Cancel a specific job by SID
-        #[arg(long)]
+        #[arg(long, value_name = "SID", group = "action")]
         cancel: Option<String>,
 
         /// Delete a specific job by SID
-        #[arg(long)]
+        #[arg(long, value_name = "SID", group = "action")]
         delete: Option<String>,
 
         /// Maximum number of jobs to list

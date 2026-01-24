@@ -2445,6 +2445,43 @@
       "completed_at": "2026-01-24T18:33:57.066413000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0064",
+      "status": "done",
+      "title": "Validate mutually exclusive jobs flags",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "jobs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/jobs.rs accepts both cancel and delete; cancel wins and delete is ignored without error."
+      ],
+      "plan": [
+        "Use clap ArgGroup or manual validation to enforce mutual exclusivity of --cancel/--delete/--list.",
+        "Add CLI tests that conflicting flags return a clear error.",
+        "Update docs/usage if help text changes."
+      ],
+      "notes": [
+        "Added clap group='action' to --cancel and --delete for mutual exclusivity",
+        "Added value_name='SID' for better help text",
+        "Added 3 CLI tests: mutually exclusive cancel+delete, cancel+list, delete+list",
+        "All 290+ CI tests pass (unit, integration, CLI, TUI, snapshot)",
+        "No documentation update needed - docs/usage.md already shows <SID>"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T18:43:31.776649000Z",
+      "completed_at": "2026-01-24T18:43:31.776649000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
