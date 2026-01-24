@@ -1939,9 +1939,34 @@ fn test_search_complete_with_no_total() {
 
     assert_eq!(app.search_results.len(), 10);
     assert_eq!(app.search_results_total_count, None);
+    // When total is None and results < page_size (100), assume no more
     assert!(
         !app.search_has_more_results,
-        "Should not have more when total is None"
+        "Should not have more when total is None and results < page_size"
+    );
+}
+
+#[test]
+fn test_search_complete_when_total_is_none_with_full_page() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate search completion with total = None but full page (exactly page_size)
+    let results = create_mock_search_results(100); // Exactly page_size
+    let sid = "test_sid_total_none_full".to_string();
+
+    app.update(Action::SearchComplete(Ok((
+        results.clone(),
+        sid.clone(),
+        None,
+    ))));
+
+    assert_eq!(app.search_results.len(), 100);
+    assert_eq!(app.search_results_total_count, None);
+    // When total is None and results == page_size, assume more may exist
+    assert!(
+        app.search_has_more_results,
+        "Should have more when total is None and results == page_size"
     );
 }
 
@@ -2155,5 +2180,59 @@ fn test_more_search_results_loaded_error_handling() {
     assert!(
         toast.message.contains("Failed to load more results"),
         "Toast should mention loading failure"
+    );
+}
+
+#[test]
+fn test_append_search_results_when_total_is_none() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Setup: 100 results loaded, total is None
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = None;
+    app.search_has_more_results = true;
+
+    // Append a full page (100 results)
+    let more_results = create_mock_search_results(100);
+    app.update(Action::MoreSearchResultsLoaded(Ok((
+        more_results,
+        100,
+        None, // total is None
+    ))));
+
+    assert_eq!(app.search_results.len(), 200);
+    assert_eq!(app.search_results_total_count, None);
+    assert!(
+        app.search_has_more_results,
+        "Should have more when total is None and page was full"
+    );
+}
+
+#[test]
+fn test_append_search_results_when_total_is_none_partial_page() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Setup: 100 results loaded, total is None
+    app.search_results = create_mock_search_results(100);
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_total_count = None;
+    app.search_has_more_results = true;
+
+    // Append a partial page (50 results, less than page_size)
+    let more_results = create_mock_search_results(50);
+    app.update(Action::MoreSearchResultsLoaded(Ok((
+        more_results,
+        100,
+        None, // total is None
+    ))));
+
+    assert_eq!(app.search_results.len(), 150);
+    assert_eq!(app.search_results_total_count, None);
+    assert!(
+        !app.search_has_more_results,
+        "Should not have more when total is None and page was partial"
     );
 }

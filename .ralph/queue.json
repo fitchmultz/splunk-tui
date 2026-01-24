@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0067",
-      "status": "todo",
-      "title": "Improve TUI pagination when total is missing",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "search",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs sets search_has_more_results only when total.is_some(), so pagination stops if total is None.",
-        "SearchJobResults.total is Option<u64> and can be missing in some Splunk responses."
-      ],
-      "plan": [
-        "If total is None, infer has_more when the fetched page is full (count == page_size).",
-        "Propagate page_size into pagination checks where needed.",
-        "Add tests for pagination behavior with total None."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0068",
       "status": "todo",
       "title": "Expose CLI flags for timeout and max retries",

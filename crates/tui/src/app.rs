@@ -364,10 +364,20 @@ impl App {
 
     /// Append more search results (for pagination, virtualization: no eager formatting).
     pub fn append_search_results(&mut self, mut results: Vec<Value>, total: Option<u64>) {
+        let results_count = results.len() as u64;
         self.search_results.append(&mut results);
         self.search_results_total_count = total;
-        self.search_has_more_results =
-            total.is_some_and(|t| (self.search_results.len() as u64) < t);
+
+        // Determine if more results may exist
+        self.search_has_more_results = if let Some(t) = total {
+            // When total is known, use it directly
+            (self.search_results.len() as u64) < t
+        } else {
+            // When total is None, infer from page fullness:
+            // If we got exactly page_size results, there might be more.
+            // If we got fewer, we're likely at the end.
+            results_count >= self.search_results_page_size
+        };
         // Note: No pre-formatting - results are formatted on-demand during rendering
     }
 
@@ -1420,12 +1430,18 @@ impl App {
                 }
             },
             Action::SearchComplete(Ok((results, sid, total))) => {
+                let results_count = results.len() as u64;
                 self.set_search_results(results);
                 self.search_sid = Some(sid);
                 // Set pagination state from initial search results
                 self.search_results_total_count = total;
-                self.search_has_more_results =
-                    total.is_some_and(|t| (self.search_results.len() as u64) < t);
+                self.search_has_more_results = if let Some(t) = total {
+                    results_count < t
+                } else {
+                    // When total is None, infer from page fullness
+                    // Note: initial fetch in main.rs uses 1000, but we use app's page_size for consistency
+                    results_count >= self.search_results_page_size
+                };
                 self.search_status = format!("Search complete: {}", self.search_input);
                 self.loading = false;
             }
