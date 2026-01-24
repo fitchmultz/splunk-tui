@@ -61,6 +61,7 @@ Environment variables take precedence over the configuration file.
 
 | Variable | Description |
 |----------|-------------|
+| `SPLUNK_CONFIG_PATH` | Path to a custom configuration file (overrides default location) - works for both CLI and TUI |
 | `SPLUNK_BASE_URL` | Base URL of the Splunk server (e.g., `https://localhost:8089`) |
 | `SPLUNK_USERNAME` | Username for session authentication |
 | `SPLUNK_PASSWORD` | Password for session authentication |

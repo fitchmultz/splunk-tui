@@ -2,37 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0062",
-      "status": "todo",
-      "title": "Honor SPLUNK_CONFIG_PATH in TUI config loading",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "config",
-        "bug"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/config/src/persistence.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs uses ConfigLoader::new() and ConfigManager::new() with default paths only.",
-        "crates/cli/src/commands/config.rs respects SPLUNK_CONFIG_PATH, so TUI and CLI can diverge."
-      ],
-      "plan": [
-        "Check for SPLUNK_CONFIG_PATH in TUI load_config and ConfigManager initialization.",
-        "Plumb the path into ConfigLoader::with_config_path and ConfigManager::new_with_path.",
-        "Add tests (unit or integration) to ensure TUI uses the override path."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0063",
       "status": "todo",
       "title": "Normalize base_url to avoid double slashes",
@@ -59,7 +28,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -90,7 +58,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -120,7 +87,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -151,7 +117,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -182,7 +147,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -212,7 +176,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -244,7 +207,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -273,7 +235,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -302,7 +263,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -331,7 +291,6 @@
       "request": "scan finding",
       "created_at": "2026-01-24T12:36:07Z",
       "updated_at": "2026-01-24T12:36:07Z",
-      "completed_at": "",
       "depends_on": [],
       "custom_fields": {}
     }

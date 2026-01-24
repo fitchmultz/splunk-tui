@@ -82,7 +82,15 @@ async fn main() -> Result<()> {
     });
 
     // Load persisted configuration
-    let mut config_manager = ConfigManager::new()?;
+    let mut config_manager = if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
+        if !config_path.is_empty() {
+            ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
+        } else {
+            ConfigManager::new()?
+        }
+    } else {
+        ConfigManager::new()?
+    };
     let persisted_state = config_manager.load();
 
     // Create app with persisted state
@@ -197,6 +205,13 @@ async fn main() -> Result<()> {
 /// Load configuration from environment and profile.
 fn load_config() -> Result<Config> {
     let mut loader = ConfigLoader::new().load_dotenv()?;
+
+    // Check for SPLUNK_CONFIG_PATH override (empty string is ignored)
+    if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH")
+        && !config_path.is_empty()
+    {
+        loader = loader.with_config_path(std::path::PathBuf::from(config_path));
+    }
 
     // Load from profile if SPLUNK_PROFILE is set
     if let Ok(profile_name) = std::env::var("SPLUNK_PROFILE") {

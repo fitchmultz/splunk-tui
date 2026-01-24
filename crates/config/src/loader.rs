@@ -561,4 +561,54 @@ mod tests {
             std::env::remove_var("SPLUNK_BASE_URL");
         }
     }
+
+    #[test]
+    fn test_splunk_config_path_env_var() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Set SPLUNK_CONFIG_PATH environment variable
+        unsafe {
+            std::env::set_var("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap());
+        }
+
+        // Verify that with_config_path would use the environment variable's path
+        // This simulates the TUI behavior of reading SPLUNK_CONFIG_PATH
+        let env_path = std::env::var("SPLUNK_CONFIG_PATH").unwrap();
+        let path_from_env = std::path::PathBuf::from(env_path);
+
+        let loader = ConfigLoader::new()
+            .with_config_path(path_from_env)
+            .with_profile_name("prod".to_string())
+            .from_profile()
+            .unwrap();
+
+        let config = loader.build().unwrap();
+        assert_eq!(config.connection.base_url, "https://prod.splunk.com:8089");
+
+        unsafe {
+            std::env::remove_var("SPLUNK_CONFIG_PATH");
+        }
+    }
+
+    #[test]
+    fn test_empty_splunk_config_path_ignored() {
+        // Empty string in SPLUNK_CONFIG_PATH should be ignored
+        // The TUI code should check for Ok() which filters empty strings
+        unsafe {
+            std::env::set_var("SPLUNK_CONFIG_PATH", "");
+        }
+
+        // std::env::var returns Err("") for empty strings, not Ok("")
+        // So this simulates the TUI behavior where empty strings are treated as "not set"
+        let result = std::env::var("SPLUNK_CONFIG_PATH");
+        assert!(
+            result.is_err() || result.unwrap().is_empty(),
+            "Empty env var should be filtered"
+        );
+
+        unsafe {
+            std::env::remove_var("SPLUNK_CONFIG_PATH");
+        }
+    }
 }

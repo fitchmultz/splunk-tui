@@ -62,7 +62,11 @@ pub enum ConfigCommand {
 
 pub fn run(command: ConfigCommand) -> Result<()> {
     let mut manager = if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
-        ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
+        if !config_path.is_empty() {
+            ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
+        } else {
+            ConfigManager::new()?
+        }
     } else {
         ConfigManager::new()?
     };

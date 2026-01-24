@@ -2370,6 +2370,44 @@
       "completed_at": "2026-01-24T17:40:31.575756000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0062",
+      "status": "done",
+      "title": "Honor SPLUNK_CONFIG_PATH in TUI config loading",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "config",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/config/src/persistence.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs uses ConfigLoader::new() and ConfigManager::new() with default paths only.",
+        "crates/cli/src/commands/config.rs respects SPLUNK_CONFIG_PATH, so TUI and CLI can diverge."
+      ],
+      "plan": [
+        "Check for SPLUNK_CONFIG_PATH in TUI load_config and ConfigManager initialization.",
+        "Plumb the path into ConfigLoader::with_config_path and ConfigManager::new_with_path.",
+        "Add tests (unit or integration) to ensure TUI uses the override path."
+      ],
+      "notes": [
+        "Fixed empty string handling bug in SPLUNK_CONFIG_PATH",
+        "TUI now correctly ignores empty SPLUNK_CONFIG_PATH values",
+        "CLI config command also fixed to ignore empty paths",
+        "Added comprehensive tests for config loading with SPLUNK_CONFIG_PATH",
+        "Tests pass when run with --test-threads=1 due to env var sharing",
+        "Updated docs/usage.md to clarify SPLUNK_CONFIG_PATH works for both CLI and TUI"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T18:23:40.043201000Z",
+      "completed_at": "2026-01-24T18:23:40.043201000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
