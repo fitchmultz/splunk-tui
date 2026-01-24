@@ -2698,6 +2698,41 @@
       "completed_at": "2026-01-24T19:52:15.111040000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0071",
+      "status": "done",
+      "title": "Update user guide screen keybindings",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "tui"
+      ],
+      "scope": [
+        "docs/user-guide.md",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "docs/user-guide.md lists only screens 1-5, while crates/tui/src/app.rs handles keys 1-9 for additional screens."
+      ],
+      "plan": [
+        "Update the keybinding list and screen descriptions to include Saved Searches, Internal Logs, Apps, and Users.",
+        "Cross-check with the TUI help popup for consistency.",
+        "Proofread for any other outdated shortcuts."
+      ],
+      "notes": [
+        "Updated docs/user-guide.md with all 9 screens (1-9), split Health/Cluster sections, added Saved Searches/Internal Logs/Apps/Users docs",
+        "Updated help popup in crates/tui/src/ui/popup.rs to document all 9 screens, increased height from 20% to 50%",
+        "Added key handlers for '8' (Apps) and '9' (Users) to all 6 screen match arms in app.rs",
+        "Updated snapshot tests for new popup height",
+        "Verified consistency: user-guide.md, popup.rs, and usage.md all document screens 1-9 correctly"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T12:36:07Z",
+      "updated_at": "2026-01-24T20:33:08.538475000Z",
+      "completed_at": "2026-01-24T20:33:08.538475000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

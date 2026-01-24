@@ -8,18 +8,18 @@ expression: harness.render()
 ┌Search Jobs───────────────────────────────────────────────────────────────────┐
 │                     No jobs loaded. Press 'r' to refresh.                    │
 │                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
 │               ┌Help──────────────────────────────────────────┐               │
 │               │                                              │               │
 │               │                 Global Keys:                 │               │
+│               │             1-9   Navigate screens           │               │
+│               │                   ?     Help                 │               │
+│               │                   q     Quit                 │               │
+│               │                                              │               │
+│               │                Search Screen:                │               │
+│               │              Enter     Run search            │               │
+│               │          Up/Down   History navigation        │               │
+│               │           Ctrl+j/k  Navigate results         │               │
 │               └──────────────────────────────────────────────┘               │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
 │                                                                              │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘

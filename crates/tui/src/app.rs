@@ -782,6 +782,14 @@ impl App {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
             }
+            KeyCode::Char('8') if key.modifiers.is_empty() => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') if key.modifiers.is_empty() => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
             KeyCode::Enter => {
                 if !self.search_input.is_empty() {
                     let query = self.search_input.clone();
@@ -920,6 +928,14 @@ impl App {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
             }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
             KeyCode::Char('r') => Some(Action::LoadJobs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -1011,6 +1027,14 @@ impl App {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
             }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
             KeyCode::Char('r') => Some(Action::LoadIndexes),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -1055,6 +1079,14 @@ impl App {
             KeyCode::Char('7') => {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
+            }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('?') => {
@@ -1109,6 +1141,14 @@ impl App {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
             }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
             KeyCode::Char('r') => Some(Action::LoadHealth),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
@@ -1149,6 +1189,14 @@ impl App {
             KeyCode::Char('7') => {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
+            }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
             }
             KeyCode::Char('r') => Some(Action::LoadSavedSearches),
             KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
@@ -1209,6 +1257,14 @@ impl App {
                 self.current_screen = CurrentScreen::InternalLogs;
                 Some(Action::LoadInternalLogs)
             }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
             KeyCode::Char('r') => Some(Action::LoadInternalLogs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -1259,6 +1315,10 @@ impl App {
             KeyCode::Char('8') => {
                 self.current_screen = CurrentScreen::Apps;
                 Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
             }
             KeyCode::Char('r') => Some(Action::LoadApps),
             KeyCode::Char('j') => Some(Action::NavigateDown),

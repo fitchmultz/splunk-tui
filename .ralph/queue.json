@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0071",
-      "status": "todo",
-      "title": "Update user guide screen keybindings",
-      "priority": "low",
-      "tags": [
-        "docs",
-        "tui"
-      ],
-      "scope": [
-        "docs/user-guide.md",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "docs/user-guide.md lists only screens 1-5, while crates/tui/src/app.rs handles keys 1-9 for additional screens."
-      ],
-      "plan": [
-        "Update the keybinding list and screen descriptions to include Saved Searches, Internal Logs, Apps, and Users.",
-        "Cross-check with the TUI help popup for consistency.",
-        "Proofread for any other outdated shortcuts."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T12:36:07Z",
-      "updated_at": "2026-01-24T12:36:07Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0072",
       "status": "todo",
       "title": "Remove duplicate validation block in config set",

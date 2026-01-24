@@ -13,7 +13,7 @@ use ratatui::{
 
 /// Default popup dimensions as percentages of screen size.
 pub const POPUP_WIDTH_PERCENT: u16 = 60;
-pub const POPUP_HEIGHT_PERCENT: u16 = 20;
+pub const POPUP_HEIGHT_PERCENT: u16 = 50;
 
 /// The type/kind of popup dialog.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -107,7 +107,7 @@ impl PopupBuilder {
                 "Help".to_string(),
                 r#"
 Global Keys:
-  1-5   Navigate screens
+  1-9   Navigate screens
   ?     Help
   q     Quit
 
@@ -128,10 +128,39 @@ Jobs Screen:
   Space Toggle job selection
   c     Cancel selected job(s)
   d     Delete selected job(s)
+  j/k   Navigate list
   Enter Inspect job
 
 Job Details Screen:
   Esc   Back to jobs
+
+Indexes Screen:
+  r     Refresh indexes
+  j/k   Navigate list
+
+Cluster Screen:
+  r     Refresh cluster info
+
+Health Screen:
+  r     Refresh health status
+
+Saved Searches Screen:
+  r     Refresh saved searches
+  Enter Run selected search
+  j/k   Navigate list
+
+Internal Logs Screen:
+  r     Refresh logs
+  a     Toggle auto-refresh
+  j/k   Navigate list
+
+Apps Screen:
+  r     Refresh apps
+  j/k   Navigate list
+
+Users Screen:
+  r     Refresh users
+  j/k   Navigate list
             "#
                 .to_string(),
             ),

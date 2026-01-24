@@ -17,8 +17,14 @@ Welcome to the comprehensive user guide for Splunk TUI and CLI. This guide is de
 4. [TUI Master Class](#tui-master-class)
     - [Navigation Basics](#navigation-basics)
     - [The Search Screen](#the-search-screen)
+    - [The Indexes Screen](#the-indexes-screen)
     - [The Jobs Screen](#the-jobs-screen)
-    - [Health & Cluster Screens](#health--cluster-screens)
+    - [The Cluster Screen](#the-cluster-screen)
+    - [The Health Screen](#the-health-screen)
+    - [The Saved Searches Screen](#the-saved-searches-screen)
+    - [The Internal Logs Screen](#the-internal-logs-screen)
+    - [The Apps Screen](#the-apps-screen)
+    - [The Users Screen](#the-users-screen)
     - [Mouse Support](#mouse-support)
 5. [Search Syntax Tips](#search-syntax-tips)
 6. [Troubleshooting](#troubleshooting)
@@ -149,7 +155,7 @@ Launch the interactive interface with `splunk-tui`.
 
 ### Navigation Basics
 
-- **Switch Screens**: Use keys `1` through `5`.
+- **Switch Screens**: Use keys `1` through `9`.
 - **Global Shortcuts**: 
     - `q`: Quit.
     - `?`: Open help popup.
@@ -168,6 +174,14 @@ The Search screen is optimized for rapid iteration.
 - **Result Scrolling**: Use `Ctrl+j` and `Ctrl+k` to scroll the results while keeping focus on the input box.
 - **Viewing Results**: Results are rendered as pretty-printed JSON objects.
 
+### The Indexes Screen (Key `2`)
+
+View and explore Splunk indexes.
+
+- **Navigation**: Use `j`/`k` or arrow keys to move through the index list.
+- **Refresh**: Press `r` to reload the indexes list.
+- **Display**: Shows index name, current size, total size, and event count.
+
 ### The Jobs Screen (Key `4`)
 
 Manage your search lifecycle in real-time.
@@ -178,13 +192,53 @@ Manage your search lifecycle in real-time.
 - **Inspecting**: Select a job and press `Enter` to see full details in "Inspect Mode". Press `Esc` to return.
 - **Lifecycle**: Press `c` to cancel or `d` to delete a selected job (requires confirmation).
 
-### Health & Cluster Screens (Keys `3` & `5`)
+### The Cluster Screen (Key `3`)
 
-These screens provide high-level visibility.
+View Splunk cluster configuration and peer information.
+
+- **Refresh**: Press `r` to reload cluster information.
+- **Display**: Shows cluster master URI, replication status, and peer details.
+
+### The Health Screen (Key `5`)
+
+Monitor Splunk system health status.
 
 - **Health Status Indicator**: Look at the header for `[+]` (Healthy), `[!]` (Unhealthy), or `[?]` (Unknown).
 - **Refresh**: Press `r` to pull the latest metrics.
 - **Sections**: The Health screen covers `splunkd` health, license usage, KVStore status, and log parsing issues.
+
+### The Saved Searches Screen (Key `6`)
+
+Browse and run pre-configured saved searches from your Splunk instance.
+
+- **Navigation**: Use `j`/`k` or arrow keys to move through the list.
+- **Running a Search**: Select a saved search and press `Enter` to load it into the Search screen and execute it automatically.
+- **Refresh**: Press `r` to reload the saved searches list.
+
+### The Internal Logs Screen (Key `7`)
+
+Monitor Splunk's internal logs in real-time.
+
+- **Auto-Refresh**: Press `a` to toggle 5-second polling. Look for `[AUTO]` in the title.
+- **Navigation**: Use `j`/`k` or arrow keys to scroll through log entries.
+- **Refresh**: Press `r` to pull the latest log entries.
+- **Content**: Displays log level, timestamp, source component, and message.
+
+### The Apps Screen (Key `8`)
+
+View and manage installed Splunk applications.
+
+- **Navigation**: Use `j`/`k` or arrow keys to browse the apps list.
+- **Refresh**: Press `r` to reload the apps list.
+- **Display**: Shows app name, label, version, and whether it is disabled.
+
+### The Users Screen (Key `9`)
+
+View user accounts and their roles.
+
+- **Navigation**: Use `j`/`k` or arrow keys to browse the users list.
+- **Refresh**: Press `r` to reload the users list.
+- **Display**: Shows username, real name, assigned roles, and last login time.
 
 ### Mouse Support
 

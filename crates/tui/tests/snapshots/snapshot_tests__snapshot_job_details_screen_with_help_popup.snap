@@ -8,18 +8,18 @@ expression: harness.render()
 ┌Job Details───────────────────────────────────────────────────────────────────┐
 │                    Job: scheduler_admin_search_1234567890                    │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌──────────────────────────────────────────────────────────────────────────────┐
-│Status: Done                                                                  │
-│Duration: 5.23 seconds                                                        │
-│Event Count: 500                                                              │
-│Scan Count: 150┌Help──────────────────────────────────────────┐               │
-│Result Count: 1│                                              │               │
-│Disk Usage: 204│                 Global Keys:                 │               │
-│Priority: 5    └──────────────────────────────────────────────┘               │
-│Label: Scheduled search                                                       │
-│Cursor Time: 2024-01-15T10:30:00.000Z                                         │
-│Finalized: No                                                                 │
-│                                                                              │
+┌───────────────┌Help──────────────────────────────────────────┐───────────────┐
+│Status: Done   │                                              │               │
+│Duration: 5.23 │                 Global Keys:                 │               │
+│Event Count: 50│             1-9   Navigate screens           │               │
+│Scan Count: 150│                   ?     Help                 │               │
+│Result Count: 1│                   q     Quit                 │               │
+│Disk Usage: 204│                                              │               │
+│Priority: 5    │                Search Screen:                │               │
+│Label: Schedule│              Enter     Run search            │               │
+│Cursor Time: 20│          Up/Down   History navigation        │               │
+│Finalized: No  │           Ctrl+j/k  Navigate results         │               │
+│               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
