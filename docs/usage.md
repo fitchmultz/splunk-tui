@@ -183,7 +183,7 @@ Launch the TUI by running `splunk-tui`.
 
 ### Navigation
 
-- `1`-`8`: Switch between screens:
+- `1`-`9`: Switch between screens:
   1. **Search**: Execute and view search results
   2. **Indexes**: View index status and metrics
   3. **Cluster**: View cluster information
@@ -192,6 +192,7 @@ Launch the TUI by running `splunk-tui`.
   6. **Saved Searches**: View and run saved searches
   7. **Internal Logs**: View internal Splunk logs
   8. **Apps**: View installed Splunk apps
+  9. **Users**: View users and their roles
 - `j` / `Down Arrow`: Move selection down (use `Ctrl+j` in Search screen)
 - `k` / `Up Arrow`: Move selection up (use `Ctrl+k` in Search screen)
 - `?`: Show help popup
@@ -225,6 +226,10 @@ Launch the TUI by running `splunk-tui`.
 #### Apps Screen
 - `r`: Refresh the list of installed apps
 - Displays: App name, label, version, and disabled status
+
+#### Users Screen
+- `r`: Refresh the list of users
+- Displays: Username, real name, roles, and last login time
 
 ### Error Handling
 

@@ -18,5 +18,6 @@ pub use models::{
     App, AppListResponse, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, IndexListResponse,
     KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack,
     LicenseUsage, LogParsingHealth, SavedSearch, SearchJob, SearchJobListResponse,
-    SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth, SplunkResponse,
+    SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth, SplunkResponse, User,
+    UserListResponse,
 };

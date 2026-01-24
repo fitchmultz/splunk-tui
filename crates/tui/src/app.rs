@@ -6,7 +6,7 @@
 use crate::action::{Action, ExportFormat};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
-use crate::ui::screens::{apps, cluster, health, indexes, saved_searches, search};
+use crate::ui::screens::{apps, cluster, health, indexes, saved_searches, search, users};
 use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
     Frame,
@@ -17,7 +17,8 @@ use ratatui::{
 };
 use serde_json::Value;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch, SearchJobStatus,
+    App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::PersistedState;
 use std::collections::HashSet;
@@ -66,6 +67,7 @@ pub enum CurrentScreen {
     SavedSearches,
     InternalLogs,
     Apps,
+    Users,
 }
 
 /// Sort column for jobs table.
@@ -193,6 +195,8 @@ pub struct App {
     pub health_info: Option<HealthCheckOutput>,
     pub apps: Option<Vec<SplunkApp>>,
     pub apps_state: ListState,
+    pub users: Option<Vec<User>>,
+    pub users_state: ListState,
 
     // UI State
     pub loading: bool,
@@ -257,6 +261,9 @@ impl App {
         let mut apps_state = ListState::default();
         apps_state.select(Some(0));
 
+        let mut users_state = ListState::default();
+        users_state.select(Some(0));
+
         let (auto_refresh, sort_column, sort_direction, last_search_query, search_history) =
             match persisted {
                 Some(state) => (
@@ -291,6 +298,8 @@ impl App {
             health_info: None,
             apps: None,
             apps_state,
+            users: None,
+            users_state,
             loading: false,
             progress: 0.0,
             toasts: Vec::new(),
@@ -423,6 +432,7 @@ impl App {
             CurrentScreen::SavedSearches => self.handle_saved_searches_input(key),
             CurrentScreen::InternalLogs => self.handle_internal_logs_input(key),
             CurrentScreen::Apps => self.handle_apps_input(key),
+            CurrentScreen::Users => self.handle_users_input(key),
         }
     }
 
@@ -487,8 +497,16 @@ impl App {
         } else if col > offset + 57 && col <= offset + 65 {
             self.current_screen = CurrentScreen::InternalLogs;
             Some(Action::LoadInternalLogs)
-        // Tab q: " q:Quit " (8 chars) -> After "|" at index 65
-        } else if col > offset + 66 && col <= offset + 74 {
+        // Tab 8: " 8:Apps " (8 chars) -> Indices 65..73
+        } else if col > offset + 65 && col <= offset + 73 {
+            self.current_screen = CurrentScreen::Apps;
+            Some(Action::LoadApps)
+        // Tab 9: " 9:Users " (9 chars) -> Indices 73..82
+        } else if col > offset + 73 && col <= offset + 82 {
+            self.current_screen = CurrentScreen::Users;
+            Some(Action::LoadUsers)
+        // Tab q: " q:Quit " (8 chars) -> After "|" at index 83
+        } else if col > offset + 83 && col <= offset + 91 {
             Some(Action::Quit)
         } else {
             None
@@ -1245,6 +1263,59 @@ impl App {
         }
     }
 
+    fn handle_users_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Char('q') => Some(Action::Quit),
+            KeyCode::Char('1') => {
+                self.current_screen = CurrentScreen::Search;
+                None
+            }
+            KeyCode::Char('2') => {
+                self.current_screen = CurrentScreen::Indexes;
+                Some(Action::LoadIndexes)
+            }
+            KeyCode::Char('3') => {
+                self.current_screen = CurrentScreen::Cluster;
+                Some(Action::LoadClusterInfo)
+            }
+            KeyCode::Char('4') => {
+                self.current_screen = CurrentScreen::Jobs;
+                Some(Action::LoadJobs)
+            }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
+            KeyCode::Char('r') => Some(Action::LoadUsers),
+            KeyCode::Char('j') => Some(Action::NavigateDown),
+            KeyCode::Char('k') => Some(Action::NavigateUp),
+            KeyCode::Down => Some(Action::NavigateDown),
+            KeyCode::Up => Some(Action::NavigateUp),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            _ => None,
+        }
+    }
+
     /// Pure state mutation based on Action.
     pub fn update(&mut self, action: Action) {
         match action {
@@ -1403,6 +1474,15 @@ impl App {
                     .push(Toast::error(format!("Failed to load apps: {}", e)));
                 self.loading = false;
             }
+            Action::UsersLoaded(Ok(users)) => {
+                self.users = Some(users);
+                self.loading = false;
+            }
+            Action::UsersLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load users: {}", e)));
+                self.loading = false;
+            }
             Action::ClusterInfoLoaded(Err(e)) => {
                 self.toasts
                     .push(Toast::error(format!("Failed to load cluster info: {}", e)));
@@ -1490,6 +1570,14 @@ impl App {
                     }
                 }
             }
+            CurrentScreen::Users => {
+                if let Some(users) = &self.users {
+                    let i = self.users_state.selected().unwrap_or(0);
+                    if i < users.len().saturating_sub(1) {
+                        self.users_state.select(Some(i + 1));
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -1527,6 +1615,12 @@ impl App {
                 let i = self.apps_state.selected().unwrap_or(0);
                 if i > 0 {
                     self.apps_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::Users => {
+                let i = self.users_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.users_state.select(Some(i - 1));
                 }
             }
             _ => {}
@@ -1633,6 +1727,9 @@ impl App {
             CurrentScreen::Apps => {
                 self.apps_state.select(Some(0));
             }
+            CurrentScreen::Users => {
+                self.users_state.select(Some(0));
+            }
             _ => {}
         }
     }
@@ -1674,6 +1771,11 @@ impl App {
             CurrentScreen::Apps => {
                 if let Some(apps) = &self.apps {
                     self.apps_state.select(Some(apps.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::Users => {
+                if let Some(users) = &self.users {
+                    self.users_state.select(Some(users.len().saturating_sub(1)));
                 }
             }
             _ => {}
@@ -1834,6 +1936,7 @@ impl App {
                     CurrentScreen::SavedSearches => "Saved Searches",
                     CurrentScreen::InternalLogs => "Internal Logs",
                     CurrentScreen::Apps => "Apps",
+                    CurrentScreen::Users => "Users",
                 },
                 Style::default().fg(Color::Yellow),
             ),
@@ -1863,13 +1966,17 @@ impl App {
                     Style::default().fg(Color::Yellow),
                 ),
                 Span::raw("|"),
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps "),
+                Span::raw(
+                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users ",
+                ),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
         } else {
             vec![Line::from(vec![
-                Span::raw(" 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps "),
+                Span::raw(
+                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users ",
+                ),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
             ])]
@@ -1967,6 +2074,17 @@ impl App {
                         loading: self.loading,
                         apps: self.apps.as_deref(),
                         state: &mut self.apps_state,
+                    },
+                );
+            }
+            CurrentScreen::Users => {
+                users::render_users(
+                    f,
+                    area,
+                    users::UsersRenderConfig {
+                        loading: self.loading,
+                        users: self.users.as_deref(),
+                        state: &mut self.users_state,
                     },
                 );
             }

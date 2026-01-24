@@ -3,10 +3,12 @@ source: crates/tui/tests/snapshot_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Splunk TUI - Jobs | [?] Unknown                                               │
+│Splunk TUI - Users | [?] Unknown                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Search Jobs───────────────────────────────────────────────────────────────────┐
-│                     No jobs loaded. Press 'r' to refresh.                    │
+┌Users─────────────────────────────────────────────────────────────────────────┐
+│admin (System Administrator) - Roles: admin, can_delete - Last login: 17369562│
+│power_user (Power User) - Roles: power - Last login: 1736870400s              │
+│user_no_roles (Limited User) - Roles: no roles - Last login: never            │
 │                                                                              │
 │                                                                              │
 │                                                                              │
@@ -18,10 +20,8 @@ expression: harness.render()
 │                                                                              │
 │                                                                              │
 │                                                                              │
-│                 ┌──────────────────────────────────────────────────────────┐ │
-│                 │ ERR Connection failed: timeout                           │ │
-│                 │                                                          │ │
-│                 └──────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users | │

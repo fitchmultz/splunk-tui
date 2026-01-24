@@ -11,6 +11,7 @@ mod parsing;
 mod request;
 pub mod search;
 mod server;
+mod users;
 
 pub use auth::login;
 pub use cluster::{get_cluster_info, get_cluster_peers};
@@ -26,3 +27,4 @@ pub use search::{
     wait_for_job,
 };
 pub use server::{get_health, get_server_info, list_apps};
+pub use users::list_users;

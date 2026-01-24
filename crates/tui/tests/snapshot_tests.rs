@@ -9,7 +9,7 @@
 mod helpers;
 
 use ratatui::{Terminal, backend::TestBackend};
-use splunk_client::models::SearchJobStatus;
+use splunk_client::models::{SearchJobStatus, User};
 use splunk_tui::{App, Popup, PopupType};
 
 /// Test harness for TUI rendering with a mock terminal.
@@ -52,6 +52,39 @@ fn buffer_to_string(buffer: &ratatui::buffer::Buffer) -> String {
     }
 
     output
+}
+
+/// Create mock user data for testing.
+fn create_mock_users() -> Vec<User> {
+    vec![
+        User {
+            name: "admin".to_string(),
+            realname: Some("System Administrator".to_string()),
+            email: Some("admin@example.com".to_string()),
+            user_type: Some("Splunk".to_string()),
+            default_app: Some("launcher".to_string()),
+            roles: vec!["admin".to_string(), "can_delete".to_string()],
+            last_successful_login: Some(1736956200), // 2024-01-15 10:30:00 UTC
+        },
+        User {
+            name: "power_user".to_string(),
+            realname: Some("Power User".to_string()),
+            email: Some("power@example.com".to_string()),
+            user_type: Some("Splunk".to_string()),
+            default_app: Some("search".to_string()),
+            roles: vec!["power".to_string()],
+            last_successful_login: Some(1736870400), // 2024-01-14 10:00:00 UTC
+        },
+        User {
+            name: "user_no_roles".to_string(),
+            realname: Some("Limited User".to_string()),
+            email: None,
+            user_type: None,
+            default_app: None,
+            roles: vec![],
+            last_successful_login: None,
+        },
+    ]
 }
 
 /// Create mock job data for testing.
@@ -392,6 +425,35 @@ fn snapshot_internal_logs_screen() {
         },
     ]);
     harness.app.internal_logs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_users_screen_empty() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Users;
+    harness.app.users = None;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_users_screen_loading() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Users;
+    harness.app.users = None;
+    harness.app.loading = true;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_users_screen_with_data() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Users;
+    harness.app.users = Some(create_mock_users());
+    harness.app.users_state.select(Some(0));
 
     insta::assert_snapshot!(harness.render());
 }

@@ -331,6 +331,20 @@ async fn handle_side_effects(
                 }
             });
         }
+        Action::LoadUsers => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.list_users(None, None).await {
+                    Ok(users) => {
+                        tx.send(Action::UsersLoaded(Ok(users))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::UsersLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
         Action::RunSearch(query) => {
             tx.send(Action::Loading(true)).ok();
             tx.send(Action::Progress(0.1)).ok();
