@@ -25,3 +25,5 @@ Cargo.lock
 /dist/
 .ralph/lock
 .ralph/cache
+.ralph/queue.json
+logs
