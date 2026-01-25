@@ -6,8 +6,8 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::LogEntry;
 use splunk_client::{
-    ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SearchJobStatus,
-    User,
+    App, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    SearchJobStatus, User,
 };
 
 pub use splunk_client::HealthCheckOutput;
@@ -77,6 +77,12 @@ pub trait Formatter {
 
     /// Format users list.
     fn format_users(&self, users: &[User]) -> Result<String>;
+
+    /// Format apps list.
+    fn format_apps(&self, apps: &[App]) -> Result<String>;
+
+    /// Format detailed app information for info subcommand.
+    fn format_app_info(&self, app: &App) -> Result<String>;
 
     /// Format list-all unified resource overview.
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String>;
@@ -167,6 +173,15 @@ impl Formatter for JsonFormatter {
 
     fn format_users(&self, users: &[User]) -> Result<String> {
         Ok(serde_json::to_string_pretty(users)?)
+    }
+
+    fn format_apps(&self, apps: &[App]) -> Result<String> {
+        let json = serde_json::to_string_pretty(apps)?;
+        Ok(json)
+    }
+
+    fn format_app_info(&self, app: &App) -> Result<String> {
+        Ok(serde_json::to_string_pretty(app)?)
     }
 
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
@@ -731,6 +746,70 @@ impl Formatter for TableFormatter {
         Ok(output)
     }
 
+    fn format_apps(&self, apps: &[App]) -> Result<String> {
+        let mut output = String::new();
+
+        if apps.is_empty() {
+            output.push_str("No apps found.");
+            return Ok(output);
+        }
+
+        // Header
+        output.push_str(&format!(
+            "{:<25} {:<20} {:<10} {:<10} {:<20}\n",
+            "NAME", "LABEL", "VERSION", "DISABLED", "AUTHOR"
+        ));
+        output.push_str(&format!(
+            "{:<25} {:<20} {:<10} {:<10} {:<20}\n",
+            "=====", "=====", "=======", "========", "======="
+        ));
+
+        // Rows
+        for app in apps {
+            let label = app.label.as_deref().unwrap_or("-");
+            let version = app.version.as_deref().unwrap_or("-");
+            let author = app.author.as_deref().unwrap_or("-");
+
+            output.push_str(&format!(
+                "{:<25} {:<20} {:<10} {:<10} {:<20}\n",
+                app.name, label, version, app.disabled, author
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn format_app_info(&self, app: &App) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("--- App Information ---\n");
+        output.push_str(&format!("Name: {}\n", app.name));
+        output.push_str(&format!(
+            "Label: {}\n",
+            app.label.as_deref().unwrap_or("N/A")
+        ));
+        output.push_str(&format!(
+            "Version: {}\n",
+            app.version.as_deref().unwrap_or("N/A")
+        ));
+        output.push_str(&format!("Disabled: {}\n", app.disabled));
+        output.push_str(&format!(
+            "Author: {}\n",
+            app.author.as_deref().unwrap_or("N/A")
+        ));
+        if let Some(ref desc) = app.description {
+            output.push_str(&format!("Description: {}\n", desc));
+        }
+        if let Some(configured) = app.is_configured {
+            output.push_str(&format!("Configured: {}\n", configured));
+        }
+        if let Some(visible) = app.is_visible {
+            output.push_str(&format!("Visible: {}\n", visible));
+        }
+
+        Ok(output)
+    }
+
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
         let mut out = String::new();
 
@@ -1176,6 +1255,47 @@ impl Formatter for CsvFormatter {
         }
 
         Ok(csv)
+    }
+
+    fn format_apps(&self, apps: &[App]) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str("name,label,version,disabled,author\n");
+
+        for app in apps {
+            let label = app.label.as_deref().unwrap_or("");
+            let version = app.version.as_deref().unwrap_or("");
+            let author = app.author.as_deref().unwrap_or("");
+
+            output.push_str(&format!(
+                "{},{},{},{},{}\n",
+                escape_csv(&app.name),
+                escape_csv(label),
+                escape_csv(version),
+                app.disabled,
+                escape_csv(author)
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn format_app_info(&self, app: &App) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("name,label,version,disabled,author,description\n");
+        output.push_str(&format!(
+            "{},{},{},{},{},{}\n",
+            escape_csv(&app.name),
+            escape_csv(app.label.as_deref().unwrap_or("")),
+            escape_csv(app.version.as_deref().unwrap_or("")),
+            app.disabled,
+            escape_csv(app.author.as_deref().unwrap_or("")),
+            escape_csv(app.description.as_deref().unwrap_or(""))
+        ));
+
+        Ok(output)
     }
 }
 
@@ -1650,6 +1770,75 @@ impl Formatter for XmlFormatter {
         }
 
         xml.push_str("</users>\n");
+        Ok(xml)
+    }
+
+    fn format_apps(&self, apps: &[App]) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<apps>\n");
+
+        for app in apps {
+            xml.push_str("  <app>\n");
+            xml.push_str(&format!("    <name>{}</name>\n", escape_xml(&app.name)));
+
+            if let Some(ref label) = app.label {
+                xml.push_str(&format!("    <label>{}</label>\n", escape_xml(label)));
+            }
+
+            if let Some(ref version) = app.version {
+                xml.push_str(&format!("    <version>{}</version>\n", escape_xml(version)));
+            }
+
+            xml.push_str(&format!("    <disabled>{}</disabled>\n", app.disabled));
+
+            if let Some(ref author) = app.author {
+                xml.push_str(&format!("    <author>{}</author>\n", escape_xml(author)));
+            }
+
+            xml.push_str("  </app>\n");
+        }
+
+        xml.push_str("</apps>");
+        Ok(xml)
+    }
+
+    fn format_app_info(&self, app: &App) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<app>\n");
+
+        xml.push_str(&format!("  <name>{}</name>\n", escape_xml(&app.name)));
+
+        if let Some(ref label) = app.label {
+            xml.push_str(&format!("  <label>{}</label>\n", escape_xml(label)));
+        }
+
+        if let Some(ref version) = app.version {
+            xml.push_str(&format!("  <version>{}</version>\n", escape_xml(version)));
+        }
+
+        xml.push_str(&format!("  <disabled>{}</disabled>\n", app.disabled));
+
+        if let Some(ref author) = app.author {
+            xml.push_str(&format!("  <author>{}</author>\n", escape_xml(author)));
+        }
+
+        if let Some(ref desc) = app.description {
+            xml.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+
+        if let Some(configured) = app.is_configured {
+            xml.push_str(&format!(
+                "  <is_configured>{}</is_configured>\n",
+                configured
+            ));
+        }
+
+        if let Some(visible) = app.is_visible {
+            xml.push_str(&format!("  <is_visible>{}</is_visible>\n", visible));
+        }
+
+        xml.push_str("</app>");
         Ok(xml)
     }
 

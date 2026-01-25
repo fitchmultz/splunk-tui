@@ -172,6 +172,55 @@ splunk-cli users --count 10 --output table
 
 - `-c, --count <NUMBER>`: Maximum number of users to list [default: 30]
 
+#### `apps`
+List and manage installed Splunk apps.
+
+```bash
+# List all apps
+splunk-cli apps list
+
+# List with count limit
+splunk-cli apps list --count 10
+
+# List with different output formats
+splunk-cli apps list --output json
+splunk-cli apps list --output csv
+splunk-cli apps list --output xml
+
+# Show detailed app information
+splunk-cli apps info search
+splunk-cli apps info launcher
+
+# Enable an app
+splunk-cli apps enable my_custom_app
+
+# Disable an app
+splunk-cli apps disable unused_app
+```
+
+**Subcommands:**
+- `list` [options]: List installed apps
+  - `-c, --count <NUMBER>`: Maximum number of apps to list [default: 30]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+
+- `info <APP_NAME>`: Show detailed information about an app
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+
+- `enable <APP_NAME>`: Enable an app by name
+
+- `disable <APP_NAME>`: Disable an app by name
+
+**Output Formats:**
+- **Table**: Human-readable formatted output (list: table view, info: detailed key-value pairs)
+- **JSON**: Full app object(s) with all fields
+- **CSV**: Comma-separated values with header row
+- **XML**: Hierarchical XML structure with app elements
+
+**Notes:**
+- System apps may require admin privileges to enable/disable
+- Some apps cannot be disabled (e.g., core Splunk apps)
+- Use `apps list` first to find the exact app name
+
 #### `list-all`
 List all Splunk resources in a unified overview.
 

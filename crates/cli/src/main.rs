@@ -155,6 +155,12 @@ enum Commands {
         count: usize,
     },
 
+    /// List and manage installed Splunk apps
+    Apps {
+        #[command(subcommand)]
+        apps_command: commands::apps::AppsCommand,
+    },
+
     /// List all Splunk resources in unified overview
     ListAll {
         /// Optional comma-separated list of resource types (e.g., 'indexes,jobs,apps')
@@ -294,6 +300,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::Users { count } => {
             commands::users::run(config, count, &cli.output).await?;
+        }
+        Commands::Apps { apps_command } => {
+            commands::apps::run(config, apps_command, &cli.output).await?;
         }
         Commands::ListAll { resources } => {
             commands::list_all::run(config, resources, &cli.output).await?;

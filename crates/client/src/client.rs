@@ -587,6 +587,125 @@ impl SplunkClient {
         }
     }
 
+    /// Get specific app details by name.
+    pub async fn get_app(&mut self, app_name: &str) -> Result<App> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::get_app(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            app_name,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(app) => Ok(app),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::get_app(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    app_name,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Enable an app by name.
+    pub async fn enable_app(&mut self, app_name: &str) -> Result<()> {
+        info!("Enabling app: {}", app_name);
+
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::update_app(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            app_name,
+            false,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(()) => Ok(()),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::update_app(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    app_name,
+                    false,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Disable an app by name.
+    pub async fn disable_app(&mut self, app_name: &str) -> Result<()> {
+        info!("Disabling app: {}", app_name);
+
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::update_app(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            app_name,
+            true,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(()) => Ok(()),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::update_app(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    app_name,
+                    true,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
     /// List all users.
     pub async fn list_users(
         &mut self,

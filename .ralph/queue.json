@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0075",
-      "status": "todo",
-      "title": "Add CLI apps management commands for parity with TUI",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "apps",
-        "feature-parity"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/",
-        "crates/cli/tests/"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/server.rs provides list_apps() endpoint that is not exposed in CLI",
-        "crates/tui/src/app.rs includes Apps screen (CurrentScreen::Apps, handle_apps_input)",
-        "crates/tui/src/ui/screens/apps.rs renders installed apps",
-        "TUI can view apps but CLI cannot manage apps (no CLI apps subcommand exists)"
-      ],
-      "plan": [
-        "Create crates/cli/src/commands/apps.rs module with run() function",
-        "Add Apps subcommand to crates/cli/src/main.rs Commands enum",
-        "Implement apps list, enable, disable, and info operations with OutputFormat support",
-        "Add integration tests in crates/cli/tests/apps_tests.rs",
-        "Update docs/usage.md with apps CLI documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0076",
       "status": "todo",
       "title": "Add CLI saved searches management commands",
