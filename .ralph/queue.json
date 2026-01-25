@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0079",
-      "status": "todo",
-      "title": "Refactor AuthStrategy conversion in CLI commands to reduce duplication",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "dry",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/src/commands/search.rs",
-        "crates/cli/src/commands/jobs.rs",
-        "crates/cli/src/commands/cluster.rs",
-        "crates/cli/src/commands/indexes.rs",
-        "crates/cli/src/commands/health.rs",
-        "crates/cli/src/commands/kvstore.rs",
-        "crates/cli/src/commands/license.rs",
-        "crates/cli/src/commands/logs.rs"
-      ],
-      "evidence": [
-        "Each CLI command module (search.rs:17-24, jobs.rs:17-22, cluster.rs:17-21, indexes.rs:15-17, etc.) has identical AuthStrategy conversion code block",
-        "splunk_config::AuthStrategy is mapped to splunk_client::AuthStrategy in 5-6 lines per command",
-        "This pattern repeats across 9 CLI command modules, violating DRY principle",
-        "Creates maintenance burden when AuthStrategy types need changes"
-      ],
-      "plan": [
-        "Create shared helper function in crates/cli/src/commands/mod.rs: fn convert_auth_strategy(config_auth: &splunk_config::AuthStrategy) -> splunk_client::AuthStrategy",
-        "Update all CLI command modules to use the shared convert_auth_strategy() helper",
-        "Add unit tests in crates/cli/tests/commands/mod.rs or dedicated test file",
-        "Verify clippy passes and make ci completes successfully"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0080",
       "status": "todo",
       "title": "Add pagination support to CLI indexes and cluster commands",

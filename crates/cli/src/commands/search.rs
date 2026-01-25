@@ -1,7 +1,7 @@
 //! Search command implementation.
 
 use anyhow::Result;
-use splunk_client::{AuthStrategy, SplunkClient};
+use splunk_client::SplunkClient;
 use tracing::info;
 
 use crate::formatters::{OutputFormat, get_formatter};
@@ -17,12 +17,7 @@ pub async fn run(
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
-    let auth_strategy = match config.auth.strategy {
-        splunk_config::AuthStrategy::SessionToken { username, password } => {
-            AuthStrategy::SessionToken { username, password }
-        }
-        splunk_config::AuthStrategy::ApiToken { token } => AuthStrategy::ApiToken { token },
-    };
+    let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
     let mut client = SplunkClient::builder()
         .base_url(config.connection.base_url)
