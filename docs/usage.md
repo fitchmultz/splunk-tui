@@ -112,19 +112,28 @@ List and manage Splunk indexes.
 
 ```bash
 splunk-cli indexes --detailed
+splunk-cli indexes --count 30 --offset 30
 ```
 
 - `-d, --detailed`: Show detailed information about each index
 - `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 30]
+- `--offset <NUMBER>`: Offset into the index list (zero-based) [default: 0]
+
+**Note (table output):** table output includes a pagination footer (e.g., `Showing 31-60 (page 2)`).
 
 #### `cluster`
 Show cluster status and configuration.
 
 ```bash
 splunk-cli cluster --detailed
+splunk-cli cluster --detailed --offset 50 --page-size 50
 ```
 
 - `-d, --detailed`: Show detailed cluster information
+- `--offset <NUMBER>`: Offset into the cluster peer list (zero-based) [default: 0] (only applies with `--detailed`)
+- `--page-size <NUMBER>`: Number of peers per page [default: 50] (only applies with `--detailed`)
+
+**Note (table output):** table output includes a pagination footer (e.g., `Showing 1-50 of 120 (page 1 of 3)`).
 
 #### `jobs`
 Manage search jobs.

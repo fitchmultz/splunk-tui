@@ -96,6 +96,10 @@ enum Commands {
         /// Maximum number of indexes to list
         #[arg(short, long, default_value = "30")]
         count: usize,
+
+        /// Offset into the index list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
     },
 
     /// Show cluster status and configuration
@@ -103,6 +107,14 @@ enum Commands {
         /// Show detailed cluster information
         #[arg(short, long)]
         detailed: bool,
+
+        /// Offset into the cluster peer list (zero-based). Only applies with --detailed.
+        #[arg(long, default_value = "0")]
+        offset: usize,
+
+        /// Number of peers per page. Only applies with --detailed.
+        #[arg(long = "page-size", default_value = "50")]
+        page_size: usize,
     },
 
     /// Manage search jobs
@@ -289,11 +301,19 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
             )
             .await?;
         }
-        Commands::Indexes { detailed, count } => {
-            commands::indexes::run(config, detailed, count, &cli.output).await?;
+        Commands::Indexes {
+            detailed,
+            count,
+            offset,
+        } => {
+            commands::indexes::run(config, detailed, count, offset, &cli.output).await?;
         }
-        Commands::Cluster { detailed } => {
-            commands::cluster::run(config, detailed, &cli.output).await?;
+        Commands::Cluster {
+            detailed,
+            offset,
+            page_size,
+        } => {
+            commands::cluster::run(config, detailed, offset, page_size, &cli.output).await?;
         }
         Commands::Jobs {
             list,

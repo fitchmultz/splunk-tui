@@ -16,7 +16,7 @@
     "gemini_bin": "gemini",
     "claude_bin": "claude",
     "claude_permission_mode": "bypass_permissions",
-    "require_repoprompt": false,
+    "require_repoprompt": true,
     "phases": 3,
     "iterations": 2
   }

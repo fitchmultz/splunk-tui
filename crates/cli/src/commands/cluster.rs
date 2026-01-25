@@ -4,10 +4,26 @@ use anyhow::Result;
 use splunk_client::SplunkClient;
 use tracing::{info, warn};
 
-use crate::formatters::{ClusterInfoOutput, ClusterPeerOutput, OutputFormat, get_formatter};
+use crate::formatters::{
+    ClusterInfoOutput, ClusterPeerOutput, OutputFormat, Pagination, TableFormatter, get_formatter,
+};
 
-pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &str) -> Result<()> {
-    info!("Fetching cluster information");
+pub async fn run(
+    config: splunk_config::Config,
+    detailed: bool,
+    offset: usize,
+    page_size: usize,
+    output_format: &str,
+) -> Result<()> {
+    info!(
+        "Fetching cluster information (detailed: {}, offset: {}, page_size: {})",
+        detailed, offset, page_size
+    );
+
+    // Validate pagination inputs (client-side pagination must be safe)
+    if page_size == 0 {
+        anyhow::bail!("--page-size must be greater than 0");
+    }
 
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
@@ -20,17 +36,36 @@ pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &
 
     match client.get_cluster_info().await {
         Ok(cluster_info) => {
-            // Fetch peers if detailed
-            let peers_output = if detailed {
+            // Fetch peers if detailed (fetch ALL once, then paginate locally)
+            let (peers_output, peers_pagination) = if detailed {
                 match client.get_cluster_peers().await {
-                    Ok(peers) => Some(peers.into_iter().map(ClusterPeerOutput::from).collect()),
+                    Ok(peers) => {
+                        let total = peers.len();
+
+                        // Slice safely (empty slice if offset beyond end)
+                        let page: Vec<_> = peers
+                            .into_iter()
+                            .skip(offset)
+                            .take(page_size)
+                            .map(ClusterPeerOutput::from)
+                            .collect();
+
+                        (
+                            Some(page),
+                            Some(Pagination {
+                                offset,
+                                page_size,
+                                total: Some(total),
+                            }),
+                        )
+                    }
                     Err(e) => {
                         warn!("Could not fetch cluster peers: {}", e);
-                        None
+                        (None, None)
                     }
                 }
             } else {
-                None
+                (None, None)
             };
 
             let info = ClusterInfoOutput {
@@ -46,9 +81,17 @@ pub async fn run(config: splunk_config::Config, detailed: bool, output_format: &
 
             // Parse output format
             let format = OutputFormat::from_str(output_format)?;
-            let formatter = get_formatter(format);
 
-            // Format and print cluster info
+            // Table output gets pagination footer; machine-readable formats must not.
+            if format == OutputFormat::Table {
+                let formatter = TableFormatter;
+                let output =
+                    formatter.format_cluster_info_paginated(&info, detailed, peers_pagination)?;
+                print!("{}", output);
+                return Ok(());
+            }
+
+            let formatter = get_formatter(format);
             let output = formatter.format_cluster_info(&info, detailed)?;
             print!("{}", output);
         }

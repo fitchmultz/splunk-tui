@@ -337,6 +337,60 @@ fn value_to_xml_elements(name: &str, value: &serde_json::Value, indent: &str) ->
     }
 }
 
+/// Pagination metadata for table output.
+///
+/// - `offset` is zero-based
+/// - `page_size` is the requested page size
+/// - `total` is optional; when absent, footer omits total/page-count
+#[derive(Debug, Clone, Copy)]
+pub struct Pagination {
+    pub offset: usize,
+    pub page_size: usize,
+    pub total: Option<usize>,
+}
+
+fn build_pagination_footer(p: Pagination, shown: usize) -> Option<String> {
+    if p.page_size == 0 {
+        // Avoid division by zero; caller should validate for client-side pagination.
+        return None;
+    }
+
+    // If nothing is shown, caller should usually emit a friendlier message.
+    if shown == 0 {
+        if let Some(total) = p.total {
+            if total == 0 {
+                return Some("No results.".to_string());
+            }
+            if p.offset >= total {
+                return Some(format!(
+                    "Showing 0 of {} (offset {} out of range)",
+                    total, p.offset
+                ));
+            }
+            return Some(format!("Showing 0 of {}", total));
+        }
+        return Some("No results.".to_string());
+    }
+
+    let start = p.offset.saturating_add(1);
+    let end = p.offset.saturating_add(shown);
+    let page = (p.offset / p.page_size).saturating_add(1);
+
+    if let Some(total) = p.total {
+        let total_pages = if total == 0 {
+            0
+        } else {
+            (total.saturating_add(p.page_size).saturating_sub(1)) / p.page_size
+        };
+        Some(format!(
+            "Showing {}-{} of {} (page {} of {})",
+            start, end, total, page, total_pages
+        ))
+    } else {
+        Some(format!("Showing {}-{} (page {})", start, end, page))
+    }
+}
+
 /// Table formatter.
 pub struct TableFormatter;
 
@@ -957,6 +1011,124 @@ impl Formatter for TableFormatter {
             "Finalized: {}\n",
             if job.is_finalized { "Yes" } else { "No" }
         ));
+
+        Ok(output)
+    }
+}
+
+impl TableFormatter {
+    /// Table-only formatter for indexes with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for indexes (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_indexes_paginated(
+        &self,
+        indexes: &[Index],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if indexes.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No indexes found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No indexes found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_indexes(indexes, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, indexes.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for cluster output with pagination footer (peers only).
+    #[allow(clippy::collapsible_if)]
+    pub fn format_cluster_info_paginated(
+        &self,
+        cluster_info: &ClusterInfoOutput,
+        detailed: bool,
+        peers_pagination: Option<Pagination>,
+    ) -> Result<String> {
+        let mut output = format!(
+            "Cluster Information:\n\
+             ID: {}\n\
+             Label: {}\n\
+             Mode: {}\n\
+             Manager URI: {}\n\
+             Replication Factor: {}\n\
+             Search Factor: {}\n\
+             Status: {}\n",
+            cluster_info.id,
+            cluster_info.label.as_deref().unwrap_or("N/A"),
+            cluster_info.mode,
+            cluster_info.manager_uri.as_deref().unwrap_or("N/A"),
+            cluster_info
+                .replication_factor
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+            cluster_info
+                .search_factor
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+            cluster_info.status.as_deref().unwrap_or("N/A")
+        );
+
+        if detailed {
+            if let Some(peers) = &cluster_info.peers {
+                output.push_str("\nCluster Peers:\n");
+
+                if peers.is_empty() {
+                    // Offset out of range is especially important to explain in table output.
+                    if let Some(p) = peers_pagination
+                        && let Some(total) = p.total
+                        && total > 0
+                        && p.offset >= total
+                    {
+                        output.push_str(&format!(
+                            "  No peers found for offset {} (total {}).\n",
+                            p.offset, total
+                        ));
+                    } else {
+                        output.push_str("  No peers found.\n");
+                    }
+                } else {
+                    for peer in peers {
+                        output.push_str(&format!(
+                            "\n  Host: {}:{}\n\
+                                ID: {}\n\
+                                Status: {}\n\
+                                State: {}\n",
+                            peer.host, peer.port, peer.id, peer.status, peer.peer_state
+                        ));
+                        if let Some(label) = &peer.label {
+                            output.push_str(&format!("    Label: {}\n", label));
+                        }
+                        if let Some(site) = &peer.site {
+                            output.push_str(&format!("    Site: {}\n", site));
+                        }
+                        if peer.is_captain {
+                            output.push_str("    Captain: Yes\n");
+                        }
+                    }
+                }
+
+                if let Some(p) = peers_pagination
+                    && let Some(footer) = build_pagination_footer(p, peers.len())
+                {
+                    output.push('\n');
+                    output.push_str(&footer);
+                    output.push('\n');
+                }
+            }
+        }
 
         Ok(output)
     }

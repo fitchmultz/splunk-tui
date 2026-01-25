@@ -3076,6 +3076,46 @@
       "completed_at": "2026-01-25T19:03:03.435905000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0080",
+      "status": "done",
+      "title": "Add pagination support to CLI indexes and cluster commands",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "pagination",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/indexes.rs",
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/formatters.rs",
+        "crates/client/src/endpoints/indexes.rs",
+        "crates/client/src/endpoints/cluster.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/indexes.rs list_indexes() accepts count/offset parameters for pagination",
+        "crates/client/src/endpoints/cluster.rs get_cluster_info() and get_cluster_peers() do not support pagination",
+        "CLI indexes.rs --count flag limits results but does not implement pagination for viewing more",
+        "CLI cluster.rs has no pagination options despite potentially large peer lists in production"
+      ],
+      "plan": [
+        "Add --offset <NUM> flag to indexes.rs and cluster.rs CLI commands",
+        "Add --page-size <NUM> flag for configurable pagination size (default: 30 for indexes)",
+        "Update formatters to include pagination metadata in table output (showing page X of Y)",
+        "Pass offset/count to client endpoint calls",
+        "Add integration tests for pagination (offset calculation, boundary checks)",
+        "Update docs/usage.md with pagination documentation",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-25T22:22:24.739119000Z",
+      "completed_at": "2026-01-25T22:22:24.739119000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

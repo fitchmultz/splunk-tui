@@ -53,6 +53,8 @@ test-integration:
 	cargo test -p splunk-cli --test apps_tests
 	cargo test -p splunk-cli --test users_tests
 	cargo test -p splunk-cli --test saved_searches_tests
+	cargo test -p splunk-cli --test indexes_pagination_tests
+	cargo test -p splunk-cli --test cluster_pagination_tests
 	cargo test -p splunk-cli --test list_all_tests
 	cargo test -p splunk-tui --test app_tests
 	cargo test -p splunk-tui --test snapshot_tests
