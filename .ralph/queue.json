@@ -1,674 +1,917 @@
-{
-  "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0081",
-      "status": "todo",
-      "title": "Extract shared session retry wrapper from client.rs",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "dry",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/client.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client.rs methods (create_search_job, get_search_results, get_job_status, list_jobs, cancel_job, delete_job, list_indexes, list_saved_searches, list_apps, list_users, get_server_info, get_health, get_cluster_info, get_cluster_peers, get_license_usage, list_license_pools, list_license_stacks, get_kvstore_status, check_log_parsing_health, get_internal_logs) each have 30+ lines of identical retry logic",
-        "Each method pattern: match result { Ok(r) => Ok(r), Err(ClientError::ApiError {status, ..}) if (status == 401 || status == 403) && !self.is_api_token_auth() => clear session, retry once, Err(e) => Err(e) }",
-        "This violates DRY principle and makes maintenance difficult when retry logic needs changes",
-        "Example at crates/client/src/client.rs:294-266 for get_search_results, 476-496 for get_job_status, similar pattern across 20+ methods"
-      ],
-      "plan": [
-        "Extract retry logic into a private method: async fn execute_with_auth_retry<F, Fut>(client: &mut SplunkClient, operation: F) -> Result<T> where F: FnOnce(&SplunkClient) -> impl Future<Output = Result<T>>",
-        "Update all API methods to use the shared execute_with_auth_retry wrapper",
-        "Ensure session_manager.clear_session(), login(), and retry call are handled in wrapper",
-        "Add unit tests for retry wrapper behavior (session token auth vs API token auth)",
-        "Run make ci to verify all existing tests still pass",
-        "Verify no dead_code attributes remain after refactoring"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0082",
-      "status": "todo",
-      "title": "Add CLI profile list and edit commands",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "config",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/config.rs",
-        "crates/cli/tests/config_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/config.rs supports list, set, delete operations",
-        "No 'edit' or 'show' command to view or modify existing profile details",
-        "Users must use splunk-cli config list then splunk-cli config set workflow to update a profile",
-        "TUI config command in usage.md does not match actual CLI capabilities"
-      ],
-      "plan": [
-        "Add 'show <profile-name>' subcommand to display full profile configuration",
-        "Add 'edit <profile-name>' subcommand to interactively edit profile fields (base-url, username, password, api-token, skip-verify, timeout, max-retries)",
-        "Update formatters to display profile details in structured format (table/json/csv/xml)",
-        "Add integration tests for profile show/edit operations",
-        "Update docs/usage.md with show/edit documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0083",
-      "status": "todo",
-      "title": "Add TUI configuration/settings screen",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "config",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/ui/screens/",
-        "crates/tui/tests/",
-        "crates/config/src/"
-      ],
-      "evidence": [
-        "TUI has runtime settings (auto_refresh, sort_column, sort_direction, search_history) persisted but no UI to configure them",
-        "Users must edit config.json file manually to change settings",
-        "TUI provides '0'-'9' screen navigation but no way to access settings",
-        "settings persisted by splunk_config::ConfigManager but no TUI screen to view/modify them"
-      ],
-      "plan": [
-        "Add CurrentScreen::Settings variant to crates/tui/src/app.rs",
-        "Create crates/tui/src/ui/screens/settings.rs module to render configuration UI",
-        "Settings screen should show: auto-refresh toggle, sort column/direction, search history, clear history button, connection info",
-        "Add SettingsScreen action variant to crates/tui/src/action.rs",
-        "Add LoadSettings action to reload persisted configuration",
-        "Implement keyboard shortcut (e.g., '0' key) to open settings screen",
-        "Add tests for settings persistence and screen navigation",
-        "Update help popup to document settings screen shortcut",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0084",
-      "status": "todo",
-      "title": "Enable TUI export functionality from non-search screens",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "export",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/ui/screens/"
-      ],
-      "evidence": [
-        "ExportSearchResults action exists in crates/tui/src/action.rs:85 but only accessible from Search screen",
-        "Users may want to export indexes, cluster info, user lists, apps list from TUI",
-        "No export keyboard shortcut or menu option on non-search screens (Indexes, Cluster, Jobs, Health, SavedSearches, InternalLogs, Apps, Users)",
-        "export.rs module supports export but not wired into screen input handlers for list-based screens"
-      ],
-      "plan": [
-        "Add generic ExportData action to crates/tui/src/action.rs: ExportData(data_type, format)",
-        "Update screen input handlers to support 'e' key for export when on list-based screens",
-        "Implement data serialization for different screen types (indexes -> Index[], users -> User[], apps -> App[])",
-        "Add export dialog popup to specify format and file path",
-        "Add tests for export from each screen type",
-        "Update help popup to document 'e' export shortcut on all screens",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0085",
-      "status": "todo",
-      "title": "Add integration tests for CLI command modules",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tests",
-        "coverage"
-      ],
-      "scope": [
-        "crates/cli/tests/"
-      ],
-      "evidence": [
-        "crates/cli/tests/ has tests: config_loading_tests, config_tests, health_tests, jobs_tests, kvstore_tests, license_tests",
-        "Missing tests: search_tests.rs, indexes_tests.rs, cluster_tests.rs, logs_tests.rs, config command module tests",
-        "commands/search.rs, commands/indexes.rs, commands/cluster.rs, commands/logs.rs have no corresponding test files",
-        "Makefile test-integration runs tests for specific crates but CLI commands lack coverage"
-      ],
-      "plan": [
-        "Create crates/cli/tests/search_tests.rs with tests for run() function (search execution, --wait, --earliest, --latest, --count flags)",
-        "Create crates/cli/tests/indexes_tests.rs with tests for run() function (list, --detailed, --count flags)",
-        "Create crates/cli/tests/cluster_tests.rs with tests for run() function (list, --detailed flags)",
-        "Create crates/cli/tests/logs_tests.rs with tests for run() function (list, --count, --earliest, --tail flags)",
-        "Update Makefile test-integration to include new test targets",
-        "Ensure all new tests use mockito for HTTP mocking",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0086",
-      "status": "todo",
-      "title": "Add progress indicators for long-running CLI operations",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "ux",
-        "feedback"
-      ],
-      "scope": [
-        "crates/cli/src/commands/search.rs",
-        "crates/cli/src/commands/jobs.rs"
-      ],
-      "evidence": [
-        "CLI search with --wait can take many seconds but provides no progress feedback",
-        "CLI job cancel/delete operations show no progress indicator",
-        "Users have no visibility into operation status (loading, in-progress)",
-        "Long-running CLI operations appear frozen with no output until completion"
-      ],
-      "plan": [
-        "Add spinner/progress bar using indicatif crate for CLI operations",
-        "Show 'Searching...' or 'Cancelling job...' with animated indicator for operations >2 seconds",
-        "Display progress percentage for job wait operations (poll job status every 2s)",
-        "Add --quiet/--verbose flags to control progress output",
-        "Add tests for progress indicator behavior with mocked slow operations",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0087",
-      "status": "todo",
-      "title": "Add keyboard shortcuts reference to TUI help",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "help",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/ui/popup.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "docs/usage.md shows screen-specific shortcuts but no comprehensive reference",
-        "Users must remember multiple screens' keybindings (1-9, j/k, r, Enter, ?, etc.)",
-        "Help popup (Action::Help) exists but shows screen-specific help, not global reference",
-        "No single-page overview of all available keyboard shortcuts"
-      ],
-      "plan": [
-        "Add 'Keybindings' section to docs/usage.md with table of all shortcuts",
-        "Add global shortcuts help (press 'h' or '?' for reference)",
-        "Organize shortcuts by screen (Search, Jobs, Indexes, Cluster, etc.)",
-        "Add category-specific shortcuts (navigation, actions, screen-specific)",
-        "Update help popup to include 'View keybindings' link or button",
-        "No code changes required, only documentation update"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0088",
-      "status": "todo",
-      "title": "Add XML export format to all CLI commands",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "format",
-        "feature-parity"
-      ],
-      "scope": [
-        "crates/cli/src/commands/",
-        "crates/cli/src/formatters.rs"
-      ],
-      "evidence": [
-        "OutputFormat enum in crates/cli/src/formatters.rs has Xml variant but search formatter implements xml formatting",
-        "commands/indexes.rs, commands/cluster.rs, commands/jobs.rs, commands/license.rs, commands/kvstore.rs use get_formatter(OutputFormat)",
-        "Only search command explicitly supports --output xml flag, other commands lack XML support",
-        "XmlFormatter exists in formatters.rs but not wired to all command run() functions"
-      ],
-      "plan": [
-        "Update crates/cli/src/main.rs to add --output <FORMAT> global flag with xml support",
-        "Update command modules (indexes, cluster, jobs, license, kvstore, health) to pass output_format parameter to formatter",
-        "Ensure XmlFormatter format_* methods handle each data type correctly",
-        "Add integration tests for XML output on each command",
-        "Update docs/usage.md to document XML format availability",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0089",
-      "status": "todo",
-      "title": "Add TUI copy to clipboard functionality",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "ux",
-        "clipboard"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/Cargo.toml"
-      ],
-      "evidence": [
-        "Users may want to copy SIDs, search queries, or results from TUI to clipboard",
-        "No clipboard action or keyboard shortcut exists (e.g., Ctrl+C, 'y' to yank)",
-        "TUI data (SIDs, search results) are manually transcribed for reuse",
-        "clipboard crate (arboard, cli-clipboard) provides cross-platform clipboard access"
-      ],
-      "plan": [
-        "Add clipboard dependency to crates/tui/Cargo.toml (arboard for cross-platform support)",
-        "Add CopyToClipboard action to crates/tui/src/action.rs with field identifier (sid, result, query, etc.)",
-        "Add keyboard shortcut (Ctrl+C or 'y') to copy selected item or focused field",
-        "Implement clipboard copy in relevant screen input handlers (jobs, indexes, search results)",
-        "Add toast notification on successful copy with clipboard content preview",
-        "Add tests for clipboard copy operations",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0090",
-      "status": "todo",
-      "title": "Remove dead_code suppressions and refactor unused code",
-      "priority": "low",
-      "tags": [
-        "refactor",
-        "dead-code",
-        "maintenance"
-      ],
-      "scope": [
-        "crates/client/src/models.rs",
-        "crates/client/src/client.rs",
-        "crates/tui/src/ui/toast.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "crates/client/src/models.rs has #[allow(dead_code)] at line 1 (unused enum variants)",
-        "crates/client/src/client.rs has #[allow(dead_code)] at lines 122 and 140 (unused methods/fields)",
-        "crates/tui/src/ui/toast.rs has 6 #[allow(dead_code)] attributes on public API methods (remaining, info, success, warning, from_str)",
-        "crates/tui/src/action.rs has 2 #[allow(dead_code)] attributes on SearchInput and ToggleSortDirection",
-        "crates/tui/src/ui/popup.rs has 2 #[allow(dead_code)] attributes",
-        "crates/tui/src/ui/screens/jobs.rs has #[allow(dead_code)] attribute",
-        "Dead code suppressions reduce code quality and may hide actual issues"
-      ],
-      "plan": [
-        "Remove #[allow(dead_code)] from crates/client/src/models.rs and delete truly unused code",
-        "Remove #[allow(dead_code)] from crates/client/src/client.rs and remove unused methods/fields",
-        "For crates/tui/src/ui/toast.rs: remove remaining, info, success, warning, from_str if they are truly unused, or #[allow(dead_code)] should be justified with usage docs",
-        "For crates/tui/src/action.rs: evaluate if SearchInput and ToggleSortDirection are used and remove suppressions if not",
-        "For crates/tui/src/ui/popup.rs and jobs.rs: remove suppressions and verify code is used",
-        "Add comments explaining any remaining suppressions with rationale",
-        "Run clippy to verify no new warnings introduced",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0091",
-      "status": "todo",
-      "title": "Add color scheme customization to TUI",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "ux",
-        "customization"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/",
-        "crates/config/src/types.rs",
-        "crates/config/src/persistence.rs"
-      ],
-      "evidence": [
-        "TUI uses hardcoded colors (ratatui style::{Color, Modifier}) throughout UI components",
-        "Users have no way to customize colors (light mode, high contrast, custom themes)",
-        "Hardcoded colors may not suit all users or accessibility needs",
-        "Color customization is a common TUI feature (htop, btop, lazydocker, etc.)"
-      ],
-      "plan": [
-        "Add ColorScheme enum to crates/tui/src/app.rs (Default, Light, Dark, HighContrast, Custom)",
-        "Add Theme struct with configurable colors for UI elements (header, footer, tables, status colors, selection colors)",
-        "Extend PersistedState in crates/config/src/persistence.rs with theme preference",
-        "Create crates/config/src/types.rs ColorTheme with color definitions for each scheme",
-        "Add 'theme' configuration field to Config struct and persistence",
-        "Update all UI render functions to use theme-based colors instead of hardcoded values",
-        "Add settings screen option to change theme (see RQ-0083)",
-        "Add tests for theme persistence and color application",
-        "Update docs/usage.md with theme configuration documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0092",
-      "status": "todo",
-      "title": "Add CLI command result file save option",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "ux",
-        "output"
-      ],
-      "scope": [
-        "crates/cli/src/commands/search.rs",
-        "crates/cli/src/commands/indexes.rs",
-        "crates/cli/src/formatters.rs"
-      ],
-      "evidence": [
-        "TUI has ExportSearchResults action with file path selection popup",
-        "CLI search and indexes commands can only print to stdout (no --output file option)",
-        "Users must redirect stdout to file manually: splunk-cli search 'query' > results.json",
-        "No unified CLI output mechanism across different commands"
-      ],
-      "plan": [
-        "Add --output <FILE> flag to global CLI options or per-command (search, indexes, jobs, cluster)",
-        "Implement file writing logic using serde_json::to_string_pretty() for JSON or formatter for other formats",
-        "Create file, write content, and print success message to stderr for progress visibility",
-        "Handle file write errors gracefully with helpful error messages",
-        "Add integration tests for file output (write success, overwrite, permission errors)",
-        "Update docs/usage.md with --output flag documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0093",
-      "status": "todo",
-      "title": "Add CLI cancel/sigint handling for long-running operations",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "ux",
-        "signal-handling"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/search.rs"
-      ],
-      "evidence": [
-        "CLI search with --wait blocks indefinitely until completion",
-        "No way to cancel long-running CLI operations (Ctrl+C terminates process but shows no cleanup message)",
-        "tokio runtime does not handle SIGINT/SIGTERM gracefully",
-        "Users see 'panic' or raw tokio errors when interrupted during async operations"
-      ],
-      "plan": [
-        "Add tokio::signal::ctrl_c() handler in crates/cli/src/main.rs to set cancellation flag",
-        "Update async command run() functions to check cancellation token and exit gracefully",
-        "Add Result type that includes Cancelled variant or use anyhow::Context with cancellation info",
-        "Ensure cleanup happens on cancel (close HTTP connections, log cancellation)",
-        "Add integration tests with simulated cancellation using tokio::time::timeout and channel close",
-        "Update docs/usage.md with cancellation behavior notes",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0094",
-      "status": "todo",
-      "title": "Optimize TUI search results rendering performance",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "performance",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/search.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs:357 stores search_results as Vec<Value> without virtualization for large datasets",
-        "crates/tui/src/app.rs:86 comment says 'virtualization: formatting is deferred to render time' but no actual virtual window exists",
-        "Large result sets (1000+ rows) cause slow rendering and scrolling in TUI",
-        "Pagination exists (search_results_page_size: 100, search_has_more_results) but all results stored in memory",
-        "TUI performance degrades with 5000+ search results rendered as full table"
-      ],
-      "plan": [
-        "Implement virtualized rendering using sliding window of visible results only (e.g., 50 rows on screen)",
-        "Add virtual_window_start field to App struct for tracking visible region",
-        "Update search screen rendering to only render visible slice based on scroll_offset and terminal height",
-        "Ensure search results pagination loads additional pages on-demand (already has LoadMoreSearchResults action)",
-        "Add performance tests for rendering with 10, 100, 1000, 10000 results",
-        "Add snapshot tests verifying virtual window scrolling behavior",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0095",
-      "status": "todo",
-      "title": "Add TUI fuzzy search for saved searches and jobs",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "search",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/saved_searches.rs",
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "Saved searches screen uses exact match navigation (j/k) with no search/filter",
-        "Jobs screen has substring filter but no fuzzy search capability",
-        "Users with many saved searches (100+) must navigate manually through list",
-        "TUI fuzzy search is a productivity feature (fzf, skim, broot pattern)"
-      ],
-      "plan": [
-        "Add fuzzy matcher crate (skim or nucleo-matcher) to crates/tui/Cargo.toml",
-        "Add fuzzy search mode action to crates/tui/src/action.rs (EnterFuzzySearch)",
-        "Update saved_searches and jobs screens to support fuzzy search with score display",
-        "Implement keyboard shortcut (/ or Ctrl+F) to activate fuzzy search",
-        "Add fuzzy search results popup with highlighted matches",
-        "Add tests for fuzzy search behavior (partial match scoring, empty query, etc.)",
-        "Update help popup to document fuzzy search shortcut",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0096",
-      "status": "todo",
-      "title": "Add CLI saved search run command",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "saved-searches",
-        "feature-parity"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/",
-        "crates/cli/tests/"
-      ],
-      "evidence": [
-        "CLI has no command to execute a saved search from the saved searches list",
-        "TUI has SavedSearches screen where Enter on a saved search executes it",
-        "Users cannot run saved searches from CLI - must know the exact SPL query or use TUI",
-        "This breaks workflow parity between CLI and TUI entrypoints"
-      ],
-      "plan": [
-        "Add --run-saved <NAME> flag to search command (or separate 'saved run' subcommand)",
-        "Implement saved search lookup by name via config manager or saved searches list endpoint",
-        "Execute the saved search query using existing search command infrastructure",
-        "Add integration tests for running saved search (exists, not found, execute success)",
-        "Update docs/usage.md with saved search run documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0097",
-      "status": "todo",
-      "title": "Add TUI job re-run functionality",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "jobs",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "TUI Jobs screen can view and cancel/delete jobs but cannot re-run a job",
-        "Users must copy SID from TUI, exit to CLI, and run search command with saved query",
-        "No 'Re-run job' action or keyboard shortcut exists",
-        "Job re-run is a common Splunk workflow for iterating on queries"
-      ],
-      "plan": [
-        "Add ReRunJob(String) action to crates/tui/src/action.rs",
-        "Implement re-run by using job's saved search query or extracting query from job details",
-        "Add keyboard shortcut (e.g., 'r' key) in Jobs screen to trigger re-run",
-        "Add confirmation popup for re-run action with job details summary",
-        "Update handle_jobs_input in app.rs to map 'r' key to ReRunJob action when on a job row",
-        "Add side_effects handler for ReRunJob (creates new search job with same query)",
-        "Add tests for job re-run (valid SID, not found job, re-run success)",
-        "Update help popup to document re-run shortcut",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0098",
-      "status": "todo",
-      "title": "Improve CLI search command to support job SID-based queries",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "search",
-        "jobs"
-      ],
-      "scope": [
-        "crates/cli/src/commands/search.rs",
-        "crates/cli/tests/search_tests.rs",
-        "crates/cli/src/commands/jobs.rs"
-      ],
-      "evidence": [
-        "CLI search command only takes raw SPL query string",
-        "No way to execute search by job SID from CLI (useful for re-running/debugging)",
-        "TUI has saved searches but CLI cannot reference saved searches by name",
-        "Common workflow: user runs search in TUI, gets SID, wants to reference it later from CLI but cannot"
-      ],
-      "plan": [
-        "Add --job-sid <SID> flag to search command (as alternative to <query>)",
-        "If --job-sid provided, retrieve job results using get_search_results(sid, count, offset)",
-        "Support both --job-sid and --query (mutually exclusive, or job-sid retrieves existing job results)",
-        "Add integration tests for job SID search (valid SID, results loading, error handling)",
-        "Update docs/usage.md with --job-sid documentation",
-        "Consider synergy with RQ-0096 (re-run saved search that creates job)",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
-}
+[
+  {
+    "id": "RQ-0081",
+    "status": "todo",
+    "title": "Extract shared session retry wrapper from client.rs",
+    "priority": "medium",
+    "tags": [
+      "client",
+      "dry",
+      "refactor"
+    ],
+    "scope": [
+      "crates/client/src/client.rs"
+    ],
+    "evidence": [
+      "crates/client/src/client.rs has 23 methods with identical session retry logic: create_search_job, get_search_results, get_job_status, list_jobs, cancel_job, delete_job, list_indexes, list_saved_searches, list_apps, get_app, enable_app, disable_app, list_users, get_server_info, get_health, get_cluster_info, get_cluster_peers, get_license_usage, list_license_pools, list_license_stacks, get_kvstore_status, check_log_parsing_health, get_internal_logs",
+      "Each method pattern: get auth token, call endpoint, match result, on 401/403 with session auth clear session and retry once",
+      "Retry logic spans 20-25 lines per method (lines 262-292 for get_search_results, 297-323 for get_job_status, similar across all 23 methods)",
+      "This violates DRY principle and makes maintenance difficult when retry logic needs changes",
+      "Integration tests already exist for 401/403 retry behavior in crates/client/tests/integration_tests.rs (test_retry_on_401_session_auth, test_retry_on_403_session_auth, test_no_retry_on_401_api_token, test_retry_fails_on_second_401)"
+    ],
+    "plan": [
+      "Extract retry logic into a private method: async fn execute_with_auth_retry<F, Fut>(client: &mut SplunkClient, operation: F) -> Result<T> where F: FnOnce(&SplunkClient) -> impl Future<Output = Result<T>>",
+      "Update all 23 API methods to use the shared execute_with_auth_retry wrapper",
+      "Ensure session_manager.clear_session(), login(), and retry call are handled in wrapper",
+      "Verify existing integration tests for 401/403 retry behavior still pass after refactoring",
+      "Run make ci to verify all existing tests still pass",
+      "Verify no dead_code attributes remain after refactoring"
+    ],
+    "notes": [
+      "Existing send_request_with_retry in endpoints/request.rs handles HTTP-level retries (429 status codes), not session-level retries (401/403). This task is for session-level retry extraction only."
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2025-01-25T00:00:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0082",
+    "status": "todo",
+    "title": "Add CLI profile show and edit commands",
+    "priority": "medium",
+    "tags": [
+      "cli",
+      "config",
+      "ux"
+    ],
+    "scope": [
+      "crates/cli/src/main.rs",
+      "crates/cli/src/commands/config.rs",
+      "crates/cli/tests/config_tests.rs",
+      "crates/cli/src/formatters.rs"
+    ],
+    "evidence": [
+      "crates/cli/src/commands/config.rs supports list, set, delete operations (lines 9-61)",
+      "No 'show' subcommand exists to display full profile configuration details",
+      "No 'edit' subcommand exists to interactively modify profile fields",
+      "Users must use 'splunk-cli config list' then 'splunk-cli config set' workflow to update a profile",
+      "set command already supports --use-keyring flag for secure credential storage (line 53)",
+      "formatters.rs defines OutputFormat enum with Json, Table, Csv, Xml variants (lines 16-22) but no format_profile method exists",
+      "docs/usage.md documents config command (lines 361-381) with list, set, delete subcommands only, no show/edit documented"
+    ],
+    "plan": [
+      "Add 'show <profile-name>' subcommand to ConfigCommand enum to display full profile configuration",
+      "Add 'edit <profile-name>' subcommand to ConfigCommand enum for interactive profile editing",
+      "Implement show functionality: load profile by name, display all fields (base-url, username, skip-verify, timeout, max-retries, auth type) with masking",
+      "Implement edit functionality: use dialoguer for interactive editing of profile fields (base-url, username, password, api-token, skip-verify, timeout, max-retries)",
+      "Add format_profile method to Formatter trait with support for table, json, csv, xml output formats",
+      "Update run() function in commands/config.rs to match new show/edit subcommands",
+      "Add integration tests in crates/cli/tests/config_tests.rs for show (valid profile, not found, output formats) and edit (create, update, field prompts) operations",
+      "Update docs/usage.md with show and edit command documentation including examples",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [
+      "Existing set command already has interactive prompts (prompt_for_secret function, lines 195-210) for password/token when not provided via CLI args",
+      "Consider reusing existing prompt_for_secret function and dialoguer::Password for edit command's password/token fields",
+      "edit command should support --use-keyring flag like set command for credential security"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T01:47:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0083",
+    "status": "todo",
+    "title": "Add TUI configuration/settings screen",
+    "priority": "medium",
+    "tags": [
+      "tui",
+      "config",
+      "ux"
+    ],
+    "scope": [
+      "crates/tui/src/app.rs",
+      "crates/tui/src/action.rs",
+      "crates/tui/src/ui/screens/",
+      "crates/tui/src/ui/screens/settings.rs",
+      "crates/tui/src/ui/screens/mod.rs",
+      "crates/tui/src/ui/popup.rs",
+      "crates/tui/tests/",
+      "crates/config/src/persistence.rs",
+      "crates/config/src/types.rs"
+    ],
+    "evidence": [
+      "PersistedState in crates/config/src/persistence.rs:11-33 defines persisted fields: auto_refresh (bool), sort_column (String), sort_direction (String), last_search_query (Option<String>), search_history (Vec<String>)",
+      "App struct in crates/tui/src/app.rs:205 stores auto_refresh field, lines 306-313 have SortState struct with column/direction, line 225 has search_history: Vec<String>",
+      "App::get_persisted_state() method (app.rs:326-336) returns PersistedState with current runtime settings for persistence",
+      "CurrentScreen enum (app.rs:60-71) has 9 variants: Search, Indexes, Cluster, Jobs, JobInspect, Health, SavedSearches, InternalLogs, Apps, Users - no Settings variant exists",
+      "Screen navigation uses '1'-'9' keys in handle_search_input (lines 667-694) and all screen input handlers, no '0' key handler exists",
+      "crates/tui/src/ui/screens/mod.rs:6-14 lists 10 screen modules (apps, cluster, health, indexes, internal_logs, job_details, jobs, saved_searches, search, users), no settings module exists",
+      "Settings can only be changed by manually editing config.json file - no UI access exists for runtime configuration"
+    ],
+    "plan": [
+      "Add CurrentScreen::Settings variant to crates/tui/src/app.rs (after Users variant)",
+      "Create crates/tui/src/ui/screens/settings.rs module with render() function to display settings UI",
+      "Settings screen should show: auto-refresh toggle (current value), sort column (current selection), sort direction (asc/desc), search history count, clear history button, current profile info",
+      "Add SettingsScreen variant to crates/tui/src/action.rs (no params needed)",
+      "Add LoadSettings action (no params) to crates/tui/src/action.rs to trigger ConfigManager load() and update app state from persisted file",
+      "Add handle_settings_input() method to crates/tui/src/app.rs for settings screen keyboard handling (j/k navigation, toggle auto-refresh, cycle sort, clear history)",
+      "Add '0' key handler to all screen input handlers (handle_search_input, handle_jobs_input, etc.) to switch to Settings screen",
+      "Update handle_input() in crates/tui/src/app.rs:436-445 to match CurrentScreen::Settings => self.handle_settings_input(key)",
+      "Add tests for settings screen: navigation, toggles, persistence, screen switching",
+      "Update crates/tui/src/ui/screens/mod.rs to add pub mod settings;",
+      "Update help popup (crates/tui/src/ui/popup.rs or docs/usage.md) to document '0: Settings' keyboard shortcut",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T00:05:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0084",
+    "status": "todo",
+    "title": "Enable TUI export functionality from non-search screens",
+    "priority": "medium",
+    "tags": [
+      "tui",
+      "export",
+      "ux"
+    ],
+    "scope": [
+      "crates/tui/src/app.rs",
+      "crates/tui/src/action.rs",
+      "crates/tui/src/export.rs",
+      "crates/tui/src/ui/popup.rs",
+      "crates/tui/src/ui/screens/indexes.rs",
+      "crates/tui/src/ui/screens/users.rs",
+      "crates/tui/src/ui/screens/apps.rs",
+      "crates/tui/src/ui/screens/saved_searches.rs",
+      "crates/tui/src/ui/screens/cluster.rs",
+      "crates/tui/src/ui/screens/jobs.rs",
+      "crates/tui/src/ui/screens/health.rs",
+      "crates/tui/src/ui/screens/internal_logs.rs"
+    ],
+    "evidence": [
+      "ExportSearchResults action exists in crates/tui/src/action.rs:85 but only for search results (Vec<Value>)",
+      "export.rs module (crates/tui/src/export.rs) has export_results() function supporting JSON and CSV formats via ExportFormat enum",
+      "Export functionality only available from Search screen: app.rs:1351-1363 shows 'e' key handler in handle_search_input() triggers ExportSearch popup",
+      "No export keyboard shortcut or menu option on non-search screens: indexes.rs, users.rs, apps.rs, saved_searches.rs, cluster.rs, jobs.rs, health.rs, internal_logs.rs all lack 'e' key handlers",
+      "Data models already implement Serialize trait: Index (models.rs:132), User (models.rs:201), App (models.rs:190), SavedSearch (models.rs:163), ClusterInfo (models.rs:242) are all Serialize + Deserialize",
+      "ExportFormat enum (Json, Csv) already exists in action.rs:14-20 and can be reused for all screen types",
+      "popup.rs:18 has PopupType::ExportSearch but only used by Search screen; Help popup mentions 'e' key only for Search screen (line 155-159)",
+      "export.rs:16-35 has export_json() and export_csv() helper functions but they accept Vec<Value>; need generic versions for other types",
+      "All list-based screens have data in app.rs: indexes (Vec<Index>), users (Vec<User>), apps (Vec<SplunkApp>), saved_searches (Vec<SavedSearch>) ready for export"
+    ],
+    "plan": [
+      "Add generic ExportData(DataType, PathBuf, ExportFormat) action to crates/tui/src/action.rs with DataType enum (Indexes, Users, Apps, SavedSearches, ClusterInfo, Jobs, Health, InternalLogs)",
+      "Add generic export functions to export.rs: export_indexes(), export_users(), export_apps(), export_saved_searches(), export_cluster(), export_jobs(), export_health(), export_logs() - all using ExportFormat",
+      "Add new PopupType variants to ui/popup.rs: ExportIndexes, ExportUsers, ExportApps, ExportSavedSearches, ExportCluster, ExportJobs, ExportHealth, ExportLogs",
+      "Add 'e' key handler to handle_indexes_input() in app.rs to trigger export popup when indexes are loaded",
+      "Add 'e' key handler to handle_users_input() in app.rs to trigger export popup when users are loaded",
+      "Add 'e' key handler to handle_apps_input() in app.rs to trigger export popup when apps are loaded",
+      "Add 'e' key handler to handle_saved_searches_input() in app.rs to trigger export popup when saved_searches are loaded",
+      "Add 'e' key handler to handle_cluster_input() in app.rs to trigger export popup when cluster_info is loaded",
+      "Add 'e' key handler to handle_jobs_input() in app.rs to trigger export popup when jobs are loaded (Jobs screen already has keyboard shortcuts, verify no conflicts)",
+      "Update handle_popup_input() in app.rs to handle all export popup types with filename input and format toggle (Tab)",
+      "Add side_effects handler for ExportData actions to call appropriate export.rs function and show success toast",
+      "Update Help popup in ui/popup.rs to document 'e' export shortcut for all screens (Indexes, Users, Apps, SavedSearches, Cluster, Jobs, Health, Logs)",
+      "Add tests in export.rs for each data type export (indexes JSON/CSV, users JSON/CSV, apps JSON/CSV, etc.)",
+      "Add TUI tests for export popup triggering on each screen type",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [
+      "Existing ExportFormat enum (Json, Csv) in action.rs:14-20 can be reused for all screen export types",
+      "All data models (Index, User, App, SavedSearch, ClusterInfo, SearchJobStatus, HealthCheckOutput, LogEntry) already implement Serialize, making export straightforward",
+      "Jobs screen has many keyboard shortcuts (r, a, s, /, space, c, d, Enter); verify 'e' doesn't conflict with existing bindings",
+      "export.rs currently has export_json() and export_csv() helpers but are specific to Vec<Value>; need to extract common logic or create generic versions",
+      "Consider creating a single generic export function: export_serializable<T: Serialize>(data: &[T], path: &Path, format: ExportFormat) to reduce code duplication"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T22:42:17Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0085",
+    "status": "todo",
+    "title": "Add integration tests for CLI search command",
+    "priority": "medium",
+    "tags": [
+      "cli",
+      "tests",
+      "coverage"
+    ],
+    "scope": [
+      "crates/cli/tests/search_tests.rs",
+      "Makefile"
+    ],
+    "evidence": [
+      "crates/cli/tests/ has 13 test files: apps_tests.rs, cluster_pagination_tests.rs, config_loading_tests.rs, config_tests.rs, health_tests.rs, indexes_pagination_tests.rs, internal_logs_tests.rs, jobs_tests.rs, kvstore_tests.rs, license_tests.rs, list_all_tests.rs, saved_searches_tests.rs, users_tests.rs",
+      "Missing test file: search_tests.rs (commands/search.rs has no corresponding integration tests)",
+      "commands/search.rs run() function accepts query, --wait, --earliest, --latest, max_results, output_format parameters",
+      "Makefile test-integration runs 12 CLI test targets but does not include internal_logs_tests.rs",
+      "Existing test pattern uses assert_cmd and predicates for CLI testing (see jobs_tests.rs, internal_logs_tests.rs)",
+      "All other CLI commands have integration tests except search command"
+    ],
+    "plan": [
+      "Create crates/cli/tests/search_tests.rs with tests for run() function (search execution, --wait, --earliest, --latest flags, --output format, max_results parameter)",
+      "Add tests: default search behavior, --wait flag, --earliest/--latest time ranges, --output format (json, csv, table), max_results parameter, help text validation",
+      "Update Makefile test-integration to include cargo test -p splunk-cli --test internal_logs_tests",
+      "Update Makefile test-integration to include cargo test -p splunk-cli --test search_tests",
+      "Ensure all tests use assert_cmd and predicates like existing test files",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [
+      "indexes_tests.rs does not exist (indexes_pagination_tests.rs exists instead), cluster_tests.rs does not exist (cluster_pagination_tests.rs exists instead), logs_tests.rs does not exist (internal_logs_tests.rs exists instead)",
+      "Task originally scoped to create 4 test files, but 3 of them already exist with different names (indexes_pagination_tests.rs, cluster_pagination_tests.rs, internal_logs_tests.rs)",
+      "Only search_tests.rs needs to be created from scratch"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T22:42:17Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0086",
+    "status": "todo",
+    "title": "Add progress indicators for long-running CLI operations",
+    "priority": "medium",
+    "tags": [
+      "cli",
+      "ux",
+      "feedback"
+    ],
+    "scope": [
+      "crates/cli/src/commands/search.rs",
+      "crates/cli/src/commands/jobs.rs",
+      "crates/cli/Cargo.toml",
+      "crates/cli/src/main.rs"
+    ],
+    "evidence": [
+      "CLI search.rs:32 passes wait boolean to client.search() with no user-facing progress feedback during long searches",
+      "CLI jobs.rs:47-58 cancel/delete operations show only static success messages after completion, no spinner or in-progress indicator",
+      "CLI main.rs:19-54 has no global --quiet/--verbose flags for controlling progress output verbosity",
+      "CLI Cargo.toml:10-39 has no indicatif or progress-indicator dependencies for animated spinners/bars",
+      "TUI already has progress infrastructure: Action::Progress (tui/src/action.rs:134), progress tracking in tui/src/app.rs:203, and done_progress percentages in job models",
+      "TUI displays job progress with 'Running ({:.0}%)' format (tui/src/ui/screens/jobs.rs:127-128) which CLI could mirror",
+      "Only info! tracing logs exist for operation status, no user-visible progress during execution"
+    ],
+    "plan": [
+      "Add indicatif dependency to crates/cli/Cargo.toml (spinners for indefinite operations, progress bars for percentage-based)",
+      "Create progress utility module (crates/cli/src/progress.rs) with wrapper functions for spinner and progress bar management",
+      "Add global --quiet flag to CLI main.rs to suppress progress output (keep only final results)",
+      "Update search.rs run() to show spinner with 'Searching...' message when wait=true, updating with job status if available",
+      "Update jobs.rs cancel() and delete() operations to show 'Cancelling job...' or 'Deleting job...' spinners during execution",
+      "For search with wait, poll job status periodically and update spinner with 'Searching... (XX%)' using done_progress from job status",
+      "Ensure progress output goes to stderr to not interfere with stdout result formatting",
+      "Add integration tests for progress indicators using tokio::time::sleep to simulate slow operations",
+      "Add test to verify --quiet flag suppresses progress output while still returning results",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [
+      "TUI already uses progress tracking patterns that CLI can reference for consistency (see tui/src/app.rs:1420-1424 for progress updates)",
+      "Job status responses include done_progress field (0.0-1.0) which can be used for percentage display in CLI",
+      "Progress indicators should use stderr to avoid contaminating stdout where formatted results are printed"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T22:46:13Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0087",
+    "status": "todo",
+    "title": "Fix inaccuracies in TUI help popup keyboard shortcuts documentation",
+    "priority": "medium",
+    "tags": [
+      "tui",
+      "help",
+      "documentation"
+    ],
+    "scope": [
+      "crates/tui/src/ui/popup.rs",
+      "crates/tui/src/app.rs",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "Help popup in crates/tui/src/ui/popup.rs:106-166 has comprehensive shortcuts reference with inaccuracies",
+      "Search screen help says 'Ctrl+j/k  Navigate results' but app.rs:749-750 shows j/k as regular character input in search mode, not Ctrl+modifier",
+      "Search screen help says 'Up/Down   History navigation' but doesn't clarify j/k add characters to search input vs Up/Down navigate history",
+      "docs/usage.md:388-461 has comprehensive keyboard shortcuts section matching help popup, inherits same inaccuracies",
+      "Search mode in app.rs:743-858 shows j/k return Action::NavigateDown/Up only when typing search, but help suggests they're for result navigation",
+      "All screen-specific shortcuts are documented in both help popup and docs/usage.md, but Search screen navigation description is confusing/ambiguous",
+      "JobInspect screen handler (app.rs:1100-1111) only supports Esc and '?', matches help popup",
+      "Other screens (Indexes, Cluster, Health, SavedSearches, InternalLogs, Apps, Users) have correct documentation matching implementation"
+    ],
+    "plan": [
+      "Fix Search screen help in crates/tui/src/ui/popup.rs: clarify that j/k add characters to search input, Up/Down navigate history, j/k navigate results after search executes",
+      "Remove 'Ctrl+' prefix from j/k in help popup Search screen section (line 115 of popup.rs)",
+      "Update docs/usage.md Search Screen section (lines 407-416) to match corrected help popup content",
+      "Clarify navigation behavior distinction between search input mode (typing query) vs results mode (viewing output)",
+      "Verify all screen-specific shortcuts match actual implementation in app.rs input handlers",
+      "Run make ci to ensure all tests pass"
+    ],
+    "notes": [
+      "Help popup and docs/usage.md already contain comprehensive keyboard shortcuts reference organized by screen",
+      "Task originally claimed no comprehensive reference exists, but both popup.rs and usage.md have detailed per-screen shortcut documentation",
+      "Only issue is inaccurate/confusing Search screen navigation description, not missing documentation",
+      "Search screen has two modes: input mode (typing query) and results mode (viewing output), but help doesn't clearly distinguish them"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T22:59:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0088",
+    "status": "done",
+    "title": "Add XML export format to all CLI commands",
+    "priority": "low",
+    "tags": [
+      "cli",
+      "format",
+      "feature-parity"
+    ],
+    "scope": [
+      "crates/cli/src/commands/",
+      "crates/cli/src/formatters.rs",
+      "crates/cli/src/main.rs",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "XmlFormatter implements Formatter trait in crates/cli/src/formatters.rs:1656-2304 with all format_* methods (format_search_results, format_indexes, format_jobs, format_cluster_info, format_health, format_kvstore_status, format_license, format_logs, format_users, format_apps, format_app_info, format_list_all, format_saved_searches, format_saved_search_info, format_job_details)",
+      "get_formatter function at formatters.rs:2350 returns XmlFormatter for OutputFormat::Xml enum variant",
+      "Global --output flag exists in main.rs:52-54 with documentation listing xml as valid format",
+      "All CLI commands use OutputFormat::from_str(output_format) and get_formatter(format) pattern: indexes.rs:38, cluster.rs:83, jobs.rs:38/66, license.rs:41, health.rs:68, kvstore.rs:26, logs.rs:23, internal_logs.rs:63, users.rs:23, apps.rs:65/93, saved_searches.rs:88/115/154, list_all.rs:85, search.rs:36",
+      "docs/usage.md documents XML format availability for all commands with multiple references (lines 90, 161, 184, 209, 225, 228, 238, 281, 302, 305, 311, 317)",
+      "All commands in main.rs pass &cli.output to their run functions (lines 300, 309, 316, 325, 328, 331, 334, 337, 341, 344, 347, 350, 353, 356)",
+      "formatters.rs tests include XML formatter tests at lines 24566-24665 (test_xml_formatter, test_xml_formatter_indexes_basic, test_xml_formatter_indexes_detailed, test_xml_formatter_with_non_string_values)"
+    ],
+    "plan": [
+      "XML export format already fully implemented across all CLI commands",
+      "XmlFormatter implements complete Formatter trait with all required methods",
+      "Global --output flag supports xml format via OutputFormat enum",
+      "All commands use get_formatter() which returns XmlFormatter when format=xml",
+      "Documentation in docs/usage.md covers XML format for all commands",
+      "Integration tests in formatters.rs verify XML output correctness"
+    ],
+    "notes": [
+      "Task originally claimed XML support was missing, but investigation reveals complete implementation",
+      "All CLI commands already support --output xml flag via global output parameter",
+      "No additional work required - feature is fully functional and tested"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T22:53:04Z",
+    "completed_at": "2026-01-25T22:53:04Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0089",
+    "status": "todo",
+    "title": "Add TUI copy to clipboard functionality",
+    "priority": "low",
+    "tags": [
+      "tui",
+      "ux",
+      "clipboard"
+    ],
+    "scope": [
+      "crates/tui/src/action.rs",
+      "crates/tui/src/app.rs",
+      "crates/tui/Cargo.toml",
+      "crates/tui/tests/app_tests.rs",
+      "crates/tui/src/ui/popup.rs",
+      "crates/tui/src/ui/screens/jobs.rs",
+      "crates/tui/src/ui/screens/search.rs",
+      "crates/tui/src/ui/screens/indexes.rs",
+      "crates/tui/src/ui/screens/saved_searches.rs",
+      "crates/tui/src/ui/screens/apps.rs",
+      "crates/tui/src/ui/screens/users.rs",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "No clipboard action or keyboard shortcut exists in TUI (confirmed by searching codebase for 'CopyToClipboard', 'clipboard', 'arboard' with zero matches)",
+      "crates/tui/src/action.rs has 150 lines with no CopyToClipboard action variant (Action enum has Quit, Input, NavigateDown/Up, PageDown/Up, LoadIndexes/Jobs/Cluster/Health/SavedSearches/InternalLogs/Apps/Users, RunSearch, ExportSearchResults, CancelJob/DeleteJob, CancelJobsBatch/DeleteJobsBatch, JobOperationComplete, InspectJob/ExitInspectMode, Progress/Loading, Notify, Tick, ShowErrorDetails/ClearErrorDetails)",
+      "crates/tui/Cargo.toml:10-45 has no arboard or clipboard dependency (dependencies: splunk-client, splunk-config, tokio, futures-util, ratatui, crossterm, serde_json, serde, csv, anyhow, tracing, tracing-subscriber, tracing-appender, uuid)",
+      "'y' key is already used in confirmation popups for 'yes' confirm (app.rs:600 for ConfirmCancel, 612 for ConfirmDelete, 624 for ConfirmCancelBatch, 629 for ConfirmDeleteBatch)",
+      "'c' key is used in Jobs screen to cancel jobs (app.rs:948 triggers CancelJob action when selected_jobs is not empty)",
+      "Ctrl+C is not used anywhere in TUI - available for clipboard shortcut",
+      "Data available to copy: SearchJobStatus (sid, status, duration, results count, etc. in models.rs:95-105), Index (name and properties in models.rs:132), SavedSearch (name, search query in models.rs:163), SplunkApp (name, label, version in models.rs:190), User (name, email, roles), search results (Vec<Value>), LogEntry (log level, message)",
+      "Screens that would benefit from clipboard: Jobs (copy SID/status), Search (copy query, copy result row), Indexes (copy index name), SavedSearches (copy name, copy search query), Apps (copy app name), Users (copy username), InternalLogs (copy log entry), Health (copy status), Cluster (copy info)",
+      "Test infrastructure exists in crates/tui/tests/app_tests.rs with create_mock_jobs helper and Action testing patterns (test_popup_cancel_flow, test_selection_preservation, etc.)",
+      "Help popup in crates/tui/src/ui/popup.rs has no clipboard documentation (PopupType::Help only documents existing shortcuts)",
+      "docs/usage.md has no clipboard shortcuts documented"
+    ],
+    "plan": [
+      "Add arboard dependency to crates/tui/Cargo.toml (arboard for cross-platform clipboard support)",
+      "Add CopyToClipboard(String) action to crates/tui/src/action.rs with content to copy",
+      "Add Ctrl+C keyboard shortcut to handle_popup_input in app.rs (only when no popup is open, to avoid conflicts with quit behavior)",
+      "Implement clipboard copy in handle_jobs_input: copy selected job SID (app.rs:866-950) when Ctrl+C pressed and job is selected",
+      "Implement clipboard copy in handle_search_input: copy search query or selected result row when Ctrl+C pressed",
+      "Implement clipboard copy in handle_indexes_input: copy selected index name when Ctrl+C pressed",
+      "Implement clipboard copy in handle_saved_searches_input: copy saved search name or query when Ctrl+C pressed",
+      "Implement clipboard copy in handle_apps_input: copy app name when Ctrl+C pressed",
+      "Implement clipboard copy in handle_users_input: copy username when Ctrl+C pressed",
+      "Add toast notification (ToastLevel::Info) on successful copy with truncated content preview (first 30 chars + '...')",
+      "Create clipboard module (crates/tui/src/clipboard.rs) with copy_to_clipboard function wrapping arboard::Clipboard",
+      "Add tests in crates/tui/tests/app_tests.rs for clipboard copy operations (test_clipboard_copy_sid, test_clipboard_copy_index_name, test_clipboard_copy_empty_selection)",
+      "Update help popup (crates/tui/src/ui/popup.rs or docs/usage.md) to document 'Ctrl+C: Copy to clipboard' shortcut",
+      "Handle clipboard errors gracefully (display toast error if clipboard operation fails)",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [
+      "Use Ctrl+C as keyboard shortcut instead of 'y' to avoid conflicts with confirmation popup 'yes' confirm (lines 600, 612, 624, 629 in app.rs)",
+      "Ctrl+C is not used anywhere in TUI codebase - confirmed by grep search for 'KeyModifiers::CONTROL'",
+      "arboard crate supports Linux, macOS, and Windows (cross-platform)",
+      "Clipboard errors should not crash app - display as toast notification instead",
+      "Only copy meaningful content when selection exists (e.g., job SID when job row is selected), ignore Ctrl+C when no data to copy",
+      "Jobs screen uses 'c' key for cancel jobs (line 948) - Ctrl+C is distinct and won't conflict"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T06:00:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0090",
+    "status": "todo",
+    "title": "Remove dead_code suppressions and refactor unused code",
+    "priority": "low",
+    "tags": [
+      "refactor",
+      "dead-code",
+      "maintenance"
+    ],
+    "scope": [
+      "crates/client/src/models.rs",
+      "crates/client/src/client.rs",
+      "crates/tui/src/ui/toast.rs",
+      "crates/tui/src/action.rs",
+      "crates/tui/src/ui/popup.rs",
+      "crates/tui/src/ui/screens/jobs.rs"
+    ],
+    "evidence": [
+      "crates/client/src/models.rs:286 - AuthResponse struct has #[allow(dead_code)], only used in test (test_deserialize_auth_response at line 453)",
+      "crates/client/src/client.rs:122 - SplunkClient struct has #[allow(dead_code)] but is heavily used (11 CLI commands, tests, lib exports) - FALSE POSITIVE",
+      "crates/client/src/client.rs:139 - ensure_authenticated() async method has #[allow(dead_code)] and is not called anywhere in production code - TRULY DEAD",
+      "crates/tui/src/action.rs:56 - SearchInput(char) variant has #[allow(dead_code)] but is actively used in app.rs:1402 (handle_input) - FALSE POSITIVE",
+      "crates/tui/src/action.rs:63 - ToggleSortDirection variant has #[allow(dead_code)] but is actively used in app.rs:1413 (handle_input) - FALSE POSITIVE",
+      "crates/tui/src/ui/popup.rs:86 - PopupBuilder::title() method has #[allow(dead_code)] and is not called anywhere - TRULY DEAD",
+      "crates/tui/src/ui/popup.rs:95 - PopupBuilder::content() method has #[allow(dead_code)] and is not called anywhere - TRULY DEAD",
+      "crates/tui/src/ui/toast.rs:21 - ToastLevel enum has #[allow(dead_code)] with comment 'Public API for future use' - intentional",
+      "crates/tui/src/ui/toast.rs:63 - ToastLevel::from_str() has #[allow(dead_code)], only used in tests (toast.rs:337-346) - TEST ONLY",
+      "crates/tui/src/ui/toast.rs:78 - Toast struct has #[allow(dead_code)] with comment 'Public API for future use' - intentional",
+      "crates/tui/src/ui/toast.rs:111 - Toast::remaining() method has #[allow(dead_code)], only used in test (toast.rs:285-296) - TEST ONLY",
+      "crates/tui/src/ui/toast.rs:117 - Toast::info() has #[allow(dead_code)], only used in tests (toast.rs:274, 278, 286, 316, 331-332) - TEST ONLY",
+      "crates/tui/src/ui/toast.rs:123 - Toast::success() has #[allow(dead_code)], only used in test (toast.rs:319) - TEST ONLY",
+      "crates/tui/src/ui/toast.rs:129 - Toast::warning() has #[allow(dead_code)] but IS used in app.rs:351 (Toast::warning for health status) - FALSE POSITIVE",
+      "crates/tui/src/ui/screens/jobs.rs:204 - compare_jobs() function has #[allow(dead_code)] with comment 'No longer used as filtering/sorting is done in App' - TRULY DEAD (app.rs:1890-1908 uses compare_jobs_for_sort instead)"
+    ],
+    "plan": [
+      "Remove #[allow(dead_code)] from crates/client/src/client.rs:122 (SplunkClient struct) - heavily used type",
+      "Remove #[allow(dead_code)] from crates/tui/src/action.rs:56 (SearchInput) - actively used in app.rs:1402",
+      "Remove #[allow(dead_code)] from crates/tui/src/action.rs:63 (ToggleSortDirection) - actively used in app.rs:1413",
+      "Remove #[allow(dead_code)] from crates/tui/src/ui/toast.rs:129 (Toast::warning) - actively used in app.rs:351",
+      "Remove crates/client/src/client.rs:139 ensure_authenticated() method entirely - not called anywhere",
+      "Remove crates/tui/src/ui/popup.rs:86-95 PopupBuilder::title() and ::content() methods - not used anywhere",
+      "Remove crates/tui/src/ui/screens/jobs.rs:204-227 compare_jobs() function and its SortColumn/SortDirection/Ordering imports - replaced by compare_jobs_for_sort in app.rs",
+      "For crates/client/src/models.rs:286 AuthResponse - keep with improved justification: 'Test fixture only, not used in production code'",
+      "For crates/tui/src/ui/toast.rs public API methods (remaining, info, success, from_str, ToastLevel enum, Toast struct) - keep suppressions but improve justification comments to clarify 'Public API for future use, tested in #[cfg(test)]'",
+      "Run clippy to verify no new warnings after removals",
+      "Run make ci to verify all tests pass (toast.rs tests use info/success/warning constructors, so they must not be removed)"
+    ],
+    "notes": [
+      "SplunkClient struct suppression is false positive - type is used in 11 CLI commands (apps, cluster, health, indexes, internal_logs, jobs, kvstore, license, list_all, logs, saved_searches, search, users), live tests, and lib.rs exports",
+      "SearchInput and ToggleSortDirection suppressions are false positives - both actively used in handle_input() method for Jobs screen filtering/sorting",
+      "Toast::warning() is actively used (app.rs:351: Toast::warning('Splunk health status changed to unhealthy'))",
+      "AuthResponse struct is only used in test_deserialize_auth_response() at models.rs:451-455",
+      "compare_jobs() was replaced by inline compare_jobs_for_sort() in app.rs:1890-1908, kept for reference but not used",
+      "Toast public API suppressions are intentional for future use - documented with 'Public API for future use' comments"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T18:00:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0091",
+    "status": "todo",
+    "title": "Add color scheme customization to TUI",
+    "priority": "low",
+    "tags": [
+      "tui",
+      "ux",
+      "customization",
+      "accessibility"
+    ],
+    "scope": [
+      "crates/tui/src/app.rs",
+      "crates/tui/src/ui/screens/jobs.rs",
+      "crates/tui/src/ui/screens/internal_logs.rs",
+      "crates/tui/src/ui/screens/job_details.rs",
+      "crates/tui/src/ui/screens/saved_searches.rs",
+      "crates/tui/src/ui/screens/indexes.rs",
+      "crates/tui/src/ui/screens/users.rs",
+      "crates/tui/src/ui/screens/apps.rs",
+      "crates/tui/src/ui/screens/search.rs",
+      "crates/tui/src/ui/screens/cluster.rs",
+      "crates/tui/src/ui/screens/health.rs",
+      "crates/tui/src/ui/toast.rs",
+      "crates/tui/src/ui/popup.rs",
+      "crates/tui/src/ui/error_details.rs",
+      "crates/tui/src/ui/syntax.rs",
+      "crates/config/src/types.rs",
+      "crates/config/src/persistence.rs",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "TUI has 100+ instances of hardcoded Color:: usage across UI screens: error_details.rs (20 matches), job_details.rs (13 matches), jobs.rs (13 matches), internal_logs.rs (11 matches), toast.rs (4 matches), popup.rs (2 matches), syntax.rs (23 matches), app.rs (11 matches), plus 1-4 matches each in indexes.rs, users.rs, apps.rs, search.rs, saved_searches.rs",
+      "No existing theme infrastructure found: codebase search for 'theme|Theme|ColorScheme|color_scheme' returned 0 matches in actual code (only found in metadata files, not implementation)",
+      "Specific hardcoded color patterns: job status colors (Green=done, Yellow=running, Red=failed) in jobs.rs:134-136; log level colors (Red=ERROR/FATAL, Yellow=WARN, Green=INFO, Blue=DEBUG, White=other) in internal_logs.rs:62-66; toast notification colors (Cyan=Info, Green=Success, Yellow=Warning, Red=Error) in toast.rs:47-50; health state colors (Green=Healthy, Red=Unhealthy, Yellow=Unknown) in app.rs:1985-1987,2025-2027; selection colors (Yellow highlight) in indexes.rs:74, users.rs:82, apps.rs:74; label colors (Cyan for field labels) in job_details.rs:57-93",
+      "PersistedState in crates/config/src/persistence.rs:11-33 defines 5 fields (auto_refresh, sort_column, sort_direction, last_search_query, search_history) with no theme-related field",
+      "Config types in crates/config/src/types.rs (lines 1-333) have AuthConfig, ConnectionConfig, ProfileConfig, SecureValue structs but no theme or color-related types exist",
+      "docs/usage.md (lines 388-460) documents keyboard shortcuts and navigation but has no theme customization documentation or examples",
+      "ratatui is already imported across all UI screens (use ratatui::style::{Color, Style, Modifier} pattern confirmed in 14 screen files)",
+      "Color usage patterns are consistent but inflexible: same colors (Green, Yellow, Red, Cyan, Blue, White, Magenta, DarkGray, Indexed(236)) hardcoded across all render functions"
+    ],
+    "plan": [
+      "Add ColorScheme enum to crates/tui/src/app.rs with variants (Default, Light, Dark, HighContrast, Custom) and impl for str conversion",
+      "Create Theme struct in crates/config/src/types.rs with color fields for UI elements: header_fg, footer_fg, table_header_fg, table_row_fg, selection_bg, selection_fg, status_done, status_running, status_failed, log_error, log_warn, log_info, log_debug, toast_info, toast_success, toast_warn, toast_error, health_healthy, health_unhealthy, health_unknown",
+      "Add ColorTheme enum to crates/config/src/types.rs with predefined color schemes: DefaultTheme, LightTheme, DarkTheme, HighContrastTheme, each implementing Into<Theme> trait",
+      "Extend PersistedState in crates/config/src/persistence.rs with theme field (String, default 'default') and impl Default returning 'default'",
+      "Add theme field to Config struct in crates/config/src/types.rs if Config struct exists (verify ProfileConfig vs Config usage)",
+      "Update App struct in crates/tui/src/app.rs: add theme field with ColorScheme, initialize from PersistedState.theme, add get_theme() method returning Theme based on current scheme",
+      "Refactor hardcoded Color:: values in jobs.rs (lines 134-136, 141, 147, 175, 185) to use app.theme.status_done, theme.status_running, theme.status_failed, theme.table_header_fg, theme.selection_bg, theme.selection_fg",
+      "Refactor hardcoded Color:: values in internal_logs.rs (lines 52-53, 57, 62-72, 91) to use app.theme.log_error, theme.log_warn, theme.log_info, theme.log_debug, theme.toast_error (for ERROR/FATAL), theme.toast_warn (for WARN/WARNING), theme.toast_info (for INFO), theme.toast_default (for other)",
+      "Refactor hardcoded Color:: values in job_details.rs (lines 35, 50-52, 57-93) to use app.theme.status_done, theme.status_running, theme.status_failed, theme.label_fg for all 'Status:', 'Duration:', etc. labels",
+      "Refactor hardcoded Color:: values in toast.rs (lines 47-50) to use toast.level.color() method already exists but pass through theme; verify theme.colors for Info/Success/Warning/Error match expected palette",
+      "Refactor hardcoded Color:: values in app.rs (lines 1985-1987, 2000, 2017, 2025-2027, 2042, 2049, 2057) for health indicators, footer borders, header text to use app.theme fields",
+      "Update remaining UI screens (saved_searches.rs:87,115, indexes.rs:74, users.rs:82, apps.rs:74, search.rs:77-79, popup.rs:215,219) to replace Color::Yellow, Color::Cyan, Color::DarkGray, etc. with app.theme.selection_fg, theme.header_fg, theme.table_header_fg",
+      "Update App::get_persisted_state() method (app.rs:326-336) to include theme field in returned PersistedState",
+      "Add theme switching logic to settings screen (see RQ-0083) with 't' key to cycle through schemes, display current scheme name",
+      "Update PersistedState default value (persistence.rs:25-33) to include theme: \"default\" field",
+      "Add tests in crates/tui/tests/app_tests.rs for theme persistence: test_theme_default, test_theme_persistence, test_theme_switching, test_color_application",
+      "Update docs/usage.md with new 'Color Themes' section explaining available schemes, how to switch via 't' key in settings screen, and manual config.json editing for theme selection",
+      "Add serde support for ColorTheme enum (#[derive(Serialize, Deserialize)]) and test round-trip serialization",
+      "Ensure all color changes are backward compatible - default theme should match current hardcoded colors exactly to avoid breaking existing user expectations",
+      "Run make ci to verify all tests pass after color refactoring"
+    ],
+    "notes": [
+      "Task depends on RQ-0083 (Add TUI configuration/settings screen) which is still todo status - theme switching UI will require settings screen to be implemented first",
+      "Consider making Theme fields optional to allow partial customization (users can override specific colors while keeping defaults for others)",
+      "ratatui Color::Rgb can be used for Custom theme allowing full hex color specification, but start with named colors for predefined schemes",
+      "Light theme should use lighter background colors (e.g., White) with darker foreground (DarkGray, Black) for better contrast than default dark theme",
+      "HighContrast theme should maximize color difference: Black/White pairs for maximum readability, avoid subtle color differences",
+      "Toast colors already have abstraction via ToastLevel::color() method (toast.rs:47-50) - verify this integrates cleanly with new Theme system"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T18:30:00Z",
+    "depends_on": [
+      "RQ-0083"
+    ],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0092",
+    "status": "todo",
+    "title": "Add CLI command result file save option",
+    "priority": "medium",
+    "tags": [
+      "cli",
+      "ux",
+      "output"
+    ],
+    "scope": [
+      "crates/cli/src/main.rs",
+      "crates/cli/src/commands/search.rs",
+      "crates/cli/src/commands/indexes.rs",
+      "crates/cli/src/commands/jobs.rs",
+      "crates/cli/src/commands/cluster.rs",
+      "crates/cli/src/commands/apps.rs",
+      "crates/cli/src/commands/saved_searches.rs",
+      "crates/cli/src/commands/users.rs",
+      "crates/cli/src/commands/health.rs",
+      "crates/cli/src/commands/license.rs",
+      "crates/cli/src/commands/kvstore.rs",
+      "crates/cli/src/commands/logs.rs",
+      "crates/cli/src/commands/internal_logs.rs",
+      "crates/cli/src/commands/list_all.rs",
+      "crates/cli/src/formatters.rs",
+      "crates/cli/tests/",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "All 15 CLI commands use print!() or println!() for stdout output only (confirmed by grep search showing 33 print!/println! usages across commands/)",
+      "Global --output <FORMAT> flag exists in main.rs:52-54 but only accepts format type (json, table, csv, xml), not file path",
+      "No --output-file or --save flag exists in any CLI command (grep for 'output.*file|output_path|PathBuf' returns no matches)",
+      "TUI has ExportSearchResults action with file path selection popup (crates/tui/src/action.rs:85), but CLI lacks equivalent functionality",
+      "Users must redirect stdout manually: splunk-cli search 'query' > results.json, which provides no error feedback or progress indication",
+      "docs/usage.md only documents --output <FORMAT> for format selection (lines 90, 184, 225, 228, 302, 305, 311), with no file save option mentioned"
+    ],
+    "plan": [
+      "Add --output-file <FILE> global flag to Cli struct in crates/cli/src/main.rs (separate from existing --output <FORMAT> flag to avoid conflicts)",
+      "Pass output_file Option<PathBuf> through run_command() to all command run() functions",
+      "Create helper function in crates/cli/src/formatters.rs: write_to_file(content: &str, path: &Path, format: OutputFormat) -> Result<()> that creates file, writes content atomically, handles errors gracefully",
+      "Update all 15 command run() functions (search, indexes, jobs, cluster, apps, saved_searches, users, health, license, kvstore, logs, internal_logs, list_all, config) to check if output_file is Some() and call write_to_file() instead of print!()",
+      "When file output is used, print success message to stderr: 'Results written to <path>' with format info for user feedback",
+      "Handle file write errors (permission denied, directory not found, disk full) with helpful error messages using anyhow::Context",
+      "Add integration tests in crates/cli/tests/file_output_tests.rs for file output behavior: write success, overwrite existing file, permission denied, invalid directory path",
+      "Update docs/usage.md with new --output-file flag documentation in global options section and example usage: 'splunk-cli search \"index=main\" --wait --output-file results.json'",
+      "Run make ci to verify all existing tests still pass and new file output tests pass"
+    ],
+    "notes": [
+      "Must use --output-file instead of reusing --output to avoid conflict with existing --output <FORMAT> flag which is widely used",
+      "All 15 CLI commands need updating (grep shows 15 command files in crates/cli/src/commands/), not just search/indexes/jobs/cluster as originally scoped",
+      "File writing should go through existing formatter logic (get_formatter(format)) to ensure consistent output formats (json/table/csv/xml)",
+      "For JSON format, consider using serde_json::to_string_pretty() for human-readable output, but for CSV/XML use formatter output directly",
+      "Print success/error messages to stderr (not stdout) to avoid contaminating piped output when users still want to use stdout redirection",
+      "Atomic file write (write to temp file then rename) is preferred to avoid partial writes if process is interrupted"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T23:04:32Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0093",
+    "status": "todo",
+    "title": "Add CLI cancel/sigint handling for long-running operations",
+    "priority": "medium",
+    "tags": [
+      "cli",
+      "ux",
+      "signal-handling"
+    ],
+    "scope": [
+      "crates/cli/src/main.rs",
+      "crates/cli/src/commands/search.rs",
+      "crates/cli/Cargo.toml",
+      "crates/cli/tests/",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "CLI search.rs:32-44 shows wait boolean passed to client.search() with no user-facing progress feedback or cancellation during long searches",
+      "CLI main.rs:117-120 shows tokio::main runtime without any signal::ctrl_c() handler or cancellation token setup",
+      "Grep search for 'ctrl_c|SIGINT|SIGTERM|signal' in crates/cli/ shows zero matches - no signal handling exists",
+      "Client library wait_for_job in search.rs:228-244 uses tokio::time::sleep for polling but no cancellation support",
+      "No tests for signal handling in crates/cli/tests/ (13 test files, none cover cancellation)",
+      "Users see tokio panic errors when pressing Ctrl+C during async operations - no graceful shutdown",
+      "TUI has similar issue noted in RQ-0066 cache: 'Tail loop runs infinitely; could add signal handling'",
+      "list_all.rs shows tokio::time::timeout pattern (RQ-0099) that could be applied to search wait for cancellation"
+    ],
+    "plan": [
+      "Add tokio::signal::ctrl_c() handler in crates/cli/src/main.rs that sets Arc<AtomicBool> cancellation flag",
+      "Pass cancellation token (Arc<AtomicBool>) to all async command run() functions via CLI struct or run_command wrapper",
+      "Update search.rs run() to use tokio::select! with both search future and ctrl_c() signal for concurrent cancellation",
+      "Update all long-running commands (search with --wait, list_all, logs with --tail) to check cancellation token periodically",
+      "Add graceful shutdown: on SIGINT, print 'Operation cancelled by user' to stderr, exit with code 130 (standard for Ctrl+C)",
+      "Use anyhow::Context with 'cancelled by user' message for cancellation errors in Result types",
+      "Add integration tests using tokio::time::timeout and tokio::spawn to simulate ctrl_c signal during async operations",
+      "Add test 'test_search_cancellation' in crates/cli/tests/search_tests.rs: spawn search task, send simulated ctrl_c, verify graceful exit",
+      "Update docs/usage.md with 'Cancellation' section explaining Ctrl+C behavior and graceful shutdown for long-running operations",
+      "Run make ci to verify all existing tests pass after signal handling changes"
+    ],
+    "notes": [
+      "tokio::signal::ctrl_c() is part of tokio standard library, no new dependency needed",
+      "Use tokio::select! macro to race between operation completion and ctrl_c signal for clean cancellation",
+      "Exit code 130 is standard Unix convention for SIGINT (128 + 2), matching curl and other CLIs",
+      "Consider using tokio_util::sync::CancellationToken for more robust cancellation across spawned tasks",
+      "Client library already has timeout support in wait_for_job (search.rs:228-244), could integrate cancellation with existing timeout logic",
+      "list_all.rs timeout pattern (tokio::time::timeout wrapper) in RQ-0099 shows precedent for adding cancellation to async operations",
+      "TUI has similar signal handling gap (RQ-0066 cache notes 'could add signal handling' for tail loop)",
+      "Signal handling should apply to all long-running CLI commands, not just search: list_all (9 fetch ops), logs --tail, search --wait",
+      "Print cancellation message to stderr to avoid contaminating stdout formatted output (RQ-0092 notes show stderr pattern for user feedback)"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T00:00:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0094",
+    "status": "todo",
+    "title": "Add performance tests for TUI search results rendering",
+    "priority": "low",
+    "tags": [
+      "tui",
+      "performance",
+      "tests"
+    ],
+    "scope": [
+      "crates/tui/src/ui/screens/search.rs",
+      "crates/tui/tests/app_tests.rs"
+    ],
+    "evidence": [
+      "Virtualization IS implemented in search.rs:100-119 using sliding window pattern (skip/take on visible range)",
+      "Pagination IS implemented in app.rs:386-406 (maybe_fetch_more_results loads more data when within 10 items of end)",
+      "search_scroll_offset field exists (app.rs:177) for tracking visible region",
+      "search_results stored as Vec<Value> (app.rs:176) to support scrolling without re-fetching",
+      "No performance tests exist for rendering with large result sets (grep in crates/tui/tests/ shows zero matches for 'virtual|performance')",
+      "No snapshot tests exist for virtual window scrolling behavior"
+    ],
+    "plan": [
+      "Add performance test in crates/tui/tests/app_tests.rs: test_search_rendering_with_large_dataset() - verify rendering time with 10, 100, 1000, 10000 results",
+      "Add snapshot test in crates/tui/tests/app_tests.rs: test_virtual_window_scrolling() - verify only visible results are rendered with various scroll offsets",
+      "Add snapshot test: test_pagination_trigger() - verify LoadMoreSearchResults action triggers at correct threshold (within 10 items of end)",
+      "Measure actual rendering time in tests using std::time::Instant to verify O(1) rendering cost regardless of total result count",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [
+      "Core virtualization work is complete - search.rs already implements sliding window rendering (lines 101-119)",
+      "Pagination is implemented with maybe_fetch_more_results() method (app.rs:386-406)",
+      "Task evidence originally claimed virtualization didn't exist, but investigation reveals it was already implemented",
+      "Remaining work is test coverage only, not implementation",
+      "Storing all results in Vec<Value> is intentional design for scrolling without re-fetching",
+      "Initial task scope was implementation work, but actual gap is test coverage for performance guarantees"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T23:30:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0095",
+    "status": "todo",
+    "title": "Add TUI fuzzy search for saved searches and jobs",
+    "priority": "low",
+    "tags": [
+      "tui",
+      "search",
+      "ux"
+    ],
+    "scope": [
+      "crates/tui/src/app.rs",
+      "crates/tui/src/ui/screens/saved_searches.rs",
+      "crates/tui/src/ui/screens/jobs.rs",
+      "crates/tui/src/action.rs",
+      "crates/tui/Cargo.toml"
+    ],
+    "evidence": [
+      "Saved searches screen has NO search or filter capability: handle_saved_searches_input (app.rs:1161-1226) only supports j/k navigation, Enter to run, r to refresh, screen navigation (1-9), q to quit, ? for help",
+      "Jobs screen has substring filter (NOT fuzzy) via '/' key: EnterSearchMode action (action.rs:52) triggers filter mode, rebuild_filtered_indices() (app.rs:1863-1905) does substring matching using .contains() on SID and status fields",
+      "No fuzzy matcher crate exists in crates/tui/Cargo.toml: dependencies list shows ratatui, crossterm, tokio, serde_json, serde, csv, anyhow, tracing, tracing-subscriber, tracing-appender, uuid - no nucleo-matcher, skim, or similar fuzzy matching library",
+      "No fuzzy search action exists in action.rs: EnterSearchMode (line 52) is for substring filter, SearchInput (line 55) for filter input, ClearSearch (line 57) to clear filter - no EnterFuzzySearch or fuzzy-specific actions",
+      "Users with many saved searches (100+) must navigate manually through list: no filtering capability means manual j/k navigation through entire list to find specific saved searches",
+      "Jobs screen filter is substring-only: rebuild_filtered_indices() (app.rs:1874-1878) uses .contains() matching on job.sid.to_lowercase() and status strings ('done'/'running'), not fuzzy matching with scoring"
+    ],
+    "plan": [
+      "Add nucleo-matcher crate to crates/tui/Cargo.toml (lightweight, actively maintained fuzzy matcher)",
+      "Add EnterFuzzySearch mode action to crates/tui/src/action.rs to distinguish from existing EnterSearchMode (substring filter)",
+      "Add fuzzy_match_result field and fuzzy_query field to App struct in app.rs to track fuzzy search state and active match",
+      "Update handle_saved_searches_input in app.rs: add fuzzy search mode entry (Ctrl+F key), implement fuzzy search popup that filters saved searches by name with score-based ranking, display match results with highlighted text",
+      "Update saved_searches.rs render: add fuzzy_match_highlight parameter to render matches with highlighted characters (bold/yellow for matched positions)",
+      "Update handle_jobs_input in app.rs: add fuzzy search mode entry (Ctrl+F or reuse '/' with modifier), implement fuzzy search popup for jobs table that matches on SID and status with score display",
+      "Update jobs.rs render: add fuzzy_match_results parameter to display fuzzy search results popup with scored matches and highlighted text",
+      "Implement fuzzy search results popup in ui/popup.rs: new PopupType::FuzzySearchResults variant with match list, current query display, navigation controls (Enter to select, Esc to cancel)",
+      "Add fuzzy search state management: toggle fuzzy mode with Ctrl+F, type query to filter matches in real-time, navigate results with j/k, select with Enter to jump to item",
+      "Add tests in crates/tui/tests/app_tests.rs for fuzzy search: test_fuzzy_search_saved_searches (partial match scoring, exact match first), test_fuzzy_search_jobs (SID and status matching), test_fuzzy_search_empty_query (show all items), test_fuzzy_search_no_matches (empty results display)",
+      "Update help popup in ui/popup.rs to document 'Ctrl+F: Fuzzy search' shortcut for Saved Searches and Jobs screens",
+      "Run make ci to verify all tests pass after fuzzy search implementation"
+    ],
+    "notes": [],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T23:59:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0096",
+    "status": "done",
+    "title": "Add CLI saved search run command",
+    "priority": "medium",
+    "tags": [
+      "cli",
+      "saved-searches",
+      "feature-parity"
+    ],
+    "scope": [
+      "crates/cli/src/commands/saved_searches.rs",
+      "crates/cli/tests/saved_searches_tests.rs",
+      "docs/usage.md"
+    ],
+    "evidence": [
+      "splunk-cli saved-searches run command is fully implemented in crates/cli/src/commands/saved_searches.rs (lines 25-39 for Run subcommand, lines 123-160 for run_run implementation)",
+      "Command supports name parameter, --wait flag, --earliest and --latest time range flags",
+      "run_run function fetches saved searches list, finds named search, executes query via client.search(), formats and prints results",
+      "Documentation exists in docs/usage.md lines 286-323 with 4 usage examples and complete subcommand documentation",
+      "Tests exist in crates/cli/tests/saved_searches_tests.rs (lines 25-35 for run help test)",
+      "TUI can execute saved searches via Enter key (app.rs extracts query and calls RunSearch action)",
+      "CLI and TUI have feature parity for saved search execution"
+    ],
+    "plan": [
+      "Feature already fully implemented - no further work needed",
+      "CLI: saved-searches run <NAME> command exists with all required flags",
+      "Documentation complete with usage examples",
+      "Note: Integration tests for run execution are missing (only help tests exist - saved_searches_tests.rs:26-35)",
+      "Run make ci to verify existing implementation passes all tests"
+    ],
+    "notes": [
+      "Task originally claimed CLI had no saved search run command, but investigation reveals complete implementation",
+      "Feature has been implemented at some point after task creation",
+      "Gap: Integration tests for run execution do not exist (tests only verify --help output)",
+      "Recommendation: Add integration tests for actual run execution (success, not-found, error cases)"
+    ],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-25T23:14:51Z",
+    "depends_on": [],
+    "custom_fields": {},
+    "completed_at": "2026-01-25T23:14:51Z"
+  },
+  {
+    "id": "RQ-0097",
+    "status": "todo",
+    "title": "Add TUI job re-run functionality",
+    "priority": "medium",
+    "tags": [
+      "tui",
+      "jobs",
+      "ux"
+    ],
+    "scope": [
+      "crates/tui/src/app.rs",
+      "crates/tui/src/action.rs",
+      "crates/tui/src/ui/screens/jobs.rs"
+    ],
+    "evidence": [
+      "TUI Jobs screen can view and cancel/delete jobs but cannot re-run a job",
+      "Users must copy SID from TUI, exit to CLI, and run search command with saved query",
+      "No 'Re-run job' action or keyboard shortcut exists",
+      "Job re-run is a common Splunk workflow for iterating on queries"
+    ],
+    "plan": [
+      "Add ReRunJob(String) action to crates/tui/src/action.rs",
+      "Implement re-run by using job's saved search query or extracting query from job details",
+      "Add keyboard shortcut (e.g., 'r' key) in Jobs screen to trigger re-run",
+      "Add confirmation popup for re-run action with job details summary",
+      "Update handle_jobs_input in app.rs to map 'r' key to ReRunJob action when on a job row",
+      "Add side_effects handler for ReRunJob (creates new search job with same query)",
+      "Add tests for job re-run (valid SID, not found job, re-run success)",
+      "Update help popup to document re-run shortcut",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-24T21:00:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  },
+  {
+    "id": "RQ-0098",
+    "status": "todo",
+    "title": "Improve CLI search command to support job SID-based queries",
+    "priority": "high",
+    "tags": [
+      "cli",
+      "search",
+      "jobs"
+    ],
+    "scope": [
+      "crates/cli/src/commands/search.rs",
+      "crates/cli/tests/search_tests.rs",
+      "crates/cli/src/commands/jobs.rs"
+    ],
+    "evidence": [
+      "CLI search command only takes raw SPL query string",
+      "No way to execute search by job SID from CLI (useful for re-running/debugging)",
+      "TUI has saved searches but CLI cannot reference saved searches by name",
+      "Common workflow: user runs search in TUI, gets SID, wants to reference it later from CLI but cannot"
+    ],
+    "plan": [
+      "Add --job-sid <SID> flag to search command (as alternative to <query>)",
+      "If --job-sid provided, retrieve job results using get_search_results(sid, count, offset)",
+      "Support both --job-sid and --query (mutually exclusive, or job-sid retrieves existing job results)",
+      "Add integration tests for job SID search (valid SID, results loading, error handling)",
+      "Update docs/usage.md with --job-sid documentation",
+      "Consider synergy with RQ-0096 (re-run saved search that creates job)",
+      "Run make ci to verify all tests pass"
+    ],
+    "notes": [],
+    "request": "scan finding",
+    "created_at": "2026-01-24T21:00:00Z",
+    "updated_at": "2026-01-24T21:00:00Z",
+    "depends_on": [],
+    "custom_fields": {}
+  }
+]
