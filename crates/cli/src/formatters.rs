@@ -6,7 +6,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::LogEntry;
 use splunk_client::{
-    App, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    App, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SavedSearch,
     SearchJobStatus, User,
 };
 
@@ -86,6 +86,12 @@ pub trait Formatter {
 
     /// Format list-all unified resource overview.
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String>;
+
+    /// Format saved searches list.
+    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String>;
+
+    /// Format detailed saved search information.
+    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -186,6 +192,14 @@ impl Formatter for JsonFormatter {
 
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
         Ok(serde_json::to_string_pretty(output)?)
+    }
+
+    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(searches)?)
+    }
+
+    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
+        Ok(serde_json::to_string_pretty(search)?)
     }
 }
 
@@ -841,6 +855,56 @@ impl Formatter for TableFormatter {
 
         Ok(out)
     }
+
+    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {
+        let mut output = String::new();
+
+        if searches.is_empty() {
+            output.push_str("No saved searches found.");
+            return Ok(output);
+        }
+
+        output.push_str(&format!(
+            "{:<30} {:<10} {:<40}\n",
+            "NAME", "DISABLED", "DESCRIPTION"
+        ));
+        output.push_str(&format!(
+            "{:<30} {:<10} {:<40}\n",
+            "====", "========", "==========="
+        ));
+
+        for search in searches {
+            let description = search.description.as_deref().unwrap_or("");
+            let truncated_desc = if description.len() > 40 {
+                format!("{}...", &description[..37])
+            } else {
+                description.to_string()
+            };
+
+            output.push_str(&format!(
+                "{:<30} {:<10} {:<40}\n",
+                search.name,
+                if search.disabled { "Yes" } else { "No" },
+                truncated_desc
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("--- Saved Search Information ---\n");
+        output.push_str(&format!("Name: {}\n", search.name));
+        output.push_str(&format!("Disabled: {}\n", search.disabled));
+        output.push_str(&format!("Search Query:\n{}\n", search.search));
+        if let Some(ref desc) = search.description {
+            output.push_str(&format!("Description: {}\n", desc));
+        }
+
+        Ok(output)
+    }
 }
 
 /// CSV formatter.
@@ -1257,10 +1321,43 @@ impl Formatter for CsvFormatter {
         Ok(csv)
     }
 
+    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("name,disabled,description\n");
+
+        for search in searches {
+            let description = search.description.as_deref().unwrap_or("");
+            output.push_str(&format!(
+                "{},{},{}\n",
+                escape_csv(&search.name),
+                search.disabled,
+                escape_csv(description)
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("name,disabled,search,description\n");
+        let description = search.description.as_deref().unwrap_or("");
+        output.push_str(&format!(
+            "{},{},{},{}\n",
+            escape_csv(&search.name),
+            search.disabled,
+            escape_csv(&search.search),
+            escape_csv(description)
+        ));
+
+        Ok(output)
+    }
+
     fn format_apps(&self, apps: &[App]) -> Result<String> {
         let mut output = String::new();
 
-        // Header
         output.push_str("name,label,version,disabled,author\n");
 
         for app in apps {
@@ -1869,6 +1966,46 @@ impl Formatter for XmlFormatter {
 
         xml.push_str("  </resources>\n");
         xml.push_str("</list_all>");
+        Ok(xml)
+    }
+
+    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {
+        let mut xml =
+            String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<saved-searches>\n");
+
+        for search in searches {
+            xml.push_str("  <saved-search>\n");
+            xml.push_str(&format!("    <name>{}</name>\n", escape_xml(&search.name)));
+            xml.push_str(&format!("    <disabled>{}</disabled>\n", search.disabled));
+            if let Some(ref desc) = search.description {
+                xml.push_str(&format!(
+                    "    <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            xml.push_str("  </saved-search>\n");
+        }
+
+        xml.push_str("</saved-searches>");
+        Ok(xml)
+    }
+
+    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<saved-search>\n");
+
+        xml.push_str(&format!("  <name>{}</name>\n", escape_xml(&search.name)));
+        xml.push_str(&format!("  <disabled>{}</disabled>\n", search.disabled));
+        if let Some(ref desc) = search.description {
+            xml.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+        xml.push_str(&format!(
+            "  <search>{}</search>\n",
+            escape_xml(&search.search)
+        ));
+        xml.push_str("</saved-search>");
         Ok(xml)
     }
 }

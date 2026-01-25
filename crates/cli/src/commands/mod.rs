@@ -10,6 +10,7 @@ pub mod kvstore;
 pub mod license;
 pub mod list_all;
 pub mod logs;
+pub mod saved_searches;
 pub mod search;
 pub mod users;
 

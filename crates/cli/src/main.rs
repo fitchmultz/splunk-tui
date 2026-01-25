@@ -167,6 +167,12 @@ enum Commands {
         #[arg(short, long, value_delimiter = ',')]
         resources: Option<Vec<String>>,
     },
+
+    /// List and manage saved searches
+    SavedSearches {
+        #[command(subcommand)]
+        command: commands::saved_searches::SavedSearchesCommand,
+    },
 }
 
 #[tokio::main]
@@ -306,6 +312,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::ListAll { resources } => {
             commands::list_all::run(config, resources, &cli.output).await?;
+        }
+        Commands::SavedSearches { command } => {
+            commands::saved_searches::run(config, command, &cli.output).await?;
         }
     }
 

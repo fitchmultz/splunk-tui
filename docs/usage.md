@@ -221,6 +221,63 @@ splunk-cli apps disable unused_app
 - Some apps cannot be disabled (e.g., core Splunk apps)
 - Use `apps list` first to find the exact app name
 
+#### `saved-searches`
+Manage Splunk saved searches.
+
+```bash
+# List all saved searches
+splunk-cli saved-searches list
+
+# List with count limit
+splunk-cli saved-searches list --count 50
+
+# List in different formats
+splunk-cli saved-searches list --output json
+splunk-cli saved-searches list --output csv
+splunk-cli saved-searches list --output xml
+
+# Show details for a specific saved search
+splunk-cli saved-searches info "Errors Last 24 Hours"
+
+# Run a saved search
+splunk-cli saved-searches run "Errors Last 24 Hours"
+
+# Run and wait for completion
+splunk-cli saved-searches run "Errors Last 24 Hours" --wait
+
+# Run with custom time range
+splunk-cli saved-searches run "Errors Last 24 Hours" --earliest "-7d" --latest "now"
+
+# Run and get results in JSON
+splunk-cli saved-searches run "Errors Last 24 Hours" --wait --output json
+```
+
+**Subcommands:**
+- `list` [options]: List saved searches
+  - `-c, --count <NUMBER>`: Maximum number of saved searches to list [default: 30]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+
+- `info <NAME>`: Show detailed information about a saved search
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+
+- `run <NAME>`: Execute a saved search by name
+  - `-w, --wait`: Wait for the search to complete before returning results
+  - `-e, --earliest <TIME>`: Earliest time for the search (e.g., `-24h`, `2024-01-01T00:00:00`)
+  - `-l, --latest <TIME>`: Latest time for the search (e.g., `now`, `2024-01-02T00:00:00`)
+  - `-o, --output <FORMAT>`: Output format for search results (table, json, csv, xml) [default: table]
+
+**Output Formats:**
+- **Table**: Human-readable formatted output (list: table view, info: detailed view)
+- **JSON**: Full saved search object(s) with all fields
+- **CSV**: Comma-separated values with header row
+- **XML**: Hierarchical XML structure with saved-search elements
+
+**Notes:**
+- All saved searches (including disabled ones) are shown in list output
+- The `run` subcommand extracts the search query from the saved search and executes it
+- Use `saved-searches list` first to find the exact saved search name
+- Time modifiers (`--earliest`, `--latest`) work the same as in the `search` command
+
 #### `list-all`
 List all Splunk resources in a unified overview.
 

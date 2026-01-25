@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0076",
-      "status": "todo",
-      "title": "Add CLI saved searches management commands",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "saved-searches",
-        "feature-parity"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/",
-        "crates/cli/tests/"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/search.rs provides list_saved_searches() endpoint that is not exposed in CLI",
-        "crates/tui/src/app.rs includes SavedSearches screen (CurrentScreen::SavedSearches, handle_saved_searches_input)",
-        "crates/tui/src/ui/screens/saved_searches.rs renders saved searches with ability to run them",
-        "TUI can view/run saved searches but CLI cannot manage them"
-      ],
-      "plan": [
-        "Create crates/cli/src/commands/saved_searches.rs module with run() function",
-        "Add SavedSearches subcommand to crates/cli/src/main.rs Commands enum",
-        "Implement saved-searches list, show, delete, and run operations with OutputFormat support",
-        "Add integration tests in crates/cli/tests/saved_searches_tests.rs",
-        "Update docs/usage.md with saved-searches CLI documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0077",
       "status": "todo",
       "title": "Add CLI internal logs command for parity with TUI",
