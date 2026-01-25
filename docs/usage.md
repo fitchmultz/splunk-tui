@@ -162,6 +162,16 @@ splunk-cli license
 
 - `-f, --format <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
 
+#### `users`
+List all Splunk users.
+
+```bash
+splunk-cli users
+splunk-cli users --count 10 --output table
+```
+
+- `-c, --count <NUMBER>`: Maximum number of users to list [default: 30]
+
 #### `config`
 Manage configuration profiles.
 

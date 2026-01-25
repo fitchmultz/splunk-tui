@@ -9,3 +9,4 @@ pub mod kvstore;
 pub mod license;
 pub mod logs;
 pub mod search;
+pub mod users;

@@ -147,6 +147,13 @@ enum Commands {
         #[arg(short, long)]
         tail: bool,
     },
+
+    /// List and manage users
+    Users {
+        /// Maximum number of users to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+    },
 }
 
 #[tokio::main]
@@ -277,6 +284,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
             tail,
         } => {
             commands::logs::run(config, count, earliest, tail, &cli.output).await?;
+        }
+        Commands::Users { count } => {
+            commands::users::run(config, count, &cli.output).await?;
         }
     }
 

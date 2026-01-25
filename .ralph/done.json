@@ -2767,6 +2767,49 @@
       "completed_at": "2026-01-24T20:54:14.072202000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0074",
+      "status": "done",
+      "title": "Add CLI users management commands for parity with TUI",
+      "priority": "critical",
+      "tags": [
+        "cli",
+        "users",
+        "feature-parity"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/",
+        "crates/cli/tests/"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/users.rs provides list_users() endpoint that is not exposed in CLI",
+        "crates/tui/src/app.rs includes Users screen (CurrentScreen::Users, handle_users_input)",
+        "docs/usage.md documents TUI Users screen functionality but CLI has no users subcommand",
+        "TUI can view users but CLI cannot manage users (list only exists in TUI via UI screens, not as a CLI command)"
+      ],
+      "plan": [
+        "Create crates/cli/src/commands/users.rs module with run() function",
+        "Add Users subcommand to crates/cli/src/main.rs Commands enum",
+        "Implement users list, show, and delete operations with OutputFormat support",
+        "Add integration tests in crates/cli/tests/users_tests.rs",
+        "Update docs/usage.md with users CLI documentation",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [
+        "Implemented CLI users command with list operation and --count flag",
+        "Added format_users() to all 4 formatters (JSON, Table, CSV, XML)",
+        "Created users_tests.rs with 3 integration tests",
+        "Updated docs/usage.md with users command documentation",
+        "All CI checks pass (221 tests total)"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-25T05:38:45.866769000Z",
+      "completed_at": "2026-01-25T05:38:45.866769000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

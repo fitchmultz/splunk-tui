@@ -2,38 +2,42 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0074",
+      "id": "RQ-0099",
       "status": "todo",
-      "title": "Add CLI users management commands for parity with TUI",
-      "priority": "critical",
+      "title": "Add CLI 'list all' command for unified resource overview",
+      "priority": "medium",
       "tags": [
         "cli",
-        "users",
-        "feature-parity"
+        "list",
+        "ux",
+        "admin"
       ],
       "scope": [
         "crates/cli/src/main.rs",
         "crates/cli/src/commands/",
-        "crates/cli/tests/"
+        "crates/cli/tests/",
+        "docs/usage.md"
       ],
       "evidence": [
-        "crates/client/src/endpoints/users.rs provides list_users() endpoint that is not exposed in CLI",
-        "crates/tui/src/app.rs includes Users screen (CurrentScreen::Users, handle_users_input)",
-        "docs/usage.md documents TUI Users screen functionality but CLI has no users subcommand",
-        "TUI can view users but CLI cannot manage users (list only exists in TUI via UI screens, not as a CLI command)"
+        "User request: 'list' - seeking comprehensive listing functionality",
+        "CLI has individual list commands (indexes, jobs, cluster, health, users, apps, saved-searches) but no unified 'list all' command",
+        "Administrators often need quick overview of all Splunk resources (indexes, jobs, apps, users, cluster status) in one command",
+        "TUI provides overview across multiple screens but CLI requires running separate commands for each resource type"
       ],
       "plan": [
-        "Create crates/cli/src/commands/users.rs module with run() function",
-        "Add Users subcommand to crates/cli/src/main.rs Commands enum",
-        "Implement users list, show, and delete operations with OutputFormat support",
-        "Add integration tests in crates/cli/tests/users_tests.rs",
-        "Update docs/usage.md with users CLI documentation",
+        "Create crates/cli/src/commands/list_all.rs module with run() function",
+        "Add 'list-all' or 'list' subcommand to crates/cli/src/main.rs Commands enum",
+        "Implement parallel fetching of multiple resource types (indexes, jobs, apps, users, cluster info) using tokio::join_all",
+        "Display unified table showing resource counts and summary status for each type",
+        "Add --resources <TYPES> flag to filter which resources to include (e.g., --resources indexes,jobs,users)",
+        "Add integration tests for list-all command (all resources, filtered resources, error handling)",
+        "Update docs/usage.md with list-all CLI documentation",
         "Run make ci to verify all tests pass"
       ],
       "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-24T21:00:00Z",
+      "request": "list",
+      "created_at": "2026-01-25T05:37:20Z",
+      "updated_at": "2026-01-25T05:37:20Z",
       "depends_on": [],
       "custom_fields": {}
     },

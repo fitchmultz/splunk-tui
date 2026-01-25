@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use splunk_client::models::LogEntry;
 use splunk_client::{
     ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SearchJobStatus,
+    User,
 };
 
 pub use splunk_client::HealthCheckOutput;
@@ -73,6 +74,9 @@ pub trait Formatter {
 
     /// Format internal logs.
     fn format_logs(&self, logs: &[LogEntry]) -> Result<String>;
+
+    /// Format users list.
+    fn format_users(&self, users: &[User]) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -156,6 +160,10 @@ impl Formatter for JsonFormatter {
 
     fn format_logs(&self, logs: &[LogEntry]) -> Result<String> {
         Ok(serde_json::to_string_pretty(logs)?)
+    }
+
+    fn format_users(&self, users: &[User]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(users)?)
     }
 }
 
@@ -677,6 +685,44 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_users(&self, users: &[User]) -> Result<String> {
+        let mut output = String::new();
+
+        if users.is_empty() {
+            output.push_str("No users found.\n");
+            return Ok(output);
+        }
+
+        // Header
+        output.push_str(&format!(
+            "{:<20} {:<30} {:<15} {:<15}\n",
+            "NAME", "REAL NAME", "TYPE", "ROLES"
+        ));
+        output.push_str(&format!(
+            "{:<20} {:<30} {:<15} {:<15}\n",
+            "====", "=========", "====", "====="
+        ));
+
+        // Rows
+        for user in users {
+            let name = &user.name;
+            let realname = user.realname.as_deref().unwrap_or("-");
+            let user_type = user.user_type.as_deref().unwrap_or("-");
+            let roles = if user.roles.is_empty() {
+                "-".to_string()
+            } else {
+                user.roles.join(", ")
+            };
+
+            output.push_str(&format!(
+                "{:<20} {:<30} {:<15} {:<15}\n",
+                name, realname, user_type, roles
+            ));
+        }
+
+        Ok(output)
+    }
 }
 
 /// CSV formatter.
@@ -1040,6 +1086,33 @@ impl Formatter for CsvFormatter {
                 escape_csv(&log.level),
                 escape_csv(&log.component),
                 escape_csv(&log.message)
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn format_users(&self, users: &[User]) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str("name,realname,user_type,default_app,roles,last_successful_login\n");
+
+        for user in users {
+            let realname = user.realname.as_deref().unwrap_or("");
+            let user_type = user.user_type.as_deref().unwrap_or("");
+            let default_app = user.default_app.as_deref().unwrap_or("");
+            let roles = user.roles.join(";");
+            let last_login = user.last_successful_login.unwrap_or(0);
+
+            output.push_str(&format!(
+                "{},{},{},{},{},{}\n",
+                escape_csv(&user.name),
+                escape_csv(realname),
+                escape_csv(user_type),
+                escape_csv(default_app),
+                roles,
+                last_login
             ));
         }
 
@@ -1471,6 +1544,53 @@ impl Formatter for XmlFormatter {
         }
 
         xml.push_str("</logs>");
+        Ok(xml)
+    }
+
+    fn format_users(&self, users: &[User]) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<users>\n");
+
+        for user in users {
+            xml.push_str("  <user>\n");
+            xml.push_str(&format!("    <name>{}</name>\n", escape_xml(&user.name)));
+
+            if let Some(ref realname) = user.realname {
+                xml.push_str(&format!(
+                    "    <realname>{}</realname>\n",
+                    escape_xml(realname)
+                ));
+            }
+
+            if let Some(ref user_type) = user.user_type {
+                xml.push_str(&format!("    <type>{}</type>\n", escape_xml(user_type)));
+            }
+
+            if let Some(ref default_app) = user.default_app {
+                xml.push_str(&format!(
+                    "    <defaultApp>{}</defaultApp>\n",
+                    escape_xml(default_app)
+                ));
+            }
+
+            if !user.roles.is_empty() {
+                xml.push_str("    <roles>\n");
+                for role in &user.roles {
+                    xml.push_str(&format!("      <role>{}</role>\n", escape_xml(role)));
+                }
+                xml.push_str("    </roles>\n");
+            }
+
+            if let Some(last_login) = user.last_successful_login {
+                xml.push_str(&format!(
+                    "    <lastSuccessfulLogin>{}</lastSuccessfulLogin>\n",
+                    last_login
+                ));
+            }
+
+            xml.push_str("  </user>\n");
+        }
+
+        xml.push_str("</users>\n");
         Ok(xml)
     }
 }
@@ -2373,5 +2493,150 @@ mod tests {
         assert!(output.contains("<zip>10001</zip>"));
         assert!(output.contains("</address>"));
         assert!(output.contains("</location>"));
+    }
+
+    #[test]
+    fn test_users_json_formatting() {
+        let formatter = JsonFormatter;
+        let users = vec![User {
+            name: "admin".to_string(),
+            realname: Some("Administrator".to_string()),
+            email: Some("admin@example.com".to_string()),
+            user_type: Some("Splunk".to_string()),
+            default_app: Some("launcher".to_string()),
+            roles: vec!["admin".to_string(), "power".to_string()],
+            last_successful_login: Some(1704067200),
+        }];
+        let output = formatter.format_users(&users).unwrap();
+        assert!(output.contains("\"name\""));
+        assert!(output.contains("\"admin\""));
+        assert!(output.contains("\"realname\""));
+        assert!(output.contains("\"Administrator\""));
+        assert!(output.contains("\"type\""));
+        assert!(output.contains("\"Splunk\""));
+        assert!(output.contains("\"defaultApp\""));
+        assert!(output.contains("\"launcher\""));
+        assert!(output.contains("\"roles\""));
+        assert!(output.contains("\"admin\""));
+        assert!(output.contains("\"power\""));
+        assert!(output.contains("\"lastSuccessfulLogin\""));
+        assert!(output.contains("1704067200"));
+    }
+
+    #[test]
+    fn test_users_table_formatting() {
+        let formatter = TableFormatter;
+        let users = vec![
+            User {
+                name: "admin".to_string(),
+                realname: Some("Administrator".to_string()),
+                email: Some("admin@example.com".to_string()),
+                user_type: Some("Splunk".to_string()),
+                default_app: Some("launcher".to_string()),
+                roles: vec!["admin".to_string(), "power".to_string()],
+                last_successful_login: Some(1704067200),
+            },
+            User {
+                name: "user1".to_string(),
+                realname: None,
+                email: None,
+                user_type: None,
+                default_app: None,
+                roles: vec![],
+                last_successful_login: None,
+            },
+        ];
+        let output = formatter.format_users(&users).unwrap();
+        assert!(output.contains("NAME"));
+        assert!(output.contains("REAL NAME"));
+        assert!(output.contains("TYPE"));
+        assert!(output.contains("ROLES"));
+        assert!(output.contains("admin"));
+        assert!(output.contains("Administrator"));
+        assert!(output.contains("Splunk"));
+        assert!(output.contains("admin, power"));
+        assert!(output.contains("user1"));
+    }
+
+    #[test]
+    fn test_users_table_empty() {
+        let formatter = TableFormatter;
+        let users: Vec<User> = vec![];
+        let output = formatter.format_users(&users).unwrap();
+        assert!(output.contains("No users found"));
+    }
+
+    #[test]
+    fn test_users_csv_formatting() {
+        let formatter = CsvFormatter;
+        let users = vec![User {
+            name: "admin".to_string(),
+            realname: Some("Administrator".to_string()),
+            email: Some("admin@example.com".to_string()),
+            user_type: Some("Splunk".to_string()),
+            default_app: Some("launcher".to_string()),
+            roles: vec!["admin".to_string(), "power".to_string()],
+            last_successful_login: Some(1704067200),
+        }];
+        let output = formatter.format_users(&users).unwrap();
+        assert!(output.contains("name,realname,user_type,default_app,roles,last_successful_login"));
+        assert!(output.contains("admin,Administrator,Splunk,launcher,admin;power,1704067200"));
+    }
+
+    #[test]
+    fn test_users_csv_special_characters() {
+        let formatter = CsvFormatter;
+        let users = vec![User {
+            name: "user,name".to_string(),
+            realname: Some("User, Name".to_string()),
+            email: None,
+            user_type: None,
+            default_app: None,
+            roles: vec![],
+            last_successful_login: None,
+        }];
+        let output = formatter.format_users(&users).unwrap();
+        assert!(output.contains("\"user,name\""));
+        assert!(output.contains("\"User, Name\""));
+    }
+
+    #[test]
+    fn test_users_xml_formatting() {
+        let formatter = XmlFormatter;
+        let users = vec![
+            User {
+                name: "admin".to_string(),
+                realname: Some("Administrator".to_string()),
+                email: Some("admin@example.com".to_string()),
+                user_type: Some("Splunk".to_string()),
+                default_app: Some("launcher".to_string()),
+                roles: vec!["admin".to_string(), "power".to_string()],
+                last_successful_login: Some(1704067200),
+            },
+            User {
+                name: "user1".to_string(),
+                realname: None,
+                email: None,
+                user_type: None,
+                default_app: None,
+                roles: vec![],
+                last_successful_login: None,
+            },
+        ];
+        let output = formatter.format_users(&users).unwrap();
+        assert!(output.contains("<?xml"));
+        assert!(output.contains("<users>"));
+        assert!(output.contains("<user>"));
+        assert!(output.contains("<name>admin</name>"));
+        assert!(output.contains("<realname>Administrator</realname>"));
+        assert!(output.contains("<type>Splunk</type>"));
+        assert!(output.contains("<defaultApp>launcher</defaultApp>"));
+        assert!(output.contains("<roles>"));
+        assert!(output.contains("<role>admin</role>"));
+        assert!(output.contains("<role>power</role>"));
+        assert!(output.contains("</roles>"));
+        assert!(output.contains("<lastSuccessfulLogin>1704067200</lastSuccessfulLogin>"));
+        assert!(output.contains("<name>user1</name>"));
+        assert!(output.contains("</users>"));
     }
 }
