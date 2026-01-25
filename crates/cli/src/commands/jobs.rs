@@ -9,6 +9,7 @@ use crate::formatters::{OutputFormat, get_formatter};
 pub async fn run(
     config: splunk_config::Config,
     mut list: bool,
+    inspect: Option<String>,
     cancel: Option<String>,
     delete: Option<String>,
     count: usize,
@@ -28,9 +29,24 @@ pub async fn run(
         .timeout(config.connection.timeout)
         .build()?;
 
-    // If cancel or delete action is specified, don't list jobs
-    if cancel.is_some() || delete.is_some() {
+    // If inspect, cancel, or delete action is specified, don't list jobs
+    if inspect.is_some() || cancel.is_some() || delete.is_some() {
         list = false;
+    }
+
+    // Handle inspect action (NEW)
+    if let Some(sid) = inspect {
+        info!("Inspecting job: {}", sid);
+        let job = client.get_job_status(&sid).await?;
+
+        // Parse output format
+        let format = OutputFormat::from_str(output_format)?;
+        let formatter = get_formatter(format);
+
+        // Format and print job details
+        let output = formatter.format_job_details(&job)?;
+        print!("{}", output);
+        return Ok(());
     }
 
     if let Some(sid) = cancel {

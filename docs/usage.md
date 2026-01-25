@@ -130,14 +130,26 @@ splunk-cli cluster --detailed
 Manage search jobs.
 
 ```bash
+# List all jobs
 splunk-cli jobs --list
+
+# Inspect a specific job for detailed information
+splunk-cli jobs --inspect "1705852800.123"
+
+# Cancel a specific job
 splunk-cli jobs --cancel "1705852800.123"
+
+# Delete a specific job
+splunk-cli jobs --delete "1705852800.123"
 ```
 
 - `--list`: List all search jobs (default)
+- `--inspect <SID>`: Show detailed information for a specific job by SID (includes status, duration, event counts, disk usage, priority, label, etc.)
 - `--cancel <SID>`: Cancel a specific job by SID
 - `--delete <SID>`: Delete a specific job by SID
 - `-c, --count <NUMBER>`: Maximum number of jobs to list [default: 50]
+
+**Output formats for `--inspect`**: Supports `--output table` (default), `--output json`, `--output csv`, `--output xml`
 
 #### `health`
 Perform a comprehensive system health check.

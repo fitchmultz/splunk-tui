@@ -2986,6 +2986,50 @@
       "completed_at": "2026-01-25T17:11:40.856395000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0078",
+      "status": "done",
+      "title": "Add CLI job inspection details command",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "jobs",
+        "feature-parity"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/tests/jobs_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/job_details.rs provides comprehensive job inspection (SID, status, duration, event counts, disk usage, priority, label, cursor time)",
+        "CLI jobs command only supports list, cancel, delete with minimal output",
+        "TUI user can press Enter on a job to see full details but CLI has no equivalent inspect command"
+      ],
+      "plan": [
+        "Add --inspect <SID> flag to crates/cli/src/commands/jobs.rs",
+        "Implement job details retrieval using get_job_status() or reusing client.list_jobs() with single SID",
+        "Format job details using existing formatters with all fields from SearchJobStatus",
+        "Add integration tests for job inspection (inspect with valid SID, inspect with invalid SID)",
+        "Update docs/usage.md with job inspection CLI documentation",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [
+        "Added --inspect <SID> flag with mutual exclusion support",
+        "Implemented format_job_details() in all formatters (table, json, csv, xml)",
+        "Added 5 integration tests for inspect functionality",
+        "Updated docs/usage.md with job inspection documentation",
+        "Feature parity achieved with TUI job_details screen",
+        "CI gate passed: format, lint, type-check, 149 unit tests, 227 integration tests, build",
+        "Note: RQ-0085 evidence is stale - jobs_tests.rs now exists (13 tests)"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-25T18:30:11.518667000Z",
+      "completed_at": "2026-01-25T18:30:11.518667000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

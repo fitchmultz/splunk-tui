@@ -117,3 +117,67 @@ fn test_jobs_delete_with_list_flag() {
         .failure()
         .stderr(predicate::str::contains("Connection refused"));
 }
+
+/// Test that `splunk-cli jobs --inspect <sid>` shows job details.
+#[test]
+fn test_jobs_inspect_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    // --inspect flag with a SID
+    let result = cmd.args(["jobs", "--inspect", "test-sid-789"]).assert();
+
+    // Should fail with connection error (trying to inspect, not list)
+    result
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that --inspect with --list still works (inspect takes precedence).
+#[test]
+fn test_jobs_inspect_with_list_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    // --inspect with --list should still inspect (list gets disabled in code)
+    cmd.args(["jobs", "--inspect", "test-sid", "--list"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Connection refused"));
+}
+
+/// Test that --inspect is shown in help text.
+#[test]
+fn test_jobs_help_shows_inspect_flag() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+
+    // The help should show --inspect flag
+    cmd.args(["jobs", "--help"]).assert().success().stdout(
+        predicate::str::contains("--inspect")
+            .and(predicate::str::contains("Inspect a specific job by SID")),
+    );
+}
+
+/// Test that --inspect and --cancel cannot be used together (clap enforcement).
+#[test]
+fn test_jobs_inspect_and_cancel_mutually_exclusive() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+
+    // Both flags should cause a clap error (before any network activity)
+    cmd.args(["jobs", "--inspect", "sid-123", "--cancel", "sid-456"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+}
+
+/// Test that --inspect and --delete cannot be used together (clap enforcement).
+#[test]
+fn test_jobs_inspect_and_delete_mutually_exclusive() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+
+    // Both flags should cause a clap error (before any network activity)
+    cmd.args(["jobs", "--inspect", "sid-123", "--delete", "sid-456"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+}

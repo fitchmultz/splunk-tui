@@ -92,6 +92,9 @@ pub trait Formatter {
 
     /// Format detailed saved search information.
     fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String>;
+
+    /// Format detailed job information.
+    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -200,6 +203,10 @@ impl Formatter for JsonFormatter {
 
     fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
         Ok(serde_json::to_string_pretty(search)?)
+    }
+
+    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
+        Ok(serde_json::to_string_pretty(job)?)
     }
 }
 
@@ -905,6 +912,54 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str("--- Job Details ---\n");
+        output.push_str(&format!("SID: {}\n", job.sid));
+
+        // Status with progress
+        let status_text = if job.is_done {
+            "Done"
+        } else if job.done_progress > 0.0 {
+            &format!("Running ({:.0}%)", job.done_progress * 100.0)
+        } else {
+            "Running"
+        };
+        output.push_str(&format!("Status: {}\n", status_text));
+
+        // Duration
+        output.push_str(&format!("Duration: {:.2} seconds\n", job.run_duration));
+
+        // Counts
+        output.push_str(&format!("Event Count: {}\n", job.event_count));
+        output.push_str(&format!("Scan Count: {}\n", job.scan_count));
+        output.push_str(&format!("Result Count: {}\n", job.result_count));
+
+        // Disk usage
+        output.push_str(&format!("Disk Usage: {} MB\n", job.disk_usage));
+
+        // Optional fields
+        output.push_str(&format!(
+            "Priority: {}\n",
+            job.priority.map_or("N/A".to_string(), |p| p.to_string())
+        ));
+        output.push_str(&format!(
+            "Label: {}\n",
+            job.label.as_deref().unwrap_or("N/A")
+        ));
+        output.push_str(&format!(
+            "Cursor Time: {}\n",
+            job.cursor_time.as_deref().unwrap_or("N/A")
+        ));
+        output.push_str(&format!(
+            "Finalized: {}\n",
+            if job.is_finalized { "Yes" } else { "No" }
+        ));
+
+        Ok(output)
+    }
 }
 
 /// CSV formatter.
@@ -1353,6 +1408,36 @@ impl Formatter for CsvFormatter {
         ));
 
         Ok(output)
+    }
+
+    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
+        let mut csv = String::new();
+
+        // Header
+        csv.push_str("sid,is_done,is_finalized,done_progress,run_duration,cursor_time,scan_count,event_count,result_count,disk_usage,priority,label\n");
+
+        // Data row
+        let priority = job.priority.map_or("".to_string(), |p| p.to_string());
+        let cursor_time = job.cursor_time.as_deref().unwrap_or("");
+        let label = job.label.as_deref().unwrap_or("");
+
+        csv.push_str(&format!(
+            "{},{},{},{},{},{},{},{},{},{},{},{}\n",
+            escape_csv(&job.sid),
+            job.is_done,
+            job.is_finalized,
+            job.done_progress,
+            job.run_duration,
+            escape_csv(cursor_time),
+            job.scan_count,
+            job.event_count,
+            job.result_count,
+            job.disk_usage,
+            escape_csv(&priority),
+            escape_csv(label)
+        ));
+
+        Ok(csv)
     }
 
     fn format_apps(&self, apps: &[App]) -> Result<String> {
@@ -2006,6 +2091,42 @@ impl Formatter for XmlFormatter {
             escape_xml(&search.search)
         ));
         xml.push_str("</saved-search>");
+        Ok(xml)
+    }
+
+    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<job>\n");
+
+        xml.push_str(&format!("  <sid>{}</sid>\n", escape_xml(&job.sid)));
+        xml.push_str(&format!("  <done>{}</done>\n", job.is_done));
+        xml.push_str(&format!("  <finalized>{}</finalized>\n", job.is_finalized));
+        xml.push_str(&format!(
+            "  <progress>{:.2}</progress>\n",
+            job.done_progress * 100.0
+        ));
+        xml.push_str(&format!("  <duration>{:.2}</duration>\n", job.run_duration));
+        xml.push_str(&format!("  <scanCount>{}</scanCount>\n", job.scan_count));
+        xml.push_str(&format!("  <eventCount>{}</eventCount>\n", job.event_count));
+        xml.push_str(&format!(
+            "  <resultCount>{}</resultCount>\n",
+            job.result_count
+        ));
+        xml.push_str(&format!("  <diskUsage>{}</diskUsage>\n", job.disk_usage));
+
+        if let Some(priority) = job.priority {
+            xml.push_str(&format!("  <priority>{}</priority>\n", priority));
+        }
+        if let Some(ref cursor_time) = job.cursor_time {
+            xml.push_str(&format!(
+                "  <cursorTime>{}</cursorTime>\n",
+                escape_xml(cursor_time)
+            ));
+        }
+        if let Some(ref label) = job.label {
+            xml.push_str(&format!("  <label>{}</label>\n", escape_xml(label)));
+        }
+
+        xml.push_str("</job>");
         Ok(xml)
     }
 }

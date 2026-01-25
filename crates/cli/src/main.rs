@@ -111,6 +111,10 @@ enum Commands {
         #[arg(long, default_value = "true")]
         list: bool,
 
+        /// Inspect a specific job by SID (show detailed information)
+        #[arg(long, value_name = "SID", group = "action")]
+        inspect: Option<String>,
+
         /// Cancel a specific job by SID
         #[arg(long, value_name = "SID", group = "action")]
         cancel: Option<String>,
@@ -293,11 +297,12 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::Jobs {
             list,
+            inspect,
             cancel,
             delete,
             count,
         } => {
-            commands::jobs::run(config, list, cancel, delete, count, &cli.output).await?;
+            commands::jobs::run(config, list, inspect, cancel, delete, count, &cli.output).await?;
         }
         Commands::Health => {
             commands::health::run(config, &cli.output).await?;
