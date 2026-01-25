@@ -87,7 +87,7 @@ The CLI tool is named `splunk-cli`.
 - `--max-retries <NUMBER>`: Maximum number of retries for failed requests
 - `--skip-verify`: Skip TLS certificate verification
 - `--profile <NAME>`: Config profile name to load
-- `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `json`]
+- `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
   - **Note**: For CSV and XML formats, nested JSON structures are automatically handled:
     - **CSV**: Nested objects are flattened using dot-notation (e.g., `user.address.city`). Arrays use indexed notation (e.g., `tags.0`, `tags.1`).
     - **XML**: Nested structures are preserved as hierarchical elements. Arrays become container elements with `<item>` children.
@@ -171,6 +171,42 @@ splunk-cli users --count 10 --output table
 ```
 
 - `-c, --count <NUMBER>`: Maximum number of users to list [default: 30]
+
+#### `list-all`
+List all Splunk resources in a unified overview.
+
+```bash
+splunk-cli list-all
+splunk-cli list-all --resources indexes,jobs,users
+splunk-cli list-all --output table
+```
+
+- `-r, --resources <TYPES>`: Optional comma-separated list of resource types to include (e.g., `indexes,jobs,users`)
+  - Valid types: `indexes`, `jobs`, `apps`, `users`, `cluster`, `health`, `kvstore`, `license`, `saved-searches`
+  - If not specified, all resource types are fetched
+  - Example: `--resources indexes,jobs,health` fetches only those three resource types
+
+**Error Handling:**
+- Individual resource fetch failures do not stop the command
+- Failed resources show status "error" with error message in Error column
+- Non-clustered instances show cluster status "not clustered" (not error)
+- License information unavailable shows status "unavailable"
+
+**Timeout Behavior:**
+- Each resource fetch has a 30-second timeout
+- Timed-out resources show status "timeout"
+- Other resources continue fetching if one times out
+
+**Status Values:**
+- `indexes`: "ok" or "error"
+- `jobs`: "active" or "error"
+- `apps`: "installed" or "error"
+- `users`: "active" or "error"
+- `cluster`: "standalone", "peer", "search-head", "not clustered", or "error"
+- `health`: "healthy", "degraded", or "error"
+- `kvstore`: "running", "stopped", or "error"
+- `license`: "ok", "warning" (>90% usage), "unavailable", or "error"
+- `saved-searches`: "available" or "error"
 
 #### `config`
 Manage configuration profiles.

@@ -50,7 +50,7 @@ struct Cli {
     profile: Option<String>,
 
     /// Output format (json, table, csv, xml)
-    #[arg(short, long, global = true, default_value = "json")]
+    #[arg(short, long, global = true, default_value = "table")]
     output: String,
 
     #[command(subcommand)]
@@ -153,6 +153,13 @@ enum Commands {
         /// Maximum number of users to list
         #[arg(short, long, default_value = "30")]
         count: usize,
+    },
+
+    /// List all Splunk resources in unified overview
+    ListAll {
+        /// Optional comma-separated list of resource types (e.g., 'indexes,jobs,apps')
+        #[arg(short, long, value_delimiter = ',')]
+        resources: Option<Vec<String>>,
     },
 }
 
@@ -287,6 +294,9 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
         }
         Commands::Users { count } => {
             commands::users::run(config, count, &cli.output).await?;
+        }
+        Commands::ListAll { resources } => {
+            commands::list_all::run(config, resources, &cli.output).await?;
         }
     }
 

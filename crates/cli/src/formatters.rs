@@ -77,6 +77,9 @@ pub trait Formatter {
 
     /// Format users list.
     fn format_users(&self, users: &[User]) -> Result<String>;
+
+    /// Format list-all unified resource overview.
+    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -164,6 +167,10 @@ impl Formatter for JsonFormatter {
 
     fn format_users(&self, users: &[User]) -> Result<String> {
         Ok(serde_json::to_string_pretty(users)?)
+    }
+
+    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(output)?)
     }
 }
 
@@ -723,6 +730,38 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
+        let mut out = String::new();
+
+        if output.resources.is_empty() {
+            return Ok("No resources found.".to_string());
+        }
+
+        out.push_str(&format!("Timestamp: {}\n", output.timestamp));
+        out.push('\n');
+
+        let header = format!(
+            "{:<20} {:<10} {:<15} {}",
+            "Resource Type", "Count", "Status", "Error"
+        );
+        out.push_str(&header);
+        out.push('\n');
+
+        let separator = format!("{:<20} {:<10} {:<15} {}", "====", "=====", "=====", "=====");
+        out.push_str(&separator);
+        out.push('\n');
+
+        for resource in &output.resources {
+            let error = resource.error.as_deref().unwrap_or("");
+            out.push_str(&format!(
+                "{:<20} {:<10} {:<15} {}\n",
+                resource.resource_type, resource.count, resource.status, error
+            ));
+        }
+
+        Ok(out)
+    }
 }
 
 /// CSV formatter.
@@ -1117,6 +1156,26 @@ impl Formatter for CsvFormatter {
         }
 
         Ok(output)
+    }
+
+    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
+        let mut csv = String::new();
+
+        csv.push_str("timestamp,resource_type,count,status,error\n");
+
+        for resource in &output.resources {
+            let error = resource.error.as_deref().unwrap_or("");
+            csv.push_str(&format!(
+                "{},{},{},{},{}\n",
+                escape_csv(&output.timestamp),
+                escape_csv(&resource.resource_type),
+                resource.count,
+                escape_csv(&resource.status),
+                escape_csv(error)
+            ));
+        }
+
+        Ok(csv)
     }
 }
 
@@ -1591,6 +1650,36 @@ impl Formatter for XmlFormatter {
         }
 
         xml.push_str("</users>\n");
+        Ok(xml)
+    }
+
+    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<list_all>\n");
+        xml.push_str(&format!(
+            "  <timestamp>{}</timestamp>\n",
+            escape_xml(&output.timestamp)
+        ));
+        xml.push_str("  <resources>\n");
+
+        for resource in &output.resources {
+            xml.push_str("    <resource>\n");
+            xml.push_str(&format!(
+                "      <type>{}</type>\n",
+                escape_xml(&resource.resource_type)
+            ));
+            xml.push_str(&format!("      <count>{}</count>\n", resource.count));
+            xml.push_str(&format!(
+                "      <status>{}</status>\n",
+                escape_xml(&resource.status)
+            ));
+            if let Some(error) = &resource.error {
+                xml.push_str(&format!("      <error>{}</error>\n", escape_xml(error)));
+            }
+            xml.push_str("    </resource>\n");
+        }
+
+        xml.push_str("  </resources>\n");
+        xml.push_str("</list_all>");
         Ok(xml)
     }
 }

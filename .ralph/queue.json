@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0099",
-      "status": "todo",
-      "title": "Add CLI 'list all' command for unified resource overview",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "list",
-        "ux",
-        "admin"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/",
-        "crates/cli/tests/",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "User request: 'list' - seeking comprehensive listing functionality",
-        "CLI has individual list commands (indexes, jobs, cluster, health, users, apps, saved-searches) but no unified 'list all' command",
-        "Administrators often need quick overview of all Splunk resources (indexes, jobs, apps, users, cluster status) in one command",
-        "TUI provides overview across multiple screens but CLI requires running separate commands for each resource type"
-      ],
-      "plan": [
-        "Create crates/cli/src/commands/list_all.rs module with run() function",
-        "Add 'list-all' or 'list' subcommand to crates/cli/src/main.rs Commands enum",
-        "Implement parallel fetching of multiple resource types (indexes, jobs, apps, users, cluster info) using tokio::join_all",
-        "Display unified table showing resource counts and summary status for each type",
-        "Add --resources <TYPES> flag to filter which resources to include (e.g., --resources indexes,jobs,users)",
-        "Add integration tests for list-all command (all resources, filtered resources, error handling)",
-        "Update docs/usage.md with list-all CLI documentation",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [],
-      "request": "list",
-      "created_at": "2026-01-25T05:37:20Z",
-      "updated_at": "2026-01-25T05:37:20Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0075",
       "status": "todo",
       "title": "Add CLI apps management commands for parity with TUI",
