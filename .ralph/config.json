@@ -18,6 +18,6 @@
     "claude_permission_mode": "bypass_permissions",
     "require_repoprompt": false,
     "phases": 3,
-    "iterations": 2
+    "iterations": 1
   }
 }
