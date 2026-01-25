@@ -221,6 +221,29 @@ splunk-cli apps disable unused_app
 - Some apps cannot be disabled (e.g., core Splunk apps)
 - Use `apps list` first to find the exact app name
 
+#### `internal-logs`
+Show internal Splunk logs (from `index=_internal`).
+
+```bash
+splunk-cli internal-logs --count 50
+```
+
+- `-c, --count <NUMBER>`: Maximum number of log entries to return [default: 50]
+- `-e, --earliest <TIME>`: Earliest time for logs [default: "-15m"]
+
+**Note**: This command provides access to internal Splunk logs using the dedicated endpoint. For real-time streaming support, see the `logs` command.
+
+#### `logs`
+View internal logs with real-time streaming support.
+
+```bash
+splunk-cli logs --count 50 --earliest "-15m" --tail
+```
+
+- `-c, --count <NUMBER>`: Maximum number of log entries to show [default: 50]
+- `-e, --earliest <TIME>`: Earliest time for logs [default: "-15m"]
+- `-t, --tail`: Follow logs in real-time (streaming mode)
+
 #### `saved-searches`
 Manage Splunk saved searches.
 

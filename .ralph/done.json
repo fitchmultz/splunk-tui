@@ -2948,6 +2948,44 @@
       "completed_at": "2026-01-25T16:09:27.346069000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0077",
+      "status": "done",
+      "title": "Add CLI internal logs command for parity with TUI",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "logs",
+        "feature-parity"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/",
+        "crates/cli/tests/"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/logs.rs provides get_internal_logs() endpoint",
+        "crates/tui/src/app.rs includes InternalLogs screen (CurrentScreen::InternalLogs, handle_internal_logs_input)",
+        "crates/cli/src/commands/logs.rs exists but has different implementation (search index=_internal, not get_internal_logs)",
+        "CLI has logs command for index=_internal search but TUI uses get_internal_logs endpoint for parsing errors"
+      ],
+      "plan": [
+        "Create crates/cli/src/commands/internal_logs.rs module with run() function",
+        "Add InternalLogs subcommand to crates/cli/src/main.rs Commands enum",
+        "Implement internal logs list operation using get_internal_logs() with --tail option for streaming",
+        "Add integration tests in crates/cli/tests/internal_logs_tests.rs",
+        "Update docs/usage.md with internal-logs CLI documentation",
+        "Consider refactoring existing logs.rs or add alias for backward compatibility",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-25T17:11:40.856395000Z",
+      "completed_at": "2026-01-25T17:11:40.856395000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

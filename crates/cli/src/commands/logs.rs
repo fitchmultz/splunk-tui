@@ -1,8 +1,8 @@
 //! Internal logs command implementation.
 
 use anyhow::Result;
+use splunk_client::SplunkClient;
 use splunk_client::models::LogEntry;
-use splunk_client::{AuthStrategy, SplunkClient};
 use tokio::time::{Duration, sleep};
 use tracing::info;
 
@@ -51,12 +51,7 @@ pub async fn run(
     tail: bool,
     output_format: &str,
 ) -> Result<()> {
-    let auth_strategy = match config.auth.strategy {
-        splunk_config::AuthStrategy::SessionToken { username, password } => {
-            AuthStrategy::SessionToken { username, password }
-        }
-        splunk_config::AuthStrategy::ApiToken { token } => AuthStrategy::ApiToken { token },
-    };
+    let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
     let mut client = SplunkClient::builder()
         .base_url(config.connection.base_url)
