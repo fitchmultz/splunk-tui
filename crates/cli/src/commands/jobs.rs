@@ -6,6 +6,7 @@ use tracing::info;
 
 use crate::formatters::{OutputFormat, get_formatter};
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config: splunk_config::Config,
     mut list: bool,
@@ -14,6 +15,7 @@ pub async fn run(
     delete: Option<String>,
     count: usize,
     output_format: &str,
+    quiet: bool,
 ) -> Result<()> {
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
@@ -46,14 +48,18 @@ pub async fn run(
 
     if let Some(sid) = cancel {
         info!("Canceling job: {}", sid);
+        let spinner = crate::progress::Spinner::new(!quiet, format!("Canceling job {}", sid));
         client.cancel_job(&sid).await?;
+        spinner.finish();
         println!("Job {} canceled.", sid);
         return Ok(());
     }
 
     if let Some(sid) = delete {
         info!("Deleting job: {}", sid);
+        let spinner = crate::progress::Spinner::new(!quiet, format!("Deleting job {}", sid));
         client.delete_job(&sid).await?;
+        spinner.finish();
         println!("Job {} deleted.", sid);
         return Ok(());
     }

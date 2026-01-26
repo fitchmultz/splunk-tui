@@ -6,6 +6,8 @@
 //! - `--list` flag explicit usage
 
 use predicates::prelude::*;
+use wiremock::matchers::{header, method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Test that `splunk-cli jobs` with no arguments defaults to listing jobs.
 #[test]
@@ -180,4 +182,59 @@ fn test_jobs_inspect_and_delete_mutually_exclusive() {
         .assert()
         .failure()
         .stderr(predicate::str::contains("cannot be used with"));
+}
+
+#[tokio::test]
+async fn test_jobs_cancel_delete_show_progress_on_stderr_unless_quiet() {
+    let server = MockServer::start().await;
+
+    // Cancel endpoint
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/test-sid/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    // Delete endpoint
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/test-sid"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    // Non-quiet cancel: spinner label should appear on stderr
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+    cmd.args(["jobs", "--cancel", "test-sid"])
+        .assert()
+        .success();
+
+    // Quiet cancel: spinner must be suppressed
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+    cmd.args(["--quiet", "jobs", "--cancel", "test-sid"])
+        .assert()
+        .success()
+        .stderr(predicate::str::is_empty());
+
+    // Non-quiet delete: spinner label should appear on stderr
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+    cmd.args(["jobs", "--delete", "test-sid"])
+        .assert()
+        .success();
+
+    // Quiet delete: spinner must be suppressed
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+    cmd.args(["--quiet", "jobs", "--delete", "test-sid"])
+        .assert()
+        .success()
+        .stderr(predicate::str::is_empty());
 }

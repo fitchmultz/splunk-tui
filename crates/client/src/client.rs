@@ -236,6 +236,55 @@ impl SplunkClient {
         Ok(results.results)
     }
 
+    /// Create and execute a search job with optional progress reporting.
+    ///
+    /// - When `wait` is true, this polls job status and can report `done_progress` (0.0–1.0).
+    /// - Progress reporting is UI-layer concern; the callback is optional and may be `None`.
+    ///
+    /// This method is designed to allow the CLI to display progress bars without
+    /// contaminating stdout, while keeping polling logic in the client library.
+    pub async fn search_with_progress(
+        &mut self,
+        query: &str,
+        wait: bool,
+        earliest_time: Option<&str>,
+        latest_time: Option<&str>,
+        max_results: Option<u64>,
+        progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
+    ) -> Result<Vec<serde_json::Value>> {
+        let options = endpoints::search::CreateJobOptions {
+            // Always create the job in non-blocking mode so callers can poll and show progress.
+            wait: Some(false),
+            earliest_time: earliest_time.map(|s| s.to_string()),
+            latest_time: latest_time.map(|s| s.to_string()),
+            max_count: max_results,
+            ..Default::default()
+        };
+
+        let sid = self.create_search_job(query, &options).await?;
+
+        if wait {
+            let auth_token = self.get_auth_token().await?;
+            endpoints::search::wait_for_job_with_progress(
+                &self.http,
+                &self.base_url,
+                &auth_token,
+                &sid,
+                500,
+                300,
+                self.max_retries,
+                progress_cb,
+            )
+            .await?;
+        }
+
+        let results = self
+            .get_search_results(&sid, max_results.unwrap_or(1000), 0)
+            .await?;
+
+        Ok(results.results)
+    }
+
     /// Create a search job without waiting for completion.
     pub async fn create_search_job(
         &mut self,

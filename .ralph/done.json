@@ -3471,6 +3471,60 @@
       "completed_at": "2026-01-26T16:22:41.955401000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0086",
+      "status": "done",
+      "title": "Add progress indicators for long-running CLI operations",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "ux",
+        "feedback"
+      ],
+      "scope": [
+        "crates/cli/src/commands/search.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/Cargo.toml",
+        "crates/cli/src/main.rs"
+      ],
+      "evidence": [
+        "CLI search.rs:32 passes wait boolean to client.search() with no user-facing progress feedback during long searches",
+        "CLI jobs.rs:47-58 cancel/delete operations show only static success messages after completion, no spinner or in-progress indicator",
+        "CLI main.rs:19-54 has no global --quiet/--verbose flags for controlling progress output verbosity",
+        "CLI Cargo.toml:10-39 has no indicatif or progress-indicator dependencies for animated spinners/bars",
+        "TUI already has progress infrastructure: Action::Progress (tui/src/action.rs:134), progress tracking in tui/src/app.rs:203, and done_progress percentages in job models",
+        "TUI displays job progress with 'Running ({:.0}%)' format (tui/src/ui/screens/jobs.rs:127-128) which CLI could mirror",
+        "Only info! tracing logs exist for operation status, no user-visible progress during execution"
+      ],
+      "plan": [
+        "Add indicatif dependency to crates/cli/Cargo.toml (spinners for indefinite operations, progress bars for percentage-based)",
+        "Create progress utility module (crates/cli/src/progress.rs) with wrapper functions for spinner and progress bar management",
+        "Add global --quiet flag to CLI main.rs to suppress progress output (keep only final results)",
+        "Update search.rs run() to show spinner with 'Searching...' message when wait=true, updating with job status if available",
+        "Update jobs.rs cancel() and delete() operations to show 'Cancelling job...' or 'Deleting job...' spinners during execution",
+        "For search with wait, poll job status periodically and update spinner with 'Searching... (XX%)' using done_progress from job status",
+        "Ensure progress output goes to stderr to not interfere with stdout result formatting",
+        "Add integration tests for progress indicators using tokio::time::sleep to simulate slow operations",
+        "Add test to verify --quiet flag suppresses progress output while still returning results",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [
+        "TUI already uses progress tracking patterns that CLI can reference for consistency (see tui/src/app.rs:1420-1424 for progress updates)",
+        "Job status responses include done_progress field (0.0-1.0) which can be used for percentage display in CLI",
+        "Progress indicators should use stderr to avoid contaminating stdout where formatted results are printed",
+        "Added indicatif-based progress indicators (bars and spinners) to CLI",
+        "Implemented global --quiet flag to suppress progress output",
+        "Ensured all progress output goes to STDERR to maintain clean STDOUT",
+        "Extended client library with search_with_progress and polling callbacks",
+        "Added comprehensive integration tests for progress and quiet mode"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-26T16:50:10.511647000Z",
+      "completed_at": "2026-01-26T16:50:10.511647000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

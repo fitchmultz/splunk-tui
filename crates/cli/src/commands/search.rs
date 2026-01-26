@@ -6,6 +6,7 @@ use tracing::info;
 
 use crate::formatters::{OutputFormat, get_formatter};
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config: splunk_config::Config,
     query: String,
@@ -14,6 +15,7 @@ pub async fn run(
     latest: Option<&str>,
     max_results: usize,
     output_format: &str,
+    quiet: bool,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -28,9 +30,38 @@ pub async fn run(
 
     info!("Connecting to {}", client.base_url());
 
-    let results = client
-        .search(&query, wait, earliest, latest, Some(max_results as u64))
-        .await?;
+    let results = if wait {
+        let progress = crate::progress::SearchProgress::new(!quiet, "Waiting for search");
+
+        let mut on_progress = |done_progress: f64| {
+            progress.set_fraction(done_progress);
+        };
+
+        let results = client
+            .search_with_progress(
+                &query,
+                true,
+                earliest,
+                latest,
+                Some(max_results as u64),
+                if quiet { None } else { Some(&mut on_progress) },
+            )
+            .await?;
+
+        progress.finish();
+        results
+    } else {
+        client
+            .search_with_progress(
+                &query,
+                false,
+                earliest,
+                latest,
+                Some(max_results as u64),
+                None,
+            )
+            .await?
+    };
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

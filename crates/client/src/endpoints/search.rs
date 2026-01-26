@@ -173,11 +173,43 @@ pub async fn wait_for_job(
     max_wait_secs: u64,
     max_retries: usize,
 ) -> Result<SearchJobStatus> {
+    wait_for_job_with_progress(
+        client,
+        base_url,
+        auth_token,
+        sid,
+        poll_interval_ms,
+        max_wait_secs,
+        max_retries,
+        None,
+    )
+    .await
+}
+
+/// Wait for a search job to complete, reporting progress via callback.
+///
+/// The callback receives `done_progress` as a fraction (0.0–1.0).
+/// This is intended for UI layers (CLI/TUI) that want to display progress.
+#[allow(clippy::too_many_arguments)]
+pub async fn wait_for_job_with_progress(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    sid: &str,
+    poll_interval_ms: u64,
+    max_wait_secs: u64,
+    max_retries: usize,
+    mut progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
+) -> Result<SearchJobStatus> {
     let start = std::time::Instant::now();
     let max_wait = std::time::Duration::from_secs(max_wait_secs);
 
     loop {
         let status = get_job_status(client, base_url, auth_token, sid, max_retries).await?;
+
+        if let Some(cb) = progress_cb.as_deref_mut() {
+            cb(status.done_progress);
+        }
 
         if status.is_done {
             debug!("Job {} completed", sid);

@@ -5,6 +5,7 @@
 
 mod commands;
 mod formatters;
+mod progress;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -52,6 +53,12 @@ struct Cli {
     /// Output format (json, table, csv, xml)
     #[arg(short, long, global = true, default_value = "table")]
     output: String,
+
+    /// Suppress all progress output (spinners / progress bars).
+    ///
+    /// Note: Progress indicators always write to STDERR; this flag disables them entirely.
+    #[arg(long, global = true)]
+    quiet: bool,
 
     #[command(subcommand)]
     command: Commands,
@@ -298,6 +305,7 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 latest.as_deref(),
                 count,
                 &cli.output,
+                cli.quiet,
             )
             .await?;
         }
@@ -322,7 +330,17 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
             delete,
             count,
         } => {
-            commands::jobs::run(config, list, inspect, cancel, delete, count, &cli.output).await?;
+            commands::jobs::run(
+                config,
+                list,
+                inspect,
+                cancel,
+                delete,
+                count,
+                &cli.output,
+                cli.quiet,
+            )
+            .await?;
         }
         Commands::Health => {
             commands::health::run(config, &cli.output).await?;
