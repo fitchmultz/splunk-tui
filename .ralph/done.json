@@ -3248,6 +3248,54 @@
       "completed_at": "2026-01-25T23:14:51Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0082",
+      "status": "done",
+      "title": "Add CLI profile show and edit commands",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "config",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/config.rs",
+        "crates/cli/tests/config_tests.rs",
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/config.rs supports list, set, delete operations (lines 9-61)",
+        "No 'show' subcommand exists to display full profile configuration details",
+        "No 'edit' subcommand exists to interactively modify profile fields",
+        "Users must use 'splunk-cli config list' then 'splunk-cli config set' workflow to update a profile",
+        "set command already supports --use-keyring flag for secure credential storage (line 53)",
+        "formatters.rs defines OutputFormat enum with Json, Table, Csv, Xml variants (lines 16-22) but no format_profile method exists",
+        "docs/usage.md documents config command (lines 361-381) with list, set, delete subcommands only, no show/edit documented"
+      ],
+      "plan": [
+        "Add 'show <profile-name>' subcommand to ConfigCommand enum to display full profile configuration",
+        "Add 'edit <profile-name>' subcommand to ConfigCommand enum for interactive profile editing",
+        "Implement show functionality: load profile by name, display all fields (base-url, username, skip-verify, timeout, max-retries, auth type) with masking",
+        "Implement edit functionality: use dialoguer for interactive editing of profile fields (base-url, username, password, api-token, skip-verify, timeout, max-retries)",
+        "Add format_profile method to Formatter trait with support for table, json, csv, xml output formats",
+        "Update run() function in commands/config.rs to match new show/edit subcommands",
+        "Add integration tests in crates/cli/tests/config_tests.rs for show (valid profile, not found, output formats) and edit (create, update, field prompts) operations",
+        "Update docs/usage.md with show and edit command documentation including examples",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [
+        "Existing set command already has interactive prompts (prompt_for_secret function, lines 195-210) for password/token when not provided via CLI args",
+        "Consider reusing existing prompt_for_secret function and dialoguer::Password for edit command's password/token fields",
+        "edit command should support --use-keyring flag like set command for credential security"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-26T02:54:23.490249000Z",
+      "completed_at": "2026-01-26T02:54:23.490249000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

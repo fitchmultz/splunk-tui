@@ -364,10 +364,13 @@ Manage configuration profiles.
 ```bash
 splunk-cli config list --output json
 splunk-cli config set my-profile --base-url https://localhost:8089 --username admin
+splunk-cli config show my-profile --output table
+splunk-cli config edit my-profile --use-keyring
 splunk-cli config delete my-profile
 ```
 
 - `list`: List all configured profiles
+  - `-o, --output <FORMAT>`: Output format (json, table). Default: json
 - `set <profile-name>`: Create or update a profile
   - `-b, --base-url <URL>`: Base URL of Splunk server
   - `-u, --username <NAME>`: Username for session authentication
@@ -377,6 +380,12 @@ splunk-cli config delete my-profile
   - `-t, --timeout-seconds <SECONDS>`: Connection timeout
   - `-m, --max-retries <NUMBER>`: Maximum number of retries
   - `--use-keyring`: Store credentials in system keyring
+- `show <profile-name>`: Display a profile's configuration
+  - `-o, --output <FORMAT>`: Output format (json, table, csv, xml). Default: table
+- `edit <profile-name>`: Edit a profile interactively
+  - `--use-keyring`: Store credentials in system keyring
+  - Prompts for each field with current values as defaults
+  - Press Enter when prompted for password/token to keep existing values
 - `delete <profile-name>`: Delete a profile
 
 ---

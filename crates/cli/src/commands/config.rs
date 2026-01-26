@@ -1,5 +1,6 @@
 //! Configuration management commands.
 
+use crate::formatters::{OutputFormat, get_formatter};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::Serialize;
@@ -53,10 +54,30 @@ pub enum ConfigCommand {
         use_keyring: bool,
     },
 
+    /// Show a profile's configuration
+    Show {
+        /// Profile name to display
+        profile_name: String,
+
+        /// Output format (json, table, csv, xml)
+        #[arg(short, long, default_value = "table")]
+        output: String,
+    },
+
     /// Delete a profile
     Delete {
         /// Profile name to delete
         profile_name: String,
+    },
+
+    /// Edit a profile interactively
+    Edit {
+        /// Profile name to edit
+        profile_name: String,
+
+        /// Store credentials in system keyring
+        #[arg(long)]
+        use_keyring: bool,
     },
 }
 
@@ -72,16 +93,10 @@ pub fn run(command: ConfigCommand) -> Result<()> {
     };
 
     match command {
-        ConfigCommand::Show { profile_name, output } => {
-            run_show(&manager, &profile_name, &output)?;
+        ConfigCommand::List { output } => {
+            run_list(&manager, &output)?;
         }
-        ConfigCommand::Edit { profile_name, use_keyring } => {
-            run_edit(&mut manager, &profile_name, use_keyring)?;
-        }
-        ConfigCommand::Delete { profile_name } => {
-            run_delete(&mut manager, &profile_name)?;
-        }
-    }
+        ConfigCommand::Set {
             profile_name,
             base_url,
             username,
@@ -104,6 +119,18 @@ pub fn run(command: ConfigCommand) -> Result<()> {
                 max_retries,
                 use_keyring,
             )?;
+        }
+        ConfigCommand::Show {
+            profile_name,
+            output,
+        } => {
+            run_show(&manager, &profile_name, &output)?;
+        }
+        ConfigCommand::Edit {
+            profile_name,
+            use_keyring,
+        } => {
+            run_edit(&mut manager, &profile_name, use_keyring)?;
         }
         ConfigCommand::Delete { profile_name } => {
             run_delete(&mut manager, &profile_name)?;
@@ -305,6 +332,192 @@ fn run_set(
 
     manager.save_profile(profile_name, profile_config)?;
     println!("Profile '{}' saved successfully.", profile_name);
+
+    Ok(())
+}
+
+fn run_show(manager: &ConfigManager, profile_name: &str, output_format: &str) -> Result<()> {
+    let profiles = manager.list_profiles();
+
+    let profile = profiles
+        .get(profile_name)
+        .ok_or_else(|| anyhow::anyhow!("Profile '{}' not found", profile_name))?;
+
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
+
+    let output = formatter.format_profile(profile_name, profile)?;
+    print!("{}", output);
+
+    Ok(())
+}
+
+fn run_edit(manager: &mut ConfigManager, profile_name: &str, use_keyring: bool) -> Result<()> {
+    let profiles = manager.list_profiles();
+
+    // Check if profile exists
+    let existing_profile = profiles.get(profile_name).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Profile '{}' not found. Use 'config set' to create a new profile.",
+            profile_name
+        )
+    })?;
+
+    let profile = existing_profile.clone();
+
+    // Prompt for each field interactively
+    let base_url = if let Some(current) = &profile.base_url {
+        dialoguer::Input::<String>::new()
+            .with_prompt("Base URL")
+            .default(current.clone())
+            .interact()
+            .ok()
+    } else {
+        dialoguer::Input::<String>::new()
+            .with_prompt("Base URL")
+            .interact()
+            .ok()
+    };
+
+    let username = if let Some(current) = &profile.username {
+        dialoguer::Input::<String>::new()
+            .with_prompt("Username")
+            .default(current.clone())
+            .allow_empty(true)
+            .interact()
+            .ok()
+            .filter(|s| !s.is_empty())
+    } else {
+        dialoguer::Input::<String>::new()
+            .with_prompt("Username")
+            .allow_empty(true)
+            .interact()
+            .ok()
+            .filter(|s| !s.is_empty())
+    };
+
+    // Validate that we have required fields
+    if base_url.is_none() {
+        anyhow::bail!("Base URL is required");
+    }
+
+    // Prompt for password if username is set
+    let password = if username.is_some() {
+        // For edit, always prompt but allow keeping existing
+        if let Ok(input) = dialoguer::Password::new()
+            .with_prompt("Password (press Enter to keep existing)")
+            .allow_empty_password(true)
+            .interact()
+        {
+            if input.is_empty() {
+                profile.password.clone()
+            } else {
+                Some(SecureValue::Plain(secrecy::SecretString::new(input.into())))
+            }
+        } else {
+            profile.password.clone()
+        }
+    } else {
+        profile.password.clone()
+    };
+
+    // Prompt for API token (alternative to password)
+    let api_token = if let Ok(input) = dialoguer::Password::new()
+        .with_prompt("API Token (press Enter to keep existing or skip)")
+        .allow_empty_password(true)
+        .interact()
+    {
+        if input.is_empty() {
+            profile.api_token.clone()
+        } else {
+            Some(SecureValue::Plain(secrecy::SecretString::new(input.into())))
+        }
+    } else {
+        profile.api_token.clone()
+    };
+
+    // Validate auth requirements
+    if username.is_some() && password.is_none() && api_token.is_none() {
+        anyhow::bail!("Either password or API token must be provided when using username");
+    }
+
+    let skip_verify = if let Some(current) = profile.skip_verify {
+        dialoguer::Confirm::new()
+            .with_prompt("Skip TLS certificate verification?")
+            .default(current)
+            .interact()
+            .ok()
+    } else {
+        dialoguer::Confirm::new()
+            .with_prompt("Skip TLS certificate verification?")
+            .default(false)
+            .interact()
+            .ok()
+    };
+
+    let timeout_seconds = if let Some(current) = profile.timeout_seconds {
+        dialoguer::Input::<u64>::new()
+            .with_prompt("Connection timeout (seconds)")
+            .default(current)
+            .interact()
+            .ok()
+    } else {
+        dialoguer::Input::<u64>::new()
+            .with_prompt("Connection timeout (seconds)")
+            .default(30)
+            .interact()
+            .ok()
+    };
+
+    let max_retries = if let Some(current) = profile.max_retries {
+        dialoguer::Input::<usize>::new()
+            .with_prompt("Maximum retries")
+            .default(current)
+            .interact()
+            .ok()
+    } else {
+        dialoguer::Input::<usize>::new()
+            .with_prompt("Maximum retries")
+            .default(3)
+            .interact()
+            .ok()
+    };
+
+    let mut profile_config = ProfileConfig {
+        base_url,
+        username: username.clone(),
+        skip_verify,
+        timeout_seconds,
+        max_retries,
+        ..Default::default()
+    };
+
+    // If use_keyring flag is set, store credentials in keyring BEFORE first save
+    let password = if use_keyring {
+        if let (Some(username), Some(SecureValue::Plain(pw))) = (&username, &password) {
+            Some(manager.store_password_in_keyring(profile_name, username, pw)?)
+        } else {
+            password
+        }
+    } else {
+        password
+    };
+
+    let api_token = if use_keyring {
+        if let Some(SecureValue::Plain(token)) = &api_token {
+            Some(manager.store_token_in_keyring(profile_name, token)?)
+        } else {
+            api_token
+        }
+    } else {
+        api_token
+    };
+
+    profile_config.password = password.or(profile.password);
+    profile_config.api_token = api_token.or(profile.api_token);
+
+    manager.save_profile(profile_name, profile_config)?;
+    println!("Profile '{}' updated successfully.", profile_name);
 
     Ok(())
 }
