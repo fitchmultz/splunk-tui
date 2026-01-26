@@ -72,10 +72,16 @@ pub fn run(command: ConfigCommand) -> Result<()> {
     };
 
     match command {
-        ConfigCommand::List { output } => {
-            run_list(&manager, &output)?;
+        ConfigCommand::Show { profile_name, output } => {
+            run_show(&manager, &profile_name, &output)?;
         }
-        ConfigCommand::Set {
+        ConfigCommand::Edit { profile_name, use_keyring } => {
+            run_edit(&mut manager, &profile_name, use_keyring)?;
+        }
+        ConfigCommand::Delete { profile_name } => {
+            run_delete(&mut manager, &profile_name)?;
+        }
+    }
             profile_name,
             base_url,
             username,

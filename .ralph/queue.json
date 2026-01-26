@@ -3,7 +3,7 @@
   "tasks": [
     {
       "id": "RQ-0082",
-      "status": "todo",
+      "status": "doing",
       "title": "Add CLI profile show and edit commands",
       "priority": "medium",
       "tags": [
@@ -44,7 +44,7 @@
       ],
       "request": "scan finding",
       "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-25T01:47:00Z",
+      "updated_at": "2026-01-26T01:14:14.219869000Z",
       "depends_on": [],
       "custom_fields": {}
     },

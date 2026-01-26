@@ -9,6 +9,7 @@ use splunk_client::{
     App, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SavedSearch,
     SearchJobStatus, User,
 };
+use splunk_config::types::ProfileConfig;
 
 pub use splunk_client::HealthCheckOutput;
 
@@ -95,6 +96,9 @@ pub trait Formatter {
 
     /// Format detailed job information.
     fn format_job_details(&self, job: &SearchJobStatus) -> Result<String>;
+
+    /// Format profile configuration.
+    fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -207,6 +211,33 @@ impl Formatter for JsonFormatter {
 
     fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
         Ok(serde_json::to_string_pretty(job)?)
+    }
+
+    fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
+        #[derive(Serialize)]
+        struct ProfileDisplay {
+            name: String,
+            base_url: Option<String>,
+            username: Option<String>,
+            skip_verify: Option<bool>,
+            timeout_seconds: Option<u64>,
+            max_retries: Option<usize>,
+            password: Option<String>,
+            api_token: Option<String>,
+        }
+
+        let display = ProfileDisplay {
+            name: profile_name.to_string(),
+            base_url: profile.base_url.clone(),
+            username: profile.username.clone(),
+            skip_verify: profile.skip_verify,
+            timeout_seconds: profile.timeout_seconds,
+            max_retries: profile.max_retries,
+            password: profile.password.as_ref().map(|_| "****".to_string()),
+            api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
+        };
+
+        Ok(serde_json::to_string_pretty(&display)?)
     }
 }
 
@@ -1014,6 +1045,47 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
+        let mut output = String::new();
+
+        output.push_str(&format!("{:<20} {}\n", "Profile Name:", profile_name));
+
+        let base_url = profile.base_url.as_deref().unwrap_or("(not set)");
+        output.push_str(&format!("{:<20} {}\n", "Base URL:", base_url));
+
+        let username = profile.username.as_deref().unwrap_or("(not set)");
+        output.push_str(&format!("{:<20} {}\n", "Username:", username));
+
+        let password_display = match &profile.password {
+            Some(_) => "****",
+            None => "(not set)",
+        };
+        output.push_str(&format!("{:<20} {}\n", "Password:", password_display));
+
+        let token_display = match &profile.api_token {
+            Some(_) => "****",
+            None => "(not set)",
+        };
+        output.push_str(&format!("{:<20} {}\n", "API Token:", token_display));
+
+        let skip_verify = profile
+            .skip_verify
+            .map_or("(not set)".to_string(), |b| b.to_string());
+        output.push_str(&format!("{:<20} {}\n", "Skip TLS Verify:", skip_verify));
+
+        let timeout = profile
+            .timeout_seconds
+            .map_or("(not set)".to_string(), |t| t.to_string());
+        output.push_str(&format!("{:<20} {}\n", "Timeout (sec):", timeout));
+
+        let max_retries = profile
+            .max_retries
+            .map_or("(not set)".to_string(), |r| r.to_string());
+        output.push_str(&format!("{:<20} {}", "Max Retries:", max_retries));
+
+        Ok(output)
+    }
 }
 
 impl TableFormatter {
@@ -1607,6 +1679,81 @@ impl Formatter for CsvFormatter {
             job.disk_usage,
             escape_csv(&priority),
             escape_csv(label)
+        ));
+
+        Ok(csv)
+    }
+
+    fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
+        let mut csv = String::new();
+
+        csv.push_str("field,value\n");
+
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("Profile Name"),
+            escape_csv(profile_name)
+        ));
+
+        let base_url = profile.base_url.as_deref().unwrap_or("(not set)");
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("Base URL"),
+            escape_csv(base_url)
+        ));
+
+        let username = profile.username.as_deref().unwrap_or("(not set)");
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("Username"),
+            escape_csv(username)
+        ));
+
+        let password_display = match &profile.password {
+            Some(_) => "****",
+            None => "(not set)",
+        };
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("Password"),
+            escape_csv(password_display)
+        ));
+
+        let token_display = match &profile.api_token {
+            Some(_) => "****",
+            None => "(not set)",
+        };
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("API Token"),
+            escape_csv(token_display)
+        ));
+
+        let skip_verify = profile
+            .skip_verify
+            .map_or("(not set)".to_string(), |b| b.to_string());
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("Skip TLS Verify"),
+            escape_csv(&skip_verify)
+        ));
+
+        let timeout = profile
+            .timeout_seconds
+            .map_or("(not set)".to_string(), |t| t.to_string());
+        csv.push_str(&format!(
+            "{},{}\n",
+            escape_csv("Timeout (sec)"),
+            escape_csv(&timeout)
+        ));
+
+        let max_retries = profile
+            .max_retries
+            .map_or("(not set)".to_string(), |r| r.to_string());
+        csv.push_str(&format!(
+            "{},{}",
+            escape_csv("Max Retries"),
+            escape_csv(&max_retries)
         ));
 
         Ok(csv)
@@ -2299,6 +2446,60 @@ impl Formatter for XmlFormatter {
         }
 
         xml.push_str("</job>");
+        Ok(xml)
+    }
+
+    fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<profile>\n");
+
+        xml.push_str(&format!("  <name>{}</name>\n", escape_xml(profile_name)));
+
+        let base_url = profile.base_url.as_deref().unwrap_or("");
+        xml.push_str(&format!(
+            "  <base_url>{}</base_url>\n",
+            escape_xml(base_url)
+        ));
+
+        let username = profile.username.as_deref().unwrap_or("");
+        xml.push_str(&format!(
+            "  <username>{}</username>\n",
+            escape_xml(username)
+        ));
+
+        let password_display = match &profile.password {
+            Some(_) => "****",
+            None => "",
+        };
+        xml.push_str(&format!(
+            "  <password>{}</password>\n",
+            escape_xml(password_display)
+        ));
+
+        let token_display = match &profile.api_token {
+            Some(_) => "****",
+            None => "",
+        };
+        xml.push_str(&format!(
+            "  <api_token>{}</api_token>\n",
+            escape_xml(token_display)
+        ));
+
+        if let Some(skip_verify) = profile.skip_verify {
+            xml.push_str(&format!("  <skip_verify>{}</skip_verify>\n", skip_verify));
+        }
+
+        if let Some(timeout) = profile.timeout_seconds {
+            xml.push_str(&format!(
+                "  <timeout_seconds>{}</timeout_seconds>\n",
+                timeout
+            ));
+        }
+
+        if let Some(max_retries) = profile.max_retries {
+            xml.push_str(&format!("  <max_retries>{}</max_retries>\n", max_retries));
+        }
+
+        xml.push_str("</profile>");
         Ok(xml)
     }
 }
