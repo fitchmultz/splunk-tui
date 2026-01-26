@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0094",
-      "status": "todo",
-      "title": "Add performance tests for TUI search results rendering",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "performance",
-        "tests"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/search.rs",
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "Virtualization IS implemented in search.rs:100-119 using sliding window pattern (skip/take on visible range)",
-        "Pagination IS implemented in app.rs:386-406 (maybe_fetch_more_results loads more data when within 10 items of end)",
-        "search_scroll_offset field exists (app.rs:177) for tracking visible region",
-        "search_results stored as Vec<Value> (app.rs:176) to support scrolling without re-fetching",
-        "No performance tests exist for rendering with large result sets (grep in crates/tui/tests/ shows zero matches for 'virtual|performance')",
-        "No snapshot tests exist for virtual window scrolling behavior"
-      ],
-      "plan": [
-        "Add performance test in crates/tui/tests/app_tests.rs: test_search_rendering_with_large_dataset() - verify rendering time with 10, 100, 1000, 10000 results",
-        "Add snapshot test in crates/tui/tests/app_tests.rs: test_virtual_window_scrolling() - verify only visible results are rendered with various scroll offsets",
-        "Add snapshot test: test_pagination_trigger() - verify LoadMoreSearchResults action triggers at correct threshold (within 10 items of end)",
-        "Measure actual rendering time in tests using std::time::Instant to verify O(1) rendering cost regardless of total result count",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [
-        "Core virtualization work is complete - search.rs already implements sliding window rendering (lines 101-119)",
-        "Pagination is implemented with maybe_fetch_more_results() method (app.rs:386-406)",
-        "Task evidence originally claimed virtualization didn't exist, but investigation reveals it was already implemented",
-        "Remaining work is test coverage only, not implementation",
-        "Storing all results in Vec<Value> is intentional design for scrolling without re-fetching",
-        "Initial task scope was implementation work, but actual gap is test coverage for performance guarantees"
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-25T23:30:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0095",
       "status": "todo",
       "title": "Add TUI fuzzy search for saved searches and jobs",

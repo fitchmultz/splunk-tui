@@ -3925,6 +3925,55 @@
       "completed_at": "2026-01-26T23:09:23.248504000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0094",
+      "status": "done",
+      "title": "Add performance tests for TUI search results rendering",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "performance",
+        "tests"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "Virtualization IS implemented in search.rs:120-127 using sliding window pattern (skip/take on visible range)",
+        "Search results are stored as Vec<Value> (app.rs:179) with search_scroll_offset field (app.rs:180) for tracking visible region",
+        "Pagination trigger implemented in app.rs:464-485 (maybe_fetch_more_results) - loads more data when within 10 items of end",
+        "Results pagination logic in app.rs:444-461 (append_search_results) handles appending new result pages",
+        "No performance tests exist for rendering with large result sets (grep in crates/tui/tests/ shows zero matches for 'virtual|performance|render.*time|instant')",
+        "Existing tests in app_tests.rs cover scrolling behavior (lines 1253-1409) but do not measure rendering performance",
+        "No snapshot tests exist for virtual window scrolling behavior or pagination triggers"
+      ],
+      "plan": [
+        "Add performance test in crates/tui/tests/app_tests.rs: test_search_rendering_with_large_dataset() - verify rendering time with 10, 100, 1000, 10000 results",
+        "Add snapshot test in crates/tui/tests/app_tests.rs: test_virtual_window_scrolling() - verify only visible results are rendered with various scroll offsets",
+        "Add snapshot test: test_pagination_trigger() - verify LoadMoreSearchResults action triggers at correct threshold (within 10 items of end)",
+        "Measure actual rendering time in tests using std::time::Instant to verify O(1) rendering cost regardless of total result count",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [
+        "Core virtualization work is complete - search.rs:120-127 implements sliding window rendering that only formats visible items",
+        "Pagination infrastructure is complete with append_search_results() (app.rs:444-461) and maybe_fetch_more_results() (app.rs:464-485)",
+        "Task originally included implementation work, but codebase investigation reveals virtualization and pagination were already implemented",
+        "Remaining work is test coverage only - specifically performance tests and snapshot tests to verify O(1) rendering guarantees",
+        "Storing all results in Vec<Value> is intentional design for scrolling without re-fetching - tests should verify this scales well",
+        "Added test_search_rendering_with_large_dataset() to app_tests.rs:2197 - validates O(1) rendering with 10, 100, 1000, 10000 results (<10ms threshold)",
+        "Added 4 pagination trigger tests: test_pagination_trigger_at_threshold, test_pagination_no_trigger_before_threshold, test_pagination_no_trigger_when_all_loaded, test_pagination_no_trigger_while_loading",
+        "Added snapshot_virtual_window_scrolling() test to snapshot_tests.rs with 3 snapshots at offsets 0, 50, 90 verifying only visible results render",
+        "All 110 app tests pass, all 28 snapshot tests pass, make ci completes successfully",
+        "Critical fix: Restored 9 batch operation tests that were accidentally deleted in Phase 2 (test_batch_cancel_action_generated, test_batch_delete_action_generated, etc.)"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-26T23:22:04.856777000Z",
+      "completed_at": "2026-01-26T23:22:04.856777000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
