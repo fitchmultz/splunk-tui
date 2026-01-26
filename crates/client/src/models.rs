@@ -283,7 +283,7 @@ pub struct ClusterPeer {
 
 /// Authentication response from login.
 #[derive(Debug, Deserialize, Clone)]
-#[allow(dead_code)]
+#[allow(dead_code)] // Test fixture only, not used in production code
 pub struct AuthResponse {
     #[serde(rename = "sessionKey")]
     pub session_key: String,

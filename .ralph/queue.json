@@ -2,68 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0090",
-      "status": "todo",
-      "title": "Remove dead_code suppressions and refactor unused code",
-      "priority": "low",
-      "tags": [
-        "refactor",
-        "dead-code",
-        "maintenance"
-      ],
-      "scope": [
-        "crates/client/src/models.rs",
-        "crates/client/src/client.rs",
-        "crates/tui/src/ui/toast.rs",
-        "crates/tui/src/action.rs",
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/src/ui/screens/jobs.rs"
-      ],
-      "evidence": [
-        "crates/client/src/models.rs:286 - AuthResponse struct has #[allow(dead_code)], only used in test (test_deserialize_auth_response at line 453)",
-        "crates/client/src/client.rs:122 - SplunkClient struct has #[allow(dead_code)] but is heavily used (11 CLI commands, tests, lib exports) - FALSE POSITIVE",
-        "crates/client/src/client.rs:139 - ensure_authenticated() async method has #[allow(dead_code)] and is not called anywhere in production code - TRULY DEAD",
-        "crates/tui/src/action.rs:56 - SearchInput(char) variant has #[allow(dead_code)] but is actively used in app.rs:1402 (handle_input) - FALSE POSITIVE",
-        "crates/tui/src/action.rs:63 - ToggleSortDirection variant has #[allow(dead_code)] but is actively used in app.rs:1413 (handle_input) - FALSE POSITIVE",
-        "crates/tui/src/ui/popup.rs:86 - PopupBuilder::title() method has #[allow(dead_code)] and is not called anywhere - TRULY DEAD",
-        "crates/tui/src/ui/popup.rs:95 - PopupBuilder::content() method has #[allow(dead_code)] and is not called anywhere - TRULY DEAD",
-        "crates/tui/src/ui/toast.rs:21 - ToastLevel enum has #[allow(dead_code)] with comment 'Public API for future use' - intentional",
-        "crates/tui/src/ui/toast.rs:63 - ToastLevel::from_str() has #[allow(dead_code)], only used in tests (toast.rs:337-346) - TEST ONLY",
-        "crates/tui/src/ui/toast.rs:78 - Toast struct has #[allow(dead_code)] with comment 'Public API for future use' - intentional",
-        "crates/tui/src/ui/toast.rs:111 - Toast::remaining() method has #[allow(dead_code)], only used in test (toast.rs:285-296) - TEST ONLY",
-        "crates/tui/src/ui/toast.rs:117 - Toast::info() has #[allow(dead_code)], only used in tests (toast.rs:274, 278, 286, 316, 331-332) - TEST ONLY",
-        "crates/tui/src/ui/toast.rs:123 - Toast::success() has #[allow(dead_code)], only used in test (toast.rs:319) - TEST ONLY",
-        "crates/tui/src/ui/toast.rs:129 - Toast::warning() has #[allow(dead_code)] but IS used in app.rs:351 (Toast::warning for health status) - FALSE POSITIVE",
-        "crates/tui/src/ui/screens/jobs.rs:204 - compare_jobs() function has #[allow(dead_code)] with comment 'No longer used as filtering/sorting is done in App' - TRULY DEAD (app.rs:1890-1908 uses compare_jobs_for_sort instead)"
-      ],
-      "plan": [
-        "Remove #[allow(dead_code)] from crates/client/src/client.rs:122 (SplunkClient struct) - heavily used type",
-        "Remove #[allow(dead_code)] from crates/tui/src/action.rs:56 (SearchInput) - actively used in app.rs:1402",
-        "Remove #[allow(dead_code)] from crates/tui/src/action.rs:63 (ToggleSortDirection) - actively used in app.rs:1413",
-        "Remove #[allow(dead_code)] from crates/tui/src/ui/toast.rs:129 (Toast::warning) - actively used in app.rs:351",
-        "Remove crates/client/src/client.rs:139 ensure_authenticated() method entirely - not called anywhere",
-        "Remove crates/tui/src/ui/popup.rs:86-95 PopupBuilder::title() and ::content() methods - not used anywhere",
-        "Remove crates/tui/src/ui/screens/jobs.rs:204-227 compare_jobs() function and its SortColumn/SortDirection/Ordering imports - replaced by compare_jobs_for_sort in app.rs",
-        "For crates/client/src/models.rs:286 AuthResponse - keep with improved justification: 'Test fixture only, not used in production code'",
-        "For crates/tui/src/ui/toast.rs public API methods (remaining, info, success, from_str, ToastLevel enum, Toast struct) - keep suppressions but improve justification comments to clarify 'Public API for future use, tested in #[cfg(test)]'",
-        "Run clippy to verify no new warnings after removals",
-        "Run make ci to verify all tests pass (toast.rs tests use info/success/warning constructors, so they must not be removed)"
-      ],
-      "notes": [
-        "SplunkClient struct suppression is false positive - type is used in 11 CLI commands (apps, cluster, health, indexes, internal_logs, jobs, kvstore, license, list_all, logs, saved_searches, search, users), live tests, and lib.rs exports",
-        "SearchInput and ToggleSortDirection suppressions are false positives - both actively used in handle_input() method for Jobs screen filtering/sorting",
-        "Toast::warning() is actively used (app.rs:351: Toast::warning('Splunk health status changed to unhealthy'))",
-        "AuthResponse struct is only used in test_deserialize_auth_response() at models.rs:451-455",
-        "compare_jobs() was replaced by inline compare_jobs_for_sort() in app.rs:1890-1908, kept for reference but not used",
-        "Toast public API suppressions are intentional for future use - documented with 'Public API for future use' comments"
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-25T18:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0091",
       "status": "todo",
       "title": "Add color scheme customization to TUI",

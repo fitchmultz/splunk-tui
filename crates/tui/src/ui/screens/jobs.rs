@@ -13,7 +13,6 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
 };
 use splunk_client::models::SearchJobStatus;
-use std::cmp::Ordering;
 use std::collections::HashSet;
 
 /// Configuration for rendering the jobs table.
@@ -194,43 +193,6 @@ fn header_cell<'a>(text: &'a str, is_sorted: bool, indicator: &str) -> Cell<'a> 
         Cell::from(format!("{} {}", text, indicator))
     } else {
         Cell::from(text.to_string())
-    }
-}
-
-/// Compare two jobs based on the specified column and direction.
-/// NOTE: No longer used as filtering/sorting is done in the App.
-/// Kept for reference/potential future use.
-#[allow(dead_code)]
-fn compare_jobs(
-    a: &SearchJobStatus,
-    b: &SearchJobStatus,
-    column: &SortColumn,
-    direction: &SortDirection,
-) -> Ordering {
-    let ordering = match column {
-        SortColumn::Sid => a.sid.cmp(&b.sid),
-        SortColumn::Status => {
-            // Sort by is_done first, then by progress
-            match (a.is_done, b.is_done) {
-                (true, false) => Ordering::Less,
-                (false, true) => Ordering::Greater,
-                _ => a
-                    .done_progress
-                    .partial_cmp(&b.done_progress)
-                    .unwrap_or(Ordering::Equal),
-            }
-        }
-        SortColumn::Duration => a
-            .run_duration
-            .partial_cmp(&b.run_duration)
-            .unwrap_or(Ordering::Equal),
-        SortColumn::Results => a.result_count.cmp(&b.result_count),
-        SortColumn::Events => a.event_count.cmp(&b.event_count),
-    };
-
-    match direction {
-        SortDirection::Asc => ordering,
-        SortDirection::Desc => ordering.reverse(),
     }
 }
 

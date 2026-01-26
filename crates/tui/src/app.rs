@@ -2438,20 +2438,6 @@ impl App {
         self.jobs.as_ref()?.get(*original_idx)
     }
 
-    /// Get the filtered and sorted list of jobs (references into the original list).
-    /// NOTE: Currently unused directly as render_jobs accesses filtered_job_indices.
-    /// Kept for potential future use or testing.
-    #[allow(dead_code)]
-    pub fn get_filtered_jobs(&self) -> Vec<&SearchJobStatus> {
-        let Some(jobs) = &self.jobs else {
-            return Vec::new();
-        };
-        self.filtered_job_indices
-            .iter()
-            .filter_map(|&i| jobs.get(i))
-            .collect()
-    }
-
     /// Get the length of the filtered jobs list.
     fn filtered_jobs_len(&self) -> usize {
         self.filtered_job_indices.len()

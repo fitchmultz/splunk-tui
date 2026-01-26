@@ -130,7 +130,6 @@ impl SplunkClientBuilder {
 /// Despite the duplication, the pattern is simple and maintainable.
 /// Future refactoring should consider architectural changes to enable cleaner extraction.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct SplunkClient {
     http: reqwest::Client,
     base_url: String,
@@ -142,31 +141,6 @@ impl SplunkClient {
     /// Create a new client builder.
     pub fn builder() -> SplunkClientBuilder {
         SplunkClientBuilder::new()
-    }
-
-    /// Ensure we have an active authentication token.
-    /// For API token auth, this is a no-op.
-    /// For session auth, this will login if needed or if the session is expired.
-    #[allow(dead_code)]
-    async fn ensure_authenticated(&self) -> Result<String> {
-        // If using API token, we don't need to manage sessions
-        if self.session_manager.is_api_token()
-            && let Some(token) = self.session_manager.get_bearer_token()
-        {
-            return Ok(token.to_string());
-        }
-
-        // Check if we have a valid session token
-        if let Some(token) = self.session_manager.get_bearer_token()
-            && !self.session_manager.is_session_expired()
-        {
-            return Ok(token.to_string());
-        }
-
-        // Need to login - this requires mutable access to the session manager
-        // Since we can't have &mut self in async methods easily, we need to handle this differently
-        // For now, return an error indicating authentication is needed
-        Err(ClientError::SessionExpired)
     }
 
     /// Login with username/password to get a session token.

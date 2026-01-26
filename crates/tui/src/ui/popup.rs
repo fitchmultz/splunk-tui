@@ -46,24 +46,22 @@ pub struct Popup {
 }
 
 impl Popup {
-    /// Create a new PopupBuilder for the given popup type.
+    /// Create a new `PopupBuilder` for the given popup type.
     ///
     /// # Example
     ///
     /// ```rust
     /// use splunk_tui::ui::popup::{Popup, PopupType};
     ///
-    /// let popup = Popup::builder(PopupType::Help)
-    ///     .title("Custom Help".to_string())
-    ///     .content("Custom help text".to_string())
-    ///     .build();
+    /// let popup = Popup::builder(PopupType::Help).build();
+    /// assert_eq!(popup.title, "Help");
     /// ```
     pub fn builder(kind: PopupType) -> PopupBuilder {
         PopupBuilder::new(kind)
     }
 }
 
-/// Builder for constructing Popup instances with customizable properties.
+/// Builder for constructing `Popup` instances.
 pub struct PopupBuilder {
     kind: PopupType,
     title: Option<String>,
@@ -83,7 +81,6 @@ impl PopupBuilder {
     /// Set the popup title.
     ///
     /// If not set, a default title will be used based on the popup type.
-    #[allow(dead_code)]
     pub fn title(mut self, title: impl Into<String>) -> Self {
         self.title = Some(title.into());
         self
@@ -92,15 +89,12 @@ impl PopupBuilder {
     /// Set the popup content.
     ///
     /// If not set, default content will be used based on the popup type.
-    #[allow(dead_code)]
     pub fn content(mut self, content: impl Into<String>) -> Self {
         self.content = Some(content.into());
         self
     }
 
-    /// Build the Popup instance.
-    ///
-    /// Default values are used for title and content if not explicitly set.
+    /// Build the `Popup` instance using defaults derived from `PopupType`.
     pub fn build(self) -> Popup {
         let (default_title, default_content) = match &self.kind {
             PopupType::Help => (
