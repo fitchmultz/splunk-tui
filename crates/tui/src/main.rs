@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
     });
 
     // Load persisted configuration
-    let mut config_manager = if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
+    let config_manager = if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
         if !config_path.is_empty() {
             ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
         } else {
@@ -92,6 +92,7 @@ async fn main() -> Result<()> {
         ConfigManager::new()?
     };
     let persisted_state = config_manager.load();
+    let config_manager = Arc::new(Mutex::new(config_manager));
 
     // Create app with persisted state
     let mut app = App::new(Some(persisted_state));
@@ -146,7 +147,8 @@ async fn main() -> Result<()> {
                 if matches!(action, Action::Quit) {
                     // Save persisted state before quitting
                     let state = app.get_persisted_state();
-                    if let Err(e) = config_manager.save(&state) {
+                    let mut cm = config_manager.lock().await;
+                    if let Err(e) = cm.save(&state) {
                         tracing::error!(error = %e, "Failed to save config");
                     }
                     break;
@@ -156,24 +158,24 @@ async fn main() -> Result<()> {
                 if let Action::Input(key) = action {
                     if let Some(a) = app.handle_input(key) {
                         app.update(a.clone());
-                        handle_side_effects(a, client.clone(), tx.clone()).await;
+                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
-                            handle_side_effects(load_action, client.clone(), tx.clone()).await;
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
                         }
                     }
                 } else if let Action::Mouse(mouse) = action {
                     if let Some(a) = app.handle_mouse(mouse) {
                         app.update(a.clone());
-                        handle_side_effects(a, client.clone(), tx.clone()).await;
+                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
-                            handle_side_effects(load_action, client.clone(), tx.clone()).await;
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
                         }
                     }
                 } else {
                     app.update(action.clone());
-                    handle_side_effects(action, client.clone(), tx.clone()).await;
+                    handle_side_effects(action, client.clone(), tx.clone(), config_manager.clone()).await;
                 }
             }
             _ = tick_interval.tick() => {
@@ -184,7 +186,7 @@ async fn main() -> Result<()> {
                 // Data refresh is separate from UI tick
                 if let Some(a) = app.handle_tick() {
                     app.update(a.clone());
-                    handle_side_effects(a, client.clone(), tx.clone()).await;
+                    handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
                 }
             }
         }
@@ -258,6 +260,7 @@ async fn handle_side_effects(
     action: Action,
     client: SharedClient,
     tx: tokio::sync::mpsc::UnboundedSender<Action>,
+    config_manager: Arc<Mutex<ConfigManager>>,
 ) {
     match action {
         Action::LoadIndexes => {
@@ -358,6 +361,15 @@ async fn handle_side_effects(
                         tx.send(Action::UsersLoaded(Err(e.to_string()))).ok();
                     }
                 }
+            });
+        }
+        Action::SwitchToSettings => {
+            tx.send(Action::Loading(true)).ok();
+            let config_manager_clone = config_manager.clone();
+            tokio::spawn(async move {
+                let cm = config_manager_clone.lock().await;
+                let state = cm.load();
+                tx.send(Action::SettingsLoaded(state)).ok();
             });
         }
         Action::RunSearch(query) => {

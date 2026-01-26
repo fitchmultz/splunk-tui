@@ -35,6 +35,59 @@ fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
 }
 
 #[test]
+fn test_settings_screen_navigation() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Settings;
+
+    // Test navigation keys - navigation to Search returns None (consistent with other screens)
+    let key = key('1');
+    let action = app.handle_input(key);
+    assert!(action.is_none(), "Navigation to Search should return None");
+
+    // Verify screen switched
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+}
+
+#[test]
+fn test_auto_refresh_toggle() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Settings;
+    let initial = app.auto_refresh;
+
+    // Toggle auto-refresh
+    app.handle_input(key('a'));
+
+    assert_ne!(app.auto_refresh, initial);
+    assert_eq!(app.toasts.len(), 1, "Toast should be added");
+}
+
+#[test]
+fn test_sort_column_cycle() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Settings;
+    let initial = app.sort_state.column;
+
+    // Cycle sort column 5 times should return to initial
+    for _ in 0..5 {
+        app.handle_input(key('s'));
+    }
+    assert_eq!(app.sort_state.column, initial);
+}
+
+#[test]
+fn test_clear_search_history() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Settings;
+    app.search_history = vec!["query1".to_string(), "query2".to_string()];
+
+    // Clear history
+    app.handle_input(key('c'));
+
+    assert!(app.search_history.is_empty(), "History should be cleared");
+    assert_eq!(app.toasts.len(), 1, "Toast should be added");
+}
+
+#[test]
 fn test_popup_cancel_flow() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Jobs;

@@ -3296,6 +3296,64 @@
       "completed_at": "2026-01-26T02:54:23.490249000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0083",
+      "status": "done",
+      "title": "Add TUI configuration/settings screen",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "config",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/ui/screens/",
+        "crates/tui/src/ui/screens/settings.rs",
+        "crates/tui/src/ui/screens/mod.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/",
+        "crates/config/src/persistence.rs",
+        "crates/config/src/types.rs"
+      ],
+      "evidence": [
+        "PersistedState in crates/config/src/persistence.rs:11-33 defines persisted fields: auto_refresh (bool), sort_column (String), sort_direction (String), last_search_query (Option<String>), search_history (Vec<String>)",
+        "App struct in crates/tui/src/app.rs:205 stores auto_refresh field, lines 306-313 have SortState struct with column/direction, line 225 has search_history: Vec<String>",
+        "App::get_persisted_state() method (app.rs:326-336) returns PersistedState with current runtime settings for persistence",
+        "CurrentScreen enum (app.rs:60-71) has 9 variants: Search, Indexes, Cluster, Jobs, JobInspect, Health, SavedSearches, InternalLogs, Apps, Users - no Settings variant exists",
+        "Screen navigation uses '1'-'9' keys in handle_search_input (lines 667-694) and all screen input handlers, no '0' key handler exists",
+        "crates/tui/src/ui/screens/mod.rs:6-14 lists 10 screen modules (apps, cluster, health, indexes, internal_logs, job_details, jobs, saved_searches, search, users), no settings module exists",
+        "Settings can only be changed by manually editing config.json file - no UI access exists for runtime configuration"
+      ],
+      "plan": [
+        "Add CurrentScreen::Settings variant to crates/tui/src/app.rs (after Users variant)",
+        "Create crates/tui/src/ui/screens/settings.rs module with render() function to display settings UI",
+        "Settings screen should show: auto-refresh toggle (current value), sort column (current selection), sort direction (asc/desc), search history count, clear history button, current profile info",
+        "Add SettingsScreen variant to crates/tui/src/action.rs (no params needed)",
+        "Add LoadSettings action (no params) to crates/tui/src/action.rs to trigger ConfigManager load() and update app state from persisted file",
+        "Add handle_settings_input() method to crates/tui/src/app.rs for settings screen keyboard handling (j/k navigation, toggle auto-refresh, cycle sort, clear history)",
+        "Add '0' key handler to all screen input handlers (handle_search_input, handle_jobs_input, etc.) to switch to Settings screen",
+        "Update handle_input() in crates/tui/src/app.rs:436-445 to match CurrentScreen::Settings => self.handle_settings_input(key)",
+        "Add tests for settings screen: navigation, toggles, persistence, screen switching",
+        "Update crates/tui/src/ui/screens/mod.rs to add pub mod settings;",
+        "Update help popup (crates/tui/src/ui/popup.rs or docs/usage.md) to document '0: Settings' keyboard shortcut",
+        "Run make ci to verify all tests pass"
+      ],
+      "notes": [
+        "Added Settings screen with full UI (auto-refresh, sort, history, profile)",
+        "Implemented '0' key navigation from all 10 screens",
+        "Added 4 test functions for settings functionality",
+        "Updated help popup and docs/usage.md documentation",
+        "Settings reload via 'r' key with async loading pattern"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-26T15:20:43.644874000Z",
+      "completed_at": "2026-01-26T15:20:43.644874000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

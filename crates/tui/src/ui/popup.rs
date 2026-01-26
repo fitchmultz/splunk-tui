@@ -107,7 +107,7 @@ impl PopupBuilder {
                 "Help".to_string(),
                 r#"
 Global Keys:
-  1-9   Navigate screens
+  0-9   Navigate screens
   ?     Help
   q     Quit
 
@@ -161,6 +161,13 @@ Apps Screen:
 Users Screen:
   r     Refresh users
   j/k   Navigate list
+
+Settings Screen:
+  a     Toggle auto-refresh
+  s     Cycle sort column
+  d     Toggle sort direction
+  c     Clear search history
+  r     Reload settings
             "#
                 .to_string(),
             ),

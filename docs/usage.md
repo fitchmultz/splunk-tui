@@ -406,6 +406,7 @@ Launch the TUI by running `splunk-tui`.
   7. **Internal Logs**: View internal Splunk logs
   8. **Apps**: View installed Splunk apps
   9. **Users**: View users and their roles
+  0. **Settings**: View and modify configuration options
 - `j` / `Down Arrow`: Move selection down (use `Ctrl+j` in Search screen)
 - `k` / `Up Arrow`: Move selection up (use `Ctrl+k` in Search screen)
 - `?`: Show help popup
@@ -441,8 +442,20 @@ Launch the TUI by running `splunk-tui`.
 - Displays: App name, label, version, and disabled status
 
 #### Users Screen
-- `r`: Refresh the list of users
+- `r`: Refresh to list of users
 - Displays: Username, real name, roles, and last login time
+
+#### Settings Screen
+- `a`: Toggle auto-refresh for jobs screen (polls every 5 seconds)
+- `s`: Cycle through sort columns (SID, Status, Duration, Results, Events)
+- `d`: Toggle sort direction (ascending/descending)
+- `c`: Clear search history (removes all saved queries)
+- `r`: Reload settings from config file (reverts any unsaved changes)
+- Displays current configuration values:
+  - Auto-refresh status
+  - Sort column and direction
+  - Search history count
+  - Current profile name (if set via SPLUNK_PROFILE environment variable)
 
 ### Error Handling
 

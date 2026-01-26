@@ -9,6 +9,7 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, SplunkHealth, User,
 };
+use splunk_config::PersistedState;
 use std::path::PathBuf;
 
 use crate::ui::ToastLevel;
@@ -79,6 +80,8 @@ pub enum Action {
     LoadApps,
     /// Load the list of users
     LoadUsers,
+    /// Switch to settings screen
+    SwitchToSettings,
     /// Run a search with the given query
     RunSearch(String),
     /// Export search results to a file
@@ -101,6 +104,8 @@ pub enum Action {
     AppsLoaded(Result<Vec<SplunkApp>, String>),
     /// Result of loading users
     UsersLoaded(Result<Vec<User>, String>),
+    /// Result of loading persisted settings
+    SettingsLoaded(PersistedState),
     /// Result of background health status check
     HealthStatusLoaded(Result<SplunkHealth, String>),
     /// Result of a search completion (results, sid, total_count)

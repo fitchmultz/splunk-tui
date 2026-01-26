@@ -6,7 +6,7 @@
 use crate::action::{Action, ExportFormat};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
-use crate::ui::screens::{apps, cluster, health, indexes, saved_searches, search, users};
+use crate::ui::screens::{apps, cluster, health, indexes, saved_searches, search, settings, users};
 use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
     Frame,
@@ -68,6 +68,7 @@ pub enum CurrentScreen {
     InternalLogs,
     Apps,
     Users,
+    Settings,
 }
 
 /// Sort column for jobs table.
@@ -443,6 +444,7 @@ impl App {
             CurrentScreen::InternalLogs => self.handle_internal_logs_input(key),
             CurrentScreen::Apps => self.handle_apps_input(key),
             CurrentScreen::Users => self.handle_users_input(key),
+            CurrentScreen::Settings => self.handle_settings_input(key),
         }
     }
 
@@ -790,6 +792,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') if key.modifiers.is_empty() => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Enter => {
                 if !self.search_input.is_empty() {
                     let query = self.search_input.clone();
@@ -936,6 +942,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadJobs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -1035,6 +1045,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadIndexes),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -1088,6 +1102,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
@@ -1101,6 +1119,10 @@ impl App {
         use crossterm::event::KeyCode;
         match key.code {
             KeyCode::Esc => Some(Action::ExitInspectMode),
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -1198,6 +1220,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadSavedSearches),
             KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
@@ -1265,6 +1291,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadInternalLogs),
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
@@ -1320,6 +1350,10 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadApps),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
@@ -1373,11 +1407,106 @@ impl App {
                 self.current_screen = CurrentScreen::Users;
                 Some(Action::LoadUsers)
             }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
             KeyCode::Char('r') => Some(Action::LoadUsers),
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Up => Some(Action::NavigateUp),
+            KeyCode::Char('?') => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn handle_settings_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Char('q') => Some(Action::Quit),
+            KeyCode::Char('1') => {
+                self.current_screen = CurrentScreen::Search;
+                None
+            }
+            KeyCode::Char('2') => {
+                self.current_screen = CurrentScreen::Indexes;
+                Some(Action::LoadIndexes)
+            }
+            KeyCode::Char('3') => {
+                self.current_screen = CurrentScreen::Cluster;
+                Some(Action::LoadClusterInfo)
+            }
+            KeyCode::Char('4') => {
+                self.current_screen = CurrentScreen::Jobs;
+                Some(Action::LoadJobs)
+            }
+            KeyCode::Char('5') => {
+                self.current_screen = CurrentScreen::Health;
+                Some(Action::LoadHealth)
+            }
+            KeyCode::Char('6') => {
+                self.current_screen = CurrentScreen::SavedSearches;
+                Some(Action::LoadSavedSearches)
+            }
+            KeyCode::Char('7') => {
+                self.current_screen = CurrentScreen::InternalLogs;
+                Some(Action::LoadInternalLogs)
+            }
+            KeyCode::Char('8') => {
+                self.current_screen = CurrentScreen::Apps;
+                Some(Action::LoadApps)
+            }
+            KeyCode::Char('9') => {
+                self.current_screen = CurrentScreen::Users;
+                Some(Action::LoadUsers)
+            }
+            KeyCode::Char('0') => {
+                self.current_screen = CurrentScreen::Settings;
+                None
+            }
+            KeyCode::Char('a') => {
+                self.auto_refresh = !self.auto_refresh;
+                self.toasts.push(Toast::info(format!(
+                    "Auto-refresh: {}",
+                    if self.auto_refresh { "On" } else { "Off" }
+                )));
+                None
+            }
+            KeyCode::Char('s') => {
+                self.sort_state.column = match self.sort_state.column {
+                    SortColumn::Sid => SortColumn::Status,
+                    SortColumn::Status => SortColumn::Duration,
+                    SortColumn::Duration => SortColumn::Results,
+                    SortColumn::Results => SortColumn::Events,
+                    SortColumn::Events => SortColumn::Sid,
+                };
+                self.toasts.push(Toast::info(format!(
+                    "Sort column: {}",
+                    self.sort_state.column.as_str()
+                )));
+                None
+            }
+            KeyCode::Char('d') => {
+                self.sort_state.direction = match self.sort_state.direction {
+                    SortDirection::Asc => SortDirection::Desc,
+                    SortDirection::Desc => SortDirection::Asc,
+                };
+                self.toasts.push(Toast::info(format!(
+                    "Sort direction: {}",
+                    self.sort_state.direction.as_str()
+                )));
+                None
+            }
+            KeyCode::Char('c') => {
+                self.search_history.clear();
+                self.toasts.push(Toast::info("Search history cleared"));
+                None
+            }
+            KeyCode::Char('r') => Some(Action::SwitchToSettings),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -1557,6 +1686,17 @@ impl App {
             Action::UsersLoaded(Err(e)) => {
                 self.toasts
                     .push(Toast::error(format!("Failed to load users: {}", e)));
+                self.loading = false;
+            }
+            Action::SettingsLoaded(state) => {
+                self.auto_refresh = state.auto_refresh;
+                self.sort_state.column = parse_sort_column(&state.sort_column);
+                self.sort_state.direction = parse_sort_direction(&state.sort_direction);
+                self.search_history = state.search_history;
+                if let Some(query) = state.last_search_query {
+                    self.search_input = query;
+                }
+                self.toasts.push(Toast::info("Settings loaded from file"));
                 self.loading = false;
             }
             Action::ClusterInfoLoaded(Err(e)) => {
@@ -2013,6 +2153,7 @@ impl App {
                     CurrentScreen::InternalLogs => "Internal Logs",
                     CurrentScreen::Apps => "Apps",
                     CurrentScreen::Users => "Users",
+                    CurrentScreen::Settings => "Settings",
                 },
                 Style::default().fg(Color::Yellow),
             ),
@@ -2043,7 +2184,7 @@ impl App {
                 ),
                 Span::raw("|"),
                 Span::raw(
-                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users ",
+                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:Settings ",
                 ),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
@@ -2051,7 +2192,7 @@ impl App {
         } else {
             vec![Line::from(vec![
                 Span::raw(
-                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users ",
+                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:Settings ",
                 ),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
@@ -2161,6 +2302,19 @@ impl App {
                         loading: self.loading,
                         users: self.users.as_deref(),
                         state: &mut self.users_state,
+                    },
+                );
+            }
+            CurrentScreen::Settings => {
+                settings::render_settings(
+                    f,
+                    area,
+                    settings::SettingsRenderConfig {
+                        auto_refresh: self.auto_refresh,
+                        sort_column: self.sort_state.column.as_str(),
+                        sort_direction: self.sort_state.direction.as_str(),
+                        search_history_count: self.search_history.len(),
+                        profile_info: std::env::var("SPLUNK_PROFILE").ok().as_deref(),
                     },
                 );
             }

@@ -11,4 +11,5 @@ pub mod job_details;
 pub mod jobs;
 pub mod saved_searches;
 pub mod search;
+pub mod settings;
 pub mod users;
