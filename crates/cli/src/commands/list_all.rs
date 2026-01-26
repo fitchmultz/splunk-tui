@@ -1,6 +1,6 @@
 //! List-all command implementation - minimal working version.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use splunk_client::SplunkClient;
 use std::time::Duration;
@@ -8,7 +8,7 @@ use tokio::time;
 use tracing::{info, warn};
 
 use crate::commands::convert_auth_strategy;
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceSummary {
@@ -50,6 +50,7 @@ pub async fn run(
     config: splunk_config::Config,
     resources_filter: Option<Vec<String>>,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     info!("Listing all Splunk resources");
 
@@ -86,7 +87,17 @@ pub async fn run(
     let formatter = get_formatter(format);
 
     let formatted = formatter.format_list_all(&output)?;
-    print!("{}", formatted);
+    if let Some(ref path) = output_file {
+        write_to_file(&formatted, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", formatted);
+    }
 
     Ok(())
 }

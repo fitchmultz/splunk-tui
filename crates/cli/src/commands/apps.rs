@@ -6,7 +6,7 @@ use splunk_client::SplunkClient;
 use tracing::info;
 
 use crate::commands::convert_auth_strategy;
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[derive(Subcommand)]
 pub enum AppsCommand {
@@ -40,16 +40,26 @@ pub async fn run(
     config: splunk_config::Config,
     command: AppsCommand,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     match command {
-        AppsCommand::List { count } => run_list(config, count, output_format).await,
-        AppsCommand::Info { app_name } => run_info(config, &app_name, output_format).await,
+        AppsCommand::List { count } => {
+            run_list(config, count, output_format, output_file.clone()).await
+        }
+        AppsCommand::Info { app_name } => {
+            run_info(config, &app_name, output_format, output_file.clone()).await
+        }
         AppsCommand::Enable { app_name } => run_enable(config, &app_name).await,
         AppsCommand::Disable { app_name } => run_disable(config, &app_name).await,
     }
 }
 
-async fn run_list(config: splunk_config::Config, count: usize, output_format: &str) -> Result<()> {
+async fn run_list(
+    config: splunk_config::Config,
+    count: usize,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     info!("Listing installed apps (count: {})", count);
 
     let auth_strategy = convert_auth_strategy(&config.auth.strategy);
@@ -65,7 +75,17 @@ async fn run_list(config: splunk_config::Config, count: usize, output_format: &s
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_apps(&apps)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }
@@ -74,6 +94,7 @@ async fn run_info(
     config: splunk_config::Config,
     app_name: &str,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     info!("Getting app info for: {}", app_name);
 
@@ -93,7 +114,17 @@ async fn run_info(
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_app_info(&app)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

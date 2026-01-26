@@ -54,6 +54,10 @@ struct Cli {
     #[arg(short, long, global = true, default_value = "table")]
     output: String,
 
+    /// Output file path (saves results to file instead of stdout)
+    #[arg(long, global = true, value_name = "FILE")]
+    output_file: Option<std::path::PathBuf>,
+
     /// Suppress all progress output (spinners / progress bars).
     ///
     /// Note: Progress indicators always write to STDERR; this flag disables them entirely.
@@ -288,7 +292,7 @@ async fn main() -> Result<()> {
 async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
     match cli.command {
         Commands::Config { command } => {
-            commands::config::run(command)?;
+            commands::config::run(command, cli.output_file.clone())?;
         }
         Commands::Search {
             query,
@@ -306,6 +310,7 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 count,
                 &cli.output,
                 cli.quiet,
+                cli.output_file.clone(),
             )
             .await?;
         }
@@ -314,14 +319,30 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
             count,
             offset,
         } => {
-            commands::indexes::run(config, detailed, count, offset, &cli.output).await?;
+            commands::indexes::run(
+                config,
+                detailed,
+                count,
+                offset,
+                &cli.output,
+                cli.output_file.clone(),
+            )
+            .await?;
         }
         Commands::Cluster {
             detailed,
             offset,
             page_size,
         } => {
-            commands::cluster::run(config, detailed, offset, page_size, &cli.output).await?;
+            commands::cluster::run(
+                config,
+                detailed,
+                offset,
+                page_size,
+                &cli.output,
+                cli.output_file.clone(),
+            )
+            .await?;
         }
         Commands::Jobs {
             list,
@@ -339,39 +360,57 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 count,
                 &cli.output,
                 cli.quiet,
+                cli.output_file.clone(),
             )
             .await?;
         }
         Commands::Health => {
-            commands::health::run(config, &cli.output).await?;
+            commands::health::run(config, &cli.output, cli.output_file.clone()).await?;
         }
         Commands::Kvstore => {
-            commands::kvstore::run(config, &cli.output).await?;
+            commands::kvstore::run(config, &cli.output, cli.output_file.clone()).await?;
         }
         Commands::License(args) => {
-            commands::license::run(config, &args).await?;
+            commands::license::run(config, &args, cli.output_file.clone()).await?;
         }
         Commands::Logs {
             count,
             earliest,
             tail,
         } => {
-            commands::logs::run(config, count, earliest, tail, &cli.output).await?;
+            commands::logs::run(
+                config,
+                count,
+                earliest,
+                tail,
+                &cli.output,
+                cli.output_file.clone(),
+            )
+            .await?;
         }
         Commands::InternalLogs { count, earliest } => {
-            commands::internal_logs::run(config, count, earliest, &cli.output).await?;
+            commands::internal_logs::run(
+                config,
+                count,
+                earliest,
+                &cli.output,
+                cli.output_file.clone(),
+            )
+            .await?;
         }
         Commands::Users { count } => {
-            commands::users::run(config, count, &cli.output).await?;
+            commands::users::run(config, count, &cli.output, cli.output_file.clone()).await?;
         }
         Commands::Apps { apps_command } => {
-            commands::apps::run(config, apps_command, &cli.output).await?;
+            commands::apps::run(config, apps_command, &cli.output, cli.output_file.clone()).await?;
         }
         Commands::ListAll { resources } => {
-            commands::list_all::run(config, resources, &cli.output).await?;
+            commands::list_all::run(config, resources, &cli.output, cli.output_file.clone())
+                .await?;
         }
         Commands::SavedSearches { command } => {
-            commands::saved_searches::run(config, command, &cli.output).await?;
+            commands::saved_searches::run(config, command, &cli.output, cli.output_file.clone())
+                .await?;
         }
     }
 

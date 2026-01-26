@@ -1,12 +1,17 @@
 //! Users command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
-pub async fn run(config: splunk_config::Config, count: usize, output_format: &str) -> Result<()> {
+pub async fn run(
+    config: splunk_config::Config,
+    count: usize,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     info!("Listing users");
 
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
@@ -24,7 +29,17 @@ pub async fn run(config: splunk_config::Config, count: usize, output_format: &st
     let formatter = get_formatter(format);
 
     let output = formatter.format_users(&users)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

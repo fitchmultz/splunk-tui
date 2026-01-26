@@ -1,10 +1,10 @@
 //! Search command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run(
@@ -16,6 +16,7 @@ pub async fn run(
     max_results: usize,
     output_format: &str,
     quiet: bool,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -69,7 +70,18 @@ pub async fn run(
 
     // Format and print results
     let output = formatter.format_search_results(&results)?;
-    print!("{}", output);
+
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

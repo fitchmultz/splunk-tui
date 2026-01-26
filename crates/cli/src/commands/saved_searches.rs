@@ -6,7 +6,7 @@ use splunk_client::SplunkClient;
 use tracing::info;
 
 use crate::commands::convert_auth_strategy;
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[derive(Subcommand)]
 pub enum SavedSearchesCommand {
@@ -43,10 +43,15 @@ pub async fn run(
     config: splunk_config::Config,
     command: SavedSearchesCommand,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     match command {
-        SavedSearchesCommand::List { count } => run_list(config, count, output_format).await,
-        SavedSearchesCommand::Info { name } => run_info(config, &name, output_format).await,
+        SavedSearchesCommand::List { count } => {
+            run_list(config, count, output_format, output_file.clone()).await
+        }
+        SavedSearchesCommand::Info { name } => {
+            run_info(config, &name, output_format, output_file.clone()).await
+        }
         SavedSearchesCommand::Run {
             name,
             wait,
@@ -60,13 +65,19 @@ pub async fn run(
                 earliest.as_deref(),
                 latest.as_deref(),
                 output_format,
+                output_file.clone(),
             )
             .await
         }
     }
 }
 
-async fn run_list(config: splunk_config::Config, count: usize, output_format: &str) -> Result<()> {
+async fn run_list(
+    config: splunk_config::Config,
+    count: usize,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     info!("Listing saved searches (count: {})", count);
 
     let auth_strategy = convert_auth_strategy(&config.auth.strategy);
@@ -88,12 +99,27 @@ async fn run_list(config: splunk_config::Config, count: usize, output_format: &s
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_saved_searches(&searches)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }
 
-async fn run_info(config: splunk_config::Config, name: &str, output_format: &str) -> Result<()> {
+async fn run_info(
+    config: splunk_config::Config,
+    name: &str,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     info!("Getting saved search info for: {}", name);
 
     let auth_strategy = convert_auth_strategy(&config.auth.strategy);
@@ -115,7 +141,17 @@ async fn run_info(config: splunk_config::Config, name: &str, output_format: &str
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_saved_search_info(search)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }
@@ -127,6 +163,7 @@ async fn run_run(
     earliest: Option<&str>,
     latest: Option<&str>,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     info!("Running saved search: {}", name);
 
@@ -154,7 +191,17 @@ async fn run_run(
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_search_results(&results)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

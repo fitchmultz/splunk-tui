@@ -3796,6 +3796,69 @@
       "completed_at": "2026-01-26T20:23:55.644386000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0092",
+      "status": "done",
+      "title": "Add CLI command result file save option",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "ux",
+        "output"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/search.rs",
+        "crates/cli/src/commands/indexes.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/commands/apps.rs",
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/cli/src/commands/users.rs",
+        "crates/cli/src/commands/health.rs",
+        "crates/cli/src/commands/license.rs",
+        "crates/cli/src/commands/kvstore.rs",
+        "crates/cli/src/commands/logs.rs",
+        "crates/cli/src/commands/internal_logs.rs",
+        "crates/cli/src/commands/list_all.rs",
+        "crates/cli/src/formatters.rs",
+        "crates/cli/tests/",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "All 15 CLI commands use print!() or println!() for stdout output only (confirmed by grep search showing 33 print!/println! usages across commands/)",
+        "Global --output <FORMAT> flag exists in main.rs:52-54 but only accepts format type (json, table, csv, xml), not file path",
+        "No --output-file or --save flag exists in any CLI command (grep for 'output.*file|output_path|PathBuf' returns no matches)",
+        "TUI has ExportSearchResults action with file path selection popup (crates/tui/src/action.rs:85), but CLI lacks equivalent functionality",
+        "Users must redirect stdout manually: splunk-cli search 'query' > results.json, which provides no error feedback or progress indication",
+        "docs/usage.md only documents --output <FORMAT> for format selection (lines 90, 184, 225, 228, 302, 305, 311), with no file save option mentioned"
+      ],
+      "plan": [
+        "Add --output-file <FILE> global flag to Cli struct in crates/cli/src/main.rs (separate from existing --output <FORMAT> flag to avoid conflicts)",
+        "Pass output_file Option<PathBuf> through run_command() to all command run() functions",
+        "Create helper function in crates/cli/src/formatters.rs: write_to_file(content: &str, path: &Path, format: OutputFormat) -> Result<()> that creates file, writes content atomically, handles errors gracefully",
+        "Update all 15 command run() functions (search, indexes, jobs, cluster, apps, saved_searches, users, health, license, kvstore, logs, internal_logs, list_all, config) to check if output_file is Some() and call write_to_file() instead of print!()",
+        "When file output is used, print success message to stderr: 'Results written to <path>' with format info for user feedback",
+        "Handle file write errors (permission denied, directory not found, disk full) with helpful error messages using anyhow::Context",
+        "Add integration tests in crates/cli/tests/file_output_tests.rs for file output behavior: write success, overwrite existing file, permission denied, invalid directory path",
+        "Update docs/usage.md with new --output-file flag documentation in global options section and example usage: 'splunk-cli search \"index=main\" --wait --output-file results.json'",
+        "Run make ci to verify all existing tests still pass and new file output tests pass"
+      ],
+      "notes": [
+        "Must use --output-file instead of reusing --output to avoid conflict with existing --output <FORMAT> flag which is widely used",
+        "All 15 CLI commands need updating (grep shows 15 command files in crates/cli/src/commands/), not just search/indexes/jobs/cluster as originally scoped",
+        "File writing should go through existing formatter logic (get_formatter(format)) to ensure consistent output formats (json/table/csv/xml)",
+        "For JSON format, consider using serde_json::to_string_pretty() for human-readable output, but for CSV/XML use formatter output directly",
+        "Print success/error messages to stderr (not stdout) to avoid contaminating piped output when users still want to use stdout redirection",
+        "Atomic file write (write to temp file then rename) is preferred to avoid partial writes if process is interrupted"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-26T20:53:06.731392000Z",
+      "completed_at": "2026-01-26T20:53:06.731392000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

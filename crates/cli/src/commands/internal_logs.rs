@@ -1,15 +1,16 @@
 //! Internal logs command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 pub async fn run(
     config: splunk_config::Config,
     count: usize,
     earliest: String,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
@@ -28,7 +29,17 @@ pub async fn run(
         .await?;
 
     let output = formatter.format_logs(&logs)?;
-    println!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        println!("{}", output);
+    }
 
     Ok(())
 }

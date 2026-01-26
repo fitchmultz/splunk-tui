@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
-use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter};
+use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
 
 pub async fn run(
     config: splunk_config::Config,
@@ -12,6 +12,7 @@ pub async fn run(
     count: usize,
     offset: usize,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     info!("Listing indexes (count: {}, offset: {})", count, offset);
 
@@ -46,13 +47,33 @@ pub async fn run(
             total: None, // server-side total is not available in current client response shape
         };
         let output = formatter.format_indexes_paginated(&indexes, detailed, pagination)?;
-        print!("{}", output);
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
         return Ok(());
     }
 
     let formatter = get_formatter(format);
     let output = formatter.format_indexes(&indexes, detailed)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

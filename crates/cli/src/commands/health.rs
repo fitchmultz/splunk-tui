@@ -1,12 +1,16 @@
 //! Health command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::{info, warn};
 
-use crate::formatters::{HealthCheckOutput, OutputFormat, get_formatter};
+use crate::formatters::{HealthCheckOutput, OutputFormat, get_formatter, write_to_file};
 
-pub async fn run(config: splunk_config::Config, output_format: &str) -> Result<()> {
+pub async fn run(
+    config: splunk_config::Config,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     info!("Performing health check...");
 
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
@@ -70,7 +74,17 @@ pub async fn run(config: splunk_config::Config, output_format: &str) -> Result<(
 
     // Format and print results
     let output = formatter.format_health(&health_output)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

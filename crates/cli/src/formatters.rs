@@ -2,7 +2,7 @@
 //!
 //! Provides multiple output formats: JSON, Table, CSV, and XML.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use splunk_client::models::LogEntry;
 use splunk_client::{
@@ -2555,6 +2555,44 @@ pub fn get_formatter(format: OutputFormat) -> Box<dyn Formatter> {
         OutputFormat::Csv => Box::new(CsvFormatter),
         OutputFormat::Xml => Box::new(XmlFormatter),
     }
+}
+
+/// Write formatted output to a file atomically.
+///
+/// Creates parent directories if needed, writes to temp file then renames
+/// for atomicity. Returns error with helpful context on failure.
+pub fn write_to_file(content: &str, path: &std::path::Path) -> Result<()> {
+    use std::fs;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Get parent directory for temp file creation
+    // If path has no parent (e.g., just "results.json"), use current directory
+    let parent_dir = path.parent().unwrap_or_else(|| std::path::Path::new("."));
+
+    // Create parent directories if they don't exist
+    if !parent_dir.as_os_str().is_empty() && parent_dir != std::path::Path::new(".") {
+        fs::create_dir_all(parent_dir)
+            .with_context(|| format!("Failed to create directory: {}", parent_dir.display()))?;
+    }
+
+    // Write to temp file first for atomicity
+    let mut temp_file = NamedTempFile::new_in(parent_dir)
+        .with_context(|| format!("Failed to create temp file in: {}", parent_dir.display()))?;
+
+    temp_file
+        .write_all(content.as_bytes())
+        .with_context(|| "Failed to write to temp file")?;
+    temp_file
+        .flush()
+        .with_context(|| "Failed to flush temp file")?;
+
+    // Atomic rename
+    temp_file
+        .persist(path)
+        .with_context(|| format!("Failed to write file: {}", path.display()))?;
+
+    Ok(())
 }
 
 #[cfg(test)]

@@ -1,10 +1,10 @@
 //! Jobs command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run(
@@ -16,6 +16,7 @@ pub async fn run(
     count: usize,
     output_format: &str,
     quiet: bool,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
@@ -42,7 +43,17 @@ pub async fn run(
 
         // Format and print job details
         let output = formatter.format_job_details(&job)?;
-        print!("{}", output);
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
         return Ok(());
     }
 
@@ -74,7 +85,17 @@ pub async fn run(
 
         // Format and print jobs
         let output = formatter.format_jobs(&jobs)?;
-        print!("{}", output);
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
     }
 
     Ok(())

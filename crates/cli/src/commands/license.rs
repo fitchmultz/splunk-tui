@@ -1,11 +1,11 @@
 //! License command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Args;
 use splunk_client::SplunkClient;
 use tracing::info;
 
-use crate::formatters::{LicenseInfoOutput, OutputFormat, get_formatter};
+use crate::formatters::{LicenseInfoOutput, OutputFormat, get_formatter, write_to_file};
 
 /// Display license information.
 #[derive(Args, Debug)]
@@ -16,7 +16,11 @@ pub struct LicenseArgs {
 }
 
 /// Run the license command.
-pub async fn run(config: splunk_config::Config, args: &LicenseArgs) -> Result<()> {
+pub async fn run(
+    config: splunk_config::Config,
+    args: &LicenseArgs,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     info!("Fetching license information...");
 
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
@@ -42,7 +46,17 @@ pub async fn run(config: splunk_config::Config, args: &LicenseArgs) -> Result<()
     let formatter = get_formatter(format);
     let formatted = formatter.format_license(&output)?;
 
-    println!("{}", formatted);
+    if let Some(ref path) = output_file {
+        write_to_file(&formatted, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        println!("{}", formatted);
+    }
 
     Ok(())
 }

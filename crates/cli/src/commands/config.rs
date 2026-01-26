@@ -1,7 +1,7 @@
 //! Configuration management commands.
 
-use crate::formatters::{OutputFormat, get_formatter};
-use anyhow::Result;
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use anyhow::{Context, Result};
 use clap::Subcommand;
 use serde::Serialize;
 use splunk_config::persistence::ConfigManager;
@@ -81,7 +81,7 @@ pub enum ConfigCommand {
     },
 }
 
-pub fn run(command: ConfigCommand) -> Result<()> {
+pub fn run(command: ConfigCommand, output_file: Option<std::path::PathBuf>) -> Result<()> {
     let mut manager = if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
         if !config_path.is_empty() {
             ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
@@ -94,7 +94,7 @@ pub fn run(command: ConfigCommand) -> Result<()> {
 
     match command {
         ConfigCommand::List { output } => {
-            run_list(&manager, &output)?;
+            run_list(&manager, &output, output_file.clone())?;
         }
         ConfigCommand::Set {
             profile_name,
@@ -124,7 +124,7 @@ pub fn run(command: ConfigCommand) -> Result<()> {
             profile_name,
             output,
         } => {
-            run_show(&manager, &profile_name, &output)?;
+            run_show(&manager, &profile_name, &output, output_file.clone())?;
         }
         ConfigCommand::Edit {
             profile_name,
@@ -140,7 +140,11 @@ pub fn run(command: ConfigCommand) -> Result<()> {
     Ok(())
 }
 
-fn run_list(manager: &ConfigManager, output_format: &str) -> Result<()> {
+fn run_list(
+    manager: &ConfigManager,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     let profiles = manager.list_profiles();
 
     // Validate output format before checking for empty profiles
@@ -198,16 +202,42 @@ fn run_list(manager: &ConfigManager, output_format: &str) -> Result<()> {
             let output = Output {
                 profiles: display_profiles,
             };
-            println!("{}", serde_json::to_string_pretty(&output)?);
+            let formatted = serde_json::to_string_pretty(&output)?;
+            if let Some(ref path) = output_file {
+                let format = OutputFormat::Json;
+                write_to_file(&formatted, path)
+                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
+                eprintln!(
+                    "Results written to {} ({:?} format)",
+                    path.display(),
+                    format
+                );
+            } else {
+                println!("{}", formatted);
+            }
         }
         "table" => {
-            println!("{:<20} {:<40} {:<15}", "Profile", "Base URL", "Username");
-            println!("{}", "-".repeat(75));
+            let mut table_output =
+                format!("{:<20} {:<40} {:<15}\n", "Profile", "Base URL", "Username");
+            table_output.push_str(&format!("{}\n", "-".repeat(75)));
 
             for (name, profile) in profiles {
                 let base_url = profile.base_url.as_deref().unwrap_or("-");
                 let username = profile.username.as_deref().unwrap_or("-");
-                println!("{:<20} {:<40} {:<15}", name, base_url, username);
+                table_output.push_str(&format!("{:<20} {:<40} {:<15}\n", name, base_url, username));
+            }
+
+            if let Some(ref path) = output_file {
+                let format = OutputFormat::Table;
+                write_to_file(&table_output, path)
+                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
+                eprintln!(
+                    "Results written to {} ({:?} format)",
+                    path.display(),
+                    format
+                );
+            } else {
+                print!("{}", table_output);
             }
         }
         _ => {
@@ -336,7 +366,12 @@ fn run_set(
     Ok(())
 }
 
-fn run_show(manager: &ConfigManager, profile_name: &str, output_format: &str) -> Result<()> {
+fn run_show(
+    manager: &ConfigManager,
+    profile_name: &str,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+) -> Result<()> {
     let profiles = manager.list_profiles();
 
     let profile = profiles
@@ -347,7 +382,17 @@ fn run_show(manager: &ConfigManager, profile_name: &str, output_format: &str) ->
     let formatter = get_formatter(format);
 
     let output = formatter.format_profile(profile_name, profile)?;
-    print!("{}", output);
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
 
     Ok(())
 }

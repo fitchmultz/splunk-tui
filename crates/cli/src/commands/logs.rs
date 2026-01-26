@@ -1,12 +1,12 @@
-//! Internal logs command implementation.
+//! Logs command implementation with tail support.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use splunk_client::models::LogEntry;
 use tokio::time::{Duration, sleep};
 use tracing::info;
 
-use crate::formatters::{OutputFormat, get_formatter};
+use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 /// Cursor for tracking log position during tailing.
 #[derive(Debug, Clone)]
@@ -50,7 +50,15 @@ pub async fn run(
     earliest: String,
     tail: bool,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
+    // Tail mode is incompatible with file output
+    if tail && output_file.is_some() {
+        anyhow::bail!(
+            "--output-file cannot be used with --tail mode. Tail mode streams output continuously."
+        );
+    }
+
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
     let mut client = SplunkClient::builder()
@@ -115,7 +123,17 @@ pub async fn run(
             .get_internal_logs(count as u64, Some(&earliest))
             .await?;
         let output = formatter.format_logs(&logs)?;
-        println!("{}", output);
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            println!("{}", output);
+        }
     }
 
     Ok(())

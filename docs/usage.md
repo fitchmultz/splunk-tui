@@ -91,6 +91,12 @@ The CLI tool is named `splunk-cli`.
   - **Note**: For CSV and XML formats, nested JSON structures are automatically handled:
     - **CSV**: Nested objects are flattened using dot-notation (e.g., `user.address.city`). Arrays use indexed notation (e.g., `tags.0`, `tags.1`).
     - **XML**: Nested structures are preserved as hierarchical elements. Arrays become container elements with `<item>` children.
+- `--output-file <FILE>`: Save command results to a file instead of printing to stdout
+  - Creates parent directories if they don't exist
+  - Overwrites existing files
+  - Success message is printed to stderr: "Results written to <path> (<format> format)"
+  - Cannot be used with `--tail` mode (logs command)
+  - Example: `splunk-cli search "index=main" --wait --output-file results.json`
 
 ### Commands
 

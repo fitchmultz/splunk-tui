@@ -1,11 +1,12 @@
 //! Cluster command implementation.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::{info, warn};
 
 use crate::formatters::{
     ClusterInfoOutput, ClusterPeerOutput, OutputFormat, Pagination, TableFormatter, get_formatter,
+    write_to_file,
 };
 
 pub async fn run(
@@ -14,6 +15,7 @@ pub async fn run(
     offset: usize,
     page_size: usize,
     output_format: &str,
+    output_file: Option<std::path::PathBuf>,
 ) -> Result<()> {
     info!(
         "Fetching cluster information (detailed: {}, offset: {}, page_size: {})",
@@ -87,13 +89,33 @@ pub async fn run(
                 let formatter = TableFormatter;
                 let output =
                     formatter.format_cluster_info_paginated(&info, detailed, peers_pagination)?;
-                print!("{}", output);
+                if let Some(ref path) = output_file {
+                    write_to_file(&output, path)
+                        .with_context(|| format!("Failed to write output to {}", path.display()))?;
+                    eprintln!(
+                        "Results written to {} ({:?} format)",
+                        path.display(),
+                        format
+                    );
+                } else {
+                    print!("{}", output);
+                }
                 return Ok(());
             }
 
             let formatter = get_formatter(format);
             let output = formatter.format_cluster_info(&info, detailed)?;
-            print!("{}", output);
+            if let Some(ref path) = output_file {
+                write_to_file(&output, path)
+                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
+                eprintln!(
+                    "Results written to {} ({:?} format)",
+                    path.display(),
+                    format
+                );
+            } else {
+                print!("{}", output);
+            }
         }
         Err(e) => {
             // Not all Splunk instances are clustered
