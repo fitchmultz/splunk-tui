@@ -25,7 +25,7 @@ pub async fn login(
 
     let splunk_resp: serde_json::Value = response.json().await?;
 
-    splunk_resp["entry"][0]["content"]["sessionKey"]
+    splunk_resp["sessionKey"]
         .as_str()
         .ok_or_else(|| {
             crate::error::ClientError::InvalidResponse("Missing sessionKey in response".to_string())
