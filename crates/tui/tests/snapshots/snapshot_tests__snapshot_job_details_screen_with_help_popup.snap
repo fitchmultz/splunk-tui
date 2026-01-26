@@ -11,14 +11,14 @@ expression: harness.render()
 ┌───────────────┌Help──────────────────────────────────────────┐───────────────┐
 │Status: Done   │                                              │               │
 │Duration: 5.23 │                 Global Keys:                 │               │
-│Event Count: 50│             0-9   Navigate screens           │               │
-│Scan Count: 150│                   ?     Help                 │               │
-│Result Count: 1│                   q     Quit                 │               │
-│Disk Usage: 204│                                              │               │
-│Priority: 5    │                Search Screen:                │               │
-│Label: Schedule│              Enter     Run search            │               │
-│Cursor Time: 20│            e         Export results          │               │
-│Finalized: No  │       Up/Down   Navigate history (query)     │               │
+│Event Count: 50│             0-9    Navigate screens          │               │
+│Scan Count: 150│            Ctrl+c Copy to clipboard          │               │
+│Result Count: 1│                   ?      Help                │               │
+│Disk Usage: 204│                   q      Quit                │               │
+│Priority: 5    │                                              │               │
+│Label: Schedule│                Search Screen:                │               │
+│Cursor Time: 20│              Enter     Run search            │               │
+│Finalized: No  │            e         Export results          │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

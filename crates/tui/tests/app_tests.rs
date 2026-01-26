@@ -8,7 +8,7 @@
 
 mod helpers;
 use helpers::*;
-use splunk_client::models::SearchJobStatus;
+use splunk_client::models::{App as SplunkApp, Index, SavedSearch, SearchJobStatus, User};
 use splunk_tui::{
     CurrentScreen, Popup, PopupType, Toast, ToastLevel, action::Action, action::ExportFormat,
     app::App,
@@ -1484,6 +1484,248 @@ fn test_search_result_scrolling_by_line() {
     assert!(matches!(action, Some(Action::NavigateUp)));
     app.update(action.unwrap());
     assert_eq!(app.search_scroll_offset, 0);
+}
+
+// ============================================================================
+// Clipboard (Ctrl+C) Tests
+// ============================================================================
+
+#[test]
+fn test_ctrl_c_copies_search_query_when_no_results() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+    app.search_input = "index=_internal | head 5".to_string();
+    app.search_results.clear();
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "index=_internal | head 5"),
+        "Ctrl+C should emit CopyToClipboard(query)"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_current_search_result_when_results_exist() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    let v = serde_json::json!({"foo":"bar","n":1});
+    app.set_search_results(vec![v.clone()]);
+    app.search_scroll_offset = 0;
+
+    let expected = serde_json::to_string_pretty(&v).unwrap();
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == expected),
+        "Ctrl+C should emit CopyToClipboard(pretty_json)"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_selected_job_sid() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(1));
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "sid_1"),
+        "Ctrl+C should copy selected job SID"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_selected_index_name() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Indexes;
+    app.indexes = Some(vec![Index {
+        name: "main".to_string(),
+        total_event_count: 1,
+        current_db_size_mb: 1,
+        max_total_data_size_mb: None,
+        max_warm_db_count: None,
+        max_hot_buckets: None,
+        frozen_time_period_in_secs: None,
+        cold_db_path: None,
+        home_path: None,
+        thawed_path: None,
+        cold_to_frozen_dir: None,
+        primary_index: None,
+    }]);
+    app.indexes_state.select(Some(0));
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "main"),
+        "Ctrl+C should copy selected index name"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_selected_saved_search_name() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::SavedSearches;
+    app.saved_searches = Some(vec![SavedSearch {
+        name: "Errors Last 24 Hours".to_string(),
+        search: "index=_internal error".to_string(),
+        description: None,
+        disabled: false,
+    }]);
+    app.saved_searches_state.select(Some(0));
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "Errors Last 24 Hours"),
+        "Ctrl+C should copy selected saved search name"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_selected_app_name() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Apps;
+    app.apps = Some(vec![SplunkApp {
+        name: "search".to_string(),
+        label: Some("Search".to_string()),
+        version: Some("1.0.0".to_string()),
+        is_configured: None,
+        is_visible: None,
+        disabled: false,
+        description: None,
+        author: None,
+    }]);
+    app.apps_state.select(Some(0));
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "search"),
+        "Ctrl+C should copy selected app name"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_selected_username() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Users;
+    app.users = Some(vec![User {
+        name: "admin".to_string(),
+        realname: Some("Administrator".to_string()),
+        email: None,
+        user_type: None,
+        default_app: None,
+        roles: vec!["admin".to_string()],
+        last_successful_login: None,
+    }]);
+    app.users_state.select(Some(0));
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "admin"),
+        "Ctrl+C should copy selected username"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_selected_log_message() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::InternalLogs;
+    app.internal_logs = Some(vec![splunk_client::models::LogEntry {
+        time: "2024-01-01 12:00:00".to_string(),
+        index_time: String::new(),
+        serial: None,
+        level: "ERROR".to_string(),
+        component: "Test".to_string(),
+        message: "Something went wrong".to_string(),
+    }]);
+    app.internal_logs_state.select(Some(0));
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "Something went wrong"),
+        "Ctrl+C should copy selected log message"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_cluster_id() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Cluster;
+    app.cluster_info = Some(splunk_client::models::ClusterInfo {
+        id: "cluster-123".to_string(),
+        label: None,
+        mode: "master".to_string(),
+        manager_uri: None,
+        replication_factor: None,
+        search_factor: None,
+        status: None,
+    });
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "cluster-123"),
+        "Ctrl+C should copy cluster ID"
+    );
+}
+
+#[test]
+fn test_ctrl_c_copies_health_status() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Health;
+    app.health_info = Some(splunk_client::models::HealthCheckOutput {
+        server_info: None,
+        splunkd_health: Some(splunk_client::models::SplunkHealth {
+            health: "green".to_string(),
+            features: std::collections::HashMap::new(),
+        }),
+        license_usage: None,
+        kvstore_status: None,
+        log_parsing_health: None,
+    });
+
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(s)) if s == "green"),
+        "Ctrl+C should copy health status"
+    );
+}
+
+#[test]
+fn test_copy_to_clipboard_action_success_emits_info_toast_and_records_text() {
+    let guard = splunk_tui::app::clipboard::install_recording_clipboard();
+
+    let mut app = App::new(None);
+    app.update(Action::CopyToClipboard("hello world".to_string()));
+
+    assert!(
+        guard.copied_text().as_deref() == Some("hello world"),
+        "Recording clipboard should capture copied content"
+    );
+    assert!(!app.toasts.is_empty(), "Should emit a toast on success");
+    assert_eq!(app.toasts.last().unwrap().level, ToastLevel::Info);
+    assert!(
+        app.toasts.last().unwrap().message.starts_with("Copied:"),
+        "Success toast should begin with 'Copied:'"
+    );
+}
+
+#[test]
+fn test_copy_to_clipboard_action_failure_emits_error_toast() {
+    let _guard = splunk_tui::app::clipboard::install_failing_clipboard("boom");
+
+    let mut app = App::new(None);
+    app.update(Action::CopyToClipboard("hello".to_string()));
+
+    assert!(!app.toasts.is_empty(), "Should emit a toast on failure");
+    assert_eq!(app.toasts.last().unwrap().level, ToastLevel::Error);
+    assert!(
+        app.toasts
+            .last()
+            .unwrap()
+            .message
+            .contains("Clipboard error: boom"),
+        "Error toast should include clipboard error message"
+    );
 }
 
 #[test]

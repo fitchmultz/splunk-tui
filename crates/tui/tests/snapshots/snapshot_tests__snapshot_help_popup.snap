@@ -11,14 +11,14 @@ expression: harness.render()
 │               ┌Help──────────────────────────────────────────┐               │
 │               │                                              │               │
 │               │                 Global Keys:                 │               │
-│               │             0-9   Navigate screens           │               │
-│               │                   ?     Help                 │               │
-│               │                   q     Quit                 │               │
+│               │             0-9    Navigate screens          │               │
+│               │            Ctrl+c Copy to clipboard          │               │
+│               │                   ?      Help                │               │
+│               │                   q      Quit                │               │
 │               │                                              │               │
 │               │                Search Screen:                │               │
 │               │              Enter     Run search            │               │
 │               │            e         Export results          │               │
-│               │       Up/Down   Navigate history (query)     │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

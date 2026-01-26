@@ -566,7 +566,7 @@ async fn test_forbidden_access() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    assert!(matches!(err, ClientError::ApiError { status: 403, .. }));
 }
 
 #[tokio::test]
@@ -589,17 +589,24 @@ async fn test_login_response_format_regression() {
     let token = result.unwrap();
     assert_eq!(token, "test-session-key-12345678");
 
-    let fixture_value: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("fixtures/auth/login_success.json"),
-    ).unwrap()).unwrap();
+    let fixture_value: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("fixtures/auth/login_success.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
 
     assert!(
         fixture_value.get("sessionKey").is_some(),
         "Login response must have sessionKey at top level"
     );
     assert!(
-        fixture_value.get("entry").is_none() || !fixture_value["entry"][0]["content"].get("sessionKey").is_some(),
+        fixture_value.get("entry").is_none()
+            || fixture_value["entry"][0]["content"]
+                .get("sessionKey")
+                .is_none(),
         "Login response must NOT have sessionKey nested under entry[0][content]"
     );
 }

@@ -63,6 +63,11 @@ pub enum Action {
     #[allow(dead_code)]
     ToggleSortDirection,
 
+    /// Copy the provided text to the system clipboard.
+    ///
+    /// This is emitted by per-screen input handlers (Ctrl+C) and executed by the app.
+    CopyToClipboard(String),
+
     // API Triggers
     /// Load the list of indexes
     LoadIndexes,

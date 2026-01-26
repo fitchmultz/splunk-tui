@@ -417,6 +417,7 @@ Launch the TUI by running `splunk-tui`.
 #### Search Screen
 - `Enter`: Execute the search query typed in the input box (adds to history)
 - `e`: Export current search results to a file (JSON or CSV)
+- `Ctrl+c`: Copy current search query to clipboard (if results are loaded, copies the “current” result JSON instead)
 - `Up` / `Down`: Navigate through search history (query)
 - `Ctrl+j` / `Ctrl+k`: Scroll search results (while typing)
 - `j`, `k`, ...: Type search query characters directly
@@ -427,6 +428,7 @@ Launch the TUI by running `splunk-tui`.
 #### Jobs Screen
 - `Enter`: View details for the selected job (Inspect mode)
 - `e`: Export list of jobs to a file (JSON or CSV)
+- `Ctrl+c`: Copy SID of the selected job to clipboard
 - `Space`: Toggle selection for the job under cursor (multi-selection mode)
 - `r`: Refresh list of jobs manually
 - `a`: Toggle auto-refresh (polls every 5 seconds)
@@ -438,15 +440,18 @@ Launch the TUI by running `splunk-tui`.
 #### Indexes / Cluster / Health Screens
 - `r`: Refresh the data for the current screen
 - `e`: Export screen data to a file (JSON or CSV)
+- `Ctrl+c`: Copy screen-specific ID or status (Index name, Cluster ID, or Health status)
 
 #### Apps Screen
 - `r`: Refresh the list of installed apps
 - `e`: Export list of apps to a file (JSON or CSV)
+- `Ctrl+c`: Copy selected app name to clipboard
 - Displays: App name, label, version, and disabled status
 
 #### Users Screen
 - `r`: Refresh to list of users
 - `e`: Export list of users to a file (JSON or CSV)
+- `Ctrl+c`: Copy selected username to clipboard
 - Displays: Username, real name, roles, and last login time
 
 #### Settings Screen
@@ -482,12 +487,14 @@ Navigate error details popup:
 
 #### Job Details (Inspect) Screen
 - `Esc`: Return to the main Jobs list
+- `Ctrl+c`: Copy SID of the selected job to clipboard
 - `?`: Show help popup
 - `0`: Go to settings screen
 
 #### Saved Searches Screen
 - `r`: Refresh saved searches
 - `e`: Export list of saved searches to a file (JSON or CSV)
+- `Ctrl+c`: Copy selected saved search name to clipboard
 - `Enter`: Run the selected saved search (switches to Search screen)
 - `j` / `k`: Navigate the list of saved searches
 
@@ -495,4 +502,5 @@ Navigate error details popup:
 - `r`: Refresh the internal logs list
 - `e`: Export internal logs to a file (JSON or CSV)
 - `a`: Toggle auto-refresh (polls every 5 seconds)
+- `Ctrl+c`: Copy selected log message to clipboard
 - `j` / `k`: Navigate the logs list

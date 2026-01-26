@@ -3,6 +3,8 @@
 //! This module contains the main application state, input handling,
 //! and rendering logic for the TUI.
 
+pub mod clipboard;
+
 use crate::action::{Action, ExportFormat};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
@@ -481,6 +483,31 @@ impl App {
         self.history_index = None;
     }
 
+    /// Create a single-line, truncated preview for clipboard toast notifications.
+    fn clipboard_preview(content: &str) -> String {
+        // Normalize whitespace for toasts (avoid multi-line notifications).
+        let normalized = content.replace(['\n', '\r', '\t'], " ");
+
+        let max_chars = 30usize;
+        let ellipsis = "...";
+
+        let char_count = normalized.chars().count();
+        if char_count <= max_chars {
+            return normalized;
+        }
+
+        let take = max_chars.saturating_sub(ellipsis.len());
+        let mut out = String::with_capacity(max_chars);
+        for (i, ch) in normalized.chars().enumerate() {
+            if i >= take {
+                break;
+            }
+            out.push(ch);
+        }
+        out.push_str(ellipsis);
+        out
+    }
+
     /// Handle keyboard input - returns Action if one should be dispatched.
     pub fn handle_input(&mut self, key: KeyEvent) -> Option<Action> {
         if self.popup.is_some() {
@@ -856,11 +883,34 @@ impl App {
     fn handle_search_input(&mut self, key: KeyEvent) -> Option<Action> {
         use crossterm::event::{KeyCode, KeyModifiers};
 
-        // Handle Ctrl+j/k for result navigation while in input
+        // Handle Ctrl+* shortcuts while in input
         if key.modifiers.contains(KeyModifiers::CONTROL) {
             match key.code {
                 KeyCode::Char('j') => return Some(Action::NavigateDown),
                 KeyCode::Char('k') => return Some(Action::NavigateUp),
+                KeyCode::Char('c') => {
+                    // Decision:
+                    // - If results exist, copy the JSON for the "current" result (at scroll offset).
+                    // - Otherwise, copy the current search query.
+                    let content = if !self.search_results.is_empty() {
+                        let idx = self
+                            .search_scroll_offset
+                            .min(self.search_results.len().saturating_sub(1));
+                        self.search_results
+                            .get(idx)
+                            .and_then(|v| serde_json::to_string_pretty(v).ok())
+                            .unwrap_or_else(|| "<invalid>".to_string())
+                    } else {
+                        self.search_input.clone()
+                    };
+
+                    if content.trim().is_empty() {
+                        self.toasts.push(Toast::info("Nothing to copy"));
+                        return None;
+                    }
+
+                    return Some(Action::CopyToClipboard(content));
+                }
                 _ => {}
             }
         }
@@ -978,7 +1028,16 @@ impl App {
     }
 
     fn handle_jobs_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy selected job SID
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            if let Some(job) = self.get_selected_job() {
+                return Some(Action::CopyToClipboard(job.sid.clone()));
+            }
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
 
         // Handle filter mode input
         if self.is_filtering {
@@ -1118,7 +1177,24 @@ impl App {
     }
 
     fn handle_indexes_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy selected index name
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            let content = self
+                .indexes
+                .as_ref()
+                .and_then(|indexes| self.indexes_state.selected().and_then(|i| indexes.get(i)))
+                .map(|idx| idx.name.clone());
+
+            if let Some(content) = content {
+                return Some(Action::CopyToClipboard(content));
+            }
+
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1185,7 +1261,17 @@ impl App {
     }
 
     fn handle_cluster_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy cluster ID
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            if let Some(info) = &self.cluster_info {
+                return Some(Action::CopyToClipboard(info.id.clone()));
+            }
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1242,7 +1328,17 @@ impl App {
     }
 
     fn handle_job_inspect_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy SID of the currently selected job (inspect view)
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            if let Some(job) = self.get_selected_job() {
+                return Some(Action::CopyToClipboard(job.sid.clone()));
+            }
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Esc => Some(Action::ExitInspectMode),
             KeyCode::Char('0') => {
@@ -1258,7 +1354,24 @@ impl App {
     }
 
     fn handle_health_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy health status
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            let content = self.health_info.as_ref().and_then(|h| {
+                h.splunkd_health
+                    .as_ref()
+                    .map(|sh| sh.health.clone())
+                    .or_else(|| h.server_info.as_ref().map(|s| s.server_name.clone()))
+            });
+
+            if let Some(content) = content {
+                return Some(Action::CopyToClipboard(content));
+            }
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1311,7 +1424,25 @@ impl App {
     }
 
     fn handle_saved_searches_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy selected saved search name
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            let content = self.saved_searches.as_ref().and_then(|searches| {
+                self.saved_searches_state
+                    .selected()
+                    .and_then(|i| searches.get(i))
+                    .map(|s| s.name.clone())
+            });
+
+            if let Some(content) = content.filter(|s| !s.trim().is_empty()) {
+                return Some(Action::CopyToClipboard(content));
+            }
+
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1392,7 +1523,25 @@ impl App {
     }
 
     fn handle_internal_logs_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy selected log message
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            let content = self.internal_logs.as_ref().and_then(|logs| {
+                self.internal_logs_state
+                    .selected()
+                    .and_then(|i| logs.get(i))
+                    .map(|l| l.message.clone())
+            });
+
+            if let Some(content) = content.filter(|s| !s.trim().is_empty()) {
+                return Some(Action::CopyToClipboard(content));
+            }
+
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1461,7 +1610,25 @@ impl App {
     }
 
     fn handle_apps_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy selected app name
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            let content = self.apps.as_ref().and_then(|apps| {
+                self.apps_state
+                    .selected()
+                    .and_then(|i| apps.get(i))
+                    .map(|a| a.name.clone())
+            });
+
+            if let Some(content) = content.filter(|s| !s.trim().is_empty()) {
+                return Some(Action::CopyToClipboard(content));
+            }
+
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1522,7 +1689,25 @@ impl App {
     }
 
     fn handle_users_input(&mut self, key: KeyEvent) -> Option<Action> {
-        use crossterm::event::KeyCode;
+        use crossterm::event::{KeyCode, KeyModifiers};
+
+        // Ctrl+C: copy selected username
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            let content = self.users.as_ref().and_then(|users| {
+                self.users_state
+                    .selected()
+                    .and_then(|i| users.get(i))
+                    .map(|u| u.name.clone())
+            });
+
+            if let Some(content) = content.filter(|s| !s.trim().is_empty()) {
+                return Some(Action::CopyToClipboard(content));
+            }
+
+            self.toasts.push(Toast::info("Nothing to copy"));
+            return None;
+        }
+
         match key.code {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('1') => {
@@ -1713,6 +1898,17 @@ impl App {
             Action::Notify(level, message) => {
                 self.toasts.push(Toast::new(message, level));
             }
+            Action::CopyToClipboard(content) => match clipboard::copy_to_clipboard(content.clone())
+            {
+                Ok(()) => {
+                    let preview = Self::clipboard_preview(&content);
+                    self.toasts.push(Toast::info(format!("Copied: {preview}")));
+                }
+                Err(e) => {
+                    self.toasts
+                        .push(Toast::error(format!("Clipboard error: {e}")));
+                }
+            },
             Action::Tick => {
                 // Prune expired toasts
                 self.toasts.retain(|t| !t.is_expired());
