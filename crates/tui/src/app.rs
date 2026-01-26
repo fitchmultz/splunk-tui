@@ -230,6 +230,7 @@ pub struct App {
     // Export state
     pub export_input: String,
     pub export_format: ExportFormat,
+    export_target: Option<ExportTarget>,
 
     // Error state
     pub current_error: Option<crate::error_details::ErrorDetails>,
@@ -237,6 +238,57 @@ pub struct App {
 
     // Layout tracking
     pub last_area: Rect,
+}
+
+/// Identifies which screen's data should be exported when the export popup is confirmed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ExportTarget {
+    SearchResults,
+    Indexes,
+    Users,
+    Apps,
+    SavedSearches,
+    ClusterInfo,
+    Jobs,
+    Health,
+    InternalLogs,
+}
+
+impl ExportTarget {
+    fn title(self) -> &'static str {
+        match self {
+            ExportTarget::SearchResults => "Export Search Results",
+            ExportTarget::Indexes => "Export Indexes",
+            ExportTarget::Users => "Export Users",
+            ExportTarget::Apps => "Export Apps",
+            ExportTarget::SavedSearches => "Export Saved Searches",
+            ExportTarget::ClusterInfo => "Export Cluster Info",
+            ExportTarget::Jobs => "Export Jobs",
+            ExportTarget::Health => "Export Health",
+            ExportTarget::InternalLogs => "Export Internal Logs",
+        }
+    }
+
+    fn default_filename(self, format: ExportFormat) -> String {
+        let base = match self {
+            ExportTarget::SearchResults => "results",
+            ExportTarget::Indexes => "indexes",
+            ExportTarget::Users => "users",
+            ExportTarget::Apps => "apps",
+            ExportTarget::SavedSearches => "saved-searches",
+            ExportTarget::ClusterInfo => "cluster-info",
+            ExportTarget::Jobs => "jobs",
+            ExportTarget::Health => "health",
+            ExportTarget::InternalLogs => "internal-logs",
+        };
+
+        let ext = match format {
+            ExportFormat::Json => "json",
+            ExportFormat::Csv => "csv",
+        };
+
+        format!("{base}.{ext}")
+    }
 }
 
 impl Default for App {
@@ -321,6 +373,7 @@ impl App {
             saved_search_input: String::new(),
             export_input: String::new(),
             export_format: ExportFormat::Json,
+            export_target: None,
             current_error: None,
             error_scroll_offset: 0,
             last_area: Rect::default(),
@@ -635,15 +688,20 @@ impl App {
             }
             (Some(PopupType::ExportSearch), KeyCode::Esc) => {
                 self.popup = None;
+                self.export_target = None;
                 None
             }
             (Some(PopupType::ExportSearch), KeyCode::Enter) => {
-                if !self.export_input.is_empty() && !self.search_results.is_empty() {
+                if self.export_input.is_empty() {
+                    return None;
+                }
+
+                if let Some(data) = self.collect_export_data() {
                     let path = std::path::PathBuf::from(&self.export_input);
                     let format = self.export_format;
-                    let results = self.search_results.clone();
                     self.popup = None;
-                    Some(Action::ExportSearchResults(results, path, format))
+                    self.export_target = None;
+                    Some(Action::ExportData(data, path, format))
                 } else {
                     None
                 }
@@ -720,19 +778,72 @@ impl App {
         }
     }
 
-    /// Refresh the export popup content based on current input and format.
+    /// Begin an export flow for a specific screen's dataset.
+    fn begin_export(&mut self, target: ExportTarget) {
+        self.export_target = Some(target);
+        self.export_input = target.default_filename(self.export_format);
+        self.popup = Some(Popup::builder(PopupType::ExportSearch).build());
+        self.update_export_popup();
+    }
+
+    /// Collect the dataset to export, pre-serialized as `serde_json::Value`.
+    fn collect_export_data(&self) -> Option<serde_json::Value> {
+        let target = self.export_target.unwrap_or(ExportTarget::SearchResults);
+
+        match target {
+            ExportTarget::SearchResults => {
+                Some(serde_json::Value::Array(self.search_results.clone()))
+            }
+            ExportTarget::Indexes => self
+                .indexes
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Users => self
+                .users
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Apps => self
+                .apps
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::SavedSearches => self
+                .saved_searches
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::ClusterInfo => self
+                .cluster_info
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Jobs => self
+                .jobs
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Health => self
+                .health_info
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::InternalLogs => self
+                .internal_logs
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+        }
+    }
+
+    /// Refresh the export popup content based on current input, format, and target.
     fn update_export_popup(&mut self) {
         if let Some(Popup {
             kind: PopupType::ExportSearch,
             ..
         }) = &mut self.popup
         {
+            let target = self.export_target.unwrap_or(ExportTarget::SearchResults);
             let format_str = match self.export_format {
                 ExportFormat::Json => "JSON",
                 ExportFormat::Csv => "CSV",
             };
+
             let popup = Popup::builder(PopupType::ExportSearch)
-                .title("Export Search Results")
+                .title(target.title())
                 .content(format!(
                     "File: {}\nFormat: {} (Tab to toggle)\n\nPress Enter to export, Esc to cancel",
                     self.export_input, format_str
@@ -853,10 +964,7 @@ impl App {
             }
             KeyCode::Char('e') if key.modifiers.is_empty() => {
                 if !self.search_results.is_empty() {
-                    self.export_input = "results.json".to_string();
-                    self.export_format = ExportFormat::Json;
-                    self.popup = Some(Popup::builder(PopupType::ExportSearch).build());
-                    self.update_export_popup();
+                    self.begin_export(ExportTarget::SearchResults);
                 }
                 None
             }
@@ -947,6 +1055,10 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadJobs),
+            KeyCode::Char('e') if self.jobs.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
+                self.begin_export(ExportTarget::Jobs);
+                None
+            }
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
                 None
@@ -1050,6 +1162,16 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadIndexes),
+            KeyCode::Char('e')
+                if self
+                    .indexes
+                    .as_ref()
+                    .map(|v| !v.is_empty())
+                    .unwrap_or(false) =>
+            {
+                self.begin_export(ExportTarget::Indexes);
+                None
+            }
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Down => Some(Action::NavigateDown),
@@ -1107,6 +1229,10 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadClusterInfo),
+            KeyCode::Char('e') if self.cluster_info.is_some() => {
+                self.begin_export(ExportTarget::ClusterInfo);
+                None
+            }
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -1172,6 +1298,10 @@ impl App {
                 Some(Action::LoadUsers)
             }
             KeyCode::Char('r') => Some(Action::LoadHealth),
+            KeyCode::Char('e') if self.health_info.is_some() => {
+                self.begin_export(ExportTarget::Health);
+                None
+            }
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
@@ -1225,6 +1355,16 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadSavedSearches),
+            KeyCode::Char('e')
+                if self
+                    .saved_searches
+                    .as_ref()
+                    .map(|v| !v.is_empty())
+                    .unwrap_or(false) =>
+            {
+                self.begin_export(ExportTarget::SavedSearches);
+                None
+            }
             KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
             KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Enter => {
@@ -1296,6 +1436,16 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadInternalLogs),
+            KeyCode::Char('e')
+                if self
+                    .internal_logs
+                    .as_ref()
+                    .map(|v| !v.is_empty())
+                    .unwrap_or(false) =>
+            {
+                self.begin_export(ExportTarget::InternalLogs);
+                None
+            }
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
                 None
@@ -1355,6 +1505,10 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadApps),
+            KeyCode::Char('e') if self.apps.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
+                self.begin_export(ExportTarget::Apps);
+                None
+            }
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Down => Some(Action::NavigateDown),
@@ -1412,6 +1566,10 @@ impl App {
                 None
             }
             KeyCode::Char('r') => Some(Action::LoadUsers),
+            KeyCode::Char('e') if self.users.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
+                self.begin_export(ExportTarget::Users);
+                None
+            }
             KeyCode::Char('j') => Some(Action::NavigateDown),
             KeyCode::Char('k') => Some(Action::NavigateUp),
             KeyCode::Down => Some(Action::NavigateDown),
@@ -2689,5 +2847,127 @@ mod tests {
         app.update(Action::HealthLoaded(Box::new(Ok(health_output))));
 
         assert_eq!(app.health_state, HealthState::Unhealthy);
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::field_reassign_with_default)]
+mod export_popup_tests {
+    use super::*;
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    fn key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE)
+    }
+
+    #[test]
+    fn test_export_key_opens_export_popup_from_all_supported_screens() {
+        let mut app = App::default();
+
+        // Indexes
+        app.popup = None;
+        app.indexes = Some(vec![]); // Empty but present
+        app.handle_indexes_input(key('e'));
+        assert_eq!(app.export_target, None); // Should NOT open for empty list
+
+        app.indexes = Some(vec![
+            serde_json::from_value(serde_json::json!({
+                "name": "test",
+                "currentDBSizeMB": 100,
+                "totalEventCount": 1000
+            }))
+            .unwrap(),
+        ]);
+        app.handle_indexes_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::Indexes));
+        assert!(matches!(
+            app.popup.as_ref().map(|p| &p.kind),
+            Some(PopupType::ExportSearch)
+        ));
+
+        // Users
+        app.popup = None;
+        app.users = Some(vec![
+            serde_json::from_value(serde_json::json!({
+                "name": "test",
+                "roles": ["admin"]
+            }))
+            .unwrap(),
+        ]);
+        app.handle_users_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::Users));
+
+        // Apps
+        app.popup = None;
+        app.apps = Some(vec![
+            serde_json::from_value(serde_json::json!({
+                "name": "test",
+                "disabled": false
+            }))
+            .unwrap(),
+        ]);
+        app.handle_apps_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::Apps));
+
+        // Saved Searches
+        app.popup = None;
+        app.saved_searches = Some(vec![
+            serde_json::from_value(serde_json::json!({
+                "name": "test",
+                "search": "index=_internal",
+                "disabled": false
+            }))
+            .unwrap(),
+        ]);
+        app.handle_saved_searches_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::SavedSearches));
+
+        // Cluster
+        app.popup = None;
+        app.cluster_info = Some(
+            serde_json::from_value(serde_json::json!({
+                "id": "123",
+                "mode": "master"
+            }))
+            .unwrap(),
+        );
+        app.handle_cluster_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::ClusterInfo));
+
+        // Jobs
+        app.popup = None;
+        app.jobs = Some(vec![
+            serde_json::from_value(serde_json::json!({
+                "sid": "123",
+                "isDone": true,
+                "runDuration": 0.0,
+                "scanCount": 0,
+                "eventCount": 0,
+                "resultCount": 0,
+                "diskUsage": 0
+            }))
+            .unwrap(),
+        ]);
+        app.handle_jobs_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::Jobs));
+
+        // Health
+        app.popup = None;
+        app.health_info = Some(serde_json::from_value(serde_json::json!({})).unwrap());
+        app.handle_health_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::Health));
+
+        // Internal Logs
+        app.popup = None;
+        app.internal_logs = Some(vec![
+            serde_json::from_value(serde_json::json!({
+                "_time": "2025-01-01T00:00:00Z",
+                "log_level": "INFO",
+                "_raw": "test message"
+            }))
+            .unwrap(),
+        ]);
+        app.handle_internal_logs_input(key('e'));
+        assert_eq!(app.export_target, Some(ExportTarget::InternalLogs));
     }
 }

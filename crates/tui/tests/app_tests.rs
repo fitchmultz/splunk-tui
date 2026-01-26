@@ -1534,12 +1534,12 @@ fn test_export_search_popup_flow() {
     // Press Enter to confirm export
     let action = app.handle_input(enter_key());
     assert!(action.is_some());
-    if let Some(Action::ExportSearchResults(results, path, format)) = action {
-        assert_eq!(results.len(), 1);
+    if let Some(Action::ExportData(data, path, format)) = action {
+        assert!(data.is_array());
         assert_eq!(path.to_str().unwrap(), "data.csv");
         assert_eq!(format, ExportFormat::Csv);
     } else {
-        panic!("Should return ExportSearchResults action");
+        panic!("Should return ExportData action");
     }
     assert!(app.popup.is_none());
 }

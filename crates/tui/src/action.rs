@@ -84,8 +84,11 @@ pub enum Action {
     SwitchToSettings,
     /// Run a search with the given query
     RunSearch(String),
-    /// Export search results to a file
-    ExportSearchResults(Vec<Value>, PathBuf, ExportFormat),
+    /// Export data (pre-serialized as JSON) to a file.
+    ///
+    /// This payload is produced by the UI state machine so the main event loop
+    /// can export without needing access to `App` state.
+    ExportData(Value, PathBuf, ExportFormat),
 
     // API Results
     /// Result of loading indexes

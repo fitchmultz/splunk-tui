@@ -113,6 +113,7 @@ Global Keys:
 
 Search Screen:
   Enter     Run search
+  e         Export results
   Up/Down   History navigation
   Ctrl+j/k  Navigate results
   PgDn      Page down
@@ -122,6 +123,7 @@ Search Screen:
 
 Jobs Screen:
   r     Refresh jobs
+  e     Export jobs
   a     Toggle auto-refresh
   s     Cycle sort column
   /     Filter jobs
@@ -136,30 +138,37 @@ Job Details Screen:
 
 Indexes Screen:
   r     Refresh indexes
+  e     Export indexes
   j/k   Navigate list
 
 Cluster Screen:
   r     Refresh cluster info
+  e     Export cluster info
 
 Health Screen:
   r     Refresh health status
+  e     Export health info
 
 Saved Searches Screen:
   r     Refresh saved searches
+  e     Export saved searches
   Enter Run selected search
   j/k   Navigate list
 
 Internal Logs Screen:
   r     Refresh logs
+  e     Export logs
   a     Toggle auto-refresh
   j/k   Navigate list
 
 Apps Screen:
   r     Refresh apps
+  e     Export apps
   j/k   Navigate list
 
 Users Screen:
   r     Refresh users
+  e     Export users
   j/k   Navigate list
 
 Settings Screen:
@@ -188,8 +197,8 @@ Settings Screen:
                 format!("Delete {} job(s)? (y/n)", sids.len()),
             ),
             PopupType::ExportSearch => (
-                "Export Search Results".to_string(),
-                "Enter filename: results.json\nFormat: JSON (Tab to toggle)".to_string(),
+                "Export".to_string(),
+                "Enter filename: export.json\nFormat: JSON (Tab to toggle)".to_string(),
             ),
             PopupType::ErrorDetails => (
                 "Error Details".to_string(),

@@ -17,8 +17,8 @@ expression: harness.render()
 │Disk Usage: 204│                                              │               │
 │Priority: 5    │                Search Screen:                │               │
 │Label: Schedule│              Enter     Run search            │               │
-│Cursor Time: 20│          Up/Down   History navigation        │               │
-│Finalized: No  │           Ctrl+j/k  Navigate results         │               │
+│Cursor Time: 20│            e         Export results          │               │
+│Finalized: No  │          Up/Down   History navigation        │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

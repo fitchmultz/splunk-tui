@@ -681,9 +681,9 @@ async fn handle_side_effects(
                 }
             });
         }
-        Action::ExportSearchResults(results, path, format) => {
+        Action::ExportData(data, path, format) => {
             tokio::spawn(async move {
-                let result = splunk_tui::export::export_results(&results, &path, format);
+                let result = splunk_tui::export::export_value(&data, &path, format);
 
                 match result {
                     Ok(_) => {
