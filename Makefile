@@ -44,18 +44,20 @@ test-unit:
 # Run integration tests
 test-integration:
 	cargo test -p splunk-client --test integration_tests
+	cargo test -p splunk-cli --test apps_tests
+	cargo test -p splunk-cli --test cluster_pagination_tests
+	cargo test -p splunk-cli --test config_loading_tests
+	cargo test -p splunk-cli --test config_tests
 	cargo test -p splunk-cli --test health_tests
+	cargo test -p splunk-cli --test indexes_pagination_tests
+	cargo test -p splunk-cli --test internal_logs_tests
 	cargo test -p splunk-cli --test jobs_tests
 	cargo test -p splunk-cli --test kvstore_tests
 	cargo test -p splunk-cli --test license_tests
-	cargo test -p splunk-cli --test config_tests
-	cargo test -p splunk-cli --test config_loading_tests
-	cargo test -p splunk-cli --test apps_tests
-	cargo test -p splunk-cli --test users_tests
-	cargo test -p splunk-cli --test saved_searches_tests
-	cargo test -p splunk-cli --test indexes_pagination_tests
-	cargo test -p splunk-cli --test cluster_pagination_tests
 	cargo test -p splunk-cli --test list_all_tests
+	cargo test -p splunk-cli --test saved_searches_tests
+	cargo test -p splunk-cli --test search_tests
+	cargo test -p splunk-cli --test users_tests
 	cargo test -p splunk-tui --test app_tests
 	cargo test -p splunk-tui --test snapshot_tests
 

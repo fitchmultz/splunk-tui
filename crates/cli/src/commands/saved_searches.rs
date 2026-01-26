@@ -31,10 +31,10 @@ pub enum SavedSearchesCommand {
         #[arg(long)]
         wait: bool,
         /// Earliest time for the search (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long)]
+        #[arg(short, long, allow_hyphen_values = true)]
         earliest: Option<String>,
         /// Latest time for the search (e.g., 'now', '2024-01-02T00:00:00')
-        #[arg(short, long)]
+        #[arg(short, long, allow_hyphen_values = true)]
         latest: Option<String>,
     },
 }

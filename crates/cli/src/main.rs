@@ -75,11 +75,11 @@ enum Commands {
         wait: bool,
 
         /// Earliest time for the search (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long)]
+        #[arg(short, long, allow_hyphen_values = true)]
         earliest: Option<String>,
 
         /// Latest time for the search (e.g., 'now', '2024-01-02T00:00:00')
-        #[arg(short, long)]
+        #[arg(short, long, allow_hyphen_values = true)]
         latest: Option<String>,
 
         /// Maximum number of results to return
@@ -156,7 +156,7 @@ enum Commands {
         count: usize,
 
         /// Earliest time for logs (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long, default_value = "-15m")]
+        #[arg(short, long, default_value = "-15m", allow_hyphen_values = true)]
         earliest: String,
 
         /// Follow logs in real-time
@@ -171,7 +171,7 @@ enum Commands {
         count: usize,
 
         /// Earliest time for logs (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long, default_value = "-15m")]
+        #[arg(short, long, default_value = "-15m", allow_hyphen_values = true)]
         earliest: String,
     },
 

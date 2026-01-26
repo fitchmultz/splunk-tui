@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0085",
-      "status": "todo",
-      "title": "Add integration tests for CLI search command",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tests",
-        "coverage"
-      ],
-      "scope": [
-        "crates/cli/tests/search_tests.rs",
-        "Makefile"
-      ],
-      "evidence": [
-        "crates/cli/tests/ has 13 test files: apps_tests.rs, cluster_pagination_tests.rs, config_loading_tests.rs, config_tests.rs, health_tests.rs, indexes_pagination_tests.rs, internal_logs_tests.rs, jobs_tests.rs, kvstore_tests.rs, license_tests.rs, list_all_tests.rs, saved_searches_tests.rs, users_tests.rs",
-        "Missing test file: search_tests.rs (commands/search.rs has no corresponding integration tests)",
-        "commands/search.rs run() function accepts query, --wait, --earliest, --latest, max_results, output_format parameters",
-        "Makefile test-integration runs 12 CLI test targets but does not include internal_logs_tests.rs",
-        "Existing test pattern uses assert_cmd and predicates for CLI testing (see jobs_tests.rs, internal_logs_tests.rs)",
-        "All other CLI commands have integration tests except search command"
-      ],
-      "plan": [
-        "Create crates/cli/tests/search_tests.rs with tests for run() function (search execution, --wait, --earliest, --latest flags, --output format, max_results parameter)",
-        "Add tests: default search behavior, --wait flag, --earliest/--latest time ranges, --output format (json, csv, table), max_results parameter, help text validation",
-        "Update Makefile test-integration to include cargo test -p splunk-cli --test internal_logs_tests",
-        "Update Makefile test-integration to include cargo test -p splunk-cli --test search_tests",
-        "Ensure all tests use assert_cmd and predicates like existing test files",
-        "Run make ci to verify all tests pass"
-      ],
-      "notes": [
-        "indexes_tests.rs does not exist (indexes_pagination_tests.rs exists instead), cluster_tests.rs does not exist (cluster_pagination_tests.rs exists instead), logs_tests.rs does not exist (internal_logs_tests.rs exists instead)",
-        "Task originally scoped to create 4 test files, but 3 of them already exist with different names (indexes_pagination_tests.rs, cluster_pagination_tests.rs, internal_logs_tests.rs)",
-        "Only search_tests.rs needs to be created from scratch"
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-25T22:42:17Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0086",
       "status": "todo",
       "title": "Add progress indicators for long-running CLI operations",
