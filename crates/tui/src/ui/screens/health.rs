@@ -6,9 +6,12 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
+    style::{Modifier, Style},
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
 use splunk_client::models::HealthCheckOutput;
+use splunk_config::Theme;
 
 /// Configuration for rendering the health screen.
 pub struct HealthRenderConfig<'a> {
@@ -16,6 +19,8 @@ pub struct HealthRenderConfig<'a> {
     pub loading: bool,
     /// The health information to display
     pub health_info: Option<&'a HealthCheckOutput>,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the health screen.
@@ -29,6 +34,7 @@ pub fn render_health(f: &mut Frame, area: Rect, config: HealthRenderConfig) {
     let HealthRenderConfig {
         loading,
         health_info,
+        theme,
     } = config;
 
     if loading && health_info.is_none() {
@@ -50,134 +56,191 @@ pub fn render_health(f: &mut Frame, area: Rect, config: HealthRenderConfig) {
         }
     };
 
-    let text = build_health_text(info);
-    let health_widget = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("Health Check"))
+    let lines = build_health_lines(info, theme);
+    let health_widget = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Health Check")
+                .border_style(Style::default().fg(theme.border))
+                .title_style(Style::default().fg(theme.title)),
+        )
         .alignment(Alignment::Left);
     f.render_widget(health_widget, area);
 }
 
 /// Build text content from health check output.
-fn build_health_text(health: &HealthCheckOutput) -> String {
-    let mut text = String::new();
+fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::new();
 
     if let Some(server_info) = &health.server_info {
-        push_section_text(&mut text, "Server Information");
-        text.push_str(&format!("Name: {}\n", server_info.server_name));
-        text.push_str(&format!("Version: {}\n", server_info.version));
-        text.push_str(&format!("Build: {}\n", server_info.build));
-        text.push_str(&format!(
-            "OS: {}\n",
+        push_section_lines(&mut lines, "Server Information", theme);
+        lines.push(Line::from(format!("Name: {}", server_info.server_name)));
+        lines.push(Line::from(format!("Version: {}", server_info.version)));
+        lines.push(Line::from(format!("Build: {}", server_info.build)));
+        lines.push(Line::from(format!(
+            "OS: {}",
             server_info.os_name.as_deref().unwrap_or("unknown")
-        ));
-        text.push_str(&format!(
-            "Mode: {}\n",
+        )));
+        lines.push(Line::from(format!(
+            "Mode: {}",
             server_info.mode.as_deref().unwrap_or("unknown")
-        ));
+        )));
     }
 
     if let Some(splunkd_health) = &health.splunkd_health {
-        push_section_text(&mut text, "Splunkd Health");
-        text.push_str(&format!("Overall: {}\n", splunkd_health.health));
+        push_section_lines(&mut lines, "Splunkd Health", theme);
+
+        let overall_color = match splunkd_health.health.to_lowercase().as_str() {
+            "green" => theme.success,
+            "red" => theme.error,
+            _ => theme.warning,
+        };
+
+        lines.push(Line::from(vec![
+            Span::raw("Overall: "),
+            Span::styled(
+                splunkd_health.health.clone(),
+                Style::default()
+                    .fg(overall_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]));
+
         for (feature_name, feature) in &splunkd_health.features {
-            text.push_str(&format!(
-                "  {}: {} ({})\n",
+            lines.push(Line::from(format!(
+                "  {}: {} ({})",
                 feature_name, feature.health, feature.status
-            ));
+            )));
         }
     }
 
     if let Some(license_usage) = &health.license_usage {
-        push_section_text(&mut text, "License Usage");
+        push_section_lines(&mut lines, "License Usage", theme);
         for (i, usage) in license_usage.iter().enumerate() {
             let percentage = if usage.quota > 0 {
                 (usage.used_bytes as f64 / usage.quota as f64) * 100.0
             } else {
                 0.0
             };
-            text.push_str(&format!(
-                "Pool {}: {}\n",
-                i + 1,
-                percentage_text(percentage)
-            ));
-            text.push_str(&format!("  Used: {}\n", format_bytes(usage.used_bytes)));
-            text.push_str(&format!("  Quota: {}\n", format_bytes(usage.quota)));
+
+            let (pct_text, pct_color) = percentage_span(percentage, theme);
+            lines.push(Line::from(vec![
+                Span::raw(format!("Pool {}: ", i + 1)),
+                Span::styled(pct_text, Style::default().fg(pct_color)),
+            ]));
+            lines.push(Line::from(format!(
+                "  Used: {}",
+                format_bytes(usage.used_bytes)
+            )));
+            lines.push(Line::from(format!(
+                "  Quota: {}",
+                format_bytes(usage.quota)
+            )));
         }
     }
 
     if let Some(kvstore_status) = &health.kvstore_status {
-        push_section_text(&mut text, "KVStore Status");
-        text.push_str(&format!(
-            "Status: {}\n",
+        push_section_lines(&mut lines, "KVStore Status", theme);
+        lines.push(Line::from(format!(
+            "Status: {}",
             kvstore_status.current_member.status
-        ));
-        text.push_str(&format!(
-            "Host: {}:{}\n",
+        )));
+        lines.push(Line::from(format!(
+            "Host: {}:{}",
             kvstore_status.current_member.host, kvstore_status.current_member.port
-        ));
-        text.push_str(&format!(
-            "Replica Set: {}\n",
+        )));
+        lines.push(Line::from(format!(
+            "Replica Set: {}",
             kvstore_status.current_member.replica_set
-        ));
-        text.push_str(&format!(
-            "Oplog Used: {:.2} / {} MB\n",
+        )));
+        lines.push(Line::from(format!(
+            "Oplog Used: {:.2} / {} MB",
             kvstore_status.replication_status.oplog_used,
             kvstore_status.replication_status.oplog_size
-        ));
+        )));
     }
 
     if let Some(log_parsing) = &health.log_parsing_health {
-        push_section_text(&mut text, "Log Parsing Health");
-        text.push_str(&format!(
-            "Status: {}\n",
-            if log_parsing.is_healthy {
-                "Healthy"
-            } else {
-                "Unhealthy"
-            }
-        ));
-        text.push_str(&format!("Total Errors: {}\n", log_parsing.total_errors));
-        text.push_str(&format!("Time Window: {}\n", log_parsing.time_window));
+        push_section_lines(&mut lines, "Log Parsing Health", theme);
+
+        let status_color = if log_parsing.is_healthy {
+            theme.success
+        } else {
+            theme.error
+        };
+
+        lines.push(Line::from(vec![
+            Span::raw("Status: "),
+            Span::styled(
+                if log_parsing.is_healthy {
+                    "Healthy".to_string()
+                } else {
+                    "Unhealthy".to_string()
+                },
+                Style::default()
+                    .fg(status_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]));
+        lines.push(Line::from(format!(
+            "Total Errors: {}",
+            log_parsing.total_errors
+        )));
+        lines.push(Line::from(format!(
+            "Time Window: {}",
+            log_parsing.time_window
+        )));
+
         if !log_parsing.errors.is_empty() {
-            text.push_str("Recent Errors:\n");
-            for error in log_parsing.errors.iter().take(5) {
-                text.push_str(&format!("  • {}: {}\n", error.source, error.message));
+            lines.push(Line::from(Span::styled(
+                "Recent Errors:",
+                Style::default()
+                    .fg(theme.title)
+                    .add_modifier(Modifier::BOLD),
+            )));
+            for err in log_parsing.errors.iter().take(5) {
+                lines.push(Line::from(format!("  • {}: {}", err.source, err.message)));
             }
             if log_parsing.errors.len() > 5 {
-                text.push_str(&format!(
-                    "  ... and {} more\n",
+                lines.push(Line::from(format!(
+                    "  ... and {} more",
                     log_parsing.errors.len() - 5
-                ));
+                )));
             }
         }
     }
 
-    if text.is_empty() {
-        text = "No health data available.".to_string();
+    if lines.is_empty() {
+        lines.push(Line::from("No health data available."));
     }
 
-    text
+    lines
 }
 
 /// Add a section header to the text.
-fn push_section_text(text: &mut String, title: &str) {
-    if !text.is_empty() {
-        text.push('\n');
+fn push_section_lines(lines: &mut Vec<Line<'static>>, title: &str, theme: &Theme) {
+    if !lines.is_empty() {
+        lines.push(Line::from(""));
     }
-    text.push_str(title);
-    text.push('\n');
+    lines.push(Line::from(Span::styled(
+        title.to_string(),
+        Style::default()
+            .fg(theme.title)
+            .add_modifier(Modifier::BOLD),
+    )));
 }
 
-/// Format license usage percentage with color indication.
-fn percentage_text(percentage: f64) -> String {
+/// Format license usage percentage and choose a semantic color.
+fn percentage_span(percentage: f64, theme: &Theme) -> (String, ratatui::style::Color) {
     let color = if percentage < 70.0 {
-        "green"
+        theme.success
     } else if percentage < 90.0 {
-        "yellow"
+        theme.warning
     } else {
-        "red"
+        theme.error
     };
-    format!("{:.1}% ({})", percentage, color)
+    (format!("{:.1}%", percentage), color)
 }
 
 /// Format byte count with appropriate units.
@@ -205,6 +268,19 @@ mod tests {
     use super::*;
     use splunk_client::models::{LicenseUsage, LogParsingError, LogParsingHealth, ServerInfo};
 
+    fn flatten_lines(lines: Vec<Line>) -> String {
+        lines
+            .into_iter()
+            .map(|l| {
+                l.spans
+                    .into_iter()
+                    .map(|s| s.content.to_string())
+                    .collect::<String>()
+            })
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+
     #[test]
     fn test_format_bytes() {
         assert_eq!(format_bytes(0), "0 B");
@@ -217,14 +293,6 @@ mod tests {
     }
 
     #[test]
-    fn test_percentage_text() {
-        assert!(percentage_text(50.0).contains("50.0%"));
-        assert!(percentage_text(50.0).contains("green"));
-        assert!(percentage_text(80.0).contains("yellow"));
-        assert!(percentage_text(95.0).contains("red"));
-    }
-
-    #[test]
     fn test_build_health_text_empty() {
         let health = HealthCheckOutput {
             server_info: None,
@@ -233,8 +301,13 @@ mod tests {
             kvstore_status: None,
             log_parsing_health: None,
         };
-        let text = build_health_text(&health);
-        assert_eq!(text, "No health data available.");
+        let lines = build_health_lines(&health, &Theme::default());
+        assert_eq!(lines.len(), 1);
+        assert!(
+            lines[0].spans[0]
+                .content
+                .contains("No health data available.")
+        );
     }
 
     #[test]
@@ -253,7 +326,8 @@ mod tests {
             kvstore_status: None,
             log_parsing_health: None,
         };
-        let text = build_health_text(&health);
+        let lines = build_health_lines(&health, &Theme::default());
+        let text = flatten_lines(lines);
         assert!(text.contains("Server Information"));
         assert!(text.contains("Name: splunk01"));
         assert!(text.contains("Version: 9.0.0"));
@@ -274,7 +348,8 @@ mod tests {
             kvstore_status: None,
             log_parsing_health: None,
         };
-        let text = build_health_text(&health);
+        let lines = build_health_lines(&health, &Theme::default());
+        let text = flatten_lines(lines);
         assert!(text.contains("License Usage"));
         assert!(text.contains("50.0%"));
     }
@@ -318,7 +393,8 @@ mod tests {
                 time_window: "-24h".to_string(),
             }),
         };
-        let text = build_health_text(&health);
+        let lines = build_health_lines(&health, &Theme::default());
+        let text = flatten_lines(lines);
         assert!(text.contains("Log Parsing Health"));
         assert!(text.contains("Total Errors: 3"));
         assert!(text.contains("Recent Errors:"));

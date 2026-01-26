@@ -4,12 +4,12 @@
 
 use ratatui::{
     Frame,
-    layout::Alignment,
-    layout::Rect,
-    style::Style,
+    layout::{Alignment, Rect},
+    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Index;
+use splunk_config::Theme;
 
 /// Configuration for rendering the indexes screen.
 pub struct IndexesRenderConfig<'a> {
@@ -19,6 +19,8 @@ pub struct IndexesRenderConfig<'a> {
     pub indexes: Option<&'a [Index]>,
     /// The current list selection state
     pub state: &'a mut ListState,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the indexes screen.
@@ -33,6 +35,7 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
         loading,
         indexes,
         state,
+        theme,
     } = config;
 
     if loading && indexes.is_none() {
@@ -66,7 +69,18 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
         .collect();
 
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title("Indexes"))
-        .highlight_style(Style::default().fg(ratatui::style::Color::Yellow));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Indexes")
+                .border_style(Style::default().fg(theme.border))
+                .title_style(Style::default().fg(theme.title)),
+        )
+        .highlight_style(
+            Style::default()
+                .fg(theme.highlight_fg)
+                .bg(theme.highlight_bg)
+                .add_modifier(Modifier::BOLD),
+        );
     f.render_stateful_widget(list, area, state);
 }

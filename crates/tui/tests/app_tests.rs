@@ -62,6 +62,28 @@ fn test_auto_refresh_toggle() {
 }
 
 #[test]
+fn test_theme_cycle_from_settings() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Settings;
+
+    let initial = app.color_theme;
+
+    let action = app.handle_input(key('t'));
+    assert!(matches!(action, Some(Action::CycleTheme)));
+
+    app.update(action.unwrap());
+    assert_ne!(app.color_theme, initial, "Theme should change immediately");
+
+    // Persisted state should include theme
+    let persisted = app.get_persisted_state();
+    assert_eq!(persisted.selected_theme, app.color_theme);
+
+    // New app should initialize from persisted state
+    let app2 = App::new(Some(persisted));
+    assert_eq!(app2.color_theme, app.color_theme);
+}
+
+#[test]
 fn test_sort_column_cycle() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Settings;

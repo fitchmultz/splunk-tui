@@ -357,12 +357,14 @@ fn test_config_manager_persistence_with_custom_path() {
 
     // Create some test state to persist
     use splunk_config::persistence::PersistedState;
+    use splunk_config::types::ColorTheme;
     let test_state = PersistedState {
         auto_refresh: true,
         sort_column: "disk_usage".to_string(),
         sort_direction: "desc".to_string(),
         last_search_query: Some("test query".to_string()),
         search_history: vec!["query1".to_string(), "query2".to_string()],
+        selected_theme: ColorTheme::Dark,
     };
 
     // Save the state
@@ -396,6 +398,10 @@ fn test_config_manager_persistence_with_custom_path() {
     assert_eq!(
         loaded.search_history, test_state.search_history,
         "Loaded search_history should match saved state"
+    );
+    assert_eq!(
+        loaded.selected_theme, test_state.selected_theme,
+        "Loaded selected_theme should match saved state"
     );
 }
 

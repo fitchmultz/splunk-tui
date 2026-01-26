@@ -7,9 +7,10 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
 };
+use splunk_config::Theme;
 
 /// Default popup dimensions as percentages of screen size.
 pub const POPUP_WIDTH_PERCENT: u16 = 60;
@@ -180,6 +181,7 @@ Users Screen:
   j/k    Navigate list
 
 Settings Screen:
+  t     Cycle theme
   a     Toggle auto-refresh
   s     Cycle sort column
   d     Toggle sort direction
@@ -228,7 +230,7 @@ Settings Screen:
 ///
 /// * `f` - The frame to render to
 /// * `popup` - The popup to render
-pub fn render_popup(f: &mut Frame, popup: &Popup) {
+pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
     let size = f.area();
     let popup_area = centered_rect(POPUP_WIDTH_PERCENT, POPUP_HEIGHT_PERCENT, size);
 
@@ -236,11 +238,11 @@ pub fn render_popup(f: &mut Frame, popup: &Popup) {
 
     // Determine border color based on popup type
     let border_color = match &popup.kind {
-        PopupType::Help | PopupType::ExportSearch | PopupType::ErrorDetails => Color::Cyan,
+        PopupType::Help | PopupType::ExportSearch | PopupType::ErrorDetails => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
-        | PopupType::ConfirmDeleteBatch(_) => Color::Red,
+        | PopupType::ConfirmDeleteBatch(_) => theme.error,
     };
 
     // Determine wrapping behavior based on popup type

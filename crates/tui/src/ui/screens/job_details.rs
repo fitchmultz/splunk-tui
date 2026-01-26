@@ -3,7 +3,7 @@
 //! Renders a detailed view of a single search job, showing all available
 //! metadata including status, duration, counts, and other properties.
 
-use ratatui::style::{Color, Style};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::{
@@ -11,6 +11,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
 };
 use splunk_client::models::SearchJobStatus;
+use splunk_config::Theme;
 
 /// Render detailed information about a single search job.
 ///
@@ -19,7 +20,7 @@ use splunk_client::models::SearchJobStatus;
 /// * `f` - The frame to render to
 /// * `area` - The area to render within
 /// * `job` - The job to display details for
-pub fn render_details(f: &mut Frame, area: Rect, job: &SearchJobStatus) {
+pub fn render_details(f: &mut Frame, area: Rect, job: &SearchJobStatus, theme: &Theme) {
     // Split into title and content areas
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -32,7 +33,8 @@ pub fn render_details(f: &mut Frame, area: Rect, job: &SearchJobStatus) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Job Details")
-                .title_style(Style::default().fg(Color::Cyan)),
+                .title_style(Style::default().fg(theme.title))
+                .border_style(Style::default().fg(theme.border)),
         )
         .alignment(Alignment::Center);
     f.render_widget(title, chunks[0]);
@@ -47,50 +49,50 @@ pub fn render_details(f: &mut Frame, area: Rect, job: &SearchJobStatus) {
     };
 
     let status_color = if job.is_done {
-        Color::Green
+        theme.success
     } else {
-        Color::Yellow
+        theme.warning
     };
 
     let details = vec![
         Line::from(vec![
-            Span::styled("Status: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Status: ", Style::default().fg(theme.title)),
             Span::styled(status_text, Style::default().fg(status_color)),
         ]),
         Line::from(vec![
-            Span::styled("Duration: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Duration: ", Style::default().fg(theme.title)),
             Span::raw(format!("{:.2} seconds", job.run_duration)),
         ]),
         Line::from(vec![
-            Span::styled("Event Count: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Event Count: ", Style::default().fg(theme.title)),
             Span::raw(job.event_count.to_string()),
         ]),
         Line::from(vec![
-            Span::styled("Scan Count: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Scan Count: ", Style::default().fg(theme.title)),
             Span::raw(job.scan_count.to_string()),
         ]),
         Line::from(vec![
-            Span::styled("Result Count: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Result Count: ", Style::default().fg(theme.title)),
             Span::raw(job.result_count.to_string()),
         ]),
         Line::from(vec![
-            Span::styled("Disk Usage: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Disk Usage: ", Style::default().fg(theme.title)),
             Span::raw(format!("{} MB", job.disk_usage)),
         ]),
         Line::from(vec![
-            Span::styled("Priority: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Priority: ", Style::default().fg(theme.title)),
             Span::raw(job.priority.map_or("N/A".to_string(), |p| p.to_string())),
         ]),
         Line::from(vec![
-            Span::styled("Label: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Label: ", Style::default().fg(theme.title)),
             Span::raw(job.label.as_deref().unwrap_or("N/A")),
         ]),
         Line::from(vec![
-            Span::styled("Cursor Time: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Cursor Time: ", Style::default().fg(theme.title)),
             Span::raw(job.cursor_time.as_deref().unwrap_or("N/A")),
         ]),
         Line::from(vec![
-            Span::styled("Finalized: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Finalized: ", Style::default().fg(theme.title)),
             Span::raw(if job.is_finalized { "Yes" } else { "No" }),
         ]),
     ];

@@ -5,7 +5,7 @@
 //! and sorting by any column.
 
 use crate::app::{SortColumn, SortDirection};
-use ratatui::style::{Color, Style};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
 use ratatui::{
@@ -13,6 +13,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
 };
 use splunk_client::models::SearchJobStatus;
+use splunk_config::Theme;
 use std::collections::HashSet;
 
 /// Configuration for rendering the jobs table.
@@ -35,6 +36,8 @@ pub struct JobsRenderConfig<'a> {
     pub sort_direction: SortDirection,
     /// Selected job SIDs for multi-selection
     pub selected_jobs: &'a HashSet<String>,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the jobs table.
@@ -55,6 +58,7 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
         sort_column,
         sort_direction,
         selected_jobs,
+        theme,
     } = config;
 
     // If filtering, show the filter input at the top
@@ -79,7 +83,13 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
         };
 
         let filter_paragraph = Paragraph::new(filter_text)
-            .block(Block::default().borders(Borders::ALL).title("Filter"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Filter")
+                    .border_style(Style::default().fg(theme.border))
+                    .title_style(Style::default().fg(theme.title)),
+            )
             .alignment(Alignment::Left);
         f.render_widget(filter_paragraph, filter_area);
     }
@@ -130,20 +140,20 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
             };
 
             let status_style = if job.is_done {
-                Style::default().fg(Color::Green)
+                Style::default().fg(theme.success)
             } else {
-                Style::default().fg(Color::Yellow)
+                Style::default().fg(theme.warning)
             };
 
             // Highlight matching text if filter is active
             let sid_cell = if let Some(filter_str) = filter {
-                highlight_match(job.sid.clone(), filter_str, Color::Cyan)
+                highlight_match(job.sid.clone(), filter_str, theme)
             } else {
                 Cell::from(job.sid.clone())
             };
 
             let status_cell = if let Some(filter_str) = filter {
-                highlight_match(status_text.clone(), filter_str, Color::Cyan)
+                highlight_match(status_text.clone(), filter_str, theme)
             } else {
                 Cell::from(status_text).style(status_style)
             };
@@ -171,7 +181,13 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
             Constraint::Length(10),
         ],
     )
-    .header(Row::new(header_cells).style(Style::default().fg(Color::Cyan)))
+    .header(
+        Row::new(header_cells).style(
+            Style::default()
+                .fg(theme.table_header_fg)
+                .bg(theme.table_header_bg),
+        ),
+    )
     .block(
         Block::default()
             .title(if auto_refresh {
@@ -179,9 +195,15 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
             } else {
                 "Search Jobs"
             })
-            .borders(Borders::ALL),
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(theme.border))
+            .title_style(Style::default().fg(theme.title)),
     )
-    .row_highlight_style(Style::default().bg(Color::DarkGray).fg(Color::Yellow))
+    .row_highlight_style(
+        Style::default()
+            .bg(theme.highlight_bg)
+            .fg(theme.highlight_fg),
+    )
     .column_spacing(1);
 
     f.render_stateful_widget(table, table_area, state);
@@ -197,7 +219,7 @@ fn header_cell<'a>(text: &'a str, is_sorted: bool, indicator: &str) -> Cell<'a> 
 }
 
 /// Highlight matching text in the given string with the specified color.
-fn highlight_match(text: String, pattern: &str, color: Color) -> Cell<'static> {
+fn highlight_match(text: String, pattern: &str, theme: &Theme) -> Cell<'static> {
     let pattern_lower = pattern.to_lowercase();
     let text_lower = text.to_lowercase();
 
@@ -208,7 +230,7 @@ fn highlight_match(text: String, pattern: &str, color: Color) -> Cell<'static> {
 
         let spans = vec![
             Span::raw(before),
-            Span::styled(matched, Style::default().fg(color)),
+            Span::styled(matched, Style::default().fg(theme.info)),
             Span::raw(after),
         ];
         Cell::from(Line::from(spans))

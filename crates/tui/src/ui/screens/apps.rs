@@ -4,12 +4,12 @@
 
 use ratatui::{
     Frame,
-    layout::Alignment,
-    layout::Rect,
-    style::Style,
+    layout::{Alignment, Rect},
+    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::App;
+use splunk_config::Theme;
 
 /// Configuration for rendering the apps screen.
 pub struct AppsRenderConfig<'a> {
@@ -19,6 +19,8 @@ pub struct AppsRenderConfig<'a> {
     pub apps: Option<&'a [App]>,
     /// The current list selection state
     pub state: &'a mut ListState,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the apps screen.
@@ -33,6 +35,7 @@ pub fn render_apps(f: &mut Frame, area: Rect, config: AppsRenderConfig) {
         loading,
         apps,
         state,
+        theme,
     } = config;
 
     if loading && apps.is_none() {
@@ -70,7 +73,18 @@ pub fn render_apps(f: &mut Frame, area: Rect, config: AppsRenderConfig) {
         .collect();
 
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title("Apps"))
-        .highlight_style(Style::default().fg(ratatui::style::Color::Yellow));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Apps")
+                .border_style(Style::default().fg(theme.border))
+                .title_style(Style::default().fg(theme.title)),
+        )
+        .highlight_style(
+            Style::default()
+                .fg(theme.highlight_fg)
+                .bg(theme.highlight_bg)
+                .add_modifier(Modifier::BOLD),
+        );
     f.render_stateful_widget(list, area, state);
 }

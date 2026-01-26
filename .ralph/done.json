@@ -3722,6 +3722,80 @@
       "completed_at": "2026-01-26T18:06:28.488739000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0091",
+      "status": "done",
+      "title": "Add color scheme customization to TUI",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "ux",
+        "customization",
+        "accessibility"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/jobs.rs",
+        "crates/tui/src/ui/screens/internal_logs.rs",
+        "crates/tui/src/ui/screens/job_details.rs",
+        "crates/tui/src/ui/screens/saved_searches.rs",
+        "crates/tui/src/ui/screens/indexes.rs",
+        "crates/tui/src/ui/screens/users.rs",
+        "crates/tui/src/ui/screens/apps.rs",
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/tui/src/ui/screens/health.rs",
+        "crates/tui/src/ui/screens/settings.rs",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/src/ui/error_details.rs",
+        "crates/tui/src/ui/syntax.rs",
+        "crates/config/src/types.rs",
+        "crates/config/src/persistence.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "TUI has multiple instances of hardcoded Color:: usage across all UI screens (confirmed via grep search in crates/tui/src/ui/screens/ showing 50+ matches in settings.rs, job_details.rs, etc.)",
+        "No existing theme infrastructure found in codebase (Config types in crates/config/src/types.rs lack theme/color types)",
+        "Settings screen (RQ-0083) is completed in crates/tui/src/ui/screens/settings.rs, providing a location for theme selection UI",
+        "PersistedState in crates/config/src/persistence.rs does not include theme-related fields for persistence across sessions",
+        "ratatui::style::Color and Style are used directly in render functions instead of being abstracted via a theme provider",
+        "SPL syntax highlighting in syntax.rs uses hardcoded colors that should be theme-aware",
+        "docs/usage.md documents Settings shortcuts but lacks theme customization documentation"
+      ],
+      "plan": [
+        "Add ColorScheme enum to crates/tui/src/app.rs with variants (Default, Light, Dark, HighContrast) and impl for string conversion",
+        "Create Theme struct in crates/config/src/types.rs with color fields for UI elements (header_fg, selection_bg, status_colors, etc.)",
+        "Add ColorTheme enum to crates/config/src/types.rs with predefined color sets for each variant, each implementing Into<Theme>",
+        "Extend PersistedState in crates/config/src/persistence.rs with 'theme' field (defaulting to 'default')",
+        "Update App struct in crates/tui/src/app.rs to include current ColorScheme and initialize it from PersistedState",
+        "Implement App::get_theme() to return a concrete Theme based on the current scheme",
+        "Refactor hardcoded Color:: values in all UI screen modules (jobs.rs, internal_logs.rs, etc.) to use fields from app.get_theme()",
+        "Update syntax.rs to use theme-based colors for SPL highlighting",
+        "Update settings.rs to display the current theme and handle 't' key to cycle through available themes",
+        "Update App::get_persisted_state() to ensure the selected theme is saved to disk",
+        "Add unit tests in crates/tui/src/app.rs and integration tests in crates/tui/tests/ for theme switching and persistence",
+        "Update docs/usage.md with a new 'Color Themes' section",
+        "Run make ci to verify all tests and UI snapshots pass"
+      ],
+      "notes": [
+        "Default theme must exactly match current hardcoded colors to maintain visual consistency for existing users",
+        "HighContrast theme should prioritize WCAG accessibility guidelines",
+        "Theme switching should be instantaneous without requiring app restart",
+        "Consider future-proofing Theme struct for user-definable custom themes",
+        "Implemented comprehensive ColorTheme system with Default, Light, Dark, and HighContrast modes",
+        "Refactored all 11 UI screens and common widgets to consume semantic colors from a centralized Theme struct",
+        "Added instantaneous theme switching via the 't' key in Settings, with persistence across sessions",
+        "Made SPL syntax highlighting theme-aware in syntax.rs for improved readability",
+        "Verified stability with 101 unit tests and 27 snapshot tests passing in make ci"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-24T21:00:00Z",
+      "updated_at": "2026-01-26T20:23:55.644386000Z",
+      "completed_at": "2026-01-26T20:23:55.644386000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

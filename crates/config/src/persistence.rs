@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use crate::types::{KEYRING_SERVICE, ProfileConfig, SecureValue};
+use crate::types::{ColorTheme, KEYRING_SERVICE, ProfileConfig, SecureValue};
 
 /// User preferences that persist across application runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +24,9 @@ pub struct PersistedState {
     /// Search history for the search screen.
     #[serde(default)]
     pub search_history: Vec<String>,
+    /// Persisted UI theme selection.
+    #[serde(default)]
+    pub selected_theme: ColorTheme,
 }
 
 impl Default for PersistedState {
@@ -34,6 +37,7 @@ impl Default for PersistedState {
             sort_direction: "asc".to_string(),
             last_search_query: None,
             search_history: Vec::new(),
+            selected_theme: ColorTheme::Default,
         }
     }
 }
@@ -324,6 +328,7 @@ mod tests {
         assert_eq!(state.sort_direction, "asc");
         assert!(state.last_search_query.is_none());
         assert!(state.search_history.is_empty());
+        assert_eq!(state.selected_theme, ColorTheme::Default);
     }
 
     #[test]
@@ -334,6 +339,7 @@ mod tests {
             sort_direction: "desc".to_string(),
             last_search_query: Some("test query".to_string()),
             search_history: vec!["query1".to_string(), "query2".to_string()],
+            selected_theme: ColorTheme::Dark,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -347,6 +353,7 @@ mod tests {
             Some("test query".to_string())
         );
         assert_eq!(deserialized.search_history, vec!["query1", "query2"]);
+        assert_eq!(deserialized.selected_theme, ColorTheme::Dark);
     }
 
     #[test]
@@ -358,6 +365,7 @@ mod tests {
             sort_direction: "desc".to_string(),
             last_search_query: Some("legacy query".to_string()),
             search_history: Vec::new(),
+            selected_theme: ColorTheme::Default,
         };
 
         writeln!(

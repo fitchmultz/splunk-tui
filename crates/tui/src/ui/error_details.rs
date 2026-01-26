@@ -3,13 +3,14 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Margin, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarState, Wrap},
 };
 
 use crate::app::App;
 use crate::error_details::ErrorDetails;
+use splunk_config::Theme;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
@@ -37,7 +38,7 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .split(popup_layout[1])[1]
 }
 
-pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
+pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App, theme: &Theme) {
     let area = f.area();
 
     let popup_width = 80.min(area.width.saturating_sub(4));
@@ -65,9 +66,9 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
             Span::styled(
                 format!("{}", status),
                 Style::default().fg(if status >= 500 {
-                    Color::Red
+                    theme.error
                 } else {
-                    Color::Yellow
+                    theme.warning
                 }),
             ),
         ]));
@@ -88,7 +89,7 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
                 "Request ID: ",
                 Style::default().add_modifier(Modifier::BOLD),
             ),
-            Span::styled(rid, Style::default().fg(Color::Cyan)),
+            Span::styled(rid, Style::default().fg(theme.accent)),
         ]));
         lines.push(Line::default());
     }
@@ -98,7 +99,7 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
             "Context:",
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .fg(Color::Yellow),
+                .fg(theme.title),
         )));
 
         for (key, value) in &error.context {
@@ -108,7 +109,7 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
                     format!("{}: ", key),
                     Style::default()
                         .add_modifier(Modifier::BOLD)
-                        .fg(Color::Cyan),
+                        .fg(theme.accent),
                 ),
                 Span::raw(value),
             ]));
@@ -121,15 +122,15 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
             "Splunk Messages:",
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .fg(Color::Yellow),
+                .fg(theme.title),
         )));
 
         for msg in &error.messages {
             let color = match msg.message_type.as_str() {
-                "ERROR" => Color::Red,
-                "WARN" => Color::Yellow,
-                "INFO" => Color::Cyan,
-                _ => Color::Gray,
+                "ERROR" => theme.error,
+                "WARN" => theme.warning,
+                "INFO" => theme.info,
+                _ => theme.text_dim,
             };
             lines.push(Line::from(vec![
                 Span::styled(
@@ -169,7 +170,7 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App) {
             Block::default()
                 .title("Error Details")
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red)),
+                .border_style(Style::default().fg(theme.error)),
         )
         .wrap(Wrap { trim: false })
         .scroll((app.error_scroll_offset as u16, 0));

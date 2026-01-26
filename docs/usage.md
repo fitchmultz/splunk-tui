@@ -455,6 +455,7 @@ Launch the TUI by running `splunk-tui`.
 - Displays: Username, real name, roles, and last login time
 
 #### Settings Screen
+- `t`: Cycle theme (Default, Light, Dark, HighContrast). Theme is persisted across sessions.
 - `a`: Toggle auto-refresh for jobs screen (polls every 5 seconds)
 - `s`: Cycle through sort columns (SID, Status, Duration, Results, Events)
 - `d`: Toggle sort direction (ascending/descending)

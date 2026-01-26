@@ -11,6 +11,7 @@ serde_json = { workspace = true }
 dotenvy = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+ratatui = { workspace = true }
 directories = "6.0"
 tracing = { workspace = true }
 

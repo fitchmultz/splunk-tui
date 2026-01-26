@@ -4,11 +4,12 @@
 
 use ratatui::{
     Frame,
-    layout::Alignment,
-    layout::Rect,
+    layout::{Alignment, Rect},
+    style::Style,
     widgets::{Block, Borders, List, ListItem},
 };
 use splunk_client::models::ClusterInfo;
+use splunk_config::Theme;
 
 /// Configuration for rendering the cluster screen.
 pub struct ClusterRenderConfig<'a> {
@@ -16,6 +17,8 @@ pub struct ClusterRenderConfig<'a> {
     pub loading: bool,
     /// The cluster information to display
     pub cluster_info: Option<&'a ClusterInfo>,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the cluster screen.
@@ -29,6 +32,7 @@ pub fn render_cluster(f: &mut Frame, area: Rect, config: ClusterRenderConfig) {
     let ClusterRenderConfig {
         loading,
         cluster_info,
+        theme,
     } = config;
 
     if loading && cluster_info.is_none() {
@@ -72,7 +76,9 @@ pub fn render_cluster(f: &mut Frame, area: Rect, config: ClusterRenderConfig) {
     let list = List::new(items).block(
         Block::default()
             .borders(Borders::ALL)
-            .title("Cluster Information"),
+            .title("Cluster Information")
+            .border_style(Style::default().fg(theme.border))
+            .title_style(Style::default().fg(theme.title)),
     );
     f.render_widget(list, area);
 }

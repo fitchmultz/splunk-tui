@@ -3,10 +3,11 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::LogEntry;
+use splunk_config::Theme;
 
 /// Configuration for rendering the internal logs screen.
 pub struct InternalLogsRenderConfig<'a> {
@@ -14,17 +15,24 @@ pub struct InternalLogsRenderConfig<'a> {
     pub logs: Option<&'a [LogEntry]>,
     pub state: &'a mut TableState,
     pub auto_refresh: bool,
+    pub theme: &'a Theme,
 }
 
 /// Render the internal logs screen.
 pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRenderConfig) {
+    let theme = config.theme;
+
     let title = if config.auto_refresh {
         "Internal Logs (_internal) [AUTO]"
     } else {
         "Internal Logs (_internal)"
     };
 
-    let block = Block::default().borders(Borders::ALL).title(title);
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(title)
+        .border_style(Style::default().fg(theme.border))
+        .title_style(Style::default().fg(theme.title));
 
     if config.loading && config.logs.is_none() {
         let loading = ratatui::widgets::Paragraph::new("Loading internal logs...")
@@ -49,27 +57,27 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
     let header_cells = ["Time", "Level", "Component", "Message"].iter().map(|h| {
         Cell::from(*h).style(
             Style::default()
-                .fg(Color::Cyan)
+                .fg(theme.table_header_fg)
                 .add_modifier(Modifier::BOLD),
         )
     });
     let header = Row::new(header_cells)
-        .style(Style::default().bg(Color::DarkGray))
+        .style(Style::default().bg(theme.table_header_bg))
         .height(1);
 
     let rows = logs.iter().map(|log| {
         let level_color = match log.level.to_uppercase().as_str() {
-            "ERROR" | "FATAL" => Color::Red,
-            "WARN" | "WARNING" => Color::Yellow,
-            "INFO" => Color::Green,
-            "DEBUG" => Color::Blue,
-            _ => Color::White,
+            "ERROR" | "FATAL" => theme.log_error,
+            "WARN" | "WARNING" => theme.log_warn,
+            "INFO" => theme.log_info,
+            "DEBUG" => theme.log_debug,
+            _ => theme.text,
         };
 
         let cells = vec![
             Cell::from(log.time.as_str()),
             Cell::from(log.level.as_str()).style(Style::default().fg(level_color)),
-            Cell::from(log.component.as_str()).style(Style::default().fg(Color::Magenta)),
+            Cell::from(log.component.as_str()).style(Style::default().fg(theme.log_component)),
             Cell::from(log.message.as_str()),
         ];
         Row::new(cells)
@@ -88,7 +96,8 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
     .block(block)
     .row_highlight_style(
         Style::default()
-            .bg(Color::Indexed(236))
+            .fg(theme.highlight_fg)
+            .bg(theme.highlight_bg)
             .add_modifier(Modifier::BOLD),
     )
     .highlight_symbol(">> ");

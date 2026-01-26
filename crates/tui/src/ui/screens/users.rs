@@ -4,12 +4,12 @@
 
 use ratatui::{
     Frame,
-    layout::Alignment,
-    layout::Rect,
-    style::Style,
+    layout::{Alignment, Rect},
+    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::User;
+use splunk_config::Theme;
 
 /// Configuration for rendering the users screen.
 pub struct UsersRenderConfig<'a> {
@@ -19,6 +19,8 @@ pub struct UsersRenderConfig<'a> {
     pub users: Option<&'a [User]>,
     /// The current list selection state
     pub state: &'a mut ListState,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the users screen.
@@ -33,6 +35,7 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
         loading,
         users,
         state,
+        theme,
     } = config;
 
     if loading && users.is_none() {
@@ -78,8 +81,19 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
         .collect();
 
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title("Users"))
-        .highlight_style(Style::default().fg(ratatui::style::Color::Yellow));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Users")
+                .border_style(Style::default().fg(theme.border))
+                .title_style(Style::default().fg(theme.title)),
+        )
+        .highlight_style(
+            Style::default()
+                .fg(theme.highlight_fg)
+                .bg(theme.highlight_bg)
+                .add_modifier(Modifier::BOLD),
+        );
     f.render_stateful_widget(list, area, state);
 }
 

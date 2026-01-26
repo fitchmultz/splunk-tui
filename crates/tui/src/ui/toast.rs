@@ -7,10 +7,11 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
+use splunk_config::Theme;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -38,16 +39,6 @@ impl ToastLevel {
             Self::Success => "OK",
             Self::Warning => "WARN",
             Self::Error => "ERR",
-        }
-    }
-
-    /// Returns the foreground color for this level.
-    pub fn color(&self) -> Color {
-        match self {
-            Self::Info => Color::Cyan,
-            Self::Success => Color::Green,
-            Self::Warning => Color::Yellow,
-            Self::Error => Color::Red,
         }
     }
 
@@ -146,7 +137,7 @@ impl Toast {
 ///
 /// * `f` - The frame to render into
 /// * `toasts` - Slice of toasts to render (will be filtered for non-expired)
-pub fn render_toasts(f: &mut Frame, toasts: &[Toast], has_error: bool) {
+pub fn render_toasts(f: &mut Frame, toasts: &[Toast], has_error: bool, theme: &Theme) {
     // Filter out expired toasts
     let active: Vec<_> = toasts.iter().filter(|t| !t.is_expired()).collect();
 
@@ -187,14 +178,19 @@ pub fn render_toasts(f: &mut Frame, toasts: &[Toast], has_error: bool) {
 
     // Render each toast
     for (toast, chunk) in active.iter().zip(chunks.iter()) {
-        render_single_toast(f, toast, *chunk, has_error);
+        render_single_toast(f, toast, *chunk, has_error, theme);
     }
 }
 
 /// Renders a single toast notification.
-fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool) {
+fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool, theme: &Theme) {
     let level = toast.level;
-    let color = level.color();
+    let color = match level {
+        ToastLevel::Info => theme.info,
+        ToastLevel::Success => theme.success,
+        ToastLevel::Warning => theme.warning,
+        ToastLevel::Error => theme.error,
+    };
     let label = level.label();
 
     // Truncate message if too long
@@ -241,7 +237,7 @@ fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool
     if chars.len() > max_width * max_lines {
         content_lines.push(Line::from(vec![
             Span::styled(" ", Style::default().fg(color)),
-            Span::styled("...", Style::default().fg(Color::Gray)),
+            Span::styled("...", Style::default().fg(theme.text_dim)),
         ]));
     }
 
@@ -249,7 +245,7 @@ fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool
     if has_error && toast.level == ToastLevel::Error {
         content_lines.push(Line::from(vec![
             Span::styled(" ", Style::default().fg(color)),
-            Span::styled("Press 'e' for details", Style::default().fg(Color::Gray)),
+            Span::styled("Press 'e' for details", Style::default().fg(theme.text_dim)),
         ]));
     }
 
@@ -293,14 +289,6 @@ mod tests {
             remaining.as_secs() >= 4,
             "Remaining should be at least 4 seconds"
         );
-    }
-
-    #[test]
-    fn test_toast_level_colors() {
-        assert_eq!(ToastLevel::Info.color(), Color::Cyan);
-        assert_eq!(ToastLevel::Success.color(), Color::Green);
-        assert_eq!(ToastLevel::Warning.color(), Color::Yellow);
-        assert_eq!(ToastLevel::Error.color(), Color::Red);
     }
 
     #[test]

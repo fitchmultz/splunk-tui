@@ -5,12 +5,13 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::Line,
     widgets::{Block, Borders, Gauge, Paragraph},
 };
 
 use crate::ui::syntax::highlight_spl;
+use splunk_config::Theme;
 
 /// Configuration for rendering the search screen.
 pub struct SearchRenderConfig<'a> {
@@ -30,6 +31,8 @@ pub struct SearchRenderConfig<'a> {
     pub search_results_total_count: Option<u64>,
     /// Whether more results can be loaded
     pub search_has_more_results: bool,
+    /// Theme for consistent styling.
+    pub theme: &'a Theme,
 }
 
 /// Render the search screen.
@@ -49,6 +52,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         search_scroll_offset,
         search_results_total_count,
         search_has_more_results,
+        theme,
     } = config;
 
     let chunks = Layout::default()
@@ -64,8 +68,13 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         .split(area);
 
     // Search input
-    let input = Paragraph::new(highlight_spl(search_input))
-        .block(Block::default().borders(Borders::ALL).title("Search Query"));
+    let input = Paragraph::new(highlight_spl(search_input, theme)).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Search Query")
+            .border_style(Style::default().fg(theme.border))
+            .title_style(Style::default().fg(theme.title)),
+    );
     f.render_widget(input, chunks[0]);
 
     // Status
@@ -74,16 +83,21 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             .block(Block::default().borders(Borders::ALL).title("Status"))
             .gauge_style(
                 Style::default()
-                    .fg(Color::Cyan)
-                    .bg(Color::Black)
+                    .fg(theme.info)
+                    .bg(theme.background)
                     .add_modifier(Modifier::ITALIC),
             )
             .ratio(progress.clamp(0.0, 1.0) as f64)
             .label(format!("{} ({:.0}%)", search_status, progress * 100.0));
         f.render_widget(gauge, chunks[1]);
     } else {
-        let status = Paragraph::new(search_status)
-            .block(Block::default().borders(Borders::ALL).title("Status"));
+        let status = Paragraph::new(search_status).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Status")
+                .border_style(Style::default().fg(theme.border))
+                .title_style(Style::default().fg(theme.title)),
+        );
         f.render_widget(status, chunks[1]);
     }
 
@@ -93,7 +107,13 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
     // Results
     if search_results.is_empty() {
         let placeholder = Paragraph::new("No results. Enter a search query and press Enter.")
-            .block(Block::default().borders(Borders::ALL).title("Results"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Results")
+                    .border_style(Style::default().fg(theme.border))
+                    .title_style(Style::default().fg(theme.title)),
+            )
             .alignment(Alignment::Center);
         f.render_widget(placeholder, chunks[2]);
     } else {
@@ -139,8 +159,13 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             format!("Results ({} loaded)", search_results.len())
         };
 
-        let results =
-            Paragraph::new(results_text).block(Block::default().borders(Borders::ALL).title(title));
+        let results = Paragraph::new(results_text).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(title)
+                .border_style(Style::default().fg(theme.border))
+                .title_style(Style::default().fg(theme.title)),
+        );
         f.render_widget(results, chunks[2]);
     }
 }

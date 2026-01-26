@@ -61,6 +61,9 @@ pub enum Action {
     /// Toggle sort direction for jobs
     ToggleSortDirection,
 
+    /// Cycle through the available color themes (Settings screen).
+    CycleTheme,
+
     /// Copy the provided text to the system clipboard.
     ///
     /// This is emitted by per-screen input handlers (Ctrl+C) and executed by the app.

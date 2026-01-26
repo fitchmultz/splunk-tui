@@ -5,7 +5,7 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
@@ -22,6 +22,10 @@ pub struct SettingsRenderConfig<'a> {
     pub search_history_count: usize,
     /// Current profile name (if SPLUNK_PROFILE is set)
     pub profile_info: Option<&'a str>,
+    /// Selected persisted theme (for display).
+    pub selected_theme: splunk_config::ColorTheme,
+    /// Runtime expanded theme (for colors).
+    pub theme: &'a splunk_config::Theme,
 }
 
 /// Render the settings screen.
@@ -37,10 +41,12 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
         .constraints([Constraint::Length(1), Constraint::Min(0)])
         .split(area);
 
+    let theme = config.theme;
+
     // Header
     let header = Line::from(vec![Span::styled(
         "Settings",
-        Style::default().fg(Color::Yellow),
+        Style::default().fg(theme.accent),
     )]);
 
     f.render_widget(
@@ -48,7 +54,7 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::Cyan)),
+                    .style(Style::default().fg(theme.border)),
             )
             .alignment(Alignment::Center),
         chunks[0],
@@ -56,9 +62,9 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
 
     // Content
     let auto_refresh_color = if config.auto_refresh {
-        Color::Green
+        theme.success
     } else {
-        Color::Yellow
+        theme.warning
     };
 
     let auto_refresh_text = format!("[{}]", if config.auto_refresh { "On" } else { "Off" });
@@ -67,54 +73,80 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
 
     let content = vec![
         Line::from(vec![
-            Span::styled("Auto-refresh:  ", Style::default().fg(Color::Cyan)),
-            Span::styled(&auto_refresh_text, Style::default().fg(auto_refresh_color)),
-        ]),
-        Line::from(vec![
-            Span::styled("Sort column:    ", Style::default().fg(Color::Cyan)),
-            Span::styled(config.sort_column, Style::default().fg(Color::White)),
-        ]),
-        Line::from(vec![
-            Span::styled("Sort direction: ", Style::default().fg(Color::Cyan)),
-            Span::styled(config.sort_direction, Style::default().fg(Color::White)),
-        ]),
-        Line::from(vec![
-            Span::styled("Search history: ", Style::default().fg(Color::Cyan)),
+            Span::styled("Theme:          ", Style::default().fg(theme.title)),
             Span::styled(
-                format!("{} items", config.search_history_count),
-                Style::default().fg(Color::White),
+                config.selected_theme.to_string(),
+                Style::default().fg(theme.text),
             ),
         ]),
         Line::from(vec![
-            Span::styled("Profile:        ", Style::default().fg(Color::Cyan)),
-            Span::styled(profile_display, Style::default().fg(Color::White)),
+            Span::styled("Auto-refresh:   ", Style::default().fg(theme.title)),
+            Span::styled(&auto_refresh_text, Style::default().fg(auto_refresh_color)),
+        ]),
+        Line::from(vec![
+            Span::styled("Sort column:    ", Style::default().fg(theme.title)),
+            Span::styled(config.sort_column, Style::default().fg(theme.text)),
+        ]),
+        Line::from(vec![
+            Span::styled("Sort direction: ", Style::default().fg(theme.title)),
+            Span::styled(config.sort_direction, Style::default().fg(theme.text)),
+        ]),
+        Line::from(vec![
+            Span::styled("Search history: ", Style::default().fg(theme.title)),
+            Span::styled(
+                format!("{} items", config.search_history_count),
+                Style::default().fg(theme.text),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Profile:        ", Style::default().fg(theme.title)),
+            Span::styled(profile_display, Style::default().fg(theme.text)),
         ]),
         Line::from(""),
-        Line::from(""),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(Color::Yellow)),
-            Span::styled("a", Style::default().fg(Color::Green)),
-            Span::styled("' to toggle auto-refresh", Style::default()),
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("t", Style::default().fg(theme.accent)),
+            Span::styled("' to cycle theme", Style::default().fg(theme.text_dim)),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(Color::Yellow)),
-            Span::styled("s", Style::default().fg(Color::Green)),
-            Span::styled("' to cycle sort column", Style::default()),
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("a", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to toggle auto-refresh",
+                Style::default().fg(theme.text_dim),
+            ),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(Color::Yellow)),
-            Span::styled("d", Style::default().fg(Color::Green)),
-            Span::styled("' to toggle sort direction", Style::default()),
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("s", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to cycle sort column",
+                Style::default().fg(theme.text_dim),
+            ),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(Color::Yellow)),
-            Span::styled("c", Style::default().fg(Color::Green)),
-            Span::styled("' to clear search history", Style::default()),
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("d", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to toggle sort direction",
+                Style::default().fg(theme.text_dim),
+            ),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(Color::Yellow)),
-            Span::styled("r", Style::default().fg(Color::Green)),
-            Span::styled("' to reload settings file", Style::default()),
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("c", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to clear search history",
+                Style::default().fg(theme.text_dim),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("r", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to reload settings file",
+                Style::default().fg(theme.text_dim),
+            ),
         ]),
     ];
 
@@ -123,7 +155,7 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::Cyan)),
+                    .style(Style::default().fg(theme.border)),
             )
             .wrap(Wrap { trim: false })
             .alignment(Alignment::Left),

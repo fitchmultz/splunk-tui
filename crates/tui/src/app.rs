@@ -13,7 +13,7 @@ use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, ListState, Paragraph, TableState},
 };
@@ -22,7 +22,7 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, User,
 };
-use splunk_config::PersistedState;
+use splunk_config::{ColorTheme, PersistedState, Theme};
 use std::collections::HashSet;
 
 /// Health state of the Splunk instance.
@@ -208,6 +208,11 @@ pub struct App {
     pub auto_refresh: bool,
     pub popup: Option<Popup>,
 
+    /// Currently selected color theme (persisted across runs).
+    pub color_theme: ColorTheme,
+    /// Expanded runtime theme derived from `color_theme`.
+    pub theme: Theme,
+
     // Jobs filter state
     pub search_filter: Option<String>,
     pub is_filtering: bool,
@@ -319,17 +324,31 @@ impl App {
         let mut users_state = ListState::default();
         users_state.select(Some(0));
 
-        let (auto_refresh, sort_column, sort_direction, last_search_query, search_history) =
-            match persisted {
-                Some(state) => (
-                    state.auto_refresh,
-                    parse_sort_column(&state.sort_column),
-                    parse_sort_direction(&state.sort_direction),
-                    state.last_search_query,
-                    state.search_history,
-                ),
-                None => (false, SortColumn::Sid, SortDirection::Asc, None, Vec::new()),
-            };
+        let (
+            auto_refresh,
+            sort_column,
+            sort_direction,
+            last_search_query,
+            search_history,
+            color_theme,
+        ) = match persisted {
+            Some(state) => (
+                state.auto_refresh,
+                parse_sort_column(&state.sort_column),
+                parse_sort_direction(&state.sort_direction),
+                state.last_search_query,
+                state.search_history,
+                state.selected_theme,
+            ),
+            None => (
+                false,
+                SortColumn::Sid,
+                SortDirection::Asc,
+                None,
+                Vec::new(),
+                ColorTheme::Default,
+            ),
+        };
 
         Self {
             current_screen: CurrentScreen::Search,
@@ -360,6 +379,9 @@ impl App {
             toasts: Vec::new(),
             auto_refresh,
             popup: None,
+
+            color_theme,
+            theme: Theme::from(color_theme),
             search_filter: None,
             is_filtering: false,
             filter_input: String::new(),
@@ -396,6 +418,7 @@ impl App {
                 None
             },
             search_history: self.search_history.clone(),
+            selected_theme: self.color_theme,
         }
     }
 
@@ -1849,6 +1872,7 @@ impl App {
                 self.toasts.push(Toast::info("Search history cleared"));
                 None
             }
+            KeyCode::Char('t') => Some(Action::CycleTheme),
             KeyCode::Char('r') => Some(Action::SwitchToSettings),
             KeyCode::Char('?') => {
                 self.popup = Some(Popup::builder(PopupType::Help).build());
@@ -1885,6 +1909,12 @@ impl App {
             Action::ToggleSortDirection => {
                 self.sort_state.toggle_direction();
                 self.rebuild_filtered_indices();
+            }
+            Action::CycleTheme => {
+                self.color_theme = self.color_theme.cycle_next();
+                self.theme = Theme::from(self.color_theme);
+                self.toasts
+                    .push(Toast::info(format!("Theme: {}", self.color_theme)));
             }
             Action::Loading(is_loading) => {
                 self.loading = is_loading;
@@ -2460,11 +2490,15 @@ impl App {
             .split(f.area());
 
         // Header
+        let theme = self.theme;
+
         // Build health indicator span
         let health_indicator = match self.health_state {
-            HealthState::Healthy => Span::styled("[+]", Style::default().fg(Color::Green)),
-            HealthState::Unhealthy => Span::styled("[!]", Style::default().fg(Color::Red)),
-            HealthState::Unknown => Span::styled("[?]", Style::default().fg(Color::Yellow)),
+            HealthState::Healthy => Span::styled("[+]", Style::default().fg(theme.health_healthy)),
+            HealthState::Unhealthy => {
+                Span::styled("[!]", Style::default().fg(theme.health_unhealthy))
+            }
+            HealthState::Unknown => Span::styled("[?]", Style::default().fg(theme.health_unknown)),
         };
 
         let health_label = match self.health_state {
@@ -2473,11 +2507,17 @@ impl App {
             HealthState::Unknown => "Unknown",
         };
 
+        let health_label_style = match self.health_state {
+            HealthState::Healthy => Style::default().fg(theme.health_healthy),
+            HealthState::Unhealthy => Style::default().fg(theme.health_unhealthy),
+            HealthState::Unknown => Style::default().fg(theme.health_unknown),
+        };
+
         let header = Paragraph::new(vec![Line::from(vec![
             Span::styled(
                 "Splunk TUI",
                 Style::default()
-                    .fg(Color::Cyan)
+                    .fg(theme.title)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(" - "),
@@ -2495,21 +2535,18 @@ impl App {
                     CurrentScreen::Users => "Users",
                     CurrentScreen::Settings => "Settings",
                 },
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(theme.accent),
             ),
             Span::raw(" | "),
             health_indicator,
             Span::raw(" "),
-            Span::styled(
-                health_label,
-                match self.health_state {
-                    HealthState::Healthy => Style::default().fg(Color::Green),
-                    HealthState::Unhealthy => Style::default().fg(Color::Red),
-                    HealthState::Unknown => Style::default().fg(Color::Yellow),
-                },
-            ),
+            Span::styled(health_label, health_label_style),
         ])])
-        .block(Block::default().borders(Borders::ALL));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme.border)),
+        );
         f.render_widget(header, chunks[0]);
 
         // Main content
@@ -2520,14 +2557,14 @@ impl App {
             vec![Line::from(vec![
                 Span::styled(
                     format!(" Loading... {:.0}% ", self.progress * 100.0),
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(theme.warning),
                 ),
                 Span::raw("|"),
                 Span::raw(
                     " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:Settings ",
                 ),
                 Span::raw("|"),
-                Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
+                Span::styled(" q:Quit ", Style::default().fg(theme.error)),
             ])]
         } else {
             vec![Line::from(vec![
@@ -2535,18 +2572,22 @@ impl App {
                     " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:Settings ",
                 ),
                 Span::raw("|"),
-                Span::styled(" q:Quit ", Style::default().fg(Color::Red)),
+                Span::styled(" q:Quit ", Style::default().fg(theme.error)),
             ])]
         };
-        let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::ALL));
+        let footer = Paragraph::new(footer_text).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme.border)),
+        );
         f.render_widget(footer, chunks[2]);
 
         // Render toasts
-        crate::ui::toast::render_toasts(f, &self.toasts, self.current_error.is_some());
+        crate::ui::toast::render_toasts(f, &self.toasts, self.current_error.is_some(), &self.theme);
 
         // Render popup if active (on top of toasts)
         if let Some(ref popup) = self.popup {
-            crate::ui::popup::render_popup(f, popup);
+            crate::ui::popup::render_popup(f, popup, &self.theme);
         }
 
         // Render error details popup if active
@@ -2556,7 +2597,7 @@ impl App {
         }) = &self.popup
             && let Some(error) = &self.current_error
         {
-            crate::ui::error_details::render_error_details(f, error, self);
+            crate::ui::error_details::render_error_details(f, error, self, &self.theme);
         }
     }
 
@@ -2575,6 +2616,7 @@ impl App {
                         search_scroll_offset: self.search_scroll_offset,
                         search_results_total_count: self.search_results_total_count,
                         search_has_more_results: self.search_has_more_results,
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2586,6 +2628,7 @@ impl App {
                         loading: self.loading,
                         indexes: self.indexes.as_deref(),
                         state: &mut self.indexes_state,
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2596,6 +2639,7 @@ impl App {
                     cluster::ClusterRenderConfig {
                         loading: self.loading,
                         cluster_info: self.cluster_info.as_ref(),
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2608,6 +2652,7 @@ impl App {
                     health::HealthRenderConfig {
                         loading: self.loading,
                         health_info: self.health_info.as_ref(),
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2619,6 +2664,7 @@ impl App {
                         loading: self.loading,
                         saved_searches: self.saved_searches.as_deref(),
                         state: &mut self.saved_searches_state,
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2631,6 +2677,7 @@ impl App {
                         loading: self.loading,
                         apps: self.apps.as_deref(),
                         state: &mut self.apps_state,
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2642,6 +2689,7 @@ impl App {
                         loading: self.loading,
                         users: self.users.as_deref(),
                         state: &mut self.users_state,
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2655,6 +2703,8 @@ impl App {
                         sort_direction: self.sort_state.direction.as_str(),
                         search_history_count: self.search_history.len(),
                         profile_info: std::env::var("SPLUNK_PROFILE").ok().as_deref(),
+                        selected_theme: self.color_theme,
+                        theme: &self.theme,
                     },
                 );
             }
@@ -2723,6 +2773,7 @@ impl App {
                 sort_column: self.sort_state.column,
                 sort_direction: self.sort_state.direction,
                 selected_jobs: &self.selected_jobs,
+                theme: &self.theme,
             },
         );
     }
@@ -2735,7 +2786,7 @@ impl App {
 
         match job {
             Some(job) => {
-                job_details::render_details(f, area, job);
+                job_details::render_details(f, area, job, &self.theme);
             }
             None => {
                 let placeholder = Paragraph::new("No job selected or jobs not loaded.")
@@ -2757,6 +2808,7 @@ impl App {
                 logs: self.internal_logs.as_deref(),
                 state: &mut self.internal_logs_state,
                 auto_refresh: self.auto_refresh,
+                theme: &self.theme,
             },
         );
     }
