@@ -1,9 +1,5 @@
 {
-  "entry": [
-    {
-      "content": {
-        "sessionKey": "test-session-key-12345678"
-      }
-    }
-  ]
+  "sessionKey": "test-session-key-12345678",
+  "message": "",
+  "code": ""
 }
