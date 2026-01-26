@@ -18,7 +18,7 @@ expression: harness.render()
 │               │                Search Screen:                │               │
 │               │              Enter     Run search            │               │
 │               │            e         Export results          │               │
-│               │          Up/Down   History navigation        │               │
+│               │       Up/Down   Navigate history (query)     │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

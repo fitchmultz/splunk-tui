@@ -114,8 +114,9 @@ Global Keys:
 Search Screen:
   Enter     Run search
   e         Export results
-  Up/Down   History navigation
-  Ctrl+j/k  Navigate results
+  Up/Down   Navigate history (query)
+  Ctrl+j/k  Scroll results (while typing)
+  j,k,...   Type search query
   PgDn      Page down
   PgUp      Page up
   Home      Go to top
@@ -135,6 +136,8 @@ Jobs Screen:
 
 Job Details Screen:
   Esc   Back to jobs
+  ?     Help
+  0     Go to settings
 
 Indexes Screen:
   r     Refresh indexes

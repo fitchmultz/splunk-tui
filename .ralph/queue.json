@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0087",
-      "status": "todo",
-      "title": "Fix inaccuracies in TUI help popup keyboard shortcuts documentation",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "help",
-        "documentation"
-      ],
-      "scope": [
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/src/app.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "Help popup in crates/tui/src/ui/popup.rs:106-166 has comprehensive shortcuts reference with inaccuracies",
-        "Search screen help says 'Ctrl+j/k  Navigate results' but app.rs:749-750 shows j/k as regular character input in search mode, not Ctrl+modifier",
-        "Search screen help says 'Up/Down   History navigation' but doesn't clarify j/k add characters to search input vs Up/Down navigate history",
-        "docs/usage.md:388-461 has comprehensive keyboard shortcuts section matching help popup, inherits same inaccuracies",
-        "Search mode in app.rs:743-858 shows j/k return Action::NavigateDown/Up only when typing search, but help suggests they're for result navigation",
-        "All screen-specific shortcuts are documented in both help popup and docs/usage.md, but Search screen navigation description is confusing/ambiguous",
-        "JobInspect screen handler (app.rs:1100-1111) only supports Esc and '?', matches help popup",
-        "Other screens (Indexes, Cluster, Health, SavedSearches, InternalLogs, Apps, Users) have correct documentation matching implementation"
-      ],
-      "plan": [
-        "Fix Search screen help in crates/tui/src/ui/popup.rs: clarify that j/k add characters to search input, Up/Down navigate history, j/k navigate results after search executes",
-        "Remove 'Ctrl+' prefix from j/k in help popup Search screen section (line 115 of popup.rs)",
-        "Update docs/usage.md Search Screen section (lines 407-416) to match corrected help popup content",
-        "Clarify navigation behavior distinction between search input mode (typing query) vs results mode (viewing output)",
-        "Verify all screen-specific shortcuts match actual implementation in app.rs input handlers",
-        "Run make ci to ensure all tests pass"
-      ],
-      "notes": [
-        "Help popup and docs/usage.md already contain comprehensive keyboard shortcuts reference organized by screen",
-        "Task originally claimed no comprehensive reference exists, but both popup.rs and usage.md have detailed per-screen shortcut documentation",
-        "Only issue is inaccurate/confusing Search screen navigation description, not missing documentation",
-        "Search screen has two modes: input mode (typing query) and results mode (viewing output), but help doesn't clearly distinguish them"
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-25T22:59:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0089",
       "status": "todo",
       "title": "Add TUI copy to clipboard functionality",
