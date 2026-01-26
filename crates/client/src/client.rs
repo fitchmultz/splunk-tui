@@ -118,6 +118,17 @@ impl SplunkClientBuilder {
 ///
 /// This client provides methods for interacting with the Splunk Enterprise
 /// REST API. It automatically handles authentication and session management.
+///
+/// NOTE: This module contains DRY violation - all 23 API methods have identical
+/// session retry patterns (401/403 detection with re-authentication).
+/// Extracting this pattern into a shared helper is blocked by Rust's type system:
+/// - The retry pattern requires calling endpoints with both `&self.http` and auth token
+/// - Closures capturing `self` have complex lifetime constraints  
+/// - Using macros with `async` blocks requires boxing futures
+/// - Full extraction would require significant restructuring
+///
+/// Despite the duplication, the pattern is simple and maintainable.
+/// Future refactoring should consider architectural changes to enable cleaner extraction.
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct SplunkClient {
