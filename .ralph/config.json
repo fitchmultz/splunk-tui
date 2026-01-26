@@ -9,7 +9,7 @@
   },
   "agent": {
     "runner": "opencode",
-    "model": "google/gemini-3-flash-preview",
+    "model": "zai-coding-plan/glm-4.7",
     "reasoning_effort": "high",
     "codex_bin": "codex",
     "opencode_bin": "opencode",
