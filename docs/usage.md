@@ -69,7 +69,13 @@ Environment variables take precedence over the configuration file.
 | `SPLUNK_SKIP_VERIFY` | Skip TLS verification (`true` or `false`) |
 | `SPLUNK_TIMEOUT` | Connection timeout in seconds |
 | `SPLUNK_MAX_RETRIES` | Maximum number of retries for failed requests |
-| `SPLUNK_PROFILE` | Name of the profile to load from the configuration file |
+| `SPLUNK_PROFILE` | Name of profile to load from the configuration file |
+
+### Cancellation (Ctrl+C / SIGINT)
+Long-running commands can be interrupted with `Ctrl+C`:
+- The CLI prints `^C` and `Operation cancelled by user` to **stderr**
+- The CLI exits with standard Unix SIGINT exit code **130**
+- Common cancellable operations: `search --wait`, `logs --tail`, `list-all`
 
 ---
 
@@ -97,6 +103,12 @@ The CLI tool is named `splunk-cli`.
   - Success message is printed to stderr: "Results written to <path> (<format> format)"
   - Cannot be used with `--tail` mode (logs command)
   - Example: `splunk-cli search "index=main" --wait --output-file results.json`
+
+#### Cancellation (Ctrl+C / SIGINT)
+Long-running commands can be interrupted with `Ctrl+C`:
+- The CLI prints `^C` and `Operation cancelled by user` to **stderr**
+- The CLI exits with standard Unix SIGINT exit code **130**
+- Common cancellable operations: `search --wait`, `logs --tail`, `list-all`
 
 ### Commands
 

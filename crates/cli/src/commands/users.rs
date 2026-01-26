@@ -11,6 +11,7 @@ pub async fn run(
     count: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing users");
 

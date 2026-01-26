@@ -3,6 +3,7 @@
 //! This CLI provides tools for managing Splunk deployments, running searches,
 //! and managing indexes and clusters.
 
+mod cancellation;
 mod commands;
 mod formatters;
 mod progress;
@@ -12,6 +13,10 @@ use clap::{Parser, Subcommand};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use splunk_config::ConfigLoader;
+
+use crate::cancellation::{
+    CancellationToken, SIGINT_EXIT_CODE, is_cancelled_error, print_cancelled_message,
+};
 
 #[derive(Parser)]
 #[command(name = "splunk-cli")]
@@ -285,11 +290,34 @@ async fn main() -> Result<()> {
         loader.build()?
     };
 
+    // Create cancellation token and set up signal handling
+    let cancel = CancellationToken::new();
+    let cancel_clone = cancel.clone();
+
+    tokio::spawn(async move {
+        if let Err(e) = tokio::signal::ctrl_c().await {
+            eprintln!("Failed to listen for Ctrl+C: {}", e);
+            return;
+        }
+        cancel_clone.cancel();
+    });
+
     // Execute command
-    run_command(cli, config).await
+    match run_command(cli, config, &cancel).await {
+        Ok(()) => Ok(()),
+        Err(e) if is_cancelled_error(&e) => {
+            print_cancelled_message();
+            std::process::exit(SIGINT_EXIT_CODE as i32);
+        }
+        Err(e) => Err(e),
+    }
 }
 
-async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
+async fn run_command(
+    cli: Cli,
+    config: splunk_config::Config,
+    cancel: &CancellationToken,
+) -> Result<()> {
     match cli.command {
         Commands::Config { command } => {
             commands::config::run(command, cli.output_file.clone())?;
@@ -311,6 +339,7 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),
+                cancel,
             )
             .await?;
         }
@@ -326,6 +355,7 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 offset,
                 &cli.output,
                 cli.output_file.clone(),
+                cancel,
             )
             .await?;
         }
@@ -341,6 +371,7 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 page_size,
                 &cli.output,
                 cli.output_file.clone(),
+                cancel,
             )
             .await?;
         }
@@ -365,13 +396,13 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
             .await?;
         }
         Commands::Health => {
-            commands::health::run(config, &cli.output, cli.output_file.clone()).await?;
+            commands::health::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
         Commands::Kvstore => {
-            commands::kvstore::run(config, &cli.output, cli.output_file.clone()).await?;
+            commands::kvstore::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
         Commands::License(args) => {
-            commands::license::run(config, &args, cli.output_file.clone()).await?;
+            commands::license::run(config, &args, cli.output_file.clone(), cancel).await?;
         }
         Commands::Logs {
             count,
@@ -385,6 +416,7 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 tail,
                 &cli.output,
                 cli.output_file.clone(),
+                cancel,
             )
             .await?;
         }
@@ -395,22 +427,43 @@ async fn run_command(cli: Cli, config: splunk_config::Config) -> Result<()> {
                 earliest,
                 &cli.output,
                 cli.output_file.clone(),
+                cancel,
             )
             .await?;
         }
         Commands::Users { count } => {
-            commands::users::run(config, count, &cli.output, cli.output_file.clone()).await?;
+            commands::users::run(config, count, &cli.output, cli.output_file.clone(), cancel)
+                .await?;
         }
         Commands::Apps { apps_command } => {
-            commands::apps::run(config, apps_command, &cli.output, cli.output_file.clone()).await?;
+            commands::apps::run(
+                config,
+                apps_command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel,
+            )
+            .await?;
         }
         Commands::ListAll { resources } => {
-            commands::list_all::run(config, resources, &cli.output, cli.output_file.clone())
-                .await?;
+            commands::list_all::run(
+                config,
+                resources,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel,
+            )
+            .await?;
         }
         Commands::SavedSearches { command } => {
-            commands::saved_searches::run(config, command, &cli.output, cli.output_file.clone())
-                .await?;
+            commands::saved_searches::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel,
+            )
+            .await?;
         }
     }
 

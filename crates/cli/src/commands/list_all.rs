@@ -7,6 +7,7 @@ use std::time::Duration;
 use tokio::time;
 use tracing::{info, warn};
 
+use crate::cancellation::Cancelled;
 use crate::commands::convert_auth_strategy;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
@@ -51,6 +52,7 @@ pub async fn run(
     resources_filter: Option<Vec<String>>,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing all Splunk resources");
 
@@ -76,7 +78,7 @@ pub async fn run(
         }
     }
 
-    let resources = fetch_all_resources(&mut client, resources_to_fetch).await?;
+    let resources = fetch_all_resources(&mut client, resources_to_fetch, _cancel).await?;
 
     let output = ListAllOutput {
         timestamp: format_timestamp(),
@@ -105,21 +107,27 @@ pub async fn run(
 async fn fetch_all_resources(
     client: &mut SplunkClient,
     resource_types: Vec<String>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<Vec<ResourceSummary>> {
     let mut resources = Vec::new();
 
     for resource_type in resource_types {
-        let summary = match resource_type.as_str() {
-            "indexes" => fetch_indexes(client).await,
-            "jobs" => fetch_jobs(client).await,
-            "apps" => fetch_apps(client).await,
-            "users" => fetch_users(client).await,
-            "cluster" => fetch_cluster(client).await,
-            "health" => fetch_health(client).await,
-            "kvstore" => fetch_kvstore(client).await,
-            "license" => fetch_license(client).await,
-            "saved-searches" => fetch_saved_searches(client).await,
-            _ => unreachable!(),
+        let summary: ResourceSummary = tokio::select! {
+            res = async {
+                match resource_type.as_str() {
+                    "indexes" => fetch_indexes(client).await,
+                    "jobs" => fetch_jobs(client).await,
+                    "apps" => fetch_apps(client).await,
+                    "users" => fetch_users(client).await,
+                    "cluster" => fetch_cluster(client).await,
+                    "health" => fetch_health(client).await,
+                    "kvstore" => fetch_kvstore(client).await,
+                    "license" => fetch_license(client).await,
+                    "saved-searches" => fetch_saved_searches(client).await,
+                    _ => unreachable!(),
+                }
+            } => res,
+            _ = _cancel.cancelled() => return Err(Cancelled.into()),
         };
         resources.push(summary);
     }

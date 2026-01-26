@@ -6,6 +6,7 @@ use splunk_client::models::LogEntry;
 use tokio::time::{Duration, sleep};
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 /// Cursor for tracking log position during tailing.
@@ -17,7 +18,7 @@ struct LogCursor {
 }
 
 impl LogCursor {
-    /// Returns true if the log entry is NEWER than this cursor.
+    /// Returns true if * log entry is NEWER than this cursor.
     fn is_after(&self, entry: &LogEntry) -> bool {
         // Compare by timestamp first
         if entry.time != self.time {
@@ -44,6 +45,7 @@ impl LogCursor {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config: splunk_config::Config,
     count: usize,
@@ -51,6 +53,7 @@ pub async fn run(
     tail: bool,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     // Tail mode is incompatible with file output
     if tail && output_file.is_some() {
@@ -76,17 +79,14 @@ pub async fn run(
         let mut cursor: Option<LogCursor> = None;
 
         loop {
-            // If we have a cursor, use its time as earliest for next poll
-            let current_earliest = cursor
-                .as_ref()
-                .map(|c| c.time.as_str())
-                .unwrap_or(&earliest);
+            let fetch_result: Result<Vec<LogEntry>> = tokio::select! {
+                res = client.get_internal_logs(count as u64, Some(cursor.as_ref().map(|c| c.time.as_str()).unwrap_or(&earliest))) => res.map_err(|e| e.into()),
+                _ = cancel.cancelled() => return Err(Cancelled.into()),
+            };
 
-            match client
-                .get_internal_logs(count as u64, Some(current_earliest))
-                .await
-            {
+            match fetch_result {
                 Ok(logs) => {
+                    let logs: Vec<LogEntry> = logs;
                     if !logs.is_empty() {
                         // Filter out logs we've already seen
                         let new_logs: Vec<_> = if let Some(ref cursor) = cursor {
@@ -115,13 +115,17 @@ pub async fn run(
                 }
             }
 
-            sleep(Duration::from_secs(2)).await;
+            tokio::select! {
+                _ = sleep(Duration::from_secs(2)) => {}
+                _ = cancel.cancelled() => return Err(Cancelled.into()),
+            }
         }
     } else {
         info!("Fetching internal logs...");
-        let logs = client
-            .get_internal_logs(count as u64, Some(&earliest))
-            .await?;
+        let logs: Vec<LogEntry> = tokio::select! {
+            res = client.get_internal_logs(count as u64, Some(&earliest)) => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        };
         let output = formatter.format_logs(&logs)?;
         if let Some(ref path) = output_file {
             write_to_file(&output, path)
@@ -205,7 +209,7 @@ mod tests {
         let entry_no_serial =
             make_log_entry("2025-01-24T12:00:00.000Z", "2025-01-24T12:00:01.000Z", None);
 
-        // Conservative: if no serial, assume it's the same entry
+        // Conservative: if no serial, assume it's same entry
         assert!(!cursor.is_after(&entry_no_serial));
     }
 
@@ -274,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_cursor_update_uses_newest_entry() {
-        // This test verifies the fix for the duplicate bug:
+        // This test verifies fix for duplicate bug:
         // When we have multiple new logs, cursor should update to the NEWEST one (first in list),
         // not the oldest. This prevents re-querying same-timestamp events.
 
@@ -303,7 +307,7 @@ mod tests {
             ),
         ];
 
-        // All should be "after" the current cursor
+        // All should be "after" current cursor
         assert!(cursor.is_after(&new_logs[0]));
         assert!(cursor.is_after(&new_logs[1]));
         assert!(cursor.is_after(&new_logs[2]));
@@ -312,7 +316,7 @@ mod tests {
         let new_cursor = LogCursor::from_entry(&new_logs[0]);
         assert_eq!(new_cursor.serial, Some(30));
 
-        // On next query, none of these entries should be "after" the new cursor
+        // On next query, none of these entries should be "after" new cursor
         assert!(!new_cursor.is_after(&new_logs[0]));
         assert!(!new_cursor.is_after(&new_logs[1]));
         assert!(!new_cursor.is_after(&new_logs[2]));

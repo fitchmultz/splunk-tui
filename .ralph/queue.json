@@ -2,62 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0093",
-      "status": "todo",
-      "title": "Add CLI cancel/sigint handling for long-running operations",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "ux",
-        "signal-handling"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/search.rs",
-        "crates/cli/Cargo.toml",
-        "crates/cli/tests/",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "CLI search.rs:32-44 shows wait boolean passed to client.search() with no user-facing progress feedback or cancellation during long searches",
-        "CLI main.rs:117-120 shows tokio::main runtime without any signal::ctrl_c() handler or cancellation token setup",
-        "Grep search for 'ctrl_c|SIGINT|SIGTERM|signal' in crates/cli/ shows zero matches - no signal handling exists",
-        "Client library wait_for_job in search.rs:228-244 uses tokio::time::sleep for polling but no cancellation support",
-        "No tests for signal handling in crates/cli/tests/ (13 test files, none cover cancellation)",
-        "Users see tokio panic errors when pressing Ctrl+C during async operations - no graceful shutdown",
-        "TUI has similar issue noted in RQ-0066 cache: 'Tail loop runs infinitely; could add signal handling'",
-        "list_all.rs shows tokio::time::timeout pattern (RQ-0099) that could be applied to search wait for cancellation"
-      ],
-      "plan": [
-        "Add tokio::signal::ctrl_c() handler in crates/cli/src/main.rs that sets Arc<AtomicBool> cancellation flag",
-        "Pass cancellation token (Arc<AtomicBool>) to all async command run() functions via CLI struct or run_command wrapper",
-        "Update search.rs run() to use tokio::select! with both search future and ctrl_c() signal for concurrent cancellation",
-        "Update all long-running commands (search with --wait, list_all, logs with --tail) to check cancellation token periodically",
-        "Add graceful shutdown: on SIGINT, print 'Operation cancelled by user' to stderr, exit with code 130 (standard for Ctrl+C)",
-        "Use anyhow::Context with 'cancelled by user' message for cancellation errors in Result types",
-        "Add integration tests using tokio::time::timeout and tokio::spawn to simulate ctrl_c signal during async operations",
-        "Add test 'test_search_cancellation' in crates/cli/tests/search_tests.rs: spawn search task, send simulated ctrl_c, verify graceful exit",
-        "Update docs/usage.md with 'Cancellation' section explaining Ctrl+C behavior and graceful shutdown for long-running operations",
-        "Run make ci to verify all existing tests pass after signal handling changes"
-      ],
-      "notes": [
-        "tokio::signal::ctrl_c() is part of tokio standard library, no new dependency needed",
-        "Use tokio::select! macro to race between operation completion and ctrl_c signal for clean cancellation",
-        "Exit code 130 is standard Unix convention for SIGINT (128 + 2), matching curl and other CLIs",
-        "Consider using tokio_util::sync::CancellationToken for more robust cancellation across spawned tasks",
-        "Client library already has timeout support in wait_for_job (search.rs:228-244), could integrate cancellation with existing timeout logic",
-        "list_all.rs timeout pattern (tokio::time::timeout wrapper) in RQ-0099 shows precedent for adding cancellation to async operations",
-        "TUI has similar signal handling gap (RQ-0066 cache notes 'could add signal handling' for tail loop)",
-        "Signal handling should apply to all long-running CLI commands, not just search: list_all (9 fetch ops), logs --tail, search --wait",
-        "Print cancellation message to stderr to avoid contaminating stdout formatted output (RQ-0092 notes show stderr pattern for user feedback)"
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-24T21:00:00Z",
-      "updated_at": "2026-01-25T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0094",
       "status": "todo",
       "title": "Add performance tests for TUI search results rendering",

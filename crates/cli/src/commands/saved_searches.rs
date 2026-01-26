@@ -44,6 +44,7 @@ pub async fn run(
     command: SavedSearchesCommand,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     match command {
         SavedSearchesCommand::List { count } => {

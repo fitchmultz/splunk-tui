@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[allow(clippy::too_many_arguments)]
@@ -17,6 +18,7 @@ pub async fn run(
     output_format: &str,
     quiet: bool,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -31,37 +33,39 @@ pub async fn run(
 
     info!("Connecting to {}", client.base_url());
 
-    let results = if wait {
+    let results: Vec<serde_json::Value> = if wait {
         let progress = crate::progress::SearchProgress::new(!quiet, "Waiting for search");
 
         let mut on_progress = |done_progress: f64| {
             progress.set_fraction(done_progress);
         };
 
-        let results = client
-            .search_with_progress(
+        let results: Vec<serde_json::Value> = tokio::select! {
+            res = client.search_with_progress(
                 &query,
                 true,
                 earliest,
                 latest,
                 Some(max_results as u64),
                 if quiet { None } else { Some(&mut on_progress) },
-            )
-            .await?;
+            ) => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        };
 
         progress.finish();
         results
     } else {
-        client
-            .search_with_progress(
+        tokio::select! {
+            res = client.search_with_progress(
                 &query,
                 false,
                 earliest,
                 latest,
                 Some(max_results as u64),
                 None,
-            )
-            .await?
+            ) => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        }
     };
 
     // Parse output format

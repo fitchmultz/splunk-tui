@@ -45,3 +45,7 @@ tempfile = "3"
 keyring = { workspace = true }
 wiremock = { workspace = true }
 serde_json = { workspace = true }
+
+# Unix-only tests send SIGINT to child processes.
+[target.'cfg(unix)'.dev-dependencies]
+libc = "0.2"

@@ -16,6 +16,7 @@ pub async fn run(
     page_size: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!(
         "Fetching cluster information (detailed: {}, offset: {}, page_size: {})",

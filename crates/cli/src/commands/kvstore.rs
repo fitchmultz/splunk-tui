@@ -10,6 +10,7 @@ pub async fn run(
     config: splunk_config::Config,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Fetching KVStore status...");
 

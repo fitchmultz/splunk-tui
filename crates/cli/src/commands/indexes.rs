@@ -13,6 +13,7 @@ pub async fn run(
     offset: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing indexes (count: {}, offset: {})", count, offset);
 

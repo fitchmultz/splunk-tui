@@ -41,6 +41,7 @@ pub async fn run(
     command: AppsCommand,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     match command {
         AppsCommand::List { count } => {

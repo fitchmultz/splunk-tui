@@ -45,6 +45,7 @@ test-unit:
 test-integration:
 	cargo test -p splunk-client --test integration_tests
 	cargo test -p splunk-cli --test apps_tests
+	cargo test -p splunk-cli --test cancellation_tests
 	cargo test -p splunk-cli --test cluster_pagination_tests
 	cargo test -p splunk-cli --test config_loading_tests
 	cargo test -p splunk-cli --test config_tests
