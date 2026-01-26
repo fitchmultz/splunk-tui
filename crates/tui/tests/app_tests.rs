@@ -2191,6 +2191,54 @@ fn test_batch_confirm_with_enter() {
 }
 
 // ============================================================================
+// Performance Tests
+// ============================================================================
+
+#[test]
+fn test_search_rendering_with_large_dataset() {
+    use ratatui::{Terminal, backend::TestBackend};
+    use std::time::Instant;
+
+    let dataset_sizes = [10, 100, 1000, 10000];
+
+    for size in dataset_sizes {
+        let mut app = App::new(None);
+        app.current_screen = CurrentScreen::Search;
+
+        let results: Vec<serde_json::Value> = (0..size)
+            .map(|i| {
+                serde_json::json!({
+                    "_time": format!("2024-01-15T10:30:{:02}.000Z", i % 60),
+                    "level": "INFO",
+                    "message": format!("Event number {}", i),
+                })
+            })
+            .collect();
+
+        app.set_search_results(results);
+        app.search_scroll_offset = 0;
+
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).expect("Failed to create terminal");
+
+        let start = Instant::now();
+        terminal.draw(|f| app.render(f)).expect("Failed to render");
+        let duration = start.elapsed();
+
+        let max_expected_ms = 10;
+        assert!(
+            duration.as_millis() < max_expected_ms,
+            "Rendering {} results took {:?}, expected < {:?}ms",
+            size,
+            duration,
+            max_expected_ms
+        );
+    }
+}
+
+// ============================================================================
+// Pagination Tests
+// ============================================================================
 // Pagination Tests
 // ============================================================================
 
@@ -2551,5 +2599,101 @@ fn test_append_search_results_when_total_is_none_partial_page() {
     assert!(
         !app.search_has_more_results,
         "Should not have more when total is None and page was partial"
+    );
+}
+
+#[test]
+fn test_pagination_trigger_at_threshold() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_page_size = 50;
+    app.search_has_more_results = true;
+    app.loading = false;
+
+    let results: Vec<serde_json::Value> = (0..50).map(|i| serde_json::json!({"id": i})).collect();
+    app.append_search_results(results, Some(200));
+
+    app.search_scroll_offset = 40;
+
+    let action = app.maybe_fetch_more_results();
+    assert!(
+        action.is_some(),
+        "Should trigger LoadMoreSearchResults when within threshold"
+    );
+
+    if let Some(Action::LoadMoreSearchResults { sid, offset, count }) = action {
+        assert_eq!(sid, "test_sid");
+        assert_eq!(offset, 50);
+        assert_eq!(count, 50);
+    } else {
+        panic!("Expected LoadMoreSearchResults action");
+    }
+}
+
+#[test]
+fn test_pagination_no_trigger_before_threshold() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_page_size = 50;
+    app.search_has_more_results = true;
+    app.loading = false;
+
+    let results: Vec<serde_json::Value> = (0..50).map(|i| serde_json::json!({"id": i})).collect();
+    app.append_search_results(results, Some(200));
+
+    app.search_scroll_offset = 30;
+
+    let action = app.maybe_fetch_more_results();
+    assert!(
+        action.is_none(),
+        "Should NOT trigger LoadMoreSearchResults before threshold"
+    );
+}
+
+#[test]
+fn test_pagination_no_trigger_when_all_loaded() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_page_size = 50;
+    app.search_has_more_results = false;
+    app.loading = false;
+
+    let results: Vec<serde_json::Value> = (0..50).map(|i| serde_json::json!({"id": i})).collect();
+    app.append_search_results(results, Some(50));
+
+    app.search_scroll_offset = 40;
+
+    let action = app.maybe_fetch_more_results();
+    assert!(
+        action.is_none(),
+        "Should NOT trigger LoadMoreSearchResults when all results loaded"
+    );
+}
+
+#[test]
+fn test_pagination_no_trigger_while_loading() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    app.search_sid = Some("test_sid".to_string());
+    app.search_results_page_size = 50;
+    app.search_has_more_results = true;
+    app.loading = true;
+
+    let results: Vec<serde_json::Value> = (0..50).map(|i| serde_json::json!({"id": i})).collect();
+    app.append_search_results(results, Some(200));
+
+    app.search_scroll_offset = 40;
+
+    let action = app.maybe_fetch_more_results();
+    assert!(
+        action.is_none(),
+        "Should NOT trigger LoadMoreSearchResults while loading"
     );
 }

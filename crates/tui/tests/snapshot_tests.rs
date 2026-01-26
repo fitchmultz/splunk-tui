@@ -288,6 +288,54 @@ fn snapshot_search_screen_empty() {
 }
 
 #[test]
+fn snapshot_virtual_window_scrolling() {
+    {
+        let mut harness = TuiHarness::new(80, 24);
+        harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+        harness.app.search_input = "test query".to_string();
+
+        let results: Vec<serde_json::Value> = (0..100)
+            .map(|i| serde_json::json!({"id": i, "message": format!("Message {}", i)}))
+            .collect();
+
+        harness.app.set_search_results(results);
+        harness.app.search_scroll_offset = 0;
+
+        insta::assert_snapshot!(harness.render());
+    }
+
+    {
+        let mut harness = TuiHarness::new(80, 24);
+        harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+        harness.app.search_input = "test query".to_string();
+
+        let results: Vec<serde_json::Value> = (0..100)
+            .map(|i| serde_json::json!({"id": i, "message": format!("Message {}", i)}))
+            .collect();
+
+        harness.app.set_search_results(results);
+        harness.app.search_scroll_offset = 50;
+
+        insta::assert_snapshot!(harness.render());
+    }
+
+    {
+        let mut harness = TuiHarness::new(80, 24);
+        harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+        harness.app.search_input = "test query".to_string();
+
+        let results: Vec<serde_json::Value> = (0..100)
+            .map(|i| serde_json::json!({"id": i, "message": format!("Message {}", i)}))
+            .collect();
+
+        harness.app.set_search_results(results);
+        harness.app.search_scroll_offset = 90;
+
+        insta::assert_snapshot!(harness.render());
+    }
+}
+
+#[test]
 fn snapshot_indexes_screen_empty() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
