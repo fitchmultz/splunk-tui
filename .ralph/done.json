@@ -4655,6 +4655,49 @@
       "completed_at": "2026-01-27T20:21:21.333128000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0133",
+      "status": "done",
+      "title": "Docs and metadata polish: align README/user-guide with current keymap and repo metadata",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "polish",
+        "metadata"
+      ],
+      "scope": [
+        "README.md",
+        "docs/user-guide.md",
+        "docs/usage.md",
+        "Cargo.toml"
+      ],
+      "evidence": [
+        "Cargo.toml line 11 uses placeholder URL: https://github.com/example/splunk-tui",
+        "README.md lines 111-118 list numeric navigation (1-5) which is out of sync with the 1-9 navigation supported in the TUI (and documented in user-guide.md).",
+        "README.md and docs/user-guide.md have hardcoded keybinding lists that are not managed by 'make generate', leading to drift from crates/tui/src/input/keymap/.",
+        "docs/usage.md is the only file with <!-- BEGIN TUI KEYBINDINGS --> markers managed by the generate-tui-docs tool."
+      ],
+      "plan": [
+        "Update workspace.package.repository in Cargo.toml to the correct repository URL.",
+        "Align README.md and docs/user-guide.md with the source-of-truth keymap by either linking to docs/usage.md or adding markers and updating generate-tui-docs.rs to support them.",
+        "Run 'make generate' and 'make lint-docs' to ensure consistency across all documentation files.",
+        "Verify all TUI screen navigation references (1-9) are consistent across all docs."
+      ],
+      "notes": [
+        "The generate-tui-docs tool currently only targets docs/usage.md. Consider expanding it to support README.md if we want to keep a summary there.",
+        "Updated Cargo.toml repository URL to github.com/fitchmultz/splunk-tui",
+        "Enhanced generate-tui-docs to support multiple targets (README, user-guide, usage)",
+        "Aligned documentation with source-of-truth keymap via markers",
+        "Removed obsolete numeric navigation hints (1-9) from all docs",
+        "Verified consistency via make ci and make lint-docs"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T20:36:40.153721000Z",
+      "completed_at": "2026-01-27T20:36:40.153721000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -1,7 +1,7 @@
 //! Generate TUI keybinding documentation from the centralized keymap.
 //!
 //! Responsibilities:
-//! - Replace the marked keybinding block in docs/usage.md with generated content.
+//! - Replace the marked keybinding block in documentation files with generated content.
 //! - Provide a stable, repeatable output for local CI.
 //!
 //! Non-responsibilities:
@@ -9,7 +9,7 @@
 //! - Validating runtime TUI behavior.
 //!
 //! Invariants:
-//! - The markers must exist in the target file.
+//! - The markers must exist in all target files.
 //! - Generated content is derived from the keymap only.
 
 use std::fs;
@@ -17,25 +17,26 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-/// Generate the TUI keybinding block in docs/usage.md.
+/// Generate the TUI keybinding block in documentation files.
 #[derive(Debug, Parser)]
 #[command(
     name = "generate-tui-docs",
-    about = "Regenerate the TUI keybinding section in docs/usage.md",
+    about = "Regenerate the TUI keybinding section in documentation files",
     after_help = "Examples:\n  generate-tui-docs\n  generate-tui-docs --path docs/usage.md\n"
 )]
 struct Args {
-    /// Path to the usage guide markdown file.
-    #[arg(long, default_value = "docs/usage.md")]
-    path: PathBuf,
+    /// Paths to the markdown files to update. Defaults to README.md and standard docs.
+    #[arg(long)]
+    path: Vec<PathBuf>,
 
-    /// Check if the file is up to date without writing.
+    /// Check if the files are up to date without writing.
     #[arg(long)]
     check: bool,
 }
 
 const START_MARKER: &str = "<!-- BEGIN TUI KEYBINDINGS -->";
 const END_MARKER: &str = "<!-- END TUI KEYBINDINGS -->";
+const DEFAULT_PATHS: &[&str] = &["README.md", "docs/usage.md", "docs/user-guide.md"];
 
 fn replace_keybinding_block(content: &str, generated: &str) -> anyhow::Result<String> {
     let Some(start_idx) = content.find(START_MARKER) else {
@@ -56,11 +57,19 @@ fn replace_keybinding_block(content: &str, generated: &str) -> anyhow::Result<St
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let content = fs::read_to_string(&args.path)?;
-    let generated = splunk_tui::render_tui_keybinding_docs();
-    let new_content = replace_keybinding_block(&content, &generated)?;
+    let paths = if args.path.is_empty() {
+        DEFAULT_PATHS.iter().map(PathBuf::from).collect()
+    } else {
+        args.path
+    };
 
-    ensure_up_to_date(&args.path, &content, &new_content, args.check)?;
+    let generated = splunk_tui::render_tui_keybinding_docs();
+
+    for path in paths {
+        let content = fs::read_to_string(&path)?;
+        let new_content = replace_keybinding_block(&content, &generated)?;
+        ensure_up_to_date(&path, &content, &new_content, args.check)?;
+    }
 
     Ok(())
 }

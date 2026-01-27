@@ -158,17 +158,104 @@ Launch the interactive interface with `splunk-tui`.
 
 ### Navigation Basics
 
-- **Switch Screens**: Use keys `1` through `9`.
-- **Global Shortcuts**: 
-    - `q`: Quit.
-    - `?`: Open help popup.
-    - `r`: Refresh current screen data.
+<!-- BEGIN TUI KEYBINDINGS -->
+
+### Navigation
+
+- `?`: Help
+- `q`: Quit
+- `Tab`: Next screen
+- `Shift+Tab`: Previous screen
+- `Ctrl+c`: Copy to clipboard
+
+### Screen Specific Shortcuts
+
+#### Search Screen
+- `Enter`: Run search
+- `Ctrl+e`: Export results
+- `Ctrl+c`: Copy query (or current result)
+- `Up/Down`: Navigate history (query)
+- `Ctrl+j/k`: Scroll results (while typing)
+- `PgDn`: Page down
+- `PgUp`: Page up
+- `Home`: Go to top
+- `End`: Go to bottom
+- `j,k,...`: Type search query
+
+#### Jobs Screen
+- `r`: Refresh jobs
+- `Ctrl+e`: Export jobs
+- `Ctrl+c`: Copy selected SID
+- `a`: Toggle auto-refresh
+- `s`: Cycle sort column
+- `/`: Filter jobs
+- `Space`: Toggle job selection
+- `c`: Cancel selected job(s)
+- `d`: Delete selected job(s)
+- `j/k or Up/Down`: Navigate list
+- `Enter`: Inspect job
+
+#### Job Details (Inspect) Screen
+- `Esc`: Back to jobs
+- `Ctrl+c`: Copy job SID
+
+#### Indexes Screen
+- `r`: Refresh indexes
+- `Ctrl+e`: Export indexes
+- `Ctrl+c`: Copy selected index name
+- `j/k or Up/Down`: Navigate list
+
+#### Cluster Screen
+- `r`: Refresh cluster info
+- `Ctrl+e`: Export cluster info
+- `Ctrl+c`: Copy cluster ID
+
+#### Health Screen
+- `r`: Refresh health status
+- `Ctrl+e`: Export health info
+- `Ctrl+c`: Copy health status
+
+#### Saved Searches Screen
+- `r`: Refresh saved searches
+- `Ctrl+e`: Export saved searches
+- `Ctrl+c`: Copy selected saved search name
+- `Enter`: Run selected search
+- `j/k or Up/Down`: Navigate list
+
+#### Internal Logs Screen
+- `r`: Refresh logs
+- `Ctrl+e`: Export logs
+- `a`: Toggle auto-refresh
+- `Ctrl+c`: Copy selected log message
+- `j/k or Up/Down`: Navigate list
+
+#### Apps Screen
+- `r`: Refresh apps
+- `Ctrl+e`: Export apps
+- `Ctrl+c`: Copy selected app name
+- `j/k or Up/Down`: Navigate list
+
+#### Users Screen
+- `r`: Refresh users
+- `Ctrl+e`: Export users
+- `Ctrl+c`: Copy selected username
+- `j/k or Up/Down`: Navigate list
+
+#### Settings Screen
+- `t`: Cycle theme
+- `a`: Toggle auto-refresh
+- `s`: Cycle sort column
+- `d`: Toggle sort direction
+- `c`: Clear search history
+- `r`: Reload settings
+<!-- END TUI KEYBINDINGS -->
+
 - **Scrolling**:
     - `j` / `k` or Arrow Keys: Move selection.
     - `PageUp` / `PageDown`: Scroll through long lists.
     - `Home` / `End`: Jump to top or bottom.
 
-### The Search Screen (Key `1`)
+### The Search Screen
 
 The Search screen is optimized for rapid iteration.
 
@@ -177,7 +264,7 @@ The Search screen is optimized for rapid iteration.
 - **Result Scrolling**: Use `Ctrl+j` and `Ctrl+k` to scroll the results while keeping focus on the input box.
 - **Viewing Results**: Results are rendered as pretty-printed JSON objects.
 
-### The Indexes Screen (Key `2`)
+### The Indexes Screen
 
 View and explore Splunk indexes.
 
@@ -185,7 +272,7 @@ View and explore Splunk indexes.
 - **Refresh**: Press `r` to reload the indexes list.
 - **Display**: Shows index name, current size, total size, and event count.
 
-### The Jobs Screen (Key `4`)
+### The Jobs Screen
 
 Manage your search lifecycle in real-time.
 
@@ -195,14 +282,14 @@ Manage your search lifecycle in real-time.
 - **Inspecting**: Select a job and press `Enter` to see full details in "Inspect Mode". Press `Esc` to return.
 - **Lifecycle**: Press `c` to cancel or `d` to delete a selected job (requires confirmation).
 
-### The Cluster Screen (Key `3`)
+### The Cluster Screen
 
 View Splunk cluster configuration and peer information.
 
 - **Refresh**: Press `r` to reload cluster information.
 - **Display**: Shows cluster master URI, replication status, and peer details.
 
-### The Health Screen (Key `5`)
+### The Health Screen
 
 Monitor Splunk system health status.
 
@@ -210,7 +297,7 @@ Monitor Splunk system health status.
 - **Refresh**: Press `r` to pull the latest metrics.
 - **Sections**: The Health screen covers `splunkd` health, license usage, KVStore status, and log parsing issues.
 
-### The Saved Searches Screen (Key `6`)
+### The Saved Searches Screen
 
 Browse and run pre-configured saved searches from your Splunk instance.
 
@@ -218,7 +305,7 @@ Browse and run pre-configured saved searches from your Splunk instance.
 - **Running a Search**: Select a saved search and press `Enter` to load it into the Search screen and execute it automatically.
 - **Refresh**: Press `r` to reload the saved searches list.
 
-### The Internal Logs Screen (Key `7`)
+### The Internal Logs Screen
 
 Monitor Splunk's internal logs in real-time.
 
@@ -227,7 +314,7 @@ Monitor Splunk's internal logs in real-time.
 - **Refresh**: Press `r` to pull the latest log entries.
 - **Content**: Displays log level, timestamp, source component, and message.
 
-### The Apps Screen (Key `8`)
+### The Apps Screen
 
 View and manage installed Splunk applications.
 
@@ -235,7 +322,7 @@ View and manage installed Splunk applications.
 - **Refresh**: Press `r` to reload the apps list.
 - **Display**: Shows app name, label, version, and whether it is disabled.
 
-### The Users Screen (Key `9`)
+### The Users Screen
 
 View user accounts and their roles.
 

@@ -110,22 +110,105 @@ splunk-tui
 
 ### Keybindings
 
-- `1` - Switch to Search screen
-- `2` - Switch to Indexes screen
-- `3` - Switch to Cluster screen
-- `4` - Switch to Jobs screen
-- `5` - Switch to Health screen
-- `q` - Quit
-- `r` - Refresh current screen data
-- `?` - Show help popup
+<!-- BEGIN TUI KEYBINDINGS -->
+
+### Navigation
+
+- `?`: Help
+- `q`: Quit
+- `Tab`: Next screen
+- `Shift+Tab`: Previous screen
+- `Ctrl+c`: Copy to clipboard
+
+### Screen Specific Shortcuts
+
+#### Search Screen
+- `Enter`: Run search
+- `Ctrl+e`: Export results
+- `Ctrl+c`: Copy query (or current result)
+- `Up/Down`: Navigate history (query)
+- `Ctrl+j/k`: Scroll results (while typing)
+- `PgDn`: Page down
+- `PgUp`: Page up
+- `Home`: Go to top
+- `End`: Go to bottom
+- `j,k,...`: Type search query
+
+#### Jobs Screen
+- `r`: Refresh jobs
+- `Ctrl+e`: Export jobs
+- `Ctrl+c`: Copy selected SID
+- `a`: Toggle auto-refresh
+- `s`: Cycle sort column
+- `/`: Filter jobs
+- `Space`: Toggle job selection
+- `c`: Cancel selected job(s)
+- `d`: Delete selected job(s)
+- `j/k or Up/Down`: Navigate list
+- `Enter`: Inspect job
+
+#### Job Details (Inspect) Screen
+- `Esc`: Back to jobs
+- `Ctrl+c`: Copy job SID
+
+#### Indexes Screen
+- `r`: Refresh indexes
+- `Ctrl+e`: Export indexes
+- `Ctrl+c`: Copy selected index name
+- `j/k or Up/Down`: Navigate list
+
+#### Cluster Screen
+- `r`: Refresh cluster info
+- `Ctrl+e`: Export cluster info
+- `Ctrl+c`: Copy cluster ID
+
+#### Health Screen
+- `r`: Refresh health status
+- `Ctrl+e`: Export health info
+- `Ctrl+c`: Copy health status
+
+#### Saved Searches Screen
+- `r`: Refresh saved searches
+- `Ctrl+e`: Export saved searches
+- `Ctrl+c`: Copy selected saved search name
+- `Enter`: Run selected search
+- `j/k or Up/Down`: Navigate list
+
+#### Internal Logs Screen
+- `r`: Refresh logs
+- `Ctrl+e`: Export logs
+- `a`: Toggle auto-refresh
+- `Ctrl+c`: Copy selected log message
+- `j/k or Up/Down`: Navigate list
+
+#### Apps Screen
+- `r`: Refresh apps
+- `Ctrl+e`: Export apps
+- `Ctrl+c`: Copy selected app name
+- `j/k or Up/Down`: Navigate list
+
+#### Users Screen
+- `r`: Refresh users
+- `Ctrl+e`: Export users
+- `Ctrl+c`: Copy selected username
+- `j/k or Up/Down`: Navigate list
+
+#### Settings Screen
+- `t`: Cycle theme
+- `a`: Toggle auto-refresh
+- `s`: Cycle sort column
+- `d`: Toggle sort direction
+- `c`: Clear search history
+- `r`: Reload settings
+<!-- END TUI KEYBINDINGS -->
 
 ### Screens
 
 **Search**: Enter SPL queries and view results
 **Indexes**: Browse and inspect indexes
 **Cluster**: View cluster status and peer information
-**Jobs**: Monitor and manage search jobs (cancel, delete, inspect)
-**Health**: Comprehensive health monitoring including server info, splunkd health, license usage, KVStore status, and log parsing health
+**Jobs**: Monitor and manage search jobs
+**Health**: Comprehensive health monitoring
 
 ## Documentation
 

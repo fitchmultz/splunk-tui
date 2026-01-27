@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0133",
-      "status": "todo",
-      "title": "Docs and metadata polish: align README/user-guide with current keymap and repo metadata",
-      "priority": "medium",
-      "tags": [
-        "docs",
-        "polish"
-      ],
-      "scope": [
-        "README.md",
-        "docs/user-guide.md",
-        "docs/usage.md",
-        "Cargo.toml"
-      ],
-      "evidence": [
-        "Cargo.toml workspace.package.repository is set to a placeholder URL (https://github.com/example/splunk-tui).",
-        "README.md TUI keybindings section lists numeric screen switching (1-5) and other shortcuts that are likely out of sync with the generated keybinding block in docs/usage.md.",
-        "docs/user-guide.md describes numeric navigation (1 through 9) and other behaviors that can drift from the centralized keymap and current runtime."
-      ],
-      "plan": [
-        "Update Cargo.toml repository metadata to the real GitHub URL.",
-        "Update README.md and docs/user-guide.md to derive keybinding references from docs/usage.md or a shared source of truth.",
-        "Add a small docs check (optional) ensuring README/user-guide do not mention removed keybindings.",
-        "Spot-check rendered Markdown output for readability and correctness."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0129",
       "status": "todo",
       "title": "Improve HTTP retry strategy: handle transient reqwest errors and 5xx responses",
