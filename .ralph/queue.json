@@ -1,4 +1,615 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0100",
+      "status": "todo",
+      "title": "Make quit/exit work end-to-end (keyboard + footer click)",
+      "priority": "critical",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs",
+        "make test -p splunk-tui",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs: the main loop only breaks when an incoming channel message is Action::Quit; Action::Quit returned from app.handle_input() is never treated as a quit signal.",
+        "crates/tui/src/app.rs: multiple input handlers return Some(Action::Quit) on KeyCode::Char('q'), and footer click hit-testing can return Some(Action::Quit).",
+        "crates/tui/src/ui/popup.rs + docs/usage.md: the UI and docs advertise q as Quit, but the process does not exit because the event loop does not act on Quit emitted by the App state machine."
+      ],
+      "plan": [
+        "Refactor main loop to treat post-handle_input Action::Quit as an immediate shutdown path (same as direct Action::Quit).",
+        "Ensure shutdown path always persists state (ConfigManager::save) and restores terminal modes.",
+        "Add a regression test that exercises the quit path end-to-end (likely by extracting the loop body into a testable function).",
+        "Run targeted tests for splunk-tui and then make ci."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0106",
+      "status": "todo",
+      "title": "Stop logging sensitive Action payloads to disk (queries, clipboard contents)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "security",
+        "logging",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "logs/ (runtime)",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs: tracing::info!(?action, ...) logs every Action using Debug, including Action::CopyToClipboard(String) and Action::RunSearch(String).",
+        "crates/tui/src/action.rs: Action variants include string payloads that can contain user data (queries, copied JSON results).",
+        "Repo guidelines: never log secrets; current logging can capture sensitive content into logs/splunk-tui.log."
+      ],
+      "plan": [
+        "Replace the unconditional action Debug log with structured, redacted logging (e.g., log Action discriminant only, and omit/size-cap string payloads).",
+        "Add tests around the redaction helper (unit test) to ensure secrets/large payloads are not logged.",
+        "Run make ci to ensure no regressions."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0107",
+      "status": "todo",
+      "title": "Process only KeyEventKind::Press to avoid double-triggering input",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "keybindings",
+        "bug",
+        "crossterm"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs: EventStream forwards every Event::Key(key) directly into the app without filtering by key.kind.",
+        "crates/tui/src/app.rs: input handlers ignore key.kind and operate purely on key.code/modifiers, which risks processing Release/Repeat events as real input when enabled by the terminal.",
+        "crates/tui/tests/helpers.rs: tests create KeyEvent via KeyEvent::new, which defaults to Press and does not cover Release/Repeat behavior."
+      ],
+      "plan": [
+        "Filter key events in the input task (recommended) or in App::handle_input to accept only KeyEventKind::Press.",
+        "Add tests constructing KeyEvent with non-Press kinds (where supported) to ensure they are ignored.",
+        "Confirm typing and navigation no longer double-fire under terminals that emit Release/Repeat."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0108",
+      "status": "todo",
+      "title": "Centralize keybinding handling (reduce per-screen duplication and drift)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "keybindings",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: every handle_*_input repeats the same global bindings (q, 0-9 navigation, ? help), creating many places for inconsistency.",
+        "crates/tui/src/ui/popup.rs + docs/usage.md: help/docs are maintained separately from the code paths that implement keybindings, enabling drift.",
+        "crates/tui/src/action.rs: Action enum already suggests a unified input/action protocol, but Search screen mutates state directly instead of emitting typed actions, adding inconsistency."
+      ],
+      "plan": [
+        "Define a single keymap layer (global + per-screen) that maps KeyEvent -> semantic intent.",
+        "Refactor App input handling to route through the keymap and eliminate duplicated match arms.",
+        "Have help/docs generation pull from the same keymap, and update tests accordingly.",
+        "Run make test and make ci."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0102",
+      "status": "todo",
+      "title": "Replace digit-based screen navigation while typing (use Tab/Shift+Tab or Alt+digits)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "navigation"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/src/app.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: per-screen handlers map KeyCode::Char('0'..'9') to screen navigation, which conflicts with Search query entry where digits are legitimate query characters.",
+        "crates/tui/src/app.rs: footer displays \"1:Search ... 0:Settings\" as primary navigation, reinforcing digit bindings that block search entry today.",
+        "docs/usage.md: TUI navigation section documents 0-9 screen switching as the primary mechanism."
+      ],
+      "plan": [
+        "Pick a new global navigation scheme that does not conflict with text entry (recommended: Tab/Shift+Tab for next/prev screen; keep mouse footer click as well).",
+        "Implement the new scheme across all screens (App input handlers + footer/help strings).",
+        "Update docs/usage.md and in-app help popup to match.",
+        "Add tests verifying navigation works from Search while preserving query typing."
+      ],
+      "notes": [
+        "This is intentionally allowed to be a breaking change; prioritize a coherent, non-conflicting keymap."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0103",
+      "status": "todo",
+      "title": "Rebind export so it never steals text input (Search + future text fields)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "export"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: Search screen uses unmodified \"e\" as export shortcut inside handle_search_input, directly conflicting with freeform query entry.",
+        "crates/tui/src/ui/popup.rs: Help text advertises \"e\" export on Search, reinforcing the conflict.",
+        "crates/tui/tests/app_tests.rs: export popup tests are built around \"press e\" semantics."
+      ],
+      "plan": [
+        "Choose an export binding that is safe in text-entry contexts (e.g., Ctrl+E, Alt+E, or an explicit Command mode).",
+        "Update Search + other screens to use the new binding consistently.",
+        "Update help popup content and docs; update/extend tests to cover both success (has data) and failure (no data) paths.",
+        "Ensure export popup still supports typing full paths (including digits and \"e\") without conflicts."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0116",
+      "status": "todo",
+      "title": "Allow quitting from any popup/modal (consistent global quit behavior)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "popups"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: when PopupType::Help is open, KeyCode::Char('q') is treated as \"close help\" rather than quit, conflicting with the idea of global quit.",
+        "crates/tui/src/app.rs: ErrorDetails popup close handler accepts KeyCode::Char('e') as a close key (surprising/inconsistent), and confirmation popups use y/n without a consistent global quit.",
+        "crates/tui/src/ui/popup.rs: help text advertises q quit globally, but popup-specific behavior overrides it."
+      ],
+      "plan": [
+        "Define a true global quit key (recommended: Ctrl+Q) that always quits, even when a popup is open.",
+        "Ensure popup-local keys remain (Esc to close, y/n for confirms) but do not block global quit.",
+        "Add tests covering quit behavior from help popup, error details popup, and confirmation dialogs."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0101",
+      "status": "todo",
+      "title": "Fix Search query typing: stop consuming printable characters (e, digits, q, ?)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "search",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs",
+        "docs/usage.md",
+        "make test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: handle_search_input matches KeyCode::Char('e') before KeyCode::Char(c), consuming \"e\" during query entry (even when no results).",
+        "crates/tui/src/app.rs: handle_search_input maps KeyCode::Char('0'..'9') and KeyCode::Char('?') to navigation/help, preventing those characters from being typed into queries.",
+        "crates/tui/tests/app_tests.rs: export tests exercise \"press e\" behavior on Search, effectively baking in the current conflict between typing and commands."
+      ],
+      "plan": [
+        "Introduce an explicit Search input mode/focus (e.g., Query vs Results) so that printable characters always insert when Query is focused.",
+        "Move command shortcuts (export/help/nav/quit) behind modifiers or a command mode so Query focus can accept all needed characters.",
+        "Add tests covering character insertion for \"e\", digits, \"q\", and \"?\" in Query mode plus the expected command behavior in non-Query mode.",
+        "Update docs/usage.md Search section to reflect the new behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0104",
+      "status": "todo",
+      "title": "Fix Error Details UX contract (toast hint vs auto-popup vs keybinding)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "errors"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/app.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/toast.rs: error toasts render a hint \"Press 'e' for details\" when has_error is true.",
+        "crates/tui/src/main.rs: API error paths send Action::ShowErrorDetails immediately, which opens the error details popup without waiting for user intent.",
+        "crates/tui/src/app.rs: popup close handler for ErrorDetails accepts Esc/q/e, but PopupType::ErrorDetails default content says \"Press Esc or q to close\" (mismatch)."
+      ],
+      "plan": [
+        "Decide the intended UX: (A) toast-only until user opens details, or (B) auto-popup but remove the toast hint and align close keys.",
+        "Implement the chosen behavior consistently across all error sources (search, loads, job ops).",
+        "Add/adjust tests and snapshots to cover error toast rendering + opening/closing details.",
+        "Update docs/usage.md error handling section to match reality."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0105",
+      "status": "todo",
+      "title": "Make Help popup scrollable, left-aligned, and derived from actual keymap",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "help"
+      ],
+      "scope": [
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/popup.rs: Help content is a long static string rendered via Paragraph with center alignment and no scroll support, so it will truncate on typical terminal sizes.",
+        "crates/tui/tests/snapshot_tests.rs: snapshot_help_popup asserts a specific help rendering, so keymap changes require coordinated updates and better structure.",
+        "crates/tui/src/app.rs: help popup is opened via KeyCode::Char('?') in many handlers, but help content is not generated from those handlers, enabling drift."
+      ],
+      "plan": [
+        "Change help popup rendering to support scrolling (similar to error details popup) and left-align the content for readability.",
+        "Generate help content from a centralized keymap definition (or at least a single source of truth) to prevent drift.",
+        "Update snapshot tests for help (and add a smaller-terminal snapshot) to ensure content remains accessible.",
+        "Verify all help-close keys still work after keymap changes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0115",
+      "status": "todo",
+      "title": "Add per-screen footer hints (discoverability without opening Help)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "polish"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: footer currently shows only screen navigation and q:Quit, even though each screen has multiple important shortcuts (refresh/export/filter/etc).",
+        "crates/tui/src/ui/popup.rs: help content is long and modal; relying on it for basic discovery contributes to a \"rudimentary\" feel.",
+        "docs/usage.md: screen-specific shortcuts exist but are not surfaced in-app except via the help popup."
+      ],
+      "plan": [
+        "Define a small per-screen hint set (3-6 keys) and render it in the footer alongside navigation.",
+        "Ensure hints adapt when in text-input modes (e.g., Search Query focus vs Results focus).",
+        "Add snapshots for a few screens to lock in the footer hint layout across themes and terminal sizes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0109",
+      "status": "todo",
+      "title": "Fix footer mouse hit-testing (dynamic offsets, loading % width, small terminals)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "mouse",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/mod.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: handle_footer_click uses a hard-coded loading offset (18) and hard-coded column ranges for each tab.",
+        "crates/tui/src/app.rs: footer text includes format!(\" Loading... {:.0}% \", self.progress * 100.0) whose width varies (0% vs 100%), so the fixed offset can mis-route clicks.",
+        "crates/tui/src/app.rs tests: test_handle_mouse_footer_click covers only one static geometry and does not cover loading/progress or narrow widths."
+      ],
+      "plan": [
+        "Compute footer click targets from the actual rendered spans/strings (or a shared footer model) instead of fixed column math.",
+        "Add tests for click routing when loading is true at multiple progress values (0/9/10/100).",
+        "Ensure behavior is stable on small terminal widths (gracefully disable click targets when truncated)."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0110",
+      "status": "todo",
+      "title": "Add a visible cursor + basic line editing for Search query input",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/search.rs: renders the query text but does not place a terminal cursor or show caret position, making text entry feel opaque.",
+        "crates/tui/src/app.rs: search_input is a plain String with backspace-only editing; no cursor position tracking exists.",
+        "Repo-wide search: no uses of Frame::set_cursor, indicating cursor is never displayed."
+      ],
+      "plan": [
+        "Track a cursor index for Search query input (and any future text inputs) and render the cursor with Frame::set_cursor.",
+        "Implement minimal editing keys (Left/Right, Home/End for line, Backspace/Delete) without conflicting with navigation.",
+        "Update snapshots (Search screen) to validate cursor placement in a stable way, and add unit tests for editing behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0111",
+      "status": "todo",
+      "title": "Fix Search status messaging to reference the actual running query, not current input",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: Action::SearchComplete sets search_status using self.search_input, which can be edited while a search is running.",
+        "crates/tui/src/main.rs: Action::RunSearch captures query_clone for the running job, so the app already has a stable query string that can be stored/displayed.",
+        "crates/tui/src/app.rs: search_status is set to \"Running: {query}\" at submit time, but completion uses the (possibly changed) current input."
+      ],
+      "plan": [
+        "Introduce an explicit field for the active/running query and use it for status lines and completion summaries.",
+        "Add tests that modify search_input while loading and assert status still references the submitted query.",
+        "Ensure this integrates with the redesigned Search input mode."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0112",
+      "status": "todo",
+      "title": "Repair Search results viewport math (result-count vs line-count) and scrolling semantics",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "rendering",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/search.rs: available_height is computed in terminal rows, but visible_end is computed as search_scroll_offset + available_height where search_scroll_offset is treated as a result index.",
+        "crates/tui/src/ui/screens/search.rs: each result is pretty-printed and expanded into many Lines, so taking N results can exceed the viewport by an order of magnitude and make scrolling confusing.",
+        "crates/tui/src/app.rs: next_item/previous_item adjust search_scroll_offset by 1, implying result-based scrolling rather than line-based, which fights with the multi-line rendering."
+      ],
+      "plan": [
+        "Decide on a consistent scroll model (recommended: line-based scroll for the rendered text, with an optional selected-result index for copy/export actions).",
+        "Refactor Search rendering to compute visible window based on lines and apply Paragraph::scroll for performance.",
+        "Update navigation keys/tests/snapshots to reflect the new scroll behavior and ensure copy/export uses the intended selection."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0114",
+      "status": "todo",
+      "title": "Improve Jobs filter UX: Esc cancels edit without clearing existing filter",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "jobs",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/jobs.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: in jobs filtering branch, KeyCode::Esc exits filter mode and returns Action::ClearSearch, which clears any previously applied filter (no way to cancel an edit).",
+        "crates/tui/src/ui/screens/jobs.rs: when a filter is applied, UI says \"(Press ESC to clear)\", but the same Esc is also used while actively editing, conflating cancel vs clear.",
+        "crates/tui/tests/app_tests.rs: filter tests focus on apply/clear flows but do not cover cancel-edit semantics."
+      ],
+      "plan": [
+        "Track a previous filter value when entering filter edit mode so Esc can revert/cancel without clearing.",
+        "Reserve a distinct keybinding for clearing the applied filter (e.g., Ctrl+Esc or a dedicated \"clear\" key).",
+        "Update UI hint text and add tests for cancel vs clear."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0113",
+      "status": "todo",
+      "title": "Make Help and Docs consistent with runtime behavior (post-keymap change)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "docs",
+        "ux",
+        "keybindings"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "make ci"
+      ],
+      "evidence": [
+        "docs/usage.md: documents q Quit, e Export, and 0-9 navigation as primary controls; current runtime is already inconsistent (quit does not exit) and will change as keymap is redesigned.",
+        "crates/tui/src/ui/popup.rs: duplicates the same keybinding documentation as a static string, which can drift from code and from docs/usage.md.",
+        "crates/tui/tests/snapshot_tests.rs: snapshot_help_popup asserts a specific help rendering, requiring coordinated updates as help content changes."
+      ],
+      "plan": [
+        "After implementing the new keymap, update docs/usage.md TUI section to exactly match runtime behavior.",
+        "Ensure in-app help is generated from the same source of truth as docs (or at least kept in sync by tests).",
+        "Run make ci and visually review help + docs for completeness."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0117",
+      "status": "todo",
+      "title": "Add a future-proof keybinding configuration story (optional, post-stabilization)",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "config",
+        "future"
+      ],
+      "scope": [
+        "crates/config/",
+        "crates/tui/src/app.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "Current keybindings are hard-coded across App input handlers and the help popup text, making iteration risky and user customization impossible.",
+        "Splunk TUI already persists some UI state (theme, history, sort) and has a config system; keybinds could follow similar patterns once stabilized."
+      ],
+      "plan": [
+        "After stabilizing the default keymap, design a minimal config format for overriding a small subset (quit, help, export, next/prev screen).",
+        "Implement config loading/validation in crates/config with safe defaults and clear error messages.",
+        "Document customization in docs/usage.md and add tests for config parsing and fallback behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
