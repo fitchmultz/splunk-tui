@@ -158,6 +158,10 @@ impl App {
                         let new_state = HealthState::from_health_str(&health.health);
                         self.set_health_state(new_state);
                     }
+                    // Store server info for header display (RQ-0134)
+                    if let Some(ref server_info) = info.server_info {
+                        self.set_server_info(server_info);
+                    }
                     self.loading = false;
                 }
                 Err(e) => {
@@ -297,11 +301,12 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ConnectionContext;
     use splunk_client::models::{HealthCheckOutput, SplunkHealth};
 
     #[test]
     fn test_health_status_loaded_action_ok() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
 
         // Simulate receiving a healthy status
         let health = SplunkHealth {
@@ -316,7 +321,7 @@ mod tests {
 
     #[test]
     fn test_health_status_loaded_action_err() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.health_state = HealthState::Healthy;
 
         // Simulate error - should set to unhealthy
@@ -331,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_health_loaded_action_with_splunkd_health() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
 
         // Simulate receiving HealthCheckOutput with splunkd_health
         let health_output = HealthCheckOutput {
@@ -352,7 +357,7 @@ mod tests {
 
     #[test]
     fn test_set_health_state_healthy_to_unhealthy_emits_toast() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.health_state = HealthState::Healthy;
 
         // Set to unhealthy should emit a toast
@@ -368,7 +373,7 @@ mod tests {
 
     #[test]
     fn test_set_health_state_unknown_to_unhealthy_emits_no_toast() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         // Default state is Unknown
         assert_eq!(app.health_state, HealthState::Unknown);
 
@@ -381,7 +386,7 @@ mod tests {
 
     #[test]
     fn test_set_health_state_healthy_to_unknown_emits_no_toast() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.health_state = HealthState::Healthy;
 
         // Set to unknown should not emit a toast
@@ -393,7 +398,7 @@ mod tests {
 
     #[test]
     fn test_set_health_state_unhealthy_to_healthy_emits_no_toast() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.health_state = HealthState::Unhealthy;
 
         // Set to healthy should not emit a toast (only Healthy -> Unhealthy does)

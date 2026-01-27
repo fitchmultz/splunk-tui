@@ -122,16 +122,48 @@ pub struct App {
 
     // Layout tracking
     pub last_area: Rect,
+
+    // Connection context (RQ-0134)
+    /// Profile name used for this connection (from CLI --profile or SPLUNK_PROFILE env var)
+    pub profile_name: Option<String>,
+    /// Base URL of the Splunk server
+    pub base_url: Option<String>,
+    /// Auth mode display string (e.g., "token" or "session")
+    pub auth_mode: Option<String>,
+    /// Server version (fetched from server info)
+    pub server_version: Option<String>,
+    /// Server build (fetched from server info)
+    pub server_build: Option<String>,
+}
+
+/// Connection context for the TUI header display.
+///
+/// Contains static connection information passed at startup.
+/// Server version/build are fetched separately and populated later.
+#[derive(Debug, Clone, Default)]
+pub struct ConnectionContext {
+    /// Profile name (from --profile or SPLUNK_PROFILE env var)
+    pub profile_name: Option<String>,
+    /// Base URL of the Splunk server
+    pub base_url: String,
+    /// Auth mode display string ("token" or "session")
+    pub auth_mode: String,
 }
 
 impl Default for App {
     fn default() -> Self {
-        Self::new(None)
+        Self::new(None, ConnectionContext::default())
     }
 }
 
 impl App {
-    pub fn new(persisted: Option<PersistedState>) -> Self {
+    /// Create a new App instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `persisted` - Optional persisted state from previous runs
+    /// * `connection_ctx` - Connection context (profile, base_url, auth_mode)
+    pub fn new(persisted: Option<PersistedState>, connection_ctx: ConnectionContext) -> Self {
         let mut indexes_state = ratatui::widgets::ListState::default();
         indexes_state.select(Some(0));
 
@@ -231,6 +263,13 @@ impl App {
             current_error: None,
             error_scroll_offset: 0,
             last_area: Rect::default(),
+
+            // Connection context (RQ-0134)
+            profile_name: connection_ctx.profile_name,
+            base_url: Some(connection_ctx.base_url),
+            auth_mode: Some(connection_ctx.auth_mode),
+            server_version: None,
+            server_build: None,
         }
     }
 
@@ -261,6 +300,14 @@ impl App {
                 .push(Toast::warning("Splunk health status changed to unhealthy"));
         }
         self.health_state = new_state;
+    }
+
+    /// Set server info from health check (RQ-0134).
+    ///
+    /// Populates server version and build info for display in the header.
+    pub fn set_server_info(&mut self, server_info: &splunk_client::models::ServerInfo) {
+        self.server_version = Some(server_info.version.clone());
+        self.server_build = Some(server_info.build.clone());
     }
 
     /// Set search results (virtualization: formatting is deferred to render time).
@@ -420,7 +467,7 @@ mod tests {
 
     #[test]
     fn test_app_new_default() {
-        let app = App::new(None);
+        let app = App::new(None, ConnectionContext::default());
         assert_eq!(app.current_screen, CurrentScreen::Search);
         assert!(app.indexes_state.selected().is_some());
         assert!(app.jobs_state.selected().is_some());
@@ -428,7 +475,7 @@ mod tests {
 
     #[test]
     fn test_add_to_history() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
 
         app.add_to_history("query1".to_string());
         assert_eq!(app.search_history.len(), 1);
@@ -458,7 +505,7 @@ mod tests {
 
     #[test]
     fn test_load_action_for_screen() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
 
         app.current_screen = CurrentScreen::Indexes;
         assert!(matches!(

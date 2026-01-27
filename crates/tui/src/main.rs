@@ -27,7 +27,7 @@ use crossterm::{
 use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
 use splunk_tui::action::{Action, progress_callback_to_action_sender};
-use splunk_tui::app::App;
+use splunk_tui::app::{App, ConnectionContext};
 use splunk_tui::error_details::{build_search_error_details, search_error_message};
 use splunk_tui::ui::ToastLevel;
 use std::path::PathBuf;
@@ -169,8 +169,23 @@ async fn main() -> Result<()> {
         max_results: search_default_config.max_results,
     };
 
+    // Build connection context for TUI header display (RQ-0134)
+    let connection_ctx = ConnectionContext {
+        profile_name: cli
+            .profile
+            .clone()
+            .or_else(|| ConfigLoader::env_var_or_none("SPLUNK_PROFILE")),
+        base_url: config.connection.base_url.clone(),
+        auth_mode: match &config.auth.strategy {
+            ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),
+            ConfigAuthStrategy::SessionToken { username, .. } => {
+                format!("session ({username})")
+            }
+        },
+    };
+
     // Create app with persisted state (now includes env var overrides for search defaults)
-    let mut app = App::new(Some(persisted_state));
+    let mut app = App::new(Some(persisted_state), connection_ctx);
 
     // Spawn background health monitoring task (60-second interval)
     let tx_health = tx.clone();

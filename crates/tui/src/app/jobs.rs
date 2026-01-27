@@ -109,6 +109,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ConnectionContext;
     use crate::app::state::{SortColumn, SortDirection};
 
     fn create_test_job(sid: &str, is_done: bool, run_duration: f64) -> SearchJobStatus {
@@ -130,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_compare_jobs_for_sort_by_sid_asc() {
-        let app = App::new(None);
+        let app = App::new(None, ConnectionContext::default());
         let job_a = create_test_job("job1", true, 1.0);
         let job_b = create_test_job("job2", true, 1.0);
 
@@ -142,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_compare_jobs_for_sort_by_status() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.sort_state.column = SortColumn::Status;
 
         let job_done = create_test_job("job1", true, 1.0);
@@ -161,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_compare_jobs_for_sort_by_duration_desc() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.sort_state.column = SortColumn::Duration;
         app.sort_state.direction = SortDirection::Desc;
 

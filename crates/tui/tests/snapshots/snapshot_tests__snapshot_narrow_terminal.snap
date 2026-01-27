@@ -4,12 +4,12 @@ expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────┐
 │Splunk TUI - Jobs | [?] Unknown                           │
+│ |                                                        │
 └──────────────────────────────────────────────────────────┘
 ┌Search Jobs───────────────────────────────────────────────┐
 │Sel  SID  Status          Duration   Results    Events    │
 │[ ]  sche Done            5.23s      100        500       │
 │[ ]  admi Running (65%)   12.45s     450        2000      │
-│                                                          │
 │                                                          │
 │                                                          │
 │                                                          │

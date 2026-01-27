@@ -25,7 +25,7 @@ pub(crate) mod input;
 
 // Re-export commonly used types at the crate root
 pub use action::Action;
-pub use app::{App, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT};
+pub use app::{App, ConnectionContext, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT};
 pub use error_details::ErrorDetails;
 pub use ui::popup::{Popup, PopupType};
 pub use ui::toast::{Toast, ToastLevel};

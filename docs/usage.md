@@ -510,6 +510,23 @@ splunk-tui --log-dir /var/log/splunk-tui --no-mouse
 splunk-tui --profile dev --log-dir ./logs --no-mouse
 ```
 
+### Connection Context Header
+
+The TUI header displays your current Splunk connection context to help you identify which environment you're working with:
+
+- **Profile**: The active profile name (from `--profile` or `SPLUNK_PROFILE` env var)
+- **Base URL**: The Splunk server URL (truncated if too long for the terminal width)
+- **Auth Mode**: Shows `token` for API token auth, or `session (username)` for session auth
+- **Server Version**: Splunk version number (fetched from server on startup)
+
+Example header display:
+```
+Splunk TUI - Jobs | [+] Healthy
+prod@splunk.company.com:8089 | token | v9.2.1
+```
+
+Before the server info is loaded, the header shows "Connecting..." as a placeholder.
+
 <!-- BEGIN TUI KEYBINDINGS -->
 
 ### Navigation

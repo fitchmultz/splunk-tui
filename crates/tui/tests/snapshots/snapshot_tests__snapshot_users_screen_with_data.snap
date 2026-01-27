@@ -4,12 +4,12 @@ expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Users | [?] Unknown                                              │
+│ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Users─────────────────────────────────────────────────────────────────────────┐
 │admin (System Administrator) - Roles: admin, can_delete - Last login: 17369562│
 │power_user (Power User) - Roles: power - Last login: 1736870400s              │
 │user_no_roles (Limited User) - Roles: no roles - Last login: never            │
-│                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │

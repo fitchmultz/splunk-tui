@@ -63,35 +63,41 @@ impl App {
             HealthState::Unknown => Style::default().fg(theme.health_unknown),
         };
 
-        let header = Paragraph::new(vec![Line::from(vec![
-            Span::styled(
-                "Splunk TUI",
-                Style::default()
-                    .fg(theme.title)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::raw(" - "),
-            Span::styled(
-                match self.current_screen {
-                    CurrentScreen::Search => "Search",
-                    CurrentScreen::Indexes => "Indexes",
-                    CurrentScreen::Cluster => "Cluster",
-                    CurrentScreen::Jobs => "Jobs",
-                    CurrentScreen::JobInspect => "Job Details",
-                    CurrentScreen::Health => "Health",
-                    CurrentScreen::SavedSearches => "Saved Searches",
-                    CurrentScreen::InternalLogs => "Internal Logs",
-                    CurrentScreen::Apps => "Apps",
-                    CurrentScreen::Users => "Users",
-                    CurrentScreen::Settings => "Settings",
-                },
-                Style::default().fg(theme.accent),
-            ),
-            Span::raw(" | "),
-            health_indicator,
-            Span::raw(" "),
-            Span::styled(health_label, health_label_style),
-        ])])
+        // Build connection context line for header (RQ-0134)
+        let connection_line = self.format_connection_context();
+
+        let header = Paragraph::new(vec![
+            Line::from(vec![
+                Span::styled(
+                    "Splunk TUI",
+                    Style::default()
+                        .fg(theme.title)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::raw(" - "),
+                Span::styled(
+                    match self.current_screen {
+                        CurrentScreen::Search => "Search",
+                        CurrentScreen::Indexes => "Indexes",
+                        CurrentScreen::Cluster => "Cluster",
+                        CurrentScreen::Jobs => "Jobs",
+                        CurrentScreen::JobInspect => "Job Details",
+                        CurrentScreen::Health => "Health",
+                        CurrentScreen::SavedSearches => "Saved Searches",
+                        CurrentScreen::InternalLogs => "Internal Logs",
+                        CurrentScreen::Apps => "Apps",
+                        CurrentScreen::Users => "Users",
+                        CurrentScreen::Settings => "Settings",
+                    },
+                    Style::default().fg(theme.accent),
+                ),
+                Span::raw(" | "),
+                health_indicator,
+                Span::raw(" "),
+                Span::styled(health_label, health_label_style),
+            ]),
+            Line::from(connection_line),
+        ])
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -363,5 +369,60 @@ impl App {
                 theme: &self.theme,
             },
         );
+    }
+
+    /// Format connection context for header display (RQ-0134).
+    ///
+    /// Returns a vector of spans representing:
+    /// - profile@base_url (or just base_url if no profile)
+    /// - auth mode (token or session)
+    /// - server version (if available)
+    ///
+    /// Long URLs are truncated to fit the terminal width.
+    fn format_connection_context(&self) -> Vec<Span<'_>> {
+        let theme = self.theme;
+        let mut spans = Vec::new();
+
+        // Build connection string: profile@base_url or just base_url
+        let conn_str = match (&self.profile_name, &self.base_url) {
+            (Some(profile), Some(url)) => format!("{}@{}", profile, Self::truncate_url(url, 40)),
+            (None, Some(url)) => Self::truncate_url(url, 40),
+            _ => "Connecting...".to_string(),
+        };
+
+        spans.push(Span::styled(conn_str, Style::default().fg(theme.text)));
+
+        // Add auth mode if available
+        if let Some(ref auth) = self.auth_mode {
+            spans.push(Span::raw(" | "));
+            spans.push(Span::styled(
+                auth.clone(),
+                Style::default().fg(theme.accent),
+            ));
+        }
+
+        // Add server version if available
+        if let Some(ref version) = self.server_version {
+            spans.push(Span::raw(" | "));
+            spans.push(Span::styled(
+                format!("v{}", version),
+                Style::default().fg(theme.success),
+            ));
+        }
+
+        spans
+    }
+
+    /// Truncate URL for display, keeping the most significant parts.
+    ///
+    /// For long URLs, shows the end (domain:port) with ellipsis prefix.
+    fn truncate_url(url: &str, max_len: usize) -> String {
+        if url.len() <= max_len {
+            url.to_string()
+        } else {
+            // Show ellipsis + end of URL (domain is more important than protocol)
+            let start = url.len().saturating_sub(max_len - 3);
+            format!("...{}", &url[start..])
+        }
     }
 }

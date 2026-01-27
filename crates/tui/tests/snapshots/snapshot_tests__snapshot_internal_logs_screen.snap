@@ -4,12 +4,12 @@ expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Internal Logs | [?] Unknown                                      │
+│ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Internal Logs (_internal)─────────────────────────────────────────────────────┐
 │   Time       Level      Component    Message                                 │
 │>> 2024-01-15 INFO       Metrics      some metrics log message                │
 │   2024-01-15 ERROR      DateParser   failed to parse date                    │
-│                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │

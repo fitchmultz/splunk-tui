@@ -4990,6 +4990,62 @@
       "completed_at": "2026-01-27T22:56:57.661218000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0134",
+      "status": "done",
+      "title": "Show connection context in TUI (profile/base_url/auth + server version)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "polish"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/main.rs",
+        "crates/client/src/client.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "TUI UI rendering does not currently surface which Splunk instance/profile is active; users can easily run actions against the wrong environment.",
+        "crates/tui/src/main.rs loads profile via --profile or SPLUNK_PROFILE at startup, but that context is only displayed in Settings screen.",
+        "crates/tui/src/app/render.rs header shows 'Splunk TUI - <screen> | [health]' but no connection context.",
+        "crates/client/src/client.rs has get_server_info() at line 829 that returns ServerInfo with version/build info.",
+        "Settings screen (crates/tui/src/ui/screens/settings.rs:78) already shows profile_info from SPLUNK_PROFILE env var.",
+        "App struct (crates/tui/src/app.rs:49-125) has no fields for connection context (profile name, base_url, server version)."
+      ],
+      "plan": [
+        "Add connection context fields to App struct (profile_name, base_url, auth_mode, server_version, server_build).",
+        "Modify main.rs to populate connection context in App after client creation (pass profile name from CLI/env, base_url from config).",
+        "Add Action::LoadServerInfo and handler to fetch server info via client.get_server_info() at startup.",
+        "Update render.rs header to show connection context (profile@base_url or truncated version) alongside existing health indicator.",
+        "Add graceful truncation for long base_urls in narrow terminals (show ellipsis or abbreviated form).",
+        "Add snapshot tests for header rendering with connection context at various terminal widths.",
+        "Update docs/usage.md TUI section to document where connection context appears (header) and what it shows."
+      ],
+      "notes": [
+        "App was recently refactored into submodules (state.rs, render.rs, actions.rs, etc.) - changes should follow this pattern.",
+        "Header height is currently HEADER_HEIGHT=3 (defined in state.rs:41) - may need adjustment if adding second line for connection details.",
+        "Consider showing auth mode as icon/badge (token vs session) for quick visual identification.",
+        "Server info loading should be non-blocking; show 'connecting...' placeholder until loaded.",
+        "Implemented connection context header in TUI",
+        "Added ConnectionContext struct with profile_name, base_url, auth_mode",
+        "Updated App struct with server_version, server_build fields",
+        "Header now shows: profile@base_url | auth_mode | v{version}",
+        "URL truncation for narrow terminals (40 char max with ellipsis)",
+        "All 130 app tests and 28 snapshot tests passing",
+        "Updated docs/usage.md with Connection Context Header section"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T23:19:22.465303000Z",
+      "completed_at": "2026-01-27T23:19:22.465303000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

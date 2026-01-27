@@ -38,7 +38,8 @@ impl HealthState {
 }
 
 /// Layout constants for UI components.
-pub const HEADER_HEIGHT: u16 = 3;
+/// Header height increased to 4 to accommodate connection context line (RQ-0134)
+pub const HEADER_HEIGHT: u16 = 4;
 pub const FOOTER_HEIGHT: u16 = 3;
 
 /// Current active screen.

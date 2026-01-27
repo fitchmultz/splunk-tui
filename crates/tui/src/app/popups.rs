@@ -151,6 +151,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ConnectionContext;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn key(c: KeyCode) -> KeyEvent {
@@ -159,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_popup_help_close() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::Help).build());
 
         // Close with Esc
@@ -176,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_popup_confirm_cancel() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ConfirmCancel("test-sid".to_string())).build());
 
         // Confirm with 'y'
@@ -187,7 +188,7 @@ mod tests {
 
     #[test]
     fn test_popup_confirm_cancel_with_enter() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ConfirmCancel("test-sid".to_string())).build());
 
         // Confirm with Enter
@@ -198,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_popup_confirm_cancel_reject() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ConfirmCancel("test-sid".to_string())).build());
 
         // Reject with 'n'
@@ -217,7 +218,7 @@ mod tests {
     fn test_popup_export_search_input() {
         use crate::app::export::ExportTarget;
 
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ExportSearch).build());
         app.export_target = Some(ExportTarget::SearchResults);
         app.export_input = String::new();
@@ -239,7 +240,7 @@ mod tests {
     fn test_popup_export_search_format_toggle() {
         use crate::app::export::ExportTarget;
 
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ExportSearch).build());
         app.export_target = Some(ExportTarget::SearchResults);
         app.export_input = "test.json".to_string();
@@ -258,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_popup_export_search_cancel() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ExportSearch).build());
         app.export_target = Some(crate::app::export::ExportTarget::SearchResults);
 
@@ -271,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_popup_error_details_navigation() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
         app.error_scroll_offset = 0;
 

@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0134",
-      "status": "todo",
-      "title": "Show connection context in TUI (profile/base_url/auth + server version)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "polish"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/main.rs",
-        "crates/client/src/client.rs",
-        "crates/tui/tests/snapshot_tests.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "TUI UI rendering does not currently surface which Splunk instance/profile is active; users can easily run actions against the wrong environment.",
-        "crates/tui/src/main.rs loads profile via SPLUNK_PROFILE at startup, but that context is not displayed anywhere in the UI.",
-        "splunk-client already has get_server_info(); showing version/build is valuable for admins triaging behavior differences."
-      ],
-      "plan": [
-        "Add an App field for connection context (profile name, base_url, auth mode) and populate it at startup.",
-        "Load server info on startup (or on-demand) and show version/build in a header/footer line.",
-        "Add snapshots for narrow and wide terminals to ensure the layout degrades gracefully.",
-        "Update docs/usage.md to describe where connection context is visible."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0138",
       "status": "todo",
       "title": "Add Index details/inspect view in TUI (beyond the summary list)",

@@ -13,7 +13,7 @@ use ratatui::prelude::Rect;
 use splunk_client::models::{App as SplunkApp, Index, SavedSearch, SearchJobStatus, User};
 use splunk_tui::{
     CurrentScreen, Popup, PopupType, Toast, ToastLevel, action::Action, action::ExportFormat,
-    app::App,
+    app::App, app::ConnectionContext,
 };
 use std::time::Duration;
 
@@ -64,7 +64,7 @@ fn test_repeat_event_helper_creates_correct_kind() {
 #[allow(dead_code)]
 #[test]
 fn test_settings_screen_navigation() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
 
     // Test navigation with Tab - should wrap to Search
@@ -81,7 +81,7 @@ fn test_settings_screen_navigation() {
 
 #[test]
 fn test_auto_refresh_toggle() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
     let initial = app.auto_refresh;
 
@@ -94,7 +94,7 @@ fn test_auto_refresh_toggle() {
 
 #[test]
 fn test_theme_cycle_from_settings() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
 
     let initial = app.color_theme;
@@ -110,13 +110,13 @@ fn test_theme_cycle_from_settings() {
     assert_eq!(persisted.selected_theme, app.color_theme);
 
     // New app should initialize from persisted state
-    let app2 = App::new(Some(persisted));
+    let app2 = App::new(Some(persisted), ConnectionContext::default());
     assert_eq!(app2.color_theme, app.color_theme);
 }
 
 #[test]
 fn test_sort_column_cycle() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
     let initial = app.sort_state.column;
 
@@ -129,7 +129,7 @@ fn test_sort_column_cycle() {
 
 #[test]
 fn test_clear_search_history() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
     app.search_history = vec!["query1".to_string(), "query2".to_string()];
 
@@ -142,7 +142,7 @@ fn test_clear_search_history() {
 
 #[test]
 fn test_popup_cancel_flow() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -174,7 +174,7 @@ fn test_popup_cancel_flow() {
 
 #[test]
 fn test_popup_cancel_with_escape() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -194,7 +194,7 @@ fn test_popup_cancel_with_escape() {
 
 #[test]
 fn test_popup_confirm_cancel_action() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -213,7 +213,7 @@ fn test_popup_confirm_cancel_action() {
 
 #[test]
 fn test_popup_confirm_with_enter() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -233,7 +233,7 @@ fn test_popup_confirm_with_enter() {
 
 #[test]
 fn test_popup_delete_confirm_action() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(2));
@@ -254,7 +254,7 @@ fn test_popup_delete_confirm_action() {
 
 #[test]
 fn test_jobs_loaded_preserves_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
     app.jobs_state.select(Some(7));
@@ -274,7 +274,7 @@ fn test_jobs_loaded_preserves_selection() {
 
 #[test]
 fn test_jobs_loaded_with_empty_list() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
     app.jobs_state.select(Some(2));
@@ -293,7 +293,7 @@ fn test_jobs_loaded_with_empty_list() {
 
 #[test]
 fn test_tick_suppressed_during_popup() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.auto_refresh = true;
 
@@ -314,7 +314,7 @@ fn test_tick_suppressed_during_popup() {
 
 #[test]
 fn test_navigation_down_at_boundary() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(2)); // Already at last item
@@ -332,7 +332,7 @@ fn test_navigation_down_at_boundary() {
 
 #[test]
 fn test_navigation_up_at_boundary() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(0)); // Already at first item
@@ -350,7 +350,7 @@ fn test_navigation_up_at_boundary() {
 
 #[test]
 fn test_navigation_down_normal() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
     app.jobs_state.select(Some(1));
@@ -363,7 +363,7 @@ fn test_navigation_down_normal() {
 
 #[test]
 fn test_navigation_up_normal() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
     app.jobs_state.select(Some(3));
@@ -376,7 +376,7 @@ fn test_navigation_up_normal() {
 
 #[test]
 fn test_help_popup_open_close() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Open help popup
@@ -416,7 +416,7 @@ fn test_help_popup_open_close() {
 
 #[test]
 fn test_page_down_navigation() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(25))));
     app.jobs_state.select(Some(5));
@@ -434,7 +434,7 @@ fn test_page_down_navigation() {
 
 #[test]
 fn test_page_up_navigation() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(25))));
     app.jobs_state.select(Some(20));
@@ -448,7 +448,7 @@ fn test_page_up_navigation() {
 
 #[test]
 fn test_go_to_top() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
     app.jobs_state.select(Some(7));
@@ -465,7 +465,7 @@ fn test_go_to_top() {
 
 #[test]
 fn test_go_to_bottom() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
     app.jobs_state.select(Some(2));
@@ -482,7 +482,7 @@ fn test_go_to_bottom() {
 
 #[test]
 fn test_toggle_auto_refresh() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Auto-refresh should start as false
@@ -502,7 +502,7 @@ fn test_toggle_auto_refresh() {
 
 #[test]
 fn test_screen_navigation_with_tab() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Navigate to Indexes with Tab
@@ -521,7 +521,7 @@ fn test_screen_navigation_with_tab() {
 
 #[test]
 fn test_digits_typed_in_search_query() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Type digits - should be added to search_input, not trigger navigation
@@ -539,7 +539,7 @@ fn test_digits_typed_in_search_query() {
 
 #[test]
 fn test_tab_navigates_to_next_screen() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     let action = app.handle_input(tab_key());
@@ -550,7 +550,7 @@ fn test_tab_navigates_to_next_screen() {
 
 #[test]
 fn test_shift_tab_navigates_to_previous_screen() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Indexes;
 
     let action = app.handle_input(shift_tab_key());
@@ -561,7 +561,7 @@ fn test_shift_tab_navigates_to_previous_screen() {
 
 #[test]
 fn test_tab_cycles_through_screens() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
 
     // Tab from Settings should wrap to Search
@@ -578,7 +578,7 @@ fn test_tab_cycles_through_screens() {
 
 #[test]
 fn test_shift_tab_cycles_backwards() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Shift+Tab from Search should wrap to Settings
@@ -609,7 +609,7 @@ fn test_navigation_from_all_screens() {
     ];
 
     for screen in screens {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.current_screen = screen;
 
         // Tab should work from all screens
@@ -630,7 +630,7 @@ fn test_navigation_from_all_screens() {
 
 #[test]
 fn test_job_inspect_excluded_from_cycle() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::JobInspect;
 
     // Tab from JobInspect should go to Jobs (not cycle)
@@ -648,7 +648,7 @@ fn test_job_inspect_excluded_from_cycle() {
 
 #[test]
 fn test_quit_action() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Press 'q' to quit
@@ -675,7 +675,7 @@ fn test_quit_keyboard_triggers_action() {
     ];
 
     for screen in screens {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.current_screen = screen;
 
         let action = app.handle_input(key('q'));
@@ -689,7 +689,7 @@ fn test_quit_keyboard_triggers_action() {
 
 #[test]
 fn test_quit_mouse_footer_click() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.last_area = Rect::new(0, 0, 100, 24);
     app.loading = false;
 
@@ -705,7 +705,7 @@ fn test_quit_mouse_footer_click() {
 
 #[test]
 fn test_quit_mouse_footer_click_with_loading() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.last_area = Rect::new(0, 0, 100, 24);
     app.loading = true;
     app.progress = 1.0; // Set progress so loading text renders
@@ -722,7 +722,7 @@ fn test_quit_mouse_footer_click_with_loading() {
 
 #[test]
 fn test_refresh_jobs_action() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Press 'r' to refresh
@@ -735,7 +735,7 @@ fn test_refresh_jobs_action() {
 
 #[test]
 fn test_notify_adds_toast() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Add a toast notification
@@ -755,7 +755,7 @@ fn test_notify_adds_toast() {
 
 #[test]
 fn test_tick_prunes_expired_toasts() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Add a toast
@@ -773,7 +773,7 @@ fn test_tick_prunes_expired_toasts() {
 
 #[test]
 fn test_progress_update() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Update progress
     app.update(Action::Progress(0.75));
@@ -783,7 +783,7 @@ fn test_progress_update() {
 
 #[test]
 fn test_indexes_navigation() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Indexes;
     app.indexes = Some(vec![
         splunk_client::models::Index {
@@ -836,7 +836,7 @@ fn test_indexes_navigation() {
 
 #[test]
 fn test_job_inspection_flow() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -883,7 +883,7 @@ fn test_job_inspection_flow() {
 
 #[test]
 fn test_job_inspection_without_jobs() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(vec![]))); // No jobs loaded
     app.jobs_state.select(Some(0));
@@ -907,7 +907,7 @@ fn test_job_inspection_without_jobs() {
 
 #[test]
 fn test_job_inspect_help_popup() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::JobInspect;
 
     // Open help popup with '?'
@@ -927,7 +927,7 @@ fn test_job_inspect_help_popup() {
 
 #[test]
 fn test_jobs_filter_persistence() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Enter filter mode with '/'
@@ -976,7 +976,7 @@ fn test_jobs_filter_persistence() {
 
 #[test]
 fn test_jobs_filter_clear_with_empty_input() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Set an existing filter
@@ -1002,7 +1002,7 @@ fn test_jobs_filter_clear_with_empty_input() {
 
 #[test]
 fn test_jobs_filter_cancel_with_escape() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Set an existing filter
@@ -1042,7 +1042,7 @@ fn test_jobs_filter_cancel_with_escape() {
 
 #[test]
 fn test_filtered_job_selection_inspect() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Create jobs with distinct SIDs for easy identification
@@ -1117,7 +1117,7 @@ fn test_filtered_job_selection_inspect() {
 
 #[test]
 fn test_filtered_job_selection_cancel() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Create jobs with specific SIDs
@@ -1204,7 +1204,7 @@ fn test_filtered_job_selection_cancel() {
 
 #[test]
 fn test_filtered_job_selection_delete() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Create jobs
@@ -1276,7 +1276,7 @@ fn test_filtered_job_selection_delete() {
 
 #[test]
 fn test_filtered_navigation_respects_bounds() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Create 10 jobs
@@ -1314,7 +1314,7 @@ fn test_filtered_navigation_respects_bounds() {
 
 #[test]
 fn test_clear_filter_rebuilds_indices() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Create jobs
@@ -1359,7 +1359,7 @@ fn test_clear_filter_rebuilds_indices() {
 
 #[test]
 fn test_sort_changes_rebuild_indices() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Create jobs with different durations
@@ -1423,7 +1423,7 @@ fn test_sort_changes_rebuild_indices() {
 
 #[test]
 fn test_cancel_job_error_clears_loading() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Simulate the sequence of actions when CancelJob fails:
@@ -1451,7 +1451,7 @@ fn test_cancel_job_error_clears_loading() {
 
 #[test]
 fn test_delete_job_error_clears_loading() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Simulate the sequence of actions when DeleteJob fails:
@@ -1481,7 +1481,7 @@ fn test_delete_job_error_clears_loading() {
 
 #[test]
 fn test_search_page_down_scrolls_by_10() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 0;
@@ -1494,7 +1494,7 @@ fn test_search_page_down_scrolls_by_10() {
 
 #[test]
 fn test_search_page_up_scrolls_back() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 20;
@@ -1510,7 +1510,7 @@ fn test_search_page_up_scrolls_back() {
 
 #[test]
 fn test_search_page_down_clamps_at_end() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..15).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 5;
@@ -1527,7 +1527,7 @@ fn test_search_page_down_clamps_at_end() {
 
 #[test]
 fn test_search_page_up_clamps_at_zero() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 5;
@@ -1541,7 +1541,7 @@ fn test_search_page_up_clamps_at_zero() {
 
 #[test]
 fn test_search_page_up_from_zero_stays_at_zero() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 0;
@@ -1554,7 +1554,7 @@ fn test_search_page_up_from_zero_stays_at_zero() {
 
 #[test]
 fn test_search_go_to_top() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 20;
@@ -1567,7 +1567,7 @@ fn test_search_go_to_top() {
 
 #[test]
 fn test_search_go_to_bottom() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..25).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 5;
@@ -1584,7 +1584,7 @@ fn test_search_go_to_bottom() {
 
 #[test]
 fn test_search_go_to_bottom_with_empty_results() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results(Vec::new());
     app.search_scroll_offset = 5;
@@ -1600,7 +1600,7 @@ fn test_search_go_to_bottom_with_empty_results() {
 
 #[test]
 fn test_search_scroll_with_single_result() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results(vec![serde_json::json!(1)]);
     app.search_scroll_offset = 0;
@@ -1617,7 +1617,7 @@ fn test_search_scroll_with_single_result() {
 
 #[test]
 fn test_search_go_to_top_from_bottom() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..50).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 49;
@@ -1630,7 +1630,7 @@ fn test_search_go_to_top_from_bottom() {
 
 #[test]
 fn test_search_history_navigation() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_history = vec!["query1".to_string(), "query2".to_string()];
     app.search_input = "current".to_string();
@@ -1664,7 +1664,7 @@ fn test_search_history_navigation() {
 
 #[test]
 fn test_search_history_add_on_enter() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_input = "new query".to_string();
 
@@ -1678,7 +1678,7 @@ fn test_search_history_add_on_enter() {
 
 #[test]
 fn test_search_history_deduplication() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_history = vec!["old".to_string(), "other".to_string()];
     app.search_input = "other".to_string();
@@ -1694,7 +1694,7 @@ fn test_search_history_deduplication() {
 
 #[test]
 fn test_search_input_resets_history_index() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_history = vec!["query1".to_string()];
 
@@ -1717,7 +1717,7 @@ fn test_search_input_resets_history_index() {
 
 #[test]
 fn test_search_result_scrolling_by_line() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results((0..10).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 0;
@@ -1741,7 +1741,7 @@ fn test_search_result_scrolling_by_line() {
 
 #[test]
 fn test_ctrl_c_copies_search_query_when_no_results() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_input = "index=_internal | head 5".to_string();
     app.search_results.clear();
@@ -1755,7 +1755,7 @@ fn test_ctrl_c_copies_search_query_when_no_results() {
 
 #[test]
 fn test_ctrl_c_copies_current_search_result_when_results_exist() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     let v = serde_json::json!({"foo":"bar","n":1});
@@ -1772,7 +1772,7 @@ fn test_ctrl_c_copies_current_search_result_when_results_exist() {
 
 #[test]
 fn test_ctrl_c_copies_selected_job_sid() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -1786,7 +1786,7 @@ fn test_ctrl_c_copies_selected_job_sid() {
 
 #[test]
 fn test_ctrl_c_copies_selected_index_name() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Indexes;
     app.indexes = Some(vec![Index {
         name: "main".to_string(),
@@ -1813,7 +1813,7 @@ fn test_ctrl_c_copies_selected_index_name() {
 
 #[test]
 fn test_ctrl_c_copies_selected_saved_search_name() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::SavedSearches;
     app.saved_searches = Some(vec![SavedSearch {
         name: "Errors Last 24 Hours".to_string(),
@@ -1832,7 +1832,7 @@ fn test_ctrl_c_copies_selected_saved_search_name() {
 
 #[test]
 fn test_ctrl_c_copies_selected_app_name() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Apps;
     app.apps = Some(vec![SplunkApp {
         name: "search".to_string(),
@@ -1855,7 +1855,7 @@ fn test_ctrl_c_copies_selected_app_name() {
 
 #[test]
 fn test_ctrl_c_copies_selected_username() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Users;
     app.users = Some(vec![User {
         name: "admin".to_string(),
@@ -1877,7 +1877,7 @@ fn test_ctrl_c_copies_selected_username() {
 
 #[test]
 fn test_ctrl_c_copies_selected_log_message() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::InternalLogs;
     app.internal_logs = Some(vec![splunk_client::models::LogEntry {
         time: "2024-01-01 12:00:00".to_string(),
@@ -1898,7 +1898,7 @@ fn test_ctrl_c_copies_selected_log_message() {
 
 #[test]
 fn test_ctrl_c_copies_cluster_id() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Cluster;
     app.cluster_info = Some(splunk_client::models::ClusterInfo {
         id: "cluster-123".to_string(),
@@ -1919,7 +1919,7 @@ fn test_ctrl_c_copies_cluster_id() {
 
 #[test]
 fn test_ctrl_c_copies_health_status() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Health;
     app.health_info = Some(splunk_client::models::HealthCheckOutput {
         server_info: None,
@@ -1943,7 +1943,7 @@ fn test_ctrl_c_copies_health_status() {
 fn test_copy_to_clipboard_action_success_emits_info_toast_and_records_text() {
     let guard = splunk_tui::app::clipboard::install_recording_clipboard();
 
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.update(Action::CopyToClipboard("hello world".to_string()));
 
     assert!(
@@ -1962,7 +1962,7 @@ fn test_copy_to_clipboard_action_success_emits_info_toast_and_records_text() {
 fn test_copy_to_clipboard_action_failure_emits_error_toast() {
     let _guard = splunk_tui::app::clipboard::install_failing_clipboard("boom");
 
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.update(Action::CopyToClipboard("hello".to_string()));
 
     assert!(!app.toasts.is_empty(), "Should emit a toast on failure");
@@ -1979,7 +1979,7 @@ fn test_copy_to_clipboard_action_failure_emits_error_toast() {
 
 #[test]
 fn test_typing_e_in_search_query_does_not_trigger_export() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Ensure export would be available if Ctrl+E were pressed.
@@ -1998,7 +1998,7 @@ fn test_typing_e_in_search_query_does_not_trigger_export() {
 
 #[test]
 fn test_export_search_popup_flow() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
 
@@ -2056,7 +2056,7 @@ fn test_export_search_popup_flow() {
 
 #[test]
 fn test_export_search_disabled_when_no_results() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_results = Vec::new();
 
@@ -2067,7 +2067,7 @@ fn test_export_search_disabled_when_no_results() {
 
 #[test]
 fn test_export_search_cancel_with_esc() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
 
@@ -2082,7 +2082,7 @@ fn test_export_search_cancel_with_esc() {
 
 #[test]
 fn test_spacebar_toggles_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -2108,7 +2108,7 @@ fn test_spacebar_toggles_selection() {
 
 #[test]
 fn test_multiple_jobs_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
 
@@ -2140,7 +2140,7 @@ fn test_multiple_jobs_selection() {
 
 #[test]
 fn test_batch_cancel_popup_with_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
 
@@ -2167,7 +2167,7 @@ fn test_batch_cancel_popup_with_selection() {
 
 #[test]
 fn test_batch_delete_popup_with_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
 
@@ -2194,7 +2194,7 @@ fn test_batch_delete_popup_with_selection() {
 
 #[test]
 fn test_batch_cancel_action_generated() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
 
@@ -2225,7 +2225,7 @@ fn test_batch_cancel_action_generated() {
 
 #[test]
 fn test_batch_delete_action_generated() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
 
@@ -2256,7 +2256,7 @@ fn test_batch_delete_action_generated() {
 
 #[test]
 fn test_single_cancel_with_no_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(1));
@@ -2277,7 +2277,7 @@ fn test_single_cancel_with_no_selection() {
 
 #[test]
 fn test_single_delete_with_no_selection() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
     app.jobs_state.select(Some(2));
@@ -2298,7 +2298,7 @@ fn test_single_delete_with_no_selection() {
 
 #[test]
 fn test_selection_cleared_after_job_operation() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
 
@@ -2329,7 +2329,7 @@ fn test_selection_cleared_after_job_operation() {
 
 #[test]
 fn test_selection_persists_across_jobs_loaded() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
     // Load initial jobs and select some
@@ -2361,7 +2361,7 @@ fn test_selection_persists_across_jobs_loaded() {
 
 #[test]
 fn test_batch_popup_cancel_with_n() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
 
@@ -2384,7 +2384,7 @@ fn test_batch_popup_cancel_with_n() {
 
 #[test]
 fn test_batch_popup_cancel_with_esc() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
 
@@ -2409,7 +2409,7 @@ fn test_batch_popup_cancel_with_esc() {
 
 #[test]
 fn test_batch_confirm_with_enter() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
     app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
 
@@ -2448,7 +2448,7 @@ fn test_search_rendering_with_large_dataset() {
     let dataset_sizes = [10, 100, 1000, 10000];
 
     for size in dataset_sizes {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.current_screen = CurrentScreen::Search;
 
         let results: Vec<serde_json::Value> = (0..size)
@@ -2503,7 +2503,7 @@ fn create_mock_search_results(count: usize) -> Vec<serde_json::Value> {
 
 #[test]
 fn test_search_complete_sets_pagination_state() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Simulate search completion with total count
@@ -2535,7 +2535,7 @@ fn test_search_complete_sets_pagination_state() {
 
 #[test]
 fn test_search_complete_with_no_total() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Simulate search completion without total count (API doesn't always provide it)
@@ -2559,7 +2559,7 @@ fn test_search_complete_with_no_total() {
 
 #[test]
 fn test_search_complete_when_total_is_none_with_full_page() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Simulate search completion with total = None but full page (exactly page_size)
@@ -2583,7 +2583,7 @@ fn test_search_complete_when_total_is_none_with_full_page() {
 
 #[test]
 fn test_search_complete_when_all_results_loaded() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Simulate search completion where loaded == total (all results)
@@ -2607,7 +2607,7 @@ fn test_search_complete_when_all_results_loaded() {
 
 #[test]
 fn test_append_search_results_increases_results() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Initial state: 100 results loaded, 500 total
     app.search_results = create_mock_search_results(100);
@@ -2633,7 +2633,7 @@ fn test_append_search_results_increases_results() {
 
 #[test]
 fn test_append_search_results_reaches_total() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Initial state: 400 results loaded, 500 total
     app.search_results = create_mock_search_results(400);
@@ -2659,7 +2659,7 @@ fn test_append_search_results_reaches_total() {
 
 #[test]
 fn test_maybe_fetch_more_results_returns_action_when_needed() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Setup: 100 results loaded, 1000 total, scroll at position 90 (within threshold)
     app.search_results = create_mock_search_results(100);
@@ -2686,7 +2686,7 @@ fn test_maybe_fetch_more_results_returns_action_when_needed() {
 
 #[test]
 fn test_maybe_fetch_more_results_returns_none_when_not_near_end() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Setup: 100 results loaded, scroll at position 50 (not within threshold)
     app.search_results = create_mock_search_results(100);
@@ -2706,7 +2706,7 @@ fn test_maybe_fetch_more_results_returns_none_when_not_near_end() {
 
 #[test]
 fn test_maybe_fetch_more_results_returns_none_when_no_more_results() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Setup: All results loaded (search_has_more_results = false)
     app.search_results = create_mock_search_results(100);
@@ -2726,7 +2726,7 @@ fn test_maybe_fetch_more_results_returns_none_when_no_more_results() {
 
 #[test]
 fn test_maybe_fetch_more_results_returns_none_when_already_loading() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Setup: loading = true prevents duplicate fetches
     app.search_results = create_mock_search_results(100);
@@ -2746,7 +2746,7 @@ fn test_maybe_fetch_more_results_returns_none_when_already_loading() {
 
 #[test]
 fn test_maybe_fetch_more_results_returns_none_when_no_sid() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Setup: no search SID (no active search)
     app.search_results = create_mock_search_results(100);
@@ -2763,7 +2763,7 @@ fn test_maybe_fetch_more_results_returns_none_when_no_sid() {
 
 #[test]
 fn test_more_search_results_loaded_error_handling() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
 
     // Setup initial state
     app.search_results = create_mock_search_results(50);
@@ -2796,7 +2796,7 @@ fn test_more_search_results_loaded_error_handling() {
 
 #[test]
 fn test_append_search_results_when_total_is_none() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Setup: 100 results loaded, total is None
@@ -2823,7 +2823,7 @@ fn test_append_search_results_when_total_is_none() {
 
 #[test]
 fn test_append_search_results_when_total_is_none_partial_page() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     // Setup: 100 results loaded, total is None
@@ -2850,7 +2850,7 @@ fn test_append_search_results_when_total_is_none_partial_page() {
 
 #[test]
 fn test_pagination_trigger_at_threshold() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     app.search_sid = Some("test_sid".to_string());
@@ -2880,7 +2880,7 @@ fn test_pagination_trigger_at_threshold() {
 
 #[test]
 fn test_pagination_no_trigger_before_threshold() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     app.search_sid = Some("test_sid".to_string());
@@ -2902,7 +2902,7 @@ fn test_pagination_no_trigger_before_threshold() {
 
 #[test]
 fn test_pagination_no_trigger_when_all_loaded() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     app.search_sid = Some("test_sid".to_string());
@@ -2924,7 +2924,7 @@ fn test_pagination_no_trigger_when_all_loaded() {
 
 #[test]
 fn test_pagination_no_trigger_while_loading() {
-    let mut app = App::new(None);
+    let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
     app.search_sid = Some("test_sid".to_string());

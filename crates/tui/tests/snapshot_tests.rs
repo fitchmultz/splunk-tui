@@ -10,7 +10,7 @@ mod helpers;
 
 use ratatui::{Terminal, backend::TestBackend};
 use splunk_client::models::{SearchJobStatus, User};
-use splunk_tui::{App, Popup, PopupType};
+use splunk_tui::{App, ConnectionContext, Popup, PopupType};
 
 /// Test harness for TUI rendering with a mock terminal.
 struct TuiHarness {
@@ -23,7 +23,7 @@ impl TuiHarness {
     fn new(width: u16, height: u16) -> Self {
         let backend = TestBackend::new(width, height);
         let terminal = Terminal::new(backend).expect("Failed to create terminal");
-        let app = App::new(None);
+        let app = App::new(None, ConnectionContext::default());
         Self { app, terminal }
     }
 

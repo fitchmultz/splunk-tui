@@ -4,12 +4,12 @@ expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Jobs | [?] Unknown                                               │
+│ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Jobs───────────────────────────────────────────────────────────────────┐
 │Sel  SID ↑                    Status          Duration   Results    Events    │
-│[ ]  scheduler_admin_search_1 Done            5.23s      100        500       │
-│[ ]  admin_sear┌Confirm Cancel────────────────────────────────┐     2000      │
-│               │ Cancel job scheduler_admin_search_1234567890?│               │
+│[ ]  scheduler_┌Confirm Cancel────────────────────────────────┐     500       │
+│[ ]  admin_sear│ Cancel job scheduler_admin_search_1234567890?│     2000      │
 │               │                     (y/n)                    │               │
 │               │                                              │               │
 │               │                                              │               │

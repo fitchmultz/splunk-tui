@@ -123,12 +123,13 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ConnectionContext;
     use crate::app::state::CurrentScreen;
     use crossterm::event::{KeyModifiers, MouseButton, MouseEventKind};
 
     #[test]
     fn test_handle_mouse_scroll() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
 
         // Scroll Down
         let event_down = MouseEvent {
@@ -153,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_handle_mouse_footer_click() {
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
 
         // Footer navigation clicks are no longer supported (navigation is keyboard-only via Tab/Shift+Tab)
@@ -175,7 +176,7 @@ mod tests {
     fn test_handle_mouse_content_click_jobs() {
         use splunk_client::models::SearchJobStatus;
 
-        let mut app = App::new(None);
+        let mut app = App::new(None, ConnectionContext::default());
         app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
         app.current_screen = CurrentScreen::Jobs;
         app.jobs = Some(vec![
@@ -211,11 +212,11 @@ mod tests {
         app.rebuild_filtered_indices();
 
         // Click second job
-        // Header (3) + Table Header (1) + first row (1) = Row 5
+        // Header (4) + Table Header (1) + first row (1) = Row 6
         let event = MouseEvent {
             kind: MouseEventKind::Down(MouseButton::Left),
             column: 10,
-            row: 6, // Second row of data
+            row: 7, // Second row of data
             modifiers: KeyModifiers::empty(),
         };
 
