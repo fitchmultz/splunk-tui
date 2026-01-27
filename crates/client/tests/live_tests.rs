@@ -3,15 +3,73 @@
 //! These tests require a reachable Splunk server configured via environment
 //! variables or `.env.test` (workspace root).
 //!
+//! These tests are designed to be "best effort":
+//! - If required `SPLUNK_*` variables are not set, the tests no-op (pass).
+//! - If the configured server is unreachable, the tests no-op (pass).
+//! - If the server is reachable but requests fail (auth, API errors), the tests fail.
+//!
 //! Run with: cargo test -p splunk-client --test live_tests -- --ignored
+
+use std::net::{TcpStream, ToSocketAddrs};
+use std::sync::OnceLock;
+use std::time::Duration;
 
 use secrecy::SecretString;
 use splunk_client::AuthStrategy;
 use splunk_client::SplunkClient;
 use splunk_client::endpoints::search::CreateJobOptions;
 
+#[derive(Debug, Clone)]
+struct LiveEnv {
+    base_url: String,
+    username: String,
+    password: String,
+    skip_verify: bool,
+}
+
+fn parse_skip_verify_env() -> bool {
+    matches!(
+        std::env::var("SPLUNK_SKIP_VERIFY").as_deref(),
+        Ok("1") | Ok("true") | Ok("TRUE") | Ok("yes") | Ok("YES")
+    )
+}
+
+fn tcp_reachable(base_url: &str) -> bool {
+    let without_scheme = base_url
+        .strip_prefix("https://")
+        .or_else(|| base_url.strip_prefix("http://"))
+        .unwrap_or(base_url);
+    let host_port = without_scheme.split('/').next().unwrap_or("");
+
+    let (host, port) = match host_port.rsplit_once(':') {
+        Some((h, p)) if !h.is_empty() && p.chars().all(|c| c.is_ascii_digit()) => {
+            let port: u16 = match p.parse() {
+                Ok(v) => v,
+                Err(_) => return false,
+            };
+            (h, port)
+        }
+        _ => return false,
+    };
+
+    let addr = match (host, port).to_socket_addrs() {
+        Ok(mut addrs) => match addrs.next() {
+            Some(a) => a,
+            None => return false,
+        },
+        Err(_) => return false,
+    };
+
+    TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_ok()
+}
+
+fn should_run_live_tests(base_url: &str) -> bool {
+    static REACHABLE: OnceLock<bool> = OnceLock::new();
+    *REACHABLE.get_or_init(|| tcp_reachable(base_url))
+}
+
 /// Load test environment variables.
-fn load_test_env() -> (String, String, String) {
+fn load_test_env_or_skip() -> Option<LiveEnv> {
     // Resolve path to .env.test from CARGO_MANIFEST_DIR
     // CARGO_MANIFEST_DIR for this test file is crates/client
     // .env.test is at the workspace root, two levels up
@@ -21,40 +79,74 @@ fn load_test_env() -> (String, String, String) {
         .join("..")
         .join(".env.test");
 
-    // Override any pre-existing SPLUNK_* variables so `.env.test` is the source of truth.
-    dotenvy::from_path_override(env_path).ok();
+    // Override any pre-existing SPLUNK_* variables so `.env.test` is the source of truth,
+    // but only if the file exists (CI or other environments may not have it).
+    if env_path.exists() {
+        dotenvy::from_path_override(env_path).ok();
+    }
 
-    let base_url = std::env::var("SPLUNK_BASE_URL")
-        .expect("SPLUNK_BASE_URL must be set (use .env.test or environment variables)");
-    let username = std::env::var("SPLUNK_USERNAME")
-        .expect("SPLUNK_USERNAME must be set (use .env.test or environment variables)");
-    let password = std::env::var("SPLUNK_PASSWORD")
-        .expect("SPLUNK_PASSWORD must be set (use .env.test or environment variables)");
+    let base_url = match std::env::var("SPLUNK_BASE_URL") {
+        Ok(v) => v,
+        Err(_) => {
+            eprintln!("Skipping live tests: SPLUNK_BASE_URL is not set.");
+            return None;
+        }
+    };
+    let username = match std::env::var("SPLUNK_USERNAME") {
+        Ok(v) => v,
+        Err(_) => {
+            eprintln!("Skipping live tests: SPLUNK_USERNAME is not set.");
+            return None;
+        }
+    };
+    let password = match std::env::var("SPLUNK_PASSWORD") {
+        Ok(v) => v,
+        Err(_) => {
+            eprintln!("Skipping live tests: SPLUNK_PASSWORD is not set.");
+            return None;
+        }
+    };
 
-    (base_url, username, password)
+    let skip_verify = parse_skip_verify_env();
+
+    if !should_run_live_tests(&base_url) {
+        eprintln!("Skipping live tests: Splunk server is unreachable.");
+        return None;
+    }
+
+    Some(LiveEnv {
+        base_url,
+        username,
+        password,
+        skip_verify,
+    })
 }
 
 /// Create a client for testing.
-fn create_test_client() -> SplunkClient {
-    let (base_url, username, password) = load_test_env();
+fn create_test_client_or_skip() -> Option<SplunkClient> {
+    let env = load_test_env_or_skip()?;
 
     let auth_strategy = AuthStrategy::SessionToken {
-        username,
-        password: SecretString::new(password.into()),
+        username: env.username,
+        password: SecretString::new(env.password.into()),
     };
 
-    SplunkClient::builder()
-        .base_url(base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(true)
-        .build()
-        .expect("Failed to create client")
+    Some(
+        SplunkClient::builder()
+            .base_url(env.base_url)
+            .auth_strategy(auth_strategy)
+            .skip_verify(env.skip_verify)
+            .build()
+            .expect("Failed to create client"),
+    )
 }
 
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_login() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     // Login by calling any authenticated method
     // If this succeeds without error, login worked
     client
@@ -66,7 +158,9 @@ async fn test_live_login() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_list_indexes() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let indexes = client
         .list_indexes(Some(500), Some(0))
         .await
@@ -82,7 +176,9 @@ async fn test_live_list_indexes() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_search_and_get_results() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
 
     // Create a search job
     let sid = client
@@ -126,7 +222,9 @@ async fn test_live_search_and_get_results() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_list_jobs() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     // Just verify we can list jobs successfully
     let _jobs = client
         .list_jobs(Some(10), Some(0))
@@ -137,7 +235,9 @@ async fn test_live_list_jobs() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_create_and_cancel_job() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
 
     // Create a search job without waiting
     let sid = client
@@ -158,7 +258,9 @@ async fn test_live_create_and_cancel_job() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_cluster_info() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
 
     // This may fail on standalone instances - just verify we can make the call
     let _result = client.get_cluster_info().await;
@@ -167,7 +269,9 @@ async fn test_live_cluster_info() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_get_server_info() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let info = client
         .get_server_info()
         .await
@@ -184,7 +288,9 @@ async fn test_live_get_server_info() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_get_health() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let health = client.get_health().await.expect("Failed to get health");
 
     assert!(!health.health.is_empty(), "health should not be empty");
@@ -193,7 +299,9 @@ async fn test_live_get_health() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_get_license_usage() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let usage = client
         .get_license_usage()
         .await
@@ -209,7 +317,9 @@ async fn test_live_get_license_usage() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_get_kvstore_status() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let status = client
         .get_kvstore_status()
         .await
@@ -228,7 +338,9 @@ async fn test_live_get_kvstore_status() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_check_log_parsing_health() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let parsing = client
         .check_log_parsing_health()
         .await
@@ -253,7 +365,9 @@ async fn test_live_check_log_parsing_health() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_get_internal_logs() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
     let logs = client
         .get_internal_logs(20, Some("-15m"))
         .await
@@ -273,7 +387,9 @@ async fn test_live_get_internal_logs() {
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
 async fn test_live_list_apps_and_users_and_saved_searches() {
-    let mut client = create_test_client();
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
 
     let apps = client
         .list_apps(Some(10), Some(0))

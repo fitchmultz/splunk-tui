@@ -13,9 +13,15 @@
 //! - Credentials are provided via environment variables or `.env.test` at the workspace root.
 //! - Self-signed TLS is expected; `SPLUNK_SKIP_VERIFY=true` is recommended.
 //!
+//! These tests are designed to be "best effort":
+//! - If required `SPLUNK_*` variables are not set, the tests no-op (pass).
+//! - If the configured server is unreachable, the tests no-op (pass).
+//! - If the server is reachable but requests fail (auth, API errors), the tests fail.
+//!
 //! Run with: cargo test -p splunk-cli --test live_tests -- --ignored
 
 use predicates::prelude::*;
+use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
 
 fn env_lock() -> &'static Mutex<()> {
@@ -45,41 +51,86 @@ struct LiveEnvGuard {
 }
 
 impl LiveEnvGuard {
-    fn new() -> Self {
+    fn parse_base_url_host_port(base_url: &str) -> Option<(String, u16)> {
+        let without_scheme = base_url
+            .strip_prefix("https://")
+            .or_else(|| base_url.strip_prefix("http://"))
+            .unwrap_or(base_url);
+        let host_port = without_scheme.split('/').next().unwrap_or("");
+
+        let (host, port) = host_port.rsplit_once(':')?;
+        if host.is_empty() || !port.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+        let port: u16 = port.parse().ok()?;
+        Some((host.to_string(), port))
+    }
+
+    fn tcp_reachable(base_url: &str) -> bool {
+        let Some((host, port)) = Self::parse_base_url_host_port(base_url) else {
+            return false;
+        };
+
+        let addr = match (host.as_str(), port).to_socket_addrs() {
+            Ok(mut addrs) => match addrs.next() {
+                Some(a) => a,
+                None => return false,
+            },
+            Err(_) => return false,
+        };
+
+        TcpStream::connect_timeout(&addr, std::time::Duration::from_secs(2)).is_ok()
+    }
+
+    fn should_run(base_url: &str) -> bool {
+        static REACHABLE: OnceLock<bool> = OnceLock::new();
+        *REACHABLE.get_or_init(|| Self::tcp_reachable(base_url))
+    }
+
+    fn new_or_skip() -> Option<Self> {
         let lock = env_lock()
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-
-        clear_splunk_env();
 
         let env_test_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("..")
             .join("..")
             .join(".env.test");
 
-        dotenvy::from_path_override(env_test_path)
-            .expect(".env.test must exist at the workspace root for live CLI tests");
-
-        // Force the expected dev-server setting (self-signed TLS).
-        unsafe {
-            std::env::set_var("SPLUNK_SKIP_VERIFY", "true");
+        if env_test_path.exists() {
+            clear_splunk_env();
+            dotenvy::from_path_override(env_test_path).ok();
         }
 
-        // Fail fast with actionable messages, but never print secrets.
-        assert!(
-            std::env::var("SPLUNK_BASE_URL").is_ok(),
-            "SPLUNK_BASE_URL must be set in .env.test"
-        );
-        assert!(
-            std::env::var("SPLUNK_USERNAME").is_ok(),
-            "SPLUNK_USERNAME must be set in .env.test"
-        );
-        assert!(
-            std::env::var("SPLUNK_PASSWORD").is_ok(),
-            "SPLUNK_PASSWORD must be set in .env.test"
-        );
+        let base_url = match std::env::var("SPLUNK_BASE_URL") {
+            Ok(v) => v,
+            Err(_) => {
+                eprintln!("Skipping live CLI tests: SPLUNK_BASE_URL is not set.");
+                return None;
+            }
+        };
+        if std::env::var("SPLUNK_USERNAME").is_err() {
+            eprintln!("Skipping live CLI tests: SPLUNK_USERNAME is not set.");
+            return None;
+        }
+        if std::env::var("SPLUNK_PASSWORD").is_err() {
+            eprintln!("Skipping live CLI tests: SPLUNK_PASSWORD is not set.");
+            return None;
+        }
 
-        Self { _lock: lock }
+        if !Self::should_run(&base_url) {
+            eprintln!("Skipping live CLI tests: Splunk server is unreachable.");
+            return None;
+        }
+
+        // Self-signed TLS is typical for dev servers; keep existing behavior unless explicitly set.
+        if std::env::var("SPLUNK_SKIP_VERIFY").is_err() {
+            unsafe {
+                std::env::set_var("SPLUNK_SKIP_VERIFY", "true");
+            }
+        }
+
+        Some(Self { _lock: lock })
     }
 }
 
@@ -92,7 +143,9 @@ impl Drop for LiveEnvGuard {
 #[test]
 #[ignore = "requires live Splunk server"]
 fn test_live_cli_indexes_json() {
-    let _env = LiveEnvGuard::new();
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
     let mut cmd = splunk_cli_cmd();
 
     cmd.args(["--output", "json", "indexes", "--count", "5"])
@@ -103,7 +156,9 @@ fn test_live_cli_indexes_json() {
 #[test]
 #[ignore = "requires live Splunk server"]
 fn test_live_cli_users_json() {
-    let _env = LiveEnvGuard::new();
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
     let mut cmd = splunk_cli_cmd();
 
     cmd.args(["--output", "json", "users", "--count", "5"])
@@ -115,7 +170,9 @@ fn test_live_cli_users_json() {
 #[test]
 #[ignore = "requires live Splunk server"]
 fn test_live_cli_apps_list_json() {
-    let _env = LiveEnvGuard::new();
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
     let mut cmd = splunk_cli_cmd();
 
     cmd.args(["--output", "json", "apps", "list", "--count", "5"])
@@ -126,7 +183,9 @@ fn test_live_cli_apps_list_json() {
 #[test]
 #[ignore = "requires live Splunk server"]
 fn test_live_cli_health_json() {
-    let _env = LiveEnvGuard::new();
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
     let mut cmd = splunk_cli_cmd();
 
     cmd.args(["--output", "json", "health"]).assert().success();
@@ -135,7 +194,9 @@ fn test_live_cli_health_json() {
 #[test]
 #[ignore = "requires live Splunk server"]
 fn test_live_cli_search_wait_json() {
-    let _env = LiveEnvGuard::new();
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
     let mut cmd = splunk_cli_cmd();
 
     cmd.args([
