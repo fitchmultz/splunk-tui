@@ -90,7 +90,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Search,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export results",
             scope: BindingScope::Screen(Search),
             matcher: None,

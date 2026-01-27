@@ -1978,13 +1978,32 @@ fn test_copy_to_clipboard_action_failure_emits_error_toast() {
 }
 
 #[test]
+fn test_typing_e_in_search_query_does_not_trigger_export() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Ensure export would be available if Ctrl+E were pressed.
+    app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
+
+    // Plain 'e' should type into the query, not open the export popup.
+    app.search_input = "s".to_string();
+    app.handle_input(key('e'));
+
+    assert_eq!(app.search_input, "se", "Should append 'e' to query input");
+    assert!(
+        app.popup.is_none(),
+        "Should not open export popup on plain 'e'"
+    );
+}
+
+#[test]
 fn test_export_search_popup_flow() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
     app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
 
-    // Press 'e' to open export popup
-    app.handle_input(key('e'));
+    // Press Ctrl+e to open export popup
+    app.handle_input(ctrl_key('e'));
     assert!(app.popup.is_some());
     assert!(matches!(
         app.popup.as_ref().map(|p| &p.kind),
@@ -2041,8 +2060,8 @@ fn test_export_search_disabled_when_no_results() {
     app.current_screen = CurrentScreen::Search;
     app.search_results = Vec::new();
 
-    // Press 'e' - should not open popup
-    app.handle_input(key('e'));
+    // Press Ctrl+e - should not open popup
+    app.handle_input(ctrl_key('e'));
     assert!(app.popup.is_none());
 }
 
@@ -2052,7 +2071,7 @@ fn test_export_search_cancel_with_esc() {
     app.current_screen = CurrentScreen::Search;
     app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
 
-    app.handle_input(key('e'));
+    app.handle_input(ctrl_key('e'));
     assert!(app.popup.is_some());
 
     app.handle_input(esc_key());

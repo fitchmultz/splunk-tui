@@ -4199,6 +4199,53 @@
       "completed_at": "2026-01-27T15:52:42.944881000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0103",
+      "status": "done",
+      "title": "Rebind export so it never steals text input (Search + future text fields)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "export"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/input/keymap/bindings/global_search.rs",
+        "crates/tui/src/input/keymap/bindings/screens.rs",
+        "crates/tui/tests/app_tests.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: handle_search_input matches KeyCode::Char('e') before KeyCode::Char(c), stealing the 'e' character from search queries.",
+        "crates/tui/src/input/keymap/bindings/global_search.rs: Search export is hard-coded to 'e' in the centralized keymap.",
+        "crates/tui/src/input/keymap/bindings/screens.rs: Indexes, Cluster, Health, SavedSearches, Apps, and Users screens all use 'e' for export in the centralized keymap.",
+        "crates/tui/tests/app_tests.rs: test_export_search_popup_flow and others explicitly exercise 'press e' behavior.",
+        "crates/tui/src/ui/popup.rs: export popup default content says 'Enter filename...', which already handles typing 'e' correctly, but the trigger key is the source of the conflict."
+      ],
+      "plan": [
+        "Migrate all export triggers to a safe modifier-based binding (recommended: Ctrl+E).",
+        "Update keymap definitions in crates/tui/src/input/keymap/bindings/ to use the new binding.",
+        "Update screen handlers in crates/tui/src/app.rs to match the new binding.",
+        "Update test suite in crates/tui/tests/app_tests.rs to use the new binding and add a regression test for typing 'e' in Search.",
+        "Update docs/usage.md to reflect the new export shortcut."
+      ],
+      "notes": [
+        "Since keybindings were centralized, the scope now includes the keymap binding files.",
+        "Ctrl+E is chosen to avoid conflict with typing and to follow common terminal conventions.",
+        "Migrated all TUI export triggers to Ctrl+E to avoid conflict with text input",
+        "Updated keymap catalog and documentation to reflect the new shortcut",
+        "Added regression test ensuring plain 'e' appends to search queries",
+        "Verified all changes pass CI gate including TUI snapshot tests"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T16:19:10.807135000Z",
+      "completed_at": "2026-01-27T16:19:10.807135000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

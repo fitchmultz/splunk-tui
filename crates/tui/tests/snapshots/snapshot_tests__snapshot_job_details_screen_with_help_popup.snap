@@ -18,7 +18,7 @@ expression: harness.render()
 │Priority: 5    │                                              │               │
 │Label: Schedule│                Search Screen:                │               │
 │Cursor Time: 20│              Enter     Run search            │               │
-│Finalized: No  │            e         Export results          │               │
+│Finalized: No  │            Ctrl+e    Export results          │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

@@ -1020,7 +1020,7 @@ impl App {
                 }
                 None
             }
-            KeyCode::Char('e') if key.modifiers.is_empty() => {
+            KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if !self.search_results.is_empty() {
                     self.begin_export(ExportTarget::SearchResults);
                 }
@@ -1049,7 +1049,10 @@ impl App {
 
         // Normal jobs screen input
         match key.code {
-            KeyCode::Char('e') if self.jobs.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
+            KeyCode::Char('e')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self.jobs.as_ref().map(|v| !v.is_empty()).unwrap_or(false) =>
+            {
                 self.begin_export(ExportTarget::Jobs);
                 None
             }
@@ -1153,11 +1156,12 @@ impl App {
 
         match key.code {
             KeyCode::Char('e')
-                if self
-                    .indexes
-                    .as_ref()
-                    .map(|v| !v.is_empty())
-                    .unwrap_or(false) =>
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self
+                        .indexes
+                        .as_ref()
+                        .map(|v| !v.is_empty())
+                        .unwrap_or(false) =>
             {
                 self.begin_export(ExportTarget::Indexes);
                 None
@@ -1179,7 +1183,9 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('e') if self.cluster_info.is_some() => {
+            KeyCode::Char('e')
+                if key.modifiers.contains(KeyModifiers::CONTROL) && self.cluster_info.is_some() =>
+            {
                 self.begin_export(ExportTarget::ClusterInfo);
                 None
             }
@@ -1222,7 +1228,9 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('e') if self.health_info.is_some() => {
+            KeyCode::Char('e')
+                if key.modifiers.contains(KeyModifiers::CONTROL) && self.health_info.is_some() =>
+            {
                 self.begin_export(ExportTarget::Health);
                 None
             }
@@ -1252,11 +1260,12 @@ impl App {
 
         match key.code {
             KeyCode::Char('e')
-                if self
-                    .saved_searches
-                    .as_ref()
-                    .map(|v| !v.is_empty())
-                    .unwrap_or(false) =>
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self
+                        .saved_searches
+                        .as_ref()
+                        .map(|v| !v.is_empty())
+                        .unwrap_or(false) =>
             {
                 self.begin_export(ExportTarget::SavedSearches);
                 None
@@ -1303,11 +1312,12 @@ impl App {
 
         match key.code {
             KeyCode::Char('e')
-                if self
-                    .internal_logs
-                    .as_ref()
-                    .map(|v| !v.is_empty())
-                    .unwrap_or(false) =>
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self
+                        .internal_logs
+                        .as_ref()
+                        .map(|v| !v.is_empty())
+                        .unwrap_or(false) =>
             {
                 self.begin_export(ExportTarget::InternalLogs);
                 None
@@ -1341,7 +1351,10 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('e') if self.apps.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
+            KeyCode::Char('e')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self.apps.as_ref().map(|v| !v.is_empty()).unwrap_or(false) =>
+            {
                 self.begin_export(ExportTarget::Apps);
                 None
             }
@@ -1370,7 +1383,10 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('e') if self.users.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
+            KeyCode::Char('e')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self.users.as_ref().map(|v| !v.is_empty()).unwrap_or(false) =>
+            {
                 self.begin_export(ExportTarget::Users);
                 None
             }
@@ -2666,8 +2682,8 @@ mod export_popup_tests {
     use super::*;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-    fn key(c: char) -> KeyEvent {
-        KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE)
+    fn ctrl_key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
     }
 
     #[test]
@@ -2677,7 +2693,7 @@ mod export_popup_tests {
         // Indexes
         app.popup = None;
         app.indexes = Some(vec![]); // Empty but present
-        app.handle_indexes_input(key('e'));
+        app.handle_indexes_input(ctrl_key('e'));
         assert_eq!(app.export_target, None); // Should NOT open for empty list
 
         app.indexes = Some(vec![
@@ -2688,7 +2704,7 @@ mod export_popup_tests {
             }))
             .unwrap(),
         ]);
-        app.handle_indexes_input(key('e'));
+        app.handle_indexes_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::Indexes));
         assert!(matches!(
             app.popup.as_ref().map(|p| &p.kind),
@@ -2704,7 +2720,7 @@ mod export_popup_tests {
             }))
             .unwrap(),
         ]);
-        app.handle_users_input(key('e'));
+        app.handle_users_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::Users));
 
         // Apps
@@ -2716,7 +2732,7 @@ mod export_popup_tests {
             }))
             .unwrap(),
         ]);
-        app.handle_apps_input(key('e'));
+        app.handle_apps_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::Apps));
 
         // Saved Searches
@@ -2729,7 +2745,7 @@ mod export_popup_tests {
             }))
             .unwrap(),
         ]);
-        app.handle_saved_searches_input(key('e'));
+        app.handle_saved_searches_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::SavedSearches));
 
         // Cluster
@@ -2741,7 +2757,7 @@ mod export_popup_tests {
             }))
             .unwrap(),
         );
-        app.handle_cluster_input(key('e'));
+        app.handle_cluster_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::ClusterInfo));
 
         // Jobs
@@ -2758,13 +2774,13 @@ mod export_popup_tests {
             }))
             .unwrap(),
         ]);
-        app.handle_jobs_input(key('e'));
+        app.handle_jobs_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::Jobs));
 
         // Health
         app.popup = None;
         app.health_info = Some(serde_json::from_value(serde_json::json!({})).unwrap());
-        app.handle_health_input(key('e'));
+        app.handle_health_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::Health));
 
         // Internal Logs
@@ -2777,7 +2793,7 @@ mod export_popup_tests {
             }))
             .unwrap(),
         ]);
-        app.handle_internal_logs_input(key('e'));
+        app.handle_internal_logs_input(ctrl_key('e'));
         assert_eq!(app.export_target, Some(ExportTarget::InternalLogs));
     }
 }

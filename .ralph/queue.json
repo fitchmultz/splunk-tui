@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0103",
-      "status": "todo",
-      "title": "Rebind export so it never steals text input (Search + future text fields)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "keybindings",
-        "export"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs: Search screen uses unmodified \"e\" as export shortcut inside handle_search_input, directly conflicting with freeform query entry.",
-        "crates/tui/src/ui/popup.rs: Help text advertises \"e\" export on Search, reinforcing the conflict.",
-        "crates/tui/tests/app_tests.rs: export popup tests are built around \"press e\" semantics."
-      ],
-      "plan": [
-        "Choose an export binding that is safe in text-entry contexts (e.g., Ctrl+E, Alt+E, or an explicit Command mode).",
-        "Update Search + other screens to use the new binding consistently.",
-        "Update help popup content and docs; update/extend tests to cover both success (has data) and failure (no data) paths.",
-        "Ensure export popup still supports typing full paths (including digits and \"e\") without conflicts."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0116",
       "status": "todo",
       "title": "Allow quitting from any popup/modal (consistent global quit behavior)",

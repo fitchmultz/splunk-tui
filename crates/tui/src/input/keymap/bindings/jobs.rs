@@ -35,7 +35,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Jobs,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export jobs",
             scope: BindingScope::Screen(Jobs),
             matcher: None,

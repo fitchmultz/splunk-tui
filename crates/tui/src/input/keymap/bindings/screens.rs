@@ -35,7 +35,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Indexes,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export indexes",
             scope: BindingScope::Screen(Indexes),
             matcher: None,
@@ -114,7 +114,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Cluster,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export cluster info",
             scope: BindingScope::Screen(Cluster),
             matcher: None,
@@ -145,7 +145,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Health,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export health info",
             scope: BindingScope::Screen(Health),
             matcher: None,
@@ -176,7 +176,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::SavedSearches,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export saved searches",
             scope: BindingScope::Screen(SavedSearches),
             matcher: None,
@@ -264,7 +264,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::InternalLogs,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export logs",
             scope: BindingScope::Screen(InternalLogs),
             matcher: None,
@@ -352,7 +352,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Apps,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export apps",
             scope: BindingScope::Screen(Apps),
             matcher: None,
@@ -431,7 +431,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Users,
-            keys: "e",
+            keys: "Ctrl+e",
             description: "Export users",
             scope: BindingScope::Screen(Users),
             matcher: None,

@@ -426,7 +426,7 @@ Launch the TUI by running `splunk-tui`.
 
 #### Search Screen
 - `Enter`: Run search
-- `e`: Export results
+- `Ctrl+e`: Export results
 - `Ctrl+c`: Copy query (or current result)
 - `Up/Down`: Navigate history (query)
 - `Ctrl+j/k`: Scroll results (while typing)
@@ -438,7 +438,7 @@ Launch the TUI by running `splunk-tui`.
 
 #### Jobs Screen
 - `r`: Refresh jobs
-- `e`: Export jobs
+- `Ctrl+e`: Export jobs
 - `Ctrl+c`: Copy selected SID
 - `a`: Toggle auto-refresh
 - `s`: Cycle sort column
@@ -455,43 +455,43 @@ Launch the TUI by running `splunk-tui`.
 
 #### Indexes Screen
 - `r`: Refresh indexes
-- `e`: Export indexes
+- `Ctrl+e`: Export indexes
 - `Ctrl+c`: Copy selected index name
 - `j/k or Up/Down`: Navigate list
 
 #### Cluster Screen
 - `r`: Refresh cluster info
-- `e`: Export cluster info
+- `Ctrl+e`: Export cluster info
 - `Ctrl+c`: Copy cluster ID
 
 #### Health Screen
 - `r`: Refresh health status
-- `e`: Export health info
+- `Ctrl+e`: Export health info
 - `Ctrl+c`: Copy health status
 
 #### Saved Searches Screen
 - `r`: Refresh saved searches
-- `e`: Export saved searches
+- `Ctrl+e`: Export saved searches
 - `Ctrl+c`: Copy selected saved search name
 - `Enter`: Run selected search
 - `j/k or Up/Down`: Navigate list
 
 #### Internal Logs Screen
 - `r`: Refresh logs
-- `e`: Export logs
+- `Ctrl+e`: Export logs
 - `a`: Toggle auto-refresh
 - `Ctrl+c`: Copy selected log message
 - `j/k or Up/Down`: Navigate list
 
 #### Apps Screen
 - `r`: Refresh apps
-- `e`: Export apps
+- `Ctrl+e`: Export apps
 - `Ctrl+c`: Copy selected app name
 - `j/k or Up/Down`: Navigate list
 
 #### Users Screen
 - `r`: Refresh users
-- `e`: Export users
+- `Ctrl+e`: Export users
 - `Ctrl+c`: Copy selected username
 - `j/k or Up/Down`: Navigate list
 
