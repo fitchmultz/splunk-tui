@@ -51,7 +51,7 @@ make ci           # install -> format -> generate -> lint -> type-check -> test 
 Notes:
 - `make clean` deletes `Cargo.lock` by design (don’t be surprised).
 - `make test-live` runs all `#[ignore]` tests across the workspace. Set `SKIP_LIVE_TESTS=1` to skip when the dev server is unavailable.
-- Live tests should be configured via `.env.test` (untracked) or environment variables; avoid hardcoding server addresses in code or docs.
+- Live tests should be configured via `.env.test` (untracked; copy from `.env.test.example`) or environment variables; avoid hardcoding server addresses in code or docs.
 - Integration tests are discovered automatically; adding a new `crates/*/tests/*.rs` file requires no Makefile updates.
 
 ## Coding Standards
