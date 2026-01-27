@@ -58,7 +58,7 @@ fn test_config_delete_help() {
 #[test]
 fn test_config_list_executes() {
     splunk_cmd()
-        .args(["config", "list", "--output", "json"])
+        .args(["-o", "json", "config", "list"])
         .assert()
         .success();
 }
@@ -68,7 +68,7 @@ fn test_config_list_executes() {
 fn test_config_list_executes_with_whitespace_splunk_config_path() {
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", "   ")
-        .args(["config", "list", "--output", "json"])
+        .args(["-o", "json", "config", "list"])
         .assert()
         .success();
 }
@@ -76,10 +76,14 @@ fn test_config_list_executes_with_whitespace_splunk_config_path() {
 /// Test that `splunk-cli config list` accepts table format.
 #[test]
 fn test_config_list_table_format_empty() {
+    let (_temp_dir, config_path) = setup_temp_config();
+
     splunk_cmd()
-        .args(["config", "list", "--output", "table"])
+        .env("SPLUNK_CONFIG_PATH", config_path)
+        .args(["-o", "table", "config", "list"])
         .assert()
-        .success();
+        .success()
+        .stdout(predicate::str::contains("No profiles configured"));
 }
 
 /// Test that `splunk-cli config list` shows no profiles message when empty.
@@ -89,10 +93,10 @@ fn test_config_list_empty() {
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
-        .args(["config", "list", "--output", "json"])
+        .args(["-o", "json", "config", "list"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("No profiles configured"));
+        .stdout(predicate::str::contains("\"profiles\": {}"));
 }
 
 /// Test creating a profile with basic options.
@@ -201,7 +205,7 @@ fn test_config_list_json_format() {
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .args(["config", "list", "--output", "json"])
+        .args(["-o", "json", "config", "list"])
         .assert()
         .success()
         .stdout(predicate::str::contains("profiles"))
@@ -233,7 +237,7 @@ fn test_config_list_table_format() {
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .args(["config", "list", "--output", "table"])
+        .args(["-o", "table", "config", "list"])
         .assert()
         .success()
         .stdout(predicate::str::contains("Profile"))
@@ -333,7 +337,7 @@ fn test_config_set_invalid_output_format() {
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
-        .args(["config", "list", "--output", "invalid"])
+        .args(["-o", "invalid", "config", "list"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("Invalid output format"));
@@ -489,7 +493,7 @@ fn test_config_show_json_format() {
     // Show profile in JSON format
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .args(["config", "show", "test-profile", "--output", "json"])
+        .args(["-o", "json", "config", "show", "test-profile"])
         .assert()
         .success()
         .stdout(predicate::str::contains("\"name\""))
@@ -525,7 +529,7 @@ fn test_config_show_csv_format() {
     // Show profile in CSV format
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .args(["config", "show", "test-profile", "--output", "csv"])
+        .args(["-o", "csv", "config", "show", "test-profile"])
         .assert()
         .success()
         .stdout(predicate::str::contains("field,value"))
@@ -560,7 +564,7 @@ fn test_config_show_xml_format() {
     // Show profile in XML format
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .args(["config", "show", "test-profile", "--output", "xml"])
+        .args(["-o", "xml", "config", "show", "test-profile"])
         .assert()
         .success()
         .stdout(predicate::str::contains("<?xml"))
@@ -592,7 +596,7 @@ fn test_config_show_invalid_output_format() {
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
-        .args(["config", "show", "test-profile", "--output", "invalid"])
+        .args(["-o", "invalid", "config", "show", "test-profile"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("Invalid output format"));

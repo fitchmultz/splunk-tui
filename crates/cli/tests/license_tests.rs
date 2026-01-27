@@ -25,3 +25,16 @@ fn test_license_execution() {
         .failure()
         .stderr(predicate::str::contains("Connection refused"));
 }
+
+/// Test that `splunk-cli license` accepts global output flags.
+#[test]
+fn test_license_formats() {
+    for format in ["json", "table", "csv", "xml"] {
+        let mut cmd = splunk_cmd();
+        cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+        cmd.args(["-o", format, "license"])
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains("Connection refused"));
+    }
+}

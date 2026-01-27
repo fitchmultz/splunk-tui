@@ -1,6 +1,17 @@
 //! Output formatters for CLI commands.
 //!
-//! Provides multiple output formats: JSON, Table, CSV, and XML.
+//! Responsibilities:
+//! - Provide multiple output formats: JSON, Table, CSV, and XML.
+//! - Implement the `Formatter` trait for various Splunk resource types.
+//! - Handle nested JSON flattening for CSV and hierarchical mapping for XML.
+//!
+//! Does NOT handle:
+//! - Direct printing to stdout (returns formatted strings).
+//! - Terminal UI rendering (see `crates/tui`).
+//!
+//! Invariants / Assumptions:
+//! - Tables use tab-separation for consistent alignment in standard terminals.
+//! - XML output includes a standard version/encoding declaration.
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -99,6 +110,12 @@ pub trait Formatter {
 
     /// Format profile configuration.
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String>;
+
+    /// Format all configured profiles.
+    fn format_profiles(
+        &self,
+        profiles: &std::collections::BTreeMap<String, ProfileConfig>,
+    ) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -238,6 +255,49 @@ impl Formatter for JsonFormatter {
         };
 
         Ok(serde_json::to_string_pretty(&display)?)
+    }
+
+    fn format_profiles(
+        &self,
+        profiles: &std::collections::BTreeMap<String, ProfileConfig>,
+    ) -> Result<String> {
+        #[derive(Serialize)]
+        struct ProfileDisplay {
+            base_url: Option<String>,
+            username: Option<String>,
+            skip_verify: Option<bool>,
+            timeout_seconds: Option<u64>,
+            max_retries: Option<usize>,
+            password: Option<String>,
+            api_token: Option<String>,
+        }
+
+        let display_profiles: std::collections::BTreeMap<String, ProfileDisplay> = profiles
+            .iter()
+            .map(|(name, profile)| {
+                (
+                    name.clone(),
+                    ProfileDisplay {
+                        base_url: profile.base_url.clone(),
+                        username: profile.username.clone(),
+                        skip_verify: profile.skip_verify,
+                        timeout_seconds: profile.timeout_seconds,
+                        max_retries: profile.max_retries,
+                        password: profile.password.as_ref().map(|_| "****".to_string()),
+                        api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
+                    },
+                )
+            })
+            .collect();
+
+        #[derive(Serialize)]
+        struct Output {
+            profiles: std::collections::BTreeMap<String, ProfileDisplay>,
+        }
+
+        Ok(serde_json::to_string_pretty(&Output {
+            profiles: display_profiles,
+        })?)
     }
 }
 
@@ -1094,6 +1154,29 @@ impl Formatter for TableFormatter {
 
         Ok(output)
     }
+
+    fn format_profiles(
+        &self,
+        profiles: &std::collections::BTreeMap<String, ProfileConfig>,
+    ) -> Result<String> {
+        if profiles.is_empty() {
+            return Ok(
+                "No profiles configured. Use 'splunk-cli config set <profile-name>' to add one."
+                    .to_string(),
+            );
+        }
+
+        let mut output = format!("{:<20} {:<40} {:<15}\n", "Profile", "Base URL", "Username");
+        output.push_str(&format!("{}\n", "-".repeat(75)));
+
+        for (name, profile) in profiles {
+            let base_url = profile.base_url.as_deref().unwrap_or("-");
+            let username = profile.username.as_deref().unwrap_or("-");
+            output.push_str(&format!("{:<20} {:<40} {:<15}\n", name, base_url, username));
+        }
+
+        Ok(output)
+    }
 }
 
 impl TableFormatter {
@@ -1771,6 +1854,43 @@ impl Formatter for CsvFormatter {
             escape_csv(&max_retries)
         ));
 
+        Ok(csv)
+    }
+
+    fn format_profiles(
+        &self,
+        profiles: &std::collections::BTreeMap<String, ProfileConfig>,
+    ) -> Result<String> {
+        if profiles.is_empty() {
+            return Ok(String::new());
+        }
+
+        let mut csv =
+            String::from("profile,base_url,username,skip_verify,timeout_seconds,max_retries\n");
+        for (name, profile) in profiles {
+            let fields = [
+                escape_csv(name),
+                escape_csv(profile.base_url.as_deref().unwrap_or("")),
+                escape_csv(profile.username.as_deref().unwrap_or("")),
+                escape_csv(
+                    &profile
+                        .skip_verify
+                        .map_or("".to_string(), |b| b.to_string()),
+                ),
+                escape_csv(
+                    &profile
+                        .timeout_seconds
+                        .map_or("".to_string(), |t| t.to_string()),
+                ),
+                escape_csv(
+                    &profile
+                        .max_retries
+                        .map_or("".to_string(), |r| r.to_string()),
+                ),
+            ];
+            csv.push_str(&fields.join(","));
+            csv.push('\n');
+        }
         Ok(csv)
     }
 
@@ -2524,6 +2644,38 @@ impl Formatter for XmlFormatter {
         }
 
         xml.push_str("</profile>");
+        Ok(xml)
+    }
+
+    fn format_profiles(
+        &self,
+        profiles: &std::collections::BTreeMap<String, ProfileConfig>,
+    ) -> Result<String> {
+        let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<profiles>\n");
+        for (name, profile) in profiles {
+            xml.push_str("  <profile>\n");
+            xml.push_str(&format!("    <name>{}</name>\n", escape_xml(name)));
+            if let Some(ref url) = profile.base_url {
+                xml.push_str(&format!("    <base_url>{}</base_url>\n", escape_xml(url)));
+            }
+            if let Some(ref user) = profile.username {
+                xml.push_str(&format!("    <username>{}</username>\n", escape_xml(user)));
+            }
+            if let Some(skip) = profile.skip_verify {
+                xml.push_str(&format!("    <skip_verify>{}</skip_verify>\n", skip));
+            }
+            if let Some(timeout) = profile.timeout_seconds {
+                xml.push_str(&format!(
+                    "    <timeout_seconds>{}</timeout_seconds>\n",
+                    timeout
+                ));
+            }
+            if let Some(retries) = profile.max_retries {
+                xml.push_str(&format!("    <max_retries>{}</max_retries>\n", retries));
+            }
+            xml.push_str("  </profile>\n");
+        }
+        xml.push_str("</profiles>\n");
         Ok(xml)
     }
 }

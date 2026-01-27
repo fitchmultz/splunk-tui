@@ -1,4 +1,14 @@
 //! License command implementation.
+//!
+//! Responsibilities:
+//! - Fetch license usage, pools, and stacks from Splunk.
+//! - Format and display license information.
+//!
+//! Does NOT handle:
+//! - License management (activation, deletion).
+//!
+//! Invariants / Assumptions:
+//! - Requires an authenticated Splunk client.
 
 use anyhow::{Context, Result};
 use clap::Args;
@@ -9,16 +19,12 @@ use crate::formatters::{LicenseInfoOutput, OutputFormat, get_formatter, write_to
 
 /// Display license information.
 #[derive(Args, Debug)]
-pub struct LicenseArgs {
-    /// Output format (json, table, csv, xml).
-    #[arg(short, long, default_value = "table")]
-    pub format: String,
-}
+pub struct LicenseArgs {}
 
 /// Run the license command.
 pub async fn run(
     config: splunk_config::Config,
-    args: &LicenseArgs,
+    output_format: &str,
     output_file: Option<std::path::PathBuf>,
     _cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
@@ -43,7 +49,7 @@ pub async fn run(
         stacks,
     };
 
-    let format = OutputFormat::from_str(&args.format)?;
+    let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let formatted = formatter.format_license(&output)?;
 

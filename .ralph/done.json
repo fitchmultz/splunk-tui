@@ -4522,6 +4522,53 @@
       "completed_at": "2026-01-27T19:07:13.400914000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0125",
+      "status": "done",
+      "title": "Fix splunk-cli config subcommand output flag conflicts and unify formatting semantics",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "ux",
+        "bug",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/config.rs",
+        "crates/cli/src/commands/license.rs",
+        "docs/usage.md",
+        "crates/cli/tests/config_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs defines a global -o/--output option, but crates/cli/src/commands/config.rs and crates/cli/src/commands/license.rs define their own output/format flags (-o/--output in config, -f/--format in license).",
+        "Global -o/--output is currently ignored by config and license commands because main.rs does not pass it to their respective run() functions, using the subcommand-local values instead.",
+        "Config subcommands (List/Show) have inconsistent default formats (List: json, Show: table) compared to the global default (table).",
+        "Config subcommands manually validate formats (e.g., List only supports json/table) while global --output supports json/table/csv/xml, leading to confusing failures (e.g., 'splunk-cli config list -o csv' fails even though --help says csv is supported)."
+      ],
+      "plan": [
+        "Standardize all CLI commands to use the global -o/--output option defined in main.rs.",
+        "Remove local 'output' and 'format' flags from ConfigCommand (config.rs) and LicenseArgs (license.rs).",
+        "Update run() functions in config.rs and license.rs to accept the output format as a parameter.",
+        "Ensure all commands support the full set of global formats (json, table, csv, xml) where applicable, or provide clear errors for unsupported combinations.",
+        "Update docs/usage.md and integration tests to reflect the unified flag behavior."
+      ],
+      "notes": [
+        "The License command uses -f/--format which should be removed in favor of the global -o/--output for consistency.",
+        "Consider if 'config set' or 'config edit' should also support output flags, or if they should remain side-effect only with standard success messages.",
+        "Unified all CLI subcommands to use the global -o/--output flag from main.rs.",
+        "Removed local 'output' and 'format' flags from config and license commands to eliminate conflicts.",
+        "Implemented format_profiles and format_profile in the Formatter trait to support JSON, Table, CSV, and XML consistently.",
+        "Updated documentation and integration tests to reflect the new unified flag behavior.",
+        "Verified that config list now supports all global formats and defaults to table output."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T19:27:19.753251000Z",
+      "completed_at": "2026-01-27T19:27:19.753251000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

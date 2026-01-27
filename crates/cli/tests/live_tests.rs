@@ -268,7 +268,7 @@ fn test_live_cli_license_json() {
     };
     let mut cmd = splunk_cli_cmd();
 
-    cmd.args(["license", "--format", "json"])
+    cmd.args(["-o", "json", "license"])
         .assert()
         .success()
         .stdout(predicate::str::contains("\"usage\""));

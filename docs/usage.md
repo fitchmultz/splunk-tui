@@ -257,9 +257,8 @@ Show license information, including usage, pools, and stacks.
 
 ```bash
 splunk-cli license
+splunk-cli -o json license
 ```
-
-- `-f, --format <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
 
 #### `users`
 List all Splunk users.
@@ -440,15 +439,14 @@ splunk-cli list-all --output table
 Manage configuration profiles.
 
 ```bash
-splunk-cli config list --output json
+splunk-cli -o json config list
 splunk-cli config set my-profile --base-url https://localhost:8089 --username admin
-splunk-cli config show my-profile --output table
+splunk-cli config show my-profile
 splunk-cli config edit my-profile --use-keyring
 splunk-cli config delete my-profile
 ```
 
 - `list`: List all configured profiles
-  - `-o, --output <FORMAT>`: Output format (json, table). Default: json
 - `set <profile-name>`: Create or update a profile
   - `-b, --base-url <URL>`: Base URL of Splunk server
   - `-u, --username <NAME>`: Username for session authentication
@@ -459,7 +457,6 @@ splunk-cli config delete my-profile
   - `-m, --max-retries <NUMBER>`: Maximum number of retries
   - `--use-keyring`: Store credentials in system keyring
 - `show <profile-name>`: Display a profile's configuration
-  - `-o, --output <FORMAT>`: Output format (json, table, csv, xml). Default: table
 - `edit <profile-name>`: Edit a profile interactively
   - `--use-keyring`: Store credentials in system keyring
   - Prompts for each field with current values as defaults

@@ -16,7 +16,6 @@
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 use anyhow::{Context, Result};
 use clap::Subcommand;
-use serde::Serialize;
 use splunk_config::persistence::ConfigManager;
 use splunk_config::types::{ProfileConfig, SecureValue};
 use std::path::PathBuf;
@@ -24,11 +23,7 @@ use std::path::PathBuf;
 #[derive(Subcommand)]
 pub enum ConfigCommand {
     /// List all configured profiles
-    List {
-        /// Output format (json, table)
-        #[arg(short, long, default_value = "json")]
-        output: String,
-    },
+    List,
 
     /// Set or update a profile
     Set {
@@ -72,10 +67,6 @@ pub enum ConfigCommand {
     Show {
         /// Profile name to display
         profile_name: String,
-
-        /// Output format (json, table, csv, xml)
-        #[arg(short, long, default_value = "table")]
-        output: String,
     },
 
     /// Delete a profile
@@ -97,6 +88,7 @@ pub enum ConfigCommand {
 
 pub fn run(
     command: ConfigCommand,
+    output_format: &str,
     output_file: Option<PathBuf>,
     config_path: Option<PathBuf>,
 ) -> Result<()> {
@@ -107,8 +99,8 @@ pub fn run(
     };
 
     match command {
-        ConfigCommand::List { output } => {
-            run_list(&manager, &output, output_file.clone())?;
+        ConfigCommand::List => {
+            run_list(&manager, output_format, output_file.clone())?;
         }
         ConfigCommand::Set {
             profile_name,
@@ -134,11 +126,8 @@ pub fn run(
                 use_keyring,
             )?;
         }
-        ConfigCommand::Show {
-            profile_name,
-            output,
-        } => {
-            run_show(&manager, &profile_name, &output, output_file.clone())?;
+        ConfigCommand::Show { profile_name } => {
+            run_show(&manager, &profile_name, output_format, output_file.clone())?;
         }
         ConfigCommand::Edit {
             profile_name,
@@ -161,105 +150,21 @@ fn run_list(
 ) -> Result<()> {
     let profiles = manager.list_profiles();
 
-    // Validate output format before checking for empty profiles
-    match output_format {
-        "json" | "table" => {}
-        _ => {
-            anyhow::bail!(
-                "Invalid output format '{}'. Valid values are 'json' or 'table'",
-                output_format
-            );
-        }
-    }
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
 
-    if profiles.is_empty() {
-        println!("No profiles configured. Use 'splunk-cli config set <profile-name>' to add one.");
-        return Ok(());
-    }
+    let output = formatter.format_profiles(profiles)?;
 
-    match output_format {
-        "json" => {
-            #[derive(Serialize)]
-            struct Output {
-                profiles: std::collections::BTreeMap<String, ProfileDisplay>,
-            }
-
-            #[derive(Serialize)]
-            struct ProfileDisplay {
-                base_url: Option<String>,
-                username: Option<String>,
-                skip_verify: Option<bool>,
-                timeout_seconds: Option<u64>,
-                max_retries: Option<usize>,
-                password: Option<String>,
-                api_token: Option<String>,
-            }
-
-            let display_profiles: std::collections::BTreeMap<String, ProfileDisplay> = profiles
-                .iter()
-                .map(|(name, profile): (&String, &ProfileConfig)| {
-                    (
-                        name.clone(),
-                        ProfileDisplay {
-                            base_url: profile.base_url.clone(),
-                            username: profile.username.clone(),
-                            skip_verify: profile.skip_verify,
-                            timeout_seconds: profile.timeout_seconds,
-                            max_retries: profile.max_retries,
-                            password: profile.password.as_ref().map(|_| "****".to_string()),
-                            api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
-                        },
-                    )
-                })
-                .collect();
-
-            let output = Output {
-                profiles: display_profiles,
-            };
-            let formatted = serde_json::to_string_pretty(&output)?;
-            if let Some(ref path) = output_file {
-                let format = OutputFormat::Json;
-                write_to_file(&formatted, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                println!("{}", formatted);
-            }
-        }
-        "table" => {
-            let mut table_output =
-                format!("{:<20} {:<40} {:<15}\n", "Profile", "Base URL", "Username");
-            table_output.push_str(&format!("{}\n", "-".repeat(75)));
-
-            for (name, profile) in profiles {
-                let base_url = profile.base_url.as_deref().unwrap_or("-");
-                let username = profile.username.as_deref().unwrap_or("-");
-                table_output.push_str(&format!("{:<20} {:<40} {:<15}\n", name, base_url, username));
-            }
-
-            if let Some(ref path) = output_file {
-                let format = OutputFormat::Table;
-                write_to_file(&table_output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", table_output);
-            }
-        }
-        _ => {
-            anyhow::bail!(
-                "Invalid output format '{}'. Valid values are 'json' or 'table'",
-                output_format
-            );
-        }
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
     }
 
     Ok(())

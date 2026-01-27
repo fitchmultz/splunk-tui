@@ -367,7 +367,12 @@ async fn run_command(
 ) -> Result<()> {
     match cli.command {
         Commands::Config { command } => {
-            commands::config::run(command, cli.output_file.clone(), cli.config_path.clone())?;
+            commands::config::run(
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cli.config_path.clone(),
+            )?;
         }
         Commands::Search {
             query,
@@ -448,8 +453,8 @@ async fn run_command(
         Commands::Kvstore => {
             commands::kvstore::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
-        Commands::License(args) => {
-            commands::license::run(config, &args, cli.output_file.clone(), cancel).await?;
+        Commands::License(_args) => {
+            commands::license::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
         Commands::Logs {
             count,
