@@ -4,7 +4,7 @@ use reqwest::Client;
 use splunk_client::endpoints;
 use wiremock::{
     Mock, MockServer, ResponseTemplate,
-    matchers::{method, path, path_regex, query_param},
+    matchers::{body_string_contains, method, path, path_regex, query_param},
 };
 
 // Re-export commonly used types for test convenience
@@ -337,6 +337,52 @@ async fn test_list_saved_searches() {
     );
     assert_eq!(searches[1].name, "Disabled Search");
     assert!(searches[1].disabled);
+}
+
+#[tokio::test]
+async fn test_create_saved_search() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/saved/searches"))
+        .and(query_param("output_mode", "json"))
+        .and(body_string_contains("name=my-search"))
+        .and(body_string_contains("search=%7C+makeresults"))
+        .respond_with(ResponseTemplate::new(201).set_body_string("{}"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::create_saved_search(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "my-search",
+        "| makeresults",
+        3,
+    )
+    .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_delete_saved_search() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/saved/searches/my-search"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result =
+        endpoints::delete_saved_search(&client, &mock_server.uri(), "test-token", "my-search", 3)
+            .await;
+
+    assert!(result.is_ok());
 }
 
 #[tokio::test]

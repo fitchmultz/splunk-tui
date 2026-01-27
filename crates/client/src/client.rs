@@ -582,6 +582,82 @@ impl SplunkClient {
         }
     }
 
+    /// Create a saved search.
+    pub async fn create_saved_search(&mut self, name: &str, search: &str) -> Result<()> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::create_saved_search(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            name,
+            search,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(()) => Ok(()),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::create_saved_search(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    name,
+                    search,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Delete a saved search by name.
+    pub async fn delete_saved_search(&mut self, name: &str) -> Result<()> {
+        let auth_token = self.get_auth_token().await?;
+
+        let result = endpoints::delete_saved_search(
+            &self.http,
+            &self.base_url,
+            &auth_token,
+            name,
+            self.max_retries,
+        )
+        .await;
+
+        match result {
+            Ok(()) => Ok(()),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
+            {
+                info!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                self.session_manager.clear_session();
+                let new_token = self.get_auth_token().await?;
+                endpoints::delete_saved_search(
+                    &self.http,
+                    &self.base_url,
+                    &new_token,
+                    name,
+                    self.max_retries,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    }
+
     /// List all installed apps.
     pub async fn list_apps(&mut self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
         let auth_token = self.get_auth_token().await?;

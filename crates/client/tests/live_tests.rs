@@ -20,10 +20,15 @@ use splunk_client::SplunkClient;
 use splunk_client::endpoints::search::CreateJobOptions;
 
 #[derive(Debug, Clone)]
+enum LiveAuth {
+    Session { username: String, password: String },
+    ApiToken { token: String },
+}
+
+#[derive(Debug, Clone)]
 struct LiveEnv {
     base_url: String,
-    username: String,
-    password: String,
+    auth: LiveAuth,
     skip_verify: bool,
 }
 
@@ -92,19 +97,24 @@ fn load_test_env_or_skip() -> Option<LiveEnv> {
             return None;
         }
     };
-    let username = match std::env::var("SPLUNK_USERNAME") {
-        Ok(v) => v,
-        Err(_) => {
-            eprintln!("Skipping live tests: SPLUNK_USERNAME is not set.");
-            return None;
-        }
-    };
-    let password = match std::env::var("SPLUNK_PASSWORD") {
-        Ok(v) => v,
-        Err(_) => {
-            eprintln!("Skipping live tests: SPLUNK_PASSWORD is not set.");
-            return None;
-        }
+    let auth = if let Ok(token) = std::env::var("SPLUNK_API_TOKEN") {
+        LiveAuth::ApiToken { token }
+    } else {
+        let username = match std::env::var("SPLUNK_USERNAME") {
+            Ok(v) => v,
+            Err(_) => {
+                eprintln!("Skipping live tests: SPLUNK_USERNAME is not set.");
+                return None;
+            }
+        };
+        let password = match std::env::var("SPLUNK_PASSWORD") {
+            Ok(v) => v,
+            Err(_) => {
+                eprintln!("Skipping live tests: SPLUNK_PASSWORD is not set.");
+                return None;
+            }
+        };
+        LiveAuth::Session { username, password }
     };
 
     let skip_verify = parse_skip_verify_env();
@@ -116,8 +126,7 @@ fn load_test_env_or_skip() -> Option<LiveEnv> {
 
     Some(LiveEnv {
         base_url,
-        username,
-        password,
+        auth,
         skip_verify,
     })
 }
@@ -126,9 +135,14 @@ fn load_test_env_or_skip() -> Option<LiveEnv> {
 fn create_test_client_or_skip() -> Option<SplunkClient> {
     let env = load_test_env_or_skip()?;
 
-    let auth_strategy = AuthStrategy::SessionToken {
-        username: env.username,
-        password: SecretString::new(env.password.into()),
+    let auth_strategy = match env.auth {
+        LiveAuth::Session { username, password } => AuthStrategy::SessionToken {
+            username,
+            password: SecretString::new(password.into()),
+        },
+        LiveAuth::ApiToken { token } => AuthStrategy::ApiToken {
+            token: SecretString::new(token.into()),
+        },
     };
 
     Some(
@@ -139,6 +153,71 @@ fn create_test_client_or_skip() -> Option<SplunkClient> {
             .build()
             .expect("Failed to create client"),
     )
+}
+
+fn unique_name(prefix: &str) -> String {
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_else(|_| Duration::from_secs(0))
+        .as_millis();
+    format!("{prefix}_{ts}")
+}
+
+struct SavedSearchCleanup {
+    name: String,
+    base_url: String,
+    auth_strategy: AuthStrategy,
+    skip_verify: bool,
+}
+
+impl SavedSearchCleanup {
+    fn new(name: String) -> Option<Self> {
+        let env = load_test_env_or_skip()?;
+        let auth_strategy = match env.auth {
+            LiveAuth::Session { username, password } => AuthStrategy::SessionToken {
+                username,
+                password: SecretString::new(password.into()),
+            },
+            LiveAuth::ApiToken { token } => AuthStrategy::ApiToken {
+                token: SecretString::new(token.into()),
+            },
+        };
+
+        Some(Self {
+            name,
+            base_url: env.base_url,
+            auth_strategy,
+            skip_verify: env.skip_verify,
+        })
+    }
+}
+
+impl Drop for SavedSearchCleanup {
+    fn drop(&mut self) {
+        let Ok(handle) = tokio::runtime::Handle::try_current() else {
+            return;
+        };
+        let name = std::mem::take(&mut self.name);
+        if name.is_empty() {
+            return;
+        }
+        let base_url = self.base_url.clone();
+        let auth_strategy = self.auth_strategy.clone();
+        let skip_verify = self.skip_verify;
+
+        handle.spawn(async move {
+            let mut client = match SplunkClient::builder()
+                .base_url(base_url)
+                .auth_strategy(auth_strategy)
+                .skip_verify(skip_verify)
+                .build()
+            {
+                Ok(c) => c,
+                Err(_) => return,
+            };
+            let _ = client.delete_saved_search(&name).await;
+        });
+    }
 }
 
 #[tokio::test]
@@ -217,6 +296,33 @@ async fn test_live_search_and_get_results() {
         "Search results did not contain expected foo=bar row (last total={:?})",
         last_total
     );
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
+async fn test_live_create_status_and_delete_job() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    let sid = client
+        .create_search_job(
+            r#"| makeresults | eval foo="job" | table foo"#,
+            &CreateJobOptions {
+                wait: Some(false),
+                exec_time: Some(60),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("Failed to create search job");
+
+    let _status = client
+        .get_job_status(&sid)
+        .await
+        .expect("Failed to get job status");
+
+    client.delete_job(&sid).await.expect("Failed to delete job");
 }
 
 #[tokio::test]
@@ -316,6 +422,23 @@ async fn test_live_get_license_usage() {
 
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
+async fn test_live_list_license_pools_and_stacks() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    let _pools = client
+        .list_license_pools()
+        .await
+        .expect("Failed to list license pools");
+    let _stacks = client
+        .list_license_stacks()
+        .await
+        .expect("Failed to list license stacks");
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
 async fn test_live_get_kvstore_status() {
     let Some(mut client) = create_test_client_or_skip() else {
         return;
@@ -411,4 +534,39 @@ async fn test_live_list_apps_and_users_and_saved_searches() {
         .list_saved_searches()
         .await
         .expect("Failed to list saved searches");
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
+async fn test_live_create_list_and_delete_saved_search() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    let name = unique_name("codex_saved_search");
+    let _cleanup = SavedSearchCleanup::new(name.clone());
+
+    let search = r#"| makeresults | eval foo="saved-search" | table foo"#;
+    client
+        .create_saved_search(&name, search)
+        .await
+        .expect("Failed to create saved search");
+
+    let searches = client
+        .list_saved_searches()
+        .await
+        .expect("Failed to list saved searches");
+    let created = searches
+        .iter()
+        .find(|s| s.name == name)
+        .expect("created saved search should be listed");
+    assert_eq!(
+        created.search, search,
+        "created saved search should retain its search query"
+    );
+
+    client
+        .delete_saved_search(&name)
+        .await
+        .expect("Failed to delete saved search");
 }

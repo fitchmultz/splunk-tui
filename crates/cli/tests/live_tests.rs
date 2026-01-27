@@ -23,6 +23,7 @@
 use predicates::prelude::*;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
 
 fn env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -79,7 +80,7 @@ impl LiveEnvGuard {
             Err(_) => return false,
         };
 
-        TcpStream::connect_timeout(&addr, std::time::Duration::from_secs(2)).is_ok()
+        TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_ok()
     }
 
     fn should_run(base_url: &str) -> bool {
@@ -109,13 +110,15 @@ impl LiveEnvGuard {
                 return None;
             }
         };
-        if std::env::var("SPLUNK_USERNAME").is_err() {
-            eprintln!("Skipping live CLI tests: SPLUNK_USERNAME is not set.");
-            return None;
-        }
-        if std::env::var("SPLUNK_PASSWORD").is_err() {
-            eprintln!("Skipping live CLI tests: SPLUNK_PASSWORD is not set.");
-            return None;
+        if std::env::var("SPLUNK_API_TOKEN").is_err() {
+            if std::env::var("SPLUNK_USERNAME").is_err() {
+                eprintln!("Skipping live CLI tests: SPLUNK_USERNAME is not set.");
+                return None;
+            }
+            if std::env::var("SPLUNK_PASSWORD").is_err() {
+                eprintln!("Skipping live CLI tests: SPLUNK_PASSWORD is not set.");
+                return None;
+            }
         }
 
         if !Self::should_run(&base_url) {
@@ -138,6 +141,46 @@ impl Drop for LiveEnvGuard {
     fn drop(&mut self) {
         clear_splunk_env();
     }
+}
+
+fn create_test_client_from_env() -> splunk_client::SplunkClient {
+    use secrecy::SecretString;
+    use splunk_client::AuthStrategy;
+    use splunk_client::SplunkClient;
+
+    let base_url = std::env::var("SPLUNK_BASE_URL").expect("SPLUNK_BASE_URL must be set");
+    let auth = if let Ok(token) = std::env::var("SPLUNK_API_TOKEN") {
+        AuthStrategy::ApiToken {
+            token: SecretString::new(token.into()),
+        }
+    } else {
+        let username = std::env::var("SPLUNK_USERNAME").expect("SPLUNK_USERNAME must be set");
+        let password = std::env::var("SPLUNK_PASSWORD").expect("SPLUNK_PASSWORD must be set");
+        AuthStrategy::SessionToken {
+            username,
+            password: SecretString::new(password.into()),
+        }
+    };
+
+    let skip_verify = matches!(
+        std::env::var("SPLUNK_SKIP_VERIFY").as_deref(),
+        Ok("1") | Ok("true") | Ok("TRUE") | Ok("yes") | Ok("YES")
+    );
+
+    SplunkClient::builder()
+        .base_url(base_url)
+        .auth_strategy(auth)
+        .skip_verify(skip_verify)
+        .build()
+        .expect("Failed to create SplunkClient")
+}
+
+fn unique_name(prefix: &str) -> String {
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_else(|_| std::time::Duration::from_secs(0))
+        .as_millis();
+    format!("{prefix}_{ts}")
 }
 
 #[test]
@@ -203,11 +246,69 @@ fn test_live_cli_search_wait_json() {
         "--output",
         "json",
         "search",
-        "search index=main | head 1",
+        r#"| makeresults | eval foo="cli-live" | table foo"#,
         "--wait",
         "--count",
         "1",
     ])
     .assert()
-    .success();
+    .success()
+    .stdout(predicate::str::contains("cli-live"));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_license_json() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    cmd.args(["license", "--format", "json"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"usage\""));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_saved_searches_info_and_run_json() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+
+    let name = unique_name("codex_saved_search_cli");
+    let search = r#"| makeresults | eval foo="saved-search-cli" | table foo"#;
+
+    // Setup via client library, validate via CLI.
+    let mut client = create_test_client_from_env();
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to build tokio runtime");
+    rt.block_on(async {
+        client
+            .create_saved_search(&name, search)
+            .await
+            .expect("Failed to create saved search");
+    });
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.args(["--output", "json", "saved-searches", "info", &name])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&name));
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.args(["--output", "json", "saved-searches", "run", &name, "--wait"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("saved-search-cli"));
+
+    rt.block_on(async {
+        client
+            .delete_saved_search(&name)
+            .await
+            .expect("Failed to delete saved search");
+    });
 }

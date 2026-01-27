@@ -23,8 +23,8 @@ pub use logs::get_internal_logs;
 pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
 pub use search::{
-    CreateJobOptions, OutputMode, create_job, get_job_status, get_results, list_saved_searches,
-    wait_for_job,
+    CreateJobOptions, OutputMode, create_job, create_saved_search, delete_saved_search,
+    get_job_status, get_results, list_saved_searches, wait_for_job,
 };
 pub use server::*;
 pub use users::list_users;

@@ -333,6 +333,54 @@ pub async fn list_saved_searches(
         .collect())
 }
 
+/// Create a saved search.
+///
+/// This endpoint is used for live-test setup and for future UI/CLI parity.
+pub async fn create_saved_search(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    name: &str,
+    search: &str,
+    max_retries: usize,
+) -> Result<()> {
+    debug!("Creating saved search: {}", name);
+
+    let url = format!("{}/services/saved/searches", base_url);
+
+    let builder = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json")])
+        .form(&[("name", name), ("search", search)]);
+
+    let _response = send_request_with_retry(builder, max_retries).await?;
+    Ok(())
+}
+
+/// Delete a saved search by name.
+///
+/// This endpoint is used for live-test cleanup and for future UI/CLI parity.
+pub async fn delete_saved_search(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    name: &str,
+    max_retries: usize,
+) -> Result<()> {
+    debug!("Deleting saved search: {}", name);
+
+    let url = format!("{}/services/saved/searches/{}", base_url, name);
+
+    let builder = client
+        .delete(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json")]);
+
+    let _response = send_request_with_retry(builder, max_retries).await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
