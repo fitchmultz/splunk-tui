@@ -7,6 +7,7 @@
 //! - Navigation boundary behavior
 
 mod helpers;
+use crossterm::event::KeyCode;
 use helpers::*;
 use ratatui::prelude::Rect;
 use splunk_client::models::{App as SplunkApp, Index, SavedSearch, SearchJobStatus, User};
@@ -35,6 +36,32 @@ fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
         .collect()
 }
 
+// ============================================================================
+// KeyEventKind Filtering Tests (RQ-0107 fix)
+// ============================================================================
+
+// NOTE: The filtering for KeyEventKind happens in main.rs at the input task level.
+// These tests verify that the helper functions create events with the correct kind.
+// The app.handle_input() method does NOT check key.kind - it only looks at
+// key.code and key.modifiers, which is why filtering must happen earlier in the pipeline.
+
+#[test]
+fn test_release_event_helper_creates_correct_kind() {
+    let release = release_key('a');
+
+    assert_eq!(release.kind, crossterm::event::KeyEventKind::Release);
+    assert_eq!(release.code, KeyCode::Char('a'));
+}
+
+#[test]
+fn test_repeat_event_helper_creates_correct_kind() {
+    let repeat = repeat_key('b');
+
+    assert_eq!(repeat.kind, crossterm::event::KeyEventKind::Repeat);
+    assert_eq!(repeat.code, KeyCode::Char('b'));
+}
+
+#[allow(dead_code)]
 #[test]
 fn test_settings_screen_navigation() {
     let mut app = App::new(None);

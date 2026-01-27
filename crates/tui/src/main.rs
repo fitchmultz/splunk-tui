@@ -66,7 +66,9 @@ async fn main() -> Result<()> {
             match event_result {
                 Ok(event) => match event {
                     crossterm::event::Event::Key(key) => {
-                        tx_input.send(Action::Input(key)).ok();
+                        if key.kind == crossterm::event::KeyEventKind::Press {
+                            tx_input.send(Action::Input(key)).ok();
+                        }
                     }
                     crossterm::event::Event::Mouse(mouse) => {
                         tx_input.send(Action::Mouse(mouse)).ok();

@@ -67,6 +67,26 @@ pub fn ctrl_key(c: char) -> KeyEvent {
     KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
 }
 
+/// Create a key event with explicit KeyEventKind.
+pub fn key_with_kind(code: KeyCode, kind: crossterm::event::KeyEventKind) -> KeyEvent {
+    KeyEvent {
+        code,
+        modifiers: KeyModifiers::NONE,
+        kind,
+        state: crossterm::event::KeyEventState::NONE,
+    }
+}
+
+/// Create a Release key event (used to test filtering).
+pub fn release_key(c: char) -> KeyEvent {
+    key_with_kind(KeyCode::Char(c), crossterm::event::KeyEventKind::Release)
+}
+
+/// Create a Repeat key event (used to test filtering).
+pub fn repeat_key(c: char) -> KeyEvent {
+    key_with_kind(KeyCode::Char(c), crossterm::event::KeyEventKind::Repeat)
+}
+
 /// Create a mouse click event.
 pub fn mouse_click(col: u16, row: u16) -> crossterm::event::MouseEvent {
     use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};

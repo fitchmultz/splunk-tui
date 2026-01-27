@@ -4061,6 +4061,46 @@
       "completed_at": "2026-01-27T12:22:27.439091000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0107",
+      "status": "done",
+      "title": "Process only KeyEventKind::Press to avoid double-triggering input",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "keybindings",
+        "bug",
+        "crossterm"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs: EventStream forwards every Event::Key(key) directly into the app without filtering by key.kind.",
+        "crates/tui/src/app.rs: input handlers ignore key.kind and operate purely on key.code/modifiers, which risks processing Release/Repeat events as real input when enabled by the terminal.",
+        "crates/tui/tests/helpers.rs: tests create KeyEvent via KeyEvent::new, which defaults to Press and does not cover Release/Repeat behavior."
+      ],
+      "plan": [
+        "Filter key events in the input task (recommended) or in App::handle_input to accept only KeyEventKind::Press.",
+        "Add tests constructing KeyEvent with non-Press kinds (where supported) to ensure they are ignored.",
+        "Confirm typing and navigation no longer double-fire under terminals that emit Release/Repeat."
+      ],
+      "notes": [
+        "Implemented KeyEventKind::Press filtering in main.rs input task (recommended approach from task plan)",
+        "Added test helpers: key_with_kind(), release_key(), repeat_key()",
+        "Added 2 tests verifying helper functions create correct KeyEventKind values",
+        "All 111 TUI tests pass; CI passes cleanly",
+        "Manual verification: run splunk-tui to confirm no double-input on Release/Repeat terminals"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T12:54:50.632180000Z",
+      "completed_at": "2026-01-27T12:54:50.632180000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

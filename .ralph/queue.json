@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0107",
-      "status": "todo",
-      "title": "Process only KeyEventKind::Press to avoid double-triggering input",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "keybindings",
-        "bug",
-        "crossterm"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs: EventStream forwards every Event::Key(key) directly into the app without filtering by key.kind.",
-        "crates/tui/src/app.rs: input handlers ignore key.kind and operate purely on key.code/modifiers, which risks processing Release/Repeat events as real input when enabled by the terminal.",
-        "crates/tui/tests/helpers.rs: tests create KeyEvent via KeyEvent::new, which defaults to Press and does not cover Release/Repeat behavior."
-      ],
-      "plan": [
-        "Filter key events in the input task (recommended) or in App::handle_input to accept only KeyEventKind::Press.",
-        "Add tests constructing KeyEvent with non-Press kinds (where supported) to ensure they are ignored.",
-        "Confirm typing and navigation no longer double-fire under terminals that emit Release/Repeat."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0108",
       "status": "todo",
       "title": "Centralize keybinding handling (reduce per-screen duplication and drift)",
