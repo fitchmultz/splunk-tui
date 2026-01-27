@@ -8,7 +8,7 @@
     "id_width": 4
   },
   "agent": {
-    "runner": "claud",
+    "runner": "claude",
     "model": "opus",
     "phases": 3,
     "iterations": 1,
