@@ -8,6 +8,7 @@
 
 mod helpers;
 use helpers::*;
+use ratatui::prelude::Rect;
 use splunk_client::models::{App as SplunkApp, Index, SavedSearch, SearchJobStatus, User};
 use splunk_tui::{
     CurrentScreen, Popup, PopupType, Toast, ToastLevel, action::Action, action::ExportFormat,
@@ -491,6 +492,60 @@ fn test_quit_action() {
     assert!(
         matches!(action, Some(Action::Quit)),
         "Should return Quit action"
+    );
+}
+
+#[test]
+fn test_quit_keyboard_triggers_action() {
+    let screens = [
+        CurrentScreen::Search,
+        CurrentScreen::Jobs,
+        CurrentScreen::Indexes,
+        CurrentScreen::Cluster,
+        CurrentScreen::Health,
+        CurrentScreen::SavedSearches,
+        CurrentScreen::InternalLogs,
+        CurrentScreen::Apps,
+        CurrentScreen::Users,
+        CurrentScreen::Settings,
+    ];
+
+    for screen in screens {
+        let mut app = App::new(None);
+        app.current_screen = screen;
+
+        let action = app.handle_input(key('q'));
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Pressing 'q' on {:?} screen should return Quit action",
+            screen
+        );
+    }
+}
+
+#[test]
+fn test_quit_mouse_footer_click() {
+    let mut app = App::new(None);
+    app.last_area = Rect::new(0, 0, 100, 24);
+    app.loading = false;
+
+    let action = app.handle_mouse(mouse_click(87, 22));
+    assert!(
+        matches!(action, Some(Action::Quit)),
+        "Clicking 'Quit' in footer should return Quit action"
+    );
+}
+
+#[test]
+fn test_quit_mouse_footer_click_with_loading() {
+    let mut app = App::new(None);
+    app.last_area = Rect::new(0, 0, 100, 24);
+    app.loading = true;
+
+    let action = app.handle_mouse(mouse_click(105, 22));
+    assert!(
+        matches!(action, Some(Action::Quit)),
+        "Clicking 'Quit' in footer with loading offset should return Quit action"
     );
 }
 

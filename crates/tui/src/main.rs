@@ -145,10 +145,7 @@ async fn main() -> Result<()> {
 
                 // Check for quit first
                 if matches!(action, Action::Quit) {
-                    // Save persisted state before quitting
-                    let state = app.get_persisted_state();
-                    let mut cm = config_manager.lock().await;
-                    if let Err(e) = cm.save(&state) {
+                    if let Err(e) = save_and_quit(&app, &config_manager).await {
                         tracing::error!(error = %e, "Failed to save config");
                     }
                     break;
@@ -157,6 +154,13 @@ async fn main() -> Result<()> {
                 // Handle input -> Action
                 if let Action::Input(key) = action {
                     if let Some(a) = app.handle_input(key) {
+                        // Check for quit immediately after input handling
+                        if matches!(a, Action::Quit) {
+                            if let Err(e) = save_and_quit(&app, &config_manager).await {
+                                tracing::error!(error = %e, "Failed to save config");
+                            }
+                            break;
+                        }
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
                         // Check if we need to load more results after navigation
@@ -166,6 +170,13 @@ async fn main() -> Result<()> {
                     }
                 } else if let Action::Mouse(mouse) = action {
                     if let Some(a) = app.handle_mouse(mouse) {
+                        // Check for quit immediately after mouse handling
+                        if matches!(a, Action::Quit) {
+                            if let Err(e) = save_and_quit(&app, &config_manager).await {
+                                tracing::error!(error = %e, "Failed to save config");
+                            }
+                            break;
+                        }
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
                         // Check if we need to load more results after navigation
@@ -705,6 +716,17 @@ async fn handle_side_effects(
         }
         _ => {}
     }
+}
+
+/// Save persisted state and prepare to quit.
+///
+/// This function should be called before exiting the event loop to ensure
+/// user preferences and UI state are persisted to disk.
+async fn save_and_quit(app: &App, config_manager: &Arc<Mutex<ConfigManager>>) -> Result<()> {
+    let state = app.get_persisted_state();
+    let mut cm = config_manager.lock().await;
+    cm.save(&state)?;
+    Ok(())
 }
 
 /// Wait for a job to complete by polling its status.

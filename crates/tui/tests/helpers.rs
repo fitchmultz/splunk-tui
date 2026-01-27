@@ -66,3 +66,14 @@ pub fn tab_key() -> KeyEvent {
 pub fn ctrl_key(c: char) -> KeyEvent {
     KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
 }
+
+/// Create a mouse click event.
+pub fn mouse_click(col: u16, row: u16) -> crossterm::event::MouseEvent {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: col,
+        row,
+        modifiers: KeyModifiers::empty(),
+    }
+}

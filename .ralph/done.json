@@ -3974,6 +3974,49 @@
       "completed_at": "2026-01-26T23:22:04.856777000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0100",
+      "status": "done",
+      "title": "Make quit/exit work end-to-end (keyboard + footer click)",
+      "priority": "critical",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/app_tests.rs",
+        "make test -p splunk-tui",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs: the main loop only breaks when an incoming channel message is Action::Quit; Action::Quit returned from app.handle_input() is never treated as a quit signal.",
+        "crates/tui/src/app.rs: multiple input handlers return Some(Action::Quit) on KeyCode::Char('q'), and footer click hit-testing can return Some(Action::Quit).",
+        "crates/tui/src/ui/popup.rs + docs/usage.md: the UI and docs advertise q as Quit, but the process does not exit because the event loop does not act on Quit emitted by the App state machine."
+      ],
+      "plan": [
+        "Refactor main loop to treat post-handle_input Action::Quit as an immediate shutdown path (same as direct Action::Quit).",
+        "Ensure shutdown path always persists state (ConfigManager::save) and restores terminal modes.",
+        "Add a regression test that exercises the quit path end-to-end (likely by extracting the loop body into a testable function).",
+        "Run targeted tests for splunk-tui and then make ci."
+      ],
+      "notes": [
+        "Added quit checks after handle_input() and handle_mouse() in main.rs",
+        "Extracted save_and_quit helper to eliminate code duplication",
+        "Added test_quit_keyboard_triggers_action for all 10 screens",
+        "Added test_quit_mouse_footer_click for footer click path",
+        "Added test_quit_mouse_footer_click_with_loading for loading offset"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T05:17:15.176022000Z",
+      "completed_at": "2026-01-27T05:17:15.176022000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
