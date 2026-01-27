@@ -13,3 +13,13 @@ pub use types::{
     AuthConfig, AuthStrategy, ColorTheme, Config, ConnectionConfig, ProfileConfig, SecureValue,
     Theme,
 };
+
+#[cfg(test)]
+pub(crate) mod test_util {
+    use std::sync::{Mutex, OnceLock};
+
+    pub fn global_test_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+}

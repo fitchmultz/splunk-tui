@@ -848,9 +848,7 @@ mod tests {
     }
 
     fn capture_warn_messages<F: FnOnce()>(f: F) -> Vec<String> {
-        use std::sync::OnceLock;
-        static TRACING_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        let _guard = TRACING_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        let _guard = crate::test_util::global_test_lock().lock().unwrap();
 
         let subscriber = CapturingSubscriber {
             events: Arc::new(Mutex::new(Vec::new())),

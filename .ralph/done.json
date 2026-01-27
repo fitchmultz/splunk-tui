@@ -4430,6 +4430,53 @@
       "completed_at": "2026-01-27T18:23:03.792733000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0121",
+      "status": "done",
+      "title": "Align env var parsing with docs: treat empty values as unset for all SPLUNK_* vars",
+      "priority": "high",
+      "tags": [
+        "config",
+        "bug",
+        "ux",
+        "consistency"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs",
+        "crates/tui/src/main.rs",
+        "crates/cli/src/commands/config.rs",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "docs/usage.md states empty env var values are treated as unset, but implementation is inconsistent across crates.",
+        "crates/config/src/loader.rs uses env_var_or_none() for string fields but std::env::var().ok() for bool/number fields (SPLUNK_SKIP_VERIFY, SPLUNK_TIMEOUT, SPLUNK_MAX_RETRIES), leading to parse errors on empty strings.",
+        "crates/tui/src/main.rs filters empty SPLUNK_CONFIG_PATH but not empty SPLUNK_PROFILE.",
+        "env_var_or_none() does not trim whitespace, treating '   ' as a set value, which contradicts 'treat empty as unset' for most CLI users.",
+        "crates/cli/src/commands/config.rs manually filters SPLUNK_CONFIG_PATH; this logic should be centralized or unified."
+      ],
+      "plan": [
+        "Refactor ConfigLoader::env_var_or_none to trim and filter empty strings, ensuring 'unset' and 'empty/whitespace' are treated identically.",
+        "Update ConfigLoader::from_env to use the unified helper for all fields (parsing strings into bool/number/Duration as needed) and skip assignment for None results.",
+        "Update TUI and CLI entry points to use the unified helper for SPLUNK_CONFIG_PATH and SPLUNK_PROFILE to ensure consistent fallback behavior.",
+        "Add focused tests in crates/config/src/loader.rs covering empty, whitespace-only, and invalid values for all SPLUNK_* env vars.",
+        "Update docs/usage.md to explicitly state that whitespace-only values are also treated as unset."
+      ],
+      "notes": [
+        "Unifying this at the ConfigLoader level ensures that all frontends (CLI, TUI, and any future ones) share the same robustness against misconfigured environment variables.",
+        "Centralized env var parsing in ConfigLoader::env_var_or_none to treat empty/whitespace as unset",
+        "Unified SPLUNK_* parsing in from_env for consistent behavior across all field types",
+        "Updated TUI and CLI entry points to use unified helper for path and profile overrides",
+        "Fixed flaky unit tests by adding global test lock for env var mutations",
+        "Updated docs/usage.md to explicitly document whitespace-only treatment"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T18:52:49.035481000Z",
+      "completed_at": "2026-01-27T18:52:49.035481000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

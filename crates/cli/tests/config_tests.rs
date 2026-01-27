@@ -63,6 +63,16 @@ fn test_config_list_executes() {
         .success();
 }
 
+/// Test that `splunk-cli config list` executes successfully with whitespace SPLUNK_CONFIG_PATH.
+#[test]
+fn test_config_list_executes_with_whitespace_splunk_config_path() {
+    splunk_cmd()
+        .env("SPLUNK_CONFIG_PATH", "   ")
+        .args(["config", "list", "--output", "json"])
+        .assert()
+        .success();
+}
+
 /// Test that `splunk-cli config list` accepts table format.
 #[test]
 fn test_config_list_table_format_empty() {

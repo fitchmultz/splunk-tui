@@ -222,23 +222,20 @@ fn test_empty_splunk_config_path_uses_default() {
         std::env::set_var("SPLUNK_CONFIG_PATH", "");
     }
 
-    // In Rust 1.84+, std::env::var returns Ok("") for empty strings
-    let result = std::env::var("SPLUNK_CONFIG_PATH");
-    assert!(
-        result.is_ok() && result.unwrap().is_empty(),
-        "Empty SPLUNK_CONFIG_PATH should return Ok with empty string"
-    );
-
-    // The TUI pattern uses `if let Ok(...)` which will match empty strings
-    // So we need to handle this case properly with !path.is_empty()
-    let should_use_custom = if let Ok(path) = std::env::var("SPLUNK_CONFIG_PATH") {
-        !path.is_empty() // Don't use custom path if empty
-    } else {
-        false
-    };
+    let should_use_custom = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").is_some();
     assert!(
         !should_use_custom,
         "Empty SPLUNK_CONFIG_PATH should not trigger custom path usage"
+    );
+
+    // Test that whitespace-only SPLUNK_CONFIG_PATH is handled correctly
+    unsafe {
+        std::env::set_var("SPLUNK_CONFIG_PATH", "   ");
+    }
+    let should_use_custom_ws = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").is_some();
+    assert!(
+        !should_use_custom_ws,
+        "Whitespace-only SPLUNK_CONFIG_PATH should not trigger custom path usage"
     );
 }
 
@@ -251,13 +248,9 @@ fn test_empty_splunk_config_path_with_config_manager() {
         std::env::set_var("SPLUNK_CONFIG_PATH", "");
     }
 
-    // This simulates the actual TUI code pattern (after fix)
-    let manager = if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
-        if !config_path.is_empty() {
-            ConfigManager::new_with_path(std::path::PathBuf::from(config_path))
-        } else {
-            ConfigManager::new()
-        }
+    // This simulates the actual TUI code pattern
+    let manager = if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+        ConfigManager::new_with_path(std::path::PathBuf::from(config_path))
     } else {
         ConfigManager::new()
     };
@@ -267,9 +260,20 @@ fn test_empty_splunk_config_path_with_config_manager() {
         "ConfigManager should succeed when SPLUNK_CONFIG_PATH is empty"
     );
 
-    // Just verify it succeeded - the fact it didn't try to use empty path is enough
-    // (empty path would cause different behavior or errors)
-    let _created_manager = manager.unwrap();
+    // Test with whitespace
+    unsafe {
+        std::env::set_var("SPLUNK_CONFIG_PATH", "  ");
+    }
+    let manager_ws = if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH")
+    {
+        ConfigManager::new_with_path(std::path::PathBuf::from(config_path))
+    } else {
+        ConfigManager::new()
+    };
+    assert!(
+        manager_ws.is_ok(),
+        "ConfigManager should succeed when SPLUNK_CONFIG_PATH is whitespace"
+    );
 }
 
 #[test]
@@ -283,23 +287,17 @@ fn test_empty_splunk_config_path_with_config_loader() {
 
     let mut loader = ConfigLoader::new().load_dotenv().unwrap();
 
-    // This simulates the actual TUI load_config code pattern (after fix)
-    if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH")
-        && !config_path.is_empty()
-    {
+    // This simulates the actual TUI load_config code pattern
+    if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
         loader = loader.with_config_path(std::path::PathBuf::from(config_path));
-        // If empty, do nothing (use default path)
     }
 
-    // The loader should work fine with default path - just verify it doesn't fail
-    // with path-related errors (missing auth/base URL is expected and OK here)
+    // The loader should work fine with default path
     let result = loader.from_env().and_then(|l| l.build());
 
     match result {
         Ok(_) => {}
         Err(e) => {
-            // MissingBaseUrl or MissingAuth are expected when env vars are not set
-            // Any other error (especially path-related) would be a problem
             let error_msg = e.to_string();
             assert!(
                 error_msg.contains("Base URL") || error_msg.contains("Authentication"),
@@ -446,12 +444,12 @@ fn test_config_loader_with_profile_from_custom_path() {
     }
 
     // Check for SPLUNK_CONFIG_PATH override (TUI pattern)
-    if let Ok(path) = std::env::var("SPLUNK_CONFIG_PATH") {
+    if let Some(path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
         loader = loader.with_config_path(std::path::PathBuf::from(path));
     }
 
     // Load from profile if SPLUNK_PROFILE is set
-    if let Ok(profile_name) = std::env::var("SPLUNK_PROFILE") {
+    if let Some(profile_name) = ConfigLoader::env_var_or_none("SPLUNK_PROFILE") {
         loader = loader
             .with_profile_name(profile_name)
             .from_profile()
@@ -481,22 +479,22 @@ fn test_tui_pattern_matches_cli_pattern() {
     let config_path =
         create_test_config_with_profile(&temp_dir, "test", "https://test.example.com:8089");
 
-    // Test TUI pattern (from main.rs lines 85-87)
+    // Test TUI pattern
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
-    let tui_result = if let Ok(path) = std::env::var("SPLUNK_CONFIG_PATH") {
+    let tui_result = if let Some(path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(path))
     } else {
         ConfigManager::new()
     };
     cleanup_env_vars();
 
-    // Test CLI pattern (from cli/src/commands/config.rs lines 64-67)
+    // Test CLI pattern
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
-    let cli_result = if let Ok(path) = std::env::var("SPLUNK_CONFIG_PATH") {
+    let cli_result = if let Some(path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(path))
     } else {
         ConfigManager::new()

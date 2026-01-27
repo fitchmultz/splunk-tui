@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0121",
-      "status": "todo",
-      "title": "Align env var parsing with docs: treat empty values as unset for all SPLUNK_* vars",
-      "priority": "high",
-      "tags": [
-        "config",
-        "bug",
-        "ux"
-      ],
-      "scope": [
-        "crates/config/src/loader.rs",
-        "docs/usage.md",
-        "crates/config/src/loader.rs (tests)",
-        "make test"
-      ],
-      "evidence": [
-        "docs/usage.md states empty env var values are treated as unset (e.g., SPLUNK_API_TOKEN=\"\" should not override profiles).",
-        "crates/config/src/loader.rs uses env_var_or_none() for some vars but reads SPLUNK_SKIP_VERIFY/SPLUNK_TIMEOUT/SPLUNK_MAX_RETRIES via std::env::var without filtering empty strings, which can cause parse errors instead of ignoring empties.",
-        "crates/config/src/loader.rs includes a test showing whitespace-only values are treated as set; this may be surprising in practice for CLI/TUI users."
-      ],
-      "plan": [
-        "Update from_env() to use a consistent helper for all env vars (string/bool/number) and ignore empty values.",
-        "Decide whether to trim whitespace-only values (recommended: treat whitespace-only as empty/unset) and update tests accordingly.",
-        "Add focused tests for empty/whitespace env var behavior across bool/number fields.",
-        "Update docs/usage.md to match the finalized behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0124",
       "status": "todo",
       "title": "Add splunk-cli global --config-path option and wire it through consistently",

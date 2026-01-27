@@ -249,16 +249,18 @@ async fn main() -> Result<()> {
         // Config command doesn't need full config, return minimal placeholder
         splunk_config::Config {
             connection: splunk_config::ConnectionConfig {
-                base_url: std::env::var("SPLUNK_BASE_URL").unwrap_or_default(),
+                base_url: ConfigLoader::env_var_or_none("SPLUNK_BASE_URL").unwrap_or_default(),
                 skip_verify: false,
                 timeout: std::time::Duration::from_secs(30),
                 max_retries: 3,
             },
             auth: splunk_config::AuthConfig {
                 strategy: splunk_config::types::AuthStrategy::SessionToken {
-                    username: std::env::var("SPLUNK_USERNAME").unwrap_or_default(),
+                    username: ConfigLoader::env_var_or_none("SPLUNK_USERNAME").unwrap_or_default(),
                     password: secrecy::SecretString::new(
-                        std::env::var("SPLUNK_PASSWORD").unwrap_or_default().into(),
+                        ConfigLoader::env_var_or_none("SPLUNK_PASSWORD")
+                            .unwrap_or_default()
+                            .into(),
                     ),
                 },
             },

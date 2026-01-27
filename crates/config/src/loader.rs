@@ -198,9 +198,9 @@ impl ConfigLoader {
         Ok(())
     }
 
-    /// Read an environment variable, returning None if unset or empty.
-    fn env_var_or_none(key: &str) -> Option<String> {
-        std::env::var(key).ok().filter(|s| !s.is_empty())
+    /// Read an environment variable, returning None if unset, empty, or whitespace-only.
+    pub fn env_var_or_none(key: &str) -> Option<String> {
+        std::env::var(key).ok().filter(|s| !s.trim().is_empty())
     }
 
     /// Read configuration from environment variables.
@@ -219,24 +219,34 @@ impl ConfigLoader {
         if let Some(token) = Self::env_var_or_none("SPLUNK_API_TOKEN") {
             self.api_token = Some(SecretString::new(token.into()));
         }
-        if let Ok(skip) = std::env::var("SPLUNK_SKIP_VERIFY") {
-            self.skip_verify = Some(skip.parse().map_err(|_| ConfigError::InvalidValue {
-                var: "SPLUNK_SKIP_VERIFY".to_string(),
-                message: "must be true or false".to_string(),
-            })?);
+        if let Some(skip) = Self::env_var_or_none("SPLUNK_SKIP_VERIFY") {
+            self.skip_verify =
+                Some(skip.trim().parse().map_err(|_| ConfigError::InvalidValue {
+                    var: "SPLUNK_SKIP_VERIFY".to_string(),
+                    message: "must be true or false".to_string(),
+                })?);
         }
-        if let Ok(timeout) = std::env::var("SPLUNK_TIMEOUT") {
-            let secs: u64 = timeout.parse().map_err(|_| ConfigError::InvalidValue {
-                var: "SPLUNK_TIMEOUT".to_string(),
-                message: "must be a number".to_string(),
-            })?;
+        if let Some(timeout) = Self::env_var_or_none("SPLUNK_TIMEOUT") {
+            let secs: u64 = timeout
+                .trim()
+                .parse()
+                .map_err(|_| ConfigError::InvalidValue {
+                    var: "SPLUNK_TIMEOUT".to_string(),
+                    message: "must be a number".to_string(),
+                })?;
             self.timeout = Some(Duration::from_secs(secs));
         }
-        if let Ok(retries) = std::env::var("SPLUNK_MAX_RETRIES") {
-            self.max_retries = Some(retries.parse().map_err(|_| ConfigError::InvalidValue {
-                var: "SPLUNK_MAX_RETRIES".to_string(),
-                message: "must be a number".to_string(),
-            })?);
+        if let Some(retries) = Self::env_var_or_none("SPLUNK_MAX_RETRIES") {
+            self.max_retries =
+                Some(
+                    retries
+                        .trim()
+                        .parse()
+                        .map_err(|_| ConfigError::InvalidValue {
+                            var: "SPLUNK_MAX_RETRIES".to_string(),
+                            message: "must be a number".to_string(),
+                        })?,
+                );
         }
         Ok(self)
     }
@@ -328,7 +338,7 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::Mutex;
     use tempfile::TempDir;
 
     fn create_test_config_file(dir: &Path) -> PathBuf {
@@ -365,8 +375,7 @@ mod tests {
     }
 
     fn env_lock() -> &'static Mutex<()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(()))
+        crate::test_util::global_test_lock()
     }
 
     fn cleanup_splunk_env() {
@@ -376,6 +385,10 @@ mod tests {
             std::env::remove_var("SPLUNK_USERNAME");
             std::env::remove_var("SPLUNK_PASSWORD");
             std::env::remove_var("SPLUNK_CONFIG_PATH");
+            std::env::remove_var("SPLUNK_PROFILE");
+            std::env::remove_var("SPLUNK_SKIP_VERIFY");
+            std::env::remove_var("SPLUNK_TIMEOUT");
+            std::env::remove_var("SPLUNK_MAX_RETRIES");
         }
     }
 
@@ -559,10 +572,9 @@ mod tests {
     }
 
     #[test]
-    fn test_env_var_or_none_filters_empty_strings() {
+    fn test_env_var_or_none_filters_empty_and_whitespace_strings() {
         let _env = EnvVarGuard::new();
         // Direct unit test for the env_var_or_none helper function
-        // This tests the core functionality without relying on complex env var setup
 
         // Test 1: Unset env var returns None
         let key1 = "_SPLUNK_TEST_UNSET_VAR";
@@ -575,63 +587,82 @@ mod tests {
         }
         let result2 = ConfigLoader::env_var_or_none(key1);
         assert!(result2.is_none(), "Empty string env var should return None");
+
+        // Test 3: Whitespace-only string env var returns None
+        unsafe {
+            std::env::set_var(key1, "   ");
+        }
+        let result3 = ConfigLoader::env_var_or_none(key1);
+        assert!(
+            result3.is_none(),
+            "Whitespace-only env var should return None"
+        );
         unsafe {
             std::env::remove_var(key1);
         }
 
-        // Test 3: Non-empty string env var returns Some
+        // Test 4: Non-empty string env var returns Some(trimmed)
         let key2 = "_SPLUNK_TEST_SET_VAR";
         unsafe {
-            std::env::set_var(key2, "test-value");
+            std::env::set_var(key2, " test-value ");
         }
-        let result3 = ConfigLoader::env_var_or_none(key2);
+        let result4 = ConfigLoader::env_var_or_none(key2);
         assert_eq!(
-            result3,
-            Some("test-value".to_string()),
+            result4,
+            Some(" test-value ".to_string()), // Implementation doesn't trim the value, just checks if trimmed is empty
             "Non-empty env var should return Some(value)"
         );
         unsafe {
             std::env::remove_var(key2);
         }
-
-        // Test 4: Whitespace-only string is NOT filtered
-        let key3 = "_SPLUNK_TEST_WHITESPACE_VAR";
-        unsafe {
-            std::env::set_var(key3, "   ");
-        }
-        let result4 = ConfigLoader::env_var_or_none(key3);
-        assert_eq!(
-            result4,
-            Some("   ".to_string()),
-            "Whitespace-only env var should return Some(whitespace)"
-        );
-        unsafe {
-            std::env::remove_var(key3);
-        }
     }
 
     #[test]
-    fn test_whitespace_only_env_var_treated_as_set() {
+    fn test_whitespace_only_env_var_treated_as_unset() {
         let _env = EnvVarGuard::new();
-        // Whitespace-only is NOT filtered as empty (only empty string is)
+        // Whitespace-only is filtered as empty/unset
         unsafe {
             std::env::set_var("SPLUNK_API_TOKEN", "   ");
             std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_USERNAME", "admin");
+            std::env::set_var("SPLUNK_PASSWORD", "password");
         }
 
         let loader = ConfigLoader::new().from_env().unwrap();
 
         let config = loader.build().unwrap();
-        // Whitespace is a valid (though invalid for auth) value, so API token is used
+        // Whitespace API token should be ignored, falling back to session auth
         assert!(matches!(
             config.auth.strategy,
-            AuthStrategy::ApiToken { .. }
+            AuthStrategy::SessionToken { .. }
         ));
 
         unsafe {
             std::env::remove_var("SPLUNK_API_TOKEN");
             std::env::remove_var("SPLUNK_BASE_URL");
+            std::env::remove_var("SPLUNK_USERNAME");
+            std::env::remove_var("SPLUNK_PASSWORD");
         }
+    }
+
+    #[test]
+    fn test_empty_and_whitespace_env_vars_ignored_for_non_string_fields() {
+        let _env = EnvVarGuard::new();
+        unsafe {
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "token");
+            std::env::set_var("SPLUNK_SKIP_VERIFY", "   ");
+            std::env::set_var("SPLUNK_TIMEOUT", "");
+            std::env::set_var("SPLUNK_MAX_RETRIES", " ");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        // Should use defaults for bool/number fields instead of erroring on parse
+        assert!(!config.connection.skip_verify);
+        assert_eq!(config.connection.timeout, Duration::from_secs(30));
+        assert_eq!(config.connection.max_retries, 3);
     }
 
     #[test]
@@ -646,8 +677,7 @@ mod tests {
         }
 
         // Verify that with_config_path would use the environment variable's path
-        // This simulates the TUI behavior of reading SPLUNK_CONFIG_PATH
-        let env_path = std::env::var("SPLUNK_CONFIG_PATH").unwrap();
+        let env_path = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").unwrap();
         let path_from_env = std::path::PathBuf::from(env_path);
 
         let loader = ConfigLoader::new()
@@ -668,17 +698,24 @@ mod tests {
     fn test_empty_splunk_config_path_ignored() {
         let _env = EnvVarGuard::new();
         // Empty string in SPLUNK_CONFIG_PATH should be ignored
-        // The TUI code should check for Ok() which filters empty strings
         unsafe {
             std::env::set_var("SPLUNK_CONFIG_PATH", "");
         }
 
-        // std::env::var returns Err("") for empty strings, not Ok("")
-        // So this simulates the TUI behavior where empty strings are treated as "not set"
-        let result = std::env::var("SPLUNK_CONFIG_PATH");
+        let result = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
         assert!(
-            result.is_err() || result.unwrap().is_empty(),
-            "Empty env var should be filtered"
+            result.is_none(),
+            "Empty env var should be filtered by env_var_or_none"
+        );
+
+        // Test with whitespace
+        unsafe {
+            std::env::set_var("SPLUNK_CONFIG_PATH", "   ");
+        }
+        let result_ws = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
+        assert!(
+            result_ws.is_none(),
+            "Whitespace env var should be filtered by env_var_or_none"
         );
 
         unsafe {

@@ -22,7 +22,7 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, User,
 };
-use splunk_config::{ColorTheme, PersistedState, Theme};
+use splunk_config::{ColorTheme, ConfigLoader, PersistedState, Theme};
 use std::collections::HashSet;
 
 /// Health state of the Splunk instance.
@@ -2294,7 +2294,7 @@ impl App {
                         sort_column: self.sort_state.column.as_str(),
                         sort_direction: self.sort_state.direction.as_str(),
                         search_history_count: self.search_history.len(),
-                        profile_info: std::env::var("SPLUNK_PROFILE").ok().as_deref(),
+                        profile_info: ConfigLoader::env_var_or_none("SPLUNK_PROFILE").as_deref(),
                         selected_theme: self.color_theme,
                         theme: &self.theme,
                     },

@@ -33,9 +33,10 @@ struct LiveEnv {
 }
 
 fn parse_skip_verify_env() -> bool {
+    use splunk_config::ConfigLoader;
     matches!(
-        std::env::var("SPLUNK_SKIP_VERIFY").as_deref(),
-        Ok("1") | Ok("true") | Ok("TRUE") | Ok("yes") | Ok("YES")
+        ConfigLoader::env_var_or_none("SPLUNK_SKIP_VERIFY").as_deref(),
+        Some("1") | Some("true") | Some("TRUE") | Some("yes") | Some("YES")
     )
 }
 
@@ -90,26 +91,27 @@ fn load_test_env_or_skip() -> Option<LiveEnv> {
         dotenvy::from_path_override(env_path).ok();
     }
 
-    let base_url = match std::env::var("SPLUNK_BASE_URL") {
-        Ok(v) => v,
-        Err(_) => {
+    use splunk_config::ConfigLoader;
+    let base_url = match ConfigLoader::env_var_or_none("SPLUNK_BASE_URL") {
+        Some(v) => v,
+        None => {
             eprintln!("Skipping live tests: SPLUNK_BASE_URL is not set.");
             return None;
         }
     };
-    let auth = if let Ok(token) = std::env::var("SPLUNK_API_TOKEN") {
+    let auth = if let Some(token) = ConfigLoader::env_var_or_none("SPLUNK_API_TOKEN") {
         LiveAuth::ApiToken { token }
     } else {
-        let username = match std::env::var("SPLUNK_USERNAME") {
-            Ok(v) => v,
-            Err(_) => {
+        let username = match ConfigLoader::env_var_or_none("SPLUNK_USERNAME") {
+            Some(v) => v,
+            None => {
                 eprintln!("Skipping live tests: SPLUNK_USERNAME is not set.");
                 return None;
             }
         };
-        let password = match std::env::var("SPLUNK_PASSWORD") {
-            Ok(v) => v,
-            Err(_) => {
+        let password = match ConfigLoader::env_var_or_none("SPLUNK_PASSWORD") {
+            Some(v) => v,
+            None => {
                 eprintln!("Skipping live tests: SPLUNK_PASSWORD is not set.");
                 return None;
             }
