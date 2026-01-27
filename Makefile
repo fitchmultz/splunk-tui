@@ -1,4 +1,4 @@
-.PHONY: install update lint type-check format clean test test-all test-unit test-integration test-live test-live-manual build release generate ci help
+.PHONY: install update lint type-check format clean test test-all test-unit test-integration test-live test-live-manual build release generate ci help lint-secrets install-hooks
 
 # Binaries and Installation
 BINS := splunk-cli splunk-tui
@@ -19,6 +19,16 @@ update:
 lint:
 	cargo clippy --workspace --all-targets --all-features -- -D warnings
 	cargo fmt --all --check
+
+# Run secret-commit guard
+lint-secrets:
+	bash scripts/check-secrets.sh
+
+# Install local git pre-commit hook
+install-hooks:
+	ln -sf ../../scripts/check-secrets.sh .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+	@echo "Git pre-commit hook installed (pointing to scripts/check-secrets.sh)"
 
 # Type check all crates
 type-check:
@@ -77,8 +87,8 @@ build: release
 generate:
 	cargo run -p splunk-tui --bin generate-tui-docs
 
-# CI pipeline: install -> format -> generate -> lint -> type-check -> test -> test-live -> release
-ci: install format generate lint type-check test test-live release
+# CI pipeline: install -> format -> lint-secrets -> generate -> lint -> type-check -> test -> test-live -> release
+ci: install format lint-secrets generate lint type-check test test-live release
 
 # Display help for each target
 help:
@@ -99,5 +109,7 @@ help:
 	@echo "  make release          - Optimized release build and install to $(INSTALL_DIR)"
 	@echo "  make build            - Alias for release"
 	@echo "  make generate         - Regenerate derived documentation (TUI keybindings)"
-	@echo "  make ci               - Run full CI pipeline (install -> format -> generate -> lint -> type-check -> test -> test-live -> release)"
+	@echo "  make lint-secrets     - Run secret-commit guard (fail if sensitive files are tracked)"
+	@echo "  make install-hooks    - Install git pre-commit hook for secret guard"
+	@echo "  make ci               - Run full CI pipeline (install -> format -> lint-secrets -> generate -> lint -> type-check -> test -> test-live -> release)"
 	@echo "  make help             - Show this help message"

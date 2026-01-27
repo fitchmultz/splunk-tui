@@ -79,6 +79,55 @@ Long-running commands can be interrupted with `Ctrl+C`:
 
 ---
 
+## Security & Secret Management
+
+Splunk TUI includes a **secret-commit guard** to prevent accidental leaks of credentials or private environment details.
+
+### Secret-Commit Guard
+
+The guard ensures that sensitive files are **not tracked** in your git repository. This is critical because `.gitignore` only prevents *new* files from being tracked; it does not protect files that have already been committed.
+
+#### Forbidden Tracked Paths
+- `.env`
+- `.env.test`
+- `docs/splunk-test-environment.md`
+- `rust_out/`
+
+#### Running the Guard
+You can run the guard manually:
+```bash
+make lint-secrets
+```
+
+The guard is also integrated into `make ci`, ensuring that local CI passes only when no secrets are tracked.
+
+#### Remediation
+If the guard fails, follow these steps to safely untrack the files while keeping your local copies:
+
+1. **Untrack the files**:
+   ```bash
+   git rm --cached -- .env .env.test docs/splunk-test-environment.md rust_out
+   ```
+
+2. **Commit the removals**:
+   ```bash
+   git commit -m "chore(security): stop tracking local secret files"
+   ```
+
+3. **Verify**:
+   ```bash
+   make lint-secrets
+   ```
+
+#### Pre-commit Hook (Optional)
+To catch leaks even earlier, you can install a local git pre-commit hook:
+```bash
+make install-hooks
+```
+This will run the secret guard every time you attempt to `git commit`.
+
+---
+
 ## Command Line Interface (CLI)
 
 The CLI tool is named `splunk-cli`.
