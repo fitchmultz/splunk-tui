@@ -162,8 +162,15 @@ async fn main() -> Result<()> {
                             }
                             break;
                         }
+                        let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
+                        // If navigation action, trigger load for new screen
+                        if is_navigation
+                            && let Some(load_action) = app.load_action_for_screen()
+                        {
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                        }
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
                             handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
@@ -178,8 +185,15 @@ async fn main() -> Result<()> {
                             }
                             break;
                         }
+                        let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
+                        // If navigation action, trigger load for new screen
+                        if is_navigation
+                            && let Some(load_action) = app.load_action_for_screen()
+                        {
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                        }
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
                             handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;

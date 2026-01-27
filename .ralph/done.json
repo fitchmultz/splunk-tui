@@ -4145,6 +4145,60 @@
       "completed_at": "2026-01-27T15:11:38.854292000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0102",
+      "status": "done",
+      "title": "Replace digit-based screen navigation while typing (use Tab/Shift+Tab or Alt+digits)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "navigation"
+      ],
+      "scope": [
+        "crates/tui/src/input/keymap/bindings/global_search.rs",
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs",
+        "docs/usage.md",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/input/keymap/bindings/global_search.rs: defines global digit bindings (1-9, 0) for screen navigation as KeyCode::Char('0'..'9') with BindingScope::Global, which conflicts with Search query entry where digits are legitimate query characters.",
+        "crates/tui/src/app.rs: footer rendering (lines 2097-2124) displays \"1:Search 2:Indexes ... 0:Settings\" as primary navigation, reinforcing digit bindings that block search entry.",
+        "crates/tui/src/app.rs: handle_footer_click (lines 590-650) uses hard-coded column ranges matching the digit-based footer layout.",
+        "crates/tui/src/app.rs: handle_input (line 544) calls keymap::resolve_action() before per-screen handlers, so global digit bindings intercept all digit input.",
+        "crates/tui/src/input/help.rs: generates help text from keymap bindings, so digit navigation appears in help popup.",
+        "docs/usage.md: TUI navigation section (lines 421-430) documents 1-9/0 screen switching as the primary mechanism."
+      ],
+      "plan": [
+        "Decide on new navigation scheme: Tab/Shift+Tab for next/prev screen (cyclic), or Alt+digits as alternative to unmodified digits.",
+        "Add new Actions if needed (e.g., NextScreen, PreviousScreen) to crates/tui/src/action.rs.",
+        "Replace digit bindings in crates/tui/src/input/keymap/bindings/global_search.rs with Tab/Shift+Tab (or Alt+digits) bindings.",
+        "Update footer rendering in crates/tui/src/app.rs to show new navigation scheme (e.g., \"Tab:Next Shift+Tab:Prev\" or remove digit hints).",
+        "Update handle_footer_click in app.rs if footer layout changes (mouse clicks should still work).",
+        "Help text in crates/tui/src/input/help.rs will auto-update from keymap changes.",
+        "Update docs/usage.md TUI navigation section to document new scheme.",
+        "Add tests in crates/tui/tests/app_tests.rs verifying: (a) digits can be typed in Search query, (b) Tab/Shift+Tab navigates screens, (c) navigation works from all screens including Search."
+      ],
+      "notes": [
+        "This is intentionally allowed to be a breaking change; prioritize a coherent, non-conflicting keymap.",
+        "Digit navigation bindings are centralized in crates/tui/src/input/keymap/bindings/global_search.rs, making replacement straightforward.",
+        "Help text generation is automatic from keymap, so only keymap and docs need manual updates.",
+        "Replaced digit-based navigation (1-9, 0) with Tab/Shift+Tab for cyclic screen navigation",
+        "Digits can now be typed in search queries without triggering navigation",
+        "Updated footer rendering and click handler to match new navigation scheme",
+        "Added comprehensive tests for Tab/Shift+Tab navigation and digit typing",
+        "Updated documentation in docs/usage.md to reflect new navigation"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T15:52:42.944881000Z",
+      "completed_at": "2026-01-27T15:52:42.944881000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

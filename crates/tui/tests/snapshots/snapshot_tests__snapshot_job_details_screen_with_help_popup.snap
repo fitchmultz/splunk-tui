@@ -10,19 +10,19 @@ expression: harness.render()
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌───────────────┌Help──────────────────────────────────────────┐───────────────┐
 │Status: Done   │                 Global Keys:                 │               │
-│Duration: 5.23 │                  ?       Help                │               │
-│Event Count: 50│                  q       Quit                │               │
-│Scan Count: 150│              1       Search screen           │               │
-│Result Count: 1│             2       Indexes screen           │               │
-│Disk Usage: 204│             3       Cluster screen           │               │
-│Priority: 5    │               4       Jobs screen            │               │
-│Label: Schedule│              5       Health screen           │               │
-│Cursor Time: 20│          6       Saved searches screen       │               │
-│Finalized: No  │          7       Internal logs screen        │               │
+│Duration: 5.23 │                 ?          Help              │               │
+│Event Count: 50│                 q          Quit              │               │
+│Scan Count: 150│             Tab        Next screen           │               │
+│Result Count: 1│           Shift+Tab  Previous screen         │               │
+│Disk Usage: 204│          Ctrl+c     Copy to clipboard        │               │
+│Priority: 5    │                                              │               │
+│Label: Schedule│                Search Screen:                │               │
+│Cursor Time: 20│              Enter     Run search            │               │
+│Finalized: No  │            e         Export results          │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:│
+│ Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit                         │
 └──────────────────────────────────────────────────────────────────────────────┘

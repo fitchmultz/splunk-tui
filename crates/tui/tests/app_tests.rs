@@ -67,16 +67,15 @@ fn test_settings_screen_navigation() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Settings;
 
-    // Test navigation keys - navigation to Search returns an action
-    let key = key('1');
-    let action = app.handle_input(key);
+    // Test navigation with Tab - should wrap to Search
+    let action = app.handle_input(tab_key());
     assert!(
-        matches!(action, Some(Action::SwitchToSearch)),
-        "Navigation to Search should return SwitchToSearch"
+        matches!(action, Some(Action::NextScreen)),
+        "Tab from Settings should return NextScreen and wrap to Search"
     );
 
     app.update(action.unwrap());
-    // Verify screen switched
+    // Verify screen switched to Search (wraps around)
     assert_eq!(app.current_screen, CurrentScreen::Search);
 }
 
@@ -502,22 +501,149 @@ fn test_toggle_auto_refresh() {
 }
 
 #[test]
-fn test_screen_navigation_with_number_keys() {
+fn test_screen_navigation_with_tab() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Search;
 
-    // Navigate to Jobs with '4'
-    let action = app.handle_input(key('4'));
+    // Navigate to Indexes with Tab
+    let action = app.handle_input(tab_key());
     assert!(
-        matches!(action, Some(Action::LoadJobs)),
-        "Should trigger LoadJobs"
+        matches!(action, Some(Action::NextScreen)),
+        "Should trigger NextScreen"
     );
     app.update(action.unwrap());
     assert_eq!(
         app.current_screen,
-        CurrentScreen::Jobs,
-        "Should switch to Jobs screen"
+        CurrentScreen::Indexes,
+        "Should switch to Indexes screen"
     );
+}
+
+#[test]
+fn test_digits_typed_in_search_query() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Type digits - should be added to search_input, not trigger navigation
+    app.handle_input(key('1'));
+    app.handle_input(key('2'));
+    app.handle_input(key('3'));
+    app.handle_input(key('0'));
+    app.handle_input(key('9'));
+
+    assert_eq!(
+        app.search_input, "12309",
+        "Digits should be typed into search query"
+    );
+}
+
+#[test]
+fn test_tab_navigates_to_next_screen() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+}
+
+#[test]
+fn test_shift_tab_navigates_to_previous_screen() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Indexes;
+
+    let action = app.handle_input(shift_tab_key());
+    assert!(matches!(action, Some(Action::PreviousScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+}
+
+#[test]
+fn test_tab_cycles_through_screens() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Settings;
+
+    // Tab from Settings should wrap to Search
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+
+    // Tab from Search should go to Indexes
+    let action = app.handle_input(tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+}
+
+#[test]
+fn test_shift_tab_cycles_backwards() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::Search;
+
+    // Shift+Tab from Search should wrap to Settings
+    let action = app.handle_input(shift_tab_key());
+    assert!(matches!(action, Some(Action::PreviousScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Settings);
+
+    // Shift+Tab from Settings should go to Users
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Users);
+}
+
+#[test]
+fn test_navigation_from_all_screens() {
+    let screens = [
+        CurrentScreen::Search,
+        CurrentScreen::Indexes,
+        CurrentScreen::Cluster,
+        CurrentScreen::Jobs,
+        CurrentScreen::Health,
+        CurrentScreen::SavedSearches,
+        CurrentScreen::InternalLogs,
+        CurrentScreen::Apps,
+        CurrentScreen::Users,
+        CurrentScreen::Settings,
+    ];
+
+    for screen in screens {
+        let mut app = App::new(None);
+        app.current_screen = screen;
+
+        // Tab should work from all screens
+        let action = app.handle_input(tab_key());
+        assert!(
+            matches!(action, Some(Action::NextScreen)),
+            "Tab should work from {:?} screen",
+            screen
+        );
+        app.update(action.unwrap());
+        assert_ne!(
+            app.current_screen, screen,
+            "Screen should change from {:?}",
+            screen
+        );
+    }
+}
+
+#[test]
+fn test_job_inspect_excluded_from_cycle() {
+    let mut app = App::new(None);
+    app.current_screen = CurrentScreen::JobInspect;
+
+    // Tab from JobInspect should go to Jobs (not cycle)
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Jobs);
+
+    // Shift+Tab from JobInspect should also go to Jobs
+    app.current_screen = CurrentScreen::JobInspect;
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Jobs);
 }
 
 #[test]
@@ -567,7 +693,10 @@ fn test_quit_mouse_footer_click() {
     app.last_area = Rect::new(0, 0, 100, 24);
     app.loading = false;
 
-    let action = app.handle_mouse(mouse_click(87, 22));
+    // Footer layout: " Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
+    // Quit button starts at column 46 (nav_text 45 + sep 1), ends at 54
+    // Column is 1-indexed after border, so click at column 50 (middle of quit button)
+    let action = app.handle_mouse(mouse_click(50, 22));
     assert!(
         matches!(action, Some(Action::Quit)),
         "Clicking 'Quit' in footer should return Quit action"
@@ -579,8 +708,12 @@ fn test_quit_mouse_footer_click_with_loading() {
     let mut app = App::new(None);
     app.last_area = Rect::new(0, 0, 100, 24);
     app.loading = true;
+    app.progress = 1.0; // Set progress so loading text renders
 
-    let action = app.handle_mouse(mouse_click(105, 22));
+    // Footer layout with loading: " Loading... 100% | Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
+    // Loading text is 17 chars, then sep (1), nav_text (45), sep (1), quit starts at 64, ends at 72
+    // Column is 1-indexed after border, so click at column 68 (middle of quit button)
+    let action = app.handle_mouse(mouse_click(68, 22));
     assert!(
         matches!(action, Some(Action::Quit)),
         "Clicking 'Quit' in footer with loading offset should return Quit action"

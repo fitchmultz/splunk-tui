@@ -73,6 +73,44 @@ pub enum CurrentScreen {
     Settings,
 }
 
+impl CurrentScreen {
+    /// Returns the next screen in cyclic navigation order.
+    /// Excludes JobInspect from the cycle (it's only accessible via InspectJob action).
+    pub fn next(self) -> Self {
+        match self {
+            CurrentScreen::Search => CurrentScreen::Indexes,
+            CurrentScreen::Indexes => CurrentScreen::Cluster,
+            CurrentScreen::Cluster => CurrentScreen::Jobs,
+            CurrentScreen::Jobs => CurrentScreen::Health,
+            CurrentScreen::JobInspect => CurrentScreen::Jobs, // Special case: return to Jobs
+            CurrentScreen::Health => CurrentScreen::SavedSearches,
+            CurrentScreen::SavedSearches => CurrentScreen::InternalLogs,
+            CurrentScreen::InternalLogs => CurrentScreen::Apps,
+            CurrentScreen::Apps => CurrentScreen::Users,
+            CurrentScreen::Users => CurrentScreen::Settings,
+            CurrentScreen::Settings => CurrentScreen::Search, // Wrap around
+        }
+    }
+
+    /// Returns the previous screen in cyclic navigation order.
+    /// Excludes JobInspect from the cycle (it's only accessible via InspectJob action).
+    pub fn previous(self) -> Self {
+        match self {
+            CurrentScreen::Search => CurrentScreen::Settings, // Wrap around
+            CurrentScreen::Indexes => CurrentScreen::Search,
+            CurrentScreen::Cluster => CurrentScreen::Indexes,
+            CurrentScreen::Jobs => CurrentScreen::Cluster,
+            CurrentScreen::JobInspect => CurrentScreen::Jobs, // Special case: return to Jobs
+            CurrentScreen::Health => CurrentScreen::Jobs,
+            CurrentScreen::SavedSearches => CurrentScreen::Health,
+            CurrentScreen::InternalLogs => CurrentScreen::SavedSearches,
+            CurrentScreen::Apps => CurrentScreen::InternalLogs,
+            CurrentScreen::Users => CurrentScreen::Apps,
+            CurrentScreen::Settings => CurrentScreen::Users,
+        }
+    }
+}
+
 /// Sort column for jobs table.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortColumn {
@@ -462,6 +500,24 @@ impl App {
 
     /// Check if we should load more results based on scroll position.
     /// Returns the LoadMoreSearchResults action if needed.
+    /// Returns the load action for the current screen, if one is needed.
+    /// Used after screen navigation to trigger data loading.
+    pub fn load_action_for_screen(&self) -> Option<Action> {
+        match self.current_screen {
+            CurrentScreen::Search => None, // Search doesn't need pre-loading
+            CurrentScreen::Indexes => Some(Action::LoadIndexes),
+            CurrentScreen::Cluster => Some(Action::LoadClusterInfo),
+            CurrentScreen::Jobs => Some(Action::LoadJobs),
+            CurrentScreen::JobInspect => None, // Already loaded when entering inspect mode
+            CurrentScreen::Health => Some(Action::LoadHealth),
+            CurrentScreen::SavedSearches => Some(Action::LoadSavedSearches),
+            CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs),
+            CurrentScreen::Apps => Some(Action::LoadApps),
+            CurrentScreen::Users => Some(Action::LoadUsers),
+            CurrentScreen::Settings => Some(Action::SwitchToSettings),
+        }
+    }
+
     pub fn maybe_fetch_more_results(&self) -> Option<Action> {
         // Only fetch if we have a SID, more results exist, and we're not already loading
         if self.search_sid.is_none() || !self.search_has_more_results || self.loading {
@@ -586,51 +642,28 @@ impl App {
         }
     }
 
-    /// Handle clicks in the footer area for screen navigation.
+    /// Handle clicks in the footer area.
+    /// Currently only handles quit button clicks since navigation is now keyboard-only (Tab/Shift+Tab).
     fn handle_footer_click(&mut self, col: u16) -> Option<Action> {
         // Content in the footer block starts at column 1 (due to border)
-        // Offset if loading message is present
-        let offset = if self.loading { 18 } else { 0 };
+        // Footer layout without loading: " Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
+        // Footer layout with loading: " Loading... 100% | Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
 
-        // Adjusted column ranges to match the spans rendered in render()
-        // Tab 1: " 1:Search " (10 chars) -> Indices 0..10
-        if col > offset && col <= offset + 10 {
-            self.current_screen = CurrentScreen::Search;
-            None
-        // Tab 2: " 2:Indexes " (10 chars) -> Indices 10..20
-        } else if col > offset + 10 && col <= offset + 20 {
-            self.current_screen = CurrentScreen::Indexes;
-            Some(Action::LoadIndexes)
-        // Tab 3: " 3:Cluster " (10 chars) -> Indices 20..30
-        } else if col > offset + 20 && col <= offset + 30 {
-            self.current_screen = CurrentScreen::Cluster;
-            Some(Action::LoadClusterInfo)
-        // Tab 4: " 4:Jobs " (8 chars) -> Indices 30..38
-        } else if col > offset + 30 && col <= offset + 38 {
-            self.current_screen = CurrentScreen::Jobs;
-            Some(Action::LoadJobs)
-        // Tab 5: " 5:Health " (10 chars) -> Indices 38..48
-        } else if col > offset + 38 && col <= offset + 48 {
-            self.current_screen = CurrentScreen::Health;
-            Some(Action::LoadHealth)
-        // Tab 6: " 6:Saved " (9 chars) -> Indices 48..57
-        } else if col > offset + 48 && col <= offset + 57 {
-            self.current_screen = CurrentScreen::SavedSearches;
-            Some(Action::LoadSavedSearches)
-        // Tab 7: " 7:Logs " (8 chars) -> Indices 57..65
-        } else if col > offset + 57 && col <= offset + 65 {
-            self.current_screen = CurrentScreen::InternalLogs;
-            Some(Action::LoadInternalLogs)
-        // Tab 8: " 8:Apps " (8 chars) -> Indices 65..73
-        } else if col > offset + 65 && col <= offset + 73 {
-            self.current_screen = CurrentScreen::Apps;
-            Some(Action::LoadApps)
-        // Tab 9: " 9:Users " (9 chars) -> Indices 73..82
-        } else if col > offset + 73 && col <= offset + 82 {
-            self.current_screen = CurrentScreen::Users;
-            Some(Action::LoadUsers)
-        // Tab q: " q:Quit " (8 chars) -> After "|" at index 83
-        } else if col > offset + 83 && col <= offset + 91 {
+        // Calculate quit button position based on footer layout
+        let nav_text_len = 45; // " Tab:Next Screen | Shift+Tab:Previous Screen " (including leading space)
+        let sep_len = 1; // "|"
+        let quit_text_len = 8; // " q:Quit " (including spaces)
+
+        let quit_start = if self.loading {
+            // With loading: " Loading... 100% |" (18 chars) + nav_text + "|" + quit
+            18 + nav_text_len + sep_len
+        } else {
+            // Without loading: nav_text + "|" + quit
+            nav_text_len + sep_len
+        };
+        let quit_end = quit_start + quit_text_len;
+
+        if col > quit_start && col <= quit_end {
             Some(Action::Quit)
         } else {
             None
@@ -1402,6 +1435,12 @@ impl App {
             Action::SwitchToSettingsScreen => {
                 self.current_screen = CurrentScreen::Settings;
             }
+            Action::NextScreen => {
+                self.current_screen = self.current_screen.next();
+            }
+            Action::PreviousScreen => {
+                self.current_screen = self.current_screen.previous();
+            }
             Action::LoadIndexes => {
                 self.current_screen = CurrentScreen::Indexes;
             }
@@ -2101,17 +2140,13 @@ impl App {
                     Style::default().fg(theme.warning),
                 ),
                 Span::raw("|"),
-                Span::raw(
-                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:Settings ",
-                ),
+                Span::raw(" Tab:Next Screen | Shift+Tab:Previous Screen "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(theme.error)),
             ])]
         } else {
             vec![Line::from(vec![
-                Span::raw(
-                    " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved 7:Logs 8:Apps 9:Users 0:Settings ",
-                ),
+                Span::raw(" Tab:Next Screen | Shift+Tab:Previous Screen "),
                 Span::raw("|"),
                 Span::styled(" q:Quit ", Style::default().fg(theme.error)),
             ])]
@@ -2390,19 +2425,19 @@ mod tests {
         let mut app = App::new(None);
         app.last_area = Rect::new(0, 0, 80, 24);
 
-        // Click "Jobs" (4) in footer
-        // " 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health | q:Quit "
-        // Jobs starts at offset 30 in index, so col 31
+        // Footer navigation clicks are no longer supported (navigation is keyboard-only via Tab/Shift+Tab)
+        // Only quit button clicks work now
+        // Footer layout: " Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
+        // Quit button starts at column 46, ends at 54
         let event = MouseEvent {
             kind: MouseEventKind::Down(crossterm::event::MouseButton::Left),
-            column: 34, // middle of "4:Jobs"
+            column: 50, // middle of " q:Quit "
             row: 22,    // Middle line of footer (24-2)
             modifiers: KeyModifiers::empty(),
         };
 
         let action = app.handle_mouse(event);
-        assert!(matches!(action, Some(Action::LoadJobs)));
-        assert_eq!(app.current_screen, CurrentScreen::Jobs);
+        assert!(matches!(action, Some(Action::Quit)));
     }
 
     #[test]

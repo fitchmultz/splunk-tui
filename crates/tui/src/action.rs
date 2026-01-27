@@ -93,6 +93,10 @@ pub enum Action {
     SwitchToSearch,
     /// Switch to the Settings screen without reloading settings.
     SwitchToSettingsScreen,
+    /// Navigate to the next screen in cyclic order.
+    NextScreen,
+    /// Navigate to the previous screen in cyclic order.
+    PreviousScreen,
 
     // Input
     /// Raw keyboard input event

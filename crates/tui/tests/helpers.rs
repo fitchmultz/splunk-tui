@@ -62,6 +62,11 @@ pub fn tab_key() -> KeyEvent {
     KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE)
 }
 
+/// Create a Shift+Tab (BackTab) key event.
+pub fn shift_tab_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::BackTab, KeyModifiers::NONE)
+}
+
 /// Create a Ctrl+char key event.
 pub fn ctrl_key(c: char) -> KeyEvent {
     KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)

@@ -418,16 +418,8 @@ Launch the TUI by running `splunk-tui`.
 
 - `?`: Help
 - `q`: Quit
-- `1`: Search screen
-- `2`: Indexes screen
-- `3`: Cluster screen
-- `4`: Jobs screen
-- `5`: Health screen
-- `6`: Saved searches screen
-- `7`: Internal logs screen
-- `8`: Apps screen
-- `9`: Users screen
-- `0`: Settings screen
+- `Tab`: Next screen
+- `Shift+Tab`: Previous screen
 - `Ctrl+c`: Copy to clipboard
 
 ### Screen Specific Shortcuts

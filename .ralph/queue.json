@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0102",
-      "status": "todo",
-      "title": "Replace digit-based screen navigation while typing (use Tab/Shift+Tab or Alt+digits)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "keybindings",
-        "navigation"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/src/app.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs: per-screen handlers map KeyCode::Char('0'..'9') to screen navigation, which conflicts with Search query entry where digits are legitimate query characters.",
-        "crates/tui/src/app.rs: footer displays \"1:Search ... 0:Settings\" as primary navigation, reinforcing digit bindings that block search entry today.",
-        "docs/usage.md: TUI navigation section documents 0-9 screen switching as the primary mechanism."
-      ],
-      "plan": [
-        "Pick a new global navigation scheme that does not conflict with text entry (recommended: Tab/Shift+Tab for next/prev screen; keep mouse footer click as well).",
-        "Implement the new scheme across all screens (App input handlers + footer/help strings).",
-        "Update docs/usage.md and in-app help popup to match.",
-        "Add tests verifying navigation works from Search while preserving query typing."
-      ],
-      "notes": [
-        "This is intentionally allowed to be a breaking change; prioritize a coherent, non-conflicting keymap."
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T15:11:21.525465000Z",
-      "depends_on": [],
-      "custom_fields": {
-        "stale_evidence": "Digit navigation bindings now live in crates/tui/src/input/keymap/ (global bindings); app.rs no longer hard-codes 0-9 in per-screen handlers."
-      }
-    },
-    {
       "id": "RQ-0103",
       "status": "todo",
       "title": "Rebind export so it never steals text input (Search + future text fields)",
