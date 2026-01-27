@@ -1,10 +1,13 @@
 //! Integration tests for `splunk-cli indexes` pagination flags.
 
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 
 #[test]
 fn test_indexes_help_includes_offset() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["indexes", "--help"])
         .assert()
@@ -14,7 +17,7 @@ fn test_indexes_help_includes_offset() {
 
 #[test]
 fn test_indexes_offset_flag_attempts_connection() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     // We only assert that clap accepts the flags and command attempts to run.
@@ -27,7 +30,7 @@ fn test_indexes_offset_flag_attempts_connection() {
 
 #[test]
 fn test_indexes_offset_negative_rejected_by_clap() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["indexes", "--offset", "-1"])
         .assert()

@@ -1,10 +1,13 @@
 //! Integration tests for `splunk-cli cluster` pagination flags.
 
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 
 #[test]
 fn test_cluster_help_includes_offset_and_page_size() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["cluster", "--help"]).assert().success().stdout(
         predicate::str::contains("--offset")
@@ -15,7 +18,7 @@ fn test_cluster_help_includes_offset_and_page_size() {
 
 #[test]
 fn test_cluster_page_size_zero_rejected() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     cmd.args(["cluster", "--detailed", "--page-size", "0"])
@@ -28,7 +31,7 @@ fn test_cluster_page_size_zero_rejected() {
 
 #[test]
 fn test_cluster_offset_and_page_size_flags_attempt_connection() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     // Should succeed with a note or fail with connection error in non-live test env, but must accept flags.

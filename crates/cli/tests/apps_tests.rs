@@ -1,19 +1,25 @@
 //! Integration tests for `splunk-cli apps` command.
 //!
-//! Tests cover:
-//! - `apps list` subcommand
-//! - `apps info` subcommand
-//! - `apps enable` subcommand
-//! - `apps disable` subcommand
-//! - Help text for all subcommands
-//! - Argument validation
+//! Responsibilities:
+//! - Validate `apps list`, `info`, `enable`, and `disable` subcommands.
+//! - Ensure help text and argument validation work correctly.
+//! - Verify that commands attempt network connection with correct parameters.
+//!
+//! Does NOT:
+//! - Perform live tests against a real Splunk server (see `test-live`).
+//!
+//! Invariants / Assumptions:
+//! - All tests use the hermetic `splunk_cmd()` helper.
 
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 
 /// Test that `splunk-cli apps` shows help
 #[test]
 fn test_apps_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "--help"]).assert().success().stdout(
         predicate::str::contains("List and manage installed Splunk apps")
@@ -27,7 +33,7 @@ fn test_apps_help() {
 /// Test that `splunk-cli apps list --help` shows list options
 #[test]
 fn test_apps_list_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "list", "--help"])
         .assert()
@@ -41,7 +47,7 @@ fn test_apps_list_help() {
 /// Test that `splunk-cli apps list --count` with valid value
 #[test]
 fn test_apps_list_count_valid() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["apps", "list", "--count", "10"]).assert();
@@ -55,7 +61,7 @@ fn test_apps_list_count_valid() {
 /// Test that `splunk-cli apps info --help` shows info usage
 #[test]
 fn test_apps_info_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "info", "--help"])
         .assert()
@@ -69,7 +75,7 @@ fn test_apps_info_help() {
 /// Test that missing app name for info shows error
 #[test]
 fn test_apps_info_missing_name() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "info"])
         .assert()
@@ -82,7 +88,7 @@ fn test_apps_info_missing_name() {
 /// Test that `splunk-cli apps info <name>` with valid name
 #[test]
 fn test_apps_info_valid_name() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["apps", "info", "search"]).assert();
@@ -96,7 +102,7 @@ fn test_apps_info_valid_name() {
 /// Test that `splunk-cli apps enable --help` shows enable usage
 #[test]
 fn test_apps_enable_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "enable", "--help"])
         .assert()
@@ -107,7 +113,7 @@ fn test_apps_enable_help() {
 /// Test that missing app name for enable shows error
 #[test]
 fn test_apps_enable_missing_name() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "enable"])
         .assert()
@@ -120,7 +126,7 @@ fn test_apps_enable_missing_name() {
 /// Test that `splunk-cli apps enable <name>` with valid name
 #[test]
 fn test_apps_enable_valid_name() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["apps", "enable", "my_app"]).assert();
@@ -134,7 +140,7 @@ fn test_apps_enable_valid_name() {
 /// Test that `splunk-cli apps disable --help` shows disable usage
 #[test]
 fn test_apps_disable_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "disable", "--help"])
         .assert()
@@ -145,7 +151,7 @@ fn test_apps_disable_help() {
 /// Test that missing app name for disable shows error
 #[test]
 fn test_apps_disable_missing_name() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["apps", "disable"])
         .assert()
@@ -158,7 +164,7 @@ fn test_apps_disable_missing_name() {
 /// Test that `splunk-cli apps disable <name>` with valid name
 #[test]
 fn test_apps_disable_valid_name() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["apps", "disable", "my_app"]).assert();

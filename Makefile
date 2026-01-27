@@ -7,6 +7,11 @@ INSTALL_DIR := ~/.local/bin
 # Default target
 .DEFAULT_GOAL := help
 
+# Hermetic tests:
+# Prevent test runs from accidentally loading a developer's local `.env` file.
+# (The Rust config loader respects `DOTENV_DISABLED` in `crates/config/src/loader.rs`.)
+test test-all test-unit test-integration ci: export DOTENV_DISABLED=1
+
 # Fetch all dependencies (does not install binaries)
 install:
 	cargo fetch

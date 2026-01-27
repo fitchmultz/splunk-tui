@@ -1,11 +1,14 @@
 //! Integration tests for `splunk-cli internal-logs` command.
 
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 
 /// Test that `splunk-cli internal-logs` works with defaults.
 #[test]
 fn test_internal_logs_default() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.arg("internal-logs").assert();
@@ -19,7 +22,7 @@ fn test_internal_logs_default() {
 /// Test that `splunk-cli internal-logs --count` works.
 #[test]
 fn test_internal_logs_with_count() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["internal-logs", "--count", "10"]).assert();
@@ -32,7 +35,7 @@ fn test_internal_logs_with_count() {
 /// Test that `splunk-cli internal-logs --earliest` works.
 #[test]
 fn test_internal_logs_with_earliest() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd
@@ -47,7 +50,7 @@ fn test_internal_logs_with_earliest() {
 /// Test that `--count` and `--earliest` are shown in help text.
 #[test]
 fn test_internal_logs_help_shows_flags() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["internal-logs", "--help"])
         .assert()
@@ -58,7 +61,7 @@ fn test_internal_logs_help_shows_flags() {
 /// Test that output format option works.
 #[test]
 fn test_internal_logs_output_format() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["internal-logs", "-o", "json"]).assert();

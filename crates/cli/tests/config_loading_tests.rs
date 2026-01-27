@@ -1,13 +1,21 @@
-//! Integration tests for CLI configuration loading.
+//! Integration tests for CLI configuration loading and dotenv isolation.
 //!
-//! These tests verify that:
-//! 1. .env file values are respected (loaded before CLI parsing)
-//! 2. Environment variables (SPLUNK_TIMEOUT, SPLUNK_MAX_RETRIES, SPLUNK_SKIP_VERIFY) are applied
-//! 3. CLI flags work correctly
-//! 4. Priority order is: profile < env < CLI
+//! Responsibilities:
+//! - Verify that `.env` file values are respected when loaded before CLI parsing.
+//! - Validate priority order: profile < environment variables < CLI flags.
+//! - Ensure environment variables like `SPLUNK_TIMEOUT` and `SPLUNK_MAX_RETRIES` are applied.
 //!
-//! NOTE: These tests explicitly clear SPLUNK_* environment variables to ensure
-//! test isolation. The test environment may have pre-existing SPLUNK_* vars that
+//! Does NOT:
+//! - Use the shared `splunk_cmd` helper, as these tests specifically need to
+//!   manipulate `DOTENV_DISABLED` and other raw environment variables to
+//!   validate loading logic.
+//!
+//! Invariants / Assumptions:
+//! These tests explicitly clear `SPLUNK_*` environment variables for isolation.
+//! The test environment may have pre-existing `SPLUNK_*` vars that would
+//! otherwise override `.env` file values (which is correct behavior but breaks tests).
+//!
+//! Tests that validate dotenv loading must explicitly `.env_remove("DOTENV_DISABLED")`.
 //! would otherwise override .env file values (which is correct behavior but breaks tests).
 
 use predicates::prelude::*;
@@ -44,6 +52,9 @@ fn test_dotenv_loading_for_cli_defaults() {
     // to clap's env defaults since we load dotenv before parsing
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test intentionally validates dotenv behavior; ensure it is enabled
+        // even when the parent test runner sets `DOTENV_DISABLED=1`.
+        .env_remove("DOTENV_DISABLED")
         .args(["health"])
         .assert()
         .failure()
@@ -108,6 +119,8 @@ fn test_skip_verify_from_dotenv() {
 
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test intentionally validates dotenv behavior; ensure it is enabled.
+        .env_remove("DOTENV_DISABLED")
         .args(["health"])
         .assert()
         .failure()
@@ -153,6 +166,8 @@ fn test_dotenv_loaded_before_cli_parsing() {
     // The CLI should successfully parse and use these values
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test intentionally validates dotenv behavior; ensure it is enabled.
+        .env_remove("DOTENV_DISABLED")
         .args(["health"])
         .assert()
         .failure()
@@ -196,6 +211,8 @@ fn test_config_priority_order() {
     // Run with --base-url CLI flag (highest priority)
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test intentionally validates dotenv behavior; ensure it is enabled.
+        .env_remove("DOTENV_DISABLED")
         .env("SPLUNK_CONFIG_PATH", config_path.to_string_lossy().as_ref())
         .args([
             "--profile",
@@ -226,6 +243,8 @@ fn test_dotenv_with_config_command() {
 
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test is about dotenv search/path behavior; ensure it is enabled.
+        .env_remove("DOTENV_DISABLED")
         .args(["config", "--help"])
         .assert()
         .success()
@@ -350,6 +369,8 @@ fn test_timeout_cli_overrides_dotenv() {
 
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test intentionally validates dotenv behavior; ensure it is enabled.
+        .env_remove("DOTENV_DISABLED")
         .args(["--timeout", "90", "health"])
         .assert()
         .failure()
@@ -373,6 +394,8 @@ fn test_max_retries_cli_overrides_dotenv() {
 
     let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
     cmd.current_dir(temp_dir.path())
+        // This test intentionally validates dotenv behavior; ensure it is enabled.
+        .env_remove("DOTENV_DISABLED")
         .args(["--max-retries", "8", "health"])
         .assert()
         .failure()

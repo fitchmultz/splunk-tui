@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0122",
-      "status": "todo",
-      "title": "Make tests hermetic: prevent accidental dotenv loading during test runs",
-      "priority": "high",
-      "tags": [
-        "tests",
-        "workflow",
-        "security"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/config/src/loader.rs",
-        "crates/cli/tests/",
-        "Makefile",
-        "make test",
-        "make ci"
-      ],
-      "evidence": [
-        "crates/cli/src/main.rs loads dotenv before CLI parsing, so running tests can be influenced by a developer's local .env.",
-        "crates/config/src/loader.rs supports DOTENV_DISABLED, but only some CLI tests (crates/cli/tests/config_tests.rs) set it.",
-        "splunk-tui/.env exists locally and contains non-placeholder values, making accidental test contamination likely."
-      ],
-      "plan": [
-        "Set DOTENV_DISABLED=1 for make test/make ci (and any cargo test invocations) to ensure hermetic defaults.",
-        "Update test helpers/macros to set DOTENV_DISABLED for all assert_cmd-based CLI integration tests.",
-        "Add a regression test proving that a local .env does not affect a CLI test run.",
-        "Update docs to explain why dotenv is disabled in tests and how live tests are configured (.env.test)."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0120",
       "status": "todo",
       "title": "Fix config file path mismatch (code vs docs) and add a safe migration",

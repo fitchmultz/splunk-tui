@@ -69,6 +69,8 @@ When adding a feature:
 
 ## Testing
 
+- **Hermetic test rule:** `make test` / `make ci` run with `DOTENV_DISABLED=1`, so workspace/root `.env` files are **not** loaded during tests.
+  - If a test needs to specifically validate dotenv behavior, it must explicitly **unset** `DOTENV_DISABLED` (or set it to a non-disabling value) for the spawned process.
 - Unit tests: `#[cfg(test)]` modules near the code.
 - Integration tests: `crates/*/tests/*` (prefer one concept per file, e.g. `jobs_tests.rs`).
 - Fixtures: `crates/client/fixtures/` (organized by endpoint/resource).

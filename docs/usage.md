@@ -124,6 +124,15 @@ make install-hooks
 ```
 This will run the secret guard every time you attempt to `git commit`.
 
+### Hermetic Testing
+
+To ensure tests are stable and not influenced by a developer's local environment, `splunk-tui` enforces **hermetic testing**:
+
+- **Dotenv Isolation**: Loading of `.env` files is disabled by default during test runs (`make test` or `make ci`). This is controlled by the `DOTENV_DISABLED=1` environment variable.
+- **Integration Tests**: CLI integration tests use a shared utility that explicitly sets `DOTENV_DISABLED=1` for the spawned process, ensuring they stay isolated even if run via `cargo test` directly.
+- **Live Tests**: Tests that require a real Splunk server (run via `make test-live`) may explicitly enable dotenv loading or rely on environment variables. They should be configured via `.env.test` which is also protected by the secret-commit guard.
+- **Validation**: Regression tests prove that local `.env` values are ignored during standard test runs.
+
 ---
 
 ## Command Line Interface (CLI)

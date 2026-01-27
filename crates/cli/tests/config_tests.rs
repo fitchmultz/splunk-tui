@@ -1,6 +1,8 @@
 //! Integration tests for `splunk-cli config` command.
 
-use assert_cmd::cargo::cargo_bin_cmd;
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 use std::fs;
 use tempfile::TempDir;
@@ -16,7 +18,7 @@ fn setup_temp_config() -> (TempDir, String) {
 /// Test that `splunk-cli config --help` shows command.
 #[test]
 fn test_config_help() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "--help"])
         .assert()
         .stdout(predicate::str::contains("Manage configuration profiles"));
@@ -25,7 +27,7 @@ fn test_config_help() {
 /// Test that `splunk-cli config list --help` shows options.
 #[test]
 fn test_config_list_help() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "list", "--help"])
         .assert()
         .success()
@@ -35,7 +37,7 @@ fn test_config_list_help() {
 /// Test that `splunk-cli config set --help` shows options.
 #[test]
 fn test_config_set_help() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "set", "--help"])
         .assert()
         .success()
@@ -45,7 +47,7 @@ fn test_config_set_help() {
 /// Test that `splunk-cli config delete --help` shows options.
 #[test]
 fn test_config_delete_help() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "delete", "--help"])
         .assert()
         .success()
@@ -55,7 +57,7 @@ fn test_config_delete_help() {
 /// Test that `splunk-cli config list` executes successfully.
 #[test]
 fn test_config_list_executes() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "list", "--output", "json"])
         .assert()
         .success();
@@ -64,7 +66,7 @@ fn test_config_list_executes() {
 /// Test that `splunk-cli config list` accepts table format.
 #[test]
 fn test_config_list_table_format_empty() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "list", "--output", "table"])
         .assert()
         .success();
@@ -75,7 +77,7 @@ fn test_config_list_table_format_empty() {
 fn test_config_list_empty() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
         .args(["config", "list", "--output", "json"])
         .assert()
@@ -88,11 +90,8 @@ fn test_config_list_empty() {
 fn test_config_set_creates_profile() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN")
         .args([
             "config",
             "set",
@@ -125,9 +124,8 @@ fn test_config_set_updates_existing() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create initial profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -143,9 +141,8 @@ fn test_config_set_updates_existing() {
         .success();
 
     // Update profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -174,9 +171,8 @@ fn test_config_set_updates_existing() {
 fn test_config_list_json_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -193,7 +189,7 @@ fn test_config_list_json_format() {
         .assert()
         .success();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "list", "--output", "json"])
         .assert()
@@ -207,9 +203,8 @@ fn test_config_list_json_format() {
 fn test_config_list_table_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -226,7 +221,7 @@ fn test_config_list_table_format() {
         .assert()
         .success();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "list", "--output", "table"])
         .assert()
@@ -243,9 +238,8 @@ fn test_config_delete_profile() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create a profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -261,7 +255,7 @@ fn test_config_delete_profile() {
         .success();
 
     // Delete profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "delete", "test-profile"])
         .assert()
@@ -286,7 +280,7 @@ fn test_config_delete_profile() {
 fn test_config_delete_nonexistent() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
         .args(["config", "delete", "nonexistent"])
         .assert()
@@ -299,9 +293,8 @@ fn test_config_delete_nonexistent() {
 fn test_config_set_username_without_password_error() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .env_remove("SPLUNK_USERNAME")
@@ -328,10 +321,8 @@ fn test_config_set_username_without_password_error() {
 fn test_config_set_invalid_output_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN")
         .args(["config", "list", "--output", "invalid"])
         .assert()
         .failure()
@@ -343,9 +334,8 @@ fn test_config_set_invalid_output_format() {
 fn test_config_set_with_keyring() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    let output = cargo_bin_cmd!("splunk-cli")
+    let output = splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -388,7 +378,7 @@ fn test_config_set_with_keyring() {
 /// Test that `splunk-cli config show --help` shows options.
 #[test]
 fn test_config_show_help() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "show", "--help"])
         .assert()
         .success()
@@ -398,7 +388,7 @@ fn test_config_show_help() {
 /// Test that `splunk-cli config edit --help` shows options.
 #[test]
 fn test_config_edit_help() {
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .args(["config", "edit", "--help"])
         .assert()
         .success()
@@ -410,7 +400,7 @@ fn test_config_edit_help() {
 fn test_config_show_nonexistent() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
         .args(["config", "show", "nonexistent"])
         .assert()
@@ -424,9 +414,8 @@ fn test_config_show_table_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create a profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -450,7 +439,7 @@ fn test_config_show_table_format() {
         .success();
 
     // Show profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "show", "test-profile"])
         .assert()
@@ -469,9 +458,8 @@ fn test_config_show_json_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create a profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -489,7 +477,7 @@ fn test_config_show_json_format() {
         .success();
 
     // Show profile in JSON format
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "show", "test-profile", "--output", "json"])
         .assert()
@@ -506,9 +494,8 @@ fn test_config_show_csv_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create a profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -526,7 +513,7 @@ fn test_config_show_csv_format() {
         .success();
 
     // Show profile in CSV format
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "show", "test-profile", "--output", "csv"])
         .assert()
@@ -542,9 +529,8 @@ fn test_config_show_xml_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create a profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -562,7 +548,7 @@ fn test_config_show_xml_format() {
         .success();
 
     // Show profile in XML format
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
         .args(["config", "show", "test-profile", "--output", "xml"])
         .assert()
@@ -578,9 +564,8 @@ fn test_config_show_invalid_output_format() {
     let (_temp_dir, config_path) = setup_temp_config();
 
     // Create a profile
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
-        .env("DOTENV_DISABLED", "true")
         .env_remove("SPLUNK_PASSWORD")
         .env_remove("SPLUNK_API_TOKEN")
         .args([
@@ -595,7 +580,7 @@ fn test_config_show_invalid_output_format() {
         .assert()
         .success();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
         .args(["config", "show", "test-profile", "--output", "invalid"])
         .assert()
@@ -608,7 +593,7 @@ fn test_config_show_invalid_output_format() {
 fn test_config_edit_nonexistent() {
     let (_temp_dir, config_path) = setup_temp_config();
 
-    cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", config_path)
         .args(["config", "edit", "nonexistent"])
         .assert()

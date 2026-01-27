@@ -1,6 +1,17 @@
 //! Splunk TUI - Terminal user interface for Splunk Enterprise.
 //!
-//! Interactive terminal interface for managing Splunk deployments and running searches.
+//! Responsibilities:
+//! - Provide an interactive terminal interface for Splunk.
+//! - Manage application state, UI rendering, and user input handling.
+//! - Handle background tasks for health monitoring and data fetching.
+//!
+//! Does NOT handle:
+//! - Core business logic or REST API implementation (see `crates/client`).
+//! - Manual configuration file editing (see `crates/cli`).
+//!
+//! Invariants / Assumptions:
+//! - The TUI enters raw mode and alternate screen on startup.
+//! - `load_dotenv()` is called at startup to support `.env` configuration.
 
 use anyhow::Result;
 use crossterm::{

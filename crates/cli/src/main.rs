@@ -1,7 +1,17 @@
 //! Splunk CLI - Command-line interface for Splunk Enterprise.
 //!
-//! This CLI provides tools for managing Splunk deployments, running searches,
-//! and managing indexes and clusters.
+//! Responsibilities:
+//! - Parse command-line arguments and environment variables.
+//! - Execute Splunk REST API commands via the shared client library.
+//! - Format and display results in various output formats (table, JSON, etc.).
+//!
+//! Does NOT handle:
+//! - Core business logic or REST API implementation (see `crates/client`).
+//! - Long-term persistence of search results.
+//!
+//! Invariants / Assumptions:
+//! - `load_dotenv()` is called BEFORE CLI parsing to allow `.env` to provide clap defaults.
+//! - Global options (like `--base-url`) are applied consistently across all subcommands.
 
 mod cancellation;
 mod commands;

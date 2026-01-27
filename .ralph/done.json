@@ -4336,6 +4336,53 @@
       "completed_at": "2026-01-27T17:23:25.826620000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0122",
+      "status": "done",
+      "title": "Make tests hermetic: prevent accidental dotenv loading during test runs",
+      "priority": "high",
+      "tags": [
+        "tests",
+        "workflow",
+        "security"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/tui/src/main.rs",
+        "crates/config/src/loader.rs",
+        "crates/cli/tests/",
+        "Makefile",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs and crates/tui/src/main.rs load dotenv before CLI/Config parsing, so running tests can be influenced by a developer's local .env.",
+        "crates/config/src/loader.rs supports DOTENV_DISABLED, but most CLI integration tests (crates/cli/tests/*.rs) do not set it.",
+        "Makefile targets for test and ci do not set DOTENV_DISABLED=1, allowing local .env contamination in dev environments.",
+        "Many CLI tests use cargo_bin_cmd! directly instead of a centralized helper that enforces hermeticity."
+      ],
+      "plan": [
+        "Set DOTENV_DISABLED=1 globally in Makefile for test, test-all, test-unit, test-integration, and ci targets.",
+        "Create a shared test utility in crates/cli/tests/ (e.g., common/mod.rs) that sets DOTENV_DISABLED=1 for all assert_cmd-based CLI tests.",
+        "Refactor existing CLI integration tests to use the shared utility instead of direct cargo_bin_cmd! calls.",
+        "Add a dedicated regression test proving that local .env values (like SPLUNK_BASE_URL) are ignored when DOTENV_DISABLED=1.",
+        "Update docs/usage.md to explain that tests run with dotenv disabled by default and how to use .env.test for live tests."
+      ],
+      "notes": [
+        "Ensure live tests (test-live) still function correctly if they rely on external environment setup; they may need to explicitly enable dotenv or bypass the disablement.",
+        "Created shared test utility splunk_cmd in crates/cli/tests/common/mod.rs to enforce hermeticity across all CLI integration tests.",
+        "Refactor 12 integration test files to use the shared helper, ensuring consistent DOTENV_DISABLED=1 and SPLUNK_API_TOKEN setup.",
+        "Updated docs/usage.md with a new Hermetic Testing section explaining dotenv isolation.",
+        "Added standardized documentation headers to ConfigLoader, splunk-cli, and splunk-tui entry points.",
+        "Verified all 454 tests pass and make ci pipeline is fully green."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T17:56:41.960643000Z",
+      "completed_at": "2026-01-27T17:56:41.960643000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -6,12 +6,15 @@
 //! - Output format variations (json, table, csv, xml)
 //! - Error handling when resources fail to fetch
 
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 
 /// Test that `splunk-cli list-all --help` shows command.
 #[test]
 fn test_list_all_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.args(["list-all", "--help"])
         .assert()
         .success()
@@ -27,11 +30,8 @@ fn test_list_all_help() {
 /// Test that `splunk-cli list-all` defaults to listing all resources.
 #[test]
 fn test_list_all_default_lists_all() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.arg("list-all").assert();
 
@@ -47,11 +47,8 @@ fn test_list_all_default_lists_all() {
 /// Test that `splunk-cli list-all --resources indexes,jobs,users` filters resources.
 #[test]
 fn test_list_all_filtered_resources() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd
         .args(["list-all", "--resources", "indexes,jobs,users"])
@@ -69,11 +66,8 @@ fn test_list_all_filtered_resources() {
 /// Test that `splunk-cli list-all --resources` with single resource works.
 #[test]
 fn test_list_all_single_resource() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["list-all", "--resources", "indexes"]).assert();
 
@@ -87,11 +81,8 @@ fn test_list_all_single_resource() {
 /// Test that `splunk-cli list-all --resources` with invalid resource type shows error.
 #[test]
 fn test_list_all_invalid_resource_type() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd
         .args(["list-all", "--resources", "invalid_type"])
@@ -107,11 +98,8 @@ fn test_list_all_invalid_resource_type() {
 /// Test that `splunk-cli list-all --output json` works.
 #[test]
 fn test_list_all_json_output() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["list-all", "--output", "json"]).assert();
 
@@ -126,11 +114,8 @@ fn test_list_all_json_output() {
 /// Test that `splunk-cli list-all --output table` works.
 #[test]
 fn test_list_all_table_output() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["list-all", "--output", "table"]).assert();
 
@@ -147,11 +132,8 @@ fn test_list_all_table_output() {
 /// Test that `splunk-cli list-all --output csv` works.
 #[test]
 fn test_list_all_csv_output() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["list-all", "--output", "csv"]).assert();
 
@@ -164,11 +146,8 @@ fn test_list_all_csv_output() {
 /// Test that `splunk-cli list-all --output xml` works.
 #[test]
 fn test_list_all_xml_output() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.args(["list-all", "--output", "xml"]).assert();
 
@@ -185,11 +164,8 @@ fn test_list_all_xml_output() {
 /// This test verifies that partial failures don't crash the command.
 #[test]
 fn test_list_all_error_handling() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd.arg("list-all").assert();
 
@@ -200,11 +176,8 @@ fn test_list_all_error_handling() {
 /// Test that `splunk-cli list-all --resources` with comma-separated values works.
 #[test]
 fn test_list_all_comma_separated_resources() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
-    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
-        .env_remove("SPLUNK_USERNAME")
-        .env_remove("SPLUNK_PASSWORD")
-        .env_remove("SPLUNK_API_TOKEN");
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
 
     let result = cmd
         .args([
@@ -232,7 +205,7 @@ fn test_list_all_comma_separated_resources() {
 /// This test verifies that individual resource fetches have timeout protection.
 #[test]
 fn test_list_all_timeout_protection() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
     cmd.env("SPLUNK_TIMEOUT", "1");
 

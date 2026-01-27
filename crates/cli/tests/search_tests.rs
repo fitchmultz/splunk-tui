@@ -1,5 +1,19 @@
 //! Integration tests for `splunk-cli search` command.
+//!
+//! Responsibilities:
+//! - Validate search query execution and argument handling.
+//! - Ensure progress reporting and `--quiet` mode work correctly.
+//! - Verify connection attempt behavior for various output formats.
+//!
+//! Does NOT:
+//! - Perform live searches against a real Splunk server (see `test-live`).
+//!
+//! Invariants / Assumptions:
+//! - All tests use the hermetic `splunk_cmd()` helper.
 
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -8,7 +22,7 @@ const TEST_BASE_URL: &str = "https://localhost:8089";
 const TEST_QUERY: &str = "search index=_internal | head 1";
 
 fn splunk_cli_cmd() -> assert_cmd::Command {
-    assert_cmd::cargo::cargo_bin_cmd!("splunk-cli")
+    splunk_cmd()
 }
 
 fn splunk_cli_cmd_with_base_url() -> assert_cmd::Command {
@@ -175,7 +189,6 @@ async fn test_search_wait_shows_progress_on_stderr_unless_quiet() {
     // Non-quiet: progress message should appear on stderr
     let mut cmd = splunk_cli_cmd();
     cmd.env("SPLUNK_BASE_URL", server.uri());
-    cmd.env("SPLUNK_API_TOKEN", "test-token");
     cmd.args(["--output", "json", "search", TEST_QUERY, "--wait"])
         .assert()
         .success();
@@ -185,7 +198,6 @@ async fn test_search_wait_shows_progress_on_stderr_unless_quiet() {
     // Quiet: progress must be suppressed (stderr should be empty)
     let mut cmd = splunk_cli_cmd();
     cmd.env("SPLUNK_BASE_URL", server.uri());
-    cmd.env("SPLUNK_API_TOKEN", "test-token");
     cmd.args([
         "--quiet", "--output", "json", "search", TEST_QUERY, "--wait",
     ])
