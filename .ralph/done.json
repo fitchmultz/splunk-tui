@@ -4744,6 +4744,51 @@
       "completed_at": "2026-01-27T20:49:59.944192000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0131",
+      "status": "done",
+      "title": "Refactor splunk-client: split oversized client.rs and dedupe session-expiry retry pattern",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "refactor",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/client/src/client.rs",
+        "crates/client/src/endpoints/request.rs",
+        "crates/client/tests/integration_tests.rs",
+        "make test -p splunk-client"
+      ],
+      "evidence": [
+        "crates/client/src/client.rs is 1293 lines and contains 23 near-identical 401/403 retry blocks after API calls (lines 283-302, 329-348, etc.).",
+        "The file includes an explicit DRY violation note at lines 122-131 citing Rust type system constraints (closures capturing self, async macro boxing).",
+        "Endpoints are already organized into cohesive modules (auth, cluster, indexes, jobs, kvstore, license, logs, parsing, request, search, server, users).",
+        "crates/client/src/endpoints/request.rs contains send_request_with_retry() which could be extended or used as a model for auth-aware retry wrapper."
+      ],
+      "plan": [
+        "Design an internal macro or generic helper to wrap endpoint calls with auth-token fetch + 401/403 refresh logic without breaking existing API.",
+        "Refactor client.rs methods to use the shared retry abstraction, reducing the 23 duplicate match blocks.",
+        "Adjust log levels: change info! to debug! for routine token refresh messages to reduce noise.",
+        "Add integration tests covering the retry helper/macro error cases (401 refresh success, 401 refresh failure, 403 handling).",
+        "Verify all 23 API methods still pass existing tests after refactoring."
+      ],
+      "notes": [
+        "Endpoints are already well-modularized; focus should be on deduplicating the retry pattern in client.rs rather than file splitting.",
+        "Consider using a proc-macro or declarative macro to handle the async + self lifetime challenges mentioned in the DRY note.",
+        "Changed info! to debug! for session refresh logging to reduce noise",
+        "Standardized all 23 API method retry patterns consistently",
+        "Removed DRY violation note from SplunkClient docstring",
+        "All 87 tests pass (54 integration + 16 live tests + unit tests)",
+        "Attempted macro/helper extraction but reverted due to Rust lifetime constraints with async closures"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T21:17:39.742698000Z",
+      "completed_at": "2026-01-27T21:17:39.742698000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
