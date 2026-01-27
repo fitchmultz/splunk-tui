@@ -35,6 +35,8 @@ pub enum PopupType {
     ExportSearch,
     /// Show full error details with structured information
     ErrorDetails,
+    /// Show index details with full metadata
+    IndexDetails,
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -125,6 +127,10 @@ impl PopupBuilder {
                 "Error Details".to_string(),
                 "Press Esc or q to close".to_string(),
             ),
+            PopupType::IndexDetails => (
+                "Index Details".to_string(),
+                "Press Esc or q to close, j/k to scroll".to_string(),
+            ),
         };
 
         Popup {
@@ -149,7 +155,10 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
 
     // Determine border color based on popup type
     let border_color = match &popup.kind {
-        PopupType::Help | PopupType::ExportSearch | PopupType::ErrorDetails => theme.border,
+        PopupType::Help
+        | PopupType::ExportSearch
+        | PopupType::ErrorDetails
+        | PopupType::IndexDetails => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -158,7 +167,10 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
 
     // Determine wrapping behavior based on popup type
     let wrap_mode = match &popup.kind {
-        PopupType::Help | PopupType::ExportSearch | PopupType::ErrorDetails => Wrap { trim: false },
+        PopupType::Help
+        | PopupType::ExportSearch
+        | PopupType::ErrorDetails
+        | PopupType::IndexDetails => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

@@ -11,7 +11,7 @@
 use crate::action::{Action, ExportFormat};
 use crate::app::App;
 use crate::ui::popup::{Popup, PopupType};
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl App {
     /// Handle keyboard input when a popup is active.
@@ -129,6 +129,44 @@ impl App {
             }
             (Some(PopupType::ErrorDetails), KeyCode::PageUp) => {
                 self.error_scroll_offset = self.error_scroll_offset.saturating_sub(10);
+                None
+            }
+            (Some(PopupType::IndexDetails), KeyCode::Esc | KeyCode::Char('q')) => {
+                self.popup = None;
+                self.index_details_scroll_offset = 0;
+                None
+            }
+            (Some(PopupType::IndexDetails), KeyCode::Char('j') | KeyCode::Down) => {
+                self.index_details_scroll_offset =
+                    self.index_details_scroll_offset.saturating_add(1);
+                None
+            }
+            (Some(PopupType::IndexDetails), KeyCode::Char('k') | KeyCode::Up) => {
+                self.index_details_scroll_offset =
+                    self.index_details_scroll_offset.saturating_sub(1);
+                None
+            }
+            (Some(PopupType::IndexDetails), KeyCode::PageDown) => {
+                self.index_details_scroll_offset =
+                    self.index_details_scroll_offset.saturating_add(10);
+                None
+            }
+            (Some(PopupType::IndexDetails), KeyCode::PageUp) => {
+                self.index_details_scroll_offset =
+                    self.index_details_scroll_offset.saturating_sub(10);
+                None
+            }
+            (Some(PopupType::IndexDetails), KeyCode::Char('c'))
+                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
+                // Copy index JSON to clipboard
+                if let Some(indexes) = &self.indexes
+                    && let Some(selected) = self.indexes_state.selected()
+                    && let Some(index) = indexes.get(selected)
+                    && let Ok(json) = serde_json::to_string_pretty(index)
+                {
+                    return Some(Action::CopyToClipboard(json));
+                }
                 None
             }
             (

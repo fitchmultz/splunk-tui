@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0138",
-      "status": "todo",
-      "title": "Add Index details/inspect view in TUI (beyond the summary list)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "feature-parity"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/indexes.rs",
-        "crates/tui/src/ui/popup.rs (or new screen)",
-        "crates/tui/tests/snapshot_tests.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/screens/indexes.rs renders only a single-line summary per index (name, total_event_count, current_db_size_mb).",
-        "There is no inspect/details UX in TUI for index metadata, while admins often need retention, paths, frozenTimePeriodInSecs, and other fields for troubleshooting.",
-        "CLI already provides richer output modes for other resources; adding a details view improves parity and reduces context switching."
-      ],
-      "plan": [
-        "Define the details UX (popup vs dedicated screen) and a consistent back/close contract.",
-        "Add an Action to open index details for the selected index and render a structured view (key/value, scrollable).",
-        "Add copy/export affordances for the details payload (reusing existing export/copy patterns).",
-        "Add snapshot tests for the new view (including narrow terminal) and update docs/usage.md."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0136",
       "status": "todo",
       "title": "Add Cluster peers view in TUI (parity with CLI cluster --detailed)",

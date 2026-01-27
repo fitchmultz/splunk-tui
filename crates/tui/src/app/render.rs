@@ -151,6 +151,15 @@ impl App {
         {
             crate::ui::error_details::render_error_details(f, error, self, &self.theme);
         }
+
+        // Render index details popup if active
+        if let Some(crate::ui::popup::Popup {
+            kind: PopupType::IndexDetails,
+            ..
+        }) = &self.popup
+        {
+            crate::ui::index_details::render_index_details(f, self, &self.theme);
+        }
     }
 
     fn render_content(&mut self, f: &mut Frame, area: ratatui::layout::Rect) {

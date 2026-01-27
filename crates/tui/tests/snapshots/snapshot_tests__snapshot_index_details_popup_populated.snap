@@ -1,0 +1,34 @@
+---
+source: crates/tui/tests/snapshot_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Indexes | [?] Unknown                                                                                    │
+│ |                 ┌Index Details─────────────────────────────────────────────────────────────────┐                   │
+└───────────────────│Name: test_index                                                              │───────────────────┘
+┌Indexes────────────│                                                                              │───────────────────┐
+│test_index - 100000│Total Event Count: 1000000                                                    │                   │
+│                   │                                                                              │                   │
+│                   │Current DB Size: 50000 MB                                                     │                   │
+│                   │                                                                              │                   │
+│                   │Max Total Data Size: 100000 MB                                                │                   │
+│                   │                                                                              │                   │
+│                   │Max Warm DB Count: 300                                                        │                   │
+│                   │                                                                              │                   │
+│                   │Max Hot Buckets: 10                                                           │                   │
+│                   │                                                                              │                   │
+│                   │Frozen Time Period: 2592000 seconds (30 days)                                 │                   │
+│                   │                                                                              │                   │
+│                   │Home Path: /opt/splunk/var/lib/splunk/test_index/db                           │                   │
+│                   │                                                                              │                   │
+│                   │Cold DB Path: /opt/splunk/cold                                                │                   │
+│                   │                                                                              │                   │
+│                   │Thawed Path: /opt/splunk/thawed                                               │                   │
+│                   │                                                                              │                   │
+│                   │Cold to Frozen Dir: /opt/splunk/frozen                                        │                   │
+│                   │                                                                              │                   │
+│                   │Primary Index: No                                                             │                   │
+└───────────────────└──────────────────────────────────────────────────────────────────────────────┘───────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit                                                                 │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

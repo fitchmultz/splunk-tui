@@ -222,6 +222,16 @@ impl App {
         }
 
         match key.code {
+            KeyCode::Enter => {
+                if let Some(indexes) = &self.indexes
+                    && let Some(selected) = self.indexes_state.selected()
+                    && indexes.get(selected).is_some()
+                {
+                    self.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+                    self.index_details_scroll_offset = 0;
+                }
+                None
+            }
             KeyCode::Char('e')
                 if key.modifiers.contains(KeyModifiers::CONTROL)
                     && self

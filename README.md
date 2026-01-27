@@ -181,6 +181,7 @@ Configuration values are loaded in the following order (highest to lowest):
 
 #### Indexes Screen
 - `r`: Refresh indexes
+- `Enter`: View index details
 - `Ctrl+e`: Export indexes
 - `Ctrl+c`: Copy selected index name
 - `j/k or Up/Down`: Navigate list

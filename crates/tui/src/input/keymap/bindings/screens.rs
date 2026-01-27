@@ -35,6 +35,15 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Indexes,
+            keys: "Enter",
+            description: "View index details",
+            scope: BindingScope::Screen(Indexes),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Indexes,
             keys: "Ctrl+e",
             description: "Export indexes",
             scope: BindingScope::Screen(Indexes),

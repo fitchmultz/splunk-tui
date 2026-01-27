@@ -4,6 +4,7 @@
 //! from the main app state management.
 //!
 pub mod error_details;
+pub mod index_details;
 pub mod popup;
 pub mod screens;
 pub mod syntax;

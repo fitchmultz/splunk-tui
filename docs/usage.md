@@ -570,6 +570,7 @@ Before the server info is loaded, the header shows "Connecting..." as a placehol
 
 #### Indexes Screen
 - `r`: Refresh indexes
+- `Enter`: View index details
 - `Ctrl+e`: Export indexes
 - `Ctrl+c`: Copy selected index name
 - `j/k or Up/Down`: Navigate list
@@ -618,6 +619,31 @@ Before the server info is loaded, the header shows "Connecting..." as a placehol
 - `c`: Clear search history
 - `r`: Reload settings
 <!-- END TUI KEYBINDINGS -->
+
+### Index Details Popup
+
+When viewing the Indexes screen, press `Enter` on a selected index to open the Index Details popup. This shows comprehensive metadata about the index:
+
+- **Name**: Index name
+- **Total Event Count**: Number of events in the index
+- **Current DB Size**: Current storage usage in MB
+- **Max Total Data Size**: Maximum allowed data size in MB (if configured)
+- **Max Warm DB Count**: Maximum warm database count (if configured)
+- **Max Hot Buckets**: Maximum hot buckets (if configured)
+- **Frozen Time Period**: Retention period in seconds (converted to days for readability)
+- **Home Path**: Path to hot/warm buckets
+- **Cold DB Path**: Path to cold buckets (if configured)
+- **Thawed Path**: Path for thawed data (if configured)
+- **Cold to Frozen Dir**: Directory for frozen data (if configured)
+- **Primary Index**: Whether this is a primary index
+
+Navigate the Index Details popup:
+- `j` / `↓` - Scroll down
+- `k` / `↑` - Scroll up
+- `PageDown` - Page down
+- `PageUp` - Page up
+- `Ctrl+c` - Copy full index JSON to clipboard
+- `Esc` / `q` - Close popup
 
 ### Error Handling
 

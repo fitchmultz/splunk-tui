@@ -120,6 +120,9 @@ pub struct App {
     pub current_error: Option<crate::error_details::ErrorDetails>,
     pub error_scroll_offset: usize,
 
+    // Index details popup scroll offset
+    pub index_details_scroll_offset: usize,
+
     // Layout tracking
     pub last_area: Rect,
 
@@ -262,6 +265,7 @@ impl App {
             export_target: None,
             current_error: None,
             error_scroll_offset: 0,
+            index_details_scroll_offset: 0,
             last_area: Rect::default(),
 
             // Connection context (RQ-0134)

@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Indexes | [?] Unknown                                            │
+│ ┌Index Details─────────────────────────────────────────────────────────────┐ │
+└─│Name: test_index                                                          ↑─┘
+┌I│                                                                          █─┐
+│t│Total Event Count: 1000000                                                █ │
+│ │                                                                          █ │
+│ │Current DB Size: 50000 MB                                                 █ │
+│ │                                                                          █ │
+│ │Max Total Data Size: 100000 MB                                            █ │
+│ │                                                                          █ │
+│ │Max Warm DB Count: 300                                                    ║ │
+│ │                                                                          ║ │
+│ │Max Hot Buckets: 10                                                       ║ │
+│ │                                                                          ║ │
+│ │Frozen Time Period: 2592000 seconds (30 days)                             ║ │
+│ │                                                                          ║ │
+│ │Home Path: /opt/splunk/var/lib/splunk/test_index/db                       ║ │
+│ │                                                                          ║ │
+│ │Cold DB Path: /opt/splunk/cold                                            ║ │
+└─│                                                                          ↓─┘
+┌─└──────────────────────────────────────────────────────────────────────────┘─┐
+│ Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit                         │
+└──────────────────────────────────────────────────────────────────────────────┘

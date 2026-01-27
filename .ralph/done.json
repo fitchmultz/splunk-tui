@@ -5046,6 +5046,58 @@
       "completed_at": "2026-01-27T23:19:22.465303000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0138",
+      "status": "done",
+      "title": "Add Index details/inspect view in TUI (beyond the summary list)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "feature-parity"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/input.rs",
+        "crates/tui/src/app/popups.rs",
+        "crates/tui/src/ui/screens/indexes.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/indexes.rs (lines 61-69) renders only a single-line summary per index: name, total_event_count, current_db_size_mb.",
+        "crates/client/src/models.rs (lines 189-237) Index struct has many unused fields: max_total_data_size_mb, max_warm_db_count, max_hot_buckets, frozen_time_period_in_secs, cold_db_path, home_path, thawed_path, cold_to_frozen_dir, primary_index.",
+        "crates/tui/src/app/input.rs (lines 207-238) handle_indexes_input only supports Ctrl+C copy and Ctrl+E export - no inspect/details action.",
+        "crates/tui/src/ui/popup.rs PopupType enum lacks an IndexDetails variant; only has Help, ConfirmCancel, ConfirmDelete, ExportSearch, ErrorDetails.",
+        "docs/usage.md Indexes Screen section documents only: r (refresh), Ctrl+e (export), Ctrl+c (copy), j/k (navigate) - no inspect keybinding."
+      ],
+      "plan": [
+        "Add PopupType::IndexDetails variant to crates/tui/src/ui/popup.rs with appropriate title and scrollable content support.",
+        "Add Enter keybinding in handle_indexes_input to open IndexDetails popup for selected index; add popup input handler for Esc/q to close.",
+        "Create structured key/value rendering for Index fields in popup using Paragraph with scroll support (similar to ErrorDetails popup pattern).",
+        "Add Ctrl+c copy support in IndexDetails popup to copy full index JSON or specific field values.",
+        "Add snapshot tests for IndexDetails popup (empty state, populated state, narrow terminal) and update docs/usage.md keybindings."
+      ],
+      "notes": [
+        "Index model has rich metadata that would benefit admins: retention settings (frozen_time_period_in_secs), storage paths (home_path, cold_db_path), size limits (max_total_data_size_mb).",
+        "Follow existing patterns: ErrorDetails popup shows scrollable structured content; ExportSearch shows popup with interactive input.",
+        "Consider consistency with JobInspect screen (dedicated screen) vs popup approach - popup is lighter weight for read-only index metadata.",
+        "Added IndexDetails popup variant to PopupType enum",
+        "Added Enter keybinding in indexes screen to open index details",
+        "Implemented index_details.rs module with structured key/value rendering",
+        "Added popup input handlers for scroll (j/k/PageUp/PageDown), close (Esc/q), and copy (Ctrl+c)",
+        "Added 3 snapshot tests: empty state, populated state, narrow terminal",
+        "Updated documentation in usage.md, user-guide.md, and README.md",
+        "All tests pass including make ci"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T23:41:11.427291000Z",
+      "completed_at": "2026-01-27T23:41:11.427291000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

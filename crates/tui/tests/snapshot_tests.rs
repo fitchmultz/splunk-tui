@@ -509,3 +509,56 @@ fn snapshot_users_screen_with_data() {
 
     insta::assert_snapshot!(harness.render());
 }
+
+/// Create mock index data for testing.
+fn create_mock_index() -> splunk_client::models::Index {
+    splunk_client::models::Index {
+        name: "test_index".to_string(),
+        max_total_data_size_mb: Some(100000),
+        current_db_size_mb: 50000,
+        total_event_count: 1000000,
+        max_warm_db_count: Some(300),
+        max_hot_buckets: Some("10".to_string()),
+        frozen_time_period_in_secs: Some(2592000),
+        cold_db_path: Some("/opt/splunk/cold".to_string()),
+        home_path: Some("/opt/splunk/var/lib/splunk/test_index/db".to_string()),
+        thawed_path: Some("/opt/splunk/thawed".to_string()),
+        cold_to_frozen_dir: Some("/opt/splunk/frozen".to_string()),
+        primary_index: Some(false),
+    }
+}
+
+#[test]
+fn snapshot_index_details_popup_empty() {
+    // Test with no index selected (edge case)
+    let mut harness = TuiHarness::new(120, 30);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
+    harness.app.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+    // No indexes set, should show "No index selected" message
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_index_details_popup_populated() {
+    // Test with full index data
+    let mut harness = TuiHarness::new(120, 30);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
+    harness.app.indexes = Some(vec![create_mock_index()]);
+    harness.app.indexes_state.select(Some(0));
+    harness.app.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_index_details_popup_narrow() {
+    // Test with narrow terminal (80x24)
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
+    harness.app.indexes = Some(vec![create_mock_index()]);
+    harness.app.indexes_state.select(Some(0));
+    harness.app.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+
+    insta::assert_snapshot!(harness.render());
+}
