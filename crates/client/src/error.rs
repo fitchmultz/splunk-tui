@@ -76,6 +76,22 @@ impl ClientError {
         )
     }
 
+    /// Check if an HTTP status code is retryable.
+    ///
+    /// Retryable status codes:
+    /// - 429: Too Many Requests (rate limiting)
+    /// - 502: Bad Gateway (transient server error)
+    /// - 503: Service Unavailable (transient server error)
+    /// - 504: Gateway Timeout (transient server error)
+    ///
+    /// Non-retryable status codes (fail immediately):
+    /// - 400, 401, 403, 404: Client errors
+    /// - 500: Internal Server Error (typically indicates a bug, not transient)
+    /// - 501: Not Implemented
+    pub fn is_retryable_status(status: u16) -> bool {
+        matches!(status, 429 | 502 | 503 | 504)
+    }
+
     /// Check if this error indicates authentication failure.
     pub fn is_auth_error(&self) -> bool {
         matches!(
@@ -108,5 +124,31 @@ mod tests {
 
         let err = ClientError::Timeout(Duration::from_secs(1));
         assert!(!err.is_auth_error());
+    }
+
+    #[test]
+    fn test_is_retryable_status_retryable() {
+        // Retryable status codes
+        assert!(ClientError::is_retryable_status(429));
+        assert!(ClientError::is_retryable_status(502));
+        assert!(ClientError::is_retryable_status(503));
+        assert!(ClientError::is_retryable_status(504));
+    }
+
+    #[test]
+    fn test_is_retryable_status_not_retryable() {
+        // Client errors (4xx) - should not retry
+        assert!(!ClientError::is_retryable_status(400));
+        assert!(!ClientError::is_retryable_status(401));
+        assert!(!ClientError::is_retryable_status(403));
+        assert!(!ClientError::is_retryable_status(404));
+
+        // Server errors (5xx) that are not retryable
+        assert!(!ClientError::is_retryable_status(500));
+        assert!(!ClientError::is_retryable_status(501));
+
+        // Success codes
+        assert!(!ClientError::is_retryable_status(200));
+        assert!(!ClientError::is_retryable_status(201));
     }
 }

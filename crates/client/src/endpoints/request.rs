@@ -1,13 +1,24 @@
 //! Retry helper for HTTP requests with exponential backoff.
 //!
 //! This module provides functionality to automatically retry HTTP requests
-//! that fail with HTTP 429 (Too Many Requests) status codes, using
-//! exponential backoff between retry attempts.
+//! that fail with transient errors, using exponential backoff between retry
+//! attempts.
 //!
-//! The retry logic respects the `Retry-After` response header when present,
-//! using the maximum of the calculated exponential backoff and the server's
-//! suggested delay. Currently, only the delay-seconds format is supported
-//! (e.g., "120" for 120 seconds). HTTP-date format is not currently implemented.
+//! Retryable conditions:
+//! - HTTP 429 (Too Many Requests): Rate limiting, respects `Retry-After` header
+//! - HTTP 502 (Bad Gateway): Transient server error
+//! - HTTP 503 (Service Unavailable): Transient server error
+//! - HTTP 504 (Gateway Timeout): Transient server error
+//! - Transport errors: Connection refused, connection reset, timeouts
+//!
+//! The retry logic respects the `Retry-After` response header when present
+//! for 429 responses, using the maximum of the calculated exponential backoff
+//! and the server's suggested delay. Currently, only the delay-seconds format
+//! is supported (e.g., "120" for 120 seconds). HTTP-date format is not
+//! currently implemented.
+//!
+//! For 5xx errors and transport errors, exponential backoff is used without
+//! Retry-After header support.
 
 use reqwest::{RequestBuilder, Response};
 use std::time::Duration;
@@ -48,13 +59,38 @@ fn parse_retry_after(response: &Response) -> Option<Duration> {
         })
 }
 
-/// Sends an HTTP request with automatic retry logic for HTTP 429 responses.
+/// Check if a reqwest error is retryable.
+///
+/// Retryable transport errors:
+/// - Connection refused (server may be temporarily down)
+/// - Connection reset (transient network issue)
+/// - Broken pipe (transient network issue)
+/// - Timeout (request may succeed on retry)
+/// - DNS resolution failures (transient DNS issue)
+fn is_retryable_transport_error(error: &reqwest::Error) -> bool {
+    if error.is_timeout() {
+        return true;
+    }
+
+    // Check for specific connection errors by examining the error message
+    // reqwest doesn't expose structured error types for connection failures,
+    // so we use string matching as a pragmatic approach
+    let error_string = error.to_string().to_lowercase();
+    error_string.contains("connection refused")
+        || error_string.contains("connection reset")
+        || error_string.contains("broken pipe")
+        || error_string.contains("dns")
+}
+
+/// Sends an HTTP request with automatic retry logic for transient errors.
 ///
 /// This function wraps a `reqwest::RequestBuilder` with retry logic that:
-/// - Detects HTTP 429 (Too Many Requests) status codes
+/// - Detects HTTP 429 (Too Many Requests) status codes and respects `Retry-After`
+/// - Detects HTTP 502/503/504 (transient server errors) with exponential backoff
+/// - Detects retryable transport errors (connection refused, reset, timeouts)
 /// - Implements exponential backoff (1s, 2s, 4s = 2^attempt)
-/// - Respects the `Retry-After` header when present, using the maximum of
-///   the calculated backoff and the server's suggested delay
+/// - Respects the `Retry-After` header when present for 429 responses, using
+///   the maximum of the calculated backoff and the server's suggested delay
 /// - Respects the `max_retries` parameter
 /// - Logs retry attempts with `tracing::debug`
 /// - Returns `MaxRetriesExceeded` error when retries are exhausted
@@ -103,56 +139,76 @@ pub async fn send_request_with_retry(
         };
 
         match attempt_builder.send().await {
-            Ok(response) if response.status().as_u16() == 429 => {
-                if attempt < max_retries {
-                    // Calculate exponential backoff: 2^attempt seconds
-                    let backoff_secs = 2u64.pow(attempt as u32);
-
-                    // Check for Retry-After header
-                    let retry_after = parse_retry_after(&response);
-
-                    let sleep_duration = if let Some(retry_after_duration) = retry_after {
-                        let retry_after_secs = retry_after_duration.as_secs();
-                        // Use the larger of exponential backoff or Retry-After value
-                        let sleep_secs = backoff_secs.max(retry_after_secs);
-                        debug!(
-                            attempt = attempt + 1,
-                            max_retries = max_retries + 1,
-                            backoff_secs = backoff_secs,
-                            retry_after_secs = retry_after_secs,
-                            sleep_secs = sleep_secs,
-                            "Rate limited (HTTP 429), using max of backoff and Retry-After"
-                        );
-                        sleep_secs
-                    } else {
-                        debug!(
-                            attempt = attempt + 1,
-                            max_retries = max_retries + 1,
-                            backoff_secs = backoff_secs,
-                            "Rate limited (HTTP 429), retrying with exponential backoff (no Retry-After header)"
-                        );
-                        backoff_secs
-                    };
-
-                    tokio::time::sleep(tokio::time::Duration::from_secs(sleep_duration)).await;
-                } else {
-                    debug!(
-                        attempts = attempt + 1,
-                        "Max retries exhausted for rate-limited request"
-                    );
-                    return Err(ClientError::MaxRetriesExceeded(max_retries + 1));
-                }
-            }
             Ok(response) => {
-                if response.status().is_success() {
+                let status = response.status();
+
+                if status.is_success() {
                     // Successful response
                     if attempt > 0 {
                         debug!(attempt = attempt + 1, "Request succeeded after retry");
                     }
                     return Ok(response);
+                }
+
+                let status_u16 = status.as_u16();
+
+                // Check for retryable status codes (429 or 5xx)
+                if ClientError::is_retryable_status(status_u16) {
+                    if attempt < max_retries {
+                        // Calculate exponential backoff: 2^attempt seconds
+                        let backoff_secs = 2u64.pow(attempt as u32);
+
+                        // For 429, check for Retry-After header
+                        if status_u16 == 429 {
+                            let retry_after = parse_retry_after(&response);
+
+                            let sleep_duration = if let Some(retry_after_duration) = retry_after {
+                                let retry_after_secs = retry_after_duration.as_secs();
+                                // Use the larger of exponential backoff or Retry-After value
+                                let sleep_secs = backoff_secs.max(retry_after_secs);
+                                debug!(
+                                    attempt = attempt + 1,
+                                    max_retries = max_retries + 1,
+                                    backoff_secs = backoff_secs,
+                                    retry_after_secs = retry_after_secs,
+                                    sleep_secs = sleep_secs,
+                                    "Rate limited (HTTP 429), using max of backoff and Retry-After"
+                                );
+                                sleep_secs
+                            } else {
+                                debug!(
+                                    attempt = attempt + 1,
+                                    max_retries = max_retries + 1,
+                                    backoff_secs = backoff_secs,
+                                    "Rate limited (HTTP 429), retrying with exponential backoff (no Retry-After header)"
+                                );
+                                backoff_secs
+                            };
+
+                            tokio::time::sleep(tokio::time::Duration::from_secs(sleep_duration))
+                                .await;
+                        } else {
+                            // For 5xx errors, use exponential backoff only
+                            debug!(
+                                attempt = attempt + 1,
+                                max_retries = max_retries + 1,
+                                status = status_u16,
+                                backoff_secs = backoff_secs,
+                                "Server error, retrying with exponential backoff"
+                            );
+                            tokio::time::sleep(tokio::time::Duration::from_secs(backoff_secs))
+                                .await;
+                        }
+                    } else {
+                        debug!(
+                            attempts = attempt + 1,
+                            status = status_u16,
+                            "Max retries exhausted for retryable request"
+                        );
+                        return Err(ClientError::MaxRetriesExceeded(max_retries + 1));
+                    }
                 } else {
-                    // Handle non-success status codes
-                    let status = response.status().as_u16();
+                    // Non-retryable error: extract details and return ApiError
                     let url = response.url().to_string();
                     let request_id = response
                         .headers()
@@ -176,7 +232,7 @@ pub async fn send_request_with_retry(
                     };
 
                     return Err(ClientError::ApiError {
-                        status,
+                        status: status_u16,
                         url,
                         message,
                         request_id,
@@ -184,8 +240,23 @@ pub async fn send_request_with_retry(
                 }
             }
             Err(e) => {
-                // For non-429 errors, propagate immediately
-                return Err(ClientError::from(e));
+                // Check if this is a retryable transport error
+                if is_retryable_transport_error(&e) && attempt < max_retries {
+                    let backoff_secs = 2u64.pow(attempt as u32);
+
+                    debug!(
+                        attempt = attempt + 1,
+                        max_retries = max_retries + 1,
+                        error = %e,
+                        backoff_secs = backoff_secs,
+                        "Transport error, retrying with exponential backoff"
+                    );
+
+                    tokio::time::sleep(tokio::time::Duration::from_secs(backoff_secs)).await;
+                } else {
+                    // Non-retryable error: propagate immediately
+                    return Err(ClientError::from(e));
+                }
             }
         }
     }

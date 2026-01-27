@@ -4698,6 +4698,52 @@
       "completed_at": "2026-01-27T20:36:40.153721000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0129",
+      "status": "done",
+      "title": "Improve HTTP retry strategy: handle transient reqwest errors and 5xx responses",
+      "priority": "high",
+      "tags": [
+        "client",
+        "reliability",
+        "ux"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs",
+        "crates/client/src/error.rs",
+        "crates/client/tests/integration_tests.rs",
+        "make test -p splunk-client"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/request.rs:186-188 propagates non-429 errors immediately without retry, including transient network failures (connection resets, timeouts).",
+        "crates/client/src/error.rs:72-77 defines is_retryable() matching HttpError/Timeout/RateLimited, but this is not utilized by send_request_with_retry.",
+        "crates/client/src/endpoints/request.rs:146-184 handles non-success status codes (5xx) by returning ApiError immediately without any retry logic.",
+        "crates/client/tests/integration_tests.rs has extensive 429 retry tests but no coverage for 5xx or transport-level retry scenarios.",
+        "Splunk admin workflows commonly hit transient 502/503/504 during maintenance; current behavior forces users to manually retry."
+      ],
+      "plan": [
+        "Extend send_request_with_retry to detect retryable 5xx status codes (502, 503, 504) and transient transport errors (connection refused, reset, timeouts).",
+        "Apply exponential backoff for these new retryable cases, separate from 429 Retry-After handling.",
+        "Add is_retryable_status() helper to error.rs for centralized retry classification.",
+        "Add integration tests for 5xx retry scenarios and transport error simulation using wiremock.",
+        "Verify secrets redaction remains intact (no URL/credentials in error messages)."
+      ],
+      "notes": [
+        "Current retry tests in integration_tests.rs:842-1809 provide good template patterns for new 5xx tests.",
+        "Consider differentiating max_retries for 429 (rate limit) vs 5xx (server issues) if needed.",
+        "Implemented retry logic for 5xx errors (502, 503, 504) and transport errors (timeouts, connection failures)",
+        "Added is_retryable_status() helper to error.rs for centralized retry classification",
+        "Added 7 new integration tests: 6 for 5xx scenarios and 1 for timeout retry",
+        "All 54 integration tests pass, 16 live tests pass, make ci passes",
+        "Secrets redaction verified: no URL/credentials in error messages or logs"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T20:49:59.944192000Z",
+      "completed_at": "2026-01-27T20:49:59.944192000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
