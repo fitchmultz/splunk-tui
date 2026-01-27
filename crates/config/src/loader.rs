@@ -20,8 +20,8 @@ use std::time::Duration;
 use thiserror::Error;
 
 use crate::persistence::{
-    ConfigFileError, default_config_path, legacy_config_path, migrate_config_file_if_needed,
-    read_config_file,
+    ConfigFileError, SearchDefaults, default_config_path, legacy_config_path,
+    migrate_config_file_if_needed, read_config_file,
 };
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig};
 
@@ -80,11 +80,38 @@ pub struct ConfigLoader {
     profile_name: Option<String>,
     profile_missing: Option<String>,
     config_path: Option<PathBuf>,
+    earliest_time: Option<String>,
+    latest_time: Option<String>,
+    max_results: Option<u64>,
 }
 
 impl Default for ConfigLoader {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Search default configuration values.
+///
+/// This is separate from the main `Config` because search defaults
+/// are persisted to disk and managed through the TUI settings.
+#[derive(Debug, Clone)]
+pub struct SearchDefaultConfig {
+    /// Earliest time for searches (e.g., "-24h").
+    pub earliest_time: String,
+    /// Latest time for searches (e.g., "now").
+    pub latest_time: String,
+    /// Maximum number of results to return per search.
+    pub max_results: u64,
+}
+
+impl Default for SearchDefaultConfig {
+    fn default() -> Self {
+        Self {
+            earliest_time: "-24h".to_string(),
+            latest_time: "now".to_string(),
+            max_results: 1000,
+        }
     }
 }
 
@@ -102,6 +129,9 @@ impl ConfigLoader {
             profile_name: None,
             profile_missing: None,
             config_path: None,
+            earliest_time: None,
+            latest_time: None,
+            max_results: None,
         }
     }
 
@@ -248,6 +278,25 @@ impl ConfigLoader {
                         })?,
                 );
         }
+        // Search defaults
+        if let Some(earliest) = Self::env_var_or_none("SPLUNK_EARLIEST_TIME") {
+            self.earliest_time = Some(earliest);
+        }
+        if let Some(latest) = Self::env_var_or_none("SPLUNK_LATEST_TIME") {
+            self.latest_time = Some(latest);
+        }
+        if let Some(max_results) = Self::env_var_or_none("SPLUNK_MAX_RESULTS") {
+            self.max_results =
+                Some(
+                    max_results
+                        .trim()
+                        .parse()
+                        .map_err(|_| ConfigError::InvalidValue {
+                            var: "SPLUNK_MAX_RESULTS".to_string(),
+                            message: "must be a positive number".to_string(),
+                        })?,
+                );
+        }
         Ok(self)
     }
 
@@ -328,6 +377,34 @@ impl ConfigLoader {
             auth: AuthConfig { strategy },
         })
     }
+
+    /// Build the search default configuration from loaded values.
+    ///
+    /// This uses environment variable values if set, otherwise falls back
+    /// to the provided persisted defaults.
+    pub fn build_search_defaults(&self, persisted: Option<SearchDefaults>) -> SearchDefaultConfig {
+        let defaults = persisted.unwrap_or_default();
+        SearchDefaultConfig {
+            earliest_time: self.earliest_time.clone().unwrap_or(defaults.earliest_time),
+            latest_time: self.latest_time.clone().unwrap_or(defaults.latest_time),
+            max_results: self.max_results.unwrap_or(defaults.max_results),
+        }
+    }
+
+    /// Get the earliest time if set via environment variable.
+    pub fn earliest_time(&self) -> Option<&String> {
+        self.earliest_time.as_ref()
+    }
+
+    /// Get the latest time if set via environment variable.
+    pub fn latest_time(&self) -> Option<&String> {
+        self.latest_time.as_ref()
+    }
+
+    /// Get the max results if set via environment variable.
+    pub fn max_results(&self) -> Option<u64> {
+        self.max_results
+    }
 }
 
 #[cfg(test)]
@@ -389,6 +466,9 @@ mod tests {
             std::env::remove_var("SPLUNK_SKIP_VERIFY");
             std::env::remove_var("SPLUNK_TIMEOUT");
             std::env::remove_var("SPLUNK_MAX_RETRIES");
+            std::env::remove_var("SPLUNK_EARLIEST_TIME");
+            std::env::remove_var("SPLUNK_LATEST_TIME");
+            std::env::remove_var("SPLUNK_MAX_RESULTS");
         }
     }
 
@@ -720,6 +800,148 @@ mod tests {
 
         unsafe {
             std::env::remove_var("SPLUNK_CONFIG_PATH");
+        }
+    }
+
+    #[test]
+    fn test_search_defaults_env_vars() {
+        let _env = EnvVarGuard::new();
+
+        // Set search default env vars
+        unsafe {
+            std::env::set_var("SPLUNK_EARLIEST_TIME", "-48h");
+            std::env::set_var("SPLUNK_LATEST_TIME", "2024-01-01T00:00:00");
+            std::env::set_var("SPLUNK_MAX_RESULTS", "500");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+
+        assert_eq!(loader.earliest_time(), Some(&"-48h".to_string()));
+        assert_eq!(
+            loader.latest_time(),
+            Some(&"2024-01-01T00:00:00".to_string())
+        );
+        assert_eq!(loader.max_results(), Some(500));
+    }
+
+    #[test]
+    fn test_search_defaults_env_vars_empty_ignored() {
+        let _env = EnvVarGuard::new();
+
+        // Set empty/whitespace search default env vars
+        unsafe {
+            std::env::set_var("SPLUNK_EARLIEST_TIME", "");
+            std::env::set_var("SPLUNK_LATEST_TIME", "   ");
+            std::env::set_var("SPLUNK_MAX_RESULTS", "");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+
+        // Empty/whitespace values should be treated as None
+        assert_eq!(loader.earliest_time(), None);
+        assert_eq!(loader.latest_time(), None);
+        assert_eq!(loader.max_results(), None);
+    }
+
+    #[test]
+    fn test_build_search_defaults_with_persisted() {
+        let _env = EnvVarGuard::new();
+
+        // Set only some env vars
+        unsafe {
+            std::env::set_var("SPLUNK_EARLIEST_TIME", "-7d");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+
+        let persisted = SearchDefaults {
+            earliest_time: "-24h".to_string(),
+            latest_time: "now".to_string(),
+            max_results: 1000,
+        };
+
+        let defaults = loader.build_search_defaults(Some(persisted));
+
+        // Env var should override persisted
+        assert_eq!(defaults.earliest_time, "-7d");
+        // Non-env values should use persisted
+        assert_eq!(defaults.latest_time, "now");
+        assert_eq!(defaults.max_results, 1000);
+    }
+
+    #[test]
+    fn test_build_search_defaults_without_persisted() {
+        let _env = EnvVarGuard::new();
+
+        // Don't set any search default env vars
+        unsafe {
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+
+        // Build without persisted defaults - should use hardcoded defaults
+        let defaults = loader.build_search_defaults(None);
+
+        assert_eq!(defaults.earliest_time, "-24h");
+        assert_eq!(defaults.latest_time, "now");
+        assert_eq!(defaults.max_results, 1000);
+    }
+
+    #[test]
+    fn test_search_defaults_env_vars_override_persisted() {
+        let _env = EnvVarGuard::new();
+
+        // Set all search default env vars
+        unsafe {
+            std::env::set_var("SPLUNK_EARLIEST_TIME", "-1h");
+            std::env::set_var("SPLUNK_LATEST_TIME", "-5m");
+            std::env::set_var("SPLUNK_MAX_RESULTS", "100");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+
+        let persisted = SearchDefaults {
+            earliest_time: "-48h".to_string(),
+            latest_time: "2024-01-01T00:00:00".to_string(),
+            max_results: 5000,
+        };
+
+        let defaults = loader.build_search_defaults(Some(persisted));
+
+        // All env vars should override persisted values
+        assert_eq!(defaults.earliest_time, "-1h");
+        assert_eq!(defaults.latest_time, "-5m");
+        assert_eq!(defaults.max_results, 100);
+    }
+
+    #[test]
+    fn test_invalid_max_results_env_var() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_MAX_RESULTS", "not-a-number");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let result = ConfigLoader::new().from_env();
+
+        match result {
+            Err(ConfigError::InvalidValue { var, .. }) => {
+                assert_eq!(var, "SPLUNK_MAX_RESULTS");
+            }
+            Ok(_) => panic!("Expected an error for invalid SPLUNK_MAX_RESULTS"),
+            Err(_) => panic!("Expected InvalidValue error for SPLUNK_MAX_RESULTS"),
         }
     }
 }

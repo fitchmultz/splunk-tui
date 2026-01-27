@@ -73,6 +73,9 @@ Environment variables take precedence over the configuration file.
 | `SPLUNK_TIMEOUT` | Connection timeout in seconds |
 | `SPLUNK_MAX_RETRIES` | Maximum number of retries for failed requests |
 | `SPLUNK_PROFILE` | Name of profile to load from the configuration file |
+| `SPLUNK_EARLIEST_TIME` | Default earliest time for searches (e.g., `-24h`, `2024-01-01T00:00:00`) [default: `-24h`] |
+| `SPLUNK_LATEST_TIME` | Default latest time for searches (e.g., `now`) [default: `now`] |
+| `SPLUNK_MAX_RESULTS` | Default maximum number of results per search [default: `1000`] |
 
 ### Cancellation (Ctrl+C / SIGINT)
 Long-running commands can be interrupted with `Ctrl+C`:
@@ -622,3 +625,20 @@ See the keybindings section above for screen-specific shortcuts.
 - `a`: Toggle auto-refresh (polls every 5 seconds)
 - `Ctrl+c`: Copy selected log message to clipboard
 - `j` / `k`: Navigate the logs list
+
+### Search Defaults
+
+The TUI applies default search parameters to prevent unbounded searches that can overload Splunk servers. These defaults are:
+
+- **Earliest time**: `-24h` (last 24 hours)
+- **Latest time**: `now`
+- **Max results**: `1000`
+
+You can customize these defaults using environment variables (see [Environment Variables](#environment-variables) section):
+- `SPLUNK_EARLIEST_TIME`: Override the default earliest time
+- `SPLUNK_LATEST_TIME`: Override the default latest time
+- `SPLUNK_MAX_RESULTS`: Override the default maximum results
+
+The Settings screen displays the currently active search defaults. Values set via environment variables take precedence over persisted settings.
+
+Search defaults are persisted to the configuration file and will be restored on the next run. Environment variables always override persisted values.

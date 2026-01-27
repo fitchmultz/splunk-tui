@@ -254,6 +254,9 @@ impl App {
                         .as_deref(),
                         selected_theme: self.color_theme,
                         theme: &self.theme,
+                        earliest_time: &self.search_defaults.earliest_time,
+                        latest_time: &self.search_defaults.latest_time,
+                        max_results: self.search_defaults.max_results,
                     },
                 );
             }

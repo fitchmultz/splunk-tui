@@ -26,6 +26,12 @@ pub struct SettingsRenderConfig<'a> {
     pub selected_theme: splunk_config::ColorTheme,
     /// Runtime expanded theme (for colors).
     pub theme: &'a splunk_config::Theme,
+    /// Default earliest time for searches (e.g., "-24h").
+    pub earliest_time: &'a str,
+    /// Default latest time for searches (e.g., "now").
+    pub latest_time: &'a str,
+    /// Default maximum number of results per search.
+    pub max_results: u64,
 }
 
 /// Render the settings screen.
@@ -101,6 +107,26 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
         Line::from(vec![
             Span::styled("Profile:        ", Style::default().fg(theme.title)),
             Span::styled(profile_display, Style::default().fg(theme.text)),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Search Defaults",
+            Style::default().fg(theme.title),
+        )]),
+        Line::from(vec![
+            Span::styled("  Earliest time: ", Style::default().fg(theme.title)),
+            Span::styled(config.earliest_time, Style::default().fg(theme.text)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Latest time:   ", Style::default().fg(theme.title)),
+            Span::styled(config.latest_time, Style::default().fg(theme.text)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Max results:   ", Style::default().fg(theme.title)),
+            Span::styled(
+                format!("{}", config.max_results),
+                Style::default().fg(theme.text),
+            ),
         ]),
         Line::from(""),
         Line::from(vec![

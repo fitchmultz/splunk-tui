@@ -7,8 +7,8 @@ mod loader;
 pub mod persistence;
 pub mod types;
 
-pub use loader::ConfigLoader;
-pub use persistence::{ConfigManager, PersistedState};
+pub use loader::{ConfigLoader, SearchDefaultConfig};
+pub use persistence::{ConfigManager, PersistedState, SearchDefaults};
 pub use types::{
     AuthConfig, AuthStrategy, ColorTheme, Config, ConnectionConfig, ProfileConfig, SecureValue,
     Theme,

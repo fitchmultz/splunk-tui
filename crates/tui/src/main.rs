@@ -35,8 +35,10 @@ use tokio::sync::{Mutex, mpsc::unbounded_channel};
 use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use splunk_client::{SplunkClient, models::HealthCheckOutput};
-use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager};
+use splunk_client::{SplunkClient, endpoints::CreateJobOptions, models::HealthCheckOutput};
+use splunk_config::{
+    AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager, SearchDefaults,
+};
 
 /// Command-line arguments for splunk-tui.
 ///
@@ -96,7 +98,8 @@ async fn main() -> Result<()> {
     // Note: _guard must live for entire main() duration to ensure logs are flushed
 
     // Load config at startup with CLI overrides
-    let config = load_config(&cli)?;
+    // Also get search defaults with env var overrides applied
+    let (search_default_config, config) = load_config_with_search_defaults(&cli)?;
 
     // Build and authenticate client
     let client = Arc::new(Mutex::new(create_client(&config).await?));
@@ -154,10 +157,18 @@ async fn main() -> Result<()> {
     } else {
         ConfigManager::new()?
     };
-    let persisted_state = config_manager.load();
+    let mut persisted_state = config_manager.load();
     let config_manager = Arc::new(Mutex::new(config_manager));
 
-    // Create app with persisted state
+    // Apply environment variable overrides to search defaults
+    // Precedence: env vars > persisted values > hardcoded defaults
+    persisted_state.search_defaults = SearchDefaults {
+        earliest_time: search_default_config.earliest_time,
+        latest_time: search_default_config.latest_time,
+        max_results: search_default_config.max_results,
+    };
+
+    // Create app with persisted state (now includes env var overrides for search defaults)
     let mut app = App::new(Some(persisted_state));
 
     // Spawn background health monitoring task (60-second interval)
@@ -298,7 +309,10 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-/// Load configuration from CLI args, environment variables, and profile.
+/// Load configuration and search defaults from CLI args, environment variables, and profile.
+///
+/// This function returns both the main Config and the SearchDefaultConfig so that
+/// search defaults with environment variable overrides can be applied to the App state.
 ///
 /// Configuration precedence (highest to lowest):
 /// 1. CLI arguments (e.g., --profile, --config-path)
@@ -314,7 +328,9 @@ async fn main() -> Result<()> {
 ///
 /// Returns an error if configuration loading fails (e.g., profile not found,
 /// missing required fields like base_url or auth credentials).
-fn load_config(cli: &Cli) -> Result<Config> {
+fn load_config_with_search_defaults(
+    cli: &Cli,
+) -> Result<(splunk_config::SearchDefaultConfig, Config)> {
     let mut loader = ConfigLoader::new().load_dotenv()?;
 
     // Apply config path from CLI if provided (highest precedence)
@@ -337,10 +353,16 @@ fn load_config(cli: &Cli) -> Result<Config> {
     }
 
     // Environment variables are loaded last - they override profile values
-    loader
-        .from_env()?
+    let loader = loader.from_env()?;
+
+    // Build search defaults with env var overrides (pass None for now, will merge with persisted later)
+    let search_defaults = loader.build_search_defaults(None);
+
+    let config = loader
         .build()
-        .map_err(|e| anyhow::anyhow!("Failed to load config: {}", e))
+        .map_err(|e| anyhow::anyhow!("Failed to load config: {}", e))?;
+
+    Ok((search_defaults, config))
 }
 
 /// Create and authenticate a new Splunk client.
@@ -489,7 +511,10 @@ async fn handle_side_effects(
                 tx.send(Action::SettingsLoaded(state)).ok();
             });
         }
-        Action::RunSearch(query) => {
+        Action::RunSearch {
+            query,
+            search_defaults,
+        } => {
             tx.send(Action::Loading(true)).ok();
             tx.send(Action::Progress(0.1)).ok();
 
@@ -498,8 +523,14 @@ async fn handle_side_effects(
             tokio::spawn(async move {
                 let mut c = client.lock().await;
 
-                // Create search job
-                let sid = match c.create_search_job(&query_clone, &Default::default()).await {
+                // Create search job with defaults (already includes env var overrides from App state)
+                let options = CreateJobOptions {
+                    earliest_time: Some(search_defaults.earliest_time.clone()),
+                    latest_time: Some(search_defaults.latest_time.clone()),
+                    max_count: Some(search_defaults.max_results),
+                    ..Default::default()
+                };
+                let sid = match c.create_search_job(&query_clone, &options).await {
                     Ok(s) => s,
                     Err(e) => {
                         let mut details =

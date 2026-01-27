@@ -15,7 +15,7 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, SplunkHealth, User,
 };
-use splunk_config::PersistedState;
+use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
 
 use crate::ui::ToastLevel;
@@ -37,7 +37,11 @@ pub enum ExportFormat {
 ///
 /// # Example
 /// ```ignore
-/// let action = Action::RunSearch("SELECT * FROM users WHERE password='secret'".to_string());
+/// use splunk_config::SearchDefaults;
+/// let action = Action::RunSearch {
+///     query: "SELECT * FROM users WHERE password='secret'".to_string(),
+///     search_defaults: SearchDefaults::default(),
+/// };
 /// tracing::info!("Handling action: {:?}", RedactedAction(&action));
 /// // Logs: Handling action: RunSearch(<52 chars>)
 /// ```
@@ -46,7 +50,7 @@ pub struct RedactedAction<'a>(pub &'a Action);
 impl std::fmt::Debug for RedactedAction<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
-            Action::RunSearch(query) => {
+            Action::RunSearch { query, .. } => {
                 write!(f, "RunSearch(<{} chars>)", query.len())
             }
             Action::CopyToClipboard(text) => {
@@ -153,8 +157,14 @@ pub enum Action {
     LoadUsers,
     /// Switch to settings screen
     SwitchToSettings,
-    /// Run a search with the given query
-    RunSearch(String),
+    /// Run a search with the given query and search defaults.
+    ///
+    /// The search defaults (earliest_time, latest_time, max_results) are passed
+    /// explicitly to ensure environment variable overrides are applied correctly.
+    RunSearch {
+        query: String,
+        search_defaults: SearchDefaults,
+    },
     /// Export data (pre-serialized as JSON) to a file.
     ///
     /// This payload is produced by the UI state machine so the main event loop
@@ -238,7 +248,10 @@ mod tests {
 
     #[test]
     fn test_redact_run_search() {
-        let action = Action::RunSearch("SELECT * FROM users WHERE password='secret'".to_string());
+        let action = Action::RunSearch {
+            query: "SELECT * FROM users WHERE password='secret'".to_string(),
+            search_defaults: SearchDefaults::default(),
+        };
         let output = redacted_debug(&action);
 
         assert!(

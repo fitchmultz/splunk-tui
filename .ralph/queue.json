@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0127",
-      "status": "todo",
-      "title": "Add safe default Search time range + max results in TUI (avoid unbounded searches)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "search"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/app.rs",
-        "crates/config/src/types.rs",
-        "docs/usage.md",
-        "crates/tui/tests/"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs Action::RunSearch builds CreateJobOptions with Default::default(), so earliest/latest are unset and searches may be unbounded.",
-        "splunk-tui/.env contains SPLUNK_EARLIEST_TIME and SPLUNK_LATEST_TIME, but there are no code references to these variables; users may think they work when they do not.",
-        "Splunk admin best practice is to bound time ranges to reduce load and speed up queries; the TUI should default to a safe window (e.g., -24h..now)."
-      ],
-      "plan": [
-        "Define where defaults live (recommended: persisted settings with sensible defaults, optionally overridable by env/CLI flags).",
-        "Plumb earliest/latest/count into the TUI search submission path (CreateJobOptions).",
-        "Expose quick editing in the UI (Settings screen or a Search options popup).",
-        "Add tests covering default application, overrides, and edge cases (empty/invalid time strings)."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0128",
       "status": "todo",
       "title": "Use splunk-client search_with_progress in TUI (remove duplicate polling, unify timeouts)",

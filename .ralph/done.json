@@ -4887,6 +4887,56 @@
       "completed_at": "2026-01-27T22:07:52.774314000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0127",
+      "status": "done",
+      "title": "Add safe default Search time range + max results in TUI (avoid unbounded searches)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "config"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/actions.rs",
+        "crates/config/src/types.rs",
+        "crates/config/src/persistence.rs",
+        "docs/usage.md",
+        "crates/tui/tests/app_tests.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:502 Action::RunSearch builds CreateJobOptions with Default::default(), so earliest/latest are unset and searches may be unbounded.",
+        "splunk-tui/.env contains SPLUNK_EARLIEST_TIME and SPLUNK_LATEST_TIME, but there are no code references to these variables; users may think they work when they do not.",
+        "crates/client/src/endpoints/search.rs:12-36 CreateJobOptions supports earliest_time, latest_time, and max_count fields that are not being utilized by the TUI.",
+        "crates/tui/src/app.rs:51-60 App struct has search state but no default time range or max results configuration.",
+        "Splunk admin best practice is to bound time ranges to reduce load and speed up queries; the TUI should default to a safe window (e.g., -24h..now)."
+      ],
+      "plan": [
+        "Add search_defaults to PersistedState (earliest_time, latest_time, max_results) with sensible defaults (-24h, now, 1000).",
+        "Update Config or ConfigLoader to read SPLUNK_EARLIEST_TIME, SPLUNK_LATEST_TIME, SPLUNK_MAX_RESULTS from env vars.",
+        "Plumb earliest/latest/max_count into the TUI search submission path (CreateJobOptions in main.rs handle_side_effects).",
+        "Add UI controls in Settings screen to view/edit default time range and max results.",
+        "Add tests covering default application, env var overrides, persisted state round-trip, and edge cases (empty/invalid time strings)."
+      ],
+      "notes": [
+        "App module was refactored into submodules (RQ-0130); changes will touch app.rs for state and main.rs for side effects.",
+        "Consider adding a SearchOptions popup for per-search override without changing persisted defaults.",
+        "Fixed critical bug: env var overrides now properly applied to search defaults",
+        "Changed Action::RunSearch to struct variant with embedded search_defaults",
+        "Updated all call sites in input.rs and main.rs",
+        "All tests pass, make ci succeeds"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T22:32:57.845467000Z",
+      "completed_at": "2026-01-27T22:32:57.845467000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

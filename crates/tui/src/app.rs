@@ -42,7 +42,7 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, User,
 };
-use splunk_config::{ColorTheme, PersistedState, Theme};
+use splunk_config::{ColorTheme, PersistedState, SearchDefaults, Theme};
 use std::collections::HashSet;
 
 /// Main application state.
@@ -108,6 +108,9 @@ pub struct App {
     pub history_index: Option<usize>,
     pub saved_search_input: String,
 
+    // Search defaults (persisted)
+    pub search_defaults: SearchDefaults,
+
     // Export state
     pub export_input: String,
     pub export_format: ExportFormat,
@@ -154,6 +157,7 @@ impl App {
             last_search_query,
             search_history,
             color_theme,
+            search_defaults,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -162,6 +166,7 @@ impl App {
                 state.last_search_query,
                 state.search_history,
                 state.selected_theme,
+                state.search_defaults,
             ),
             None => (
                 false,
@@ -170,6 +175,7 @@ impl App {
                 None,
                 Vec::new(),
                 ColorTheme::Default,
+                SearchDefaults::default(),
             ),
         };
 
@@ -218,6 +224,7 @@ impl App {
             search_history,
             history_index: None,
             saved_search_input: String::new(),
+            search_defaults,
             export_input: String::new(),
             export_format: ExportFormat::Json,
             export_target: None,
@@ -242,6 +249,7 @@ impl App {
             },
             search_history: self.search_history.clone(),
             selected_theme: self.color_theme,
+            search_defaults: self.search_defaults.clone(),
         }
     }
 

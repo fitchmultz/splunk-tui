@@ -49,7 +49,10 @@ impl App {
                     let query = self.search_input.clone();
                     self.add_to_history(query.clone());
                     self.search_status = format!("Running: {}", query);
-                    Some(Action::RunSearch(query))
+                    Some(Action::RunSearch {
+                        query,
+                        search_defaults: self.search_defaults.clone(),
+                    })
                 } else {
                     None
                 }
@@ -338,7 +341,10 @@ impl App {
                     self.current_screen = CurrentScreen::Search;
                     self.add_to_history(query.clone());
                     self.search_status = format!("Running: {}", query);
-                    return Some(Action::RunSearch(query));
+                    return Some(Action::RunSearch {
+                        query,
+                        search_defaults: self.search_defaults.clone(),
+                    });
                 }
                 None
             }
