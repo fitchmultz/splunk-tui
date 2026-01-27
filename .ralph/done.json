@@ -4101,6 +4101,50 @@
       "completed_at": "2026-01-27T12:54:50.632180000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0108",
+      "status": "done",
+      "title": "Centralize keybinding handling (reduce per-screen duplication and drift)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "keybindings",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/ui/popup.rs",
+        "docs/usage.md",
+        "crates/tui/tests/app_tests.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: handle_search_input and handle_jobs_input both hard-code global bindings (q and 0-9 for screen switching), duplicating the same navigation logic across per-screen handlers.",
+        "crates/tui/src/app.rs: per-screen handlers directly mutate current_screen on digit keys instead of emitting shared semantic actions, so global navigation behavior is scattered.",
+        "crates/tui/src/ui/popup.rs: Help popup content is a static multi-line string listing keybindings, not derived from the input handlers, which enables drift from runtime behavior."
+      ],
+      "plan": [
+        "Introduce a centralized keymap module that maps KeyEvent to semantic intents (global + per-screen), returning Actions rather than mutating App state directly.",
+        "Refactor App input routing to apply the shared keymap first (global bindings) and then screen-specific bindings, removing duplicated digit/quit handling.",
+        "Generate Help popup (and docs/usage.md content) from the same keymap source and update snapshot/app tests to cover keymap-driven behavior.",
+        "Run make test -p splunk-tui and make ci."
+      ],
+      "notes": [
+        "No keymap module exists under crates/tui/src today; expect to add a new module for shared bindings.",
+        "Split keymap bindings into per-screen modules to keep file sizes within limits.",
+        "Added tests for keybinding docs rendering and docs generator error cases.",
+        "Removed duplicate keybinding lists from docs/usage.md to avoid drift.",
+        "make ci (SKIP_LIVE_TESTS=1) passed."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T15:29:29.673182000Z",
+      "completed_at": "2026-01-27T15:11:38.854292000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -9,16 +9,16 @@ expression: harness.render()
 │                    Job: scheduler_admin_search_1234567890                    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌───────────────┌Help──────────────────────────────────────────┐───────────────┐
-│Status: Done   │                                              │               │
-│Duration: 5.23 │                 Global Keys:                 │               │
-│Event Count: 50│             0-9    Navigate screens          │               │
-│Scan Count: 150│            Ctrl+c Copy to clipboard          │               │
-│Result Count: 1│                   ?      Help                │               │
-│Disk Usage: 204│                   q      Quit                │               │
-│Priority: 5    │                                              │               │
-│Label: Schedule│                Search Screen:                │               │
-│Cursor Time: 20│              Enter     Run search            │               │
-│Finalized: No  │            e         Export results          │               │
+│Status: Done   │                 Global Keys:                 │               │
+│Duration: 5.23 │                  ?       Help                │               │
+│Event Count: 50│                  q       Quit                │               │
+│Scan Count: 150│              1       Search screen           │               │
+│Result Count: 1│             2       Indexes screen           │               │
+│Disk Usage: 204│             3       Cluster screen           │               │
+│Priority: 5    │               4       Jobs screen            │               │
+│Label: Schedule│              5       Health screen           │               │
+│Cursor Time: 20│          6       Saved searches screen       │               │
+│Finalized: No  │          7       Internal logs screen        │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

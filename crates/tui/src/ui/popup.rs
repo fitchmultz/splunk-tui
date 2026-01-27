@@ -12,6 +12,8 @@ use ratatui::{
 };
 use splunk_config::Theme;
 
+use crate::input::help;
+
 /// Default popup dimensions as percentages of screen size.
 pub const POPUP_WIDTH_PERCENT: u16 = 60;
 pub const POPUP_HEIGHT_PERCENT: u16 = 50;
@@ -98,98 +100,7 @@ impl PopupBuilder {
     /// Build the `Popup` instance using defaults derived from `PopupType`.
     pub fn build(self) -> Popup {
         let (default_title, default_content) = match &self.kind {
-            PopupType::Help => (
-                "Help".to_string(),
-                r#"
-Global Keys:
-  0-9    Navigate screens
-  Ctrl+c Copy to clipboard
-  ?      Help
-  q      Quit
-
-Search Screen:
-  Enter     Run search
-  e         Export results
-  Ctrl+c    Copy query (or current result)
-  Up/Down   Navigate history (query)
-  Ctrl+j/k  Scroll results (while typing)
-  j,k,...   Type search query
-  PgDn      Page down
-  PgUp      Page up
-  Home      Go to top
-  End       Go to bottom
-
-Jobs Screen:
-  r      Refresh jobs
-  e      Export jobs
-  Ctrl+c Copy selected SID
-  a      Toggle auto-refresh
-  s      Cycle sort column
-  /      Filter jobs
-  Space  Toggle job selection
-  c      Cancel selected job(s)
-  d      Delete selected job(s)
-  j/k    Navigate list
-  Enter  Inspect job
-
-Job Details Screen:
-  Esc   Back to jobs
-  Ctrl+c Copy job SID
-  ?     Help
-  0     Go to settings
-
-Indexes Screen:
-  r      Refresh indexes
-  e      Export indexes
-  Ctrl+c Copy selected index name
-  j/k    Navigate list
-
-Cluster Screen:
-  r      Refresh cluster info
-  e      Export cluster info
-  Ctrl+c Copy cluster ID
-
-Health Screen:
-  r      Refresh health status
-  e      Export health info
-  Ctrl+c Copy health status
-
-Saved Searches Screen:
-  r      Refresh saved searches
-  e      Export saved searches
-  Ctrl+c Copy selected saved search name
-  Enter  Run selected search
-  j/k    Navigate list
-
-Internal Logs Screen:
-  r      Refresh logs
-  e      Export logs
-  a      Toggle auto-refresh
-  Ctrl+c Copy selected log message
-  j/k    Navigate list
-
-Apps Screen:
-  r      Refresh apps
-  e      Export apps
-  Ctrl+c Copy selected app name
-  j/k    Navigate list
-
-Users Screen:
-  r      Refresh users
-  e      Export users
-  Ctrl+c Copy selected username
-  j/k    Navigate list
-
-Settings Screen:
-  t     Cycle theme
-  a     Toggle auto-refresh
-  s     Cycle sort column
-  d     Toggle sort direction
-  c     Clear search history
-  r     Reload settings
-            "#
-                .to_string(),
-            ),
+            PopupType::Help => ("Help".to_string(), help::help_text()),
             PopupType::ConfirmCancel(sid) => (
                 "Confirm Cancel".to_string(),
                 format!("Cancel job {sid}? (y/n)"),

@@ -67,11 +67,15 @@ fn test_settings_screen_navigation() {
     let mut app = App::new(None);
     app.current_screen = CurrentScreen::Settings;
 
-    // Test navigation keys - navigation to Search returns None (consistent with other screens)
+    // Test navigation keys - navigation to Search returns an action
     let key = key('1');
     let action = app.handle_input(key);
-    assert!(action.is_none(), "Navigation to Search should return None");
+    assert!(
+        matches!(action, Some(Action::SwitchToSearch)),
+        "Navigation to Search should return SwitchToSearch"
+    );
 
+    app.update(action.unwrap());
     // Verify screen switched
     assert_eq!(app.current_screen, CurrentScreen::Search);
 }
@@ -378,7 +382,11 @@ fn test_help_popup_open_close() {
 
     // Open help popup
     let action = app.handle_input(key('?'));
-    assert!(action.is_none(), "Opening help should not return action");
+    assert!(
+        matches!(action, Some(Action::OpenHelpPopup)),
+        "Opening help should return OpenHelpPopup action"
+    );
+    app.update(action.unwrap());
     assert!(
         matches!(app.popup.as_ref().map(|p| &p.kind), Some(PopupType::Help)),
         "Should open Help popup"
@@ -390,7 +398,9 @@ fn test_help_popup_open_close() {
     assert!(app.popup.is_none(), "Popup should be closed");
 
     // Reopen with '?'
-    app.handle_input(key('?'));
+    let action = app.handle_input(key('?'));
+    assert!(matches!(action, Some(Action::OpenHelpPopup)));
+    app.update(action.unwrap());
     assert!(matches!(
         app.popup.as_ref().map(|p| &p.kind),
         Some(PopupType::Help)
@@ -502,6 +512,7 @@ fn test_screen_navigation_with_number_keys() {
         matches!(action, Some(Action::LoadJobs)),
         "Should trigger LoadJobs"
     );
+    app.update(action.unwrap());
     assert_eq!(
         app.current_screen,
         CurrentScreen::Jobs,
@@ -768,7 +779,8 @@ fn test_job_inspect_help_popup() {
 
     // Open help popup with '?'
     let action = app.handle_input(key('?'));
-    assert!(action.is_none(), "Opening help should not return action");
+    assert!(matches!(action, Some(Action::OpenHelpPopup)));
+    app.update(action.unwrap());
     assert!(
         matches!(app.popup.as_ref().map(|p| &p.kind), Some(PopupType::Help)),
         "Should open Help popup"

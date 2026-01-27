@@ -412,78 +412,105 @@ splunk-cli config delete my-profile
 
 Launch the TUI by running `splunk-tui`.
 
+<!-- BEGIN TUI KEYBINDINGS -->
+
 ### Navigation
 
-- `1`-`9`: Switch between screens:
-  1. **Search**: Execute and view search results
-  2. **Indexes**: View index status and metrics
-  3. **Cluster**: View cluster information
-  4. **Jobs**: Manage active and historical search jobs
-  5. **Health**: View system health status
-  6. **Saved Searches**: View and run saved searches
-  7. **Internal Logs**: View internal Splunk logs
-  8. **Apps**: View installed Splunk apps
-  9. **Users**: View users and their roles
-  0. **Settings**: View and modify configuration options
-- `j` / `Down Arrow`: Move selection down (use `Ctrl+j` in Search screen)
-- `k` / `Up Arrow`: Move selection up (use `Ctrl+k` in Search screen)
-- `?`: Show help popup
-- `q`: Quit the application
+- `?`: Help
+- `q`: Quit
+- `1`: Search screen
+- `2`: Indexes screen
+- `3`: Cluster screen
+- `4`: Jobs screen
+- `5`: Health screen
+- `6`: Saved searches screen
+- `7`: Internal logs screen
+- `8`: Apps screen
+- `9`: Users screen
+- `0`: Settings screen
+- `Ctrl+c`: Copy to clipboard
 
 ### Screen Specific Shortcuts
 
 #### Search Screen
-- `Enter`: Execute the search query typed in the input box (adds to history)
-- `e`: Export current search results to a file (JSON or CSV)
-- `Ctrl+c`: Copy current search query to clipboard (if results are loaded, copies the “current” result JSON instead)
-- `Up` / `Down`: Navigate through search history (query)
-- `Ctrl+j` / `Ctrl+k`: Scroll search results (while typing)
-- `j`, `k`, ...: Type search query characters directly
-- `Backspace`: Delete character in the search input
-- `PageUp` / `PageDown`: Scroll through search results
-- `Home` / `End`: Jump to top or bottom of results
+- `Enter`: Run search
+- `e`: Export results
+- `Ctrl+c`: Copy query (or current result)
+- `Up/Down`: Navigate history (query)
+- `Ctrl+j/k`: Scroll results (while typing)
+- `PgDn`: Page down
+- `PgUp`: Page up
+- `Home`: Go to top
+- `End`: Go to bottom
+- `j,k,...`: Type search query
 
 #### Jobs Screen
-- `Enter`: View details for the selected job (Inspect mode)
-- `e`: Export list of jobs to a file (JSON or CSV)
-- `Ctrl+c`: Copy SID of the selected job to clipboard
-- `Space`: Toggle selection for the job under cursor (multi-selection mode)
-- `r`: Refresh list of jobs manually
-- `a`: Toggle auto-refresh (polls every 5 seconds)
-- `s`: Cycle through sort columns (SID, Status, Duration, Results, Events)
-- `/`: Enter filter mode to search for specific jobs by SID or status
-- `c`: Cancel selected job(s). If multiple jobs are selected, cancels all at once (requires confirmation). If none selected, cancels the job under cursor.
-- `d`: Delete selected job(s). If multiple jobs are selected, deletes all at once (requires confirmation). If none selected, deletes the job under cursor.
+- `r`: Refresh jobs
+- `e`: Export jobs
+- `Ctrl+c`: Copy selected SID
+- `a`: Toggle auto-refresh
+- `s`: Cycle sort column
+- `/`: Filter jobs
+- `Space`: Toggle job selection
+- `c`: Cancel selected job(s)
+- `d`: Delete selected job(s)
+- `j/k or Up/Down`: Navigate list
+- `Enter`: Inspect job
 
-#### Indexes / Cluster / Health Screens
-- `r`: Refresh the data for the current screen
-- `e`: Export screen data to a file (JSON or CSV)
-- `Ctrl+c`: Copy screen-specific ID or status (Index name, Cluster ID, or Health status)
+#### Job Details (Inspect) Screen
+- `Esc`: Back to jobs
+- `Ctrl+c`: Copy job SID
+
+#### Indexes Screen
+- `r`: Refresh indexes
+- `e`: Export indexes
+- `Ctrl+c`: Copy selected index name
+- `j/k or Up/Down`: Navigate list
+
+#### Cluster Screen
+- `r`: Refresh cluster info
+- `e`: Export cluster info
+- `Ctrl+c`: Copy cluster ID
+
+#### Health Screen
+- `r`: Refresh health status
+- `e`: Export health info
+- `Ctrl+c`: Copy health status
+
+#### Saved Searches Screen
+- `r`: Refresh saved searches
+- `e`: Export saved searches
+- `Ctrl+c`: Copy selected saved search name
+- `Enter`: Run selected search
+- `j/k or Up/Down`: Navigate list
+
+#### Internal Logs Screen
+- `r`: Refresh logs
+- `e`: Export logs
+- `a`: Toggle auto-refresh
+- `Ctrl+c`: Copy selected log message
+- `j/k or Up/Down`: Navigate list
 
 #### Apps Screen
-- `r`: Refresh the list of installed apps
-- `e`: Export list of apps to a file (JSON or CSV)
-- `Ctrl+c`: Copy selected app name to clipboard
-- Displays: App name, label, version, and disabled status
+- `r`: Refresh apps
+- `e`: Export apps
+- `Ctrl+c`: Copy selected app name
+- `j/k or Up/Down`: Navigate list
 
 #### Users Screen
-- `r`: Refresh to list of users
-- `e`: Export list of users to a file (JSON or CSV)
-- `Ctrl+c`: Copy selected username to clipboard
-- Displays: Username, real name, roles, and last login time
+- `r`: Refresh users
+- `e`: Export users
+- `Ctrl+c`: Copy selected username
+- `j/k or Up/Down`: Navigate list
 
 #### Settings Screen
-- `t`: Cycle theme (Default, Light, Dark, HighContrast). Theme is persisted across sessions.
-- `a`: Toggle auto-refresh for jobs screen (polls every 5 seconds)
-- `s`: Cycle through sort columns (SID, Status, Duration, Results, Events)
-- `d`: Toggle sort direction (ascending/descending)
-- `c`: Clear search history (removes all saved queries)
-- `r`: Reload settings from config file (reverts any unsaved changes)
-- Displays current configuration values:
-  - Auto-refresh status
-  - Sort column and direction
-  - Search history count
-  - Current profile name (if set via SPLUNK_PROFILE environment variable)
+- `t`: Cycle theme
+- `a`: Toggle auto-refresh
+- `s`: Cycle sort column
+- `d`: Toggle sort direction
+- `c`: Clear search history
+- `r`: Reload settings
+<!-- END TUI KEYBINDINGS -->
 
 ### Error Handling
 
@@ -504,22 +531,7 @@ Navigate error details popup:
 - `PageUp` - Page up
 - `Esc` / `q` - Close popup
 
-#### Job Details (Inspect) Screen
-- `Esc`: Return to the main Jobs list
-- `Ctrl+c`: Copy SID of the selected job to clipboard
-- `?`: Show help popup
-- `0`: Go to settings screen
-
-#### Saved Searches Screen
-- `r`: Refresh saved searches
-- `e`: Export list of saved searches to a file (JSON or CSV)
-- `Ctrl+c`: Copy selected saved search name to clipboard
-- `Enter`: Run the selected saved search (switches to Search screen)
-- `j` / `k`: Navigate the list of saved searches
-
-#### Internal Logs Screen
-- `r`: Refresh the internal logs list
-- `e`: Export internal logs to a file (JSON or CSV)
+See the keybindings section above for screen-specific shortcuts.
 - `a`: Toggle auto-refresh (polls every 5 seconds)
 - `Ctrl+c`: Copy selected log message to clipboard
 - `j` / `k`: Navigate the logs list

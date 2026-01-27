@@ -73,9 +73,9 @@ release:
 # Build target (alias for release)
 build: release
 
-# No code generation required for this project
+# Regenerate derived documentation artifacts
 generate:
-	@echo "No code generation required for this project."
+	cargo run -p splunk-tui --bin generate-tui-docs
 
 # CI pipeline: install -> format -> generate -> lint -> type-check -> test -> test-live -> release
 ci: install format generate lint type-check test test-live release
@@ -98,6 +98,6 @@ help:
 	@echo "  make test-live-manual - Run manual live server test script"
 	@echo "  make release          - Optimized release build and install to $(INSTALL_DIR)"
 	@echo "  make build            - Alias for release"
-	@echo "  make generate         - No code generation required for this project"
+	@echo "  make generate         - Regenerate derived documentation (TUI keybindings)"
 	@echo "  make ci               - Run full CI pipeline (install -> format -> generate -> lint -> type-check -> test -> test-live -> release)"
 	@echo "  make help             - Show this help message"

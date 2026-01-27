@@ -9,16 +9,16 @@ expression: harness.render()
 │                     No jobs loaded. Press 'r' to refresh.                    │
 │                                                                              │
 │               ┌Help──────────────────────────────────────────┐               │
-│               │                                              │               │
 │               │                 Global Keys:                 │               │
-│               │             0-9    Navigate screens          │               │
-│               │            Ctrl+c Copy to clipboard          │               │
-│               │                   ?      Help                │               │
-│               │                   q      Quit                │               │
-│               │                                              │               │
-│               │                Search Screen:                │               │
-│               │              Enter     Run search            │               │
-│               │            e         Export results          │               │
+│               │                  ?       Help                │               │
+│               │                  q       Quit                │               │
+│               │              1       Search screen           │               │
+│               │             2       Indexes screen           │               │
+│               │             3       Cluster screen           │               │
+│               │               4       Jobs screen            │               │
+│               │              5       Health screen           │               │
+│               │          6       Saved searches screen       │               │
+│               │          7       Internal logs screen        │               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

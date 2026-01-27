@@ -1,0 +1,296 @@
+//! Global and search-screen keybindings.
+//!
+//! Responsibilities:
+//! - Define global navigation bindings and search screen shortcuts.
+//!
+//! Non-responsibilities:
+//! - Handling input resolution or application state updates.
+//!
+//! Invariants:
+//! - Ordering matches the rendered help/docs expectations.
+
+use crossterm::event::{KeyCode, KeyModifiers};
+
+use crate::action::Action;
+use crate::app::CurrentScreen;
+
+use super::super::{BindingScope, Keybinding, Matcher, Section};
+
+pub(super) fn bindings() -> Vec<Keybinding> {
+    use CurrentScreen::*;
+
+    vec![
+        // Global
+        Keybinding {
+            section: Section::Global,
+            keys: "?",
+            description: "Help",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('?'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::OpenHelpPopup),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "q",
+            description: "Quit",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::Quit),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "1",
+            description: "Search screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('1'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::SwitchToSearch),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "2",
+            description: "Indexes screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('2'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadIndexes),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "3",
+            description: "Cluster screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('3'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadClusterInfo),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "4",
+            description: "Jobs screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('4'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadJobs),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "5",
+            description: "Health screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('5'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadHealth),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "6",
+            description: "Saved searches screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('6'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadSavedSearches),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "7",
+            description: "Internal logs screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('7'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadInternalLogs),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "8",
+            description: "Apps screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('8'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadApps),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "9",
+            description: "Users screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('9'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadUsers),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "0",
+            description: "Settings screen",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('0'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::SwitchToSettingsScreen),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "Ctrl+c",
+            description: "Copy to clipboard",
+            scope: BindingScope::Global,
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        // Search
+        Keybinding {
+            section: Section::Search,
+            keys: "Enter",
+            description: "Run search",
+            scope: BindingScope::Screen(Search),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "e",
+            description: "Export results",
+            scope: BindingScope::Screen(Search),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "Ctrl+c",
+            description: "Copy query (or current result)",
+            scope: BindingScope::Screen(Search),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "Up/Down",
+            description: "Navigate history (query)",
+            scope: BindingScope::Screen(Search),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "Ctrl+j/k",
+            description: "Scroll results (while typing)",
+            scope: BindingScope::Screen(Search),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('j'),
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "Ctrl+j/k",
+            description: "Scroll results (while typing)",
+            scope: BindingScope::Screen(Search),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('k'),
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "PgDn",
+            description: "Page down",
+            scope: BindingScope::Screen(Search),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::PageDown,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::PageDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "PgUp",
+            description: "Page up",
+            scope: BindingScope::Screen(Search),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::PageUp,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::PageUp),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "Home",
+            description: "Go to top",
+            scope: BindingScope::Screen(Search),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Home,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::GoToTop),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "End",
+            description: "Go to bottom",
+            scope: BindingScope::Screen(Search),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::End,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::GoToBottom),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Search,
+            keys: "j,k,...",
+            description: "Type search query",
+            scope: BindingScope::Screen(Search),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+    ]
+}

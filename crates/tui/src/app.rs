@@ -536,6 +536,15 @@ impl App {
         if self.popup.is_some() {
             return self.handle_popup_input(key);
         }
+
+        if self.current_screen == CurrentScreen::Jobs && self.is_filtering {
+            return self.handle_jobs_filter_input(key);
+        }
+
+        if let Some(action) = crate::input::keymap::resolve_action(self.current_screen, key) {
+            return Some(action);
+        }
+
         match self.current_screen {
             CurrentScreen::Search => self.handle_search_input(key),
             CurrentScreen::Jobs => self.handle_jobs_input(key),
@@ -907,79 +916,31 @@ impl App {
         use crossterm::event::{KeyCode, KeyModifiers};
 
         // Handle Ctrl+* shortcuts while in input
-        if key.modifiers.contains(KeyModifiers::CONTROL) {
-            match key.code {
-                KeyCode::Char('j') => return Some(Action::NavigateDown),
-                KeyCode::Char('k') => return Some(Action::NavigateUp),
-                KeyCode::Char('c') => {
-                    // Decision:
-                    // - If results exist, copy the JSON for the "current" result (at scroll offset).
-                    // - Otherwise, copy the current search query.
-                    let content = if !self.search_results.is_empty() {
-                        let idx = self
-                            .search_scroll_offset
-                            .min(self.search_results.len().saturating_sub(1));
-                        self.search_results
-                            .get(idx)
-                            .and_then(|v| serde_json::to_string_pretty(v).ok())
-                            .unwrap_or_else(|| "<invalid>".to_string())
-                    } else {
-                        self.search_input.clone()
-                    };
+        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+            // Decision:
+            // - If results exist, copy the JSON for the "current" result (at scroll offset).
+            // - Otherwise, copy the current search query.
+            let content = if !self.search_results.is_empty() {
+                let idx = self
+                    .search_scroll_offset
+                    .min(self.search_results.len().saturating_sub(1));
+                self.search_results
+                    .get(idx)
+                    .and_then(|v| serde_json::to_string_pretty(v).ok())
+                    .unwrap_or_else(|| "<invalid>".to_string())
+            } else {
+                self.search_input.clone()
+            };
 
-                    if content.trim().is_empty() {
-                        self.toasts.push(Toast::info("Nothing to copy"));
-                        return None;
-                    }
-
-                    return Some(Action::CopyToClipboard(content));
-                }
-                _ => {}
+            if content.trim().is_empty() {
+                self.toasts.push(Toast::info("Nothing to copy"));
+                return None;
             }
+
+            return Some(Action::CopyToClipboard(content));
         }
 
         match key.code {
-            KeyCode::Char('q') if key.modifiers.is_empty() => Some(Action::Quit),
-            KeyCode::Char('1') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') if key.modifiers.is_empty() => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
             KeyCode::Enter => {
                 if !self.search_input.is_empty() {
                     let query = self.search_input.clone();
@@ -1012,27 +973,18 @@ impl App {
                     return None;
                 }
 
-                if self.history_index.is_none() {
-                    self.saved_search_input = self.search_input.clone();
-                    self.history_index = Some(0);
-                } else {
-                    let curr = self.history_index.unwrap();
+                if let Some(curr) = self.history_index {
                     if curr < self.search_history.len().saturating_sub(1) {
                         self.history_index = Some(curr + 1);
                     }
+                } else {
+                    self.saved_search_input = self.search_input.clone();
+                    self.history_index = Some(0);
                 }
 
                 if let Some(idx) = self.history_index {
                     self.search_input = self.search_history[idx].clone();
                 }
-                None
-            }
-            KeyCode::PageDown => Some(Action::PageDown),
-            KeyCode::PageUp => Some(Action::PageUp),
-            KeyCode::Home => Some(Action::GoToTop),
-            KeyCode::End => Some(Action::GoToBottom),
-            KeyCode::Char('?') if key.modifiers.is_empty() => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             KeyCode::Char('e') if key.modifiers.is_empty() => {
@@ -1062,81 +1014,8 @@ impl App {
             return None;
         }
 
-        // Handle filter mode input
-        if self.is_filtering {
-            return match key.code {
-                KeyCode::Esc => {
-                    self.is_filtering = false;
-                    self.filter_input.clear();
-                    Some(Action::ClearSearch)
-                }
-                KeyCode::Enter => {
-                    self.is_filtering = false;
-                    if !self.filter_input.is_empty() {
-                        self.search_filter = Some(self.filter_input.clone());
-                        self.filter_input.clear();
-                        self.rebuild_filtered_indices(); // Rebuild indices after filter is applied
-                        None
-                    } else {
-                        Some(Action::ClearSearch) // Empty input clears the filter
-                    }
-                }
-                KeyCode::Backspace => {
-                    self.filter_input.pop();
-                    None
-                }
-                KeyCode::Char(c) => {
-                    self.filter_input.push(c);
-                    None
-                }
-                _ => None,
-            };
-        }
-
         // Normal jobs screen input
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadJobs),
             KeyCode::Char('e') if self.jobs.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
                 self.begin_export(ExportTarget::Jobs);
                 None
@@ -1145,10 +1024,6 @@ impl App {
                 self.auto_refresh = !self.auto_refresh;
                 None
             }
-            KeyCode::Char('j') => Some(Action::NavigateDown),
-            KeyCode::Char('k') => Some(Action::NavigateUp),
-            KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Char('c') => {
                 if !self.selected_jobs.is_empty() {
                     self.popup = Some(
@@ -1177,13 +1052,6 @@ impl App {
                 }
                 None
             }
-            KeyCode::Char('s') => Some(Action::CycleSortColumn),
-            KeyCode::Char('/') => Some(Action::EnterSearchMode),
-            KeyCode::Enter => Some(Action::InspectJob),
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
-                None
-            }
             KeyCode::Char(' ') => {
                 if let Some(job) = self.get_selected_job() {
                     let sid = job.sid.clone();
@@ -1193,6 +1061,38 @@ impl App {
                         self.selected_jobs.insert(sid);
                     }
                 }
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn handle_jobs_filter_input(&mut self, key: KeyEvent) -> Option<Action> {
+        use crossterm::event::KeyCode;
+
+        match key.code {
+            KeyCode::Esc => {
+                self.is_filtering = false;
+                self.filter_input.clear();
+                Some(Action::ClearSearch)
+            }
+            KeyCode::Enter => {
+                self.is_filtering = false;
+                if !self.filter_input.is_empty() {
+                    self.search_filter = Some(self.filter_input.clone());
+                    self.filter_input.clear();
+                    self.rebuild_filtered_indices();
+                    None
+                } else {
+                    Some(Action::ClearSearch)
+                }
+            }
+            KeyCode::Backspace => {
+                self.filter_input.pop();
+                None
+            }
+            KeyCode::Char(c) => {
+                self.filter_input.push(c);
                 None
             }
             _ => None,
@@ -1219,48 +1119,6 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadIndexes),
             KeyCode::Char('e')
                 if self
                     .indexes
@@ -1269,14 +1127,6 @@ impl App {
                     .unwrap_or(false) =>
             {
                 self.begin_export(ExportTarget::Indexes);
-                None
-            }
-            KeyCode::Char('j') => Some(Action::NavigateDown),
-            KeyCode::Char('k') => Some(Action::NavigateUp),
-            KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Up => Some(Action::NavigateUp),
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1296,54 +1146,8 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadClusterInfo),
             KeyCode::Char('e') if self.cluster_info.is_some() => {
                 self.begin_export(ExportTarget::ClusterInfo);
-                None
-            }
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1362,18 +1166,7 @@ impl App {
             return None;
         }
 
-        match key.code {
-            KeyCode::Esc => Some(Action::ExitInspectMode),
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
-                None
-            }
-            _ => None,
-        }
+        None
     }
 
     fn handle_health_input(&mut self, key: KeyEvent) -> Option<Action> {
@@ -1396,50 +1189,8 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('r') => Some(Action::LoadHealth),
             KeyCode::Char('e') if self.health_info.is_some() => {
                 self.begin_export(ExportTarget::Health);
-                None
-            }
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1467,48 +1218,6 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadSavedSearches),
             KeyCode::Char('e')
                 if self
                     .saved_searches
@@ -1519,8 +1228,6 @@ impl App {
                 self.begin_export(ExportTarget::SavedSearches);
                 None
             }
-            KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
             KeyCode::Enter => {
                 let query = self.saved_searches.as_ref().and_then(|searches| {
                     self.saved_searches_state.selected().and_then(|selected| {
@@ -1535,10 +1242,6 @@ impl App {
                     self.search_status = format!("Running: {}", query);
                     return Some(Action::RunSearch(query));
                 }
-                None
-            }
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1566,48 +1269,6 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadInternalLogs),
             KeyCode::Char('e')
                 if self
                     .internal_logs
@@ -1620,12 +1281,6 @@ impl App {
             }
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
-                None
-            }
-            KeyCode::Char('j') | KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Char('k') | KeyCode::Up => Some(Action::NavigateUp),
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1653,58 +1308,8 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadApps),
             KeyCode::Char('e') if self.apps.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
                 self.begin_export(ExportTarget::Apps);
-                None
-            }
-            KeyCode::Char('j') => Some(Action::NavigateDown),
-            KeyCode::Char('k') => Some(Action::NavigateUp),
-            KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Up => Some(Action::NavigateUp),
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1732,58 +1337,8 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
-            KeyCode::Char('r') => Some(Action::LoadUsers),
             KeyCode::Char('e') if self.users.as_ref().map(|v| !v.is_empty()).unwrap_or(false) => {
                 self.begin_export(ExportTarget::Users);
-                None
-            }
-            KeyCode::Char('j') => Some(Action::NavigateDown),
-            KeyCode::Char('k') => Some(Action::NavigateUp),
-            KeyCode::Down => Some(Action::NavigateDown),
-            KeyCode::Up => Some(Action::NavigateUp),
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
                 None
             }
             _ => None,
@@ -1793,47 +1348,6 @@ impl App {
     fn handle_settings_input(&mut self, key: KeyEvent) -> Option<Action> {
         use crossterm::event::KeyCode;
         match key.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('1') => {
-                self.current_screen = CurrentScreen::Search;
-                None
-            }
-            KeyCode::Char('2') => {
-                self.current_screen = CurrentScreen::Indexes;
-                Some(Action::LoadIndexes)
-            }
-            KeyCode::Char('3') => {
-                self.current_screen = CurrentScreen::Cluster;
-                Some(Action::LoadClusterInfo)
-            }
-            KeyCode::Char('4') => {
-                self.current_screen = CurrentScreen::Jobs;
-                Some(Action::LoadJobs)
-            }
-            KeyCode::Char('5') => {
-                self.current_screen = CurrentScreen::Health;
-                Some(Action::LoadHealth)
-            }
-            KeyCode::Char('6') => {
-                self.current_screen = CurrentScreen::SavedSearches;
-                Some(Action::LoadSavedSearches)
-            }
-            KeyCode::Char('7') => {
-                self.current_screen = CurrentScreen::InternalLogs;
-                Some(Action::LoadInternalLogs)
-            }
-            KeyCode::Char('8') => {
-                self.current_screen = CurrentScreen::Apps;
-                Some(Action::LoadApps)
-            }
-            KeyCode::Char('9') => {
-                self.current_screen = CurrentScreen::Users;
-                Some(Action::LoadUsers)
-            }
-            KeyCode::Char('0') => {
-                self.current_screen = CurrentScreen::Settings;
-                None
-            }
             KeyCode::Char('a') => {
                 self.auto_refresh = !self.auto_refresh;
                 self.toasts.push(Toast::info(format!(
@@ -1872,12 +1386,6 @@ impl App {
                 self.toasts.push(Toast::info("Search history cleared"));
                 None
             }
-            KeyCode::Char('t') => Some(Action::CycleTheme),
-            KeyCode::Char('r') => Some(Action::SwitchToSettings),
-            KeyCode::Char('?') => {
-                self.popup = Some(Popup::builder(PopupType::Help).build());
-                None
-            }
             _ => None,
         }
     }
@@ -1885,6 +1393,39 @@ impl App {
     /// Pure state mutation based on Action.
     pub fn update(&mut self, action: Action) {
         match action {
+            Action::OpenHelpPopup => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+            }
+            Action::SwitchToSearch => {
+                self.current_screen = CurrentScreen::Search;
+            }
+            Action::SwitchToSettingsScreen => {
+                self.current_screen = CurrentScreen::Settings;
+            }
+            Action::LoadIndexes => {
+                self.current_screen = CurrentScreen::Indexes;
+            }
+            Action::LoadClusterInfo => {
+                self.current_screen = CurrentScreen::Cluster;
+            }
+            Action::LoadJobs => {
+                self.current_screen = CurrentScreen::Jobs;
+            }
+            Action::LoadHealth => {
+                self.current_screen = CurrentScreen::Health;
+            }
+            Action::LoadSavedSearches => {
+                self.current_screen = CurrentScreen::SavedSearches;
+            }
+            Action::LoadInternalLogs => {
+                self.current_screen = CurrentScreen::InternalLogs;
+            }
+            Action::LoadApps => {
+                self.current_screen = CurrentScreen::Apps;
+            }
+            Action::LoadUsers => {
+                self.current_screen = CurrentScreen::Users;
+            }
             Action::NavigateDown => self.next_item(),
             Action::NavigateUp => self.previous_item(),
             Action::PageDown => self.next_page(),

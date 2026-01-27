@@ -87,6 +87,13 @@ pub enum Action {
     /// Quit the application
     Quit,
 
+    /// Open the help popup.
+    OpenHelpPopup,
+    /// Switch to the Search screen without triggering a load.
+    SwitchToSearch,
+    /// Switch to the Settings screen without reloading settings.
+    SwitchToSettingsScreen,
+
     // Input
     /// Raw keyboard input event
     Input(KeyEvent),
