@@ -1,4 +1,4 @@
-.PHONY: install update lint type-check format clean test build release generate ci help
+.PHONY: install update lint type-check format clean test test-all test-unit test-integration test-live test-live-manual build release generate ci help
 
 # Binaries and Installation
 BINS := splunk-cli splunk-tui
@@ -35,36 +35,27 @@ clean:
 	rm -rf target/
 
 # Run all tests
-test: test-unit test-integration
+test: test-all
+
+# Run all tests (workspace, all targets). This is the default "everything" gate.
+test-all:
+	cargo test --workspace --all-targets --all-features
 
 # Run unit tests (lib and bins)
 test-unit:
-	cargo test --lib --bins
+	cargo test --workspace --lib --bins --all-features
 
 # Run integration tests
 test-integration:
-	cargo test -p splunk-client --test integration_tests
-	cargo test -p splunk-cli --test apps_tests
-	cargo test -p splunk-cli --test cancellation_tests
-	cargo test -p splunk-cli --test cluster_pagination_tests
-	cargo test -p splunk-cli --test config_loading_tests
-	cargo test -p splunk-cli --test config_tests
-	cargo test -p splunk-cli --test health_tests
-	cargo test -p splunk-cli --test indexes_pagination_tests
-	cargo test -p splunk-cli --test internal_logs_tests
-	cargo test -p splunk-cli --test jobs_tests
-	cargo test -p splunk-cli --test kvstore_tests
-	cargo test -p splunk-cli --test license_tests
-	cargo test -p splunk-cli --test list_all_tests
-	cargo test -p splunk-cli --test saved_searches_tests
-	cargo test -p splunk-cli --test search_tests
-	cargo test -p splunk-cli --test users_tests
-	cargo test -p splunk-tui --test app_tests
-	cargo test -p splunk-tui --test snapshot_tests
+	cargo test --workspace --tests --all-features
 
-# Run live tests (requires Splunk server at 192.168.1.122:8089)
+# Run live tests (requires a reachable Splunk server configured via env / .env.test)
 test-live:
-	cargo test -p splunk-client --test live_tests -- --ignored
+	@if [ "$$SKIP_LIVE_TESTS" = "1" ]; then \
+		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
+		exit 0; \
+	fi
+	cargo test --workspace --all-targets --all-features -- --ignored
 
 # Manual live server test script
 test-live-manual:
@@ -86,8 +77,8 @@ build: release
 generate:
 	@echo "No code generation required for this project."
 
-# CI pipeline: install -> format -> generate -> lint -> type-check -> test -> release
-ci: install format generate lint type-check test release
+# CI pipeline: install -> format -> generate -> lint -> type-check -> test -> test-live -> release
+ci: install format generate lint type-check test test-live release
 
 # Display help for each target
 help:
@@ -99,13 +90,14 @@ help:
 	@echo "  make type-check       - Run cargo check"
 	@echo "  make format           - Format code with rustfmt (write mode)"
 	@echo "  make clean            - Remove build artifacts and lock files"
-	@echo "  make test             - Run all tests (unit + integration)"
+	@echo "  make test             - Run all tests (workspace, all targets)"
+	@echo "  make test-all         - Alias for make test"
 	@echo "  make test-unit        - Run unit tests (lib and bins)"
-	@echo "  make test-integration - Run integration tests (HTTP mocking)"
-	@echo "  make test-live        - Run live tests (requires Splunk server)"
+	@echo "  make test-integration - Run integration tests"
+	@echo "  make test-live        - Run live tests (requires Splunk server; set SKIP_LIVE_TESTS=1 to skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
 	@echo "  make release          - Optimized release build and install to $(INSTALL_DIR)"
 	@echo "  make build            - Alias for release"
 	@echo "  make generate         - No code generation required for this project"
-	@echo "  make ci               - Run full CI pipeline (install -> format -> generate -> lint -> type-check -> test -> release)"
+	@echo "  make ci               - Run full CI pipeline (install -> format -> generate -> lint -> type-check -> test -> test-live -> release)"
 	@echo "  make help             - Show this help message"

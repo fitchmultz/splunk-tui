@@ -5,6 +5,7 @@ use reqwest::Client;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::models::{Index, IndexListResponse};
+use crate::name_merge::attach_entry_name;
 
 /// List all indexes.
 pub async fn list_indexes(
@@ -34,5 +35,9 @@ pub async fn list_indexes(
 
     let resp: IndexListResponse = response.json().await?;
 
-    Ok(resp.entry.into_iter().map(|e| e.content).collect())
+    Ok(resp
+        .entry
+        .into_iter()
+        .map(|e| attach_entry_name(e.name, e.content))
+        .collect())
 }

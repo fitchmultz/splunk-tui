@@ -304,6 +304,7 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
+    use std::sync::{Mutex, OnceLock};
     use tempfile::TempDir;
 
     fn create_test_config_file(dir: &Path) -> PathBuf {
@@ -337,6 +338,42 @@ mod tests {
         writeln!(file, "{}", config).unwrap();
 
         config_path
+    }
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    fn cleanup_splunk_env() {
+        unsafe {
+            std::env::remove_var("SPLUNK_BASE_URL");
+            std::env::remove_var("SPLUNK_API_TOKEN");
+            std::env::remove_var("SPLUNK_USERNAME");
+            std::env::remove_var("SPLUNK_PASSWORD");
+            std::env::remove_var("SPLUNK_CONFIG_PATH");
+        }
+    }
+
+    /// Serializes process-global env-var mutations for this test module.
+    struct EnvVarGuard {
+        _lock: std::sync::MutexGuard<'static, ()>,
+    }
+
+    impl EnvVarGuard {
+        fn new() -> Self {
+            let lock = env_lock()
+                .lock()
+                .expect("Failed to acquire SPLUNK_* env var lock");
+            cleanup_splunk_env();
+            Self { _lock: lock }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            cleanup_splunk_env();
+        }
     }
 
     #[test]
@@ -430,6 +467,7 @@ mod tests {
 
     #[test]
     fn test_env_overrides_profile() {
+        let _env = EnvVarGuard::new();
         let temp_dir = TempDir::new().unwrap();
         let config_path = create_test_config_file(temp_dir.path());
 
@@ -460,6 +498,7 @@ mod tests {
 
     #[test]
     fn test_empty_env_vars_ignored() {
+        let _env = EnvVarGuard::new();
         // Clean up first to ensure test isolation
         unsafe {
             std::env::remove_var("SPLUNK_API_TOKEN");
@@ -497,6 +536,7 @@ mod tests {
 
     #[test]
     fn test_env_var_or_none_filters_empty_strings() {
+        let _env = EnvVarGuard::new();
         // Direct unit test for the env_var_or_none helper function
         // This tests the core functionality without relying on complex env var setup
 
@@ -548,6 +588,7 @@ mod tests {
 
     #[test]
     fn test_whitespace_only_env_var_treated_as_set() {
+        let _env = EnvVarGuard::new();
         // Whitespace-only is NOT filtered as empty (only empty string is)
         unsafe {
             std::env::set_var("SPLUNK_API_TOKEN", "   ");
@@ -571,6 +612,7 @@ mod tests {
 
     #[test]
     fn test_splunk_config_path_env_var() {
+        let _env = EnvVarGuard::new();
         let temp_dir = TempDir::new().unwrap();
         let config_path = create_test_config_file(temp_dir.path());
 
@@ -600,6 +642,7 @@ mod tests {
 
     #[test]
     fn test_empty_splunk_config_path_ignored() {
+        let _env = EnvVarGuard::new();
         // Empty string in SPLUNK_CONFIG_PATH should be ignored
         // The TUI code should check for Ok() which filters empty strings
         unsafe {

@@ -4,14 +4,14 @@
 //! environment variable for both ConfigLoader and ConfigManager.
 //!
 //! NOTE: These tests use environment variables which are process-global.
-//! When running individually, they work fine, but when run in parallel
-//! they may interfere with each other. Run with:
-//!   cargo test -p splunk-tui --test config_loading_tests -- --test-threads=1
+//! These tests serialize all SPLUNK_* env-var mutations with a global mutex so
+//! they are safe under the default parallel test runner.
 
 #![allow(unused_unsafe)]
 
 use splunk_config::{ConfigLoader, ConfigManager};
 use std::fs;
+use std::sync::{Mutex, OnceLock};
 use tempfile::TempDir;
 
 /// Helper to create a test config file with a profile.
@@ -67,9 +67,35 @@ fn cleanup_env_vars() {
     }
 }
 
+fn env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+/// Serializes env-var usage and guarantees cleanup between tests.
+struct EnvVarGuard {
+    _lock: std::sync::MutexGuard<'static, ()>,
+}
+
+impl EnvVarGuard {
+    fn new() -> Self {
+        let lock = env_lock()
+            .lock()
+            .expect("Failed to acquire SPLUNK_* env var lock");
+        cleanup_env_vars();
+        Self { _lock: lock }
+    }
+}
+
+impl Drop for EnvVarGuard {
+    fn drop(&mut self) {
+        cleanup_env_vars();
+    }
+}
+
 #[test]
 fn test_config_manager_with_splunk_config_path() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let config_path = create_test_config_with_profile(
@@ -85,9 +111,6 @@ fn test_config_manager_with_splunk_config_path() {
 
     // Create ConfigManager - it should use the custom path
     let result = ConfigManager::new_with_path(std::path::PathBuf::from(&config_path));
-
-    // Clean up env var
-    cleanup_env_vars();
 
     assert!(
         result.is_ok(),
@@ -106,7 +129,7 @@ fn test_config_manager_with_splunk_config_path() {
 
 #[test]
 fn test_config_manager_default_path_when_env_not_set() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     // Create ConfigManager with default path
     let result = ConfigManager::new();
@@ -119,7 +142,7 @@ fn test_config_manager_default_path_when_env_not_set() {
 
 #[test]
 fn test_config_loader_with_splunk_config_path() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let config_path = create_test_config_with_profile(
@@ -148,9 +171,6 @@ fn test_config_loader_with_splunk_config_path() {
     // Build the config (skip from_env to avoid .env overrides)
     let result = loader.build();
 
-    // Clean up env vars
-    cleanup_env_vars();
-
     assert!(
         result.is_ok(),
         "ConfigLoader should successfully load config from custom path"
@@ -165,7 +185,7 @@ fn test_config_loader_with_splunk_config_path() {
 
 #[test]
 fn test_config_loader_default_path_when_env_not_set() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     // Create loader with default path - should not fail due to path issues
     // (may fail due to missing auth, which is expected)
@@ -191,13 +211,11 @@ fn test_config_loader_default_path_when_env_not_set() {
             );
         }
     }
-
-    cleanup_env_vars();
 }
 
 #[test]
 fn test_empty_splunk_config_path_uses_default() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     // Test that an empty SPLUNK_CONFIG_PATH is handled correctly
     unsafe {
@@ -222,14 +240,11 @@ fn test_empty_splunk_config_path_uses_default() {
         !should_use_custom,
         "Empty SPLUNK_CONFIG_PATH should not trigger custom path usage"
     );
-
-    // Clean up
-    cleanup_env_vars();
 }
 
 #[test]
 fn test_empty_splunk_config_path_with_config_manager() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     // Test that ConfigManager uses default path when SPLUNK_CONFIG_PATH is empty
     unsafe {
@@ -247,9 +262,6 @@ fn test_empty_splunk_config_path_with_config_manager() {
         ConfigManager::new()
     };
 
-    // Clean up
-    cleanup_env_vars();
-
     assert!(
         manager.is_ok(),
         "ConfigManager should succeed when SPLUNK_CONFIG_PATH is empty"
@@ -262,7 +274,7 @@ fn test_empty_splunk_config_path_with_config_manager() {
 
 #[test]
 fn test_empty_splunk_config_path_with_config_loader() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     // Test that ConfigLoader ignores empty SPLUNK_CONFIG_PATH
     unsafe {
@@ -278,9 +290,6 @@ fn test_empty_splunk_config_path_with_config_loader() {
         loader = loader.with_config_path(std::path::PathBuf::from(config_path));
         // If empty, do nothing (use default path)
     }
-
-    // Clean up
-    cleanup_env_vars();
 
     // The loader should work fine with default path - just verify it doesn't fail
     // with path-related errors (missing auth/base URL is expected and OK here)
@@ -303,7 +312,7 @@ fn test_empty_splunk_config_path_with_config_loader() {
 
 #[test]
 fn test_splunk_config_path_with_nonexistent_file() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     let nonexistent_path = "/tmp/nonexistent_splunk_config_12345.json";
 
@@ -314,9 +323,6 @@ fn test_splunk_config_path_with_nonexistent_file() {
 
     // Create ConfigManager with nonexistent path
     let result = ConfigManager::new_with_path(std::path::PathBuf::from(nonexistent_path));
-
-    // Clean up
-    cleanup_env_vars();
 
     // ConfigManager::new_with_path should succeed, but load() will return default state
     assert!(result.is_ok(), "ConfigManager creation should succeed");
@@ -337,7 +343,7 @@ fn test_splunk_config_path_with_nonexistent_file() {
 
 #[test]
 fn test_config_manager_persistence_with_custom_path() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let config_path = temp_dir.path().join("test-persist.json");
@@ -408,7 +414,7 @@ fn test_config_manager_persistence_with_custom_path() {
 #[test]
 fn test_config_loader_with_profile_from_custom_path() {
     // Clean up any env vars from previous tests
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let config_path =
@@ -455,9 +461,6 @@ fn test_config_loader_with_profile_from_custom_path() {
     // Build the config (skip from_env to avoid .env overrides in test)
     let result = loader.build();
 
-    // Clean up env vars
-    cleanup_env_vars();
-
     assert!(result.is_ok(), "Config should be built successfully");
 
     let config = result.unwrap();
@@ -469,7 +472,7 @@ fn test_config_loader_with_profile_from_custom_path() {
 
 #[test]
 fn test_tui_pattern_matches_cli_pattern() {
-    cleanup_env_vars();
+    let _env = EnvVarGuard::new();
 
     // This test verifies that the TUI pattern for handling SPLUNK_CONFIG_PATH
     // matches the CLI pattern, ensuring consistency across the codebase

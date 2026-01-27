@@ -8,6 +8,8 @@ mod auth;
 mod client;
 pub mod error;
 pub mod models;
+mod name_merge;
+mod serde_helpers;
 
 pub mod endpoints;
 

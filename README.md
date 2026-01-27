@@ -131,7 +131,7 @@ splunk-tui
 
 - [User Guide](docs/user-guide.md) - Task-oriented guide for CLI and TUI
 - [Usage Guide](docs/usage.md) - Detailed technical reference and configuration
-- [Development Guide](docs/splunk-test-environment.md) - Setting up a local Splunk environment
+- Development: configure live server access via `.env.test` (untracked) or environment variables (`SPLUNK_BASE_URL`, `SPLUNK_USERNAME`, `SPLUNK_PASSWORD`).
 
 ## Development
 

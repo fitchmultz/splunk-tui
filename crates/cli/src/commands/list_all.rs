@@ -370,7 +370,8 @@ async fn fetch_license(client: &mut SplunkClient) -> ResourceSummary {
 
     match time::timeout(timeout_duration, client.get_license_usage()).await {
         Ok(Ok(usage)) => {
-            let total_usage: u64 = usage.iter().map(|u| u.used_bytes).sum::<u64>() / 1024;
+            let total_usage: u64 =
+                usage.iter().map(|u| u.effective_used_bytes()).sum::<u64>() / 1024;
             let total_quota: u64 = usage.iter().map(|u| u.quota).sum::<u64>() / 1024;
             let pct = if total_quota > 0 && total_usage > total_quota * 9 / 10 {
                 "warning"

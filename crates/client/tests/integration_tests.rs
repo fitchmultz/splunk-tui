@@ -99,6 +99,39 @@ async fn test_create_search_job() {
 }
 
 #[tokio::test]
+async fn test_create_search_job_sid_only_response() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success_sid_only.json");
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        exec_time: Some(60),
+        ..Default::default()
+    };
+
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "1769478517.49");
+}
+
+#[tokio::test]
 async fn test_get_search_results() {
     let mock_server = MockServer::start().await;
 
@@ -404,7 +437,7 @@ async fn test_get_license_usage() {
     let fixture = load_fixture("license/get_usage.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/license/usage"))
+        .and(path("/services/licenser/usage"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -416,10 +449,10 @@ async fn test_get_license_usage() {
     let usage = result.unwrap();
     assert_eq!(usage.len(), 1);
     assert_eq!(usage[0].quota, 53687091200);
-    assert_eq!(usage[0].used_bytes, 1610612736);
+    assert_eq!(usage[0].used_bytes, Some(1610612736));
     assert_eq!(usage[0].stack_id.as_deref(), Some("enterprise"));
 
-    let slaves = usage[0].slaves_usage_bytes.as_ref().unwrap();
+    let slaves = usage[0].slaves_breakdown().unwrap();
     assert_eq!(
         slaves.get("00000000-0000-0000-0000-000000000000"),
         Some(&1073741824)
@@ -433,7 +466,7 @@ async fn test_list_license_pools() {
     let fixture = load_fixture("license/list_pools.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/license/pools"))
+        .and(path("/services/licenser/pools"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -455,7 +488,7 @@ async fn test_list_license_stacks() {
     let fixture = load_fixture("license/list_stacks.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/license/stacks"))
+        .and(path("/services/licenser/stacks"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -1088,7 +1121,7 @@ async fn test_splunk_client_get_license_usage() {
     let fixture = load_fixture("license/get_usage.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/license/usage"))
+        .and(path("/services/licenser/usage"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;

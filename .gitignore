@@ -13,6 +13,10 @@ Cargo.lock
 
 # Environment
 .env
+.env.test
+
+# Local-only dev server notes
+docs/splunk-test-environment.md
 
 # Logs
 *.log

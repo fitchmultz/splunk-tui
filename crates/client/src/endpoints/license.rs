@@ -13,7 +13,7 @@ pub async fn get_license_usage(
     auth_token: &str,
     max_retries: usize,
 ) -> Result<Vec<LicenseUsage>> {
-    let url = format!("{}/services/license/usage", base_url);
+    let url = format!("{}/services/licenser/usage", base_url);
 
     let builder = client
         .get(&url)
@@ -41,7 +41,7 @@ pub async fn list_license_pools(
     auth_token: &str,
     max_retries: usize,
 ) -> Result<Vec<LicensePool>> {
-    let url = format!("{}/services/license/pools", base_url);
+    let url = format!("{}/services/licenser/pools", base_url);
 
     let builder = client
         .get(&url)
@@ -69,7 +69,7 @@ pub async fn list_license_stacks(
     auth_token: &str,
     max_retries: usize,
 ) -> Result<Vec<LicenseStack>> {
-    let url = format!("{}/services/license/stacks", base_url);
+    let url = format!("{}/services/licenser/stacks", base_url);
 
     let builder = client
         .get(&url)

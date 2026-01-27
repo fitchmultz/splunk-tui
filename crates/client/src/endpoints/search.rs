@@ -7,6 +7,7 @@ use tracing::debug;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::models::{SavedSearchListResponse, SearchJobResults, SearchJobStatus};
+use crate::name_merge::attach_entry_name;
 
 /// Options for creating a search job.
 #[derive(Debug, Clone, Serialize, Default)]
@@ -133,10 +134,22 @@ pub async fn create_job(
 
     let resp: serde_json::Value = response.json().await?;
 
-    resp["entry"][0]["content"]["sid"]
-        .as_str()
-        .ok_or_else(|| ClientError::InvalidResponse("Missing sid in response".to_string()))
-        .map(|s| s.to_string())
+    // Splunk can return either:
+    // - `{ "sid": "<sid>" }` (common on newer versions / certain output modes)
+    // - `{ "entry": [ { "content": { "sid": "<sid>" } } ] }` (older/alternate shape)
+    let sid = resp
+        .get("sid")
+        .and_then(|v| v.as_str())
+        .or_else(|| {
+            resp.get("entry")?
+                .get(0)?
+                .get("content")?
+                .get("sid")?
+                .as_str()
+        })
+        .ok_or_else(|| ClientError::InvalidResponse("Missing sid in response".to_string()))?;
+
+    Ok(sid.to_string())
 }
 
 /// Get the status of a search job.
@@ -256,7 +269,19 @@ pub async fn get_results(
         .query(&query_params);
     let response = send_request_with_retry(builder, max_retries).await?;
 
-    let json: serde_json::Value = response.json().await?;
+    let body = response.text().await?;
+    if body.trim().is_empty() {
+        return Ok(SearchJobResults {
+            results: vec![],
+            preview: false,
+            offset,
+            total: None,
+        });
+    }
+
+    let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+        ClientError::InvalidResponse(format!("Failed to parse search results response: {}", e))
+    })?;
 
     Ok(SearchJobResults {
         results: match output_mode {
@@ -274,7 +299,9 @@ pub async fn get_results(
         },
         preview: json["preview"].as_bool().unwrap_or(false),
         offset,
-        total: json["total"].as_u64(),
+        total: json["total"]
+            .as_u64()
+            .or_else(|| json["total"].as_str().and_then(|s| s.parse::<u64>().ok())),
     })
 }
 
@@ -302,11 +329,7 @@ pub async fn list_saved_searches(
     Ok(resp
         .entry
         .into_iter()
-        .map(|e| {
-            let mut s = e.content;
-            s.name = e.name;
-            s
-        })
+        .map(|e| attach_entry_name(e.name, e.content))
         .collect())
 }
 

@@ -639,12 +639,13 @@ impl Formatter for TableFormatter {
                         "Stack {}:\n",
                         u.stack_id.as_deref().unwrap_or("N/A")
                     ));
+                    let used_bytes = u.effective_used_bytes();
                     output.push_str(&format!(
                         "  Used: {} MB / Quota: {} MB\n",
-                        u.used_bytes / 1024 / 1024,
+                        used_bytes / 1024 / 1024,
                         u.quota / 1024 / 1024
                     ));
-                    if let Some(slaves) = &u.slaves_usage_bytes
+                    if let Some(slaves) = u.slaves_breakdown()
                         && !slaves.is_empty()
                     {
                         output.push_str("  Slave Usage:\n");
@@ -736,10 +737,11 @@ impl Formatter for TableFormatter {
         } else {
             output.push_str("Name\tStack ID\tUsed (MB)\tQuota (MB)\t% Used\tAlert\n");
             for u in &license.usage {
-                let used_mb = u.used_bytes / 1024 / 1024;
+                let used_bytes = u.effective_used_bytes();
+                let used_mb = used_bytes / 1024 / 1024;
                 let quota_mb = u.quota / 1024 / 1024;
                 let pct = if u.quota > 0 {
-                    (u.used_bytes as f64 / u.quota as f64) * 100.0
+                    (used_bytes as f64 / u.quota as f64) * 100.0
                 } else {
                     0.0
                 };
@@ -763,12 +765,18 @@ impl Formatter for TableFormatter {
         } else {
             output.push_str("Name\tStack ID\tUsed (MB)\tQuota (MB)\tDescription\n");
             for p in &license.pools {
+                let quota_mb = p
+                    .quota
+                    .parse::<u64>()
+                    .ok()
+                    .map(|q| (q / 1024 / 1024).to_string())
+                    .unwrap_or_else(|| p.quota.clone());
                 output.push_str(&format!(
                     "{}\t{}\t{}\t{}\t{}\n",
                     p.name,
                     p.stack_id,
                     p.used_bytes / 1024 / 1024,
-                    p.quota / 1024 / 1024,
+                    quota_mb,
                     p.description.as_deref().unwrap_or("N/A")
                 ));
             }
@@ -1428,7 +1436,7 @@ impl Formatter for CsvFormatter {
             .unwrap_or("N/A");
 
         let (used, quota) = if let Some(usage) = &health.license_usage {
-            let used: u64 = usage.iter().map(|u| u.used_bytes).sum();
+            let used: u64 = usage.iter().map(|u| u.effective_used_bytes()).sum();
             let quota: u64 = usage.iter().map(|u| u.quota).sum();
             (
                 (used / 1024 / 1024).to_string(),
@@ -1509,8 +1517,9 @@ impl Formatter for CsvFormatter {
 
         // Usage
         for u in &license.usage {
+            let used_bytes = u.effective_used_bytes();
             let pct = if u.quota > 0 {
-                (u.used_bytes as f64 / u.quota as f64) * 100.0
+                (used_bytes as f64 / u.quota as f64) * 100.0
             } else {
                 0.0
             };
@@ -1518,7 +1527,7 @@ impl Formatter for CsvFormatter {
                 "Usage,{},{},{},{},{:.2},,, \n",
                 escape_csv(&u.name),
                 escape_csv(u.stack_id.as_deref().unwrap_or("N/A")),
-                u.used_bytes / 1024 / 1024,
+                used_bytes / 1024 / 1024,
                 u.quota / 1024 / 1024,
                 pct
             ));
@@ -1526,12 +1535,18 @@ impl Formatter for CsvFormatter {
 
         // Pools
         for p in &license.pools {
+            let quota_mb = p
+                .quota
+                .parse::<u64>()
+                .ok()
+                .map(|q| (q / 1024 / 1024).to_string())
+                .unwrap_or_else(|| p.quota.clone());
             output.push_str(&format!(
                 "Pool,{},{},{},{},,,,{}\n",
                 escape_csv(&p.name),
                 escape_csv(&p.stack_id),
                 p.used_bytes / 1024 / 1024,
-                p.quota / 1024 / 1024,
+                escape_csv(&quota_mb),
                 escape_csv(p.description.as_deref().unwrap_or("N/A"))
             ));
         }
@@ -2029,9 +2044,12 @@ impl Formatter for XmlFormatter {
                         escape_xml(stack_id)
                     ));
                 }
-                xml.push_str(&format!("      <usedBytes>{}</usedBytes>\n", u.used_bytes));
+                xml.push_str(&format!(
+                    "      <usedBytes>{}</usedBytes>\n",
+                    u.effective_used_bytes()
+                ));
                 xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", u.quota));
-                if let Some(slaves) = &u.slaves_usage_bytes {
+                if let Some(slaves) = u.slaves_breakdown() {
                     xml.push_str("      <slaves>\n");
                     for (name, bytes) in slaves {
                         xml.push_str(&format!(
@@ -2161,7 +2179,10 @@ impl Formatter for XmlFormatter {
                     escape_xml(stack_id)
                 ));
             }
-            xml.push_str(&format!("      <usedBytes>{}</usedBytes>\n", u.used_bytes));
+            xml.push_str(&format!(
+                "      <usedBytes>{}</usedBytes>\n",
+                u.effective_used_bytes()
+            ));
             xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", u.quota));
             xml.push_str("    </entry>\n");
         }
@@ -2176,7 +2197,10 @@ impl Formatter for XmlFormatter {
                 escape_xml(&p.stack_id)
             ));
             xml.push_str(&format!("      <usedBytes>{}</usedBytes>\n", p.used_bytes));
-            xml.push_str(&format!("      <quotaBytes>{}</quotaBytes>\n", p.quota));
+            xml.push_str(&format!(
+                "      <quotaBytes>{}</quotaBytes>\n",
+                escape_xml(&p.quota)
+            ));
             if let Some(desc) = &p.description {
                 xml.push_str(&format!(
                     "      <description>{}</description>\n",
@@ -2776,7 +2800,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -2802,7 +2826,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -2831,7 +2855,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -2854,7 +2878,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -2881,7 +2905,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -2910,7 +2934,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -2941,7 +2965,7 @@ mod tests {
             current_db_size_mb: 100,
             total_event_count: 1000,
             max_warm_db_count: Some(300),
-            max_hot_buckets: Some(10),
+            max_hot_buckets: Some("10".to_string()),
             frozen_time_period_in_secs: Some(2592000),
             cold_db_path: Some("/opt/splunk/var/lib/splunk/main/colddb".to_string()),
             home_path: Some("/opt/splunk/var/lib/splunk/main/db".to_string()),
@@ -3199,13 +3223,13 @@ mod tests {
             usage: vec![LicenseUsage {
                 name: "daily_usage".to_string(),
                 quota: 100 * 1024 * 1024,
-                used_bytes: 50 * 1024 * 1024,
+                used_bytes: Some(50 * 1024 * 1024),
                 slaves_usage_bytes: None,
                 stack_id: Some("enterprise".to_string()),
             }],
             pools: vec![LicensePool {
                 name: "pool1".to_string(),
-                quota: 50 * 1024 * 1024,
+                quota: (50 * 1024 * 1024).to_string(),
                 used_bytes: 25 * 1024 * 1024,
                 stack_id: "enterprise".to_string(),
                 description: Some("Test pool".to_string()),
@@ -3233,7 +3257,7 @@ mod tests {
             usage: vec![LicenseUsage {
                 name: "daily_usage".to_string(),
                 quota: 100 * 1024 * 1024,
-                used_bytes: 50 * 1024 * 1024,
+                used_bytes: Some(50 * 1024 * 1024),
                 slaves_usage_bytes: None,
                 stack_id: Some("enterprise".to_string()),
             }],

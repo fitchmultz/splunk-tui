@@ -118,8 +118,9 @@ fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'st
     if let Some(license_usage) = &health.license_usage {
         push_section_lines(&mut lines, "License Usage", theme);
         for (i, usage) in license_usage.iter().enumerate() {
+            let used_bytes = usage.effective_used_bytes();
             let percentage = if usage.quota > 0 {
-                (usage.used_bytes as f64 / usage.quota as f64) * 100.0
+                (used_bytes as f64 / usage.quota as f64) * 100.0
             } else {
                 0.0
             };
@@ -129,10 +130,7 @@ fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'st
                 Span::raw(format!("Pool {}: ", i + 1)),
                 Span::styled(pct_text, Style::default().fg(pct_color)),
             ]));
-            lines.push(Line::from(format!(
-                "  Used: {}",
-                format_bytes(usage.used_bytes)
-            )));
+            lines.push(Line::from(format!("  Used: {}", format_bytes(used_bytes))));
             lines.push(Line::from(format!(
                 "  Quota: {}",
                 format_bytes(usage.quota)
@@ -340,8 +338,8 @@ mod tests {
             splunkd_health: None,
             license_usage: Some(vec![LicenseUsage {
                 name: "test_license".to_string(),
-                quota: 1024 * 1024 * 1024,     // 1 GB
-                used_bytes: 512 * 1024 * 1024, // 512 MB
+                quota: 1024 * 1024 * 1024,           // 1 GB
+                used_bytes: Some(512 * 1024 * 1024), // 512 MB
                 slaves_usage_bytes: None,
                 stack_id: None,
             }]),

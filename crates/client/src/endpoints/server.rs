@@ -5,6 +5,7 @@ use reqwest::Client;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::models::{App, AppListResponse, ServerInfo, SplunkHealth};
+use crate::name_merge::attach_entry_name;
 
 /// Get server information.
 pub async fn get_server_info(
@@ -98,7 +99,11 @@ pub async fn list_apps(
 
     let resp: AppListResponse = response.json().await?;
 
-    Ok(resp.entry.into_iter().map(|e| e.content).collect())
+    Ok(resp
+        .entry
+        .into_iter()
+        .map(|e| attach_entry_name(e.name, e.content))
+        .collect())
 }
 
 /// Get specific app details by name.

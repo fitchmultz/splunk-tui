@@ -53,12 +53,33 @@ pub struct SearchJob {
     #[serde(default)]
     pub isFinalized: bool,
     pub doneProgress: f64,
+    #[serde(default)]
     pub runDuration: f64,
     pub cursorTime: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub scanCount: u64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub eventCount: u64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub resultCount: u64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub statusBuckets: Option<u64>,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub diskUsage: u64,
 }
 
@@ -84,9 +105,22 @@ pub struct JobContent {
     pub is_finalized: bool,
     #[serde(rename = "doneProgress", default)]
     pub done_progress: f64,
+    #[serde(default)]
     pub runDuration: f64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub scanCount: u64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub eventCount: u64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub resultCount: u64,
 }
 
@@ -100,17 +134,33 @@ pub struct SearchJobStatus {
     pub is_finalized: bool,
     #[serde(rename = "doneProgress", default)]
     pub done_progress: f64,
-    #[serde(rename = "runDuration")]
+    #[serde(rename = "runDuration", default)]
     pub run_duration: f64,
     #[serde(rename = "cursorTime")]
     pub cursor_time: Option<String>,
-    #[serde(rename = "scanCount")]
+    #[serde(
+        rename = "scanCount",
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub scan_count: u64,
-    #[serde(rename = "eventCount")]
+    #[serde(
+        rename = "eventCount",
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub event_count: u64,
-    #[serde(rename = "resultCount")]
+    #[serde(
+        rename = "resultCount",
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub result_count: u64,
-    #[serde(rename = "diskUsage")]
+    #[serde(
+        rename = "diskUsage",
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub disk_usage: u64,
     #[serde(rename = "priority")]
     pub priority: Option<i32>,
@@ -123,25 +173,56 @@ pub struct SearchJobResults {
     pub results: Vec<serde_json::Value>,
     #[serde(default)]
     pub preview: bool,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub offset: Option<u64>,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub total: Option<u64>,
 }
 
 /// Index information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Index {
+    #[serde(default)]
     pub name: String,
-    #[serde(rename = "maxTotalDataSizeMB")]
+    #[serde(
+        rename = "maxTotalDataSizeMB",
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub max_total_data_size_mb: Option<u64>,
-    #[serde(rename = "currentDBSizeMB")]
+    #[serde(
+        rename = "currentDBSizeMB",
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub current_db_size_mb: u64,
-    #[serde(rename = "totalEventCount")]
+    #[serde(
+        rename = "totalEventCount",
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
     pub total_event_count: u64,
-    #[serde(rename = "maxWarmDBCount")]
+    #[serde(
+        rename = "maxWarmDBCount",
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub max_warm_db_count: Option<u64>,
-    #[serde(rename = "maxHotBuckets")]
-    pub max_hot_buckets: Option<u64>,
-    #[serde(rename = "frozenTimePeriodInSecs")]
+    #[serde(
+        rename = "maxHotBuckets",
+        default,
+        deserialize_with = "crate::serde_helpers::opt_string_from_number_or_string"
+    )]
+    pub max_hot_buckets: Option<String>,
+    #[serde(
+        rename = "frozenTimePeriodInSecs",
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub frozen_time_period_in_secs: Option<u64>,
     #[serde(rename = "coldDBPath")]
     pub cold_db_path: Option<String>,
@@ -234,7 +315,11 @@ pub struct User {
     pub default_app: Option<String>,
     #[serde(default)]
     pub roles: Vec<String>,
-    #[serde(rename = "lastSuccessfulLogin")]
+    #[serde(
+        rename = "lastSuccessfulLogin",
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub last_successful_login: Option<u64>, // Unix timestamp
 }
 
@@ -316,6 +401,7 @@ pub struct HealthFeature {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SplunkHealth {
     pub health: String,
+    #[serde(default)]
     pub features: HashMap<String, HealthFeature>,
 }
 
@@ -324,10 +410,53 @@ pub struct SplunkHealth {
 pub struct LicenseUsage {
     #[serde(default)]
     pub name: String,
+    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
     pub quota: u64,
-    pub used_bytes: u64,
-    pub slaves_usage_bytes: Option<HashMap<String, u64>>,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
+    pub used_bytes: Option<u64>,
+    #[serde(default)]
+    pub slaves_usage_bytes: Option<SlavesUsageBytes>,
     pub stack_id: Option<String>,
+}
+
+/// License usage can be returned either as a total (standalone) or per-slave breakdown (cluster).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum SlavesUsageBytes {
+    Total(#[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")] u64),
+    PerSlave(
+        #[serde(
+            deserialize_with = "crate::serde_helpers::map_string_to_u64_from_string_or_number"
+        )]
+        HashMap<String, u64>,
+    ),
+}
+
+impl LicenseUsage {
+    /// Returns the best-effort used bytes for display:
+    /// - Prefer `used_bytes` when present
+    /// - Otherwise use `slaves_usage_bytes` (total or sum of per-slave values)
+    pub fn effective_used_bytes(&self) -> u64 {
+        if let Some(used) = self.used_bytes {
+            return used;
+        }
+        match &self.slaves_usage_bytes {
+            Some(SlavesUsageBytes::Total(total)) => *total,
+            Some(SlavesUsageBytes::PerSlave(map)) => map.values().sum(),
+            None => 0,
+        }
+    }
+
+    /// Returns per-slave usage when Splunk provides a breakdown.
+    pub fn slaves_breakdown(&self) -> Option<&HashMap<String, u64>> {
+        match &self.slaves_usage_bytes {
+            Some(SlavesUsageBytes::PerSlave(map)) => Some(map),
+            _ => None,
+        }
+    }
 }
 
 /// License pool information.
@@ -335,7 +464,9 @@ pub struct LicenseUsage {
 pub struct LicensePool {
     #[serde(default)]
     pub name: String,
-    pub quota: u64,
+    #[serde(deserialize_with = "crate::serde_helpers::string_from_number_or_string")]
+    pub quota: String,
+    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
     pub used_bytes: u64,
     pub stack_id: String,
     pub description: Option<String>,
@@ -346,6 +477,7 @@ pub struct LicensePool {
 pub struct LicenseStack {
     #[serde(default)]
     pub name: String,
+    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
     pub quota: u64,
     #[serde(rename = "type")]
     pub type_name: String,
@@ -367,6 +499,7 @@ pub struct KvStoreMember {
 #[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct KvStoreReplicationStatus {
     #[serde(rename = "oplogSize")]
+    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
     pub oplog_size: u64,
     #[serde(rename = "oplogUsed")]
     pub oplog_used: f64,
@@ -402,7 +535,11 @@ pub struct LogEntry {
     pub time: String,
     #[serde(rename = "_indextime", default)]
     pub index_time: String,
-    #[serde(rename = "_serial", default)]
+    #[serde(
+        rename = "_serial",
+        default,
+        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+    )]
     pub serial: Option<u64>,
     #[serde(rename = "log_level", default)]
     pub level: String,
@@ -642,5 +779,20 @@ mod tests {
         assert_eq!(user.default_app, None);
         assert!(user.roles.is_empty());
         assert_eq!(user.last_successful_login, None);
+    }
+
+    #[test]
+    fn test_deserialize_job_content_with_optional_counts_missing() {
+        let json = r#"{
+            "sid": "sid123",
+            "isDone": false,
+            "isFinalized": false,
+            "doneProgress": 0.0
+        }"#;
+        let content: JobContent = serde_json::from_str(json).unwrap();
+        assert_eq!(content.sid, "sid123");
+        assert_eq!(content.scanCount, 0);
+        assert_eq!(content.eventCount, 0);
+        assert_eq!(content.resultCount, 0);
     }
 }
