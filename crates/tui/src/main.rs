@@ -4,16 +4,21 @@
 //! - Provide an interactive terminal interface for Splunk.
 //! - Manage application state, UI rendering, and user input handling.
 //! - Handle background tasks for health monitoring and data fetching.
+//! - Parse command-line arguments for configuration overrides.
 //!
 //! Does NOT handle:
 //! - Core business logic or REST API implementation (see `crates/client`).
 //! - Manual configuration file editing (see `crates/cli`).
+//! - Configuration persistence (see `crates/config`).
 //!
 //! Invariants / Assumptions:
 //! - The TUI enters raw mode and alternate screen on startup.
 //! - `load_dotenv()` is called at startup to support `.env` configuration.
+//! - Configuration precedence: CLI args > env vars > profile config > defaults.
+//! - Mouse capture is enabled by default unless `--no-mouse` is specified.
 
 use anyhow::Result;
+use clap::Parser;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
@@ -24,6 +29,7 @@ use ratatui::{Terminal, backend::CrosstermBackend};
 use splunk_tui::action::Action;
 use splunk_tui::app::App;
 use splunk_tui::ui::ToastLevel;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::unbounded_channel};
 use tracing_appender::non_blocking;
@@ -32,16 +38,54 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use splunk_client::{SplunkClient, models::HealthCheckOutput};
 use splunk_config::{AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager};
 
+/// Command-line arguments for splunk-tui.
+///
+/// Configuration precedence (highest to lowest):
+/// 1. CLI arguments (e.g., --profile, --config-path)
+/// 2. Environment variables (e.g., SPLUNK_PROFILE, SPLUNK_BASE_URL)
+/// 3. Profile configuration (from config.json)
+/// 4. Default values
+#[derive(Debug, Parser)]
+#[command(
+    name = "splunk-tui",
+    about = "Terminal user interface for Splunk Enterprise",
+    version,
+    after_help = "Examples:\n  splunk-tui\n  splunk-tui --profile production\n  splunk-tui --config-path /etc/splunk-tui/config.json\n  splunk-tui --log-dir /var/log/splunk-tui --no-mouse\n"
+)]
+struct Cli {
+    /// Config profile name to load
+    #[arg(long, short = 'p')]
+    profile: Option<String>,
+
+    /// Path to a custom configuration file
+    #[arg(long)]
+    config_path: Option<PathBuf>,
+
+    /// Directory for log files
+    #[arg(long, default_value = "logs")]
+    log_dir: PathBuf,
+
+    /// Disable mouse support
+    #[arg(long)]
+    no_mouse: bool,
+}
+
 /// Shared client wrapper for async tasks.
 type SharedClient = Arc<Mutex<SplunkClient>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Create logs directory if it doesn't exist
-    std::fs::create_dir_all("logs")?;
+    let cli = Cli::parse();
 
-    // Initialize file-based logging
-    let file_appender = tracing_appender::rolling::daily("logs", "splunk-tui.log");
+    // Capture no_mouse flag for later use in cleanup
+    let no_mouse = cli.no_mouse;
+
+    // Create logs directory if it doesn't exist
+    std::fs::create_dir_all(&cli.log_dir)?;
+
+    // Initialize file-based logging with configurable directory
+    let log_file_name = "splunk-tui.log";
+    let file_appender = tracing_appender::rolling::daily(&cli.log_dir, log_file_name);
     let (non_blocking, _guard) = non_blocking(file_appender);
 
     tracing_subscriber::registry()
@@ -51,8 +95,8 @@ async fn main() -> Result<()> {
 
     // Note: _guard must live for entire main() duration to ensure logs are flushed
 
-    // Load config at startup
-    let config = load_config()?;
+    // Load config at startup with CLI overrides
+    let config = load_config(&cli)?;
 
     // Build and authenticate client
     let client = Arc::new(Mutex::new(create_client(&config).await?));
@@ -60,7 +104,14 @@ async fn main() -> Result<()> {
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+
+    // Conditionally enable mouse capture based on CLI flag
+    if no_mouse {
+        execute!(stdout, EnterAlternateScreen)?;
+    } else {
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    }
+
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -95,12 +146,14 @@ async fn main() -> Result<()> {
     });
 
     // Load persisted configuration
-    let config_manager =
-        if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
-            ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
-        } else {
-            ConfigManager::new()?
-        };
+    // CLI --config-path takes precedence over SPLUNK_CONFIG_PATH env var
+    let config_manager = if let Some(config_path) = &cli.config_path {
+        ConfigManager::new_with_path(config_path.clone())?
+    } else if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+        ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
+    } else {
+        ConfigManager::new()?
+    };
     let persisted_state = config_manager.load();
     let config_manager = Arc::new(Mutex::new(config_manager));
 
@@ -228,30 +281,62 @@ async fn main() -> Result<()> {
 
     // Restore terminal
     disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+
+    // Conditionally disable mouse capture based on CLI flag
+    if no_mouse {
+        execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    } else {
+        execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+    }
+
     terminal.show_cursor()?;
 
     Ok(())
 }
 
-/// Load configuration from environment and profile.
-fn load_config() -> Result<Config> {
+/// Load configuration from CLI args, environment variables, and profile.
+///
+/// Configuration precedence (highest to lowest):
+/// 1. CLI arguments (e.g., --profile, --config-path)
+/// 2. Environment variables (e.g., SPLUNK_PROFILE, SPLUNK_BASE_URL)
+/// 3. Profile configuration (from config.json)
+/// 4. Default values
+///
+/// # Arguments
+///
+/// * `cli` - The parsed CLI arguments
+///
+/// # Errors
+///
+/// Returns an error if configuration loading fails (e.g., profile not found,
+/// missing required fields like base_url or auth credentials).
+fn load_config(cli: &Cli) -> Result<Config> {
     let mut loader = ConfigLoader::new().load_dotenv()?;
 
-    // Check for SPLUNK_CONFIG_PATH override (empty/whitespace is ignored)
-    if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    // Apply config path from CLI if provided (highest precedence)
+    if let Some(config_path) = &cli.config_path {
+        loader = loader.with_config_path(config_path.clone());
+    } else if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+        // Fall back to env var
         loader = loader.with_config_path(std::path::PathBuf::from(config_path));
     }
 
-    // Load from profile if SPLUNK_PROFILE is set
-    if let Some(profile_name) = ConfigLoader::env_var_or_none("SPLUNK_PROFILE") {
-        loader = loader.with_profile_name(profile_name).from_profile()?;
+    // Load from profile if specified via CLI or env
+    // CLI --profile takes precedence over SPLUNK_PROFILE env var
+    let profile_name = cli
+        .profile
+        .clone()
+        .or_else(|| ConfigLoader::env_var_or_none("SPLUNK_PROFILE"));
+
+    if let Some(profile) = profile_name {
+        loader = loader.with_profile_name(profile).from_profile()?;
     }
 
+    // Environment variables are loaded last - they override profile values
     loader
         .from_env()?
         .build()

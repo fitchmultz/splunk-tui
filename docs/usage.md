@@ -469,6 +469,44 @@ splunk-cli config delete my-profile
 
 Launch the TUI by running `splunk-tui`.
 
+### TUI Options
+
+The TUI (`splunk-tui`) supports the following command-line options:
+
+| Option | Description |
+|--------|-------------|
+| `-p, --profile <NAME>` | Config profile name to load |
+| `--config-path <FILE>` | Path to a custom configuration file |
+| `--log-dir <DIR>` | Directory for log files [default: logs] |
+| `--no-mouse` | Disable mouse support |
+| `-h, --help` | Print help information |
+| `-V, --version` | Print version information |
+
+#### Configuration Precedence
+
+Configuration values are loaded in the following precedence (highest to lowest):
+
+1. **CLI arguments** (e.g., `--profile`, `--config-path`)
+2. **Environment variables** (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
+3. **Profile configuration** (from config.json)
+4. **Default values**
+
+Examples:
+
+```bash
+# Use a specific profile
+splunk-tui --profile production
+
+# Use a custom config file
+splunk-tui --config-path /etc/splunk-tui/config.json
+
+# Custom log directory and disable mouse
+splunk-tui --log-dir /var/log/splunk-tui --no-mouse
+
+# Combine options
+splunk-tui --profile dev --log-dir ./logs --no-mouse
+```
+
 <!-- BEGIN TUI KEYBINDINGS -->
 
 ### Navigation

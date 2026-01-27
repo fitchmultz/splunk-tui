@@ -108,6 +108,34 @@ Launch the interactive terminal interface:
 splunk-tui
 ```
 
+### CLI Options
+
+The TUI supports several command-line options for configuration:
+
+```bash
+# Use a specific profile
+splunk-tui --profile production
+
+# Custom config file location
+splunk-tui --config-path /path/to/config.json
+
+# Disable mouse support
+splunk-tui --no-mouse
+
+# Custom log directory
+splunk-tui --log-dir /var/log/splunk-tui
+```
+
+Run `splunk-tui --help` for all available options.
+
+#### Configuration Precedence
+
+Configuration values are loaded in the following order (highest to lowest):
+1. CLI arguments (e.g., `--profile`, `--config-path`)
+2. Environment variables (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
+3. Profile configuration (from config.json)
+4. Default values
+
 ### Keybindings
 
 <!-- BEGIN TUI KEYBINDINGS -->

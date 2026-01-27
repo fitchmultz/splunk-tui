@@ -1,0 +1,36 @@
+---
+source: crates/tui/tests/cli_tests.rs
+expression: normalized
+---
+Command-line arguments for splunk-tui.
+
+Configuration precedence (highest to lowest): X. CLI arguments (e.g., --profile, --config-path) X. Environment variables (e.g., SPLUNK_PROFILE, SPLUNK_BASE_URL) X. Profile configuration (from config.json) X. Default values
+
+Usage: splunk-tui [OPTIONS]
+
+Options:
+  -p, --profile <PROFILE>
+          Config profile name to load
+
+      --config-path <CONFIG_PATH>
+          Path to a custom configuration file
+
+      --log-dir <LOG_DIR>
+          Directory for log files
+          
+          [default: logs]
+
+      --no-mouse
+          Disable mouse support
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+Examples:
+  splunk-tui
+  splunk-tui --profile production
+  splunk-tui --config-path /etc/splunk-tui/config.json
+  splunk-tui --log-dir /var/log/splunk-tui --no-mouse
