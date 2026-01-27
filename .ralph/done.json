@@ -4838,6 +4838,55 @@
       "completed_at": "2026-01-27T21:39:14.581511000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0123",
+      "status": "done",
+      "title": "Add a real splunk-tui --help CLI (config overrides, log dir, mouse toggle)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "cli",
+        "completed"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/Cargo.toml",
+        "docs/usage.md",
+        "README.md",
+        "crates/tui/tests/cli_tests.rs",
+        "make test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs now has full clap-based argument parsing with --profile, --config-path, --log-dir, --no-mouse, --version, and -h flags.",
+        "Configuration precedence is documented in main.rs: CLI args > env vars > profile config > defaults.",
+        "CLI tests in crates/tui/tests/cli_tests.rs validate --help output, --version, and all argument parsing.",
+        "Help output includes examples showing common admin workflows (--profile, --config-path, --log-dir, --no-mouse).",
+        "clap dependency was already present in Cargo.toml; implementation uses derive macro with after_help for examples."
+      ],
+      "plan": [
+        "Task completed: clap-based arg parsing implemented with --profile/-p, --config-path, --log-dir, --no-mouse, --version.",
+        "Task completed: Configuration precedence CLI args > env vars > profile config > defaults documented in code.",
+        "Task completed: Examples added to --help output showing profile, config-path, log-dir, and no-mouse usage.",
+        "Task completed: Tests in cli_tests.rs validate --help output, --version, argument parsing, and snapshot help text."
+      ],
+      "notes": [
+        "Implementation completed in commit 1a44e3f. CLI parsing uses clap derive macro with clear documentation.",
+        "Tests cover help output, version output, short/long flags, invalid arguments, and profile flag acceptance.",
+        "Scope updated: app_tests.rs changed to cli_tests.rs which specifically tests CLI argument parsing.",
+        "Phase 3 review complete: CLI args implemented with --profile/-p, --config-path, --log-dir, --no-mouse, --version",
+        "Configuration precedence documented: CLI > env vars > profile config > defaults",
+        "10 CLI tests passing including snapshot test for help output",
+        "Documentation updated in docs/usage.md with TUI Options section",
+        "make ci passes cleanly"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T22:07:52.774314000Z",
+      "completed_at": "2026-01-27T22:07:52.774314000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

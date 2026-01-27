@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0123",
-      "status": "todo",
-      "title": "Add a real splunk-tui --help CLI (config overrides, log dir, mouse toggle)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "cli"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "docs/usage.md",
-        "README.md",
-        "make test -p splunk-tui"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs has no argument parsing and provides no --help surface, despite being a user-facing executable.",
-        "TUI currently relies on environment variables (SPLUNK_PROFILE, SPLUNK_CONFIG_PATH) for configuration, which is discoverability-hostile for new users.",
-        "The repo has a good precedent for executable help text: crates/tui/src/bin/generate_tui_docs.rs uses clap with examples."
-      ],
-      "plan": [
-        "Add clap-based arg parsing to splunk-tui (at least: --profile, --config-path, --log-dir, --no-mouse, --version).",
-        "Define precedence: CLI args > env vars > profile config > defaults, and document it.",
-        "Add examples to --help (common admin workflows).",
-        "Add tests that snapshot/validate --help output and basic arg precedence behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0127",
       "status": "todo",
       "title": "Add safe default Search time range + max results in TUI (avoid unbounded searches)",
