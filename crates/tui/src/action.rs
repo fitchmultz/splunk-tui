@@ -17,6 +17,7 @@ use splunk_client::models::{
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::ui::ToastLevel;
 
@@ -236,6 +237,40 @@ pub enum Action {
     ShowErrorDetails(crate::error_details::ErrorDetails),
     /// Clear current error details (when popup is dismissed)
     ClearErrorDetails,
+}
+
+/// Creates a progress callback that bridges the client's synchronous `FnMut(f64)`
+/// to the TUI's async `UnboundedSender<Action>` channel.
+///
+/// This allows the client's `search_with_progress` method to send progress updates
+/// to the TUI event loop without blocking. Progress values are clamped to [0.0, 1.0]
+/// and sent as `Action::Progress` messages.
+///
+/// # Arguments
+///
+/// * `tx` - The action sender channel to send progress updates to
+///
+/// # Returns
+///
+/// A closure that can be passed to `client.search_with_progress()` as the progress callback.
+///
+/// # Example
+///
+/// ```ignore
+/// let progress_tx = tx.clone();
+/// let mut progress_callback = progress_callback_to_action_sender(progress_tx);
+///
+/// let (results, sid, total) = client
+///     .search_with_progress(query, true, earliest, latest, max_results, Some(&mut progress_callback))
+///     .await?;
+/// ```
+pub fn progress_callback_to_action_sender(tx: UnboundedSender<Action>) -> impl FnMut(f64) + Send {
+    move |progress: f64| {
+        // Clamp progress to valid range [0.0, 1.0]
+        let clamped = progress.clamp(0.0, 1.0);
+        // Send progress as f32 (TUI uses f32 for Progress action)
+        let _ = tx.send(Action::Progress(clamped as f32));
+    }
 }
 
 #[cfg(test)]

@@ -33,14 +33,14 @@ pub async fn run(
 
     info!("Connecting to {}", client.base_url());
 
-    let results: Vec<serde_json::Value> = if wait {
+    let (results, _sid, _total) = if wait {
         let progress = crate::progress::SearchProgress::new(!quiet, "Waiting for search");
 
         let mut on_progress = |done_progress: f64| {
             progress.set_fraction(done_progress);
         };
 
-        let results: Vec<serde_json::Value> = tokio::select! {
+        let search_result = tokio::select! {
             res = client.search_with_progress(
                 &query,
                 true,
@@ -53,7 +53,7 @@ pub async fn run(
         };
 
         progress.finish();
-        results
+        search_result
     } else {
         tokio::select! {
             res = client.search_with_progress(

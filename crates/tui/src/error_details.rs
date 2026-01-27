@@ -150,6 +150,59 @@ impl ErrorDetails {
     }
 }
 
+/// Build error details with consistent search context.
+///
+/// This helper attaches common search-related context (query, operation, sid)
+/// to error details for better debugging and user feedback.
+///
+/// # Arguments
+///
+/// * `error` - The client error to build details from
+/// * `query` - The search query that was being executed
+/// * `operation` - The operation that failed (e.g., "create_search_job", "wait_for_job")
+/// * `sid` - Optional search job ID
+///
+/// # Returns
+///
+/// An `ErrorDetails` struct with the error information and context attached.
+pub fn build_search_error_details(
+    error: &splunk_client::ClientError,
+    query: String,
+    operation: String,
+    sid: Option<String>,
+) -> ErrorDetails {
+    let mut details = ErrorDetails::from_client_error(error);
+    details.add_context("query".to_string(), query);
+    details.add_context("operation".to_string(), operation);
+    if let Some(sid) = sid {
+        details.add_context("sid".to_string(), sid);
+    }
+    details
+}
+
+/// Get a user-facing error message from a client error.
+///
+/// This function maps client errors to concise, user-friendly messages
+/// suitable for toast notifications and UI display.
+///
+/// # Arguments
+///
+/// * `error` - The client error to map
+///
+/// # Returns
+///
+/// A string suitable for display to the user.
+pub fn search_error_message(error: &splunk_client::ClientError) -> String {
+    match error {
+        splunk_client::ClientError::Timeout(_) => "Search timeout".to_string(),
+        splunk_client::ClientError::AuthFailed(_) => "Authentication failed".to_string(),
+        splunk_client::ClientError::SessionExpired => "Session expired".to_string(),
+        splunk_client::ClientError::RateLimited(_) => "Rate limited".to_string(),
+        splunk_client::ClientError::ConnectionRefused(_) => "Connection refused".to_string(),
+        _ => error.to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

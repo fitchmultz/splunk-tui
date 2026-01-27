@@ -4937,6 +4937,59 @@
       "completed_at": "2026-01-27T22:32:57.845467000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0128",
+      "status": "done",
+      "title": "Use splunk-client search_with_progress in TUI (remove duplicate polling, unify timeouts)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "client",
+        "reliability",
+        "refactoring"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/action.rs",
+        "crates/client/src/client.rs",
+        "crates/client/src/endpoints/search.rs",
+        "crates/tui/tests/app_tests.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:870-889 defines custom wait_for_job() function with 500ms polling loop that sends Action::Progress via channel - no max_wait timeout, loops forever until completion.",
+        "crates/tui/src/main.rs:554-621 RunSearch action handler uses tokio::time::timeout(300s) wrapper around custom wait_for_job() instead of client's built-in timeout.",
+        "crates/client/src/client.rs:213-248 provides search_with_progress() with configurable progress callback and built-in 300s timeout via wait_for_job_with_progress.",
+        "crates/client/src/endpoints/search.rs:207-240 implements wait_for_job_with_progress() with proper timeout handling, progress callbacks, and retry logic - already used by CLI.",
+        "CLI already uses search_with_progress in crates/cli/src/commands/search.rs with progress bar callback - TUI lacks parity.",
+        "Architecture mismatch: client uses FnMut(f64) callback, TUI uses tokio::sync::mpsc::UnboundedSender<Action> channel - requires bridging strategy."
+      ],
+      "plan": [
+        "Design callback-to-channel bridge to adapt client's FnMut(f64) progress callback to TUI's Action::Progress channel messages.",
+        "Remove duplicate wait_for_job() function from crates/tui/src/main.rs (lines 870-889).",
+        "Refactor RunSearch action handler to use client.search_with_progress() instead of manual create_job + wait_for_job + get_results sequence.",
+        "Ensure timeout error handling maps ClientError::Timeout to appropriate TUI error display with ErrorDetails context.",
+        "Add/update tests in app_tests.rs covering progress updates, timeout paths, and error handling.",
+        "Verify snapshot tests in snapshot_tests.rs still pass after search execution changes."
+      ],
+      "notes": [
+        "Key challenge: client's progress callback is synchronous FnMut(f64) but TUI uses async channel - may need std::sync::mpsc or crossbeam channel to bridge.",
+        "Consider whether to keep tokio::time::timeout wrapper or rely solely on client's built-in timeout.",
+        "Related to RQ-0104 (Error Details UX) - ensure error handling changes are coordinated.",
+        "Implemented callback-to-channel bridge for progress updates",
+        "Removed duplicate wait_for_job() function from TUI",
+        "Refactored RunSearch to use client.search_with_progress() with unified timeout",
+        "Added error context helpers (build_search_error_details, search_error_message)",
+        "Added 11 tests covering progress callback, error messages, and error details",
+        "All 130 app tests, 28 snapshot tests, and make ci pass"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T22:56:57.661218000Z",
+      "completed_at": "2026-01-27T22:56:57.661218000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -26,8 +26,9 @@ use crossterm::{
 };
 use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
-use splunk_tui::action::Action;
+use splunk_tui::action::{Action, progress_callback_to_action_sender};
 use splunk_tui::app::App;
+use splunk_tui::error_details::{build_search_error_details, search_error_message};
 use splunk_tui::ui::ToastLevel;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -35,7 +36,7 @@ use tokio::sync::{Mutex, mpsc::unbounded_channel};
 use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use splunk_client::{SplunkClient, endpoints::CreateJobOptions, models::HealthCheckOutput};
+use splunk_client::{SplunkClient, models::HealthCheckOutput};
 use splunk_config::{
     AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager, SearchDefaults,
 };
@@ -523,100 +524,38 @@ async fn handle_side_effects(
             tokio::spawn(async move {
                 let mut c = client.lock().await;
 
-                // Create search job with defaults (already includes env var overrides from App state)
-                let options = CreateJobOptions {
-                    earliest_time: Some(search_defaults.earliest_time.clone()),
-                    latest_time: Some(search_defaults.latest_time.clone()),
-                    max_count: Some(search_defaults.max_results),
-                    ..Default::default()
-                };
-                let sid = match c.create_search_job(&query_clone, &options).await {
-                    Ok(s) => s,
-                    Err(e) => {
-                        let mut details =
-                            splunk_tui::error_details::ErrorDetails::from_client_error(&e);
-                        details.add_context("query".to_string(), query_clone);
-                        details
-                            .add_context("operation".to_string(), "create_search_job".to_string());
-                        tx_clone
-                            .send(Action::ShowErrorDetails(details.clone()))
-                            .ok();
-                        tx_clone
-                            .send(Action::SearchComplete(Err(e.to_string())))
-                            .ok();
-                        return;
-                    }
-                };
+                // Create progress callback that sends Action::Progress via channel
+                let progress_tx = tx_clone.clone();
+                let mut progress_callback = progress_callback_to_action_sender(progress_tx);
 
-                tx_clone.send(Action::Progress(0.5)).ok();
-
-                // Wait for completion (simplified - in production would poll)
-                match tokio::time::timeout(
-                    tokio::time::Duration::from_secs(300),
-                    wait_for_job(&mut c, &sid, tx_clone.clone()),
-                )
-                .await
+                // Use search_with_progress for unified timeout and progress handling
+                match c
+                    .search_with_progress(
+                        &query_clone,
+                        true, // wait for completion
+                        Some(&search_defaults.earliest_time),
+                        Some(&search_defaults.latest_time),
+                        Some(search_defaults.max_results),
+                        Some(&mut progress_callback),
+                    )
+                    .await
                 {
-                    Ok(Ok(())) => {
-                        // Get results
-                        match c.get_search_results(&sid, 1000, 0).await {
-                            Ok(results) => {
-                                tx_clone.send(Action::Progress(1.0)).ok();
-                                tx_clone
-                                    .send(Action::SearchComplete(Ok((
-                                        results.results,
-                                        sid,
-                                        results.total,
-                                    ))))
-                                    .ok();
-                            }
-                            Err(e) => {
-                                let mut details =
-                                    splunk_tui::error_details::ErrorDetails::from_client_error(&e);
-                                details.add_context("query".to_string(), query_clone);
-                                details.add_context("sid".to_string(), sid.clone());
-                                details.add_context(
-                                    "operation".to_string(),
-                                    "get_search_results".to_string(),
-                                );
-                                tx_clone
-                                    .send(Action::ShowErrorDetails(details.clone()))
-                                    .ok();
-                                tx_clone
-                                    .send(Action::SearchComplete(Err(e.to_string())))
-                                    .ok();
-                            }
-                        }
-                    }
-                    Ok(Err(e)) => {
-                        let mut details =
-                            splunk_tui::error_details::ErrorDetails::from_error_string(
-                                &e.to_string(),
-                            );
-                        details.add_context("query".to_string(), query_clone);
-                        details.add_context("sid".to_string(), sid.clone());
-                        details.add_context("operation".to_string(), "wait_for_job".to_string());
+                    Ok((results, sid, total)) => {
+                        tx_clone.send(Action::Progress(1.0)).ok();
                         tx_clone
-                            .send(Action::ShowErrorDetails(details.clone()))
-                            .ok();
-                        tx_clone
-                            .send(Action::SearchComplete(Err(e.to_string())))
+                            .send(Action::SearchComplete(Ok((results, sid, total))))
                             .ok();
                     }
-                    Err(_) => {
-                        let mut details =
-                            splunk_tui::error_details::ErrorDetails::from_error_string(
-                                "Search timeout",
-                            );
-                        details.add_context("query".to_string(), query_clone);
-                        details.add_context("sid".to_string(), sid.clone());
-                        details.add_context("operation".to_string(), "wait_for_job".to_string());
-                        tx_clone
-                            .send(Action::ShowErrorDetails(details.clone()))
-                            .ok();
-                        tx_clone
-                            .send(Action::SearchComplete(Err("Search timeout".to_string())))
-                            .ok();
+                    Err(e) => {
+                        let details = build_search_error_details(
+                            &e,
+                            query_clone,
+                            "search_with_progress".to_string(),
+                            None, // SID not available on failure
+                        );
+                        let error_msg = search_error_message(&e);
+                        tx_clone.send(Action::ShowErrorDetails(details)).ok();
+                        tx_clone.send(Action::SearchComplete(Err(error_msg))).ok();
                     }
                 }
             });
@@ -864,26 +803,4 @@ async fn save_and_quit(app: &App, config_manager: &Arc<Mutex<ConfigManager>>) ->
     let mut cm = config_manager.lock().await;
     cm.save(&state)?;
     Ok(())
-}
-
-/// Wait for a job to complete by polling its status.
-async fn wait_for_job(
-    client: &mut SplunkClient,
-    sid: &str,
-    tx: tokio::sync::mpsc::UnboundedSender<Action>,
-) -> Result<()> {
-    use tokio::time::{Duration, sleep};
-
-    loop {
-        sleep(Duration::from_millis(500)).await;
-
-        let status = client.get_job_status(sid).await?;
-
-        // Update progress
-        tx.send(Action::Progress(status.done_progress as f32)).ok();
-
-        if status.is_done {
-            return Ok(());
-        }
-    }
 }

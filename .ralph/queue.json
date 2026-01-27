@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0128",
-      "status": "todo",
-      "title": "Use splunk-client search_with_progress in TUI (remove duplicate polling, unify timeouts)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "client",
-        "reliability"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/client/src/client.rs",
-        "crates/client/src/endpoints/search.rs",
-        "crates/tui/tests/"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs implements its own wait_for_job loop (500ms polling) and timeout handling for searches, separate from the client library.",
-        "crates/client/src/client.rs already provides search_with_progress(...) and endpoints/search.rs provides wait_for_job_with_progress, which can centralize polling behavior.",
-        "Duplicated polling logic increases the chance of inconsistent timeouts, progress semantics, and retry behavior between CLI and TUI."
-      ],
-      "plan": [
-        "Refactor TUI search execution to call SplunkClient::search_with_progress and translate progress callbacks into Action::Progress updates.",
-        "Ensure timeout semantics are consistent and configurable (and surfaced via config/CLI where appropriate).",
-        "Unify error handling so ErrorDetails is populated consistently (query, sid, operation) without auto-opening unless intended (see RQ-0104).",
-        "Add tests covering progress updates and timeout/error paths (using fixtures or local server harness)."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0134",
       "status": "todo",
       "title": "Show connection context in TUI (profile/base_url/auth + server version)",

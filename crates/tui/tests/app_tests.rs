@@ -2943,3 +2943,227 @@ fn test_pagination_no_trigger_while_loading() {
         "Should NOT trigger LoadMoreSearchResults while loading"
     );
 }
+
+// ============================================================================
+// Progress Callback Bridge Tests (RQ-0128)
+// ============================================================================
+
+#[test]
+fn test_progress_callback_bridge_sends_action() {
+    use splunk_tui::action::progress_callback_to_action_sender;
+    use tokio::sync::mpsc::unbounded_channel;
+
+    let (tx, mut rx) = unbounded_channel::<Action>();
+    let mut callback = progress_callback_to_action_sender(tx);
+
+    // Call the callback with a progress value
+    callback(0.5);
+
+    // Verify the action was sent
+    let action = rx.try_recv().expect("Should receive action");
+    assert!(
+        matches!(action, Action::Progress(0.5)),
+        "Should receive Progress action with value 0.5"
+    );
+}
+
+#[test]
+fn test_progress_callback_bridge_clamps_to_valid_range() {
+    use splunk_tui::action::progress_callback_to_action_sender;
+    use tokio::sync::mpsc::unbounded_channel;
+
+    let (tx, mut rx) = unbounded_channel::<Action>();
+    let mut callback = progress_callback_to_action_sender(tx);
+
+    // Test values outside [0.0, 1.0] range
+    callback(-0.5);
+    let action = rx.try_recv().expect("Should receive action");
+    assert!(
+        matches!(action, Action::Progress(0.0)),
+        "Negative progress should be clamped to 0.0"
+    );
+
+    callback(1.5);
+    let action = rx.try_recv().expect("Should receive action");
+    assert!(
+        matches!(action, Action::Progress(1.0)),
+        "Progress > 1.0 should be clamped to 1.0"
+    );
+}
+
+#[test]
+fn test_progress_callback_bridge_preserves_valid_values() {
+    use splunk_tui::action::progress_callback_to_action_sender;
+    use tokio::sync::mpsc::unbounded_channel;
+
+    let (tx, mut rx) = unbounded_channel::<Action>();
+    let mut callback = progress_callback_to_action_sender(tx);
+
+    // Test boundary values
+    callback(0.0);
+    let action = rx.try_recv().expect("Should receive action");
+    assert!(
+        matches!(action, Action::Progress(0.0)),
+        "Progress 0.0 should be preserved"
+    );
+
+    callback(1.0);
+    let action = rx.try_recv().expect("Should receive action");
+    assert!(
+        matches!(action, Action::Progress(1.0)),
+        "Progress 1.0 should be preserved"
+    );
+
+    callback(0.75);
+    let action = rx.try_recv().expect("Should receive action");
+    assert!(
+        matches!(action, Action::Progress(0.75)),
+        "Progress 0.75 should be preserved"
+    );
+}
+
+// ============================================================================
+// Error Context Helper Tests (RQ-0128)
+// ============================================================================
+
+#[test]
+fn test_search_error_message_timeout() {
+    use splunk_tui::error_details::search_error_message;
+
+    let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(300));
+    let message = search_error_message(&error);
+    assert_eq!(
+        message, "Search timeout",
+        "Timeout should map to 'Search timeout'"
+    );
+}
+
+#[test]
+fn test_search_error_message_auth_failed() {
+    use splunk_tui::error_details::search_error_message;
+
+    let error = splunk_client::ClientError::AuthFailed("Invalid credentials".to_string());
+    let message = search_error_message(&error);
+    assert_eq!(
+        message, "Authentication failed",
+        "AuthFailed should map to 'Authentication failed'"
+    );
+}
+
+#[test]
+fn test_search_error_message_session_expired() {
+    use splunk_tui::error_details::search_error_message;
+
+    let error = splunk_client::ClientError::SessionExpired;
+    let message = search_error_message(&error);
+    assert_eq!(
+        message, "Session expired",
+        "SessionExpired should map to 'Session expired'"
+    );
+}
+
+#[test]
+fn test_search_error_message_rate_limited() {
+    use splunk_tui::error_details::search_error_message;
+
+    let error = splunk_client::ClientError::RateLimited(Some(std::time::Duration::from_secs(60)));
+    let message = search_error_message(&error);
+    assert_eq!(
+        message, "Rate limited",
+        "RateLimited should map to 'Rate limited'"
+    );
+}
+
+#[test]
+fn test_search_error_message_connection_refused() {
+    use splunk_tui::error_details::search_error_message;
+
+    let error = splunk_client::ClientError::ConnectionRefused("localhost:8089".to_string());
+    let message = search_error_message(&error);
+    assert_eq!(
+        message, "Connection refused",
+        "ConnectionRefused should map to 'Connection refused'"
+    );
+}
+
+#[test]
+fn test_build_search_error_details_includes_all_context() {
+    use splunk_tui::error_details::build_search_error_details;
+
+    let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(300));
+    let details = build_search_error_details(
+        &error,
+        "index=_internal | head 10".to_string(),
+        "search_with_progress".to_string(),
+        Some("test_sid_123".to_string()),
+    );
+
+    assert_eq!(
+        details.context.get("query"),
+        Some(&"index=_internal | head 10".to_string()),
+        "Should include query in context"
+    );
+    assert_eq!(
+        details.context.get("operation"),
+        Some(&"search_with_progress".to_string()),
+        "Should include operation in context"
+    );
+    assert_eq!(
+        details.context.get("sid"),
+        Some(&"test_sid_123".to_string()),
+        "Should include SID in context"
+    );
+}
+
+#[test]
+fn test_build_search_error_details_with_rate_limited() {
+    use splunk_tui::error_details::build_search_error_details;
+
+    // RateLimited takes Option<Duration>
+    let error = splunk_client::ClientError::RateLimited(Some(std::time::Duration::from_secs(60)));
+    let details = build_search_error_details(
+        &error,
+        "search *".to_string(),
+        "search_with_progress".to_string(),
+        Some("test_sid_456".to_string()),
+    );
+
+    assert_eq!(
+        details.context.get("query"),
+        Some(&"search *".to_string()),
+        "Should include query in context"
+    );
+    assert_eq!(
+        details.context.get("operation"),
+        Some(&"search_with_progress".to_string()),
+        "Should include operation in context"
+    );
+}
+
+#[test]
+fn test_build_search_error_details_without_sid() {
+    use splunk_tui::error_details::build_search_error_details;
+
+    let error = splunk_client::ClientError::AuthFailed("Invalid token".to_string());
+    let details = build_search_error_details(
+        &error,
+        "search *".to_string(),
+        "create_search_job".to_string(),
+        None,
+    );
+
+    assert_eq!(
+        details.context.get("query"),
+        Some(&"search *".to_string()),
+        "Should include query in context"
+    );
+    assert_eq!(
+        details.context.get("operation"),
+        Some(&"create_search_job".to_string()),
+        "Should include operation in context"
+    );
+    assert!(
+        !details.context.contains_key("sid"),
+        "Should not include SID when None"
+    );
+}

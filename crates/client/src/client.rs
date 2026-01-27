@@ -210,6 +210,11 @@ impl SplunkClient {
     ///
     /// This method is designed to allow the CLI to display progress bars without
     /// contaminating stdout, while keeping polling logic in the client library.
+    ///
+    /// Returns a tuple of (results, sid, total_count) where:
+    /// - `results`: The search results as JSON values
+    /// - `sid`: The search job ID for pagination or further operations
+    /// - `total_count`: Optional total count of results (may be None if not available)
     pub async fn search_with_progress(
         &mut self,
         query: &str,
@@ -218,7 +223,7 @@ impl SplunkClient {
         latest_time: Option<&str>,
         max_results: Option<u64>,
         progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
-    ) -> Result<Vec<serde_json::Value>> {
+    ) -> Result<(Vec<serde_json::Value>, String, Option<u64>)> {
         let options = endpoints::search::CreateJobOptions {
             // Always create the job in non-blocking mode so callers can poll and show progress.
             wait: Some(false),
@@ -249,7 +254,7 @@ impl SplunkClient {
             .get_search_results(&sid, max_results.unwrap_or(1000), 0)
             .await?;
 
-        Ok(results.results)
+        Ok((results.results, sid, results.total))
     }
 
     /// Create a search job without waiting for completion.
