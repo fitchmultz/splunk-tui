@@ -43,7 +43,7 @@ FORBIDDEN TRACKED PATHS:
   - .env
   - .env.test
   - docs/splunk-test-environment.md
-  - rust_out (and anything under rust_out/)
+  - rust_out (and anything under rust_out/**)
 
 NOTES:
   - This checks only what is TRACKED (git index), not untracked local files.

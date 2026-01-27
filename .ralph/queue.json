@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0118",
-      "status": "todo",
-      "title": "Remove tracked binary artifact rust_out and prevent future artifact commits",
-      "priority": "critical",
-      "tags": [
-        "repo-hygiene",
-        "security",
-        "workflow"
-      ],
-      "scope": [
-        "rust_out",
-        ".gitignore",
-        "Makefile",
-        "make ci"
-      ],
-      "evidence": [
-        "splunk-tui/rust_out is a tracked binary file (shows as [Binary file]).",
-        "Binary artifacts in the repo root increase risk (accidental distribution, AV flags) and create churn for contributors."
-      ],
-      "plan": [
-        "Identify what generates rust_out (search build scripts / tooling).",
-        "Remove rust_out from git history on main branch (git rm) and add an ignore rule if it is regeneratable.",
-        "Add a lightweight make ci guard that fails if tracked binary artifacts appear outside target/ and approved paths.",
-        "Document the policy (where artifacts may live) in README or docs/dev section."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0122",
       "status": "todo",
       "title": "Make tests hermetic: prevent accidental dotenv loading during test runs",

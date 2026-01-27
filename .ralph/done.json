@@ -4293,6 +4293,49 @@
       "completed_at": "2026-01-27T17:09:36.577200000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0118",
+      "status": "done",
+      "title": "Remove tracked binary artifact rust_out and prevent future artifact commits",
+      "priority": "critical",
+      "tags": [
+        "repo-hygiene",
+        "security",
+        "workflow"
+      ],
+      "scope": [
+        "rust_out",
+        ".gitignore",
+        "scripts/check-secrets.sh",
+        "Makefile"
+      ],
+      "evidence": [
+        "The file 'rust_out' is currently tracked by git and is an executable binary artifact (confirmed by 'git ls-files' and 'ls -F').",
+        "The current '.gitignore' entry '/rust_out/' targets a directory and fails to ignore the file 'rust_out'.",
+        "The guard script 'scripts/check-secrets.sh' exists and is wired into 'make ci', but it currently fails because 'rust_out' remains tracked.",
+        "Binary artifacts in the repo root increase risk of accidental distribution and create churn for contributors."
+      ],
+      "plan": [
+        "Correct the '.gitignore' entry from '/rust_out/' to '/rust_out' to properly ignore the binary file.",
+        "Untrack the binary file using 'git rm --cached rust_out'.",
+        "Verify that 'make lint-secrets' (and thus 'make ci') passes after the file is untracked.",
+        "Document the policy regarding binary artifacts in the repository (e.g., in docs/usage.md or a new security section)."
+      ],
+      "notes": [
+        "Previous task RQ-0119 implemented the check-secrets.sh script but failed to correctly untrack the binary and used an incorrect gitignore pattern.",
+        "Corrected .gitignore entry from /rust_out/ to /rust_out to properly ignore the binary file.",
+        "Untracked rust_out from git index while preserving the local file.",
+        "Updated scripts/check-secrets.sh help text and logic to include rust_out.",
+        "Updated docs/usage.md Forbidden Tracked Paths and remediation steps for consistency.",
+        "Verified completion with make lint-secrets and make ci."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T17:23:25.826620000Z",
+      "completed_at": "2026-01-27T17:23:25.826620000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

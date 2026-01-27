@@ -77,8 +77,6 @@ Long-running commands can be interrupted with `Ctrl+C`:
 - The CLI exits with standard Unix SIGINT exit code **130**
 - Common cancellable operations: `search --wait`, `logs --tail`, `list-all`
 
----
-
 ## Security & Secret Management
 
 Splunk TUI includes a **secret-commit guard** to prevent accidental leaks of credentials or private environment details.
@@ -91,7 +89,7 @@ The guard ensures that sensitive files are **not tracked** in your git repositor
 - `.env`
 - `.env.test`
 - `docs/splunk-test-environment.md`
-- `rust_out/`
+- `rust_out`
 
 #### Running the Guard
 You can run the guard manually:
