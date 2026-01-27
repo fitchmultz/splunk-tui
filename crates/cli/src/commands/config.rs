@@ -1,4 +1,17 @@
 //! Configuration management commands.
+//!
+//! Responsibilities:
+//! - Provide CLI commands for listing, showing, setting, and deleting profiles.
+//! - Facilitate manual configuration of Splunk connection details.
+//! - Handle secure credential storage via keyring integration.
+//!
+//! Does NOT handle:
+//! - Automated configuration loading for other commands (see `splunk_config`).
+//! - TUI configuration persistence (shared via `splunk_config::persistence`).
+//!
+//! Invariants / Assumptions:
+//! - Commands assume a valid terminal for user interaction (especially for password prompts).
+//! - Keyring operations require a supported system keyring service.
 
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 use anyhow::{Context, Result};

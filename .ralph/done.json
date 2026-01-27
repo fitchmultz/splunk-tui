@@ -4383,6 +4383,53 @@
       "completed_at": "2026-01-27T17:56:41.960643000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0120",
+      "status": "done",
+      "title": "Fix config file path mismatch (code vs docs) and add a safe migration",
+      "priority": "high",
+      "tags": [
+        "config",
+        "docs",
+        "ux"
+      ],
+      "scope": [
+        "crates/config/src/persistence.rs",
+        "crates/config/src/loader.rs",
+        "docs/usage.md",
+        "docs/user-guide.md",
+        "crates/cli/src/commands/config.rs",
+        "crates/tui/src/main.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/config/src/persistence.rs: default_config_path() uses ProjectDirs::from(\"com\", \"splunk-tui\", \"splunk-tui\"), resulting in redundant paths like ~/.config/splunk-tui/splunk-tui/config.json on Linux.",
+        "docs/usage.md and docs/user-guide.md both document ~/.config/splunk-tui/config.json as the standard path, which creates a mismatch with the current implementation.",
+        "ConfigManager::new() is used as the default entry point in both splunk-cli and splunk-tui, meaning both frontends share this incorrect default.",
+        "crates/config/src/loader.rs also relies on default_config_path() when no path is provided via environment or builder."
+      ],
+      "plan": [
+        "Standardize default_config_path() to use ProjectDirs::from(\"\", \"\", \"splunk-tui\") or similar to achieve the documented ~/.config/splunk-tui/config.json path.",
+        "Implement a migration check in ConfigManager::new(): if documented path is missing but legacy path exists, migrate (copy/rename) and log a warning.",
+        "Update tests in crates/config/src/persistence.rs to use a mockable directory structure to verify both new path selection and migration logic.",
+        "Update docs/usage.md and docs/user-guide.md to confirm the finalized path and mention the automatic migration."
+      ],
+      "notes": [
+        "The current ProjectDirs usage includes a 'qualifier' and 'organization' which is common in Java-style apps but redundant for this TUI.",
+        "Migration must be atomic to prevent data loss if interrupted.",
+        "Standardized configuration path to documented ~/.config/splunk-tui/config.json (removing redundant splunk-tui/splunk-tui segment)",
+        "Implemented atomic best-effort migration from legacy paths to standard paths in both CLI and TUI",
+        "Updated docs/usage.md and docs/user-guide.md to reflect the new path and migration behavior",
+        "Ensured all code files have standard module documentation as per AGENTS.md requirements",
+        "Resolved parallel test interference in tracing subscriber tests with a static mutex"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T18:23:03.792733000Z",
+      "completed_at": "2026-01-27T18:23:03.792733000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

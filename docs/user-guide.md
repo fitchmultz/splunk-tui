@@ -133,6 +133,9 @@ splunk-cli cluster --detailed
 
 If you manage multiple Splunk environments, use profiles in `~/.config/splunk-tui/config.json`:
 
+> **Note:** Older versions stored the config at `~/.config/splunk-tui/splunk-tui/config.json`.
+> It will be automatically migrated to the new location on first run.
+
 ```json
 {
   "profiles": {

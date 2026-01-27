@@ -19,7 +19,10 @@ use std::path::PathBuf;
 use std::time::Duration;
 use thiserror::Error;
 
-use crate::persistence::{ConfigFileError, default_config_path, read_config_file};
+use crate::persistence::{
+    ConfigFileError, default_config_path, legacy_config_path, migrate_config_file_if_needed,
+    read_config_file,
+};
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig};
 
 /// Errors that can occur during configuration loading.
@@ -142,6 +145,13 @@ impl ConfigLoader {
         } else {
             default_config_path().map_err(|e| ConfigError::ConfigDirUnavailable(e.to_string()))?
         };
+
+        // If we're using the default config path, attempt a best-effort migration from the
+        // legacy path before checking existence. This prevents TUI startup failures when
+        // users rely on profiles stored at the legacy location.
+        if let (None, Ok(legacy_path)) = (&self.config_path, legacy_config_path()) {
+            migrate_config_file_if_needed(&legacy_path, &config_path);
+        }
 
         if !config_path.exists() {
             self.profile_missing = Some(profile_name);

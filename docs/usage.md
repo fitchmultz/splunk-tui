@@ -12,6 +12,9 @@ The configuration file is stored in a platform-specific directory:
 - Linux/macOS: `~/.config/splunk-tui/config.json`
 - Windows: `%AppData%\splunk-tui\config.json`
 
+> **Note:** Older versions stored the config at `~/.config/splunk-tui/splunk-tui/config.json`.
+> On first run, `splunk-tui` / `splunk-cli` will automatically migrate it to the new location.
+
 The file uses JSON format and can contain multiple named profiles:
 
 ```json

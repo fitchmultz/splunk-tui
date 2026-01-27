@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0120",
-      "status": "todo",
-      "title": "Fix config file path mismatch (code vs docs) and add a safe migration",
-      "priority": "high",
-      "tags": [
-        "config",
-        "docs",
-        "ux"
-      ],
-      "scope": [
-        "crates/config/src/persistence.rs",
-        "docs/usage.md",
-        "docs/user-guide.md",
-        "crates/cli/src/commands/config.rs",
-        "crates/tui/src/main.rs",
-        "crates/config/tests/ (if added)",
-        "make test"
-      ],
-      "evidence": [
-        "crates/config/src/persistence.rs default_config_path() uses directories::ProjectDirs::from(\"com\", \"splunk-tui\", \"splunk-tui\"), which typically yields a config directory with a duplicated component (…/splunk-tui/splunk-tui/config.json).",
-        "docs/usage.md documents the config file path as ~/.config/splunk-tui/config.json, which likely does not match the current code path.",
-        "crates/cli/src/commands/config.rs and crates/tui/src/main.rs rely on ConfigManager::new() defaults, so this mismatch affects both CLI and TUI users."
-      ],
-      "plan": [
-        "Decide and document the canonical config path (recommend: avoid duplicated org/app directory names).",
-        "Implement a migration strategy: if legacy path exists and new path does not, copy/rename atomically.",
-        "Add tests for default path selection and migration behavior across platforms (use temp dirs and path injection).",
-        "Update docs/usage.md and docs/user-guide.md to reflect the canonical path and migration notes."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0121",
       "status": "todo",
       "title": "Align env var parsing with docs: treat empty values as unset for all SPLUNK_* vars",
