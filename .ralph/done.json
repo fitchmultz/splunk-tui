@@ -4477,6 +4477,51 @@
       "completed_at": "2026-01-27T18:52:49.035481000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0124",
+      "status": "done",
+      "title": "Add splunk-cli global --config-path option and wire it through consistently",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "config",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/config.rs",
+        "docs/usage.md",
+        "crates/cli/tests/config_tests.rs",
+        "make test -p splunk-cli"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs: Missing global --config-path argument; currently relies solely on SPLUNK_CONFIG_PATH env var for custom config locations.",
+        "crates/cli/src/commands/config.rs: Directly reads SPLUNK_CONFIG_PATH env var in its run() function, bypassing the standard ConfigLoader hierarchy used by other commands.",
+        "docs/usage.md: Documents the SPLUNK_CONFIG_PATH env var but lacks mention of a corresponding CLI flag, leading to poor discoverability."
+      ],
+      "plan": [
+        "Add config_path: Option<PathBuf> to Cli struct in crates/cli/src/main.rs with arg(long, global = true, env = \"SPLUNK_CONFIG_PATH\").",
+        "Update crates/cli/src/main.rs to pass the resolved config_path to ConfigLoader and commands::config::run.",
+        "Update crates/cli/src/commands/config.rs's run function to accept an optional config_path and use it when initializing ConfigManager.",
+        "Add integration tests in crates/cli/tests/config_tests.rs verifying that --config-path works and takes precedence over SPLUNK_CONFIG_PATH env var.",
+        "Update docs/usage.md to document the new --config-path flag.",
+        "Ensure no secrets are printed when showing config paths or errors."
+      ],
+      "notes": [
+        "This change improves CLI/TUI parity and configuration discoverability.",
+        "Alignment with RQ-0123 (TUI help) is recommended to ensure consistent flag naming across the workspace.",
+        "Added --config-path global option to splunk-cli",
+        "Wired path consistently through ConfigLoader and ConfigManager",
+        "Added integration tests for flag precedence and blank value handling",
+        "Updated docs/usage.md and verified with make ci"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T19:07:13.400914000Z",
+      "completed_at": "2026-01-27T19:07:13.400914000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

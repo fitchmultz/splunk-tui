@@ -20,6 +20,7 @@ mod progress;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::{Path, PathBuf};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use splunk_config::ConfigLoader;
@@ -71,7 +72,13 @@ struct Cli {
 
     /// Output file path (saves results to file instead of stdout)
     #[arg(long, global = true, value_name = "FILE")]
-    output_file: Option<std::path::PathBuf>,
+    output_file: Option<PathBuf>,
+
+    /// Path to a custom configuration file (overrides default location).
+    ///
+    /// Can also be set via SPLUNK_CONFIG_PATH environment variable.
+    #[arg(long, global = true, env = "SPLUNK_CONFIG_PATH", value_name = "FILE")]
+    config_path: Option<PathBuf>,
 
     /// Suppress all progress output (spinners / progress bars).
     ///
@@ -228,12 +235,35 @@ enum Commands {
     },
 }
 
+/// Returns true if the path is empty or contains only whitespace.
+fn path_is_blank(path: &Path) -> bool {
+    path.to_string_lossy().trim().is_empty()
+}
+
+/// Normalizes the config path, ignoring empty or whitespace-only values.
+/// This prevents empty environment variables or blank CLI flags from clobbering other sources.
+/// If the resulting path is blank, it falls back to the environment variable (and normalizes that too).
+fn resolve_config_path(path: Option<PathBuf>) -> Option<PathBuf> {
+    let path = path.filter(|p| !path_is_blank(p));
+    if path.is_none() {
+        ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH")
+            .map(PathBuf::from)
+            .filter(|p| !path_is_blank(p))
+    } else {
+        path
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load .env file BEFORE CLI parsing so clap env defaults can read .env values
     ConfigLoader::new().load_dotenv()?;
 
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
+
+    // Resolve config path immediately after parsing to ensure blank values are ignored.
+    // This handles both blank env vars and blank CLI flags consistently.
+    cli.config_path = resolve_config_path(cli.config_path.take());
 
     // Initialize logging
     tracing_subscriber::registry()
@@ -266,6 +296,11 @@ async fn main() -> Result<()> {
             },
         }
     } else {
+        // Apply custom config path if provided (highest priority for loader setup)
+        if let Some(ref path) = cli.config_path {
+            loader = loader.with_config_path(path.clone());
+        }
+
         // Load from profile if specified (lowest priority)
         if let Some(ref profile_name) = cli.profile {
             loader = loader
@@ -332,7 +367,7 @@ async fn run_command(
 ) -> Result<()> {
     match cli.command {
         Commands::Config { command } => {
-            commands::config::run(command, cli.output_file.clone())?;
+            commands::config::run(command, cli.output_file.clone(), cli.config_path.clone())?;
         }
         Commands::Search {
             query,

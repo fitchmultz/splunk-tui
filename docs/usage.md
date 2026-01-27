@@ -151,6 +151,7 @@ The CLI tool is named `splunk-cli`.
 - `--timeout <SECONDS>`: Connection timeout in seconds
 - `--max-retries <NUMBER>`: Maximum number of retries for failed requests
 - `--skip-verify`: Skip TLS certificate verification
+- `--config-path <FILE>`: Path to a custom configuration file (overrides default location)
 - `--profile <NAME>`: Config profile name to load
 - `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
   - **Note**: For CSV and XML formats, nested JSON structures are automatically handled:

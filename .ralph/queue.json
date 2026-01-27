@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0124",
-      "status": "todo",
-      "title": "Add splunk-cli global --config-path option and wire it through consistently",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "config",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/config.rs",
-        "docs/usage.md",
-        "make test -p splunk-cli"
-      ],
-      "evidence": [
-        "docs/usage.md documents SPLUNK_CONFIG_PATH env var but there is no equivalent CLI flag in crates/cli/src/main.rs.",
-        "crates/cli/src/commands/config.rs reads SPLUNK_CONFIG_PATH directly when constructing ConfigManager, while other commands rely on ConfigLoader/profile + env overrides, creating two different configuration entry points.",
-        "TUI also supports SPLUNK_CONFIG_PATH via env (crates/tui/src/main.rs), so CLI parity would reduce confusion."
-      ],
-      "plan": [
-        "Add a global CLI arg (e.g., --config-path <FILE>) and ensure it is documented in --help and docs/usage.md.",
-        "Use the flag to configure both ConfigLoader profile reads and ConfigManager path usage for config subcommands.",
-        "Add/extend integration tests to validate CLI flag precedence vs env var and default path.",
-        "Ensure no secrets are printed when showing config paths/errors."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0125",
       "status": "todo",
       "title": "Fix splunk-cli config subcommand output flag conflicts and unify formatting semantics",

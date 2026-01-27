@@ -19,6 +19,7 @@ use clap::Subcommand;
 use serde::Serialize;
 use splunk_config::persistence::ConfigManager;
 use splunk_config::types::{ProfileConfig, SecureValue};
+use std::path::PathBuf;
 
 #[derive(Subcommand)]
 pub enum ConfigCommand {
@@ -94,11 +95,13 @@ pub enum ConfigCommand {
     },
 }
 
-pub fn run(command: ConfigCommand, output_file: Option<std::path::PathBuf>) -> Result<()> {
-    let mut manager = if let Some(config_path) =
-        splunk_config::ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH")
-    {
-        ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
+pub fn run(
+    command: ConfigCommand,
+    output_file: Option<PathBuf>,
+    config_path: Option<PathBuf>,
+) -> Result<()> {
+    let mut manager = if let Some(path) = config_path {
+        ConfigManager::new_with_path(path)?
     } else {
         ConfigManager::new()?
     };
@@ -154,7 +157,7 @@ pub fn run(command: ConfigCommand, output_file: Option<std::path::PathBuf>) -> R
 fn run_list(
     manager: &ConfigManager,
     output_format: &str,
-    output_file: Option<std::path::PathBuf>,
+    output_file: Option<PathBuf>,
 ) -> Result<()> {
     let profiles = manager.list_profiles();
 
@@ -381,7 +384,7 @@ fn run_show(
     manager: &ConfigManager,
     profile_name: &str,
     output_format: &str,
-    output_file: Option<std::path::PathBuf>,
+    output_file: Option<PathBuf>,
 ) -> Result<()> {
     let profiles = manager.list_profiles();
 
