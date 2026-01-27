@@ -2,6 +2,12 @@
 //!
 //! This module defines the unified Action enum that replaces simple events.
 //! Actions represent both user inputs and async API operation results.
+//!
+//! # Security Note
+//!
+//! When logging Actions, use `RedactedAction(&action)` wrapper instead of
+//! `?action` Debug formatting to prevent sensitive payloads from being written
+//! to log files. See `RedactedAction` documentation for details.
 
 use crossterm::event::KeyEvent;
 use serde_json::Value;
@@ -21,6 +27,54 @@ pub enum ExportFormat {
     Json,
     /// CSV format
     Csv,
+}
+
+/// Redacted wrapper for Action that prevents sensitive payloads from being logged.
+///
+/// This wrapper implements `Debug` to replace sensitive string payloads with
+/// size indicators (e.g., `<42 chars>`) while preserving non-sensitive
+/// information for debugging purposes.
+///
+/// # Example
+/// ```ignore
+/// let action = Action::RunSearch("SELECT * FROM users WHERE password='secret'".to_string());
+/// tracing::info!("Handling action: {:?}", RedactedAction(&action));
+/// // Logs: Handling action: RunSearch(<52 chars>)
+/// ```
+pub struct RedactedAction<'a>(pub &'a Action);
+
+impl std::fmt::Debug for RedactedAction<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            Action::RunSearch(query) => {
+                write!(f, "RunSearch(<{} chars>)", query.len())
+            }
+            Action::CopyToClipboard(text) => {
+                write!(f, "CopyToClipboard(<{} chars>)", text.len())
+            }
+            Action::ExportData(data, path, format) => {
+                let data_size = data.to_string().len();
+                write!(
+                    f,
+                    "ExportData(<{} bytes>, {:?}, {:?})",
+                    data_size, path, format
+                )
+            }
+            Action::Notify(level, message) => {
+                write!(f, "Notify({:?}, <{} chars>)", level, message.len())
+            }
+            Action::CancelJob(sid) => write!(f, "CancelJob({})", sid),
+            Action::DeleteJob(sid) => write!(f, "DeleteJob({})", sid),
+            Action::CancelJobsBatch(sids) => {
+                write!(f, "CancelJobsBatch([{} job(s)])", sids.len())
+            }
+            Action::DeleteJobsBatch(sids) => {
+                write!(f, "DeleteJobsBatch([{} job(s)])", sids.len())
+            }
+            Action::SearchInput(c) => write!(f, "SearchInput({:?})", c),
+            other => write!(f, "{:?}", other),
+        }
+    }
 }
 
 /// Unified action type for async TUI event handling.
@@ -161,4 +215,144 @@ pub enum Action {
     ShowErrorDetails(crate::error_details::ErrorDetails),
     /// Clear current error details (when popup is dismissed)
     ClearErrorDetails,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn redacted_debug(action: &Action) -> String {
+        format!("{:?}", RedactedAction(action))
+    }
+
+    #[test]
+    fn test_redact_run_search() {
+        let action = Action::RunSearch("SELECT * FROM users WHERE password='secret'".to_string());
+        let output = redacted_debug(&action);
+
+        assert!(
+            !output.contains("password"),
+            "Should not contain sensitive password"
+        );
+        assert!(!output.contains("secret"), "Should not contain secret word");
+        assert!(output.contains("RunSearch"), "Should contain action name");
+        assert!(output.contains("43 chars"), "Should show size indicator");
+    }
+
+    #[test]
+    fn test_redact_copy_to_clipboard() {
+        let action =
+            Action::CopyToClipboard("{\"user\":\"alice\",\"token\":\"abc123\"}".to_string());
+        let output = redacted_debug(&action);
+
+        assert!(!output.contains("alice"), "Should not contain user name");
+        assert!(!output.contains("abc123"), "Should not contain token");
+        assert!(
+            output.contains("CopyToClipboard"),
+            "Should contain action name"
+        );
+        assert!(output.contains("33 chars"), "Should show size indicator");
+    }
+
+    #[test]
+    fn test_redact_export_data() {
+        let data = serde_json::json!({"results": [{"id": 1, "password": "secret123"}]});
+        let path = PathBuf::from("/tmp/export.json");
+        let action = Action::ExportData(data.clone(), path, ExportFormat::Json);
+        let output = redacted_debug(&action);
+
+        assert!(
+            !output.contains("secret123"),
+            "Should not contain sensitive data"
+        );
+        assert!(output.contains("ExportData"), "Should contain action name");
+        assert!(output.contains("bytes"), "Should show bytes indicator");
+    }
+
+    #[test]
+    fn test_redact_notify() {
+        let action = Action::Notify(
+            ToastLevel::Error,
+            "Failed to authenticate: invalid token xyz789".to_string(),
+        );
+        let output = redacted_debug(&action);
+
+        assert!(!output.contains("xyz789"), "Should not contain token");
+        assert!(output.contains("Notify"), "Should contain action name");
+        assert!(output.contains("Error"), "Should contain toast level");
+        assert!(output.contains("chars"), "Should show size indicator");
+    }
+
+    #[test]
+    fn test_show_cancel_job_sid() {
+        let action = Action::CancelJob("search_job_12345_789".to_string());
+        let output = redacted_debug(&action);
+
+        assert!(output.contains("CancelJob"), "Should contain action name");
+        assert!(
+            output.contains("search_job_12345_789"),
+            "Should show SID for debugging"
+        );
+    }
+
+    #[test]
+    fn test_show_delete_job_sid() {
+        let action = Action::DeleteJob("search_job_98765_4321".to_string());
+        let output = redacted_debug(&action);
+
+        assert!(output.contains("DeleteJob"), "Should contain action name");
+        assert!(
+            output.contains("search_job_98765_4321"),
+            "Should show SID for debugging"
+        );
+    }
+
+    #[test]
+    fn test_show_batch_operation_counts() {
+        let sids = vec!["job1".to_string(), "job2".to_string(), "job3".to_string()];
+        let action = Action::CancelJobsBatch(sids);
+        let output = redacted_debug(&action);
+
+        assert!(
+            output.contains("CancelJobsBatch"),
+            "Should contain action name"
+        );
+        assert!(
+            output.contains("3 job(s)"),
+            "Should show count but not SIDs"
+        );
+        assert!(!output.contains("job1"), "Should not show individual SIDs");
+    }
+
+    #[test]
+    fn test_show_search_input() {
+        let action = Action::SearchInput('s');
+        let output = redacted_debug(&action);
+
+        assert!(output.contains("SearchInput"), "Should contain action name");
+        assert!(
+            output.contains("'s'"),
+            "Should show character for input debugging"
+        );
+    }
+
+    #[test]
+    fn test_non_sensitive_action_shown_fully() {
+        let action = Action::Quit;
+        let output = redacted_debug(&action);
+
+        assert!(output.contains("Quit"), "Should show simple action fully");
+    }
+
+    #[test]
+    fn test_unicode_in_payload() {
+        let action = Action::CopyToClipboard("日本語テスト 🇯🇵".to_string());
+        let output = redacted_debug(&action);
+
+        assert!(
+            !output.contains("日本語"),
+            "Should not contain Unicode content"
+        );
+        assert!(output.contains("chars"), "Should show character count");
+    }
 }

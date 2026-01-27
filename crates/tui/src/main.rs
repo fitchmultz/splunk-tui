@@ -140,8 +140,7 @@ async fn main() -> Result<()> {
 
         tokio::select! {
             Some(action) = rx.recv() => {
-                // Log action for observability
-                tracing::info!(?action, "Handling action");
+                tracing::info!("Handling action: {:?}", splunk_tui::action::RedactedAction(&action));
 
                 // Check for quit first
                 if matches!(action, Action::Quit) {

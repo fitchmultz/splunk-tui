@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0106",
-      "status": "todo",
-      "title": "Stop logging sensitive Action payloads to disk (queries, clipboard contents)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "security",
-        "logging",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "logs/ (runtime)",
-        "make ci"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs: tracing::info!(?action, ...) logs every Action using Debug, including Action::CopyToClipboard(String) and Action::RunSearch(String).",
-        "crates/tui/src/action.rs: Action variants include string payloads that can contain user data (queries, copied JSON results).",
-        "Repo guidelines: never log secrets; current logging can capture sensitive content into logs/splunk-tui.log."
-      ],
-      "plan": [
-        "Replace the unconditional action Debug log with structured, redacted logging (e.g., log Action discriminant only, and omit/size-cap string payloads).",
-        "Add tests around the redaction helper (unit test) to ensure secrets/large payloads are not logged.",
-        "Run make ci to ensure no regressions."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0107",
       "status": "todo",
       "title": "Process only KeyEventKind::Press to avoid double-triggering input",
