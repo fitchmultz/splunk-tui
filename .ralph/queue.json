@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0130",
-      "status": "todo",
-      "title": "Refactor splunk-tui App: split crates/tui/src/app.rs into cohesive modules",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "refactor",
-        "maintainability"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/input/",
-        "crates/tui/src/ui/",
-        "crates/tui/tests/",
-        "make test -p splunk-tui"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs is ~2799 lines, mixing state, input handling, mouse routing, async-side-effect triggers, and rendering coordination.",
-        "Many planned UX and parity changes (keymap, search input modes, new screens) require touching this file, increasing merge/conflict risk.",
-        "The repo guidelines prefer cohesive modules and smaller files; this file exceeds the heuristic by an order of magnitude."
-      ],
-      "plan": [
-        "Identify cohesive boundaries (state structs, per-screen reducers, footer/header rendering, mouse hit-testing) and split into internal modules.",
-        "Keep public API minimal (prefer pub(crate) within crate) and avoid breaking external users.",
-        "Move duplicated patterns into shared helpers (e.g., selection handling, toast management).",
-        "Update and extend existing TUI tests/snapshots to cover behavior after the refactor."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0123",
       "status": "todo",
       "title": "Add a real splunk-tui --help CLI (config overrides, log dir, mouse toggle)",

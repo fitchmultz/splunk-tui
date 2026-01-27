@@ -4789,6 +4789,55 @@
       "completed_at": "2026-01-27T21:17:39.742698000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0130",
+      "status": "done",
+      "title": "Refactor splunk-tui App: split crates/tui/src/app.rs into cohesive modules",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/",
+        "crates/tui/src/input/",
+        "crates/tui/src/ui/",
+        "crates/tui/tests/",
+        "make test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs is 2799 lines (confirmed), mixing state (App struct with 70+ fields), input handling, mouse routing, async-side-effect triggers, and rendering coordination.",
+        "Many planned UX and parity changes (keymap, search input modes, new screens) require touching this file, increasing merge/conflict risk.",
+        "The repo guidelines (AGENTS.md) prefer cohesive modules and files under ~400 LOC; this file exceeds the heuristic by 7x.",
+        "Partial extraction exists: crates/tui/src/input/keymap/ contains screen-specific bindings (screens.rs, global_search.rs, jobs.rs), but app.rs still contains handle_*_input methods that should delegate to these modules.",
+        "App struct contains multiple distinct concerns: screen navigation, search state, jobs state, filtering, sorting, popups, toasts, clipboard, and mouse state - each could be a submodule."
+      ],
+      "plan": [
+        "Identify cohesive boundaries: (1) App state container, (2) Per-screen input handlers, (3) Footer/header rendering, (4) Mouse hit-testing, (5) Popup management, (6) Toast/notification system.",
+        "Create internal modules under crates/tui/src/app/ for each boundary (state.rs, input.rs, mouse.rs, popups.rs, toasts.rs).",
+        "Keep public API minimal (prefer pub(crate) within crate) and avoid breaking external users.",
+        "Move duplicated patterns into shared helpers (e.g., selection handling, toast management, export popup logic).",
+        "Update and extend existing TUI tests/snapshots to cover behavior after the refactor.",
+        "Run make ci to ensure no regressions."
+      ],
+      "notes": [
+        "Keymap extraction is partially complete in crates/tui/src/input/keymap/ - leverage this work when refactoring input handling.",
+        "clipboard.rs was already extracted to crates/tui/src/app/clipboard.rs - follow this pattern for other components.",
+        "Refactored 2799-line app.rs into 10 cohesive modules (app/, state, clipboard, export, navigation, jobs, mouse, popups, input, actions, render)",
+        "All modules under 700 LOC with clear docstrings (Responsibilities/Non-responsibilities)",
+        "All 119 unit tests + 28 snapshot tests pass",
+        "make ci passes completely with no lint warnings",
+        "Public API preserved - no breaking changes"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T21:39:14.581511000Z",
+      "completed_at": "2026-01-27T21:39:14.581511000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -1,0 +1,405 @@
+//! Action handling for the TUI app.
+//!
+//! Responsibilities:
+//! - Process Actions and mutate App state accordingly
+//! - Handle API result actions
+//! - Handle navigation actions
+//!
+//! Non-responsibilities:
+//! - Does NOT create Actions (handled by input handlers)
+//! - Does NOT perform async operations
+
+use crate::action::Action;
+use crate::app::App;
+use crate::app::clipboard;
+use crate::app::state::{CurrentScreen, HealthState};
+use crate::ui::Toast;
+use crate::ui::popup::{Popup, PopupType};
+
+impl App {
+    /// Pure state mutation based on Action.
+    pub fn update(&mut self, action: Action) {
+        match action {
+            Action::OpenHelpPopup => {
+                self.popup = Some(Popup::builder(PopupType::Help).build());
+            }
+            Action::SwitchToSearch => {
+                self.current_screen = CurrentScreen::Search;
+            }
+            Action::SwitchToSettingsScreen => {
+                self.current_screen = CurrentScreen::Settings;
+            }
+            Action::NextScreen => {
+                self.current_screen = self.current_screen.next();
+            }
+            Action::PreviousScreen => {
+                self.current_screen = self.current_screen.previous();
+            }
+            Action::LoadIndexes => {
+                self.current_screen = CurrentScreen::Indexes;
+            }
+            Action::LoadClusterInfo => {
+                self.current_screen = CurrentScreen::Cluster;
+            }
+            Action::LoadJobs => {
+                self.current_screen = CurrentScreen::Jobs;
+            }
+            Action::LoadHealth => {
+                self.current_screen = CurrentScreen::Health;
+            }
+            Action::LoadSavedSearches => {
+                self.current_screen = CurrentScreen::SavedSearches;
+            }
+            Action::LoadInternalLogs => {
+                self.current_screen = CurrentScreen::InternalLogs;
+            }
+            Action::LoadApps => {
+                self.current_screen = CurrentScreen::Apps;
+            }
+            Action::LoadUsers => {
+                self.current_screen = CurrentScreen::Users;
+            }
+            Action::NavigateDown => self.next_item(),
+            Action::NavigateUp => self.previous_item(),
+            Action::PageDown => self.next_page(),
+            Action::PageUp => self.previous_page(),
+            Action::GoToTop => self.go_to_top(),
+            Action::GoToBottom => self.go_to_bottom(),
+            Action::EnterSearchMode => {
+                self.is_filtering = true;
+                self.filter_input.clear();
+            }
+            Action::SearchInput(c) => {
+                self.filter_input.push(c);
+            }
+            Action::ClearSearch => {
+                self.search_filter = None;
+                self.rebuild_filtered_indices();
+            }
+            Action::CycleSortColumn => {
+                self.sort_state.cycle();
+                self.rebuild_filtered_indices();
+            }
+            Action::ToggleSortDirection => {
+                self.sort_state.toggle_direction();
+                self.rebuild_filtered_indices();
+            }
+            Action::CycleTheme => {
+                self.color_theme = self.color_theme.cycle_next();
+                self.theme = splunk_config::Theme::from(self.color_theme);
+                self.toasts
+                    .push(Toast::info(format!("Theme: {}", self.color_theme)));
+            }
+            Action::Loading(is_loading) => {
+                self.loading = is_loading;
+                if is_loading {
+                    self.progress = 0.0;
+                }
+            }
+            Action::Progress(p) => {
+                self.progress = p;
+            }
+            Action::Notify(level, message) => {
+                self.toasts.push(Toast::new(message, level));
+            }
+            Action::CopyToClipboard(content) => match clipboard::copy_to_clipboard(content.clone())
+            {
+                Ok(()) => {
+                    let preview = Self::clipboard_preview(&content);
+                    self.toasts.push(Toast::info(format!("Copied: {preview}")));
+                }
+                Err(e) => {
+                    self.toasts
+                        .push(Toast::error(format!("Clipboard error: {e}")));
+                }
+            },
+            Action::Tick => {
+                // Prune expired toasts
+                self.toasts.retain(|t| !t.is_expired());
+            }
+            Action::IndexesLoaded(Ok(indexes)) => {
+                self.indexes = Some(indexes);
+                self.loading = false;
+            }
+            Action::JobsLoaded(Ok(jobs)) => {
+                let sel = self.jobs_state.selected();
+                self.jobs = Some(jobs);
+                self.loading = false;
+                // Rebuild filtered indices and restore selection clamped to new bounds
+                self.rebuild_filtered_indices();
+                let filtered_len = self.filtered_jobs_len();
+                self.jobs_state.select(
+                    sel.map(|i| i.min(filtered_len.saturating_sub(1)))
+                        .or(Some(0)),
+                );
+            }
+            Action::SavedSearchesLoaded(Ok(searches)) => {
+                self.saved_searches = Some(searches);
+                self.loading = false;
+            }
+            Action::InternalLogsLoaded(Ok(logs)) => {
+                let sel = self.internal_logs_state.selected();
+                self.internal_logs = Some(logs);
+                self.loading = false;
+                if let Some(logs) = &self.internal_logs {
+                    self.internal_logs_state
+                        .select(sel.map(|i| i.min(logs.len().saturating_sub(1))).or(Some(0)));
+                }
+            }
+            Action::ClusterInfoLoaded(Ok(info)) => {
+                self.cluster_info = Some(info);
+                self.loading = false;
+            }
+            Action::HealthLoaded(boxed_result) => match *boxed_result {
+                Ok(ref info) => {
+                    self.health_info = Some(info.clone());
+                    // Update health state from splunkd_health if available
+                    if let Some(ref health) = info.splunkd_health {
+                        let new_state = HealthState::from_health_str(&health.health);
+                        self.set_health_state(new_state);
+                    }
+                    self.loading = false;
+                }
+                Err(e) => {
+                    self.toasts
+                        .push(Toast::error(format!("Failed to load health info: {}", e)));
+                    self.loading = false;
+                }
+            },
+            Action::HealthStatusLoaded(result) => match result {
+                Ok(health) => {
+                    let new_state = HealthState::from_health_str(&health.health);
+                    self.set_health_state(new_state);
+                }
+                Err(_) => {
+                    // Error getting health - mark as unhealthy
+                    self.set_health_state(HealthState::Unhealthy);
+                }
+            },
+            Action::SearchComplete(Ok((results, sid, total))) => {
+                let results_count = results.len() as u64;
+                self.set_search_results(results);
+                self.search_sid = Some(sid);
+                // Set pagination state from initial search results
+                self.search_results_total_count = total;
+                self.search_has_more_results = if let Some(t) = total {
+                    results_count < t
+                } else {
+                    // When total is None, infer from page fullness
+                    // Note: initial fetch in main.rs uses 1000, but we use app's page_size for consistency
+                    results_count >= self.search_results_page_size
+                };
+                self.search_status = format!("Search complete: {}", self.search_input);
+                self.loading = false;
+            }
+            Action::MoreSearchResultsLoaded(Ok((results, _offset, total))) => {
+                self.append_search_results(results, total);
+                self.loading = false;
+            }
+            Action::MoreSearchResultsLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load more results: {}", e)));
+                self.loading = false;
+            }
+            Action::JobOperationComplete(msg) => {
+                self.selected_jobs.clear();
+                self.search_status = msg;
+                self.loading = false;
+            }
+            Action::IndexesLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load indexes: {}", e)));
+                self.loading = false;
+            }
+            Action::JobsLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load jobs: {}", e)));
+                self.loading = false;
+            }
+            Action::SavedSearchesLoaded(Err(e)) => {
+                self.toasts.push(Toast::error(format!(
+                    "Failed to load saved searches: {}",
+                    e
+                )));
+                self.loading = false;
+            }
+            Action::InternalLogsLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load internal logs: {}", e)));
+                self.loading = false;
+            }
+            Action::AppsLoaded(Ok(apps)) => {
+                self.apps = Some(apps);
+                self.loading = false;
+            }
+            Action::AppsLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load apps: {}", e)));
+                self.loading = false;
+            }
+            Action::UsersLoaded(Ok(users)) => {
+                self.users = Some(users);
+                self.loading = false;
+            }
+            Action::UsersLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load users: {}", e)));
+                self.loading = false;
+            }
+            Action::SettingsLoaded(state) => {
+                self.auto_refresh = state.auto_refresh;
+                self.sort_state.column = crate::app::state::parse_sort_column(&state.sort_column);
+                self.sort_state.direction =
+                    crate::app::state::parse_sort_direction(&state.sort_direction);
+                self.search_history = state.search_history;
+                if let Some(query) = state.last_search_query {
+                    self.search_input = query;
+                }
+                self.toasts.push(Toast::info("Settings loaded from file"));
+                self.loading = false;
+            }
+            Action::ClusterInfoLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load cluster info: {}", e)));
+                self.loading = false;
+            }
+            Action::SearchComplete(Err(e)) => {
+                let details = crate::error_details::ErrorDetails::from_error_string(&e);
+                self.current_error = Some(details.clone());
+                self.toasts.push(Toast::error(details.to_summary()));
+                self.loading = false;
+            }
+            Action::ShowErrorDetails(details) => {
+                self.current_error = Some(details);
+                self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+            }
+            Action::ClearErrorDetails => {
+                self.current_error = None;
+                self.popup = None;
+            }
+            Action::InspectJob => {
+                // Transition to job inspect screen if we have jobs and a selection
+                if self.jobs.as_ref().map(|j| !j.is_empty()).unwrap_or(false)
+                    && self.jobs_state.selected().is_some()
+                {
+                    self.current_screen = CurrentScreen::JobInspect;
+                }
+            }
+            Action::ExitInspectMode => {
+                // Return to jobs screen
+                self.current_screen = CurrentScreen::Jobs;
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use splunk_client::models::{HealthCheckOutput, SplunkHealth};
+
+    #[test]
+    fn test_health_status_loaded_action_ok() {
+        let mut app = App::new(None);
+
+        // Simulate receiving a healthy status
+        let health = SplunkHealth {
+            health: "green".to_string(),
+            features: std::collections::HashMap::new(),
+        };
+
+        app.update(Action::HealthStatusLoaded(Ok(health)));
+
+        assert_eq!(app.health_state, HealthState::Healthy);
+    }
+
+    #[test]
+    fn test_health_status_loaded_action_err() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Healthy;
+
+        // Simulate error - should set to unhealthy
+        app.update(Action::HealthStatusLoaded(Err(
+            "Connection failed".to_string()
+        )));
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+        // Should emit toast since we went from Healthy to Unhealthy
+        assert_eq!(app.toasts.len(), 1);
+    }
+
+    #[test]
+    fn test_health_loaded_action_with_splunkd_health() {
+        let mut app = App::new(None);
+
+        // Simulate receiving HealthCheckOutput with splunkd_health
+        let health_output = HealthCheckOutput {
+            server_info: None,
+            splunkd_health: Some(SplunkHealth {
+                health: "red".to_string(),
+                features: std::collections::HashMap::new(),
+            }),
+            license_usage: None,
+            kvstore_status: None,
+            log_parsing_health: None,
+        };
+
+        app.update(Action::HealthLoaded(Box::new(Ok(health_output))));
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+    }
+
+    #[test]
+    fn test_set_health_state_healthy_to_unhealthy_emits_toast() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Healthy;
+
+        // Set to unhealthy should emit a toast
+        app.set_health_state(HealthState::Unhealthy);
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+        assert_eq!(app.toasts.len(), 1);
+        assert_eq!(
+            app.toasts[0].message,
+            "Splunk health status changed to unhealthy"
+        );
+    }
+
+    #[test]
+    fn test_set_health_state_unknown_to_unhealthy_emits_no_toast() {
+        let mut app = App::new(None);
+        // Default state is Unknown
+        assert_eq!(app.health_state, HealthState::Unknown);
+
+        // Set to unhealthy from Unknown should not emit a toast
+        app.set_health_state(HealthState::Unhealthy);
+
+        assert_eq!(app.health_state, HealthState::Unhealthy);
+        assert_eq!(app.toasts.len(), 0);
+    }
+
+    #[test]
+    fn test_set_health_state_healthy_to_unknown_emits_no_toast() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Healthy;
+
+        // Set to unknown should not emit a toast
+        app.set_health_state(HealthState::Unknown);
+
+        assert_eq!(app.health_state, HealthState::Unknown);
+        assert_eq!(app.toasts.len(), 0);
+    }
+
+    #[test]
+    fn test_set_health_state_unhealthy_to_healthy_emits_no_toast() {
+        let mut app = App::new(None);
+        app.health_state = HealthState::Unhealthy;
+
+        // Set to healthy should not emit a toast (only Healthy -> Unhealthy does)
+        app.set_health_state(HealthState::Healthy);
+
+        assert_eq!(app.health_state, HealthState::Healthy);
+        assert_eq!(app.toasts.len(), 0);
+    }
+}
