@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0132",
-      "status": "todo",
-      "title": "Fix docs/usage.md markdown correctness and make generate step enforce drift-free docs",
-      "priority": "high",
-      "tags": [
-        "docs",
-        "workflow",
-        "ci"
-      ],
-      "scope": [
-        "docs/usage.md",
-        "crates/tui/src/bin/generate_tui_docs.rs",
-        "Makefile",
-        "make generate",
-        "make ci"
-      ],
-      "evidence": [
-        "docs/usage.md currently ends with a dangling Markdown code fence (```), which breaks rendering for downstream readers.",
-        "Makefile runs make generate during make ci, but it writes docs in-place and does not assert the repo is left in a clean, drift-free state.",
-        "crates/tui/src/bin/generate_tui_docs.rs already has a deterministic replacement function, enabling a --check mode."
-      ],
-      "plan": [
-        "Fix docs/usage.md Markdown so it renders correctly (remove stray code fences and validate formatting).",
-        "Add a --check mode to generate-tui-docs (or a separate binary flag) that exits non-zero if docs are out of date.",
-        "Update Makefile so make ci uses the check mode (and make generate remains write-mode).",
-        "Add a regression test ensuring the generator output matches the docs marker block exactly."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0133",
       "status": "todo",
       "title": "Docs and metadata polish: align README/user-guide with current keymap and repo metadata",

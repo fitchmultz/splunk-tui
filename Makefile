@@ -1,4 +1,4 @@
-.PHONY: install update lint type-check format clean test test-all test-unit test-integration test-live test-live-manual build release generate ci help lint-secrets install-hooks
+.PHONY: install update lint type-check format clean test test-all test-unit test-integration test-live test-live-manual build release generate ci help lint-secrets install-hooks lint-docs
 
 # Binaries and Installation
 BINS := splunk-cli splunk-tui
@@ -92,8 +92,12 @@ build: release
 generate:
 	cargo run -p splunk-tui --bin generate-tui-docs
 
-# CI pipeline: install -> format -> lint-secrets -> generate -> lint -> type-check -> test -> test-live -> release
-ci: install format lint-secrets generate lint type-check test test-live release
+# Verify documentation is up to date
+lint-docs:
+	cargo run -p splunk-tui --bin generate-tui-docs -- --check
+
+# CI pipeline: install -> format -> lint-secrets -> lint-docs -> lint -> type-check -> test -> test-live -> release
+ci: install format lint-secrets lint-docs lint type-check test test-live release
 
 # Display help for each target
 help:
@@ -114,7 +118,8 @@ help:
 	@echo "  make release          - Optimized release build and install to $(INSTALL_DIR)"
 	@echo "  make build            - Alias for release"
 	@echo "  make generate         - Regenerate derived documentation (TUI keybindings)"
+	@echo "  make lint-docs        - Verify documentation is up to date (no drift)"
 	@echo "  make lint-secrets     - Run secret-commit guard (fail if sensitive files are tracked)"
 	@echo "  make install-hooks    - Install git pre-commit hook for secret guard"
-	@echo "  make ci               - Run full CI pipeline (install -> format -> lint-secrets -> generate -> lint -> type-check -> test -> test-live -> release)"
+	@echo "  make ci               - Run full CI pipeline (install -> format -> lint-secrets -> lint-docs -> lint -> type-check -> test -> test-live -> release)"
 	@echo "  make help             - Show this help message"

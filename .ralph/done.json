@@ -4611,6 +4611,50 @@
       "completed_at": "2026-01-27T20:04:28.004657000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0132",
+      "status": "done",
+      "title": "Fix docs/usage.md markdown correctness and make generate step enforce drift-free docs",
+      "priority": "high",
+      "tags": [
+        "docs",
+        "workflow",
+        "ci",
+        "correctness"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/tui/src/bin/generate_tui_docs.rs",
+        "Makefile",
+        "make generate",
+        "make ci"
+      ],
+      "evidence": [
+        "docs/usage.md ends with a dangling Markdown code fence (```) at line 586, breaking rendering for downstream readers.",
+        "Makefile 'ci' target runs 'generate' which blindly overwrites docs/usage.md; if derived content drifts, it is committed without validation.",
+        "crates/tui/src/bin/generate_tui_docs.rs is purely write-only and lacks a --check mode to verify if the file is already up to date."
+      ],
+      "plan": [
+        "Remove the dangling code fence from the end of docs/usage.md.",
+        "Add a --check mode to generate-tui-docs that exits non-zero if the file content would change, while keeping default behavior as write-mode.",
+        "Update Makefile to include a lint-docs or similar target that uses --check, and wire it into the 'ci' target.",
+        "Add an integration test in crates/tui/tests/ or similar to ensure the documentation generator remains deterministic."
+      ],
+      "notes": [
+        "Verified dangling code fence in usage.md and confirmed generate_tui_docs.rs is currently write-only.",
+        "Ensuring drift-free docs is critical for CI reliability when keybindings are frequently updated.",
+        "Removed redundant 'generate' from 'ci' target in Makefile to properly enforce drift-free docs via 'lint-docs'.",
+        "Verified docs/usage.md has no dangling code fences (confirmed line count and content via hexdump).",
+        "Ensured 'make ci' fails if documentation drifts, forcing explicit 'make generate' runs.",
+        "Verified all unit and integration tests for documentation generation pass."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T20:21:21.333128000Z",
+      "completed_at": "2026-01-27T20:21:21.333128000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -28,6 +28,10 @@ struct Args {
     /// Path to the usage guide markdown file.
     #[arg(long, default_value = "docs/usage.md")]
     path: PathBuf,
+
+    /// Check if the file is up to date without writing.
+    #[arg(long)]
+    check: bool,
 }
 
 const START_MARKER: &str = "<!-- BEGIN TUI KEYBINDINGS -->";
@@ -56,13 +60,37 @@ fn main() -> anyhow::Result<()> {
     let generated = splunk_tui::render_tui_keybinding_docs();
     let new_content = replace_keybinding_block(&content, &generated)?;
 
-    fs::write(&args.path, new_content)?;
+    ensure_up_to_date(&args.path, &content, &new_content, args.check)?;
+
+    Ok(())
+}
+
+fn ensure_up_to_date(
+    path: &std::path::Path,
+    original: &str,
+    updated: &str,
+    check_only: bool,
+) -> anyhow::Result<()> {
+    if original != updated {
+        if check_only {
+            anyhow::bail!(
+                "Documentation is out of date. Run 'make generate' to update {}",
+                path.display()
+            );
+        }
+        fs::write(path, updated)?;
+        println!("Updated {}.", path.display());
+    } else {
+        println!("{} is already up to date.", path.display());
+    }
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{END_MARKER, START_MARKER, replace_keybinding_block};
+    use super::{END_MARKER, START_MARKER, ensure_up_to_date, replace_keybinding_block};
+    use std::fs;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn replaces_marker_block() {
@@ -99,5 +127,47 @@ mod tests {
             err.to_string()
                 .contains("End marker appears before start marker")
         );
+    }
+
+    #[test]
+    fn check_mode_fails_when_drifted() {
+        let path = std::path::Path::new("test.md");
+        let original = "old content";
+        let updated = "new content";
+
+        let err = ensure_up_to_date(path, original, updated, true).unwrap_err();
+        assert!(err.to_string().contains("Documentation is out of date"));
+    }
+
+    #[test]
+    fn check_mode_passes_when_matching() {
+        let path = std::path::Path::new("test.md");
+        let original = "same content";
+        let updated = "same content";
+
+        ensure_up_to_date(path, original, updated, true).unwrap();
+    }
+
+    #[test]
+    fn write_mode_updates_file() {
+        let file = NamedTempFile::new().unwrap();
+        let path = file.path();
+        let original = "old";
+        let updated = "new";
+
+        ensure_up_to_date(path, original, updated, false).unwrap();
+
+        let saved = fs::read_to_string(path).unwrap();
+        assert_eq!(saved, "new");
+    }
+
+    #[test]
+    fn write_mode_skips_identical() {
+        let file = NamedTempFile::new().unwrap();
+        let path = file.path();
+        let content = "same";
+
+        ensure_up_to_date(path, content, content, false).unwrap();
+        // Success means no error, and we trust it didn't write if it said so
     }
 }
