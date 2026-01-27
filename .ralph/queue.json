@@ -2,35 +2,693 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0116",
+      "id": "RQ-0119",
       "status": "todo",
-      "title": "Allow quitting from any popup/modal (consistent global quit behavior)",
+      "title": "Add a local secret-commit guard (fail CI if secrets are tracked)",
+      "priority": "critical",
+      "tags": [
+        "security",
+        "workflow",
+        "ci"
+      ],
+      "scope": [
+        "Makefile",
+        "scripts/",
+        "docs/",
+        "ralph queue validate",
+        "make ci"
+      ],
+      "evidence": [
+        "splunk-tui/.env exists and contains real-looking connection details and a non-placeholder password; while ignored by git, it is easy to accidentally commit.",
+        "splunk-tui/docs/splunk-test-environment.md contains development credentials/tokens; it is gitignored but still represents a high-risk accidental-commit vector.",
+        "splunk-tui/.gitignore ignores .env/.env.test and docs/splunk-test-environment.md, but there is no automated guard in make ci to ensure these never become tracked."
+      ],
+      "plan": [
+        "Add a script that fails if forbidden paths are tracked (git ls-files), and optionally scans tracked files for common secret patterns.",
+        "Add make targets (e.g., make secret-check) and run it inside make ci early.",
+        "Update docs to clarify local-only files and recommend using profiles + keyring for real credentials.",
+        "Add tests for the script logic (fixtures under scripts/tests or similar) if feasible."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0118",
+      "status": "todo",
+      "title": "Remove tracked binary artifact rust_out and prevent future artifact commits",
+      "priority": "critical",
+      "tags": [
+        "repo-hygiene",
+        "security",
+        "workflow"
+      ],
+      "scope": [
+        "rust_out",
+        ".gitignore",
+        "Makefile",
+        "make ci"
+      ],
+      "evidence": [
+        "splunk-tui/rust_out is a tracked binary file (shows as [Binary file]).",
+        "Binary artifacts in the repo root increase risk (accidental distribution, AV flags) and create churn for contributors."
+      ],
+      "plan": [
+        "Identify what generates rust_out (search build scripts / tooling).",
+        "Remove rust_out from git history on main branch (git rm) and add an ignore rule if it is regeneratable.",
+        "Add a lightweight make ci guard that fails if tracked binary artifacts appear outside target/ and approved paths.",
+        "Document the policy (where artifacts may live) in README or docs/dev section."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0122",
+      "status": "todo",
+      "title": "Make tests hermetic: prevent accidental dotenv loading during test runs",
+      "priority": "high",
+      "tags": [
+        "tests",
+        "workflow",
+        "security"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/config/src/loader.rs",
+        "crates/cli/tests/",
+        "Makefile",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs loads dotenv before CLI parsing, so running tests can be influenced by a developer's local .env.",
+        "crates/config/src/loader.rs supports DOTENV_DISABLED, but only some CLI tests (crates/cli/tests/config_tests.rs) set it.",
+        "splunk-tui/.env exists locally and contains non-placeholder values, making accidental test contamination likely."
+      ],
+      "plan": [
+        "Set DOTENV_DISABLED=1 for make test/make ci (and any cargo test invocations) to ensure hermetic defaults.",
+        "Update test helpers/macros to set DOTENV_DISABLED for all assert_cmd-based CLI integration tests.",
+        "Add a regression test proving that a local .env does not affect a CLI test run.",
+        "Update docs to explain why dotenv is disabled in tests and how live tests are configured (.env.test)."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0120",
+      "status": "todo",
+      "title": "Fix config file path mismatch (code vs docs) and add a safe migration",
+      "priority": "high",
+      "tags": [
+        "config",
+        "docs",
+        "ux"
+      ],
+      "scope": [
+        "crates/config/src/persistence.rs",
+        "docs/usage.md",
+        "docs/user-guide.md",
+        "crates/cli/src/commands/config.rs",
+        "crates/tui/src/main.rs",
+        "crates/config/tests/ (if added)",
+        "make test"
+      ],
+      "evidence": [
+        "crates/config/src/persistence.rs default_config_path() uses directories::ProjectDirs::from(\"com\", \"splunk-tui\", \"splunk-tui\"), which typically yields a config directory with a duplicated component (…/splunk-tui/splunk-tui/config.json).",
+        "docs/usage.md documents the config file path as ~/.config/splunk-tui/config.json, which likely does not match the current code path.",
+        "crates/cli/src/commands/config.rs and crates/tui/src/main.rs rely on ConfigManager::new() defaults, so this mismatch affects both CLI and TUI users."
+      ],
+      "plan": [
+        "Decide and document the canonical config path (recommend: avoid duplicated org/app directory names).",
+        "Implement a migration strategy: if legacy path exists and new path does not, copy/rename atomically.",
+        "Add tests for default path selection and migration behavior across platforms (use temp dirs and path injection).",
+        "Update docs/usage.md and docs/user-guide.md to reflect the canonical path and migration notes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0121",
+      "status": "todo",
+      "title": "Align env var parsing with docs: treat empty values as unset for all SPLUNK_* vars",
+      "priority": "high",
+      "tags": [
+        "config",
+        "bug",
+        "ux"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs",
+        "docs/usage.md",
+        "crates/config/src/loader.rs (tests)",
+        "make test"
+      ],
+      "evidence": [
+        "docs/usage.md states empty env var values are treated as unset (e.g., SPLUNK_API_TOKEN=\"\" should not override profiles).",
+        "crates/config/src/loader.rs uses env_var_or_none() for some vars but reads SPLUNK_SKIP_VERIFY/SPLUNK_TIMEOUT/SPLUNK_MAX_RETRIES via std::env::var without filtering empty strings, which can cause parse errors instead of ignoring empties.",
+        "crates/config/src/loader.rs includes a test showing whitespace-only values are treated as set; this may be surprising in practice for CLI/TUI users."
+      ],
+      "plan": [
+        "Update from_env() to use a consistent helper for all env vars (string/bool/number) and ignore empty values.",
+        "Decide whether to trim whitespace-only values (recommended: treat whitespace-only as empty/unset) and update tests accordingly.",
+        "Add focused tests for empty/whitespace env var behavior across bool/number fields.",
+        "Update docs/usage.md to match the finalized behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0124",
+      "status": "todo",
+      "title": "Add splunk-cli global --config-path option and wire it through consistently",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "config",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/config.rs",
+        "docs/usage.md",
+        "make test -p splunk-cli"
+      ],
+      "evidence": [
+        "docs/usage.md documents SPLUNK_CONFIG_PATH env var but there is no equivalent CLI flag in crates/cli/src/main.rs.",
+        "crates/cli/src/commands/config.rs reads SPLUNK_CONFIG_PATH directly when constructing ConfigManager, while other commands rely on ConfigLoader/profile + env overrides, creating two different configuration entry points.",
+        "TUI also supports SPLUNK_CONFIG_PATH via env (crates/tui/src/main.rs), so CLI parity would reduce confusion."
+      ],
+      "plan": [
+        "Add a global CLI arg (e.g., --config-path <FILE>) and ensure it is documented in --help and docs/usage.md.",
+        "Use the flag to configure both ConfigLoader profile reads and ConfigManager path usage for config subcommands.",
+        "Add/extend integration tests to validate CLI flag precedence vs env var and default path.",
+        "Ensure no secrets are printed when showing config paths/errors."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0125",
+      "status": "todo",
+      "title": "Fix splunk-cli config subcommand output flag conflicts and unify formatting semantics",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "ux",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/config.rs",
+        "docs/usage.md",
+        "crates/cli/tests/config_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs defines a global -o/--output option, while crates/cli/src/commands/config.rs defines per-subcommand -o/--output options (List/Show), creating ambiguous and confusing help/usage.",
+        "crates/cli/src/main.rs routes config commands via commands::config::run(...) without passing the global output format, so global -o may not apply to config subcommands.",
+        "docs/usage.md documents config subcommand output behavior; this will drift if flags remain inconsistent."
+      ],
+      "plan": [
+        "Choose a single output-format story for config subcommands (recommended: use global --output for all commands; rename config-only option to --format with no short if needed).",
+        "Update clap definitions to remove conflicting -o flags and ensure --help output is clear.",
+        "Update docs/usage.md examples and existing CLI tests to match the new contract.",
+        "Add tests ensuring the chosen flags behave as documented (including output_file interactions)."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0126",
+      "status": "todo",
+      "title": "Fix keyring integration test to actually validate and clean up stored credentials",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tests",
+        "security"
+      ],
+      "scope": [
+        "crates/cli/tests/config_tests.rs",
+        "crates/config/src/types.rs",
+        "crates/config/src/persistence.rs",
+        "make test -p splunk-cli"
+      ],
+      "evidence": [
+        "crates/cli/tests/config_tests.rs: test_config_set_with_keyring treats api_token JSON as a string and tries to strip a \"Keyring\" prefix, but SecureValue::Keyring serializes as an object (keyring_account), so the cleanup path likely never runs.",
+        "crates/cli/tests/config_tests.rs uses keyring service string \"com.splunk-tui.splunk-tui\" for cleanup, while crates/config/src/types.rs defines KEYRING_SERVICE as \"splunk-tui\".",
+        "A failing cleanup test can leave credentials in the OS keyring, which is a security and UX problem for contributors."
+      ],
+      "plan": [
+        "Parse the saved config JSON and assert SecureValue is Keyring variant (object with keyring_account).",
+        "Use the same KEYRING_SERVICE constant (or import it) for cleanup and validation.",
+        "Skip gracefully if keyring backend is unavailable, but ensure the test fails on logic errors when available.",
+        "Add a regression assertion that the keyring entry is deleted on success."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0132",
+      "status": "todo",
+      "title": "Fix docs/usage.md markdown correctness and make generate step enforce drift-free docs",
+      "priority": "high",
+      "tags": [
+        "docs",
+        "workflow",
+        "ci"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/tui/src/bin/generate_tui_docs.rs",
+        "Makefile",
+        "make generate",
+        "make ci"
+      ],
+      "evidence": [
+        "docs/usage.md currently ends with a dangling Markdown code fence (```), which breaks rendering for downstream readers.",
+        "Makefile runs make generate during make ci, but it writes docs in-place and does not assert the repo is left in a clean, drift-free state.",
+        "crates/tui/src/bin/generate_tui_docs.rs already has a deterministic replacement function, enabling a --check mode."
+      ],
+      "plan": [
+        "Fix docs/usage.md Markdown so it renders correctly (remove stray code fences and validate formatting).",
+        "Add a --check mode to generate-tui-docs (or a separate binary flag) that exits non-zero if docs are out of date.",
+        "Update Makefile so make ci uses the check mode (and make generate remains write-mode).",
+        "Add a regression test ensuring the generator output matches the docs marker block exactly."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0133",
+      "status": "todo",
+      "title": "Docs and metadata polish: align README/user-guide with current keymap and repo metadata",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "polish"
+      ],
+      "scope": [
+        "README.md",
+        "docs/user-guide.md",
+        "docs/usage.md",
+        "Cargo.toml"
+      ],
+      "evidence": [
+        "Cargo.toml workspace.package.repository is set to a placeholder URL (https://github.com/example/splunk-tui).",
+        "README.md TUI keybindings section lists numeric screen switching (1-5) and other shortcuts that are likely out of sync with the generated keybinding block in docs/usage.md.",
+        "docs/user-guide.md describes numeric navigation (1 through 9) and other behaviors that can drift from the centralized keymap and current runtime."
+      ],
+      "plan": [
+        "Update Cargo.toml repository metadata to the real GitHub URL.",
+        "Update README.md and docs/user-guide.md to derive keybinding references from docs/usage.md or a shared source of truth.",
+        "Add a small docs check (optional) ensuring README/user-guide do not mention removed keybindings.",
+        "Spot-check rendered Markdown output for readability and correctness."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0129",
+      "status": "todo",
+      "title": "Improve HTTP retry strategy: handle transient reqwest errors and 5xx responses",
+      "priority": "high",
+      "tags": [
+        "client",
+        "reliability",
+        "ux"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs",
+        "crates/client/src/error.rs",
+        "crates/client/tests/",
+        "make test -p splunk-client"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/request.rs currently retries only on HTTP 429 and otherwise returns immediately (including for transient network failures).",
+        "crates/client/src/error.rs defines retryable error categories (HttpError/Timeout/RateLimited) but the request helper does not use this to retry more broadly.",
+        "Splunk admin workflows commonly hit transient 502/503/504 or connection resets during maintenance; improving retries reduces user-facing flakiness."
+      ],
+      "plan": [
+        "Define a conservative retry policy for 5xx and transient transport errors (with bounded attempts and backoff).",
+        "Update send_request_with_retry to apply the policy while preserving current 429 Retry-After behavior.",
+        "Add tests using a local HTTP test server to validate retry timing and stop conditions.",
+        "Ensure errors remain properly redacted and do not include secrets in logs/messages."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0131",
+      "status": "todo",
+      "title": "Refactor splunk-client: split oversized client.rs and dedupe session-expiry retry pattern",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "refactor",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/client/src/client.rs",
+        "crates/client/src/endpoints/",
+        "crates/client/tests/",
+        "make test -p splunk-client"
+      ],
+      "evidence": [
+        "crates/client/src/client.rs is ~1293 lines and contains many near-identical 401/403 retry blocks after API calls.",
+        "The file includes an explicit note about a DRY violation and cites maintainability tradeoffs; this is a long-term risk as new endpoints are added.",
+        "A shared internal helper or macro can centralize auth-refresh behavior without expanding public API surface."
+      ],
+      "plan": [
+        "Split client.rs into cohesive internal modules (e.g., search, jobs, cluster, users, apps) while keeping the external API stable.",
+        "Introduce an internal macro/helper to wrap endpoint calls with auth-token fetch + 401/403 refresh logic.",
+        "Adjust log levels for noisy info! messages (prefer debug for routine token refresh).",
+        "Run existing client unit/integration tests and add coverage for the helper/macro error cases."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0130",
+      "status": "todo",
+      "title": "Refactor splunk-tui App: split crates/tui/src/app.rs into cohesive modules",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/input/",
+        "crates/tui/src/ui/",
+        "crates/tui/tests/",
+        "make test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs is ~2799 lines, mixing state, input handling, mouse routing, async-side-effect triggers, and rendering coordination.",
+        "Many planned UX and parity changes (keymap, search input modes, new screens) require touching this file, increasing merge/conflict risk.",
+        "The repo guidelines prefer cohesive modules and smaller files; this file exceeds the heuristic by an order of magnitude."
+      ],
+      "plan": [
+        "Identify cohesive boundaries (state structs, per-screen reducers, footer/header rendering, mouse hit-testing) and split into internal modules.",
+        "Keep public API minimal (prefer pub(crate) within crate) and avoid breaking external users.",
+        "Move duplicated patterns into shared helpers (e.g., selection handling, toast management).",
+        "Update and extend existing TUI tests/snapshots to cover behavior after the refactor."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0123",
+      "status": "todo",
+      "title": "Add a real splunk-tui --help CLI (config overrides, log dir, mouse toggle)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "docs/usage.md",
+        "README.md",
+        "make test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs has no argument parsing and provides no --help surface, despite being a user-facing executable.",
+        "TUI currently relies on environment variables (SPLUNK_PROFILE, SPLUNK_CONFIG_PATH) for configuration, which is discoverability-hostile for new users.",
+        "The repo has a good precedent for executable help text: crates/tui/src/bin/generate_tui_docs.rs uses clap with examples."
+      ],
+      "plan": [
+        "Add clap-based arg parsing to splunk-tui (at least: --profile, --config-path, --log-dir, --no-mouse, --version).",
+        "Define precedence: CLI args > env vars > profile config > defaults, and document it.",
+        "Add examples to --help (common admin workflows).",
+        "Add tests that snapshot/validate --help output and basic arg precedence behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0127",
+      "status": "todo",
+      "title": "Add safe default Search time range + max results in TUI (avoid unbounded searches)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/config/src/types.rs",
+        "docs/usage.md",
+        "crates/tui/tests/"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs Action::RunSearch builds CreateJobOptions with Default::default(), so earliest/latest are unset and searches may be unbounded.",
+        "splunk-tui/.env contains SPLUNK_EARLIEST_TIME and SPLUNK_LATEST_TIME, but there are no code references to these variables; users may think they work when they do not.",
+        "Splunk admin best practice is to bound time ranges to reduce load and speed up queries; the TUI should default to a safe window (e.g., -24h..now)."
+      ],
+      "plan": [
+        "Define where defaults live (recommended: persisted settings with sensible defaults, optionally overridable by env/CLI flags).",
+        "Plumb earliest/latest/count into the TUI search submission path (CreateJobOptions).",
+        "Expose quick editing in the UI (Settings screen or a Search options popup).",
+        "Add tests covering default application, overrides, and edge cases (empty/invalid time strings)."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0128",
+      "status": "todo",
+      "title": "Use splunk-client search_with_progress in TUI (remove duplicate polling, unify timeouts)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "client",
+        "reliability"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/client/src/client.rs",
+        "crates/client/src/endpoints/search.rs",
+        "crates/tui/tests/"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs implements its own wait_for_job loop (500ms polling) and timeout handling for searches, separate from the client library.",
+        "crates/client/src/client.rs already provides search_with_progress(...) and endpoints/search.rs provides wait_for_job_with_progress, which can centralize polling behavior.",
+        "Duplicated polling logic increases the chance of inconsistent timeouts, progress semantics, and retry behavior between CLI and TUI."
+      ],
+      "plan": [
+        "Refactor TUI search execution to call SplunkClient::search_with_progress and translate progress callbacks into Action::Progress updates.",
+        "Ensure timeout semantics are consistent and configurable (and surfaced via config/CLI where appropriate).",
+        "Unify error handling so ErrorDetails is populated consistently (query, sid, operation) without auto-opening unless intended (see RQ-0104).",
+        "Add tests covering progress updates and timeout/error paths (using fixtures or local server harness)."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0134",
+      "status": "todo",
+      "title": "Show connection context in TUI (profile/base_url/auth + server version)",
       "priority": "medium",
       "tags": [
         "tui",
         "ux",
-        "keybindings",
-        "popups"
+        "polish"
       ],
       "scope": [
         "crates/tui/src/app.rs",
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/tests/app_tests.rs"
+        "crates/tui/src/main.rs",
+        "crates/client/src/client.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "docs/usage.md"
       ],
       "evidence": [
-        "crates/tui/src/app.rs: when PopupType::Help is open, KeyCode::Char('q') is treated as \"close help\" rather than quit, conflicting with the idea of global quit.",
-        "crates/tui/src/app.rs: ErrorDetails popup close handler accepts KeyCode::Char('e') as a close key (surprising/inconsistent), and confirmation popups use y/n without a consistent global quit.",
-        "crates/tui/src/ui/popup.rs: help text advertises q quit globally, but popup-specific behavior overrides it."
+        "TUI UI rendering does not currently surface which Splunk instance/profile is active; users can easily run actions against the wrong environment.",
+        "crates/tui/src/main.rs loads profile via SPLUNK_PROFILE at startup, but that context is not displayed anywhere in the UI.",
+        "splunk-client already has get_server_info(); showing version/build is valuable for admins triaging behavior differences."
       ],
       "plan": [
-        "Define a true global quit key (recommended: Ctrl+Q) that always quits, even when a popup is open.",
-        "Ensure popup-local keys remain (Esc to close, y/n for confirms) but do not block global quit.",
-        "Add tests covering quit behavior from help popup, error details popup, and confirmation dialogs."
+        "Add an App field for connection context (profile name, base_url, auth mode) and populate it at startup.",
+        "Load server info on startup (or on-demand) and show version/build in a header/footer line.",
+        "Add snapshots for narrow and wide terminals to ensure the layout degrades gracefully.",
+        "Update docs/usage.md to describe where connection context is visible."
       ],
       "notes": [],
       "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0138",
+      "status": "todo",
+      "title": "Add Index details/inspect view in TUI (beyond the summary list)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "feature-parity"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/indexes.rs",
+        "crates/tui/src/ui/popup.rs (or new screen)",
+        "crates/tui/tests/snapshot_tests.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/indexes.rs renders only a single-line summary per index (name, total_event_count, current_db_size_mb).",
+        "There is no inspect/details UX in TUI for index metadata, while admins often need retention, paths, frozenTimePeriodInSecs, and other fields for troubleshooting.",
+        "CLI already provides richer output modes for other resources; adding a details view improves parity and reduces context switching."
+      ],
+      "plan": [
+        "Define the details UX (popup vs dedicated screen) and a consistent back/close contract.",
+        "Add an Action to open index details for the selected index and render a structured view (key/value, scrollable).",
+        "Add copy/export affordances for the details payload (reusing existing export/copy patterns).",
+        "Add snapshot tests for the new view (including narrow terminal) and update docs/usage.md."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0136",
+      "status": "todo",
+      "title": "Add Cluster peers view in TUI (parity with CLI cluster --detailed)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "feature-parity",
+        "cluster"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/client/src/client.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/cluster.rs renders only ClusterInfo fields and does not show peer details.",
+        "crates/client/src/client.rs includes get_cluster_peers(), and CLI supports pagination options for cluster --detailed (docs/usage.md), indicating this is a needed admin feature.",
+        "Cluster admins need peer visibility (status, replication/search factors) to triage distributed environments."
+      ],
+      "plan": [
+        "Design the cluster peers UX (table/list with scrolling + optional pagination).",
+        "Add client call(s) and App state to load and store peer list separately from cluster info.",
+        "Add keybindings for toggling between summary and peers view (or a dedicated peers screen).",
+        "Add snapshots and targeted unit tests for navigation and rendering."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0135",
+      "status": "todo",
+      "title": "Add Apps enable/disable actions in TUI (feature parity with CLI)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "feature-parity",
+        "apps"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/screens/apps.rs",
+        "crates/client/src/client.rs",
+        "crates/tui/tests/app_tests.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/apps.rs is read-only and only renders a list; there are no enable/disable actions.",
+        "crates/client/src/client.rs exposes enable_app()/disable_app(), and CLI provides apps enable/disable workflows in docs/usage.md.",
+        "Without TUI actions, admins must context-switch to CLI or Web UI for common app management tasks."
+      ],
+      "plan": [
+        "Define keybindings and confirmation UX for enable/disable actions (avoid collisions with typing modes).",
+        "Wire enable/disable actions through App -> side effects -> client calls with toast feedback.",
+        "Handle permission errors and surface Splunk request IDs in ErrorDetails when available.",
+        "Add tests for success/failure flows and update docs/usage.md keybindings section."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
       "depends_on": [],
       "custom_fields": {}
     },
@@ -71,6 +729,39 @@
       "custom_fields": {
         "stale_evidence": "Help and digit navigation bindings are now centralized in crates/tui/src/input/keymap/; search handler no longer owns 0-9/? bindings directly."
       }
+    },
+    {
+      "id": "RQ-0116",
+      "status": "todo",
+      "title": "Allow quitting from any popup/modal (consistent global quit behavior)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "popups"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs: when PopupType::Help is open, KeyCode::Char('q') is treated as \"close help\" rather than quit, conflicting with the idea of global quit.",
+        "crates/tui/src/app.rs: ErrorDetails popup close handler accepts KeyCode::Char('e') as a close key (surprising/inconsistent), and confirmation popups use y/n without a consistent global quit.",
+        "crates/tui/src/ui/popup.rs: help text advertises q quit globally, but popup-specific behavior overrides it."
+      ],
+      "plan": [
+        "Define a true global quit key (recommended: Ctrl+Q) that always quits, even when a popup is open.",
+        "Ensure popup-local keys remain (Esc to close, y/n for confirms) but do not block global quit.",
+        "Add tests covering quit behavior from help popup, error details popup, and confirmation dialogs."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
     },
     {
       "id": "RQ-0104",
@@ -403,6 +1094,76 @@
       "request": "scan finding",
       "created_at": "2026-01-27T04:26:05Z",
       "updated_at": "2026-01-27T04:26:05Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0137",
+      "status": "todo",
+      "title": "Add runtime profile switching in TUI (re-auth + reload without restarting)",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "distributed",
+        "config"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/config/src/persistence.rs",
+        "docs/usage.md",
+        "crates/tui/tests/"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs supports selecting a profile only at startup via SPLUNK_PROFILE; changing environments requires restarting the app.",
+        "crates/config/src/persistence.rs supports multiple named profiles, and CLI supports --profile selection, so TUI lacks parity for multi-env workflows.",
+        "For Splunk admins managing multiple instances, switching environments is a core distributed-environment UX need."
+      ],
+      "plan": [
+        "Add a Settings workflow to list profiles and select an active profile at runtime.",
+        "Rebuild the client (and re-auth if needed) when profile changes; clear or reload screen data safely.",
+        "Show the active profile prominently (pair with RQ-0134 connection banner).",
+        "Add tests covering profile switching success/failure and state reset behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0139",
+      "status": "todo",
+      "title": "Add multi-profile list-all aggregation (distributed visibility across environments)",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "distributed",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all.rs",
+        "crates/cli/src/main.rs",
+        "crates/config/",
+        "docs/usage.md",
+        "make test -p splunk-cli"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all.rs is explicitly labeled a \"minimal working version\" and operates against a single resolved config/profile.",
+        "The repo supports multiple profiles (crates/config/src/persistence.rs) but there is no CLI workflow to summarize multiple environments in one invocation.",
+        "list_all.rs uses a custom timestamp string (secs.nsecsZ) rather than a standard RFC3339 timestamp, which is a UX/interop footgun when aggregating results."
+      ],
+      "plan": [
+        "Add a CLI option to run list-all across multiple profiles (e.g., --profiles a,b,c or --all-profiles).",
+        "Aggregate per-profile results with a clear table/JSON schema (profile name, base_url, per-resource status).",
+        "Upgrade timestamps to RFC3339 and document the schema in docs/usage.md.",
+        "Add integration tests using temporary config files and mocked endpoints/live-test gating as appropriate."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T16:39:47Z",
       "depends_on": [],
       "custom_fields": {}
     }
