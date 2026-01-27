@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0126",
-      "status": "todo",
-      "title": "Fix keyring integration test to actually validate and clean up stored credentials",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "tests",
-        "security"
-      ],
-      "scope": [
-        "crates/cli/tests/config_tests.rs",
-        "crates/config/src/types.rs",
-        "crates/config/src/persistence.rs",
-        "make test -p splunk-cli"
-      ],
-      "evidence": [
-        "crates/cli/tests/config_tests.rs: test_config_set_with_keyring treats api_token JSON as a string and tries to strip a \"Keyring\" prefix, but SecureValue::Keyring serializes as an object (keyring_account), so the cleanup path likely never runs.",
-        "crates/cli/tests/config_tests.rs uses keyring service string \"com.splunk-tui.splunk-tui\" for cleanup, while crates/config/src/types.rs defines KEYRING_SERVICE as \"splunk-tui\".",
-        "A failing cleanup test can leave credentials in the OS keyring, which is a security and UX problem for contributors."
-      ],
-      "plan": [
-        "Parse the saved config JSON and assert SecureValue is Keyring variant (object with keyring_account).",
-        "Use the same KEYRING_SERVICE constant (or import it) for cleanup and validation.",
-        "Skip gracefully if keyring backend is unavailable, but ensure the test fails on logic errors when available.",
-        "Add a regression assertion that the keyring entry is deleted on success."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0132",
       "status": "todo",
       "title": "Fix docs/usage.md markdown correctness and make generate step enforce drift-free docs",

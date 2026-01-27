@@ -4569,6 +4569,48 @@
       "completed_at": "2026-01-27T19:27:19.753251000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0126",
+      "status": "done",
+      "title": "Fix keyring integration test to actually validate and clean up stored credentials",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tests",
+        "security"
+      ],
+      "scope": [
+        "crates/cli/tests/config_tests.rs",
+        "crates/config/src/types.rs",
+        "crates/config/src/persistence.rs",
+        "cargo test -p splunk-cli --test config_tests"
+      ],
+      "evidence": [
+        "crates/cli/tests/config_tests.rs: test_config_set_with_keyring treats api_token JSON as a string and tries to strip a \"Keyring\" prefix, but SecureValue::Keyring serializes as an object (keyring_account), so the cleanup path likely never runs.",
+        "crates/cli/tests/config_tests.rs uses keyring service string \"com.splunk-tui.splunk-tui\" for cleanup, while crates/config/src/types.rs defines KEYRING_SERVICE as \"splunk-tui\".",
+        "A failing cleanup test can leave credentials in the OS keyring, which is a security and UX problem for contributors."
+      ],
+      "plan": [
+        "Parse the saved config JSON and assert SecureValue is Keyring variant (object with keyring_account).",
+        "Use the same KEYRING_SERVICE constant (import splunk_config::types::KEYRING_SERVICE) for cleanup and validation.",
+        "Skip gracefully if keyring backend is unavailable, but ensure the test fails on logic errors when available.",
+        "Add a regression assertion that the keyring entry is deleted on success."
+      ],
+      "notes": [
+        "The fix requires importing KEYRING_SERVICE from splunk-config into the integration tests.",
+        "Updated keyring integration test to correctly parse SecureValue::Keyring JSON objects.",
+        "Imported and used canonical KEYRING_SERVICE constant for consistency across crates.",
+        "Added explicit keyring validation and cleanup assertions.",
+        "Handled platform-specific keyring isolation gracefully in tests.",
+        "Removed debug prints from persistence layer."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-27T20:04:28.004657000Z",
+      "completed_at": "2026-01-27T20:04:28.004657000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
