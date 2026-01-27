@@ -9,7 +9,7 @@
   },
   "agent": {
     "runner": "opencode",
-    "model": "zgoogle/gemini-3-flash-preview",
+    "model": "google/gemini-3-flash-preview",
     "phases": 3,
     "iterations": 1,
     "reasoning_effort": "high",
