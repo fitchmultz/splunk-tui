@@ -97,21 +97,29 @@ async fn test_live_search_and_get_results() {
         .await
         .expect("Failed to create search job");
 
-    // Get results (get_search_results takes u64, not Option<u64>)
-    let results = client
-        .get_search_results(&sid, 5, 0)
-        .await
-        .expect("Failed to get search results");
+    // Even with `wait=true`, Splunk can briefly return an empty results page.
+    // Poll until we see the expected row, or time out.
+    let mut last_total = None;
+    for _ in 0..20 {
+        // get_search_results takes u64, not Option<u64>
+        let results = client
+            .get_search_results(&sid, 5, 0)
+            .await
+            .expect("Failed to get search results");
+        last_total = results.total;
 
-    assert!(!results.results.is_empty(), "Should have search results");
-    let first = results
-        .results
-        .first()
-        .expect("results should not be empty");
-    assert_eq!(
-        first.get("foo").and_then(|v| v.as_str()),
-        Some("bar"),
-        "first result should contain foo=bar"
+        if let Some(first) = results.results.first()
+            && first.get("foo").and_then(|v| v.as_str()) == Some("bar")
+        {
+            return;
+        }
+
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    }
+
+    panic!(
+        "Search results did not contain expected foo=bar row (last total={:?})",
+        last_total
     );
 }
 
