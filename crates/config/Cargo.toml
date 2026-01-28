@@ -19,3 +19,4 @@ tracing = { workspace = true }
 toml = "0.8"
 tempfile = "3"
 serial_test = { workspace = true }
+temp-env = "0.3"

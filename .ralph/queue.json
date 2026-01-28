@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0157",
-      "status": "todo",
-      "title": "Improve test isolation for environment variable manipulation",
-      "priority": "low",
-      "tags": [
-        "testing",
-        "config",
-        "isolation"
-      ],
-      "scope": [
-        "crates/config/src/loader.rs"
-      ],
-      "evidence": [
-        "loader.rs tests use unsafe { std::env::set_var(...) } and remove_var",
-        "While serial_test helps, this is still unsafe in Rust 2024 edition",
-        "Tests use global state which can cause issues with concurrent execution",
-        "Could cause flaky tests or test pollution"
-      ],
-      "plan": [
-        "Consider using temp-env crate for safer environment manipulation",
-        "Evaluate scope of test isolation improvements needed",
-        "Refactor tests to use isolated environment handling",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0158",
       "status": "todo",
       "title": "Verify TUI keybindings documentation stays in sync",

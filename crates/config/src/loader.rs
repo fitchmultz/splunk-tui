@@ -517,47 +517,6 @@ mod tests {
         crate::test_util::global_test_lock()
     }
 
-    fn cleanup_splunk_env() {
-        unsafe {
-            std::env::remove_var("SPLUNK_BASE_URL");
-            std::env::remove_var("SPLUNK_API_TOKEN");
-            std::env::remove_var("SPLUNK_USERNAME");
-            std::env::remove_var("SPLUNK_PASSWORD");
-            std::env::remove_var("SPLUNK_CONFIG_PATH");
-            std::env::remove_var("SPLUNK_PROFILE");
-            std::env::remove_var("SPLUNK_SKIP_VERIFY");
-            std::env::remove_var("SPLUNK_TIMEOUT");
-            std::env::remove_var("SPLUNK_MAX_RETRIES");
-            std::env::remove_var("SPLUNK_EARLIEST_TIME");
-            std::env::remove_var("SPLUNK_LATEST_TIME");
-            std::env::remove_var("SPLUNK_MAX_RESULTS");
-            std::env::remove_var("SPLUNK_SESSION_EXPIRY_BUFFER");
-            std::env::remove_var("SPLUNK_SESSION_TTL");
-            std::env::remove_var("SPLUNK_HEALTH_CHECK_INTERVAL");
-        }
-    }
-
-    /// Serializes process-global env-var mutations for this test module.
-    struct EnvVarGuard {
-        _lock: std::sync::MutexGuard<'static, ()>,
-    }
-
-    impl EnvVarGuard {
-        fn new() -> Self {
-            let lock = env_lock()
-                .lock()
-                .expect("Failed to acquire SPLUNK_* env var lock");
-            cleanup_splunk_env();
-            Self { _lock: lock }
-        }
-    }
-
-    impl Drop for EnvVarGuard {
-        fn drop(&mut self) {
-            cleanup_splunk_env();
-        }
-    }
-
     #[test]
     fn test_loader_with_api_token() {
         let loader = ConfigLoader::new()
@@ -809,78 +768,65 @@ mod tests {
     #[test]
     #[serial]
     fn test_env_overrides_profile() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
         let temp_dir = TempDir::new().unwrap();
         let config_path = create_test_config_file(temp_dir.path());
 
-        // Set env var to override profile
-        unsafe {
-            std::env::set_var("SPLUNK_BASE_URL", "https://override.splunk.com:8089");
-        }
+        temp_env::with_vars(
+            [("SPLUNK_BASE_URL", Some("https://override.splunk.com:8089"))],
+            || {
+                let loader = ConfigLoader::new()
+                    .with_profile_name("dev".to_string())
+                    .with_config_path(config_path.clone())
+                    .from_profile()
+                    .unwrap()
+                    .from_env()
+                    .unwrap();
 
-        let loader = ConfigLoader::new()
-            .with_profile_name("dev".to_string())
-            .with_config_path(config_path)
-            .from_profile()
-            .unwrap()
-            .from_env()
-            .unwrap();
-
-        let config = loader.build().unwrap();
-        // Env var should take precedence over profile
-        assert_eq!(
-            config.connection.base_url,
-            "https://override.splunk.com:8089"
+                let config = loader.build().unwrap();
+                // Env var should take precedence over profile
+                assert_eq!(
+                    config.connection.base_url,
+                    "https://override.splunk.com:8089"
+                );
+            },
         );
-
-        unsafe {
-            std::env::remove_var("SPLUNK_BASE_URL");
-        }
     }
 
     #[test]
     #[serial]
     fn test_empty_env_vars_ignored() {
-        let _env = EnvVarGuard::new();
-        // Clean up first to ensure test isolation
-        unsafe {
-            std::env::remove_var("SPLUNK_API_TOKEN");
-            std::env::remove_var("SPLUNK_USERNAME");
-            std::env::remove_var("SPLUNK_PASSWORD");
-        }
+        let _lock = env_lock().lock().unwrap();
 
         // Set empty env vars - they should be treated as None
-        unsafe {
-            std::env::set_var("SPLUNK_API_TOKEN", "");
-            std::env::set_var("SPLUNK_USERNAME", "");
-            std::env::set_var("SPLUNK_PASSWORD", "");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_API_TOKEN", Some("")),
+                ("SPLUNK_USERNAME", Some("")),
+                ("SPLUNK_PASSWORD", Some("")),
+            ],
+            || {
+                let loader = ConfigLoader::new()
+                    .with_base_url("https://localhost:8089".to_string())
+                    .with_username("admin".to_string()) // Set via builder
+                    .with_password("password".to_string())
+                    .from_env()
+                    .unwrap();
 
-        let loader = ConfigLoader::new()
-            .with_base_url("https://localhost:8089".to_string())
-            .with_username("admin".to_string()) // Set via builder
-            .with_password("password".to_string())
-            .from_env()
-            .unwrap();
-
-        let config = loader.build().unwrap();
-        // Should use session auth since API token env is empty
-        assert!(matches!(
-            config.auth.strategy,
-            AuthStrategy::SessionToken { .. }
-        ));
-
-        unsafe {
-            std::env::remove_var("SPLUNK_API_TOKEN");
-            std::env::remove_var("SPLUNK_USERNAME");
-            std::env::remove_var("SPLUNK_PASSWORD");
-        }
+                let config = loader.build().unwrap();
+                // Should use session auth since API token env is empty
+                assert!(matches!(
+                    config.auth.strategy,
+                    AuthStrategy::SessionToken { .. }
+                ));
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_env_var_or_none_filters_empty_and_whitespace_strings() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
         // Direct unit test for the env_var_or_none helper function
 
         // Test 1: Unset env var returns None
@@ -889,451 +835,472 @@ mod tests {
         assert!(result1.is_none(), "Unset env var should return None");
 
         // Test 2: Empty string env var returns None
-        unsafe {
-            std::env::set_var(key1, "");
-        }
-        let result2 = ConfigLoader::env_var_or_none(key1);
-        assert!(result2.is_none(), "Empty string env var should return None");
+        temp_env::with_vars([(key1, Some(""))], || {
+            let result2 = ConfigLoader::env_var_or_none(key1);
+            assert!(result2.is_none(), "Empty string env var should return None");
+        });
 
         // Test 3: Whitespace-only string env var returns None
-        unsafe {
-            std::env::set_var(key1, "   ");
-        }
-        let result3 = ConfigLoader::env_var_or_none(key1);
-        assert!(
-            result3.is_none(),
-            "Whitespace-only env var should return None"
-        );
-        unsafe {
-            std::env::remove_var(key1);
-        }
+        temp_env::with_vars([(key1, Some("   "))], || {
+            let result3 = ConfigLoader::env_var_or_none(key1);
+            assert!(
+                result3.is_none(),
+                "Whitespace-only env var should return None"
+            );
+        });
 
-        // Test 4: Non-empty string env var returns Some(trimmed)
+        // Test 4: Non-empty string env var returns Some(value without trimming)
         let key2 = "_SPLUNK_TEST_SET_VAR";
-        unsafe {
-            std::env::set_var(key2, " test-value ");
-        }
-        let result4 = ConfigLoader::env_var_or_none(key2);
-        assert_eq!(
-            result4,
-            Some(" test-value ".to_string()), // Implementation doesn't trim the value, just checks if trimmed is empty
-            "Non-empty env var should return Some(value)"
-        );
-        unsafe {
-            std::env::remove_var(key2);
-        }
+        temp_env::with_vars([(key2, Some(" test-value "))], || {
+            let result4 = ConfigLoader::env_var_or_none(key2);
+            assert_eq!(
+                result4,
+                Some(" test-value ".to_string()), // Implementation doesn't trim the value, just checks if trimmed is empty
+                "Non-empty env var should return Some(value)"
+            );
+        });
     }
 
     #[test]
     #[serial]
     fn test_whitespace_only_env_var_treated_as_unset() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
+
         // Whitespace-only is filtered as empty/unset
-        unsafe {
-            std::env::set_var("SPLUNK_API_TOKEN", "   ");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_USERNAME", "admin");
-            std::env::set_var("SPLUNK_PASSWORD", "password");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_API_TOKEN", Some("   ")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_USERNAME", Some("admin")),
+                ("SPLUNK_PASSWORD", Some("password")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-
-        let config = loader.build().unwrap();
-        // Whitespace API token should be ignored, falling back to session auth
-        assert!(matches!(
-            config.auth.strategy,
-            AuthStrategy::SessionToken { .. }
-        ));
-
-        unsafe {
-            std::env::remove_var("SPLUNK_API_TOKEN");
-            std::env::remove_var("SPLUNK_BASE_URL");
-            std::env::remove_var("SPLUNK_USERNAME");
-            std::env::remove_var("SPLUNK_PASSWORD");
-        }
+                let config = loader.build().unwrap();
+                // Whitespace API token should be ignored, falling back to session auth
+                assert!(matches!(
+                    config.auth.strategy,
+                    AuthStrategy::SessionToken { .. }
+                ));
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_empty_and_whitespace_env_vars_ignored_for_non_string_fields() {
-        let _env = EnvVarGuard::new();
-        unsafe {
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "token");
-            std::env::set_var("SPLUNK_SKIP_VERIFY", "   ");
-            std::env::set_var("SPLUNK_TIMEOUT", "");
-            std::env::set_var("SPLUNK_MAX_RETRIES", " ");
-        }
+        let _lock = env_lock().lock().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
+        temp_env::with_vars(
+            [
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("token")),
+                ("SPLUNK_SKIP_VERIFY", Some("   ")),
+                ("SPLUNK_TIMEOUT", Some("")),
+                ("SPLUNK_MAX_RETRIES", Some(" ")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        // Should use defaults for bool/number fields instead of erroring on parse
-        assert!(!config.connection.skip_verify);
-        assert_eq!(config.connection.timeout, Duration::from_secs(30));
-        assert_eq!(config.connection.max_retries, 3);
+                // Should use defaults for bool/number fields instead of erroring on parse
+                assert!(!config.connection.skip_verify);
+                assert_eq!(config.connection.timeout, Duration::from_secs(30));
+                assert_eq!(config.connection.max_retries, 3);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_splunk_config_path_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
         let temp_dir = TempDir::new().unwrap();
         let config_path = create_test_config_file(temp_dir.path());
 
-        // Set SPLUNK_CONFIG_PATH environment variable
-        unsafe {
-            std::env::set_var("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap());
-        }
+        temp_env::with_vars(
+            [("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap()))],
+            || {
+                // Verify that with_config_path would use the environment variable's path
+                let env_path = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").unwrap();
+                let path_from_env = std::path::PathBuf::from(env_path);
 
-        // Verify that with_config_path would use the environment variable's path
-        let env_path = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").unwrap();
-        let path_from_env = std::path::PathBuf::from(env_path);
+                let loader = ConfigLoader::new()
+                    .with_config_path(path_from_env)
+                    .with_profile_name("prod".to_string())
+                    .from_profile()
+                    .unwrap();
 
-        let loader = ConfigLoader::new()
-            .with_config_path(path_from_env)
-            .with_profile_name("prod".to_string())
-            .from_profile()
-            .unwrap();
-
-        let config = loader.build().unwrap();
-        assert_eq!(config.connection.base_url, "https://prod.splunk.com:8089");
-
-        unsafe {
-            std::env::remove_var("SPLUNK_CONFIG_PATH");
-        }
+                let config = loader.build().unwrap();
+                assert_eq!(config.connection.base_url, "https://prod.splunk.com:8089");
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_empty_splunk_config_path_ignored() {
-        let _env = EnvVarGuard::new();
-        // Empty string in SPLUNK_CONFIG_PATH should be ignored
-        unsafe {
-            std::env::set_var("SPLUNK_CONFIG_PATH", "");
-        }
+        let _lock = env_lock().lock().unwrap();
 
-        let result = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
-        assert!(
-            result.is_none(),
-            "Empty env var should be filtered by env_var_or_none"
-        );
+        // Empty string in SPLUNK_CONFIG_PATH should be ignored
+        temp_env::with_vars([("SPLUNK_CONFIG_PATH", Some(""))], || {
+            let result = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
+            assert!(
+                result.is_none(),
+                "Empty env var should be filtered by env_var_or_none"
+            );
+        });
 
         // Test with whitespace
-        unsafe {
-            std::env::set_var("SPLUNK_CONFIG_PATH", "   ");
-        }
-        let result_ws = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
-        assert!(
-            result_ws.is_none(),
-            "Whitespace env var should be filtered by env_var_or_none"
-        );
-
-        unsafe {
-            std::env::remove_var("SPLUNK_CONFIG_PATH");
-        }
+        temp_env::with_vars([("SPLUNK_CONFIG_PATH", Some("   "))], || {
+            let result_ws = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
+            assert!(
+                result_ws.is_none(),
+                "Whitespace env var should be filtered by env_var_or_none"
+            );
+        });
     }
 
     #[test]
     #[serial]
     fn test_search_defaults_env_vars() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        // Set search default env vars
-        unsafe {
-            std::env::set_var("SPLUNK_EARLIEST_TIME", "-48h");
-            std::env::set_var("SPLUNK_LATEST_TIME", "2024-01-01T00:00:00");
-            std::env::set_var("SPLUNK_MAX_RESULTS", "500");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_EARLIEST_TIME", Some("-48h")),
+                ("SPLUNK_LATEST_TIME", Some("2024-01-01T00:00:00")),
+                ("SPLUNK_MAX_RESULTS", Some("500")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-
-        assert_eq!(loader.earliest_time(), Some(&"-48h".to_string()));
-        assert_eq!(
-            loader.latest_time(),
-            Some(&"2024-01-01T00:00:00".to_string())
+                assert_eq!(loader.earliest_time(), Some(&"-48h".to_string()));
+                assert_eq!(
+                    loader.latest_time(),
+                    Some(&"2024-01-01T00:00:00".to_string())
+                );
+                assert_eq!(loader.max_results(), Some(500));
+            },
         );
-        assert_eq!(loader.max_results(), Some(500));
     }
 
     #[test]
     #[serial]
     fn test_search_defaults_env_vars_empty_ignored() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        // Set empty/whitespace search default env vars
-        unsafe {
-            std::env::set_var("SPLUNK_EARLIEST_TIME", "");
-            std::env::set_var("SPLUNK_LATEST_TIME", "   ");
-            std::env::set_var("SPLUNK_MAX_RESULTS", "");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_EARLIEST_TIME", Some("")),
+                ("SPLUNK_LATEST_TIME", Some("   ")),
+                ("SPLUNK_MAX_RESULTS", Some("")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-
-        // Empty/whitespace values should be treated as None
-        assert_eq!(loader.earliest_time(), None);
-        assert_eq!(loader.latest_time(), None);
-        assert_eq!(loader.max_results(), None);
+                // Empty/whitespace values should be treated as None
+                assert_eq!(loader.earliest_time(), None);
+                assert_eq!(loader.latest_time(), None);
+                assert_eq!(loader.max_results(), None);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_build_search_defaults_with_persisted() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        // Set only some env vars
-        unsafe {
-            std::env::set_var("SPLUNK_EARLIEST_TIME", "-7d");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_EARLIEST_TIME", Some("-7d")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
+                let persisted = SearchDefaults {
+                    earliest_time: "-24h".to_string(),
+                    latest_time: "now".to_string(),
+                    max_results: 1000,
+                };
 
-        let persisted = SearchDefaults {
-            earliest_time: "-24h".to_string(),
-            latest_time: "now".to_string(),
-            max_results: 1000,
-        };
+                let defaults = loader.build_search_defaults(Some(persisted));
 
-        let defaults = loader.build_search_defaults(Some(persisted));
-
-        // Env var should override persisted
-        assert_eq!(defaults.earliest_time, "-7d");
-        // Non-env values should use persisted
-        assert_eq!(defaults.latest_time, "now");
-        assert_eq!(defaults.max_results, 1000);
+                // Env var should override persisted
+                assert_eq!(defaults.earliest_time, "-7d");
+                // Non-env values should use persisted
+                assert_eq!(defaults.latest_time, "now");
+                assert_eq!(defaults.max_results, 1000);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_build_search_defaults_without_persisted() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        // Don't set any search default env vars
-        unsafe {
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
+                // Build without persisted defaults - should use hardcoded defaults
+                let defaults = loader.build_search_defaults(None);
 
-        // Build without persisted defaults - should use hardcoded defaults
-        let defaults = loader.build_search_defaults(None);
-
-        assert_eq!(defaults.earliest_time, "-24h");
-        assert_eq!(defaults.latest_time, "now");
-        assert_eq!(defaults.max_results, 1000);
+                assert_eq!(defaults.earliest_time, "-24h");
+                assert_eq!(defaults.latest_time, "now");
+                assert_eq!(defaults.max_results, 1000);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_search_defaults_env_vars_override_persisted() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        // Set all search default env vars
-        unsafe {
-            std::env::set_var("SPLUNK_EARLIEST_TIME", "-1h");
-            std::env::set_var("SPLUNK_LATEST_TIME", "-5m");
-            std::env::set_var("SPLUNK_MAX_RESULTS", "100");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_EARLIEST_TIME", Some("-1h")),
+                ("SPLUNK_LATEST_TIME", Some("-5m")),
+                ("SPLUNK_MAX_RESULTS", Some("100")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
+                let persisted = SearchDefaults {
+                    earliest_time: "-48h".to_string(),
+                    latest_time: "2024-01-01T00:00:00".to_string(),
+                    max_results: 5000,
+                };
 
-        let persisted = SearchDefaults {
-            earliest_time: "-48h".to_string(),
-            latest_time: "2024-01-01T00:00:00".to_string(),
-            max_results: 5000,
-        };
+                let defaults = loader.build_search_defaults(Some(persisted));
 
-        let defaults = loader.build_search_defaults(Some(persisted));
-
-        // All env vars should override persisted values
-        assert_eq!(defaults.earliest_time, "-1h");
-        assert_eq!(defaults.latest_time, "-5m");
-        assert_eq!(defaults.max_results, 100);
+                // All env vars should override persisted values
+                assert_eq!(defaults.earliest_time, "-1h");
+                assert_eq!(defaults.latest_time, "-5m");
+                assert_eq!(defaults.max_results, 100);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_invalid_max_results_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_MAX_RESULTS", "not-a-number");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_MAX_RESULTS", Some("not-a-number")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let result = ConfigLoader::new().from_env();
 
-        let result = ConfigLoader::new().from_env();
-
-        match result {
-            Err(ConfigError::InvalidValue { var, .. }) => {
-                assert_eq!(var, "SPLUNK_MAX_RESULTS");
-            }
-            Ok(_) => panic!("Expected an error for invalid SPLUNK_MAX_RESULTS"),
-            Err(_) => panic!("Expected InvalidValue error for SPLUNK_MAX_RESULTS"),
-        }
+                match result {
+                    Err(ConfigError::InvalidValue { var, .. }) => {
+                        assert_eq!(var, "SPLUNK_MAX_RESULTS");
+                    }
+                    Ok(_) => panic!("Expected an error for invalid SPLUNK_MAX_RESULTS"),
+                    Err(_) => panic!("Expected InvalidValue error for SPLUNK_MAX_RESULTS"),
+                }
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_session_ttl_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_SESSION_TTL", "7200");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_SESSION_TTL", Some("7200")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
-
-        assert_eq!(config.connection.session_ttl_seconds, 7200);
-        // Default buffer should still be 60
-        assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
+                assert_eq!(config.connection.session_ttl_seconds, 7200);
+                // Default buffer should still be 60
+                assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_session_expiry_buffer_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_SESSION_EXPIRY_BUFFER", "120");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("120")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
-
-        assert_eq!(config.connection.session_expiry_buffer_seconds, 120);
-        // Default TTL should still be 3600
-        assert_eq!(config.connection.session_ttl_seconds, 3600);
+                assert_eq!(config.connection.session_expiry_buffer_seconds, 120);
+                // Default TTL should still be 3600
+                assert_eq!(config.connection.session_ttl_seconds, 3600);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_session_ttl_and_buffer_env_vars_together() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_SESSION_TTL", "7200");
-            std::env::set_var("SPLUNK_SESSION_EXPIRY_BUFFER", "120");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_SESSION_TTL", Some("7200")),
+                ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("120")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
-
-        assert_eq!(config.connection.session_ttl_seconds, 7200);
-        assert_eq!(config.connection.session_expiry_buffer_seconds, 120);
+                assert_eq!(config.connection.session_ttl_seconds, 7200);
+                assert_eq!(config.connection.session_expiry_buffer_seconds, 120);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_invalid_session_ttl_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_SESSION_TTL", "not-a-number");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_SESSION_TTL", Some("not-a-number")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let result = ConfigLoader::new().from_env();
 
-        let result = ConfigLoader::new().from_env();
-
-        match result {
-            Err(ConfigError::InvalidValue { var, .. }) => {
-                assert_eq!(var, "SPLUNK_SESSION_TTL");
-            }
-            Ok(_) => panic!("Expected an error for invalid SPLUNK_SESSION_TTL"),
-            Err(_) => panic!("Expected InvalidValue error for SPLUNK_SESSION_TTL"),
-        }
+                match result {
+                    Err(ConfigError::InvalidValue { var, .. }) => {
+                        assert_eq!(var, "SPLUNK_SESSION_TTL");
+                    }
+                    Ok(_) => panic!("Expected an error for invalid SPLUNK_SESSION_TTL"),
+                    Err(_) => panic!("Expected InvalidValue error for SPLUNK_SESSION_TTL"),
+                }
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_session_ttl_default_values() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
         // Don't set any session env vars
-        unsafe {
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
-
-        // Should use defaults
-        assert_eq!(config.connection.session_ttl_seconds, 3600);
-        assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
+                // Should use defaults
+                assert_eq!(config.connection.session_ttl_seconds, 3600);
+                assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_health_check_interval_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_HEALTH_CHECK_INTERVAL", "120");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_HEALTH_CHECK_INTERVAL", Some("120")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
-
-        assert_eq!(config.connection.health_check_interval_seconds, 120);
+                assert_eq!(config.connection.health_check_interval_seconds, 120);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_health_check_interval_default() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
         // Don't set health check interval env var
-        unsafe {
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let loader = ConfigLoader::new().from_env().unwrap();
+                let config = loader.build().unwrap();
 
-        let loader = ConfigLoader::new().from_env().unwrap();
-        let config = loader.build().unwrap();
-
-        // Should use default of 60 seconds
-        assert_eq!(config.connection.health_check_interval_seconds, 60);
+                // Should use default of 60 seconds
+                assert_eq!(config.connection.health_check_interval_seconds, 60);
+            },
+        );
     }
 
     #[test]
     #[serial]
     fn test_invalid_health_check_interval_env_var() {
-        let _env = EnvVarGuard::new();
+        let _lock = env_lock().lock().unwrap();
 
-        unsafe {
-            std::env::set_var("SPLUNK_HEALTH_CHECK_INTERVAL", "not-a-number");
-            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
-            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
-        }
+        temp_env::with_vars(
+            [
+                ("SPLUNK_HEALTH_CHECK_INTERVAL", Some("not-a-number")),
+                ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+                ("SPLUNK_API_TOKEN", Some("test-token")),
+            ],
+            || {
+                let result = ConfigLoader::new().from_env();
 
-        let result = ConfigLoader::new().from_env();
-
-        match result {
-            Err(ConfigError::InvalidValue { var, .. }) => {
-                assert_eq!(var, "SPLUNK_HEALTH_CHECK_INTERVAL");
-            }
-            Ok(_) => panic!("Expected an error for invalid SPLUNK_HEALTH_CHECK_INTERVAL"),
-            Err(_) => panic!("Expected InvalidValue error for SPLUNK_HEALTH_CHECK_INTERVAL"),
-        }
+                match result {
+                    Err(ConfigError::InvalidValue { var, .. }) => {
+                        assert_eq!(var, "SPLUNK_HEALTH_CHECK_INTERVAL");
+                    }
+                    Ok(_) => panic!("Expected an error for invalid SPLUNK_HEALTH_CHECK_INTERVAL"),
+                    Err(_) => {
+                        panic!("Expected InvalidValue error for SPLUNK_HEALTH_CHECK_INTERVAL")
+                    }
+                }
+            },
+        );
     }
 }
