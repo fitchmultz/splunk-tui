@@ -203,6 +203,9 @@ impl App {
                     self.set_health_state(HealthState::Unhealthy);
                 }
             },
+            Action::SearchStarted(query) => {
+                self.running_query = Some(query);
+            }
             Action::SearchComplete(Ok((results, sid, total))) => {
                 let results_count = results.len() as u64;
                 self.set_search_results(results);
@@ -216,7 +219,12 @@ impl App {
                     // Note: initial fetch in main.rs uses 1000, but we use app's page_size for consistency
                     results_count >= self.search_results_page_size
                 };
-                self.search_status = format!("Search complete: {}", self.search_input);
+                // Use running_query for status message, falling back to search_input if not set
+                let query_for_status = self
+                    .running_query
+                    .take()
+                    .unwrap_or_else(|| self.search_input.clone());
+                self.search_status = format!("Search complete: {}", query_for_status);
                 self.loading = false;
             }
             Action::MoreSearchResultsLoaded(Ok((results, _offset, total))) => {
@@ -315,6 +323,7 @@ impl App {
             Action::SearchComplete(Err((error_msg, details))) => {
                 self.current_error = Some(details);
                 self.toasts.push(Toast::error(error_msg));
+                self.running_query = None; // Clear the running query on error
                 self.loading = false;
             }
             Action::ShowErrorDetails(details) => {

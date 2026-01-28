@@ -201,6 +201,9 @@ pub enum Action {
     SettingsLoaded(PersistedState),
     /// Result of background health status check
     HealthStatusLoaded(Result<SplunkHealth, String>),
+    /// Signals that a search has started with the given query.
+    /// Stores the query for accurate status messaging even if search_input is edited.
+    SearchStarted(String),
     /// Result of a search completion (results, sid, total_count) or (error_msg, error_details)
     #[allow(clippy::type_complexity)]
     SearchComplete(

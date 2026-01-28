@@ -5560,6 +5560,87 @@
       "completed_at": "2026-01-28T02:17:30.616532000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0111",
+      "status": "done",
+      "title": "Fix Search status messaging to reference the actual running query, not current input",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/actions.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/actions.rs:219: Action::SearchComplete sets search_status using self.search_input, which can be edited while a search is running.",
+        "crates/tui/src/main.rs:557: Action::RunSearch captures query_clone at submit time, but this stable query is not stored in App state for later display.",
+        "crates/tui/src/app.rs:53: search_input is the live editable field; no separate field exists to track the currently-running query.",
+        "crates/tui/src/app/actions.rs:219: search_status format string uses self.search_input which may have been modified by user during search execution."
+      ],
+      "plan": [
+        "Add running_query field to App struct to store the query at submit time.",
+        "Update Action::SearchComplete handler to use running_query for status message instead of search_input.",
+        "Clear running_query when search completes or fails.",
+        "Add tests that modify search_input while loading and assert status still references the submitted query."
+      ],
+      "notes": [
+        "Search input mode (QueryFocused/ResultsFocused) was implemented in RQ-0101; this fix should work with that design.",
+        "The query_clone in main.rs handle_side_effects is available but not passed back to App - need to store it at search start.",
+        "Added running_query field to App struct to store query at submit time",
+        "Added SearchStarted action variant and handler to capture running query",
+        "Updated SearchComplete handler to use running_query for status message",
+        "Clear running_query on both success and error completion",
+        "Added 4 regression tests covering the fix and edge cases",
+        "make ci passes"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T02:28:33.129921000Z",
+      "completed_at": "2026-01-28T02:28:33.129921000Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0112",
+      "status": "done",
+      "title": "Repair Search results viewport math (result-count vs line-count) and scrolling semantics",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "rendering",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/search.rs: available_height is computed in terminal rows, but visible_end is computed as search_scroll_offset + available_height where search_scroll_offset is treated as a result index.",
+        "crates/tui/src/ui/screens/search.rs: each result is pretty-printed and expanded into many Lines, so taking N results can exceed the viewport by an order of magnitude and make scrolling confusing.",
+        "crates/tui/src/app.rs: next_item/previous_item adjust search_scroll_offset by 1, implying result-based scrolling rather than line-based, which fights with the multi-line rendering."
+      ],
+      "plan": [
+        "Decide on a consistent scroll model (recommended: line-based scroll for the rendered text, with an optional selected-result index for copy/export actions).",
+        "Refactor Search rendering to compute visible window based on lines and apply Paragraph::scroll for performance.",
+        "Update navigation keys/tests/snapshots to reflect the new scroll behavior and ensure copy/export uses the intended selection."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T03:00:03.263502000Z",
+      "completed_at": "2026-01-28T03:00:03.263502000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

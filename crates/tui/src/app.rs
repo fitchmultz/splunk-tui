@@ -54,6 +54,9 @@ pub struct App {
     /// Cursor position within search_input (byte index, not character index).
     /// Must be kept in sync with search_input modifications.
     pub search_cursor_position: usize,
+    /// The query that was submitted for the currently running search.
+    /// Used to display accurate status messages even if search_input is edited.
+    pub running_query: Option<String>,
     pub search_status: String,
     pub search_results: Vec<Value>,
     pub search_scroll_offset: usize,
@@ -269,6 +272,7 @@ impl App {
             current_screen: CurrentScreen::Search,
             search_input: last_search_query.clone().unwrap_or_default(),
             search_cursor_position: last_search_query.unwrap_or_default().len(),
+            running_query: None,
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
             search_scroll_offset: 0,

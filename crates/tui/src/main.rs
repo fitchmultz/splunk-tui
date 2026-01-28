@@ -553,6 +553,9 @@ async fn handle_side_effects(
             tx.send(Action::Loading(true)).ok();
             tx.send(Action::Progress(0.1)).ok();
 
+            // Store the query that is about to run for accurate status messages
+            tx.send(Action::SearchStarted(query.clone())).ok();
+
             let tx_clone = tx.clone();
             let query_clone = query.clone();
             tokio::spawn(async move {

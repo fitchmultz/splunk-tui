@@ -117,3 +117,8 @@ pub fn mouse_click(col: u16, row: u16) -> crossterm::event::MouseEvent {
         modifiers: KeyModifiers::empty(),
     }
 }
+
+/// Create error details from a string for testing.
+pub fn error_details_from_string(error: &str) -> splunk_tui::error_details::ErrorDetails {
+    splunk_tui::error_details::ErrorDetails::from_error_string(error)
+}
