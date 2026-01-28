@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0172",
-      "status": "todo",
-      "title": "Split oversized TUI action.rs into focused action/serialization modules",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/action.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/action.rs is 1144 lines (wc -l), exceeding the 1000-line split threshold."
-      ],
-      "plan": [
-        "Separate action definitions, redaction logic, and progress callbacks into submodules.",
-        "Preserve public API surface while adding docstrings to new files.",
-        "Run TUI unit tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0167",
       "status": "todo",
       "title": "Split oversized CLI formatters.rs into resource-specific modules",
