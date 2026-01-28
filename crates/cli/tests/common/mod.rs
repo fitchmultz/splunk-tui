@@ -37,3 +37,15 @@ pub fn splunk_cmd() -> Command {
 
     cmd
 }
+
+/// Returns a hermetic `splunk-cli` command with a specific base URL.
+///
+/// This is a convenience wrapper around `splunk_cmd()` that sets `SPLUNK_BASE_URL`
+/// to the provided value. All other hermeticity guarantees (DOTENV_DISABLED=1,
+/// cleared env vars) are preserved.
+#[allow(dead_code)]
+pub fn splunk_cmd_with_base_url(base_url: &str) -> Command {
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", base_url);
+    cmd
+}

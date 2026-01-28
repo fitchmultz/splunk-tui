@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0162",
-      "status": "todo",
-      "title": "Make file_output_tests hermetic and avoid global cwd mutation",
-      "priority": "medium",
-      "tags": [
-        "tests",
-        "cli",
-        "reliability"
-      ],
-      "scope": [
-        "crates/cli/tests/file_output_tests.rs",
-        "crates/cli/tests/common/mod.rs"
-      ],
-      "evidence": [
-        "crates/cli/tests/file_output_tests.rs defines splunk_cli_cmd without DOTENV_DISABLED or env cleanup, unlike crates/cli/tests/common/mod.rs.",
-        "crates/cli/tests/file_output_tests.rs uses std::env::set_current_dir without restoring it, which can affect parallel tests."
-      ],
-      "plan": [
-        "Refactor file_output_tests to use the hermetic helper (or extend it) so DOTENV_DISABLED is set and env leakage is cleared.",
-        "Replace global set_current_dir with cmd.current_dir or a save/restore guard.",
-        "Run file_output_tests to confirm behavior and isolation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0164",
       "status": "todo",
       "title": "Support HTTP-date Retry-After parsing in request retry helper",

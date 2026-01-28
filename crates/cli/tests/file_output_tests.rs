@@ -1,25 +1,16 @@
 //! Integration tests for `--output-file` flag functionality.
 
+mod common;
+
 use predicates::prelude::*;
 use std::fs;
 use tempfile::TempDir;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-fn splunk_cli_cmd() -> assert_cmd::Command {
-    assert_cmd::cargo::cargo_bin_cmd!("splunk-cli")
-}
-
-fn splunk_cli_cmd_with_base_url(base_url: &str) -> assert_cmd::Command {
-    let mut cmd = splunk_cli_cmd();
-    cmd.env("SPLUNK_BASE_URL", base_url)
-        .env("SPLUNK_API_TOKEN", "test-token");
-    cmd
-}
-
 #[test]
 fn test_output_file_flag_exists() {
-    let mut cmd = splunk_cli_cmd();
+    let mut cmd = common::splunk_cmd();
     cmd.args(["search", "--help"])
         .assert()
         .success()
@@ -84,7 +75,7 @@ async fn test_output_file_creates_file() {
         .mount(&mock_server)
         .await;
 
-    let mut cmd = splunk_cli_cmd_with_base_url(&mock_server.uri());
+    let mut cmd = common::splunk_cmd_with_base_url(&mock_server.uri());
     cmd.args([
         "search",
         "index=main | head 1",
@@ -165,7 +156,7 @@ async fn test_output_file_overwrites_existing() {
         .mount(&mock_server)
         .await;
 
-    let mut cmd = splunk_cli_cmd_with_base_url(&mock_server.uri());
+    let mut cmd = common::splunk_cmd_with_base_url(&mock_server.uri());
     cmd.args([
         "search",
         "index=main | head 1",
@@ -245,7 +236,7 @@ async fn test_output_file_creates_parent_directories() {
         .mount(&mock_server)
         .await;
 
-    let mut cmd = splunk_cli_cmd_with_base_url(&mock_server.uri());
+    let mut cmd = common::splunk_cmd_with_base_url(&mock_server.uri());
     cmd.args([
         "search",
         "index=main | head 1",
@@ -268,7 +259,7 @@ async fn test_output_file_creates_parent_directories() {
 
 #[test]
 fn test_tail_mode_rejects_output_file() {
-    let mut cmd = splunk_cli_cmd_with_base_url("https://localhost:8089");
+    let mut cmd = common::splunk_cmd_with_base_url("https://localhost:8089");
     cmd.args(["logs", "--tail", "--output-file", "/tmp/test-results.json"])
         .assert()
         .failure()
@@ -338,7 +329,7 @@ async fn test_output_file_with_different_formats() {
             .mount(&mock_server)
             .await;
 
-        let mut cmd = splunk_cli_cmd_with_base_url(&mock_server.uri());
+        let mut cmd = common::splunk_cmd_with_base_url(&mock_server.uri());
         cmd.args([
             "search",
             "index=main | head 1",
@@ -419,21 +410,22 @@ async fn test_output_file_with_no_parent_directory() {
         .mount(&mock_server)
         .await;
 
-    // Change to temp_dir so we can use a relative path
-    std::env::set_current_dir(temp_dir.path()).unwrap();
-    let mut cmd = splunk_cli_cmd_with_base_url(&mock_server.uri());
-    cmd.args([
-        "search",
-        "index=main | head 1",
-        "--wait",
-        "--output",
-        "json",
-        "--output-file",
-        "results.json",
-    ])
-    .assert()
-    .success()
-    .stderr(predicate::str::contains("Results written to"));
+    // Use cmd.current_dir() instead of global set_current_dir to maintain
+    // test isolation and avoid affecting parallel tests.
+    let mut cmd = common::splunk_cmd_with_base_url(&mock_server.uri());
+    cmd.current_dir(temp_dir.path())
+        .args([
+            "search",
+            "index=main | head 1",
+            "--wait",
+            "--output",
+            "json",
+            "--output-file",
+            "results.json",
+        ])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Results written to"));
 
     // Verify file was created
     assert!(output_path.exists(), "Output file should be created");
