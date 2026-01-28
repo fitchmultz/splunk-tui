@@ -8,6 +8,40 @@ use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
 
+/// Macro to wrap an async API call with automatic session retry on 401/403 errors.
+///
+/// This macro centralizes the authentication retry pattern used across all API methods.
+/// When a 401 or 403 error is received and the client is using session-based auth
+/// (not API token auth), it clears the session, re-authenticates, and retries the call once.
+///
+/// Usage:
+/// ```ignore
+/// retry_call!(self, __token, endpoints::some_endpoint(&self.http, &self.base_url, __token, arg1, arg2).await)
+/// ```
+/// The placeholder `__token` will be replaced with the actual auth token.
+macro_rules! retry_call {
+    ($self:expr, $token:ident, $call:expr) => {{
+        let $token = $self.get_auth_token().await?;
+        let result = $call;
+
+        match result {
+            Ok(data) => Ok(data),
+            Err(ClientError::ApiError { status, .. })
+                if (status == 401 || status == 403) && !$self.is_api_token_auth() =>
+            {
+                debug!(
+                    "Session expired (status {}), clearing and re-authenticating...",
+                    status
+                );
+                $self.session_manager.clear_session();
+                let $token = $self.get_auth_token().await?;
+                $call
+            }
+            Err(e) => Err(e),
+        }
+    }};
+}
+
 use crate::models::{
     App, ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     LogEntry, LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo,
@@ -263,41 +297,19 @@ impl SplunkClient {
         query: &str,
         options: &endpoints::search::CreateJobOptions,
     ) -> Result<String> {
-        let auth_token = self.get_auth_token().await?;
-
-        let result = endpoints::search::create_job(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            query,
-            options,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::search::create_job(
+                &self.http,
+                &self.base_url,
+                &__token,
+                query,
+                options,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-
-        match result {
-            Ok(sid) => Ok(sid),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::search::create_job(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    query,
-                    options,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Get results from a search job.
@@ -307,78 +319,37 @@ impl SplunkClient {
         count: u64,
         offset: u64,
     ) -> Result<SearchJobResults> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::search::get_results(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            sid,
-            Some(count),
-            Some(offset),
-            endpoints::search::OutputMode::Json,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::search::get_results(
+                &self.http,
+                &self.base_url,
+                &__token,
+                sid,
+                Some(count),
+                Some(offset),
+                endpoints::search::OutputMode::Json,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::search::get_results(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    sid,
-                    Some(count),
-                    Some(offset),
-                    endpoints::search::OutputMode::Json,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Get the status of a search job.
     pub async fn get_job_status(&mut self, sid: &str) -> Result<SearchJobStatus> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::search::get_job_status(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            sid,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::search::get_job_status(
+                &self.http,
+                &self.base_url,
+                &__token,
+                sid,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::search::get_job_status(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    sid,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// List all search jobs.
@@ -387,109 +358,39 @@ impl SplunkClient {
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<SearchJobStatus>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_jobs(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            count,
-            offset,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_jobs(
+                &self.http,
+                &self.base_url,
+                &__token,
+                count,
+                offset,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_jobs(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    count,
-                    offset,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Cancel a search job.
     pub async fn cancel_job(&mut self, sid: &str) -> Result<()> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::cancel_job(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            sid,
-            self.max_retries,
-        )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::cancel_job(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    sid,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::cancel_job(&self.http, &self.base_url, &__token, sid, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Delete a search job.
     pub async fn delete_job(&mut self, sid: &str) -> Result<()> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::delete_job(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            sid,
-            self.max_retries,
-        )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::delete_job(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    sid,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::delete_job(&self.http, &self.base_url, &__token, sid, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// List all indexes.
@@ -498,290 +399,129 @@ impl SplunkClient {
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<Index>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_indexes(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            count,
-            offset,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_indexes(
+                &self.http,
+                &self.base_url,
+                &__token,
+                count,
+                offset,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_indexes(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    count,
-                    offset,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// List all saved searches.
     pub async fn list_saved_searches(&mut self) -> Result<Vec<SavedSearch>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_saved_searches(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            self.max_retries,
-        )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_saved_searches(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_saved_searches(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Create a saved search.
     pub async fn create_saved_search(&mut self, name: &str, search: &str) -> Result<()> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::create_saved_search(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            name,
-            search,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::create_saved_search(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                search,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::create_saved_search(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    name,
-                    search,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Delete a saved search by name.
     pub async fn delete_saved_search(&mut self, name: &str) -> Result<()> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::delete_saved_search(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            name,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::delete_saved_search(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::delete_saved_search(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    name,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// List all installed apps.
     pub async fn list_apps(&mut self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_apps(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            count,
-            offset,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_apps(
+                &self.http,
+                &self.base_url,
+                &__token,
+                count,
+                offset,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_apps(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    count,
-                    offset,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Get specific app details by name.
     pub async fn get_app(&mut self, app_name: &str) -> Result<App> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::get_app(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            app_name,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_app(
+                &self.http,
+                &self.base_url,
+                &__token,
+                app_name,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_app(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    app_name,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Enable an app by name.
     pub async fn enable_app(&mut self, app_name: &str) -> Result<()> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::update_app(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            app_name,
-            false,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::update_app(
+                &self.http,
+                &self.base_url,
+                &__token,
+                app_name,
+                false,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::update_app(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    app_name,
-                    false,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Disable an app by name.
     pub async fn disable_app(&mut self, app_name: &str) -> Result<()> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::update_app(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            app_name,
-            true,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::update_app(
+                &self.http,
+                &self.base_url,
+                &__token,
+                app_name,
+                true,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::update_app(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    app_name,
-                    true,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// List all users.
@@ -790,272 +530,98 @@ impl SplunkClient {
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<User>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_users(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            count,
-            offset,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_users(
+                &self.http,
+                &self.base_url,
+                &__token,
+                count,
+                offset,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_users(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    count,
-                    offset,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Get server information.
     pub async fn get_server_info(&mut self) -> Result<ServerInfo> {
-        let auth_token = self.get_auth_token().await?;
-        let result =
-            endpoints::get_server_info(&self.http, &self.base_url, &auth_token, self.max_retries)
-                .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_server_info(&self.http, &self.base_url, &new_token, self.max_retries)
-                    .await
-            }
-            Err(e) => Err(e),
-        }
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_server_info(&self.http, &self.base_url, &__token, self.max_retries,)
+                .await
+        )
     }
 
     /// Get system-wide health information.
     pub async fn get_health(&mut self) -> Result<SplunkHealth> {
-        let auth_token = self.get_auth_token().await?;
-        let result =
-            endpoints::get_health(&self.http, &self.base_url, &auth_token, self.max_retries).await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_health(&self.http, &self.base_url, &new_token, self.max_retries)
-                    .await
-            }
-            Err(e) => Err(e),
-        }
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_health(&self.http, &self.base_url, &__token, self.max_retries,).await
+        )
     }
 
     /// Get cluster information.
     pub async fn get_cluster_info(&mut self) -> Result<ClusterInfo> {
-        let auth_token = self.get_auth_token().await?;
-        let result =
-            endpoints::get_cluster_info(&self.http, &self.base_url, &auth_token, self.max_retries)
-                .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_cluster_info(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_cluster_info(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Get cluster peer information.
     pub async fn get_cluster_peers(&mut self) -> Result<Vec<ClusterPeer>> {
-        let auth_token = self.get_auth_token().await?;
-        let result =
-            endpoints::get_cluster_peers(&self.http, &self.base_url, &auth_token, self.max_retries)
-                .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_cluster_peers(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_cluster_peers(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Get license usage information.
     pub async fn get_license_usage(&mut self) -> Result<Vec<LicenseUsage>> {
-        let auth_token = self.get_auth_token().await?;
-        let result =
-            endpoints::get_license_usage(&self.http, &self.base_url, &auth_token, self.max_retries)
-                .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_license_usage(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_license_usage(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// List all license pools.
     pub async fn list_license_pools(&mut self) -> Result<Vec<LicensePool>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_license_pools(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            self.max_retries,
-        )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_license_pools(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_license_pools(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// List all license stacks.
     pub async fn list_license_stacks(&mut self) -> Result<Vec<LicenseStack>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::list_license_stacks(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            self.max_retries,
-        )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::list_license_stacks(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::list_license_stacks(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Get KVStore status information.
     pub async fn get_kvstore_status(&mut self) -> Result<KvStoreStatus> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::get_kvstore_status(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            self.max_retries,
-        )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_kvstore_status(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_kvstore_status(&self.http, &self.base_url, &__token, self.max_retries,)
                 .await
-            }
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Check log parsing health by searching for parsing errors in internal logs.
@@ -1064,35 +630,17 @@ impl SplunkClient {
     /// from specific components (TuningParser, DateParserVerbose, Parser) and
     /// returns structured results about any issues found.
     pub async fn check_log_parsing_health(&mut self) -> Result<LogParsingHealth> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::check_log_parsing_health(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::check_log_parsing_health(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::check_log_parsing_health(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Get internal logs from Splunk.
@@ -1101,39 +649,19 @@ impl SplunkClient {
         count: u64,
         earliest: Option<&str>,
     ) -> Result<Vec<LogEntry>> {
-        let auth_token = self.get_auth_token().await?;
-        let result = endpoints::get_internal_logs(
-            &self.http,
-            &self.base_url,
-            &auth_token,
-            count,
-            earliest,
-            self.max_retries,
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_internal_logs(
+                &self.http,
+                &self.base_url,
+                &__token,
+                count,
+                earliest,
+                self.max_retries,
+            )
+            .await
         )
-        .await;
-        match result {
-            Ok(data) => Ok(data),
-            Err(ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !self.is_api_token_auth() =>
-            {
-                debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
-                );
-                self.session_manager.clear_session();
-                let new_token = self.get_auth_token().await?;
-                endpoints::get_internal_logs(
-                    &self.http,
-                    &self.base_url,
-                    &new_token,
-                    count,
-                    earliest,
-                    self.max_retries,
-                )
-                .await
-            }
-            Err(e) => Err(e),
-        }
     }
 
     /// Get the current authentication token, logging in if necessary.
