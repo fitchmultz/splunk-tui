@@ -19,10 +19,20 @@
 //!
 //! For 5xx errors and transport errors, exponential backoff is used without
 //! Retry-After header support.
+//!
+//! ## Retry Limitation for Non-Cloneable Requests
+//!
+//! Requests with streaming bodies (e.g., file uploads, multipart forms) cannot be
+//! retried because the request body can only be consumed once. If such a request
+//! fails with a retryable error, it will fail immediately without retry attempts.
+//!
+//! This limitation is detected when `reqwest::RequestBuilder::try_clone()` returns
+//! `None`. Applications requiring retry guarantees should use non-streaming request
+//! bodies or implement application-level retry logic.
 
 use reqwest::{RequestBuilder, Response};
 use std::time::Duration;
-use tracing::debug;
+use tracing::{debug, warn};
 
 use crate::error::{ClientError, Result};
 use crate::models::SplunkMessages;
@@ -108,6 +118,12 @@ fn is_retryable_transport_error(error: &reqwest::Error) -> bool {
 ///
 /// Returns `ClientError::MaxRetriesExceeded` when all retry attempts are exhausted.
 /// Propagates other `reqwest` errors as `ClientError::ReqwestError`.
+///
+/// # Limitations
+///
+/// Requests with streaming bodies cannot be retried. If `try_clone()` fails on
+/// the first attempt, the request is sent without retry capability. Callers
+/// requiring guaranteed retries should use non-streaming request bodies.
 pub async fn send_request_with_retry(
     builder: RequestBuilder,
     max_retries: usize,
@@ -125,14 +141,15 @@ pub async fn send_request_with_retry(
         let attempt_builder = match builder.try_clone() {
             Some(cloned) => cloned,
             None => {
-                // Can't clone - this is either:
-                // 1. First attempt with a non-clonable builder - use it directly
-                // 2. Subsequent attempt but can't clone - error out
+                // Can't clone - this typically happens with streaming request bodies
+                // (file uploads, multipart forms) where the body can only be consumed once.
+                // In such cases, retry is impossible because the body is already consumed
+                // on the first attempt.
                 if attempt == 0 {
-                    debug!("Request builder cannot be cloned, single attempt only");
+                    warn!("Request builder cannot be cloned, single attempt only");
                     return builder.send().await.map_err(ClientError::from);
                 } else {
-                    debug!("Cannot clone request builder for retry");
+                    warn!("Cannot clone request builder for retry");
                     return Err(ClientError::MaxRetriesExceeded(attempt));
                 }
             }
