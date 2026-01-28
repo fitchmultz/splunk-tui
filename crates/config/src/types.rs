@@ -1,5 +1,7 @@
 //! Configuration types for Splunk TUI.
 
+use std::collections::BTreeMap;
+
 use ratatui::style::Color;
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
@@ -424,6 +426,58 @@ pub struct ProfileConfig {
     pub timeout_seconds: Option<u64>,
     /// Maximum number of retries for failed requests
     pub max_retries: Option<usize>,
+}
+
+/// An overridable keybinding action identifier.
+///
+/// This enum represents the subset of actions that users can customize.
+/// Starting with global navigation only; may expand in the future.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum KeybindAction {
+    /// Quit the application
+    Quit,
+    /// Open the help popup
+    Help,
+    /// Navigate to the next screen
+    NextScreen,
+    /// Navigate to the previous screen
+    PreviousScreen,
+}
+
+impl fmt::Display for KeybindAction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Quit => write!(f, "quit"),
+            Self::Help => write!(f, "help"),
+            Self::NextScreen => write!(f, "next_screen"),
+            Self::PreviousScreen => write!(f, "previous_screen"),
+        }
+    }
+}
+
+/// User-defined keybinding overrides.
+///
+/// Maps action identifiers to key combinations. Only actions explicitly
+/// listed here override the defaults; all others use built-in bindings.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct KeybindOverrides {
+    /// Map of action -> key combination string.
+    /// Using BTreeMap for deterministic serialization.
+    #[serde(default)]
+    pub overrides: BTreeMap<KeybindAction, String>,
+}
+
+impl KeybindOverrides {
+    /// Returns true if there are no overrides configured.
+    pub fn is_empty(&self) -> bool {
+        self.overrides.is_empty()
+    }
+
+    /// Get the override for a specific action, if any.
+    pub fn get(&self, action: KeybindAction) -> Option<&str> {
+        self.overrides.get(&action).map(|s| s.as_str())
+    }
 }
 
 impl Default for Config {

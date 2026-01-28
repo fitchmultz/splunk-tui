@@ -169,6 +169,16 @@ async fn main() -> Result<()> {
         max_results: search_default_config.max_results,
     };
 
+    // Initialize keybinding overrides from persisted state
+    if let Err(e) =
+        splunk_tui::input::keymap::overrides::init_overrides(&persisted_state.keybind_overrides)
+    {
+        tracing::warn!(
+            "Failed to initialize keybinding overrides: {}. Using defaults.",
+            e
+        );
+    }
+
     // Build connection context for TUI header display (RQ-0134)
     let connection_ctx = ConnectionContext {
         profile_name: cli

@@ -698,3 +698,53 @@ You can customize these defaults using environment variables (see [Environment V
 The Settings screen displays the currently active search defaults. Values set via environment variables take precedence over persisted settings.
 
 Search defaults are persisted to the configuration file and will be restored on the next run. Environment variables always override persisted values.
+
+### Keybinding Customization
+
+You can customize a subset of global keybindings by adding a `keybind_overrides` section to your persisted state in `~/.config/splunk-tui/config.json`:
+
+```json
+{
+  "state": {
+    "keybind_overrides": {
+      "quit": "Ctrl+x",
+      "help": "F1",
+      "next_screen": "Ctrl+n",
+      "previous_screen": "Ctrl+p"
+    }
+  }
+}
+```
+
+#### Supported Actions
+
+| Action | Default | Description |
+|--------|---------|-------------|
+| `quit` | `q` | Quit the application |
+| `help` | `?` | Open the help popup |
+| `next_screen` | `Tab` | Navigate to the next screen |
+| `previous_screen` | `Shift+Tab` | Navigate to the previous screen |
+
+#### Key Syntax
+
+Key combinations use the following format:
+
+- Simple keys: `"q"`, `"x"`, `"1"`
+- With modifiers: `"Ctrl+x"`, `"Shift+Tab"`, `"Alt+F4"`
+- Special keys: `"F1"` through `"F20"`, `"Esc"`, `"Enter"`, `"Space"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`, `"Up"`, `"Down"`, `"Left"`, `"Right"`
+
+#### Limitations
+
+- Only global navigation keys can be customized. Screen-specific keybindings (like `r` for refresh) always use their default keys.
+- Some key combinations are reserved and cannot be overridden (e.g., `Ctrl+c` for copy to clipboard).
+- If you assign the same key to multiple actions, the application will log a warning and use the default bindings.
+
+#### Validation
+
+The application validates keybinding overrides at startup:
+
+- Invalid syntax will be logged as a warning and ignored
+- Conflicting keybindings (same key for multiple actions) will be detected and rejected
+- Reserved keys will be rejected with a warning
+
+If validation fails, the application will start with default keybindings.

@@ -370,6 +370,7 @@ fn test_config_manager_persistence_with_custom_path() {
         search_history: vec!["query1".to_string(), "query2".to_string()],
         selected_theme: ColorTheme::Dark,
         search_defaults: splunk_config::SearchDefaults::default(),
+        keybind_overrides: splunk_config::KeybindOverrides::default(),
     };
 
     // Save the state

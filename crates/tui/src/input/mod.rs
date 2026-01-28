@@ -12,6 +12,6 @@
 //! - Keybinding metadata must remain the single source of truth for help/docs.
 //! - Input resolution must return Actions only and never mutate App state.
 
-pub(crate) mod docs;
-pub(crate) mod help;
-pub(crate) mod keymap;
+pub mod docs;
+pub mod help;
+pub mod keymap;

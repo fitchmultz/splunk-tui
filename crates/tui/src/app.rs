@@ -44,7 +44,7 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, User,
 };
-use splunk_config::{ColorTheme, PersistedState, SearchDefaults, Theme};
+use splunk_config::{ColorTheme, KeybindOverrides, PersistedState, SearchDefaults, Theme};
 use std::collections::HashSet;
 
 /// Main application state.
@@ -124,6 +124,9 @@ pub struct App {
 
     // Search defaults (persisted)
     pub search_defaults: SearchDefaults,
+
+    // Keybinding overrides (persisted)
+    pub keybind_overrides: KeybindOverrides,
 
     // Export state
     pub export_input: String,
@@ -250,6 +253,7 @@ impl App {
             search_history,
             color_theme,
             search_defaults,
+            keybind_overrides,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -259,6 +263,7 @@ impl App {
                 state.search_history,
                 state.selected_theme,
                 state.search_defaults,
+                state.keybind_overrides,
             ),
             None => (
                 false,
@@ -268,6 +273,7 @@ impl App {
                 Vec::new(),
                 ColorTheme::Default,
                 SearchDefaults::default(),
+                KeybindOverrides::default(),
             ),
         };
 
@@ -323,6 +329,7 @@ impl App {
             history_index: None,
             saved_search_input: String::new(),
             search_defaults,
+            keybind_overrides,
             export_input: String::new(),
             export_format: ExportFormat::Json,
             export_target: None,
@@ -360,6 +367,7 @@ impl App {
             search_history: self.search_history.clone(),
             selected_theme: self.color_theme,
             search_defaults: self.search_defaults.clone(),
+            keybind_overrides: self.keybind_overrides.clone(),
         }
     }
 

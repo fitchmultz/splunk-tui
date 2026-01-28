@@ -5796,6 +5796,56 @@
       "completed_at": "2026-01-28T03:48:02.872902000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0117",
+      "status": "done",
+      "title": "Add a future-proof keybinding configuration story (optional, post-stabilization)",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "config",
+        "future"
+      ],
+      "scope": [
+        "crates/config/src/types.rs",
+        "crates/config/src/persistence.rs",
+        "crates/tui/src/input/keymap/",
+        "crates/tui/src/app.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "Keybindings are now centralized in crates/tui/src/input/keymap/ with a clean catalog structure (Section, Keybinding, Matcher types) and bindings organized by screen in bindings/ subdirectory.",
+        "crates/config/src/persistence.rs already persists UI state (PersistedState with auto_refresh, sort_column, sort_direction, selected_theme, search_defaults) - keybinds could follow this pattern.",
+        "The keymap system uses a resolve_action() function that could be extended to check user overrides before falling back to defaults.",
+        "docs/usage.md documents all current keybindings in a structured format (between BEGIN/END TUI KEYBINDINGS markers)."
+      ],
+      "plan": [
+        "Design a minimal KeybindConfig format for overriding a small subset of actions (quit, help, export, next/prev screen) in crates/config/src/types.rs.",
+        "Extend PersistedState or add new KeybindOverrides struct to store user keybinding preferences in crates/config/src/persistence.rs.",
+        "Modify crates/tui/src/input/keymap/mod.rs resolve_action() to check user overrides before default bindings.",
+        "Add validation for user-defined keybindings (detect conflicts, invalid key codes) with clear error messages.",
+        "Document customization in docs/usage.md and add tests for config parsing, validation, and fallback behavior."
+      ],
+      "notes": [
+        "The keybinding architecture has been significantly refactored since this task was created - bindings are now centralized rather than hard-coded in App handlers.",
+        "Current keymap structure: Section enum -> Keybinding struct with matcher + action -> resolve_action() for lookup.",
+        "Consider starting with a small subset of overridable keys (global navigation only) to validate the approach before expanding.",
+        "Implemented future-proof keybinding configuration with 4 overridable actions (quit, help, next_screen, previous_screen)",
+        "Added KeybindAction enum and KeybindOverrides struct in config crate",
+        "Created keybind.rs module with parsing and validation (conflicts, reserved keys)",
+        "Created overrides.rs module for runtime resolution with OnceLock global",
+        "Fixed documentation: prev_screen -> previous_screen to match serialized key name",
+        "All tests pass (make ci), documentation up to date"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T04:19:08.190643000Z",
+      "completed_at": "2026-01-28T04:19:08.190643000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

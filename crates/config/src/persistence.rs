@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use crate::types::{ColorTheme, KEYRING_SERVICE, ProfileConfig, SecureValue};
+use crate::types::{ColorTheme, KEYRING_SERVICE, KeybindOverrides, ProfileConfig, SecureValue};
 
 /// Default search parameters to avoid unbounded searches.
 ///
@@ -80,6 +80,9 @@ pub struct PersistedState {
     /// Default search parameters to avoid unbounded searches.
     #[serde(default)]
     pub search_defaults: SearchDefaults,
+    /// User-defined keybinding overrides.
+    #[serde(default)]
+    pub keybind_overrides: KeybindOverrides,
 }
 
 impl Default for PersistedState {
@@ -92,6 +95,7 @@ impl Default for PersistedState {
             search_history: Vec::new(),
             selected_theme: ColorTheme::Default,
             search_defaults: SearchDefaults::default(),
+            keybind_overrides: KeybindOverrides::default(),
         }
     }
 }
@@ -494,6 +498,7 @@ mod tests {
                 latest_time: "now".to_string(),
                 max_results: 500,
             },
+            keybind_overrides: KeybindOverrides::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -521,6 +526,7 @@ mod tests {
             search_history: Vec::new(),
             selected_theme: ColorTheme::Default,
             search_defaults: SearchDefaults::default(),
+            keybind_overrides: KeybindOverrides::default(),
         };
 
         writeln!(
@@ -1054,6 +1060,7 @@ mod tests {
                 latest_time: "now".to_string(),
                 max_results: 2000,
             },
+            keybind_overrides: KeybindOverrides::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -1081,5 +1088,59 @@ mod tests {
         assert_eq!(deserialized.search_defaults.earliest_time, "-24h");
         assert_eq!(deserialized.search_defaults.latest_time, "now");
         assert_eq!(deserialized.search_defaults.max_results, 1000);
+    }
+
+    #[test]
+    fn test_persisted_state_with_keybind_overrides_round_trip() {
+        use crate::types::{KeybindAction, KeybindOverrides};
+
+        let mut overrides = BTreeMap::new();
+        overrides.insert(KeybindAction::Quit, "Ctrl+x".to_string());
+        overrides.insert(KeybindAction::Help, "F1".to_string());
+
+        let state = PersistedState {
+            auto_refresh: true,
+            sort_column: "status".to_string(),
+            sort_direction: "desc".to_string(),
+            last_search_query: None,
+            search_history: vec![],
+            selected_theme: ColorTheme::Default,
+            search_defaults: SearchDefaults::default(),
+            keybind_overrides: KeybindOverrides { overrides },
+        };
+
+        let json = serde_json::to_string(&state).unwrap();
+        let deserialized: PersistedState = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(
+            deserialized.keybind_overrides.get(KeybindAction::Quit),
+            Some("Ctrl+x")
+        );
+        assert_eq!(
+            deserialized.keybind_overrides.get(KeybindAction::Help),
+            Some("F1")
+        );
+    }
+
+    #[test]
+    fn test_persisted_state_backward_compatibility_without_keybind_overrides() {
+        // Simulate an old config file without keybind_overrides
+        let json = r#"{
+            "auto_refresh": false,
+            "sort_column": "sid",
+            "sort_direction": "asc",
+            "last_search_query": null,
+            "search_history": [],
+            "selected_theme": "default",
+            "search_defaults": {
+                "earliest_time": "-24h",
+                "latest_time": "now",
+                "max_results": 1000
+            }
+        }"#;
+
+        let deserialized: PersistedState = serde_json::from_str(json).unwrap();
+        // Should use defaults for missing keybind_overrides
+        assert!(deserialized.keybind_overrides.is_empty());
     }
 }

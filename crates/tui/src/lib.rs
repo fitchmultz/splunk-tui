@@ -21,7 +21,7 @@ pub mod error_details;
 pub mod export;
 pub mod ui;
 
-pub(crate) mod input;
+pub mod input;
 
 // Re-export commonly used types at the crate root
 pub use action::Action;

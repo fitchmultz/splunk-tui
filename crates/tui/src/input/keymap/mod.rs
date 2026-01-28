@@ -18,9 +18,10 @@ use crate::action::Action;
 use crate::app::CurrentScreen;
 
 mod bindings;
+pub mod overrides;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Section {
+pub enum Section {
     Global,
     Search,
     Jobs,
@@ -36,13 +37,13 @@ pub(crate) enum Section {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum BindingScope {
+pub enum BindingScope {
     Global,
     Screen(CurrentScreen),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Matcher {
+pub enum Matcher {
     Key {
         code: KeyCode,
         modifiers: KeyModifiers,
@@ -50,14 +51,14 @@ pub(crate) enum Matcher {
 }
 
 #[derive(Clone)]
-pub(crate) struct Keybinding {
-    pub(crate) section: Section,
-    pub(crate) keys: &'static str,
-    pub(crate) description: &'static str,
-    pub(crate) scope: BindingScope,
-    pub(crate) matcher: Option<Matcher>,
-    pub(crate) action: Option<Action>,
-    pub(crate) handles_input: bool,
+pub struct Keybinding {
+    pub section: Section,
+    pub keys: &'static str,
+    pub description: &'static str,
+    pub scope: BindingScope,
+    pub matcher: Option<Matcher>,
+    pub action: Option<Action>,
+    pub handles_input: bool,
 }
 
 impl Keybinding {
@@ -81,11 +82,17 @@ impl Keybinding {
     }
 }
 
-pub(crate) fn keybindings() -> Vec<Keybinding> {
+pub fn keybindings() -> Vec<Keybinding> {
     bindings::all()
 }
 
-pub(crate) fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Action> {
+pub fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Action> {
+    // First: check user overrides (if initialized)
+    if let Some(action) = overrides::resolve_override(key) {
+        return Some(action);
+    }
+
+    // Second: fall back to default bindings
     for binding in keybindings() {
         if !binding.handles_input {
             continue;
