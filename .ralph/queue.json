@@ -1,0 +1,317 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "RQ-0150",
+      "status": "doing",
+      "title": "Make hardcoded session TTL configurable",
+      "priority": "medium",
+      "tags": [
+        "config",
+        "client",
+        "session",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/client/src/client.rs",
+        "crates/client/src/auth.rs",
+        "crates/config/src/types.rs",
+        "crates/config/src/loader.rs",
+        ".env.example",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "client.rs line 196: hardcoded 3600 second (1 hour) session TTL in login() method",
+        "set_session_token() accepts ttl_seconds parameter but caller hardcodes 3600",
+        "Config already has session_expiry_buffer_seconds (line 96 in types.rs) but no session_ttl",
+        "Splunk installations may have different session timeout configurations",
+        "Mismatch between client TTL and server TTL causes unnecessary re-auth or session expiry issues"
+      ],
+      "plan": [
+        "Add session_ttl_seconds field to ConnectionConfig in types.rs (default 3600)",
+        "Add session_ttl_seconds to ProfileConfig for profile support",
+        "Add SPLUNK_SESSION_TTL env var parsing in loader.rs",
+        "Update client.rs login() to use configured TTL instead of hardcoded 3600",
+        "Update .env.example with SPLUNK_SESSION_TTL documentation",
+        "Update docs/usage.md with new configuration option",
+        "Add tests for custom session TTL configuration",
+        "Verify make ci passes"
+      ],
+      "notes": [
+        "Line number corrected: hardcoded TTL is at client.rs:196, not :137",
+        "session_expiry_buffer_seconds already exists and is configurable - session TTL is separate",
+        "Both fields work together: TTL is total session lifetime, buffer is when to proactively refresh"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T18:11:13.961220000Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0151",
+      "status": "todo",
+      "title": "Make health check interval configurable",
+      "priority": "medium",
+      "tags": [
+        "config",
+        "tui",
+        "health-check"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "main.rs line 204: 60-second health check interval is hardcoded",
+        "No way to adjust polling frequency for different environments",
+        "Some users may want more/less frequent health updates",
+        "Should be configurable via env var or config file"
+      ],
+      "plan": [
+        "Add SPLUNK_HEALTH_CHECK_INTERVAL env var support",
+        "Add health_check_interval to config if appropriate",
+        "Default to 60 seconds for backward compatibility",
+        "Update documentation",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0152",
+      "status": "todo",
+      "title": "Add request builder clone failure handling improvement",
+      "priority": "low",
+      "tags": [
+        "bug",
+        "client",
+        "retry-logic"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs"
+      ],
+      "evidence": [
+        "request.rs lines 131-148: if request builder cannot be cloned and attempt > 0, returns MaxRetriesExceeded",
+        "But if first attempt fails with retryable error and builder cannot be cloned, returns immediately without retry",
+        "Inconsistent behavior - some requests get retries, others don't based on cloneability",
+        "Should document this limitation or buffer request bodies"
+      ],
+      "plan": [
+        "Document the retry limitation for non-cloneable requests",
+        "Consider buffering request bodies to enable retries",
+        "Add warning log when retry is skipped due to non-cloneable builder",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0153",
+      "status": "todo",
+      "title": "Improve config profile missing error handling",
+      "priority": "low",
+      "tags": [
+        "ux",
+        "config",
+        "error-handling"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs"
+      ],
+      "evidence": [
+        "loader.rs lines 294-309: Profile missing logic allows partial overrides",
+        "If any single auth field is provided via env/CLI, profile not found error is suppressed",
+        "Could lead to confusing errors later when connection fails due to incomplete config",
+        "Should validate all required fields are present, not just any field"
+      ],
+      "plan": [
+        "Review profile missing validation logic",
+        "Ensure all required fields are validated, not just any field",
+        "Provide clear error messages indicating which fields are missing",
+        "Add tests for partial override scenarios",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0154",
+      "status": "todo",
+      "title": "Add cancellation token checks to all long-running operations",
+      "priority": "low",
+      "tags": [
+        "ux",
+        "cli",
+        "cancellation"
+      ],
+      "scope": [
+        "crates/cli/src/commands/"
+      ],
+      "evidence": [
+        "Cancellation token is passed to run_command() but not all commands check it",
+        "Some long-running operations may not respond to Ctrl+C",
+        "Inconsistent cancellation behavior across commands",
+        "Users expect consistent Ctrl+C handling"
+      ],
+      "plan": [
+        "Audit all command handlers for cancellation token usage",
+        "Add cancellation checks to long-running operations",
+        "Use tokio::select! pattern consistently",
+        "Test cancellation behavior for each command",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0155",
+      "status": "todo",
+      "title": "Add input channel backpressure handling for TUI",
+      "priority": "low",
+      "tags": [
+        "performance",
+        "tui",
+        "channel"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "main.rs lines 126-150: input event stream sends every key press as an action",
+        "Rapid key presses could saturate the unbounded channel",
+        "No backpressure handling or action coalescing",
+        "Could cause memory growth during high-frequency input"
+      ],
+      "plan": [
+        "Evaluate channel saturation risk",
+        "Consider adding action coalescing for high-frequency events",
+        "Add backpressure handling if needed",
+        "Test with rapid input scenarios",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0156",
+      "status": "todo",
+      "title": "Add tests for error handling paths",
+      "priority": "low",
+      "tags": [
+        "testing",
+        "error-handling",
+        "coverage"
+      ],
+      "scope": [
+        "crates/client/src/",
+        "crates/*/tests/"
+      ],
+      "evidence": [
+        "Tests focus primarily on happy paths",
+        "Error handling paths (network failures, auth failures, malformed responses) need coverage",
+        "Many error variants not exercised in tests",
+        "Important for reliability and regression prevention"
+      ],
+      "plan": [
+        "Identify error handling paths lacking coverage",
+        "Add tests for network failure scenarios",
+        "Add tests for authentication failure handling",
+        "Add tests for malformed response handling",
+        "Verify make ci passes with new tests"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0157",
+      "status": "todo",
+      "title": "Improve test isolation for environment variable manipulation",
+      "priority": "low",
+      "tags": [
+        "testing",
+        "config",
+        "isolation"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs"
+      ],
+      "evidence": [
+        "loader.rs tests use unsafe { std::env::set_var(...) } and remove_var",
+        "While serial_test helps, this is still unsafe in Rust 2024 edition",
+        "Tests use global state which can cause issues with concurrent execution",
+        "Could cause flaky tests or test pollution"
+      ],
+      "plan": [
+        "Consider using temp-env crate for safer environment manipulation",
+        "Evaluate scope of test isolation improvements needed",
+        "Refactor tests to use isolated environment handling",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0158",
+      "status": "todo",
+      "title": "Verify TUI keybindings documentation stays in sync",
+      "priority": "low",
+      "tags": [
+        "documentation",
+        "tui",
+        "ci"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/tui/src/bin/generate_tui_docs.rs",
+        "Makefile"
+      ],
+      "evidence": [
+        "Documentation has markers for auto-generated keybindings section",
+        "generate_tui_docs.rs tool exists to regenerate keybindings",
+        "No CI check to ensure docs stay in sync with code",
+        "Documentation could drift from actual behavior"
+      ],
+      "plan": [
+        "Verify lint-docs Makefile target checks keybindings sync",
+        "Add CI check if not present (part of make ci)",
+        "Ensure generate_tui_docs.rs runs and validates output",
+        "Update AGENTS.md with documentation maintenance guidance",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
+}
