@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0171",
-      "status": "todo",
-      "title": "Split oversized config persistence.rs into path/migration/state modules",
-      "priority": "medium",
-      "tags": [
-        "config",
-        "refactor"
-      ],
-      "scope": [
-        "crates/config/src/persistence.rs"
-      ],
-      "evidence": [
-        "crates/config/src/persistence.rs is 1149 lines (wc -l), above the 1000-line split requirement."
-      ],
-      "plan": [
-        "Extract path/migration helpers, state serialization, and profile/keyring logic into submodules.",
-        "Ensure module docstrings cover responsibilities and non-responsibilities.",
-        "Run config crate tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0174",
       "status": "todo",
       "title": "Split oversized config types.rs into smaller type modules",
