@@ -94,11 +94,20 @@ pub struct ConnectionConfig {
     /// Default: 60 seconds
     #[serde(default = "default_session_expiry_buffer")]
     pub session_expiry_buffer_seconds: u64,
+    /// Session time-to-live in seconds (how long tokens remain valid)
+    /// Default: 3600 seconds (1 hour)
+    #[serde(default = "default_session_ttl")]
+    pub session_ttl_seconds: u64,
 }
 
 /// Default session expiry buffer in seconds.
 fn default_session_expiry_buffer() -> u64 {
     60
+}
+
+/// Default session TTL in seconds (1 hour).
+fn default_session_ttl() -> u64 {
+    3600
 }
 
 /// Main configuration structure.
@@ -440,6 +449,9 @@ pub struct ProfileConfig {
     /// This prevents race conditions where a token expires during an API call.
     /// Default: 60 seconds
     pub session_expiry_buffer_seconds: Option<u64>,
+    /// Session time-to-live in seconds (how long tokens remain valid)
+    /// Default: 3600 seconds (1 hour)
+    pub session_ttl_seconds: Option<u64>,
 }
 
 /// An overridable keybinding action identifier.
@@ -503,6 +515,7 @@ impl Default for Config {
                 timeout: Duration::from_secs(30),
                 max_retries: 3,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
+                session_ttl_seconds: default_session_ttl(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken {
@@ -524,6 +537,7 @@ impl Config {
                 timeout: Duration::from_secs(30),
                 max_retries: 3,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
+                session_ttl_seconds: default_session_ttl(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::ApiToken { token },
@@ -540,6 +554,7 @@ impl Config {
                 timeout: Duration::from_secs(30),
                 max_retries: 3,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
+                session_ttl_seconds: default_session_ttl(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken { username, password },
@@ -602,6 +617,7 @@ mod tests {
             timeout: Duration::from_secs(60),
             max_retries: 5,
             session_expiry_buffer_seconds: default_session_expiry_buffer(),
+            session_ttl_seconds: default_session_ttl(),
         };
 
         let json = serde_json::to_string(&config).unwrap();
@@ -623,6 +639,7 @@ mod tests {
             timeout_seconds: Some(60),
             max_retries: Some(5),
             session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
+            session_ttl_seconds: Some(default_session_ttl()),
         };
 
         let json = serde_json::to_string(&original).unwrap();
@@ -775,6 +792,7 @@ mod tests {
             timeout_seconds: Some(30),
             max_retries: Some(3),
             session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
+            session_ttl_seconds: Some(default_session_ttl()),
         };
 
         let debug_output = format!("{:?}", profile);
@@ -803,6 +821,7 @@ mod tests {
             timeout_seconds: Some(30),
             max_retries: Some(3),
             session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
+            session_ttl_seconds: Some(default_session_ttl()),
         };
 
         let debug_output = format!("{:?}", profile);
@@ -852,6 +871,7 @@ mod tests {
             timeout: Duration::from_secs(60),
             max_retries: 5,
             session_expiry_buffer_seconds: default_session_expiry_buffer(),
+            session_ttl_seconds: default_session_ttl(),
         };
 
         let debug_output = format!("{:?}", config);

@@ -156,6 +156,8 @@ pub async fn run(
             .auth_strategy(auth_strategy)
             .skip_verify(config.connection.skip_verify)
             .timeout(config.connection.timeout)
+            .session_ttl_seconds(config.connection.session_ttl_seconds)
+            .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
             .build()?;
 
         let resources = fetch_all_resources(&mut client, resources_to_fetch, cancel).await?;
@@ -426,6 +428,8 @@ async fn fetch_single_profile_resources(
         .timeout(Duration::from_secs(
             profile_config.timeout_seconds.unwrap_or(30),
         ))
+        .session_ttl_seconds(profile_config.session_ttl_seconds.unwrap_or(3600))
+        .session_expiry_buffer_seconds(profile_config.session_expiry_buffer_seconds.unwrap_or(60))
         .build()
     {
         Ok(c) => c,

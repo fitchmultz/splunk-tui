@@ -591,6 +591,7 @@ async fn run_command(
                     timeout: std::time::Duration::from_secs(30),
                     max_retries: 3,
                     session_expiry_buffer_seconds: 60,
+                    session_ttl_seconds: 3600,
                 },
                 auth: splunk_config::AuthConfig {
                     strategy: splunk_config::types::AuthStrategy::SessionToken {

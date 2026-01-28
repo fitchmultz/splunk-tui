@@ -2,53 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0150",
-      "status": "doing",
-      "title": "Make hardcoded session TTL configurable",
-      "priority": "medium",
-      "tags": [
-        "config",
-        "client",
-        "session",
-        "maintainability"
-      ],
-      "scope": [
-        "crates/client/src/client.rs",
-        "crates/client/src/auth.rs",
-        "crates/config/src/types.rs",
-        "crates/config/src/loader.rs",
-        ".env.example",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "client.rs line 196: hardcoded 3600 second (1 hour) session TTL in login() method",
-        "set_session_token() accepts ttl_seconds parameter but caller hardcodes 3600",
-        "Config already has session_expiry_buffer_seconds (line 96 in types.rs) but no session_ttl",
-        "Splunk installations may have different session timeout configurations",
-        "Mismatch between client TTL and server TTL causes unnecessary re-auth or session expiry issues"
-      ],
-      "plan": [
-        "Add session_ttl_seconds field to ConnectionConfig in types.rs (default 3600)",
-        "Add session_ttl_seconds to ProfileConfig for profile support",
-        "Add SPLUNK_SESSION_TTL env var parsing in loader.rs",
-        "Update client.rs login() to use configured TTL instead of hardcoded 3600",
-        "Update .env.example with SPLUNK_SESSION_TTL documentation",
-        "Update docs/usage.md with new configuration option",
-        "Add tests for custom session TTL configuration",
-        "Verify make ci passes"
-      ],
-      "notes": [
-        "Line number corrected: hardcoded TTL is at client.rs:196, not :137",
-        "session_expiry_buffer_seconds already exists and is configurable - session TTL is separate",
-        "Both fields work together: TTL is total session lifetime, buffer is when to proactively refresh"
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T18:11:13.961220000Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0151",
       "status": "todo",
       "title": "Make health check interval configurable",

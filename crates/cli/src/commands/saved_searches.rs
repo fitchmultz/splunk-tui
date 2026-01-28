@@ -88,6 +88,8 @@ async fn run_list(
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     let mut searches = client.list_saved_searches().await?;
@@ -130,6 +132,8 @@ async fn run_info(
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     let searches = client.list_saved_searches().await?;
@@ -175,6 +179,8 @@ async fn run_run(
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     let searches = client.list_saved_searches().await?;

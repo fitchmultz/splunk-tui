@@ -78,6 +78,7 @@ pub struct ConfigLoader {
     timeout: Option<Duration>,
     max_retries: Option<usize>,
     session_expiry_buffer_seconds: Option<u64>,
+    session_ttl_seconds: Option<u64>,
     profile_name: Option<String>,
     profile_missing: Option<String>,
     config_path: Option<PathBuf>,
@@ -128,6 +129,7 @@ impl ConfigLoader {
             timeout: None,
             max_retries: None,
             session_expiry_buffer_seconds: None,
+            session_ttl_seconds: None,
             profile_name: None,
             profile_missing: None,
             config_path: None,
@@ -230,6 +232,9 @@ impl ConfigLoader {
         if let Some(buffer) = profile.session_expiry_buffer_seconds {
             self.session_expiry_buffer_seconds = Some(buffer);
         }
+        if let Some(ttl) = profile.session_ttl_seconds {
+            self.session_ttl_seconds = Some(ttl);
+        }
         Ok(())
     }
 
@@ -294,6 +299,13 @@ impl ConfigLoader {
                             message: "must be a number".to_string(),
                         })?,
                 );
+        }
+        if let Some(ttl) = Self::env_var_or_none("SPLUNK_SESSION_TTL") {
+            self.session_ttl_seconds =
+                Some(ttl.trim().parse().map_err(|_| ConfigError::InvalidValue {
+                    var: "SPLUNK_SESSION_TTL".to_string(),
+                    message: "must be a number".to_string(),
+                })?);
         }
         // Search defaults
         if let Some(earliest) = Self::env_var_or_none("SPLUNK_EARLIEST_TIME") {
@@ -391,6 +403,7 @@ impl ConfigLoader {
                 timeout: self.timeout.unwrap_or(Duration::from_secs(30)),
                 max_retries: self.max_retries.unwrap_or(3),
                 session_expiry_buffer_seconds: self.session_expiry_buffer_seconds.unwrap_or(60),
+                session_ttl_seconds: self.session_ttl_seconds.unwrap_or(3600),
             },
             auth: AuthConfig { strategy },
         })
@@ -488,6 +501,8 @@ mod tests {
             std::env::remove_var("SPLUNK_EARLIEST_TIME");
             std::env::remove_var("SPLUNK_LATEST_TIME");
             std::env::remove_var("SPLUNK_MAX_RESULTS");
+            std::env::remove_var("SPLUNK_SESSION_EXPIRY_BUFFER");
+            std::env::remove_var("SPLUNK_SESSION_TTL");
         }
     }
 
@@ -975,5 +990,103 @@ mod tests {
             Ok(_) => panic!("Expected an error for invalid SPLUNK_MAX_RESULTS"),
             Err(_) => panic!("Expected InvalidValue error for SPLUNK_MAX_RESULTS"),
         }
+    }
+
+    #[test]
+    #[serial]
+    fn test_session_ttl_env_var() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_SESSION_TTL", "7200");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        assert_eq!(config.connection.session_ttl_seconds, 7200);
+        // Default buffer should still be 60
+        assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
+    }
+
+    #[test]
+    #[serial]
+    fn test_session_expiry_buffer_env_var() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_SESSION_EXPIRY_BUFFER", "120");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        assert_eq!(config.connection.session_expiry_buffer_seconds, 120);
+        // Default TTL should still be 3600
+        assert_eq!(config.connection.session_ttl_seconds, 3600);
+    }
+
+    #[test]
+    #[serial]
+    fn test_session_ttl_and_buffer_env_vars_together() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_SESSION_TTL", "7200");
+            std::env::set_var("SPLUNK_SESSION_EXPIRY_BUFFER", "120");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        assert_eq!(config.connection.session_ttl_seconds, 7200);
+        assert_eq!(config.connection.session_expiry_buffer_seconds, 120);
+    }
+
+    #[test]
+    #[serial]
+    fn test_invalid_session_ttl_env_var() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_SESSION_TTL", "not-a-number");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let result = ConfigLoader::new().from_env();
+
+        match result {
+            Err(ConfigError::InvalidValue { var, .. }) => {
+                assert_eq!(var, "SPLUNK_SESSION_TTL");
+            }
+            Ok(_) => panic!("Expected an error for invalid SPLUNK_SESSION_TTL"),
+            Err(_) => panic!("Expected InvalidValue error for SPLUNK_SESSION_TTL"),
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_session_ttl_default_values() {
+        let _env = EnvVarGuard::new();
+
+        // Don't set any session env vars
+        unsafe {
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        // Should use defaults
+        assert_eq!(config.connection.session_ttl_seconds, 3600);
+        assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
     }
 }

@@ -69,6 +69,8 @@ async fn run_list(
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     let apps = client.list_apps(Some(count as u64), None).await?;
@@ -105,6 +107,8 @@ async fn run_info(
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     let app = client
@@ -139,6 +143,8 @@ async fn run_enable(config: splunk_config::Config, app_name: &str) -> Result<()>
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     client
@@ -160,6 +166,8 @@ async fn run_disable(config: splunk_config::Config, app_name: &str) -> Result<()
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     client

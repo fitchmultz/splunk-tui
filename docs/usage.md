@@ -73,9 +73,26 @@ Environment variables take precedence over the configuration file.
 | `SPLUNK_TIMEOUT` | Connection timeout in seconds |
 | `SPLUNK_MAX_RETRIES` | Maximum number of retries for failed requests |
 | `SPLUNK_PROFILE` | Name of profile to load from the configuration file |
+| `SPLUNK_SESSION_TTL` | Session token lifetime in seconds (default: 3600) |
+| `SPLUNK_SESSION_EXPIRY_BUFFER` | Buffer before expiry to refresh tokens (default: 60) |
 | `SPLUNK_EARLIEST_TIME` | Default earliest time for searches (e.g., `-24h`, `2024-01-01T00:00:00`) [default: `-24h`] |
 | `SPLUNK_LATEST_TIME` | Default latest time for searches (e.g., `now`) [default: `now`] |
 | `SPLUNK_MAX_RESULTS` | Default maximum number of results per search [default: `1000`] |
+
+#### Session Configuration
+
+The session TTL and expiry buffer work together to control session token lifecycle:
+
+- **`SPLUNK_SESSION_TTL`**: Total session lifetime in seconds (default: 3600 = 1 hour)
+  - Increase this if your Splunk server has longer session timeouts
+  - Decrease if you want more frequent re-authentication
+
+- **`SPLUNK_SESSION_EXPIRY_BUFFER`**: Proactive refresh buffer in seconds (default: 60)
+  - The client will refresh the session this many seconds before the TTL expires
+  - Prevents race conditions where a token expires during an API call
+  - Should be significantly smaller than the TTL
+
+Example: With TTL=3600 and buffer=60, the client will proactively refresh the session after 3540 seconds (59 minutes), leaving a 60-second safety margin.
 
 ### Cancellation (Ctrl+C / SIGINT)
 Long-running commands can be interrupted with `Ctrl+C`:

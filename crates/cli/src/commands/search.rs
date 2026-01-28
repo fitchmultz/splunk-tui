@@ -29,6 +29,8 @@ pub async fn run(
         .auth_strategy(auth_strategy)
         .skip_verify(config.connection.skip_verify)
         .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
     info!("Connecting to {}", client.base_url());

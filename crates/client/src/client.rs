@@ -55,6 +55,8 @@ pub struct SplunkClientBuilder {
     skip_verify: bool,
     timeout: Duration,
     max_retries: usize,
+    session_ttl_seconds: u64,
+    session_expiry_buffer_seconds: u64,
 }
 
 impl Default for SplunkClientBuilder {
@@ -65,6 +67,8 @@ impl Default for SplunkClientBuilder {
             skip_verify: false,
             timeout: Duration::from_secs(30),
             max_retries: 3,
+            session_ttl_seconds: 3600,
+            session_expiry_buffer_seconds: 60,
         }
     }
 }
@@ -102,6 +106,18 @@ impl SplunkClientBuilder {
     /// Set the maximum number of retries.
     pub fn max_retries(mut self, retries: usize) -> Self {
         self.max_retries = retries;
+        self
+    }
+
+    /// Set the session TTL in seconds.
+    pub fn session_ttl_seconds(mut self, ttl: u64) -> Self {
+        self.session_ttl_seconds = ttl;
+        self
+    }
+
+    /// Set the session expiry buffer in seconds.
+    pub fn session_expiry_buffer_seconds(mut self, buffer: u64) -> Self {
+        self.session_expiry_buffer_seconds = buffer;
         self
     }
 
@@ -151,6 +167,8 @@ impl SplunkClientBuilder {
             base_url,
             session_manager: SessionManager::new(auth_strategy),
             max_retries: self.max_retries,
+            session_ttl_seconds: self.session_ttl_seconds,
+            session_expiry_buffer_seconds: self.session_expiry_buffer_seconds,
         })
     }
 }
@@ -168,6 +186,8 @@ pub struct SplunkClient {
     base_url: String,
     session_manager: SessionManager,
     max_retries: usize,
+    session_ttl_seconds: u64,
+    session_expiry_buffer_seconds: u64,
 }
 
 impl SplunkClient {
@@ -190,10 +210,13 @@ impl SplunkClient {
             )
             .await?;
 
-            // Default session TTL is 1 hour, with 60s buffer for proactive refresh
+            // Use configured session TTL and buffer for proactive refresh
             let token_clone = token.clone();
-            self.session_manager
-                .set_session_token(token_clone, Some(3600), Some(60));
+            self.session_manager.set_session_token(
+                token_clone,
+                Some(self.session_ttl_seconds),
+                Some(self.session_expiry_buffer_seconds),
+            );
 
             Ok(token)
         } else {
