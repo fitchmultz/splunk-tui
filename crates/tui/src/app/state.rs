@@ -182,6 +182,26 @@ impl ClusterViewMode {
     }
 }
 
+/// Input mode for the search screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SearchInputMode {
+    /// Query input box is focused; printable characters insert into the query.
+    #[default]
+    QueryFocused,
+    /// Results area is focused; navigation keys work on results.
+    ResultsFocused,
+}
+
+impl SearchInputMode {
+    /// Toggle between query and results focus modes.
+    pub fn toggle(self) -> Self {
+        match self {
+            Self::QueryFocused => Self::ResultsFocused,
+            Self::ResultsFocused => Self::QueryFocused,
+        }
+    }
+}
+
 impl Default for SortState {
     fn default() -> Self {
         Self::new()

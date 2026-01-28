@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0101",
-      "status": "todo",
-      "title": "Fix Search query typing: stop consuming printable characters (e, digits, q, ?)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "keybindings",
-        "search",
-        "bug"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/tests/app_tests.rs",
-        "docs/usage.md",
-        "make test -p splunk-tui"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs: handle_search_input matches KeyCode::Char('e') before KeyCode::Char(c), consuming \"e\" during query entry (even when no results).",
-        "crates/tui/src/app.rs: handle_search_input maps KeyCode::Char('0'..'9') and KeyCode::Char('?') to navigation/help, preventing those characters from being typed into queries.",
-        "crates/tui/tests/app_tests.rs: export tests exercise \"press e\" behavior on Search, effectively baking in the current conflict between typing and commands."
-      ],
-      "plan": [
-        "Introduce an explicit Search input mode/focus (e.g., Query vs Results) so that printable characters always insert when Query is focused.",
-        "Move command shortcuts (export/help/nav/quit) behind modifiers or a command mode so Query focus can accept all needed characters.",
-        "Add tests covering character insertion for \"e\", digits, \"q\", and \"?\" in Query mode plus the expected command behavior in non-Query mode.",
-        "Update docs/usage.md Search section to reflect the new behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T15:11:29.022792000Z",
-      "depends_on": [],
-      "custom_fields": {
-        "stale_evidence": "Help and digit navigation bindings are now centralized in crates/tui/src/input/keymap/; search handler no longer owns 0-9/? bindings directly."
-      }
-    },
-    {
       "id": "RQ-0116",
       "status": "todo",
       "title": "Allow quitting from any popup/modal (consistent global quit behavior)",

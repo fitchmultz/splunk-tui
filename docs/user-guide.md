@@ -171,6 +171,13 @@ Launch the interactive interface with `splunk-tui`.
 ### Screen Specific Shortcuts
 
 #### Search Screen
+
+The Search screen has two input modes that affect how keys are handled:
+
+**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Tab` to switch to ResultsFocused mode.
+
+**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Tab` or `Esc` to return to QueryFocused mode.
+
 - `Enter`: Run search
 - `Ctrl+e`: Export results
 - `Ctrl+c`: Copy query (or current result)

@@ -379,6 +379,9 @@ fn test_help_popup_open_close() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
+    // Switch to ResultsFocused mode first (help only works in this mode on Search screen)
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
     // Open help popup
     let action = app.handle_input(key('?'));
     assert!(
@@ -396,7 +399,7 @@ fn test_help_popup_open_close() {
     assert!(action.is_none(), "Closing help should not return action");
     assert!(app.popup.is_none(), "Popup should be closed");
 
-    // Reopen with '?'
+    // Reopen with '?' (still in ResultsFocused mode)
     let action = app.handle_input(key('?'));
     assert!(matches!(action, Some(Action::OpenHelpPopup)));
     app.update(action.unwrap());
@@ -405,7 +408,7 @@ fn test_help_popup_open_close() {
         Some(PopupType::Help)
     ));
 
-    // Close with 'q'
+    // Close with 'q' (still in ResultsFocused mode)
     let action = app.handle_input(key('q'));
     assert!(
         action.is_none(),
@@ -502,10 +505,11 @@ fn test_toggle_auto_refresh() {
 
 #[test]
 fn test_screen_navigation_with_tab() {
+    // Tab on non-Search screens navigates to next screen
     let mut app = App::new(None, ConnectionContext::default());
-    app.current_screen = CurrentScreen::Search;
+    app.current_screen = CurrentScreen::Indexes;
 
-    // Navigate to Indexes with Tab
+    // Navigate to Cluster with Tab
     let action = app.handle_input(tab_key());
     assert!(
         matches!(action, Some(Action::NextScreen)),
@@ -514,8 +518,8 @@ fn test_screen_navigation_with_tab() {
     app.update(action.unwrap());
     assert_eq!(
         app.current_screen,
-        CurrentScreen::Indexes,
-        "Should switch to Indexes screen"
+        CurrentScreen::Cluster,
+        "Should switch to Cluster screen"
     );
 }
 
@@ -539,13 +543,38 @@ fn test_digits_typed_in_search_query() {
 
 #[test]
 fn test_tab_navigates_to_next_screen() {
+    // Tab on non-Search screens navigates to next screen
     let mut app = App::new(None, ConnectionContext::default());
-    app.current_screen = CurrentScreen::Search;
+    app.current_screen = CurrentScreen::Indexes;
 
     let action = app.handle_input(tab_key());
     assert!(matches!(action, Some(Action::NextScreen)));
     app.update(action.unwrap());
-    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+    assert_eq!(app.current_screen, CurrentScreen::Cluster);
+}
+
+#[test]
+fn test_tab_on_search_toggles_input_mode() {
+    // Tab on Search screen toggles between QueryFocused and ResultsFocused modes
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Initial state: QueryFocused
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+
+    // Tab toggles to ResultsFocused (no action returned, just mode change)
+    let action = app.handle_input(tab_key());
+    assert!(
+        action.is_none(),
+        "Tab on Search should not return action, just toggle mode"
+    );
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::ResultsFocused
+    ));
 }
 
 #[test]
@@ -570,7 +599,11 @@ fn test_tab_cycles_through_screens() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Search);
 
-    // Tab from Search should go to Indexes
+    // On Search screen, Tab toggles input mode instead of navigating
+    // Switch to ResultsFocused mode first so Tab can navigate
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    // Tab from Search (in ResultsFocused mode) should go to Indexes
     let action = app.handle_input(tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Indexes);
@@ -579,11 +612,22 @@ fn test_tab_cycles_through_screens() {
 #[test]
 fn test_shift_tab_cycles_backwards() {
     let mut app = App::new(None, ConnectionContext::default());
-    app.current_screen = CurrentScreen::Search;
 
-    // Shift+Tab from Search should wrap to Settings
+    // Start from Indexes (not Search) to avoid input mode complications
+    app.current_screen = CurrentScreen::Indexes;
+
+    // Shift+Tab from Indexes should go to Search
     let action = app.handle_input(shift_tab_key());
     assert!(matches!(action, Some(Action::PreviousScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+
+    // On Search screen in QueryFocused mode (default), Shift+Tab toggles input mode
+    // Switch to ResultsFocused mode first so Shift+Tab can navigate
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    // Shift+Tab from Search (in ResultsFocused mode) should wrap to Settings
+    let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Settings);
 
@@ -595,8 +639,8 @@ fn test_shift_tab_cycles_backwards() {
 
 #[test]
 fn test_navigation_from_all_screens() {
+    // Test screens where Tab always navigates (non-Search screens)
     let screens = [
-        CurrentScreen::Search,
         CurrentScreen::Indexes,
         CurrentScreen::Cluster,
         CurrentScreen::Jobs,
@@ -612,7 +656,7 @@ fn test_navigation_from_all_screens() {
         let mut app = App::new(None, ConnectionContext::default());
         app.current_screen = screen;
 
-        // Tab should work from all screens
+        // Tab should work from all non-Search screens
         let action = app.handle_input(tab_key());
         assert!(
             matches!(action, Some(Action::NextScreen)),
@@ -626,6 +670,37 @@ fn test_navigation_from_all_screens() {
             screen
         );
     }
+
+    // Test Search screen: Tab toggles input mode in QueryFocused mode
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // In QueryFocused mode (default), Tab toggles input mode
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+    let action = app.handle_input(tab_key());
+    assert!(
+        action.is_none(),
+        "Tab on Search in QueryFocused mode should toggle input mode, not navigate"
+    );
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::ResultsFocused
+        ),
+        "Tab should toggle to ResultsFocused mode"
+    );
+
+    // In ResultsFocused mode, Tab navigates to next screen
+    let action = app.handle_input(tab_key());
+    assert!(
+        matches!(action, Some(Action::NextScreen)),
+        "Tab on Search in ResultsFocused mode should navigate"
+    );
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
 }
 
 #[test]
@@ -661,8 +736,8 @@ fn test_quit_action() {
 
 #[test]
 fn test_quit_keyboard_triggers_action() {
+    // Test screens where 'q' always quits (non-Search screens)
     let screens = [
-        CurrentScreen::Search,
         CurrentScreen::Jobs,
         CurrentScreen::Indexes,
         CurrentScreen::Cluster,
@@ -685,6 +760,33 @@ fn test_quit_keyboard_triggers_action() {
             screen
         );
     }
+
+    // Test Search screen: 'q' quits only in ResultsFocused mode
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // In QueryFocused mode (default), 'q' should insert into query
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+    let action = app.handle_input(key('q'));
+    assert!(
+        action.is_none(),
+        "Pressing 'q' on Search screen in QueryFocused mode should insert into query"
+    );
+    assert_eq!(
+        app.search_input, "q",
+        "'q' should be inserted into search input"
+    );
+
+    // In ResultsFocused mode, 'q' should quit
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+    let action = app.handle_input(key('q'));
+    assert!(
+        matches!(action, Some(Action::Quit)),
+        "Pressing 'q' on Search screen in ResultsFocused mode should return Quit action"
+    );
 }
 
 #[test]
@@ -1722,15 +1824,28 @@ fn test_search_result_scrolling_by_line() {
     app.set_search_results((0..10).map(|i| serde_json::json!(i)).collect());
     app.search_scroll_offset = 0;
 
+    // Verify we're in QueryFocused mode (default)
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+
     // Use Ctrl+j to scroll down (NavigateDown)
+    // Note: Ctrl+j works in QueryFocused mode since it's not a printable character (has CONTROL modifier)
     let action = app.handle_input(ctrl_key('j'));
-    assert!(matches!(action, Some(Action::NavigateDown)));
+    assert!(
+        matches!(action, Some(Action::NavigateDown)),
+        "Ctrl+j should return NavigateDown action"
+    );
     app.update(action.unwrap());
     assert_eq!(app.search_scroll_offset, 1);
 
     // Use Ctrl+k to scroll up (NavigateUp)
     let action = app.handle_input(ctrl_key('k'));
-    assert!(matches!(action, Some(Action::NavigateUp)));
+    assert!(
+        matches!(action, Some(Action::NavigateUp)),
+        "Ctrl+k should return NavigateUp action"
+    );
     app.update(action.unwrap());
     assert_eq!(app.search_scroll_offset, 0);
 }
@@ -3328,4 +3443,250 @@ fn test_popup_cancel_disable_app() {
     let action = app.handle_popup_input(esc_key());
     assert!(action.is_none());
     assert!(app.popup.is_none());
+}
+
+// ============================================================================
+// Search Input Mode Tests (RQ-0101 fix)
+// ============================================================================
+
+#[test]
+fn test_search_input_mode_default_is_query_focused() {
+    let app = App::new(None, ConnectionContext::default());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Default search input mode should be QueryFocused"
+    );
+}
+
+#[test]
+fn test_search_input_mode_toggles_with_tab() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Initial state: QueryFocused
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+
+    // Tab toggles to ResultsFocused (bypasses global NextScreen binding in QueryFocused mode)
+    app.handle_input(tab_key());
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::ResultsFocused
+        ),
+        "Tab should toggle to ResultsFocused mode"
+    );
+
+    // In ResultsFocused mode, Tab triggers NextScreen action (does not toggle back)
+    let action = app.handle_input(tab_key());
+    assert!(
+        matches!(action, Some(Action::NextScreen)),
+        "Tab in ResultsFocused mode should return NextScreen action"
+    );
+    // Mode stays as ResultsFocused
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::ResultsFocused
+        ),
+        "Mode should remain ResultsFocused after Tab in that mode"
+    );
+}
+
+#[test]
+fn test_search_input_mode_esc_switches_to_query_focused() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Start in ResultsFocused mode
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    // Esc switches back to QueryFocused
+    app.handle_input(esc_key());
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Esc should switch back to QueryFocused mode"
+    );
+}
+
+#[test]
+fn test_search_query_focused_inserts_q_char() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    // Type 'q' - should insert into query, NOT quit
+    let action = app.handle_input(key('q'));
+    assert!(
+        action.is_none(),
+        "'q' in QueryFocused mode should not return an action"
+    );
+    assert_eq!(
+        app.search_input, "q",
+        "'q' should be inserted into search input"
+    );
+}
+
+#[test]
+fn test_search_query_focused_inserts_question_mark() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    // Type '?' - should insert into query, NOT open help
+    let action = app.handle_input(key('?'));
+    assert!(
+        action.is_none(),
+        "'?' in QueryFocused mode should not return an action"
+    );
+    assert_eq!(
+        app.search_input, "?",
+        "'?' should be inserted into search input"
+    );
+}
+
+#[test]
+fn test_search_query_focused_inserts_digits() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    // Type digits - should insert into query
+    app.handle_input(key('1'));
+    app.handle_input(key('2'));
+    app.handle_input(key('3'));
+    assert_eq!(
+        app.search_input, "123",
+        "Digits should be inserted into search input"
+    );
+}
+
+#[test]
+fn test_search_query_focused_inserts_e_char() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    // Type 'e' - should insert into query
+    let action = app.handle_input(key('e'));
+    assert!(
+        action.is_none(),
+        "'e' in QueryFocused mode should not return an action"
+    );
+    assert_eq!(
+        app.search_input, "e",
+        "'e' should be inserted into search input"
+    );
+}
+
+#[test]
+fn test_search_results_focused_allows_quit() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    // 'q' in ResultsFocused mode should return Quit action
+    let action = app.handle_input(key('q'));
+    assert!(
+        matches!(action, Some(Action::Quit)),
+        "'q' in ResultsFocused mode should return Quit action"
+    );
+}
+
+#[test]
+fn test_search_results_focused_allows_help() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    // '?' in ResultsFocused mode should return OpenHelpPopup action
+    let action = app.handle_input(key('?'));
+    assert!(
+        matches!(action, Some(Action::OpenHelpPopup)),
+        "'?' in ResultsFocused mode should return OpenHelpPopup action"
+    );
+}
+
+#[test]
+fn test_search_query_focused_allows_ctrl_shortcuts() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+    app.search_input = "index=main".to_string();
+
+    // Ctrl+ shortcuts should still work in QueryFocused mode
+    let action = app.handle_input(ctrl_key('c'));
+    assert!(
+        matches!(action, Some(Action::CopyToClipboard(_))),
+        "Ctrl+c in QueryFocused mode should return CopyToClipboard action"
+    );
+}
+
+#[test]
+fn test_search_query_focused_allows_special_keys() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    // Enter should still run search
+    app.search_input = "index=main".to_string();
+    let action = app.handle_input(enter_key());
+    assert!(
+        matches!(action, Some(Action::RunSearch { .. })),
+        "Enter in QueryFocused mode should return RunSearch action"
+    );
+}
+
+#[test]
+fn test_search_query_focused_allows_backspace() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    // Type some text first
+    app.handle_input(key('t'));
+    app.handle_input(key('e'));
+    app.handle_input(key('s'));
+    app.handle_input(key('t'));
+    assert_eq!(app.search_input, "test");
+
+    // Backspace should remove last character
+    let action = app.handle_input(backspace_key());
+    assert!(action.is_none(), "Backspace should not return an action");
+    assert_eq!(
+        app.search_input, "tes",
+        "Backspace should remove last character"
+    );
+}
+
+#[test]
+fn test_search_run_switches_to_results_focused() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+    app.search_input = "index=main".to_string();
+
+    // Running search should switch to ResultsFocused mode
+    let action = app.handle_input(enter_key());
+    assert!(matches!(action, Some(Action::RunSearch { .. })));
+
+    // Apply the action (which would normally be done in the main loop)
+    app.update(action.unwrap());
+
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::ResultsFocused
+        ),
+        "Running search should switch to ResultsFocused mode"
+    );
 }

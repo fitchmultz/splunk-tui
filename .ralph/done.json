@@ -5210,6 +5210,61 @@
       "completed_at": "2026-01-28T00:23:20.227945000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0101",
+      "status": "done",
+      "title": "Fix Search query typing: stop consuming printable characters (e, digits, q, ?)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "search",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app/input.rs",
+        "crates/tui/src/input/keymap/bindings/global_search.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/tests/app_tests.rs",
+        "docs/usage.md",
+        "make test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/app/input.rs: handle_search_input now handles Ctrl+e for export, but plain 'e' character falls through to KeyCode::Char(c) and inserts correctly (line 103-107).",
+        "crates/tui/src/input/keymap/bindings/global_search.rs: Global quit ('q') and help ('?') bindings have handles_input=true, which means they are resolved by keymap::resolve_action() before screen input handlers see them.",
+        "crates/tui/src/input/keymap/mod.rs: resolve_action() only returns actions for bindings with handles_input=true; Search screen has no special handling to bypass global bindings during text entry.",
+        "crates/tui/src/main.rs: Input events are sent as Action::Input(key) to the app; global keybindings are checked in the update loop before dispatch_screen_input is called.",
+        "crates/tui/src/app/input.rs: Search input handler lacks an explicit 'input mode' - all printable characters including 'q', '?', and digits are subject to global binding interception."
+      ],
+      "plan": [
+        "Add an explicit search_input_mode field to App state (QueryFocused vs ResultsFocused) in crates/tui/src/app/state.rs.",
+        "Modify the input handling flow in main.rs or app/actions.rs to check search_input_mode before resolving global keybindings.",
+        "When in QueryFocused mode: bypass global quit ('q') and help ('?') bindings so they insert as characters; use Esc or Ctrl combinations for commands.",
+        "When in ResultsFocused mode: retain current global binding behavior for navigation.",
+        "Update handle_search_input to toggle between modes (e.g., Tab or Esc to switch focus).",
+        "Add tests in crates/tui/tests/app_tests.rs covering character insertion for 'q', '?', 'e', digits in Query mode.",
+        "Update docs/usage.md Search section to document the input mode behavior and keybindings."
+      ],
+      "notes": [
+        "Keymap architecture has been centralized - bindings are now defined in crates/tui/src/input/keymap/ rather than inline in handlers.",
+        "The fix requires either: (A) making resolve_action aware of input mode, or (B) checking mode before calling resolve_action in the main loop.",
+        "Current export shortcut is Ctrl+e (not plain 'e'), so that part of the original issue is already resolved.",
+        "Implemented SearchInputMode enum (QueryFocused/ResultsFocused) in crates/tui/src/app/state.rs",
+        "Modified handle_input in crates/tui/src/app.rs to skip global bindings for printable characters in QueryFocused mode",
+        "Updated handle_search_input in crates/tui/src/app/input.rs to toggle modes with Tab/Esc and switch to ResultsFocused after search execution",
+        "Added 12 comprehensive tests covering input modes, character insertion (q, ?, e, digits), and mode switching",
+        "Updated documentation in crates/tui/src/input/docs.rs and docs/usage.md with input mode behavior",
+        "All 152 tests pass, make ci green",
+        "Affected tasks that should reference this work: RQ-0110 (cursor editing), RQ-0111 (status messaging), RQ-0113 (help/docs consistency), RQ-0115 (footer hints)"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T00:46:44.212582000Z",
+      "completed_at": "2026-01-28T00:46:44.212582000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

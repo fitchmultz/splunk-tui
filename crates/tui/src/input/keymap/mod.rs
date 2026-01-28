@@ -105,6 +105,10 @@ mod tests {
         KeyEvent::new(code, KeyModifiers::NONE)
     }
 
+    fn ctrl_key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
+    }
+
     #[test]
     fn resolves_global_quit() {
         let action = resolve_action(CurrentScreen::Search, key(KeyCode::Char('q')));
@@ -121,5 +125,23 @@ mod tests {
     fn ignores_list_navigation_on_search_screen() {
         let action = resolve_action(CurrentScreen::Search, key(KeyCode::Char('j')));
         assert!(action.is_none());
+    }
+
+    #[test]
+    fn resolves_ctrl_j_on_search_screen() {
+        let action = resolve_action(CurrentScreen::Search, ctrl_key('j'));
+        assert!(
+            matches!(action, Some(Action::NavigateDown)),
+            "Ctrl+j on Search screen should return NavigateDown action"
+        );
+    }
+
+    #[test]
+    fn resolves_ctrl_k_on_search_screen() {
+        let action = resolve_action(CurrentScreen::Search, ctrl_key('k'));
+        assert!(
+            matches!(action, Some(Action::NavigateUp)),
+            "Ctrl+k on Search screen should return NavigateUp action"
+        );
     }
 }

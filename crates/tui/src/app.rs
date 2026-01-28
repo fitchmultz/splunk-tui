@@ -28,15 +28,15 @@ mod popups;
 mod render;
 
 pub use state::{
-    ClusterViewMode, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, SortColumn,
-    SortDirection, SortState,
+    ClusterViewMode, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, SearchInputMode,
+    SortColumn, SortDirection, SortState,
 };
 
 use crate::action::{Action, ExportFormat};
 use crate::app::export::ExportTarget;
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::models::{
@@ -141,6 +141,12 @@ pub struct App {
     pub server_version: Option<String>,
     /// Server build (fetched from server info)
     pub server_build: Option<String>,
+
+    // Search input mode (RQ-0101)
+    /// Current input mode for the search screen.
+    /// When QueryFocused, printable characters insert into the query.
+    /// When ResultsFocused, navigation keys work on results.
+    pub search_input_mode: crate::app::state::SearchInputMode,
 }
 
 /// Connection context for the TUI header display.
@@ -161,6 +167,23 @@ impl Default for App {
     fn default() -> Self {
         Self::new(None, ConnectionContext::default())
     }
+}
+
+/// Check if a key event represents a printable character that should be inserted
+/// into text input during QueryFocused mode.
+///
+/// A key is considered printable only if:
+/// - It's a character key (KeyCode::Char)
+/// - The character is not a control character
+/// - No modifier keys (Ctrl, Alt, etc.) are pressed
+fn is_printable_char(key: KeyEvent) -> bool {
+    matches!(key.code, KeyCode::Char(c) if !c.is_control() && key.modifiers.is_empty())
+}
+
+/// Check if a key event is used for mode switching in the search screen.
+/// These keys should bypass global bindings when in QueryFocused mode.
+fn is_mode_switch_key(key: KeyEvent) -> bool {
+    matches!(key.code, KeyCode::Tab | KeyCode::BackTab)
 }
 
 impl App {
@@ -284,6 +307,9 @@ impl App {
             auth_mode: Some(connection_ctx.auth_mode),
             server_version: None,
             server_build: None,
+
+            // Search input mode (RQ-0101)
+            search_input_mode: crate::app::state::SearchInputMode::QueryFocused,
         }
     }
 
@@ -449,7 +475,16 @@ impl App {
             return self.handle_jobs_filter_input(key);
         }
 
-        if let Some(action) = crate::input::keymap::resolve_action(self.current_screen, key) {
+        // When in Search screen with QueryFocused mode, skip global binding resolution
+        // for printable characters to allow typing (RQ-0101 fix).
+        // Also skip Tab/BackTab to allow mode switching within the search screen.
+        let skip_global_bindings = self.current_screen == CurrentScreen::Search
+            && matches!(self.search_input_mode, SearchInputMode::QueryFocused)
+            && (is_printable_char(key) || is_mode_switch_key(key));
+
+        if !skip_global_bindings
+            && let Some(action) = crate::input::keymap::resolve_action(self.current_screen, key)
+        {
             return Some(action);
         }
 

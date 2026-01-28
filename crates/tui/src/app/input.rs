@@ -44,68 +44,99 @@ impl App {
             return Some(Action::CopyToClipboard(content));
         }
 
+        // Handle mode switching and input based on current mode
         match key.code {
-            KeyCode::Enter => {
-                if !self.search_input.is_empty() {
-                    let query = self.search_input.clone();
-                    self.add_to_history(query.clone());
-                    self.search_status = format!("Running: {}", query);
-                    Some(Action::RunSearch {
-                        query,
-                        search_defaults: self.search_defaults.clone(),
-                    })
-                } else {
+            // Tab toggles between QueryFocused and ResultsFocused modes
+            KeyCode::Tab => {
+                self.search_input_mode = self.search_input_mode.toggle();
+                None
+            }
+            // Esc switches back to QueryFocused mode (or clears if already focused)
+            KeyCode::Esc => {
+                if matches!(
+                    self.search_input_mode,
+                    crate::app::state::SearchInputMode::ResultsFocused
+                ) {
+                    self.search_input_mode = crate::app::state::SearchInputMode::QueryFocused;
+                }
+                None
+            }
+            _ => match self.search_input_mode {
+                crate::app::state::SearchInputMode::QueryFocused => {
+                    // In QueryFocused mode, handle text input
+                    match key.code {
+                        KeyCode::Enter => {
+                            if !self.search_input.is_empty() {
+                                let query = self.search_input.clone();
+                                self.add_to_history(query.clone());
+                                self.search_status = format!("Running: {}", query);
+                                // Switch to ResultsFocused after running search
+                                self.search_input_mode =
+                                    crate::app::state::SearchInputMode::ResultsFocused;
+                                Some(Action::RunSearch {
+                                    query,
+                                    search_defaults: self.search_defaults.clone(),
+                                })
+                            } else {
+                                None
+                            }
+                        }
+                        KeyCode::Backspace => {
+                            self.history_index = None;
+                            self.search_input.pop();
+                            None
+                        }
+                        KeyCode::Down => {
+                            if let Some(curr) = self.history_index {
+                                if curr > 0 {
+                                    self.history_index = Some(curr - 1);
+                                    self.search_input = self.search_history[curr - 1].clone();
+                                } else {
+                                    self.history_index = None;
+                                    self.search_input = self.saved_search_input.clone();
+                                }
+                            }
+                            None
+                        }
+                        KeyCode::Up => {
+                            if self.search_history.is_empty() {
+                                return None;
+                            }
+
+                            if let Some(curr) = self.history_index {
+                                if curr < self.search_history.len().saturating_sub(1) {
+                                    self.history_index = Some(curr + 1);
+                                }
+                            } else {
+                                self.saved_search_input = self.search_input.clone();
+                                self.history_index = Some(0);
+                            }
+
+                            if let Some(idx) = self.history_index {
+                                self.search_input = self.search_history[idx].clone();
+                            }
+                            None
+                        }
+                        KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            if !self.search_results.is_empty() {
+                                self.begin_export(ExportTarget::SearchResults);
+                            }
+                            None
+                        }
+                        KeyCode::Char(c) => {
+                            self.history_index = None;
+                            self.search_input.push(c);
+                            None
+                        }
+                        _ => None,
+                    }
+                }
+                crate::app::state::SearchInputMode::ResultsFocused => {
+                    // In ResultsFocused mode, navigation keys are handled by global bindings
+                    // We just return None here and let the global bindings handle navigation
                     None
                 }
-            }
-            KeyCode::Backspace => {
-                self.history_index = None;
-                self.search_input.pop();
-                None
-            }
-            KeyCode::Down => {
-                if let Some(curr) = self.history_index {
-                    if curr > 0 {
-                        self.history_index = Some(curr - 1);
-                        self.search_input = self.search_history[curr - 1].clone();
-                    } else {
-                        self.history_index = None;
-                        self.search_input = self.saved_search_input.clone();
-                    }
-                }
-                None
-            }
-            KeyCode::Up => {
-                if self.search_history.is_empty() {
-                    return None;
-                }
-
-                if let Some(curr) = self.history_index {
-                    if curr < self.search_history.len().saturating_sub(1) {
-                        self.history_index = Some(curr + 1);
-                    }
-                } else {
-                    self.saved_search_input = self.search_input.clone();
-                    self.history_index = Some(0);
-                }
-
-                if let Some(idx) = self.history_index {
-                    self.search_input = self.search_history[idx].clone();
-                }
-                None
-            }
-            KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if !self.search_results.is_empty() {
-                    self.begin_export(ExportTarget::SearchResults);
-                }
-                None
-            }
-            KeyCode::Char(c) => {
-                self.history_index = None;
-                self.search_input.push(c);
-                None
-            }
-            _ => None,
+            },
         }
     }
 

@@ -25,6 +25,12 @@ pub(crate) fn render_markdown() -> String {
     out.push_str("\n### Screen Specific Shortcuts\n\n");
 
     for section in screen_sections() {
+        // Special handling for Search screen to document input modes
+        if section == Section::Search {
+            out.push_str(&render_search_screen_docs());
+            continue;
+        }
+
         let entries = unique_entries(section);
         if entries.is_empty() {
             continue;
@@ -37,6 +43,27 @@ pub(crate) fn render_markdown() -> String {
     }
 
     out.trim_end().to_string()
+}
+
+/// Render Search screen documentation with input mode information.
+fn render_search_screen_docs() -> String {
+    let mut out = String::new();
+    out.push_str("#### Search Screen\n\n");
+    out.push_str("The Search screen has two input modes that affect how keys are handled:\n\n");
+    out.push_str(
+        "**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Tab` to switch to ResultsFocused mode.\n\n"
+    );
+    out.push_str(
+        "**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Tab` or `Esc` to return to QueryFocused mode.\n\n"
+    );
+
+    // Add keybindings from the keymap
+    for (keys, description) in unique_entries(Section::Search) {
+        out.push_str(&format!("- `{}`: {}\n", keys, description));
+    }
+    out.push('\n');
+
+    out
 }
 
 fn screen_sections() -> Vec<Section> {
