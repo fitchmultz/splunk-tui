@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0109",
-      "status": "todo",
-      "title": "Fix footer mouse hit-testing (dynamic offsets, loading % width, small terminals)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "mouse",
-        "bug"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/mod.rs",
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs: handle_footer_click uses a hard-coded loading offset (18) and hard-coded column ranges for each tab.",
-        "crates/tui/src/app.rs: footer text includes format!(\" Loading... {:.0}% \", self.progress * 100.0) whose width varies (0% vs 100%), so the fixed offset can mis-route clicks.",
-        "crates/tui/src/app.rs tests: test_handle_mouse_footer_click covers only one static geometry and does not cover loading/progress or narrow widths."
-      ],
-      "plan": [
-        "Compute footer click targets from the actual rendered spans/strings (or a shared footer model) instead of fixed column math.",
-        "Add tests for click routing when loading is true at multiple progress values (0/9/10/100).",
-        "Ensure behavior is stable on small terminal widths (gracefully disable click targets when truncated)."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0110",
       "status": "todo",
       "title": "Add a visible cursor + basic line editing for Search query input",

@@ -5458,6 +5458,54 @@
       "completed_at": "2026-01-28T01:42:01.617198000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0109",
+      "status": "done",
+      "title": "Fix footer mouse hit-testing (dynamic offsets, loading % width, small terminals)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "mouse",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app/mouse.rs",
+        "crates/tui/src/app/render.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/mouse.rs: handle_footer_click uses hard-coded loading offset (18) at line 59, but actual width varies: 0% = 16 chars, 100% = 17 chars.",
+        "crates/tui/src/app/mouse.rs: quit button position calculated with fixed nav_text_len=45, but actual footer text is dynamically built in render.rs build_footer_text().",
+        "crates/tui/src/app/render.rs: build_footer_text() dynamically calculates loading_width and handles narrow terminals by truncating hints, but mouse.rs does not account for truncation.",
+        "crates/tui/tests/app_tests.rs: test_quit_mouse_footer_click and test_quit_mouse_footer_click_with_loading only test 100% progress, missing 0%, single-digit, and narrow width cases.",
+        "crates/tui/src/app/mouse.rs: no handling for case when terminal is too narrow and footer hints are truncated with ellipsis."
+      ],
+      "plan": [
+        "Extract footer layout calculation from render.rs into a shared helper that returns click target ranges (loading_start/end, quit_start/end).",
+        "Update mouse.rs handle_footer_click to use the shared layout helper instead of hard-coded offsets.",
+        "Add tests for progress values 0%, 9%, 10%, 100% to verify correct quit button positioning.",
+        "Add tests for narrow terminals (width < 60) where hints are truncated - ensure quit button still clickable or gracefully disabled.",
+        "Verify make ci passes with new tests."
+      ],
+      "notes": [
+        "Code has been refactored since initial scan: footer logic moved from app.rs to app/mouse.rs and app/render.rs.",
+        "The hard-coded offset 18 in mouse.rs is slightly wrong: actual loading text is 16-17 chars depending on progress digits.",
+        "Footer rendering now includes per-screen hints which are truncated on narrow terminals - mouse hit-testing doesn't account for this.",
+        "Implemented footer layout calculation shared helper (footer_layout.rs)",
+        "Updated mouse.rs to use FooterLayout::calculate() instead of hard-coded offsets",
+        "Added comprehensive tests for progress values (0%, 9%, 10%, 100%) and narrow terminals",
+        "Fixed existing tests in app_tests.rs to use FooterLayout",
+        "All tests pass: 126 unit + 152 integration + 41 snapshot tests",
+        "make ci passes successfully"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T01:58:30.834113000Z",
+      "completed_at": "2026-01-28T01:58:30.834113000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -795,13 +795,17 @@ fn test_quit_mouse_footer_click() {
     app.last_area = Rect::new(0, 0, 100, 24);
     app.loading = false;
 
-    // Footer layout: " Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
-    // Quit button starts at column 46 (nav_text 45 + sep 1), ends at 54
-    // Column is 1-indexed after border, so click at column 50 (middle of quit button)
-    let action = app.handle_mouse(mouse_click(50, 22));
+    // Use FooterLayout to calculate the correct quit button position
+    use splunk_tui::app::footer_layout::FooterLayout;
+    let layout = FooterLayout::calculate(false, 0.0, app.current_screen, app.last_area.width);
+
+    // Click in the middle of the quit button (accounting for border)
+    let click_col = layout.quit_start + 1 + 3; // +1 for border, +3 for middle of quit button
+    let action = app.handle_mouse(mouse_click(click_col, 22));
     assert!(
         matches!(action, Some(Action::Quit)),
-        "Clicking 'Quit' in footer should return Quit action"
+        "Clicking 'Quit' in footer should return Quit action (col={})",
+        click_col
     );
 }
 
@@ -812,13 +816,17 @@ fn test_quit_mouse_footer_click_with_loading() {
     app.loading = true;
     app.progress = 1.0; // Set progress so loading text renders
 
-    // Footer layout with loading: " Loading... 100% | Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
-    // Loading text is 17 chars, then sep (1), nav_text (45), sep (1), quit starts at 64, ends at 72
-    // Column is 1-indexed after border, so click at column 68 (middle of quit button)
-    let action = app.handle_mouse(mouse_click(68, 22));
+    // Use FooterLayout to calculate the correct quit button position
+    use splunk_tui::app::footer_layout::FooterLayout;
+    let layout = FooterLayout::calculate(true, 1.0, app.current_screen, app.last_area.width);
+
+    // Click in the middle of the quit button (accounting for border)
+    let click_col = layout.quit_start + 1 + 3; // +1 for border, +3 for middle of quit button
+    let action = app.handle_mouse(mouse_click(click_col, 22));
     assert!(
         matches!(action, Some(Action::Quit)),
-        "Clicking 'Quit' in footer with loading offset should return Quit action"
+        "Clicking 'Quit' in footer with loading offset should return Quit action (col={})",
+        click_col
     );
 }
 

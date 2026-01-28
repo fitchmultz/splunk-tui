@@ -11,6 +11,7 @@
 
 use crate::action::Action;
 use crate::app::App;
+use crate::app::footer_layout::FooterLayout;
 use crate::app::state::{CurrentScreen, HEADER_HEIGHT};
 use crossterm::event::{MouseEvent, MouseEventKind};
 
@@ -46,25 +47,15 @@ impl App {
     /// Handle clicks in the footer area.
     /// Currently only handles quit button clicks since navigation is now keyboard-only (Tab/Shift+Tab).
     fn handle_footer_click(&mut self, col: u16) -> Option<Action> {
-        // Content in the footer block starts at column 1 (due to border)
-        // Footer layout without loading: " Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
-        // Footer layout with loading: " Loading... 100% | Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
+        // Use the shared layout helper to ensure consistency with rendering
+        let layout = FooterLayout::calculate(
+            self.loading,
+            f64::from(self.progress),
+            self.current_screen,
+            self.last_area.width,
+        );
 
-        // Calculate quit button position based on footer layout
-        let nav_text_len = 45; // " Tab:Next Screen | Shift+Tab:Previous Screen " (including leading space)
-        let sep_len = 1; // "|"
-        let quit_text_len = 8; // " q:Quit " (including spaces)
-
-        let quit_start = if self.loading {
-            // With loading: " Loading... 100% |" (18 chars) + nav_text + "|" + quit
-            18 + nav_text_len + sep_len
-        } else {
-            // Without loading: nav_text + "|" + quit
-            nav_text_len + sep_len
-        };
-        let quit_end = quit_start + quit_text_len;
-
-        if col > quit_start && col <= quit_end {
+        if layout.is_quit_clicked(col) {
             Some(Action::Quit)
         } else {
             None
@@ -159,17 +150,24 @@ mod tests {
 
         // Footer navigation clicks are no longer supported (navigation is keyboard-only via Tab/Shift+Tab)
         // Only quit button clicks work now
-        // Footer layout: " Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit "
-        // Quit button starts at column 46, ends at 54
+        // Use FooterLayout to get the correct quit button position
+        let layout = FooterLayout::calculate(false, 0.0, app.current_screen, app.last_area.width);
+
+        // Click in the middle of the quit button (accounting for border)
+        let click_col = layout.quit_start + 1 + 3; // +1 for border, +3 for middle of quit button
         let event = MouseEvent {
             kind: MouseEventKind::Down(MouseButton::Left),
-            column: 50, // middle of " q:Quit "
-            row: 22,    // Middle line of footer (24-2)
+            column: click_col,
+            row: 22, // Middle line of footer (24-2)
             modifiers: KeyModifiers::empty(),
         };
 
         let action = app.handle_mouse(event);
-        assert!(matches!(action, Some(Action::Quit)));
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit button should return Quit action (col={})",
+            click_col
+        );
     }
 
     #[test]
@@ -228,5 +226,255 @@ mod tests {
         // Second click on same row should Inspect
         let action2 = app.handle_mouse(event);
         assert!(matches!(action2, Some(Action::InspectJob)));
+    }
+
+    #[test]
+    fn test_footer_click_quit_at_0_percent() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.loading = true;
+        app.progress = 0.0;
+
+        // Calculate expected quit position using FooterLayout
+        let layout = FooterLayout::calculate(true, 0.0, app.current_screen, app.last_area.width);
+
+        // Click in the middle of the quit button (accounting for border)
+        let click_col = layout.quit_start + 1 + 3; // +1 for border, +3 for middle of quit button
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit at 0% progress should return Quit action (col={})",
+            click_col
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_at_9_percent() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.loading = true;
+        app.progress = 0.09;
+
+        let layout = FooterLayout::calculate(true, 0.09, app.current_screen, app.last_area.width);
+
+        let click_col = layout.quit_start + 1 + 3;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit at 9% progress should return Quit action (col={})",
+            click_col
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_at_10_percent() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.loading = true;
+        app.progress = 0.10;
+
+        let layout = FooterLayout::calculate(true, 0.10, app.current_screen, app.last_area.width);
+
+        let click_col = layout.quit_start + 1 + 3;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit at 10% progress should return Quit action (col={})",
+            click_col
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_at_100_percent() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.loading = true;
+        app.progress = 1.0;
+
+        let layout = FooterLayout::calculate(true, 1.0, app.current_screen, app.last_area.width);
+
+        let click_col = layout.quit_start + 1 + 3;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit at 100% progress should return Quit action (col={})",
+            click_col
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_narrow_terminal() {
+        let mut app = App::new(None, ConnectionContext::default());
+        // Narrow terminal (width < 60)
+        app.last_area = ratatui::layout::Rect::new(0, 0, 50, 24);
+        app.loading = false;
+
+        let layout = FooterLayout::calculate(false, 0.0, app.current_screen, app.last_area.width);
+
+        // Quit should still be visible at width 50
+        assert!(layout.quit_visible, "Quit should be visible at width 50");
+
+        let click_col = layout.quit_start + 1 + 3;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit on narrow terminal should return Quit action (col={})",
+            click_col
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_very_narrow() {
+        let mut app = App::new(None, ConnectionContext::default());
+        // Very narrow terminal (width < 40)
+        app.last_area = ratatui::layout::Rect::new(0, 0, 35, 24);
+        app.loading = false;
+
+        let layout = FooterLayout::calculate(false, 0.0, app.current_screen, app.last_area.width);
+
+        // Quit should NOT be visible at width 35
+        assert!(!layout.quit_visible, "Quit should be hidden at width 35");
+
+        // Clicking where quit would be should not return Quit action
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 30,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            !matches!(action, Some(Action::Quit)),
+            "Clicking quit area on very narrow terminal should NOT return Quit action"
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_jobs_screen() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.current_screen = CurrentScreen::Jobs;
+        app.loading = false;
+
+        let layout = FooterLayout::calculate(false, 0.0, app.current_screen, app.last_area.width);
+
+        let click_col = layout.quit_start + 1 + 3;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit on Jobs screen should return Quit action"
+        );
+    }
+
+    #[test]
+    fn test_footer_click_quit_search_screen() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.current_screen = CurrentScreen::Search;
+        app.loading = false;
+
+        let layout = FooterLayout::calculate(false, 0.0, app.current_screen, app.last_area.width);
+
+        let click_col = layout.quit_start + 1 + 3;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: click_col,
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::Quit)),
+            "Clicking quit on Search screen should return Quit action"
+        );
+    }
+
+    #[test]
+    fn test_footer_click_outside_quit_does_nothing() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 100, 24);
+        app.loading = false;
+
+        // Click in the nav area (left side of footer)
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10, // In the nav text area
+            row: 22,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            action.is_none(),
+            "Clicking in nav area should not return any action"
+        );
+    }
+
+    #[test]
+    fn test_footer_click_with_loading_progress_variations() {
+        // Test that different progress values result in correct quit button positions
+        let test_cases = [
+            (0.0, 16u16), // 0% = 16 chars
+            (0.05, 16),   // 5% = 16 chars
+            (0.09, 16),   // 9% = 16 chars
+            (0.10, 17),   // 10% = 17 chars
+            (0.50, 17),   // 50% = 17 chars
+            (0.99, 17),   // 99% = 17 chars
+            (1.0, 18),    // 100% = 18 chars
+        ];
+
+        for (progress, expected_loading_width) in test_cases {
+            let layout = FooterLayout::calculate(true, progress, CurrentScreen::Jobs, 100);
+
+            assert_eq!(
+                layout.loading_width, expected_loading_width,
+                "Progress {} should have loading width {}",
+                progress, expected_loading_width
+            );
+        }
     }
 }
