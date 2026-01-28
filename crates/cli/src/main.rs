@@ -29,6 +29,36 @@ use crate::cancellation::{
     CancellationToken, SIGINT_EXIT_CODE, is_cancelled_error, print_cancelled_message,
 };
 
+/// Context for command execution, distinguishing between real and placeholder configs.
+///
+/// This enum provides compile-time guarantees that placeholder configs (used for
+/// config management commands and multi-profile operations) cannot be accidentally
+/// used for actual Splunk API connections.
+enum ConfigCommandContext {
+    /// A real, validated config loaded from profiles/environment/CLI args.
+    /// Used for actual Splunk API operations.
+    Real(splunk_config::Config),
+    /// A placeholder config for commands that don't need real connection details.
+    /// Only valid for Config commands and multi-profile ListAll operations.
+    Placeholder,
+}
+
+impl ConfigCommandContext {
+    /// Extract the real config, failing if this is a placeholder.
+    ///
+    /// Use this for commands that require actual connection details.
+    fn into_real_config(self) -> anyhow::Result<splunk_config::Config> {
+        match self {
+            ConfigCommandContext::Real(config) => Ok(config),
+            ConfigCommandContext::Placeholder => {
+                anyhow::bail!(
+                    "Internal error: attempted to use placeholder config for an operation requiring real connection details"
+                )
+            }
+        }
+    }
+}
+
 #[derive(Parser)]
 #[command(name = "splunk-cli")]
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
@@ -280,11 +310,8 @@ async fn main() -> Result<()> {
         .with(fmt::layer())
         .init();
 
-    // Build configuration
-    let mut loader = ConfigLoader::new();
-
-    // Only build config if not running config command (it manages its own profiles)
-    // or list-all with multi-profile flags (uses profiles from config file directly)
+    // Determine if we need a real config or can use a placeholder
+    // Config commands and multi-profile list-all don't need connection details
     let is_multi_profile_list_all = matches!(
         cli.command,
         Commands::ListAll {
@@ -295,29 +322,13 @@ async fn main() -> Result<()> {
             ..
         }
     );
+    let needs_real_config =
+        !matches!(cli.command, Commands::Config { .. }) && !is_multi_profile_list_all;
 
-    let config = if matches!(cli.command, Commands::Config { .. }) || is_multi_profile_list_all {
-        // Config command and multi-profile list-all don't need full config, return minimal placeholder
-        // Config command doesn't need full config, return minimal placeholder
-        splunk_config::Config {
-            connection: splunk_config::ConnectionConfig {
-                base_url: ConfigLoader::env_var_or_none("SPLUNK_BASE_URL").unwrap_or_default(),
-                skip_verify: false,
-                timeout: std::time::Duration::from_secs(30),
-                max_retries: 3,
-            },
-            auth: splunk_config::AuthConfig {
-                strategy: splunk_config::types::AuthStrategy::SessionToken {
-                    username: ConfigLoader::env_var_or_none("SPLUNK_USERNAME").unwrap_or_default(),
-                    password: secrecy::SecretString::new(
-                        ConfigLoader::env_var_or_none("SPLUNK_PASSWORD")
-                            .unwrap_or_default()
-                            .into(),
-                    ),
-                },
-            },
-        }
-    } else {
+    // Build configuration only if needed
+    let config = if needs_real_config {
+        let mut loader = ConfigLoader::new();
+
         // Apply custom config path if provided (highest priority for loader setup)
         if let Some(ref path) = cli.config_path {
             loader = loader.with_config_path(path.clone());
@@ -356,7 +367,9 @@ async fn main() -> Result<()> {
             loader = loader.with_skip_verify(true);
         }
 
-        loader.build()?
+        Some(loader.build()?)
+    } else {
+        None
     };
 
     // Create cancellation token and set up signal handling
@@ -371,8 +384,15 @@ async fn main() -> Result<()> {
         cancel_clone.cancel();
     });
 
+    // Wrap config in appropriate context based on command type
+    let config_context = if let Some(config) = config {
+        ConfigCommandContext::Real(config)
+    } else {
+        ConfigCommandContext::Placeholder
+    };
+
     // Execute command
-    match run_command(cli, config, &cancel).await {
+    match run_command(cli, config_context, &cancel).await {
         Ok(()) => Ok(()),
         Err(e) if is_cancelled_error(&e) => {
             print_cancelled_message();
@@ -384,11 +404,13 @@ async fn main() -> Result<()> {
 
 async fn run_command(
     cli: Cli,
-    config: splunk_config::Config,
+    config: ConfigCommandContext,
     cancel: &CancellationToken,
 ) -> Result<()> {
     match cli.command {
         Commands::Config { command } => {
+            // Config commands don't use the config parameter - they use ConfigManager directly
+            // The config context is ignored here (can be Real or Placeholder)
             commands::config::run(
                 command,
                 &cli.output,
@@ -403,6 +425,7 @@ async fn run_command(
             latest,
             count,
         } => {
+            let config = config.into_real_config()?;
             commands::search::run(
                 config,
                 query,
@@ -422,6 +445,7 @@ async fn run_command(
             count,
             offset,
         } => {
+            let config = config.into_real_config()?;
             commands::indexes::run(
                 config,
                 detailed,
@@ -438,6 +462,7 @@ async fn run_command(
             offset,
             page_size,
         } => {
+            let config = config.into_real_config()?;
             commands::cluster::run(
                 config,
                 detailed,
@@ -456,6 +481,7 @@ async fn run_command(
             delete,
             count,
         } => {
+            let config = config.into_real_config()?;
             commands::jobs::run(
                 config,
                 list,
@@ -470,12 +496,15 @@ async fn run_command(
             .await?;
         }
         Commands::Health => {
+            let config = config.into_real_config()?;
             commands::health::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
         Commands::Kvstore => {
+            let config = config.into_real_config()?;
             commands::kvstore::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
         Commands::License(_args) => {
+            let config = config.into_real_config()?;
             commands::license::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
         }
         Commands::Logs {
@@ -483,6 +512,7 @@ async fn run_command(
             earliest,
             tail,
         } => {
+            let config = config.into_real_config()?;
             commands::logs::run(
                 config,
                 count,
@@ -495,6 +525,7 @@ async fn run_command(
             .await?;
         }
         Commands::InternalLogs { count, earliest } => {
+            let config = config.into_real_config()?;
             commands::internal_logs::run(
                 config,
                 count,
@@ -506,10 +537,12 @@ async fn run_command(
             .await?;
         }
         Commands::Users { count } => {
+            let config = config.into_real_config()?;
             commands::users::run(config, count, &cli.output, cli.output_file.clone(), cancel)
                 .await?;
         }
         Commands::Apps { apps_command } => {
+            let config = config.into_real_config()?;
             commands::apps::run(
                 config,
                 apps_command,
@@ -538,8 +571,36 @@ async fn run_command(
                 None
             };
 
+            // Determine which profiles to query
+            let is_multi_profile = all_profiles || profiles.is_some();
+
+            // Only extract real config for single-profile mode
+            let config = if is_multi_profile {
+                // Multi-profile mode doesn't use the config parameter
+                // (it loads configs from ConfigManager)
+                None
+            } else {
+                Some(config.into_real_config()?)
+            };
+
+            // Unwrap config for single-profile mode, use placeholder for multi-profile
+            let config_for_list_all = config.unwrap_or(splunk_config::Config {
+                connection: splunk_config::ConnectionConfig {
+                    base_url: String::new(),
+                    skip_verify: false,
+                    timeout: std::time::Duration::from_secs(30),
+                    max_retries: 3,
+                },
+                auth: splunk_config::AuthConfig {
+                    strategy: splunk_config::types::AuthStrategy::SessionToken {
+                        username: String::new(),
+                        password: secrecy::SecretString::new(String::new().into()),
+                    },
+                },
+            });
+
             commands::list_all::run(
-                config,
+                config_for_list_all,
                 resources,
                 profiles,
                 all_profiles,
@@ -551,6 +612,7 @@ async fn run_command(
             .await?;
         }
         Commands::SavedSearches { command } => {
+            let config = config.into_real_config()?;
             commands::saved_searches::run(
                 config,
                 command,
