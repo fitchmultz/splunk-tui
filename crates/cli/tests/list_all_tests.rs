@@ -409,6 +409,195 @@ fn test_list_all_single_profile_backward_compat() {
         .stdout(predicate::str::contains("Timestamp"));
 }
 
+/// Test that profile with missing credentials (no username/password/api_token) reports error.
+#[test]
+fn test_list_all_profile_missing_credentials() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create config with profile that has base_url but no credentials
+    let config = serde_json::json!({
+        "profiles": {
+            "no-creds": {
+                "base_url": "https://dev.splunk.local:8089"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--profiles",
+            "no-creds",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("no-creds"))
+        .stdout(predicate::str::contains(
+            "No credentials configured (expected api_token or username/password)",
+        ));
+}
+
+/// Test that profile with only username (no password) reports error.
+#[test]
+fn test_list_all_profile_missing_password() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create config with profile that has username but no password
+    let config = serde_json::json!({
+        "profiles": {
+            "no-password": {
+                "base_url": "https://dev.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--profiles",
+            "no-password",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("no-password"))
+        .stdout(predicate::str::contains(
+            "Username configured but password is missing",
+        ));
+}
+
+/// Test that profile with only password (no username) reports error.
+#[test]
+fn test_list_all_profile_missing_username() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create config with profile that has password but no username
+    let config = serde_json::json!({
+        "profiles": {
+            "no-username": {
+                "base_url": "https://dev.splunk.local:8089",
+                "password": "secret123"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--profiles",
+            "no-username",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("no-username"))
+        .stdout(predicate::str::contains(
+            "Password configured but username is missing",
+        ));
+}
+
+/// Test that profile with keyring-based password resolution failure reports error.
+#[test]
+fn test_list_all_profile_keyring_resolution_failure() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create config with profile that references non-existent keyring entry
+    let config = serde_json::json!({
+        "profiles": {
+            "keyring-fail": {
+                "base_url": "https://dev.splunk.local:8089",
+                "username": "admin",
+                "password": {
+                    "keyring_account": "nonexistent_account_12345"
+                }
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--profiles",
+            "keyring-fail",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("keyring-fail"))
+        .stdout(predicate::str::contains(
+            "Failed to resolve password from keyring",
+        ));
+}
+
+/// Test that profile with keyring-based API token resolution failure reports error.
+#[test]
+fn test_list_all_profile_api_token_resolution_failure() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create config with profile that references non-existent keyring entry for API token
+    let config = serde_json::json!({
+        "profiles": {
+            "token-fail": {
+                "base_url": "https://dev.splunk.local:8089",
+                "api_token": {
+                    "keyring_account": "nonexistent_token_account_12345"
+                }
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--profiles",
+            "token-fail",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("token-fail"))
+        .stdout(predicate::str::contains(
+            "Failed to resolve API token from keyring",
+        ));
+}
+
 /// Test that `--config-path` CLI flag takes precedence over SPLUNK_CONFIG_PATH env var.
 #[test]
 fn test_list_all_config_path_cli_precedence() {

@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0160",
-      "status": "todo",
-      "title": "Fail list-all profiles with missing/invalid credentials instead of empty auth",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "auth",
-        "bug"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all.rs",
-        "crates/cli/tests/list_all_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/list_all.rs build_auth_strategy_from_profile returns SessionToken with empty username/password when no credentials resolve.",
-        "Profile credential resolution errors (keyring resolve failures) are silently ignored, leading to empty auth attempts."
-      ],
-      "plan": [
-        "Change build_auth_strategy_from_profile to return Result<AuthStrategy> or Option and surface missing/failed credential resolution as a ProfileResult error.",
-        "Update fetch_single_profile_resources to short-circuit with a clear error message when credentials are missing/invalid.",
-        "Add tests covering missing credentials and keyring resolution failure paths."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0161",
       "status": "todo",
       "title": "Normalize list-all resources/profiles inputs (trim/lowercase/dedupe)",

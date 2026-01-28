@@ -417,8 +417,18 @@ async fn fetch_single_profile_resources(
     // Build config from profile
     let base_url = profile_config.base_url.clone().unwrap_or_default();
 
-    // Build auth strategy
-    let auth_strategy = build_auth_strategy_from_profile(&profile_config);
+    // Build auth strategy - fail fast if credentials are missing/invalid
+    let auth_strategy = match build_auth_strategy_from_profile(&profile_config) {
+        Ok(strategy) => strategy,
+        Err(error_msg) => {
+            return ProfileResult {
+                profile_name,
+                base_url,
+                resources: vec![],
+                error: Some(error_msg),
+            };
+        }
+    };
 
     // Build Splunk client
     let mut client = match SplunkClient::builder()
@@ -461,35 +471,44 @@ async fn fetch_single_profile_resources(
 }
 
 /// Build authentication strategy from profile configuration.
+///
+/// Returns `Ok(AuthStrategy)` when credentials are successfully resolved,
+/// or `Err(String)` with a descriptive error message when credentials are
+/// missing or fail to resolve.
 fn build_auth_strategy_from_profile(
     profile: &splunk_config::types::ProfileConfig,
-) -> splunk_client::AuthStrategy {
+) -> Result<splunk_client::AuthStrategy, String> {
     use secrecy::{ExposeSecret, SecretString};
     use splunk_client::AuthStrategy;
 
     // Prefer API token if available
-    if let Some(ref token) = profile.api_token
-        && let Ok(resolved) = token.resolve()
-    {
-        return AuthStrategy::ApiToken {
-            token: SecretString::from(resolved.expose_secret()),
-        };
+    if let Some(ref token) = profile.api_token {
+        match token.resolve() {
+            Ok(resolved) => {
+                return Ok(AuthStrategy::ApiToken {
+                    token: SecretString::from(resolved.expose_secret()),
+                });
+            }
+            Err(e) => {
+                return Err(format!("Failed to resolve API token from keyring: {}", e));
+            }
+        }
     }
 
-    // Fall back to username/password
-    if let (Some(username), Some(password)) = (&profile.username, &profile.password)
-        && let Ok(resolved) = password.resolve()
-    {
-        return AuthStrategy::SessionToken {
-            username: username.clone(),
-            password: SecretString::from(resolved.expose_secret()),
-        };
-    }
-
-    // No valid credentials
-    AuthStrategy::SessionToken {
-        username: String::new(),
-        password: SecretString::from(""),
+    // Check for partial username/password configuration
+    match (&profile.username, &profile.password) {
+        (Some(username), Some(password)) => match password.resolve() {
+            Ok(resolved) => Ok(AuthStrategy::SessionToken {
+                username: username.clone(),
+                password: SecretString::from(resolved.expose_secret()),
+            }),
+            Err(e) => Err(format!("Failed to resolve password from keyring: {}", e)),
+        },
+        (Some(_), None) => Err("Username configured but password is missing".to_string()),
+        (None, Some(_)) => Err("Password configured but username is missing".to_string()),
+        (None, None) => {
+            Err("No credentials configured (expected api_token or username/password)".to_string())
+        }
     }
 }
 
