@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0156",
-      "status": "todo",
-      "title": "Add tests for error handling paths",
-      "priority": "low",
-      "tags": [
-        "testing",
-        "error-handling",
-        "coverage"
-      ],
-      "scope": [
-        "crates/client/src/",
-        "crates/*/tests/"
-      ],
-      "evidence": [
-        "Tests focus primarily on happy paths",
-        "Error handling paths (network failures, auth failures, malformed responses) need coverage",
-        "Many error variants not exercised in tests",
-        "Important for reliability and regression prevention"
-      ],
-      "plan": [
-        "Identify error handling paths lacking coverage",
-        "Add tests for network failure scenarios",
-        "Add tests for authentication failure handling",
-        "Add tests for malformed response handling",
-        "Verify make ci passes with new tests"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0157",
       "status": "todo",
       "title": "Improve test isolation for environment variable manipulation",
