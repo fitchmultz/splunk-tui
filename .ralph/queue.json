@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0153",
-      "status": "todo",
-      "title": "Improve config profile missing error handling",
-      "priority": "low",
-      "tags": [
-        "ux",
-        "config",
-        "error-handling"
-      ],
-      "scope": [
-        "crates/config/src/loader.rs"
-      ],
-      "evidence": [
-        "loader.rs lines 294-309: Profile missing logic allows partial overrides",
-        "If any single auth field is provided via env/CLI, profile not found error is suppressed",
-        "Could lead to confusing errors later when connection fails due to incomplete config",
-        "Should validate all required fields are present, not just any field"
-      ],
-      "plan": [
-        "Review profile missing validation logic",
-        "Ensure all required fields are validated, not just any field",
-        "Provide clear error messages indicating which fields are missing",
-        "Add tests for partial override scenarios",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0154",
       "status": "todo",
       "title": "Add cancellation token checks to all long-running operations",

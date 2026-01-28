@@ -388,17 +388,29 @@ impl ConfigLoader {
         self
     }
 
+    /// Check if we have a complete configuration (base_url + auth).
+    ///
+    /// A complete configuration requires:
+    /// - base_url is present
+    /// - AND (api_token is present OR (username AND password are present))
+    fn has_complete_config(&self) -> bool {
+        // Must have base_url
+        let has_base_url = self.base_url.is_some();
+
+        // Must have complete auth: either api_token OR (username AND password)
+        let has_complete_auth =
+            self.api_token.is_some() || (self.username.is_some() && self.password.is_some());
+
+        has_base_url && has_complete_auth
+    }
+
     /// Build the final configuration.
     pub fn build(self) -> Result<Config, ConfigError> {
         // Check for missing profile first
-        if let Some(profile_name) = self.profile_missing {
-            // Only error if we don't have overrides from env/CLI
-            if self.base_url.is_none()
-                && self.username.is_none()
-                && self.password.is_none()
-                && self.api_token.is_none()
-            {
-                return Err(ConfigError::ProfileNotFound(profile_name));
+        if let Some(ref profile_name) = self.profile_missing {
+            // Only suppress ProfileNotFound if we have a complete config from env/CLI
+            if !self.has_complete_config() {
+                return Err(ConfigError::ProfileNotFound(profile_name.clone()));
             }
         }
 
@@ -633,6 +645,165 @@ mod tests {
 
         let result = loader.build();
         assert!(matches!(result, Err(ConfigError::ProfileNotFound(_))));
+    }
+
+    #[test]
+    fn test_profile_missing_with_only_username_override() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, only username provided - should get ProfileNotFound
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_username("admin".to_string());
+
+        let result = loader.build();
+        assert!(
+            matches!(result, Err(ConfigError::ProfileNotFound(_))),
+            "Expected ProfileNotFound when only username is provided, got {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_profile_missing_with_only_password_override() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, only password provided - should get ProfileNotFound
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_password("secret".to_string());
+
+        let result = loader.build();
+        assert!(
+            matches!(result, Err(ConfigError::ProfileNotFound(_))),
+            "Expected ProfileNotFound when only password is provided, got {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_profile_missing_with_only_base_url_override() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, only base_url provided - should get ProfileNotFound
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_base_url("https://splunk.com:8089".to_string());
+
+        let result = loader.build();
+        assert!(
+            matches!(result, Err(ConfigError::ProfileNotFound(_))),
+            "Expected ProfileNotFound when only base_url is provided, got {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_profile_missing_with_partial_session_auth() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, username+password provided but no base_url - should get ProfileNotFound
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_username("admin".to_string())
+            .with_password("secret".to_string());
+
+        let result = loader.build();
+        assert!(
+            matches!(result, Err(ConfigError::ProfileNotFound(_))),
+            "Expected ProfileNotFound when username+password provided but no base_url, got {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_profile_missing_with_partial_api_token_auth() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, api_token provided but no base_url - should get ProfileNotFound
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_api_token("my-token".to_string());
+
+        let result = loader.build();
+        assert!(
+            matches!(result, Err(ConfigError::ProfileNotFound(_))),
+            "Expected ProfileNotFound when api_token provided but no base_url, got {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_profile_missing_with_complete_config_override() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, but complete config provided via builder - should succeed
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_base_url("https://splunk.com:8089".to_string())
+            .with_api_token("my-token".to_string());
+
+        let result = loader.build();
+        assert!(
+            result.is_ok(),
+            "Expected success when complete config is provided, got {:?}",
+            result
+        );
+        assert_eq!(
+            result.unwrap().connection.base_url,
+            "https://splunk.com:8089"
+        );
+    }
+
+    #[test]
+    fn test_profile_missing_with_complete_session_auth_override() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = create_test_config_file(temp_dir.path());
+
+        // Profile missing, but complete session auth config provided - should succeed
+        let loader = ConfigLoader::new()
+            .with_profile_name("nonexistent".to_string())
+            .with_config_path(config_path)
+            .from_profile()
+            .unwrap()
+            .with_base_url("https://splunk.com:8089".to_string())
+            .with_username("admin".to_string())
+            .with_password("secret".to_string());
+
+        let result = loader.build();
+        assert!(
+            result.is_ok(),
+            "Expected success when complete session auth config is provided, got {:?}",
+            result
+        );
+        assert!(matches!(
+            result.unwrap().auth.strategy,
+            AuthStrategy::SessionToken { .. }
+        ));
     }
 
     #[test]
