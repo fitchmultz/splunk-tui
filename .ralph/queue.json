@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0159",
-      "status": "todo",
-      "title": "Respect --config-path for list-all multi-profile mode",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "config",
-        "bug"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/tests/list_all_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/main.rs uses std::env::var(\"SPLUNK_CONFIG_PATH\") when building ConfigManager for list-all and ignores cli.config_path (see ListAll branch around lines 559-575).",
-        "crates/cli/src/main.rs defines --config-path and resolve_config_path, so ListAll multi-profile currently bypasses the normalized path."
-      ],
-      "plan": [
-        "Route list-all multi-profile ConfigManager creation through the resolved cli.config_path (fall back to env var only if cli config path is unset).",
-        "Add/adjust list-all tests to cover --config-path and SPLUNK_CONFIG_PATH precedence in multi-profile mode.",
-        "Run list-all related tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0160",
       "status": "todo",
       "title": "Fail list-all profiles with missing/invalid credentials instead of empty auth",

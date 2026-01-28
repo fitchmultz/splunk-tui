@@ -408,3 +408,53 @@ fn test_list_all_single_profile_backward_compat() {
         .success()
         .stdout(predicate::str::contains("Timestamp"));
 }
+
+/// Test that `--config-path` CLI flag takes precedence over SPLUNK_CONFIG_PATH env var.
+#[test]
+fn test_list_all_config_path_cli_precedence() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let cli_config_path = temp_dir.path().join("cli_config.json");
+    let env_config_path = temp_dir.path().join("env_config.json");
+
+    // Create CLI config with "cli-profile"
+    let cli_config = serde_json::json!({
+        "profiles": {
+            "cli-profile": {
+                "base_url": "https://cli.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&cli_config_path, cli_config.to_string()).unwrap();
+
+    // Create env config with "env-profile"
+    let env_config = serde_json::json!({
+        "profiles": {
+            "env-profile": {
+                "base_url": "https://env.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&env_config_path, env_config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", env_config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--config-path",
+            cli_config_path.to_str().unwrap(),
+            "--all-profiles",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    // Should use CLI config, not env config
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("cli-profile"))
+        .stdout(predicate::str::contains("https://cli.splunk.local:8089"))
+        .stdout(predicate::str::contains("env-profile").not());
+}

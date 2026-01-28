@@ -569,10 +569,10 @@ async fn run_command(
         } => {
             // Load ConfigManager if multi-profile mode
             let config_manager = if all_profiles || profiles.is_some() {
-                // Use custom config path if provided via env var or CLI
-                if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
+                // Use custom config path if provided via CLI arg or env var (already resolved)
+                if let Some(config_path) = &cli.config_path {
                     Some(splunk_config::ConfigManager::new_with_path(
-                        std::path::PathBuf::from(config_path),
+                        config_path.clone(),
                     )?)
                 } else {
                     Some(splunk_config::ConfigManager::new()?)
