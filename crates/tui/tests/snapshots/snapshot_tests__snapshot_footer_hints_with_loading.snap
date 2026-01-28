@@ -6,10 +6,10 @@ expression: harness.render()
 │Splunk TUI - Jobs | [?] Unknown                                               │
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Search Jobs [AUTO]────────────────────────────────────────────────────────────┐
-│Sel  SID ↑                    Status          Duration   Results    Events    │
-│[ ]  scheduler_admin_search_1 Done            5.23s      100        500       │
-│[ ]  admin_search_9876543210  Running (65%)   12.45s     450        2000      │
+┌Search Jobs───────────────────────────────────────────────────────────────────┐
+│                                Loading jobs...                               │
+│                                                                              │
+│                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │
@@ -24,5 +24,5 @@ expression: harness.render()
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Next Screen | Shift+Tab:Previous Screen | r:Refresh ...| ?:Help | q:Quit │
+│ Loading... 65% | Tab:Next Screen | Shift+Tab:Previous Screen | r:Refresh ...|│
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -11,6 +11,7 @@
 
 use crate::app::App;
 use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState};
+use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{apps, cluster, health, indexes, saved_searches, search, settings, users};
 use ratatui::{
@@ -108,25 +109,8 @@ impl App {
         // Main content
         self.render_content(f, chunks[1]);
 
-        // Footer with status
-        let footer_text = if self.loading {
-            vec![Line::from(vec![
-                Span::styled(
-                    format!(" Loading... {:.0}% ", self.progress * 100.0),
-                    Style::default().fg(theme.warning),
-                ),
-                Span::raw("|"),
-                Span::raw(" Tab:Next Screen | Shift+Tab:Previous Screen "),
-                Span::raw("|"),
-                Span::styled(" q:Quit ", Style::default().fg(theme.error)),
-            ])]
-        } else {
-            vec![Line::from(vec![
-                Span::raw(" Tab:Next Screen | Shift+Tab:Previous Screen "),
-                Span::raw("|"),
-                Span::styled(" q:Quit ", Style::default().fg(theme.error)),
-            ])]
-        };
+        // Footer with status and per-screen hints
+        let footer_text = self.build_footer_text(theme);
         let footer = Paragraph::new(footer_text).block(
             Block::default()
                 .borders(Borders::ALL)
@@ -436,5 +420,73 @@ impl App {
             let start = url.len().saturating_sub(max_len - 3);
             format!("...{}", &url[start..])
         }
+    }
+
+    /// Build footer text with navigation hints, screen-specific hints, and controls.
+    ///
+    /// Layout: [Loading] | Tab:Next | Shift+Tab:Prev | [Screen Hints] | ?:Help | q:Quit
+    /// Handles narrow terminals by truncating screen hints with ellipsis.
+    fn build_footer_text(&self, theme: splunk_config::Theme) -> Vec<Line<'_>> {
+        let hints = footer_hints(self.current_screen);
+        let available_width = self.last_area.width as usize;
+
+        // Calculate minimum required width for fixed elements
+        let loading_width = if self.loading {
+            format!(" Loading... {:.0}% |", self.progress * 100.0).len()
+        } else {
+            0
+        };
+        let nav_width = " Tab:Next Screen | Shift+Tab:Previous Screen ".len();
+        let help_quit_width = " ?:Help | q:Quit ".len();
+
+        let fixed_width = loading_width + nav_width + help_quit_width;
+        let hints_available_width = available_width.saturating_sub(fixed_width);
+
+        // Build screen hints string
+        let hints_text = if hints.is_empty() {
+            String::new()
+        } else {
+            let mut text = String::new();
+            for (key, desc) in hints {
+                let hint = format!(" {}:{}", key, desc);
+                // Check if adding this hint would exceed available width
+                if text.len() + hint.len() > hints_available_width && !text.is_empty() {
+                    // Truncate with ellipsis
+                    text.push_str(" ...");
+                    break;
+                }
+                text.push_str(&hint);
+            }
+            text
+        };
+
+        // Build the footer line
+        let mut spans = Vec::new();
+
+        // Loading indicator (if active)
+        if self.loading {
+            spans.push(Span::styled(
+                format!(" Loading... {:.0}% ", self.progress * 100.0),
+                Style::default().fg(theme.warning),
+            ));
+            spans.push(Span::raw("|"));
+        }
+
+        // Navigation hints
+        spans.push(Span::raw(" Tab:Next Screen | Shift+Tab:Previous Screen "));
+
+        // Screen-specific hints
+        if !hints_text.is_empty() {
+            spans.push(Span::raw("|"));
+            spans.push(Span::styled(hints_text, Style::default().fg(theme.accent)));
+        }
+
+        // Help and Quit
+        spans.push(Span::raw("|"));
+        spans.push(Span::styled(" ?:Help ", Style::default().fg(theme.success)));
+        spans.push(Span::raw("|"));
+        spans.push(Span::styled(" q:Quit ", Style::default().fg(theme.error)));
+
+        vec![Line::from(spans)]
     }
 }

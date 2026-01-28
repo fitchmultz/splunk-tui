@@ -3,13 +3,13 @@ source: crates/tui/tests/snapshot_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Splunk TUI - Jobs | [?] Unknown                                               │
+│Splunk TUI - Apps | [?] Unknown                                               │
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Search Jobs [AUTO]────────────────────────────────────────────────────────────┐
-│Sel  SID ↑                    Status          Duration   Results    Events    │
-│[ ]  scheduler_admin_search_1 Done            5.23s      100        500       │
-│[ ]  admin_search_9876543210  Running (65%)   12.45s     450        2000      │
+┌Apps──────────────────────────────────────────────────────────────────────────┐
+│                     No apps loaded. Press 'r' to refresh.                    │
+│                                                                              │
+│                                                                              │
 │                                                                              │
 │                                                                              │
 │                                                                              │

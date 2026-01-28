@@ -3,26 +3,26 @@ source: crates/tui/tests/snapshot_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Splunk TUI - Job Details | [?] Unknown                                        │
+│Splunk TUI - Settings | [?] Unknown                                           │
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Job Details───────────────────────────────────────────────────────────────────┐
-│                         Job: admin_search_9876543210                         │
+┌──────────────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Theme:          Default                                                       │
+│Auto-refresh:   [Off]                                                         │
+│Sort column:    sid                                                           │
+│Sort direction: asc                                                           │
+│Search history: 0 items                                                       │
+│Profile:        N/A                                                           │
+│                                                                              │
+│Search Defaults                                                               │
+│  Earliest time: -24h                                                         │
+│  Latest time:   now                                                          │
+│  Max results:   1000                                                         │
+│                                                                              │
+│Press 't' to cycle theme                                                      │
+│Press 'a' to toggle auto-refresh                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Status: Running (65%)                                                         │
-│Duration: 12.45 seconds                                                       │
-│Event Count: 2000                                                             │
-│Scan Count: 5000                                                              │
-│Result Count: 450                                                             │
-│Disk Usage: 5120 MB                                                           │
-│Priority: 3                                                                   │
-│Label: Ad-hoc search                                                          │
-│Cursor Time: 2024-01-15T10:29:00.000Z                                         │
-│Finalized: No                                                                 │
-│                                                                              │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Next Screen | Shift+Tab:Previous Screen | Esc:Back ...| ?:Help | q:Quit  │
+│ Tab:Next Screen | Shift+Tab:Previous Screen | t:Theme a:Auto ...| ?:Help | q:│
 └──────────────────────────────────────────────────────────────────────────────┘

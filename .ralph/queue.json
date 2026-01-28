@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0115",
-      "status": "todo",
-      "title": "Add per-screen footer hints (discoverability without opening Help)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "keybindings",
-        "polish"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/tests/snapshot_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs: footer currently shows only screen navigation and q:Quit, even though each screen has multiple important shortcuts (refresh/export/filter/etc).",
-        "crates/tui/src/ui/popup.rs: help content is long and modal; relying on it for basic discovery contributes to a \"rudimentary\" feel.",
-        "docs/usage.md: screen-specific shortcuts exist but are not surfaced in-app except via the help popup."
-      ],
-      "plan": [
-        "Define a small per-screen hint set (3-6 keys) and render it in the footer alongside navigation.",
-        "Ensure hints adapt when in text-input modes (e.g., Search Query focus vs Results focus).",
-        "Add snapshots for a few screens to lock in the footer hint layout across themes and terminal sizes."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0109",
       "status": "todo",
       "title": "Fix footer mouse hit-testing (dynamic offsets, loading % width, small terminals)",

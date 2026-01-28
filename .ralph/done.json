@@ -5410,6 +5410,54 @@
       "completed_at": "2026-01-28T01:26:09.837328000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0115",
+      "status": "done",
+      "title": "Add per-screen footer hints (discoverability without opening Help)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "polish",
+        "footer"
+      ],
+      "scope": [
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/input/keymap/",
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/render.rs:112-135: footer currently shows only 'Tab:Next Screen | Shift+Tab:Previous Screen | q:Quit' with optional loading indicator.",
+        "crates/tui/src/input/keymap/: centralized keybinding catalog exists with Section enum for each screen (Global, Search, Jobs, Indexes, Cluster, Health, SavedSearches, InternalLogs, Apps, Users, Settings).",
+        "crates/tui/src/input/help.rs: help_text() generates help content from keymap - can be used as model for deriving footer hints.",
+        "docs/usage.md:530-633: extensive screen-specific shortcuts documented but not surfaced in-app except via help popup.",
+        "Each screen has 6-12 relevant shortcuts (e.g., Jobs has r:Refresh, /:Filter, s:Sort, a:Auto-refresh, c:Cancel, d:Delete, Space:Select, Enter:Inspect)."
+      ],
+      "plan": [
+        "Add a footer hint generator in crates/tui/src/input/keymap/ that returns top 3-5 keybindings for a given Section.",
+        "Modify crates/tui/src/app/render.rs to include per-screen hints in the footer, showing screen-specific shortcuts alongside navigation.",
+        "Ensure hints adapt when in text-input modes (e.g., Search Query focus vs Results focus) by checking search_input_mode.",
+        "Handle narrow terminals gracefully (truncate hints with ellipsis when width is limited).",
+        "Add snapshot tests for footer hints on key screens (Search, Jobs, Indexes) to verify layout across themes and terminal sizes."
+      ],
+      "notes": [
+        "Keymap is now centralized in crates/tui/src/input/keymap/ - leverage this for deriving hints rather than hardcoding.",
+        "Footer rendering is in render.rs (not app.rs) - the task scope should focus there.",
+        "Search screen has two modes (QueryFocused/ResultsFocused) - hints should reflect the active mode.",
+        "Fixed width calculation bug (nav_width off by 1 char)",
+        "Corrected doc comment about SearchInputMode to match implementation",
+        "Accepted updated snapshots after width fix",
+        "All 41 tests pass, make ci passes"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T01:42:01.617198000Z",
+      "completed_at": "2026-01-28T01:42:01.617198000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -97,6 +97,164 @@ pub(crate) fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Act
     None
 }
 
+/// Returns footer hints for the given screen.
+///
+/// Returns the top 3-4 most relevant keybindings for the screen, formatted as
+/// compact "key:action" strings. Excludes navigation keys (Tab, Shift+Tab, q)
+/// that are always shown in the generic footer.
+///
+/// Note: Search screen has two input modes (QueryFocused/ResultsFocused) but
+/// both modes share the same keybinding hints since the keymap doesn't
+/// distinguish between them; mode-specific behavior is handled at input time.
+pub(crate) fn footer_hints(screen: CurrentScreen) -> Vec<(&'static str, &'static str)> {
+    use std::collections::BTreeSet;
+
+    let section = screen_to_section(screen);
+
+    // Get unique entries for this section, filtering out navigation keys
+    let mut seen = BTreeSet::new();
+    let mut hints = Vec::new();
+
+    // Navigation keys that are always shown in the generic footer
+    let nav_keys: &[&str] = &["Tab", "Shift+Tab", "q", "Ctrl+Q", "?"];
+
+    for binding in keybindings() {
+        if binding.section != section {
+            continue;
+        }
+
+        // Skip navigation keys that are always shown
+        if nav_keys.contains(&binding.keys) {
+            continue;
+        }
+
+        // Skip entries with duplicate descriptions (e.g., j/k navigation)
+        let key = (binding.keys, binding.description);
+        if !seen.insert(key) {
+            continue;
+        }
+
+        // Shorten descriptions for footer display
+        let short_desc = shorten_description(binding.description);
+        hints.push((binding.keys, short_desc));
+    }
+
+    // Limit to top 4 hints, prioritizing by relevance
+    prioritize_hints(&mut hints, screen);
+    hints.truncate(4);
+
+    hints
+}
+
+/// Map CurrentScreen to Section enum.
+fn screen_to_section(screen: CurrentScreen) -> Section {
+    match screen {
+        CurrentScreen::Search => Section::Search,
+        CurrentScreen::Jobs => Section::Jobs,
+        CurrentScreen::JobInspect => Section::JobDetails,
+        CurrentScreen::Indexes => Section::Indexes,
+        CurrentScreen::Cluster => Section::Cluster,
+        CurrentScreen::Health => Section::Health,
+        CurrentScreen::SavedSearches => Section::SavedSearches,
+        CurrentScreen::InternalLogs => Section::InternalLogs,
+        CurrentScreen::Apps => Section::Apps,
+        CurrentScreen::Users => Section::Users,
+        CurrentScreen::Settings => Section::Settings,
+    }
+}
+
+/// Shorten descriptions for compact footer display.
+fn shorten_description(desc: &'static str) -> &'static str {
+    match desc {
+        "Refresh jobs" => "Refresh",
+        "Refresh indexes" => "Refresh",
+        "Refresh cluster info" => "Refresh",
+        "Refresh health status" => "Refresh",
+        "Refresh saved searches" => "Refresh",
+        "Refresh logs" => "Refresh",
+        "Refresh apps" => "Refresh",
+        "Refresh users" => "Refresh",
+        "Reload settings" => "Reload",
+        "Run search" => "Run",
+        "Export jobs" => "Export",
+        "Export results" => "Export",
+        "Export indexes" => "Export",
+        "Export cluster info" => "Export",
+        "Export health info" => "Export",
+        "Export saved searches" => "Export",
+        "Export logs" => "Export",
+        "Export apps" => "Export",
+        "Export users" => "Export",
+        "Cycle sort column" => "Sort",
+        "Toggle sort direction" => "Direction",
+        "Filter jobs" => "Filter",
+        "Toggle job selection" => "Select",
+        "Cancel selected job(s)" => "Cancel",
+        "Delete selected job(s)" => "Delete",
+        "Inspect job" => "Inspect",
+        "Back to jobs" => "Back",
+        "View index details" => "Details",
+        "Toggle peers view" => "Peers",
+        "Run selected search" => "Run",
+        "Toggle auto-refresh" => "Auto",
+        "Enable selected app" => "Enable",
+        "Disable selected app" => "Disable",
+        "Clear search history" => "Clear",
+        "Cycle theme" => "Theme",
+        "Copy selected SID" => "Copy SID",
+        "Copy job SID" => "Copy SID",
+        "Copy selected index name" => "Copy",
+        "Copy cluster ID" => "Copy",
+        "Copy selected saved search name" => "Copy",
+        "Copy selected log message" => "Copy",
+        "Copy selected app name" => "Copy",
+        "Copy selected username" => "Copy",
+        "Copy query (or current result)" => "Copy",
+        "Copy to clipboard" => "Copy",
+        "Navigate list" => "Navigate",
+        "Navigate peers list" => "Navigate",
+        "Navigate history (query)" => "History",
+        "Scroll results (while typing)" => "Scroll",
+        "Page down" => "PgDn",
+        "Page up" => "PgUp",
+        "Go to top" => "Top",
+        "Go to bottom" => "Bottom",
+        "Type search query" => "Type",
+        _ => desc,
+    }
+}
+
+/// Prioritize hints based on screen and relevance.
+fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: CurrentScreen) {
+    // Define priority order for each screen
+    let priority_keys: &[&str] = match screen {
+        CurrentScreen::Search => &["Enter", "Ctrl+e", "PgDn", "PgUp", "Ctrl+j/k", "Home", "End"],
+        CurrentScreen::Jobs => &["r", "/", "s", "a", "Space", "c", "d", "Enter"],
+        CurrentScreen::JobInspect => &["Esc", "Ctrl+c"],
+        CurrentScreen::Indexes => &["r", "Enter", "j/k or Up/Down"],
+        CurrentScreen::Cluster => &["r", "p", "j/k or Up/Down"],
+        CurrentScreen::Health => &["r"],
+        CurrentScreen::SavedSearches => &["r", "Enter", "j/k or Up/Down"],
+        CurrentScreen::InternalLogs => &["r", "a", "j/k or Up/Down"],
+        CurrentScreen::Apps => &["r", "e", "d", "j/k or Up/Down"],
+        CurrentScreen::Users => &["r", "j/k or Up/Down"],
+        CurrentScreen::Settings => &["t", "a", "s", "d", "c", "r"],
+    };
+
+    // Sort hints by priority order
+    hints.sort_by(|(key_a, _), (key_b, _)| {
+        let pos_a = priority_keys.iter().position(|k| *k == *key_a);
+        let pos_b = priority_keys.iter().position(|k| *k == *key_b);
+
+        match (pos_a, pos_b) {
+            (Some(a), Some(b)) => a.cmp(&b),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => key_a.cmp(key_b),
+        }
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
