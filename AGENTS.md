@@ -45,7 +45,7 @@ make test         # all tests (workspace, all targets)
 make test-live    # live tests (ignored tests) against dev server
 make test-live-manual # runs scripts/test-live-server.sh
 make release      # build --release and install to ~/.local/bin
-make ci           # install -> format -> generate -> lint -> type-check -> test -> test-live -> release
+make ci           # install -> format -> lint-secrets -> lint-docs -> lint -> type-check -> test -> test-live -> release
 ```
 
 Notes:
@@ -87,6 +87,10 @@ cargo test -p splunk-tui --test snapshot_tests
 
 - CLI changes: ensure `splunk-cli --help` stays correct and update `docs/usage.md`.
 - TUI changes: update `docs/usage.md` and keep the in-app `?` help consistent.
+- **TUI keybindings are auto-generated**: The keybinding documentation in `README.md`, `docs/usage.md`, and `docs/user-guide.md` is automatically generated from the keymap source.
+  - Run `make generate` to regenerate keybindings after modifying `crates/tui/src/input/keymap.rs`.
+  - Run `make lint-docs` to verify documentation is in sync (runs in CI via `make ci`).
+  - Markers `<!-- BEGIN TUI KEYBINDINGS -->` and `<!-- END TUI KEYBINDINGS -->` delimit the generated sections.
 
 ## Commits & Reviews
 

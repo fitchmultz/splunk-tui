@@ -1,40 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0158",
-      "status": "todo",
-      "title": "Verify TUI keybindings documentation stays in sync",
-      "priority": "low",
-      "tags": [
-        "documentation",
-        "tui",
-        "ci"
-      ],
-      "scope": [
-        "docs/usage.md",
-        "crates/tui/src/bin/generate_tui_docs.rs",
-        "Makefile"
-      ],
-      "evidence": [
-        "Documentation has markers for auto-generated keybindings section",
-        "generate_tui_docs.rs tool exists to regenerate keybindings",
-        "No CI check to ensure docs stay in sync with code",
-        "Documentation could drift from actual behavior"
-      ],
-      "plan": [
-        "Verify lint-docs Makefile target checks keybindings sync",
-        "Add CI check if not present (part of make ci)",
-        "Ensure generate_tui_docs.rs runs and validates output",
-        "Update AGENTS.md with documentation maintenance guidance",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }
