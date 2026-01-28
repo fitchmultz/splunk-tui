@@ -297,6 +297,63 @@ fn snapshot_search_screen_empty() {
     insta::assert_snapshot!(harness.render());
 }
 
+// Cursor visibility tests (RQ-0110)
+
+#[test]
+fn snapshot_search_screen_cursor_at_end() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main".to_string();
+    harness.app.search_cursor_position = 10; // At end
+    harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_cursor_in_middle() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main".to_string();
+    harness.app.search_cursor_position = 5; // After "index"
+    harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_cursor_at_start() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main".to_string();
+    harness.app.search_cursor_position = 0; // At start
+    harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_cursor_hidden_in_results_mode() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input = "index=main".to_string();
+    harness.app.search_cursor_position = 5;
+    harness.app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_search_screen_cursor_with_empty_input() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input.clear();
+    harness.app.search_cursor_position = 0;
+    harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    insta::assert_snapshot!(harness.render());
+}
+
 #[test]
 fn snapshot_virtual_window_scrolling() {
     {

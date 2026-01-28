@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0110",
-      "status": "todo",
-      "title": "Add a visible cursor + basic line editing for Search query input",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "search",
-        "keybindings"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/search.rs",
-        "crates/tui/tests/snapshot_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/screens/search.rs: renders the query text but does not place a terminal cursor or show caret position, making text entry feel opaque.",
-        "crates/tui/src/app.rs: search_input is a plain String with backspace-only editing; no cursor position tracking exists.",
-        "Repo-wide search: no uses of Frame::set_cursor, indicating cursor is never displayed."
-      ],
-      "plan": [
-        "Track a cursor index for Search query input (and any future text inputs) and render the cursor with Frame::set_cursor.",
-        "Implement minimal editing keys (Left/Right, Home/End for line, Backspace/Delete) without conflicting with navigation.",
-        "Update snapshots (Search screen) to validate cursor placement in a stable way, and add unit tests for editing behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0111",
       "status": "todo",
       "title": "Fix Search status messaging to reference the actual running query, not current input",

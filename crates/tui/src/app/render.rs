@@ -154,6 +154,11 @@ impl App {
                     area,
                     search::SearchRenderConfig {
                         search_input: &self.search_input,
+                        search_cursor_position: self.search_cursor_position,
+                        is_query_focused: matches!(
+                            self.search_input_mode,
+                            crate::app::state::SearchInputMode::QueryFocused
+                        ),
                         search_status: &self.search_status,
                         loading: self.loading,
                         progress: self.progress,

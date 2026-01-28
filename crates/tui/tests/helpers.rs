@@ -57,6 +57,21 @@ pub fn backspace_key() -> KeyEvent {
     KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE)
 }
 
+/// Create a Delete key event.
+pub fn delete_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE)
+}
+
+/// Create a Left arrow key event.
+pub fn left_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::Left, KeyModifiers::NONE)
+}
+
+/// Create a Right arrow key event.
+pub fn right_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::Right, KeyModifiers::NONE)
+}
+
 /// Create a Tab key event.
 pub fn tab_key() -> KeyEvent {
     KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE)

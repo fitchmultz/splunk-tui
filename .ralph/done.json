@@ -5506,6 +5506,60 @@
       "completed_at": "2026-01-28T01:58:30.834113000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0110",
+      "status": "done",
+      "title": "Add a visible cursor + basic line editing for Search query input",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "search",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/input.rs",
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/search.rs:71-78: renders query text via highlight_spl() but does not place a terminal cursor or show caret position.",
+        "crates/tui/src/app.rs:53: search_input is a plain String with no cursor position tracking.",
+        "crates/tui/src/app/input.rs:84-86: only backspace editing (pop()) is implemented; no Left/Right/Delete/Home/End support.",
+        "crates/tui/src/app/input.rs:126-129: printable chars append to end only; cursor movement not supported.",
+        "Repo-wide search: no uses of Frame::set_cursor, indicating cursor is never displayed in the TUI."
+      ],
+      "plan": [
+        "Add search_cursor_index field to App struct to track cursor position within search_input.",
+        "Update handle_search_input in crates/tui/src/app/input.rs to handle Left/Right arrow keys for cursor movement.",
+        "Add Home/End key support to jump to start/end of query input.",
+        "Implement Delete key to remove character at cursor position (Backspace already removes from end).",
+        "Modify crates/tui/src/ui/screens/search.rs to render cursor using Frame::set_cursor when in QueryFocused mode.",
+        "Update snapshot tests in crates/tui/tests/snapshot_tests.rs to validate cursor placement.",
+        "Add unit tests in crates/tui/tests/app_tests.rs for cursor movement and editing behavior."
+      ],
+      "notes": [
+        "SearchInputMode (QueryFocused vs ResultsFocused) already exists and should be used to conditionally show cursor.",
+        "Must not conflict with existing navigation keys (Tab toggles mode, Esc switches to QueryFocused).",
+        "Consider filter_input in jobs screen as a secondary text input that may benefit from same cursor treatment.",
+        "Implemented visible cursor and basic line editing for Search query input (RQ-0110)",
+        "Added search_cursor_position field to App struct with proper documentation",
+        "Implemented Left/Right arrow, Home/End, Delete key handlers in QueryFocused mode",
+        "Modified Backspace to remove character before cursor (was popping from end)",
+        "Modified char insertion to insert at cursor position (was appending to end)",
+        "Cursor is rendered via Frame::set_cursor_position when query is focused",
+        "Added 15 unit tests and 5 snapshot tests for cursor functionality",
+        "All tests pass (169 app_tests, 46 snapshot_tests) and make ci succeeds"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T02:17:30.616532000Z",
+      "completed_at": "2026-01-28T02:17:30.616532000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

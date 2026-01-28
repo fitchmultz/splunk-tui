@@ -51,6 +51,9 @@ use std::collections::HashSet;
 pub struct App {
     pub current_screen: CurrentScreen,
     pub search_input: String,
+    /// Cursor position within search_input (byte index, not character index).
+    /// Must be kept in sync with search_input modifications.
+    pub search_cursor_position: usize,
     pub search_status: String,
     pub search_results: Vec<Value>,
     pub search_scroll_offset: usize,
@@ -190,6 +193,20 @@ fn is_mode_switch_key(key: KeyEvent) -> bool {
     matches!(key.code, KeyCode::Tab | KeyCode::BackTab)
 }
 
+/// Check if a key event is used for cursor movement/editing in the search query.
+/// These keys should bypass global bindings when in QueryFocused mode (RQ-0110).
+fn is_cursor_editing_key(key: KeyEvent) -> bool {
+    matches!(
+        key.code,
+        KeyCode::Left
+            | KeyCode::Right
+            | KeyCode::Home
+            | KeyCode::End
+            | KeyCode::Delete
+            | KeyCode::Backspace
+    )
+}
+
 impl App {
     /// Create a new App instance.
     ///
@@ -250,7 +267,8 @@ impl App {
 
         Self {
             current_screen: CurrentScreen::Search,
-            search_input: last_search_query.unwrap_or_default(),
+            search_input: last_search_query.clone().unwrap_or_default(),
+            search_cursor_position: last_search_query.unwrap_or_default().len(),
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
             search_scroll_offset: 0,
@@ -493,9 +511,10 @@ impl App {
         // When in Search screen with QueryFocused mode, skip global binding resolution
         // for printable characters to allow typing (RQ-0101 fix).
         // Also skip Tab/BackTab to allow mode switching within the search screen.
+        // Also skip cursor movement/editing keys for query editing (RQ-0110).
         let skip_global_bindings = self.current_screen == CurrentScreen::Search
             && matches!(self.search_input_mode, SearchInputMode::QueryFocused)
-            && (is_printable_char(key) || is_mode_switch_key(key));
+            && (is_printable_char(key) || is_mode_switch_key(key) || is_cursor_editing_key(key));
 
         if !skip_global_bindings
             && let Some(action) = crate::input::keymap::resolve_action(self.current_screen, key)

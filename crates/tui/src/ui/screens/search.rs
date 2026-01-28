@@ -17,6 +17,10 @@ use splunk_config::Theme;
 pub struct SearchRenderConfig<'a> {
     /// The current search input text
     pub search_input: &'a str,
+    /// Cursor position within search_input (byte index)
+    pub search_cursor_position: usize,
+    /// Whether the query input is focused (cursor visible when true)
+    pub is_query_focused: bool,
     /// The current search status message
     pub search_status: &'a str,
     /// Whether a search is currently running
@@ -45,6 +49,8 @@ pub struct SearchRenderConfig<'a> {
 pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
     let SearchRenderConfig {
         search_input,
+        search_cursor_position,
+        is_query_focused,
         search_status,
         loading,
         progress,
@@ -76,6 +82,29 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             .title_style(Style::default().fg(theme.title)),
     );
     f.render_widget(input, chunks[0]);
+
+    // Render cursor when query is focused
+    if is_query_focused {
+        // Calculate cursor position
+        // Input area: chunks[0] has borders, so content starts at x+1, y+1
+        let input_area = chunks[0];
+        let content_x = input_area.x + 1;
+        let content_y = input_area.y + 1;
+
+        // Calculate display width of text before cursor
+        // Use byte index directly since we're dealing with ASCII cursor movement
+        let text_before_cursor = &search_input[..search_cursor_position.min(search_input.len())];
+        let cursor_offset = text_before_cursor.chars().count() as u16;
+
+        // Set cursor position
+        let cursor_x = content_x + cursor_offset;
+        let cursor_y = content_y;
+
+        // Only show cursor if it fits within the input area
+        if cursor_x < input_area.x + input_area.width - 1 {
+            f.set_cursor_position(ratatui::layout::Position::new(cursor_x, cursor_y));
+        }
+    }
 
     // Status
     if loading {

@@ -83,7 +83,41 @@ impl App {
                         }
                         KeyCode::Backspace => {
                             self.history_index = None;
-                            self.search_input.pop();
+                            if self.search_cursor_position > 0 {
+                                // Remove character before cursor
+                                let pos = self.search_cursor_position;
+                                self.search_input.remove(pos - 1);
+                                self.search_cursor_position -= 1;
+                            }
+                            None
+                        }
+                        KeyCode::Delete => {
+                            self.history_index = None;
+                            if self.search_cursor_position < self.search_input.len() {
+                                // Remove character at cursor
+                                let pos = self.search_cursor_position;
+                                self.search_input.remove(pos);
+                            }
+                            None
+                        }
+                        KeyCode::Left => {
+                            if self.search_cursor_position > 0 {
+                                self.search_cursor_position -= 1;
+                            }
+                            None
+                        }
+                        KeyCode::Right => {
+                            if self.search_cursor_position < self.search_input.len() {
+                                self.search_cursor_position += 1;
+                            }
+                            None
+                        }
+                        KeyCode::Home => {
+                            self.search_cursor_position = 0;
+                            None
+                        }
+                        KeyCode::End => {
+                            self.search_cursor_position = self.search_input.len();
                             None
                         }
                         KeyCode::Down => {
@@ -96,6 +130,8 @@ impl App {
                                     self.search_input = self.saved_search_input.clone();
                                 }
                             }
+                            // Move cursor to end of new text
+                            self.search_cursor_position = self.search_input.len();
                             None
                         }
                         KeyCode::Up => {
@@ -115,6 +151,8 @@ impl App {
                             if let Some(idx) = self.history_index {
                                 self.search_input = self.search_history[idx].clone();
                             }
+                            // Move cursor to end of new text
+                            self.search_cursor_position = self.search_input.len();
                             None
                         }
                         KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -125,7 +163,9 @@ impl App {
                         }
                         KeyCode::Char(c) => {
                             self.history_index = None;
-                            self.search_input.push(c);
+                            // Insert character at cursor position
+                            self.search_input.insert(self.search_cursor_position, c);
+                            self.search_cursor_position += 1;
                             None
                         }
                         _ => None,
@@ -380,6 +420,7 @@ impl App {
 
                 if let Some(query) = query {
                     self.search_input = query.clone();
+                    self.search_cursor_position = query.len();
                     self.current_screen = CurrentScreen::Search;
                     self.add_to_history(query.clone());
                     self.search_status = format!("Running: {}", query);
