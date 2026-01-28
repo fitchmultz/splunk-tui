@@ -3167,3 +3167,165 @@ fn test_build_search_error_details_without_sid() {
         "Should not include SID when None"
     );
 }
+
+// ============================================================================
+// App Enable/Disable Tests (RQ-0135)
+// ============================================================================
+
+#[test]
+fn test_apps_enable_opens_confirmation_popup() {
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Set up apps list with a disabled app
+    app.apps = Some(vec![SplunkApp {
+        name: "test-app".to_string(),
+        label: Some("Test App".to_string()),
+        version: Some("1.0.0".to_string()),
+        disabled: true,
+        description: None,
+        author: None,
+        is_configured: Some(true),
+        is_visible: Some(true),
+    }]);
+    app.apps_state.select(Some(0));
+    app.current_screen = CurrentScreen::Apps;
+
+    // Press 'e' to enable
+    let action = app.handle_input(key('e'));
+
+    assert!(action.is_none());
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ConfirmEnableApp(name)) if name == "test-app"
+    ));
+}
+
+#[test]
+fn test_apps_disable_opens_confirmation_popup() {
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Set up apps list with an enabled app
+    app.apps = Some(vec![SplunkApp {
+        name: "test-app".to_string(),
+        label: Some("Test App".to_string()),
+        version: Some("1.0.0".to_string()),
+        disabled: false,
+        description: None,
+        author: None,
+        is_configured: Some(true),
+        is_visible: Some(true),
+    }]);
+    app.apps_state.select(Some(0));
+    app.current_screen = CurrentScreen::Apps;
+
+    // Press 'd' to disable
+    let action = app.handle_input(key('d'));
+
+    assert!(action.is_none());
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ConfirmDisableApp(name)) if name == "test-app"
+    ));
+}
+
+#[test]
+fn test_apps_enable_already_enabled_shows_info() {
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Set up apps list with an already enabled app
+    app.apps = Some(vec![SplunkApp {
+        name: "test-app".to_string(),
+        label: Some("Test App".to_string()),
+        version: Some("1.0.0".to_string()),
+        disabled: false,
+        description: None,
+        author: None,
+        is_configured: Some(true),
+        is_visible: Some(true),
+    }]);
+    app.apps_state.select(Some(0));
+    app.current_screen = CurrentScreen::Apps;
+
+    // Press 'e' to enable (but it's already enabled)
+    let action = app.handle_input(key('e'));
+
+    assert!(matches!(
+        action,
+        Some(Action::Notify(ToastLevel::Info, msg)) if msg.contains("already enabled")
+    ));
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_apps_disable_already_disabled_shows_info() {
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Set up apps list with an already disabled app
+    app.apps = Some(vec![SplunkApp {
+        name: "test-app".to_string(),
+        label: Some("Test App".to_string()),
+        version: Some("1.0.0".to_string()),
+        disabled: true,
+        description: None,
+        author: None,
+        is_configured: Some(true),
+        is_visible: Some(true),
+    }]);
+    app.apps_state.select(Some(0));
+    app.current_screen = CurrentScreen::Apps;
+
+    // Press 'd' to disable (but it's already disabled)
+    let action = app.handle_input(key('d'));
+
+    assert!(matches!(
+        action,
+        Some(Action::Notify(ToastLevel::Info, msg)) if msg.contains("already disabled")
+    ));
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_confirm_enable_app() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.popup = Some(Popup::builder(PopupType::ConfirmEnableApp("test-app".to_string())).build());
+
+    // Confirm with 'y'
+    let action = app.handle_popup_input(key('y'));
+    assert!(matches!(action, Some(Action::EnableApp(name)) if name == "test-app"));
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_confirm_disable_app() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.popup = Some(Popup::builder(PopupType::ConfirmDisableApp("test-app".to_string())).build());
+
+    // Confirm with Enter
+    let action = app.handle_popup_input(enter_key());
+    assert!(matches!(action, Some(Action::DisableApp(name)) if name == "test-app"));
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_cancel_enable_app() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.popup = Some(Popup::builder(PopupType::ConfirmEnableApp("test-app".to_string())).build());
+
+    // Cancel with 'n'
+    let action = app.handle_popup_input(key('n'));
+    assert!(action.is_none());
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_cancel_disable_app() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.popup = Some(Popup::builder(PopupType::ConfirmDisableApp("test-app".to_string())).build());
+
+    // Cancel with Esc
+    let action = app.handle_popup_input(esc_key());
+    assert!(action.is_none());
+    assert!(app.popup.is_none());
+}

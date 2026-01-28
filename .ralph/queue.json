@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0135",
-      "status": "todo",
-      "title": "Add Apps enable/disable actions in TUI (feature parity with CLI)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "feature-parity",
-        "apps"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/apps.rs",
-        "crates/client/src/client.rs",
-        "crates/tui/tests/app_tests.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/screens/apps.rs is read-only and only renders a list; there are no enable/disable actions.",
-        "crates/client/src/client.rs exposes enable_app()/disable_app(), and CLI provides apps enable/disable workflows in docs/usage.md.",
-        "Without TUI actions, admins must context-switch to CLI or Web UI for common app management tasks."
-      ],
-      "plan": [
-        "Define keybindings and confirmation UX for enable/disable actions (avoid collisions with typing modes).",
-        "Wire enable/disable actions through App -> side effects -> client calls with toast feedback.",
-        "Handle permission errors and surface Splunk request IDs in ErrorDetails when available.",
-        "Add tests for success/failure flows and update docs/usage.md keybindings section."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0101",
       "status": "todo",
       "title": "Fix Search query typing: stop consuming printable characters (e, digits, q, ?)",

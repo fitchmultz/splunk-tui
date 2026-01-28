@@ -13,6 +13,7 @@ use crate::app::App;
 use crate::app::export::ExportTarget;
 use crate::app::state::CurrentScreen;
 use crate::ui::Toast;
+use crate::ui::ToastLevel;
 use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -424,6 +425,48 @@ impl App {
                     && self.apps.as_ref().map(|v| !v.is_empty()).unwrap_or(false) =>
             {
                 self.begin_export(ExportTarget::Apps);
+                None
+            }
+            KeyCode::Char('e') => {
+                // Enable selected app (if disabled)
+                if let Some(app) = self
+                    .apps
+                    .as_ref()
+                    .and_then(|apps| self.apps_state.selected().and_then(|i| apps.get(i)))
+                {
+                    if app.disabled {
+                        self.popup = Some(
+                            Popup::builder(PopupType::ConfirmEnableApp(app.name.clone())).build(),
+                        );
+                    } else {
+                        // App is already enabled, show info toast
+                        return Some(Action::Notify(
+                            ToastLevel::Info,
+                            format!("App '{}' is already enabled", app.name),
+                        ));
+                    }
+                }
+                None
+            }
+            KeyCode::Char('d') => {
+                // Disable selected app (if enabled)
+                if let Some(app) = self
+                    .apps
+                    .as_ref()
+                    .and_then(|apps| self.apps_state.selected().and_then(|i| apps.get(i)))
+                {
+                    if !app.disabled {
+                        self.popup = Some(
+                            Popup::builder(PopupType::ConfirmDisableApp(app.name.clone())).build(),
+                        );
+                    } else {
+                        // App is already disabled, show info toast
+                        return Some(Action::Notify(
+                            ToastLevel::Info,
+                            format!("App '{}' is already disabled", app.name),
+                        ));
+                    }
+                }
                 None
             }
             _ => None,

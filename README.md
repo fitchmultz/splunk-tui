@@ -217,6 +217,8 @@ Configuration values are loaded in the following order (highest to lowest):
 - `Ctrl+e`: Export apps
 - `Ctrl+c`: Copy selected app name
 - `j/k or Up/Down`: Navigate list
+- `e`: Enable selected app
+- `d`: Disable selected app
 
 #### Users Screen
 - `r`: Refresh users

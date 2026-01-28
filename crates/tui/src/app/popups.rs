@@ -55,6 +55,30 @@ impl App {
                 self.popup = None;
                 Some(Action::DeleteJobsBatch(sids))
             }
+            (Some(PopupType::ConfirmEnableApp(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let name = if let Some(Popup {
+                    kind: PopupType::ConfirmEnableApp(n),
+                    ..
+                }) = self.popup.take()
+                {
+                    n
+                } else {
+                    unreachable!()
+                };
+                Some(Action::EnableApp(name))
+            }
+            (Some(PopupType::ConfirmDisableApp(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let name = if let Some(Popup {
+                    kind: PopupType::ConfirmDisableApp(n),
+                    ..
+                }) = self.popup.take()
+                {
+                    n
+                } else {
+                    unreachable!()
+                };
+                Some(Action::DisableApp(name))
+            }
             (Some(PopupType::ExportSearch), KeyCode::Esc) => {
                 self.popup = None;
                 self.export_target = None;
@@ -174,7 +198,9 @@ impl App {
                     PopupType::ConfirmCancel(_)
                     | PopupType::ConfirmDelete(_)
                     | PopupType::ConfirmCancelBatch(_)
-                    | PopupType::ConfirmDeleteBatch(_),
+                    | PopupType::ConfirmDeleteBatch(_)
+                    | PopupType::ConfirmEnableApp(_)
+                    | PopupType::ConfirmDisableApp(_),
                 ),
                 KeyCode::Char('n') | KeyCode::Esc,
             ) => {

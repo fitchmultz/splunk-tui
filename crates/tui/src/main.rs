@@ -734,6 +734,56 @@ async fn handle_side_effects(
                 tx_clone.send(Action::LoadJobs).ok();
             });
         }
+        Action::EnableApp(name) => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.enable_app(&name).await {
+                    Ok(_) => {
+                        tx.send(Action::Notify(
+                            ToastLevel::Success,
+                            format!("App '{}' enabled successfully", name),
+                        ))
+                        .ok();
+                        // Refresh apps list
+                        tx.send(Action::LoadApps).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::Notify(
+                            ToastLevel::Error,
+                            format!("Failed to enable app '{}': {}", name, e),
+                        ))
+                        .ok();
+                        tx.send(Action::Loading(false)).ok();
+                    }
+                }
+            });
+        }
+        Action::DisableApp(name) => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.disable_app(&name).await {
+                    Ok(_) => {
+                        tx.send(Action::Notify(
+                            ToastLevel::Success,
+                            format!("App '{}' disabled successfully", name),
+                        ))
+                        .ok();
+                        // Refresh apps list
+                        tx.send(Action::LoadApps).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::Notify(
+                            ToastLevel::Error,
+                            format!("Failed to disable app '{}': {}", name, e),
+                        ))
+                        .ok();
+                        tx.send(Action::Loading(false)).ok();
+                    }
+                }
+            });
+        }
         Action::LoadHealth => {
             tx.send(Action::Loading(true)).ok();
             tokio::spawn(async move {

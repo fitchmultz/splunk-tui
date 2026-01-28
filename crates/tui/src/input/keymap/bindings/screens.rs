@@ -485,6 +485,30 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::NavigateUp),
             handles_input: true,
         },
+        Keybinding {
+            section: Section::Apps,
+            keys: "e",
+            description: "Enable selected app",
+            scope: BindingScope::Screen(Apps),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('e'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled directly in input handler
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Apps,
+            keys: "d",
+            description: "Disable selected app",
+            scope: BindingScope::Screen(Apps),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('d'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled directly in input handler
+            handles_input: false,
+        },
         // Users
         Keybinding {
             section: Section::Users,

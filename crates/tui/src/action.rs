@@ -76,6 +76,8 @@ impl std::fmt::Debug for RedactedAction<'_> {
             Action::DeleteJobsBatch(sids) => {
                 write!(f, "DeleteJobsBatch([{} job(s)])", sids.len())
             }
+            Action::EnableApp(name) => write!(f, "EnableApp({})", name),
+            Action::DisableApp(name) => write!(f, "DisableApp({})", name),
             Action::SearchInput(c) => write!(f, "SearchInput({:?})", c),
             other => write!(f, "{:?}", other),
         }
@@ -221,6 +223,12 @@ pub enum Action {
     DeleteJobsBatch(Vec<String>),
     /// Job operation completed successfully
     JobOperationComplete(String),
+
+    // App Operations
+    /// Enable an app by name
+    EnableApp(String),
+    /// Disable an app by name
+    DisableApp(String),
     /// Inspect currently selected job
     InspectJob,
     /// Exit job inspection mode

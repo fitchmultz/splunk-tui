@@ -37,6 +37,10 @@ pub enum PopupType {
     ErrorDetails,
     /// Show index details with full metadata
     IndexDetails,
+    /// Confirm enable app (holds app name)
+    ConfirmEnableApp(String),
+    /// Confirm disable app (holds app name)
+    ConfirmDisableApp(String),
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -131,6 +135,14 @@ impl PopupBuilder {
                 "Index Details".to_string(),
                 "Press Esc or q to close, j/k to scroll".to_string(),
             ),
+            PopupType::ConfirmEnableApp(name) => (
+                "Confirm Enable".to_string(),
+                format!("Enable app '{}'? (y/n)", name),
+            ),
+            PopupType::ConfirmDisableApp(name) => (
+                "Confirm Disable".to_string(),
+                format!("Disable app '{}'? (y/n)", name),
+            ),
         };
 
         Popup {
@@ -162,7 +174,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
-        | PopupType::ConfirmDeleteBatch(_) => theme.error,
+        | PopupType::ConfirmDeleteBatch(_)
+        | PopupType::ConfirmEnableApp(_)
+        | PopupType::ConfirmDisableApp(_) => theme.error,
     };
 
     // Determine wrapping behavior based on popup type
@@ -174,7 +188,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
-        | PopupType::ConfirmDeleteBatch(_) => Wrap { trim: true },
+        | PopupType::ConfirmDeleteBatch(_)
+        | PopupType::ConfirmEnableApp(_)
+        | PopupType::ConfirmDisableApp(_) => Wrap { trim: true },
     };
 
     let p = Paragraph::new(popup.content.as_str())
