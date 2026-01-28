@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0175",
-      "status": "todo",
-      "title": "Split oversized client client.rs into builder/session/request modules",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/client.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client.rs is 832 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Separate builder/initialization, session handling, and endpoint wrappers into submodules.",
-        "Add module docstrings and keep the public API minimal.",
-        "Run client unit tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0168",
       "status": "todo",
       "title": "Split oversized client integration_tests.rs into per-endpoint test files",

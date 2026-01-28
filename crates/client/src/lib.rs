@@ -5,7 +5,7 @@
 //! authentication with automatic session renewal.
 
 mod auth;
-mod client;
+pub mod client;
 pub mod error;
 pub mod models;
 mod name_merge;
@@ -15,6 +15,7 @@ pub mod endpoints;
 
 pub use auth::{AuthStrategy, SessionManager};
 pub use client::SplunkClient;
+pub use client::builder::SplunkClientBuilder;
 pub use error::{ClientError, Result};
 pub use models::{
     App, AppListResponse, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, IndexListResponse,

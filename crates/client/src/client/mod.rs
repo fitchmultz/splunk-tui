@@ -1,12 +1,36 @@
-//! Main Splunk REST API client.
+//! Main Splunk REST API client and API methods.
+//!
+//! This module provides the primary [`SplunkClient`] for interacting with the
+//! Splunk Enterprise REST API. It automatically handles authentication and
+//! session management.
+//!
+//! # Submodules
+//! - [`builder`]: Client construction and configuration
+//! - `session`: Session token management helpers (private module)
+//!
+//! # What this module does NOT handle:
+//! - Direct HTTP request implementation (delegated to [`crate::endpoints`])
+//! - Low-level session token storage (delegated to [`crate::auth::SessionManager`])
+//! - Authentication strategy configuration (handled by [`builder::SplunkClientBuilder`])
+//!
+//! # Invariants
+//! - All API methods handle 401/403 authentication errors by refreshing the session
+//!   and retrying once (for session-based authentication only; API tokens do not trigger retries)
+//! - The `retry_call!` macro centralizes this retry pattern across all API methods
 
-use secrecy::ExposeSecret;
-use std::time::Duration;
+pub mod builder;
+mod session;
+
 use tracing::debug;
 
 use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
+use crate::models::{
+    App, ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    LogEntry, LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo,
+    SplunkHealth, User,
+};
 
 /// Macro to wrap an async API call with automatic session retry on 401/403 errors.
 ///
@@ -14,10 +38,12 @@ use crate::error::{ClientError, Result};
 /// When a 401 or 403 error is received and the client is using session-based auth
 /// (not API token auth), it clears the session, re-authenticates, and retries the call once.
 ///
-/// Usage:
+/// # Usage
+///
 /// ```ignore
 /// retry_call!(self, __token, endpoints::some_endpoint(&self.http, &self.base_url, __token, arg1, arg2).await)
 /// ```
+///
 /// The placeholder `__token` will be replaced with the actual auth token.
 macro_rules! retry_call {
     ($self:expr, $token:ident, $call:expr) => {{
@@ -42,191 +68,63 @@ macro_rules! retry_call {
     }};
 }
 
-use crate::models::{
-    App, ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
-    LogEntry, LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo,
-    SplunkHealth, User,
-};
-
-/// Builder for creating a new SplunkClient.
-pub struct SplunkClientBuilder {
-    base_url: Option<String>,
-    auth_strategy: Option<crate::auth::AuthStrategy>,
-    skip_verify: bool,
-    timeout: Duration,
-    max_retries: usize,
-    session_ttl_seconds: u64,
-    session_expiry_buffer_seconds: u64,
-}
-
-impl Default for SplunkClientBuilder {
-    fn default() -> Self {
-        Self {
-            base_url: None,
-            auth_strategy: None,
-            skip_verify: false,
-            timeout: Duration::from_secs(30),
-            max_retries: 3,
-            session_ttl_seconds: 3600,
-            session_expiry_buffer_seconds: 60,
-        }
-    }
-}
-
-impl SplunkClientBuilder {
-    /// Create a new builder.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Set the base URL of the Splunk server.
-    pub fn base_url(mut self, url: String) -> Self {
-        self.base_url = Some(url);
-        self
-    }
-
-    /// Set the authentication strategy.
-    pub fn auth_strategy(mut self, strategy: crate::auth::AuthStrategy) -> Self {
-        self.auth_strategy = Some(strategy);
-        self
-    }
-
-    /// Set whether to skip TLS verification.
-    pub fn skip_verify(mut self, skip: bool) -> Self {
-        self.skip_verify = skip;
-        self
-    }
-
-    /// Set the request timeout.
-    pub fn timeout(mut self, timeout: Duration) -> Self {
-        self.timeout = timeout;
-        self
-    }
-
-    /// Set the maximum number of retries.
-    pub fn max_retries(mut self, retries: usize) -> Self {
-        self.max_retries = retries;
-        self
-    }
-
-    /// Set the session TTL in seconds.
-    pub fn session_ttl_seconds(mut self, ttl: u64) -> Self {
-        self.session_ttl_seconds = ttl;
-        self
-    }
-
-    /// Set the session expiry buffer in seconds.
-    pub fn session_expiry_buffer_seconds(mut self, buffer: u64) -> Self {
-        self.session_expiry_buffer_seconds = buffer;
-        self
-    }
-
-    /// Normalize a base URL by removing trailing slashes.
-    ///
-    /// This prevents double slashes when concatenating with endpoint paths.
-    /// Examples:
-    /// - "https://localhost:8089/" -> "https://localhost:8089"
-    /// - "https://localhost:8089" -> "https://localhost:8089"
-    /// - "https://example.com:8089//" -> "https://example.com:8089"
-    fn normalize_base_url(url: String) -> String {
-        url.trim_end_matches('/').to_string()
-    }
-
-    /// Build the client.
-    pub fn build(self) -> Result<SplunkClient> {
-        let base_url = self
-            .base_url
-            .ok_or_else(|| ClientError::InvalidUrl("base_url is required".to_string()))?;
-        let base_url = Self::normalize_base_url(base_url);
-
-        let auth_strategy = self
-            .auth_strategy
-            .ok_or_else(|| ClientError::AuthFailed("auth_strategy is required".to_string()))?;
-
-        let mut http_builder = reqwest::Client::builder()
-            .timeout(self.timeout)
-            .redirect(reqwest::redirect::Policy::limited(5));
-
-        if self.skip_verify {
-            let is_https = base_url.starts_with("https://");
-            if is_https {
-                http_builder = http_builder.danger_accept_invalid_certs(true);
-            } else {
-                // skip_verify only affects TLS certificate verification.
-                // It has no effect on HTTP connections since there is no TLS layer.
-                tracing::warn!(
-                    "skip_verify=true has no effect on HTTP URLs. TLS verification only applies to HTTPS connections."
-                );
-            }
-        }
-
-        let http = http_builder.build()?;
-
-        Ok(SplunkClient {
-            http,
-            base_url,
-            session_manager: SessionManager::new(auth_strategy),
-            max_retries: self.max_retries,
-            session_ttl_seconds: self.session_ttl_seconds,
-            session_expiry_buffer_seconds: self.session_expiry_buffer_seconds,
-        })
-    }
-}
-
 /// Splunk REST API client.
 ///
 /// This client provides methods for interacting with the Splunk Enterprise
 /// REST API. It automatically handles authentication and session management.
 ///
-/// All API methods handle 401/403 authentication errors by refreshing the session
-/// and retrying once (for session-based authentication only; API tokens do not trigger retries).
+/// # Creating a Client
+///
+/// Use [`SplunkClient::builder()`] to create a new client:
+///
+/// ```rust,ignore
+/// use splunk_client::{SplunkClient, AuthStrategy};
+/// use secrecy::SecretString;
+///
+/// let client = SplunkClient::builder()
+///     .base_url("https://localhost:8089".to_string())
+///     .auth_strategy(AuthStrategy::ApiToken {
+///         token: SecretString::new("my-token".to_string().into()),
+///     })
+///     .build()?;
+/// ```
+///
+/// # Authentication
+///
+/// The client supports two authentication strategies:
+/// - `AuthStrategy::SessionToken`: Username/password with automatic session management
+/// - `AuthStrategy::ApiToken`: Static API token (no session management needed)
 #[derive(Debug)]
 pub struct SplunkClient {
-    http: reqwest::Client,
-    base_url: String,
-    session_manager: SessionManager,
-    max_retries: usize,
-    session_ttl_seconds: u64,
-    session_expiry_buffer_seconds: u64,
+    pub(crate) http: reqwest::Client,
+    pub(crate) base_url: String,
+    pub(crate) session_manager: SessionManager,
+    pub(crate) max_retries: usize,
+    pub(crate) session_ttl_seconds: u64,
+    pub(crate) session_expiry_buffer_seconds: u64,
 }
 
 impl SplunkClient {
     /// Create a new client builder.
-    pub fn builder() -> SplunkClientBuilder {
-        SplunkClientBuilder::new()
+    ///
+    /// This is the entry point for constructing a [`SplunkClient`].
+    pub fn builder() -> builder::SplunkClientBuilder {
+        builder::SplunkClientBuilder::new()
     }
 
-    /// Login with username/password to get a session token.
-    pub async fn login(&mut self) -> Result<String> {
-        if let crate::auth::AuthStrategy::SessionToken { username, password } =
-            self.session_manager.strategy()
-        {
-            let token = endpoints::login(
-                &self.http,
-                &self.base_url,
-                username,
-                password.expose_secret(),
-                self.max_retries,
-            )
-            .await?;
-
-            // Use configured session TTL and buffer for proactive refresh
-            let token_clone = token.clone();
-            self.session_manager.set_session_token(
-                token_clone,
-                Some(self.session_ttl_seconds),
-                Some(self.session_expiry_buffer_seconds),
-            );
-
-            Ok(token)
-        } else {
-            Err(ClientError::AuthFailed(
-                "Cannot login with API token auth strategy".to_string(),
-            ))
-        }
+    /// Get the base URL.
+    pub fn base_url(&self) -> &str {
+        &self.base_url
     }
 
     /// Create and execute a search job, waiting for completion.
+    ///
+    /// # Arguments
+    /// * `query` - The SPL query to execute
+    /// * `wait` - Whether to wait for the job to complete before returning
+    /// * `earliest_time` - Optional earliest time bound (e.g., "-24h")
+    /// * `latest_time` - Optional latest time bound (e.g., "now")
+    /// * `max_results` - Maximum number of results to return
     pub async fn search(
         &mut self,
         query: &str,
@@ -268,8 +166,8 @@ impl SplunkClient {
 
     /// Create and execute a search job with optional progress reporting.
     ///
-    /// - When `wait` is true, this polls job status and can report `done_progress` (0.0–1.0).
-    /// - Progress reporting is UI-layer concern; the callback is optional and may be `None`.
+    /// When `wait` is true, this polls job status and can report `done_progress` (0.0–1.0).
+    /// Progress reporting is a UI-layer concern; the callback is optional and may be `None`.
     ///
     /// This method is designed to allow the CLI to display progress bars without
     /// contaminating stdout, while keeping polling logic in the client library.
@@ -692,40 +590,6 @@ impl SplunkClient {
             .await
         )
     }
-
-    /// Get the current authentication token, logging in if necessary.
-    ///
-    /// Proactively refreshes the session if it will expire soon (within the buffer window)
-    /// to prevent race conditions where the token expires during an API call.
-    async fn get_auth_token(&mut self) -> Result<String> {
-        // For API token auth, just return the token
-        if self.session_manager.is_api_token()
-            && let Some(token) = self.session_manager.get_bearer_token()
-        {
-            return Ok(token.to_string());
-        }
-
-        // For session auth, check if we need to login (expired OR will expire soon)
-        if self.session_manager.is_session_expired() || self.session_manager.session_expires_soon()
-        {
-            self.login().await?;
-        }
-
-        self.session_manager
-            .get_bearer_token()
-            .map(|s| s.to_string())
-            .ok_or_else(|| ClientError::SessionExpired)
-    }
-
-    /// Check if the client is using API token authentication.
-    pub fn is_api_token_auth(&self) -> bool {
-        self.session_manager.is_api_token()
-    }
-
-    /// Get the base URL.
-    pub fn base_url(&self) -> &str {
-        &self.base_url
-    }
 }
 
 #[cfg(test)]
@@ -760,27 +624,6 @@ mod tests {
         let client = SplunkClient::builder().auth_strategy(strategy).build();
 
         assert!(matches!(client.unwrap_err(), ClientError::InvalidUrl(_)));
-    }
-
-    #[test]
-    fn test_normalize_base_url_trailing_slash() {
-        let input = "https://localhost:8089/".to_string();
-        let expected = "https://localhost:8089";
-        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
-    }
-
-    #[test]
-    fn test_normalize_base_url_no_trailing_slash() {
-        let input = "https://localhost:8089".to_string();
-        let expected = "https://localhost:8089";
-        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
-    }
-
-    #[test]
-    fn test_normalize_base_url_multiple_trailing_slashes() {
-        let input = "https://example.com:8089//".to_string();
-        let expected = "https://example.com:8089";
-        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
     }
 
     #[test]

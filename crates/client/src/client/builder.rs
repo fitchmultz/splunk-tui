@@ -1,0 +1,225 @@
+//! Client builder for constructing [`SplunkClient`] instances.
+//!
+//! This module is responsible for:
+//! - Providing a fluent builder API for client configuration
+//! - Validating required configuration (base_url, auth_strategy)
+//! - Normalizing the base URL (removing trailing slashes)
+//! - Configuring the underlying HTTP client (timeouts, TLS verification)
+//!
+//! # What this module does NOT handle:
+//! - Actual API calls (handled by [`SplunkClient`] methods in `mod.rs`)
+//! - Session token management (handled by [`SessionManager`] in `auth.rs`)
+//! - Retry logic for failed requests (handled by the `retry_call!` macro)
+//!
+//! # Invariants
+//! - `base_url` and `auth_strategy` are required fields and must be provided before calling `build()`
+//! - The base URL is always normalized to have no trailing slashes
+//! - `skip_verify` only affects HTTPS connections; HTTP connections log a warning
+
+use std::time::Duration;
+
+use crate::auth::{AuthStrategy, SessionManager};
+use crate::client::SplunkClient;
+use crate::error::{ClientError, Result};
+
+/// Builder for creating a new [`SplunkClient`].
+///
+/// This builder provides a fluent API for configuring the Splunk client
+/// before instantiation. All configuration options have sensible defaults
+/// except for `base_url` and `auth_strategy`, which are required.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use splunk_client::{SplunkClient, AuthStrategy};
+/// use secrecy::SecretString;
+///
+/// let client = SplunkClient::builder()
+///     .base_url("https://localhost:8089".to_string())
+///     .auth_strategy(AuthStrategy::ApiToken {
+///         token: SecretString::new("my-token".to_string().into()),
+///     })
+///     .timeout(Duration::from_secs(60))
+///     .build()?;
+/// ```
+pub struct SplunkClientBuilder {
+    base_url: Option<String>,
+    auth_strategy: Option<AuthStrategy>,
+    skip_verify: bool,
+    timeout: Duration,
+    max_retries: usize,
+    session_ttl_seconds: u64,
+    session_expiry_buffer_seconds: u64,
+}
+
+impl Default for SplunkClientBuilder {
+    fn default() -> Self {
+        Self {
+            base_url: None,
+            auth_strategy: None,
+            skip_verify: false,
+            timeout: Duration::from_secs(30),
+            max_retries: 3,
+            session_ttl_seconds: 3600,
+            session_expiry_buffer_seconds: 60,
+        }
+    }
+}
+
+impl SplunkClientBuilder {
+    /// Create a new builder with default settings.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the base URL of the Splunk server.
+    ///
+    /// This should include the protocol and port, e.g., `https://localhost:8089`.
+    /// Trailing slashes will be automatically removed.
+    pub fn base_url(mut self, url: String) -> Self {
+        self.base_url = Some(url);
+        self
+    }
+
+    /// Set the authentication strategy.
+    ///
+    /// See [`AuthStrategy`] for available options.
+    pub fn auth_strategy(mut self, strategy: AuthStrategy) -> Self {
+        self.auth_strategy = Some(strategy);
+        self
+    }
+
+    /// Set whether to skip TLS certificate verification.
+    ///
+    /// # Security Warning
+    /// Only use this in development or testing environments. Disabling TLS
+    /// verification makes the connection vulnerable to man-in-the-middle attacks.
+    ///
+    /// # Note
+    /// This only affects HTTPS connections. For HTTP URLs, a warning is logged
+    /// but no error occurs.
+    pub fn skip_verify(mut self, skip: bool) -> Self {
+        self.skip_verify = skip;
+        self
+    }
+
+    /// Set the request timeout.
+    ///
+    /// Default is 30 seconds.
+    pub fn timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    /// Set the maximum number of retries for failed requests.
+    ///
+    /// Default is 3 retries with exponential backoff (1s, 2s, 4s delays).
+    pub fn max_retries(mut self, retries: usize) -> Self {
+        self.max_retries = retries;
+        self
+    }
+
+    /// Set the session TTL in seconds.
+    ///
+    /// This determines how long session tokens are considered valid before
+    /// proactive refresh. Default is 3600 seconds (1 hour).
+    pub fn session_ttl_seconds(mut self, ttl: u64) -> Self {
+        self.session_ttl_seconds = ttl;
+        self
+    }
+
+    /// Set the session expiry buffer in seconds.
+    ///
+    /// Sessions will be proactively refreshed if they expire within this
+    /// buffer window. This prevents race conditions where a token expires
+    /// during an API call. Default is 60 seconds.
+    pub fn session_expiry_buffer_seconds(mut self, buffer: u64) -> Self {
+        self.session_expiry_buffer_seconds = buffer;
+        self
+    }
+
+    /// Normalize a base URL by removing trailing slashes.
+    ///
+    /// This prevents double slashes when concatenating with endpoint paths.
+    ///
+    /// # Examples
+    ///
+    /// - `"https://localhost:8089/"` -> `"https://localhost:8089"`
+    /// - `"https://localhost:8089"` -> `"https://localhost:8089"`
+    /// - `"https://example.com:8089//"` -> `"https://example.com:8089"`
+    fn normalize_base_url(url: String) -> String {
+        url.trim_end_matches('/').to_string()
+    }
+
+    /// Build the [`SplunkClient`] with the configured options.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::InvalidUrl`] if `base_url` was not provided.
+    /// Returns [`ClientError::AuthFailed`] if `auth_strategy` was not provided.
+    /// Returns `ClientError::HttpError` if the HTTP client fails to build.
+    pub fn build(self) -> Result<SplunkClient> {
+        let base_url = self
+            .base_url
+            .ok_or_else(|| ClientError::InvalidUrl("base_url is required".to_string()))?;
+        let base_url = Self::normalize_base_url(base_url);
+
+        let auth_strategy = self
+            .auth_strategy
+            .ok_or_else(|| ClientError::AuthFailed("auth_strategy is required".to_string()))?;
+
+        let mut http_builder = reqwest::Client::builder()
+            .timeout(self.timeout)
+            .redirect(reqwest::redirect::Policy::limited(5));
+
+        if self.skip_verify {
+            let is_https = base_url.starts_with("https://");
+            if is_https {
+                http_builder = http_builder.danger_accept_invalid_certs(true);
+            } else {
+                // skip_verify only affects TLS certificate verification.
+                // It has no effect on HTTP connections since there is no TLS layer.
+                tracing::warn!(
+                    "skip_verify=true has no effect on HTTP URLs. TLS verification only applies to HTTPS connections."
+                );
+            }
+        }
+
+        let http = http_builder.build()?;
+
+        Ok(SplunkClient {
+            http,
+            base_url,
+            session_manager: SessionManager::new(auth_strategy),
+            max_retries: self.max_retries,
+            session_ttl_seconds: self.session_ttl_seconds,
+            session_expiry_buffer_seconds: self.session_expiry_buffer_seconds,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_base_url_trailing_slash() {
+        let input = "https://localhost:8089/".to_string();
+        let expected = "https://localhost:8089";
+        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
+    }
+
+    #[test]
+    fn test_normalize_base_url_no_trailing_slash() {
+        let input = "https://localhost:8089".to_string();
+        let expected = "https://localhost:8089";
+        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
+    }
+
+    #[test]
+    fn test_normalize_base_url_multiple_trailing_slashes() {
+        let input = "https://example.com:8089//".to_string();
+        let expected = "https://example.com:8089";
+        assert_eq!(SplunkClientBuilder::normalize_base_url(input), expected);
+    }
+}
