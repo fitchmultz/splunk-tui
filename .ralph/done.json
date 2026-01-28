@@ -5902,6 +5902,62 @@
         "RQ-0134"
       ],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0139",
+      "status": "done",
+      "title": "Add multi-profile list-all aggregation (distributed visibility across environments)",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "distributed",
+        "ux",
+        "aggregation"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all.rs",
+        "crates/cli/src/main.rs",
+        "crates/config/src/persistence.rs",
+        "crates/config/src/loader.rs",
+        "docs/usage.md",
+        "cargo test -p splunk-cli"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all.rs:1 is explicitly labeled a \"minimal working version\" and operates against a single resolved config/profile.",
+        "crates/config/src/persistence.rs:409-411 shows ConfigManager.list_profiles() returns BTreeMap of all profiles, enabling multi-profile iteration.",
+        "crates/cli/src/main.rs:224-229 shows ListAll command only accepts --resources, no multi-profile flags.",
+        "crates/cli/src/commands/list_all.rs:41-48 uses custom secs.nsecsZ timestamp format instead of RFC3339.",
+        "docs/usage.md:405-439 documents list-all command but mentions no multi-profile capability.",
+        "TUI has runtime profile switching (docs/usage.md:636-659) but CLI lacks equivalent cross-profile aggregation."
+      ],
+      "plan": [
+        "Add CLI options to list-all: --profiles a,b,c and --all-profiles for multi-profile aggregation.",
+        "Define new output schema: ListAllMultiOutput with per-profile results (profile_name, base_url, resources[], timestamp).",
+        "Change format_timestamp() in list_all.rs to use RFC3339 (chrono::Utc::now().to_rfc3339()).",
+        "Implement parallel profile fetching with tokio::join! or FuturesUnordered for efficiency.",
+        "Update docs/usage.md with multi-profile examples and output schema documentation.",
+        "Add integration tests in crates/cli/tests/ with temporary config files containing multiple profiles."
+      ],
+      "notes": [
+        "Profile switching was recently added to TUI (RQ-0137), making this CLI feature complementary.",
+        "ConfigManager.list_profiles() provides the foundation for enumerating available profiles.",
+        "Consider error handling: if one profile fails, others should still report results.",
+        "RFC3339 timestamp change is a minor breaking change for any existing parsers of the secs.nsecsZ format.",
+        "Implemented multi-profile list-all aggregation feature",
+        "Added --profiles and --all-profiles CLI flags with conflict handling",
+        "Changed timestamp format to RFC3339",
+        "Implemented parallel profile fetching with futures::join_all",
+        "Added per-profile error handling - profile failures don't stop other profiles",
+        "Added multi-profile output formatters for JSON, table, CSV, XML",
+        "Added 8 new integration tests - all 20 list_all tests pass",
+        "make ci passes successfully"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-28T05:10:14.571841000Z",
+      "completed_at": "2026-01-28T05:10:14.571841000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

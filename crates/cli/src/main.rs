@@ -226,6 +226,15 @@ enum Commands {
         /// Optional comma-separated list of resource types (e.g., 'indexes,jobs,apps')
         #[arg(short, long, value_delimiter = ',')]
         resources: Option<Vec<String>>,
+
+        /// Comma-separated list of profile names to query (e.g., 'dev,prod')
+        /// If not specified, uses the default profile or SPLUNK_PROFILE env var
+        #[arg(long, value_delimiter = ',')]
+        profiles: Option<Vec<String>>,
+
+        /// Query all configured profiles
+        #[arg(long, conflicts_with = "profiles")]
+        all_profiles: bool,
     },
 
     /// List and manage saved searches
@@ -275,7 +284,20 @@ async fn main() -> Result<()> {
     let mut loader = ConfigLoader::new();
 
     // Only build config if not running config command (it manages its own profiles)
-    let config = if matches!(cli.command, Commands::Config { .. }) {
+    // or list-all with multi-profile flags (uses profiles from config file directly)
+    let is_multi_profile_list_all = matches!(
+        cli.command,
+        Commands::ListAll {
+            all_profiles: true,
+            ..
+        } | Commands::ListAll {
+            profiles: Some(_),
+            ..
+        }
+    );
+
+    let config = if matches!(cli.command, Commands::Config { .. }) || is_multi_profile_list_all {
+        // Config command and multi-profile list-all don't need full config, return minimal placeholder
         // Config command doesn't need full config, return minimal placeholder
         splunk_config::Config {
             connection: splunk_config::ConnectionConfig {
@@ -497,10 +519,31 @@ async fn run_command(
             )
             .await?;
         }
-        Commands::ListAll { resources } => {
+        Commands::ListAll {
+            resources,
+            profiles,
+            all_profiles,
+        } => {
+            // Load ConfigManager if multi-profile mode
+            let config_manager = if all_profiles || profiles.is_some() {
+                // Use custom config path if provided via env var or CLI
+                if let Ok(config_path) = std::env::var("SPLUNK_CONFIG_PATH") {
+                    Some(splunk_config::ConfigManager::new_with_path(
+                        std::path::PathBuf::from(config_path),
+                    )?)
+                } else {
+                    Some(splunk_config::ConfigManager::new()?)
+                }
+            } else {
+                None
+            };
+
             commands::list_all::run(
                 config,
                 resources,
+                profiles,
+                all_profiles,
+                config_manager,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel,

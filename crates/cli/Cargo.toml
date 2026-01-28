@@ -13,6 +13,7 @@ splunk-config = { path = "../config" }
 
 # Async Runtime
 tokio = { workspace = true }
+futures = { workspace = true }
 
 # CLI
 clap = { workspace = true }
@@ -37,6 +38,9 @@ indicatif = "0.17"
 
 # File operations
 tempfile = "3"
+
+# Date/time
+chrono = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

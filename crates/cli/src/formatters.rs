@@ -97,6 +97,7 @@ pub trait Formatter {
     fn format_app_info(&self, app: &App) -> Result<String>;
 
     /// Format list-all unified resource overview.
+    #[allow(dead_code)]
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String>;
 
     /// Format saved searches list.

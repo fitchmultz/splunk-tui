@@ -151,13 +151,13 @@ fn test_list_all_xml_output() {
 
     let result = cmd.args(["list-all", "--output", "xml"]).assert();
 
-    // Should succeed with XML format
+    // Should succeed with XML format (now uses list_all_multi structure)
     result
         .success()
         .stdout(predicate::str::contains("<?xml version=\"1.0\""))
-        .stdout(predicate::str::contains("<list_all>"))
+        .stdout(predicate::str::contains("<list_all_multi>"))
         .stdout(predicate::str::contains("<timestamp>"))
-        .stdout(predicate::str::contains("<resources>"));
+        .stdout(predicate::str::contains("<profiles>"));
 }
 
 /// Test that `splunk-cli list-all` handles error gracefully when resources fail to fetch.
@@ -214,4 +214,197 @@ fn test_list_all_timeout_protection() {
     // Should complete quickly (not hang) even with short timeout
     // Result will show error status for indexes (connection error expected, not timeout)
     result.success();
+}
+
+/// Test that `splunk-cli list-all --help` shows multi-profile options.
+#[test]
+fn test_list_all_help_shows_multi_profile_options() {
+    let mut cmd = splunk_cmd();
+    cmd.args(["list-all", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--profiles"))
+        .stdout(predicate::str::contains("--all-profiles"));
+}
+
+/// Test that `--profiles` and `--all-profiles` conflict.
+#[test]
+fn test_list_all_profiles_conflict() {
+    let mut cmd = splunk_cmd();
+    cmd.args(["list-all", "--profiles", "dev", "--all-profiles"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+}
+
+/// Test multi-profile JSON output structure.
+#[test]
+fn test_list_all_multi_profile_json() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create a config file with multiple profiles
+    let config = serde_json::json!({
+        "profiles": {
+            "dev": {
+                "base_url": "https://dev.splunk.local:8089",
+                "username": "admin",
+                "password": "devpass"
+            },
+            "prod": {
+                "base_url": "https://prod.splunk.com:8089",
+                "api_token": "prod-token"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--all-profiles",
+            "--output",
+            "json",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("\"profiles\""))
+        .stdout(predicate::str::contains("\"timestamp\""))
+        .stdout(predicate::str::contains("\"profile_name\""))
+        .stdout(predicate::str::contains("\"base_url\""));
+}
+
+/// Test that `--profiles` with non-existent profile fails fast.
+#[test]
+fn test_list_all_invalid_profile() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create a config file with one profile
+    let config = serde_json::json!({
+        "profiles": {
+            "dev": {
+                "base_url": "https://dev.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args(["list-all", "--profiles", "nonexistent"]);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Profile 'nonexistent' not found"));
+}
+
+/// Test that `--all-profiles` with no profiles configured fails.
+#[test]
+fn test_list_all_all_profiles_no_profiles() {
+    // Use a unique temp directory to avoid interference from parallel tests
+    let temp_dir = tempfile::Builder::new()
+        .prefix("splunk-cli-test-empty-")
+        .tempdir()
+        .unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create an empty config file with no profiles
+    let config = serde_json::json!({
+        "profiles": {}
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args(["list-all", "--all-profiles"]);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("No profiles configured"));
+}
+
+/// Test multi-profile CSV output.
+#[test]
+fn test_list_all_multi_profile_csv() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    let config = serde_json::json!({
+        "profiles": {
+            "dev": {
+                "base_url": "https://dev.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--all-profiles",
+            "--output",
+            "csv",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("profile_name,base_url"));
+}
+
+/// Test multi-profile XML output.
+#[test]
+fn test_list_all_multi_profile_xml() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    let config = serde_json::json!({
+        "profiles": {
+            "dev": {
+                "base_url": "https://dev.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap())
+        .args([
+            "list-all",
+            "--all-profiles",
+            "--output",
+            "xml",
+            "--resources",
+            "health",
+        ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("list_all_multi"))
+        .stdout(predicate::str::contains("profile"));
+}
+
+/// Test that single-profile mode still works (backward compatibility).
+#[test]
+fn test_list_all_single_profile_backward_compat() {
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089").args([
+        "list-all",
+        "--resources",
+        "health",
+    ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Timestamp"));
 }

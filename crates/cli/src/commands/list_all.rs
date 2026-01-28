@@ -1,4 +1,18 @@
-//! List-all command implementation - minimal working version.
+//! List-all command implementation with multi-profile aggregation.
+//!
+//! Responsibilities:
+//! - Fetch resource summaries from single or multiple Splunk profiles.
+//! - Aggregate results across profiles for distributed visibility.
+//! - Handle per-profile errors gracefully without failing the entire command.
+//!
+//! Does NOT handle:
+//! - Direct REST API implementation (see `crates/client`).
+//! - Output formatting (see `crate::formatters`).
+//!
+//! Invariants / Assumptions:
+//! - Individual resource fetches have a 30-second timeout.
+//! - Profile-level errors are captured and reported but don't stop other profiles.
+//! - Timestamp is always RFC3339 format.
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -9,8 +23,9 @@ use tracing::{info, warn};
 
 use crate::cancellation::Cancelled;
 use crate::commands::convert_auth_strategy;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, write_to_file};
 
+/// Per-resource summary for a single resource type.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceSummary {
     pub resource_type: String,
@@ -20,10 +35,29 @@ pub struct ResourceSummary {
     pub error: Option<String>,
 }
 
+/// Single-profile list-all output structure.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ListAllOutput {
     pub timestamp: String,
     pub resources: Vec<ResourceSummary>,
+}
+
+/// Per-profile resource summary for multi-profile aggregation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfileResult {
+    pub profile_name: String,
+    pub base_url: String,
+    pub resources: Vec<ResourceSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+/// Multi-profile list-all output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListAllMultiOutput {
+    pub timestamp: String,
+    pub profiles: Vec<ProfileResult>,
 }
 
 const VALID_RESOURCES: &[&str] = &[
@@ -38,34 +72,31 @@ const VALID_RESOURCES: &[&str] = &[
     "saved-searches",
 ];
 
+/// Returns the current timestamp in RFC3339 format.
 fn format_timestamp() -> String {
-    let duration = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default();
-    let secs = duration.as_secs();
-    let nsecs = duration.subsec_nanos();
-    format!("{}.{:09}Z", secs, nsecs)
+    chrono::Utc::now().to_rfc3339()
 }
 
+/// Main entry point for the list-all command.
+///
+/// Supports single-profile and multi-profile modes:
+/// - Single-profile: Uses the provided config directly (backward compatible)
+/// - Multi-profile: Uses ConfigManager to enumerate and query multiple profiles
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config: splunk_config::Config,
     resources_filter: Option<Vec<String>>,
+    profile_names: Option<Vec<String>>,
+    all_profiles: bool,
+    config_manager: Option<splunk_config::ConfigManager>,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing all Splunk resources");
 
-    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-
-    let mut client = SplunkClient::builder()
-        .base_url(config.connection.base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .build()?;
-
-    let resources_to_fetch =
+    // Validate resource types first (fail fast)
+    let resources_to_fetch: Vec<String> =
         resources_filter.unwrap_or_else(|| VALID_RESOURCES.iter().map(|s| s.to_string()).collect());
 
     for resource in &resources_to_fetch {
@@ -78,17 +109,72 @@ pub async fn run(
         }
     }
 
-    let resources = fetch_all_resources(&mut client, resources_to_fetch, _cancel).await?;
+    // Determine which profiles to query
+    let is_multi_profile = all_profiles || profile_names.is_some();
 
-    let output = ListAllOutput {
-        timestamp: format_timestamp(),
-        resources,
+    let results = if is_multi_profile {
+        // Multi-profile mode
+        let cm = config_manager.context("ConfigManager required for multi-profile mode")?;
+
+        let target_profiles: Vec<String> = if all_profiles {
+            // Query all profiles from config file
+            cm.list_profiles().keys().cloned().collect()
+        } else {
+            // Query specified profiles
+            profile_names.unwrap_or_default()
+        };
+
+        if target_profiles.is_empty() {
+            anyhow::bail!(
+                "No profiles configured. Use 'splunk-cli config set <profile>' to add one."
+            );
+        }
+
+        // Validate that specified profiles exist
+        let available_profiles = cm.list_profiles();
+        for profile_name in &target_profiles {
+            if !available_profiles.contains_key(profile_name) {
+                anyhow::bail!(
+                    "Profile '{}' not found. Available profiles: {}",
+                    profile_name,
+                    available_profiles
+                        .keys()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+            }
+        }
+
+        fetch_multi_profile_resources(cm, target_profiles, resources_to_fetch, cancel).await?
+    } else {
+        // Single-profile mode (backward compatible)
+        let auth_strategy = convert_auth_strategy(&config.auth.strategy);
+
+        let mut client = SplunkClient::builder()
+            .base_url(config.connection.base_url.clone())
+            .auth_strategy(auth_strategy)
+            .skip_verify(config.connection.skip_verify)
+            .timeout(config.connection.timeout)
+            .build()?;
+
+        let resources = fetch_all_resources(&mut client, resources_to_fetch, cancel).await?;
+
+        ListAllMultiOutput {
+            timestamp: format_timestamp(),
+            profiles: vec![ProfileResult {
+                profile_name: "default".to_string(),
+                base_url: config.connection.base_url,
+                resources,
+                error: None,
+            }],
+        }
     };
 
+    // Format and output results
     let format = OutputFormat::from_str(output_format)?;
-    let formatter = get_formatter(format);
+    let formatted = format_multi_profile_output(&results, format)?;
 
-    let formatted = formatter.format_list_all(&output)?;
     if let Some(ref path) = output_file {
         write_to_file(&formatted, path)
             .with_context(|| format!("Failed to write output to {}", path.display()))?;
@@ -102,6 +188,305 @@ pub async fn run(
     }
 
     Ok(())
+}
+
+/// Format multi-profile output based on the selected format.
+fn format_multi_profile_output(
+    output: &ListAllMultiOutput,
+    format: OutputFormat,
+) -> Result<String> {
+    match format {
+        OutputFormat::Json => Ok(serde_json::to_string_pretty(output)?),
+        OutputFormat::Table => format_multi_profile_table(output),
+        OutputFormat::Csv => format_multi_profile_csv(output),
+        OutputFormat::Xml => format_multi_profile_xml(output),
+    }
+}
+
+/// Format multi-profile output as a table.
+fn format_multi_profile_table(output: &ListAllMultiOutput) -> Result<String> {
+    let mut out = String::new();
+
+    out.push_str(&format!("Timestamp: {}\n", output.timestamp));
+    out.push('\n');
+
+    if output.profiles.is_empty() {
+        out.push_str("No profiles found.\n");
+        return Ok(out);
+    }
+
+    for profile in &output.profiles {
+        out.push_str(&format!(
+            "=== Profile: {} ({}) ===\n",
+            profile.profile_name, profile.base_url
+        ));
+
+        if let Some(ref error) = profile.error {
+            out.push_str(&format!("Error: {}\n", error));
+            out.push('\n');
+            continue;
+        }
+
+        if profile.resources.is_empty() {
+            out.push_str("No resources found.\n");
+        } else {
+            let header = format!(
+                "{:<20} {:<10} {:<15} {}",
+                "Resource Type", "Count", "Status", "Error"
+            );
+            out.push_str(&header);
+            out.push('\n');
+
+            let separator = format!("{:<20} {:<10} {:<15} {}", "====", "=====", "=====", "=====");
+            out.push_str(&separator);
+            out.push('\n');
+
+            for resource in &profile.resources {
+                let error = resource.error.as_deref().unwrap_or("");
+                out.push_str(&format!(
+                    "{:<20} {:<10} {:<15} {}\n",
+                    resource.resource_type, resource.count, resource.status, error
+                ));
+            }
+        }
+        out.push('\n');
+    }
+
+    Ok(out)
+}
+
+/// Format multi-profile output as CSV.
+fn format_multi_profile_csv(output: &ListAllMultiOutput) -> Result<String> {
+    let mut csv = String::new();
+
+    csv.push_str("profile_name,base_url,timestamp,resource_type,count,status,error\n");
+
+    for profile in &output.profiles {
+        if let Some(ref error) = profile.error {
+            // Profile-level error
+            csv.push_str(&format!(
+                "{},{},{},,,,{}\n",
+                escape_csv(&profile.profile_name),
+                escape_csv(&profile.base_url),
+                escape_csv(&output.timestamp),
+                escape_csv(error)
+            ));
+        } else {
+            for resource in &profile.resources {
+                let error = resource.error.as_deref().unwrap_or("");
+                csv.push_str(&format!(
+                    "{},{},{},{},{},{},{}\n",
+                    escape_csv(&profile.profile_name),
+                    escape_csv(&profile.base_url),
+                    escape_csv(&output.timestamp),
+                    escape_csv(&resource.resource_type),
+                    resource.count,
+                    escape_csv(&resource.status),
+                    escape_csv(error)
+                ));
+            }
+        }
+    }
+
+    Ok(csv)
+}
+
+/// Escape a string for CSV output.
+fn escape_csv(s: &str) -> String {
+    if s.contains(',') || s.contains('"') || s.contains('\n') || s.contains('\r') {
+        format!("\"{}\"", s.replace('"', "\"\""))
+    } else {
+        s.to_string()
+    }
+}
+
+/// Format multi-profile output as XML.
+fn format_multi_profile_xml(output: &ListAllMultiOutput) -> Result<String> {
+    let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<list_all_multi>\n");
+    xml.push_str(&format!(
+        "  <timestamp>{}</timestamp>\n",
+        escape_xml(&output.timestamp)
+    ));
+    xml.push_str("  <profiles>\n");
+
+    for profile in &output.profiles {
+        xml.push_str("    <profile>\n");
+        xml.push_str(&format!(
+            "      <name>{}</name>\n",
+            escape_xml(&profile.profile_name)
+        ));
+        xml.push_str(&format!(
+            "      <base_url>{}</base_url>\n",
+            escape_xml(&profile.base_url)
+        ));
+
+        if let Some(ref error) = profile.error {
+            xml.push_str(&format!("      <error>{}</error>\n", escape_xml(error)));
+        } else {
+            xml.push_str("      <resources>\n");
+            for resource in &profile.resources {
+                xml.push_str("        <resource>\n");
+                xml.push_str(&format!(
+                    "          <type>{}</type>\n",
+                    escape_xml(&resource.resource_type)
+                ));
+                xml.push_str(&format!("          <count>{}</count>\n", resource.count));
+                xml.push_str(&format!(
+                    "          <status>{}</status>\n",
+                    escape_xml(&resource.status)
+                ));
+                if let Some(ref error) = resource.error {
+                    xml.push_str(&format!("          <error>{}</error>\n", escape_xml(error)));
+                }
+                xml.push_str("        </resource>\n");
+            }
+            xml.push_str("      </resources>\n");
+        }
+
+        xml.push_str("    </profile>\n");
+    }
+
+    xml.push_str("  </profiles>\n");
+    xml.push_str("</list_all_multi>");
+    Ok(xml)
+}
+
+/// Escape special XML characters.
+fn escape_xml(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+/// Fetch resources from multiple profiles in parallel.
+async fn fetch_multi_profile_resources(
+    config_manager: splunk_config::ConfigManager,
+    profile_names: Vec<String>,
+    resource_types: Vec<String>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<ListAllMultiOutput> {
+    let timestamp = format_timestamp();
+    let mut profile_results = Vec::new();
+
+    // Get all profile configs first
+    let profiles_map = config_manager.list_profiles().clone();
+
+    // Create futures for each profile
+    let mut futures = Vec::new();
+    for profile_name in &profile_names {
+        let profile_config = profiles_map.get(profile_name).cloned();
+        let resource_types = resource_types.clone();
+        let profile_name = profile_name.clone();
+
+        let future = async move {
+            if let Some(config) = profile_config {
+                fetch_single_profile_resources(profile_name, config, resource_types, cancel).await
+            } else {
+                ProfileResult {
+                    profile_name,
+                    base_url: String::new(),
+                    resources: vec![],
+                    error: Some("Profile configuration not found".to_string()),
+                }
+            }
+        };
+        futures.push(future);
+    }
+
+    // Execute all futures concurrently
+    let results = futures::future::join_all(futures).await;
+    profile_results.extend(results);
+
+    Ok(ListAllMultiOutput {
+        timestamp,
+        profiles: profile_results,
+    })
+}
+
+/// Fetch resources from a single profile.
+async fn fetch_single_profile_resources(
+    profile_name: String,
+    profile_config: splunk_config::types::ProfileConfig,
+    resource_types: Vec<String>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> ProfileResult {
+    // Build config from profile
+    let base_url = profile_config.base_url.clone().unwrap_or_default();
+
+    // Build auth strategy
+    let auth_strategy = build_auth_strategy_from_profile(&profile_config);
+
+    // Build Splunk client
+    let mut client = match SplunkClient::builder()
+        .base_url(base_url.clone())
+        .auth_strategy(auth_strategy)
+        .skip_verify(profile_config.skip_verify.unwrap_or(false))
+        .timeout(Duration::from_secs(
+            profile_config.timeout_seconds.unwrap_or(30),
+        ))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            return ProfileResult {
+                profile_name,
+                base_url,
+                resources: vec![],
+                error: Some(format!("Failed to build client: {}", e)),
+            };
+        }
+    };
+
+    // Fetch resources
+    match fetch_all_resources(&mut client, resource_types, cancel).await {
+        Ok(resources) => ProfileResult {
+            profile_name,
+            base_url,
+            resources,
+            error: None,
+        },
+        Err(e) => ProfileResult {
+            profile_name,
+            base_url,
+            resources: vec![],
+            error: Some(e.to_string()),
+        },
+    }
+}
+
+/// Build authentication strategy from profile configuration.
+fn build_auth_strategy_from_profile(
+    profile: &splunk_config::types::ProfileConfig,
+) -> splunk_client::AuthStrategy {
+    use secrecy::{ExposeSecret, SecretString};
+    use splunk_client::AuthStrategy;
+
+    // Prefer API token if available
+    if let Some(ref token) = profile.api_token
+        && let Ok(resolved) = token.resolve()
+    {
+        return AuthStrategy::ApiToken {
+            token: SecretString::from(resolved.expose_secret()),
+        };
+    }
+
+    // Fall back to username/password
+    if let (Some(username), Some(password)) = (&profile.username, &profile.password)
+        && let Ok(resolved) = password.resolve()
+    {
+        return AuthStrategy::SessionToken {
+            username: username.clone(),
+            password: SecretString::from(resolved.expose_secret()),
+        };
+    }
+
+    // No valid credentials
+    AuthStrategy::SessionToken {
+        username: String::new(),
+        password: SecretString::from(""),
+    }
 }
 
 async fn fetch_all_resources(

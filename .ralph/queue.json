@@ -1,40 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0139",
-      "status": "todo",
-      "title": "Add multi-profile list-all aggregation (distributed visibility across environments)",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "distributed",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all.rs",
-        "crates/cli/src/main.rs",
-        "crates/config/",
-        "docs/usage.md",
-        "make test -p splunk-cli"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/list_all.rs is explicitly labeled a \"minimal working version\" and operates against a single resolved config/profile.",
-        "The repo supports multiple profiles (crates/config/src/persistence.rs) but there is no CLI workflow to summarize multiple environments in one invocation.",
-        "list_all.rs uses a custom timestamp string (secs.nsecsZ) rather than a standard RFC3339 timestamp, which is a UX/interop footgun when aggregating results."
-      ],
-      "plan": [
-        "Add a CLI option to run list-all across multiple profiles (e.g., --profiles a,b,c or --all-profiles).",
-        "Aggregate per-profile results with a clear table/JSON schema (profile name, base_url, per-resource status).",
-        "Upgrade timestamps to RFC3339 and document the schema in docs/usage.md.",
-        "Add integration tests using temporary config files and mocked endpoints/live-test gating as appropriate."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }

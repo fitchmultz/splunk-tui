@@ -416,11 +416,55 @@ splunk-cli list-all --output table
   - If not specified, all resource types are fetched
   - Example: `--resources indexes,jobs,health` fetches only those three resource types
 
+**Multi-Profile Aggregation:**
+
+Query multiple Splunk environments simultaneously:
+
+```bash
+# Query specific profiles
+splunk-cli list-all --profiles dev,prod --resources indexes,health
+
+# Query all configured profiles
+splunk-cli list-all --all-profiles
+
+# Multi-profile output with JSON
+splunk-cli list-all --all-profiles --output json
+```
+
+- `--profiles <NAMES>`: Comma-separated list of profile names to query (e.g., `dev,prod`)
+  - Profiles must be configured via `splunk-cli config set`
+  - If a profile doesn't exist, the command fails fast with available profiles listed
+- `--all-profiles`: Query all configured profiles
+  - Cannot be used with `--profiles`
+
+**Multi-Profile Output Schema (JSON):**
+
+```json
+{
+  "timestamp": "2026-01-27T19:30:00+00:00",
+  "profiles": [
+    {
+      "profile_name": "dev",
+      "base_url": "https://dev.splunk.local:8089",
+      "resources": [...],
+      "error": null
+    },
+    {
+      "profile_name": "prod",
+      "base_url": "https://prod.splunk.com:8089",
+      "resources": [...],
+      "error": null
+    }
+  ]
+}
+```
+
 **Error Handling:**
 - Individual resource fetch failures do not stop the command
 - Failed resources show status "error" with error message in Error column
 - Non-clustered instances show cluster status "not clustered" (not error)
 - License information unavailable shows status "unavailable"
+- In multi-profile mode, profile-level errors don't stop other profiles from being queried
 
 **Timeout Behavior:**
 - Each resource fetch has a 30-second timeout
