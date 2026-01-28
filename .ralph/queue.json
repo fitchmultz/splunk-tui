@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0170",
-      "status": "todo",
-      "title": "Split oversized TUI main.rs into runtime and UI modules",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs is 1170 lines (wc -l), exceeding the 1000-line split threshold."
-      ],
-      "plan": [
-        "Extract event loop, side effects, and setup into separate modules.",
-        "Keep main.rs focused on wiring + top-level orchestration with docstrings in new files.",
-        "Run TUI tests and any CLI smoke tests if needed."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0172",
       "status": "todo",
       "title": "Split oversized TUI action.rs into focused action/serialization modules",
