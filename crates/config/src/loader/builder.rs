@@ -1,72 +1,31 @@
-//! Configuration loader for environment variables and files.
+//! Configuration loader builder implementation.
 //!
 //! Responsibilities:
-//! - Load configuration from `.env` files, environment variables, and JSON profile files.
 //! - Provide a builder-pattern `ConfigLoader` for hierarchical configuration merging.
-//! - Enforce `DOTENV_DISABLED` gate to prevent accidental dotenv loading in tests.
+//! - Support loading from environment variables, profile files, and direct builder methods.
+//! - Build the final `Config` and `SearchDefaultConfig` from loaded values.
 //!
 //! Does NOT handle:
-//! - Persisting configuration changes back to disk (see `persistence.rs`).
-//! - Interaction with system keyrings directly (delegated to `types.rs` via `resolve()`).
+//! - Direct environment variable parsing logic (delegated to env.rs).
+//! - Profile file loading logic (delegated to profile.rs).
+//! - Persisting configuration changes (see persistence.rs).
 //!
 //! Invariants / Assumptions:
 //! - Environment variables take precedence over profile file values.
+//! - Builder methods take precedence over environment variables.
 //! - `load_dotenv()` must be called explicitly to enable `.env` file loading.
 //! - The `DOTENV_DISABLED` variable is checked before `dotenvy::dotenv()` is called.
 
 use secrecy::SecretString;
 use std::path::PathBuf;
 use std::time::Duration;
-use thiserror::Error;
 
-use crate::persistence::{
-    ConfigFileError, SearchDefaults, default_config_path, legacy_config_path,
-    migrate_config_file_if_needed, read_config_file,
-};
-use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig, ProfileConfig};
-
-/// Errors that can occur during configuration loading.
-#[derive(Error, Debug)]
-pub enum ConfigError {
-    #[error("Missing required environment variable: {0}")]
-    MissingEnvVar(String),
-
-    #[error("Invalid value for {var}: {message}")]
-    InvalidValue { var: String, message: String },
-
-    #[error("Base URL is required")]
-    MissingBaseUrl,
-
-    #[error("Authentication configuration is required (either username/password or API token)")]
-    MissingAuth,
-
-    #[error("Unable to determine config directory: {0}")]
-    ConfigDirUnavailable(String),
-
-    #[error("Failed to read config file at {path}")]
-    ConfigFileRead { path: PathBuf },
-
-    #[error("Failed to parse config file at {path}")]
-    ConfigFileParse { path: PathBuf },
-
-    #[error("Profile '{0}' not found in config file")]
-    ProfileNotFound(String),
-
-    #[error("Keyring error: {0}")]
-    Keyring(#[from] keyring::Error),
-
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-}
-
-impl From<ConfigFileError> for ConfigError {
-    fn from(error: ConfigFileError) -> Self {
-        match error {
-            ConfigFileError::Read { path, .. } => ConfigError::ConfigFileRead { path },
-            ConfigFileError::Parse { path, .. } => ConfigError::ConfigFileParse { path },
-        }
-    }
-}
+use super::defaults::SearchDefaultConfig;
+use super::env::apply_env;
+use super::error::ConfigError;
+use super::profile::apply_profile;
+use crate::persistence::SearchDefaults;
+use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
 
 /// Configuration loader that builds config from environment variables and profiles.
 pub struct ConfigLoader {
@@ -91,30 +50,6 @@ pub struct ConfigLoader {
 impl Default for ConfigLoader {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// Search default configuration values.
-///
-/// This is separate from the main `Config` because search defaults
-/// are persisted to disk and managed through the TUI settings.
-#[derive(Debug, Clone)]
-pub struct SearchDefaultConfig {
-    /// Earliest time for searches (e.g., "-24h").
-    pub earliest_time: String,
-    /// Latest time for searches (e.g., "now").
-    pub latest_time: String,
-    /// Maximum number of results to return per search.
-    pub max_results: u64,
-}
-
-impl Default for SearchDefaultConfig {
-    fn default() -> Self {
-        Self {
-            earliest_time: "-24h".to_string(),
-            latest_time: "now".to_string(),
-            max_results: 1000,
-        }
     }
 }
 
@@ -171,178 +106,15 @@ impl ConfigLoader {
     /// If the profile is not found, this records the missing profile name
     /// for later error handling in `build()`.
     pub fn from_profile(mut self) -> Result<Self, ConfigError> {
-        let profile_name = match &self.profile_name {
-            Some(name) => name.clone(),
-            None => return Ok(self),
-        };
-
-        let config_path = if let Some(path) = &self.config_path {
-            path.clone()
-        } else {
-            default_config_path().map_err(|e| ConfigError::ConfigDirUnavailable(e.to_string()))?
-        };
-
-        // If we're using the default config path, attempt a best-effort migration from the
-        // legacy path before checking existence. This prevents TUI startup failures when
-        // users rely on profiles stored at the legacy location.
-        if let (None, Ok(legacy_path)) = (&self.config_path, legacy_config_path()) {
-            migrate_config_file_if_needed(&legacy_path, &config_path);
-        }
-
-        if !config_path.exists() {
-            self.profile_missing = Some(profile_name);
-            return Ok(self);
-        }
-
-        let config_file = read_config_file(&config_path)?;
-
-        let profile = match config_file.profiles.get(&profile_name) {
-            Some(p) => p,
-            None => {
-                self.profile_missing = Some(profile_name);
-                return Ok(self);
-            }
-        };
-
-        self.apply_profile(profile)?;
+        apply_profile(&mut self)?;
         Ok(self)
-    }
-
-    /// Apply profile configuration to the loader.
-    fn apply_profile(&mut self, profile: &ProfileConfig) -> Result<(), ConfigError> {
-        if let Some(url) = &profile.base_url {
-            self.base_url = Some(url.clone());
-        }
-        if let Some(username) = &profile.username {
-            self.username = Some(username.clone());
-        }
-        if let Some(password) = &profile.password {
-            self.password = Some(password.resolve()?);
-        }
-        if let Some(token) = &profile.api_token {
-            self.api_token = Some(token.resolve()?);
-        }
-        if let Some(skip) = profile.skip_verify {
-            self.skip_verify = Some(skip);
-        }
-        if let Some(secs) = profile.timeout_seconds {
-            self.timeout = Some(Duration::from_secs(secs));
-        }
-        if let Some(retries) = profile.max_retries {
-            self.max_retries = Some(retries);
-        }
-        if let Some(buffer) = profile.session_expiry_buffer_seconds {
-            self.session_expiry_buffer_seconds = Some(buffer);
-        }
-        if let Some(ttl) = profile.session_ttl_seconds {
-            self.session_ttl_seconds = Some(ttl);
-        }
-        if let Some(interval) = profile.health_check_interval_seconds {
-            self.health_check_interval_seconds = Some(interval);
-        }
-        Ok(())
-    }
-
-    /// Read an environment variable, returning None if unset, empty, or whitespace-only.
-    pub fn env_var_or_none(key: &str) -> Option<String> {
-        std::env::var(key).ok().filter(|s| !s.trim().is_empty())
     }
 
     /// Read configuration from environment variables.
     ///
     /// Environment variables take precedence over profile settings.
     pub fn from_env(mut self) -> Result<Self, ConfigError> {
-        if let Some(url) = Self::env_var_or_none("SPLUNK_BASE_URL") {
-            self.base_url = Some(url);
-        }
-        if let Some(username) = Self::env_var_or_none("SPLUNK_USERNAME") {
-            self.username = Some(username);
-        }
-        if let Some(password) = Self::env_var_or_none("SPLUNK_PASSWORD") {
-            self.password = Some(SecretString::new(password.into()));
-        }
-        if let Some(token) = Self::env_var_or_none("SPLUNK_API_TOKEN") {
-            self.api_token = Some(SecretString::new(token.into()));
-        }
-        if let Some(skip) = Self::env_var_or_none("SPLUNK_SKIP_VERIFY") {
-            self.skip_verify =
-                Some(skip.trim().parse().map_err(|_| ConfigError::InvalidValue {
-                    var: "SPLUNK_SKIP_VERIFY".to_string(),
-                    message: "must be true or false".to_string(),
-                })?);
-        }
-        if let Some(timeout) = Self::env_var_or_none("SPLUNK_TIMEOUT") {
-            let secs: u64 = timeout
-                .trim()
-                .parse()
-                .map_err(|_| ConfigError::InvalidValue {
-                    var: "SPLUNK_TIMEOUT".to_string(),
-                    message: "must be a number".to_string(),
-                })?;
-            self.timeout = Some(Duration::from_secs(secs));
-        }
-        if let Some(retries) = Self::env_var_or_none("SPLUNK_MAX_RETRIES") {
-            self.max_retries =
-                Some(
-                    retries
-                        .trim()
-                        .parse()
-                        .map_err(|_| ConfigError::InvalidValue {
-                            var: "SPLUNK_MAX_RETRIES".to_string(),
-                            message: "must be a number".to_string(),
-                        })?,
-                );
-        }
-        if let Some(buffer) = Self::env_var_or_none("SPLUNK_SESSION_EXPIRY_BUFFER") {
-            self.session_expiry_buffer_seconds =
-                Some(
-                    buffer
-                        .trim()
-                        .parse()
-                        .map_err(|_| ConfigError::InvalidValue {
-                            var: "SPLUNK_SESSION_EXPIRY_BUFFER".to_string(),
-                            message: "must be a number".to_string(),
-                        })?,
-                );
-        }
-        if let Some(ttl) = Self::env_var_or_none("SPLUNK_SESSION_TTL") {
-            self.session_ttl_seconds =
-                Some(ttl.trim().parse().map_err(|_| ConfigError::InvalidValue {
-                    var: "SPLUNK_SESSION_TTL".to_string(),
-                    message: "must be a number".to_string(),
-                })?);
-        }
-        if let Some(interval) = Self::env_var_or_none("SPLUNK_HEALTH_CHECK_INTERVAL") {
-            self.health_check_interval_seconds =
-                Some(
-                    interval
-                        .trim()
-                        .parse()
-                        .map_err(|_| ConfigError::InvalidValue {
-                            var: "SPLUNK_HEALTH_CHECK_INTERVAL".to_string(),
-                            message: "must be a number".to_string(),
-                        })?,
-                );
-        }
-        // Search defaults
-        if let Some(earliest) = Self::env_var_or_none("SPLUNK_EARLIEST_TIME") {
-            self.earliest_time = Some(earliest);
-        }
-        if let Some(latest) = Self::env_var_or_none("SPLUNK_LATEST_TIME") {
-            self.latest_time = Some(latest);
-        }
-        if let Some(max_results) = Self::env_var_or_none("SPLUNK_MAX_RESULTS") {
-            self.max_results =
-                Some(
-                    max_results
-                        .trim()
-                        .parse()
-                        .map_err(|_| ConfigError::InvalidValue {
-                            var: "SPLUNK_MAX_RESULTS".to_string(),
-                            message: "must be a positive number".to_string(),
-                        })?,
-                );
-        }
+        apply_env(&mut self)?;
         Ok(self)
     }
 
@@ -466,26 +238,89 @@ impl ConfigLoader {
     pub fn max_results(&self) -> Option<u64> {
         self.max_results
     }
+
+    // Internal accessor methods for use by other loader modules
+
+    pub(crate) fn profile_name(&self) -> Option<&String> {
+        self.profile_name.as_ref()
+    }
+
+    pub(crate) fn config_path(&self) -> Option<&PathBuf> {
+        self.config_path.as_ref()
+    }
+
+    pub(crate) fn set_profile_missing(&mut self, name: Option<String>) {
+        self.profile_missing = name;
+    }
+
+    pub(crate) fn set_base_url(&mut self, url: Option<String>) {
+        self.base_url = url;
+    }
+
+    pub(crate) fn set_username(&mut self, username: Option<String>) {
+        self.username = username;
+    }
+
+    pub(crate) fn set_password(&mut self, password: Option<SecretString>) {
+        self.password = password;
+    }
+
+    pub(crate) fn set_api_token(&mut self, token: Option<SecretString>) {
+        self.api_token = token;
+    }
+
+    pub(crate) fn set_skip_verify(&mut self, skip: Option<bool>) {
+        self.skip_verify = skip;
+    }
+
+    pub(crate) fn set_timeout(&mut self, timeout: Option<Duration>) {
+        self.timeout = timeout;
+    }
+
+    pub(crate) fn set_max_retries(&mut self, retries: Option<usize>) {
+        self.max_retries = retries;
+    }
+
+    pub(crate) fn set_session_expiry_buffer_seconds(&mut self, buffer: Option<u64>) {
+        self.session_expiry_buffer_seconds = buffer;
+    }
+
+    pub(crate) fn set_session_ttl_seconds(&mut self, ttl: Option<u64>) {
+        self.session_ttl_seconds = ttl;
+    }
+
+    pub(crate) fn set_health_check_interval_seconds(&mut self, interval: Option<u64>) {
+        self.health_check_interval_seconds = interval;
+    }
+
+    pub(crate) fn set_earliest_time(&mut self, earliest: Option<String>) {
+        self.earliest_time = earliest;
+    }
+
+    pub(crate) fn set_latest_time(&mut self, latest: Option<String>) {
+        self.latest_time = latest;
+    }
+
+    pub(crate) fn set_max_results(&mut self, max_results: Option<u64>) {
+        self.max_results = max_results;
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use secrecy::SecretString;
-    use serde_json::json;
+    use crate::loader::env::env_var_or_none;
+    use secrecy::ExposeSecret;
     use serial_test::serial;
-    use std::fs::File;
     use std::io::Write;
-    use std::path::Path;
     use std::sync::Mutex;
     use tempfile::TempDir;
 
-    fn create_test_config_file(dir: &Path) -> PathBuf {
+    fn create_test_config_file(dir: &std::path::Path) -> PathBuf {
         let config_path = dir.join("config.json");
-        use secrecy::ExposeSecret;
         let password = SecretString::new("test-password".to_string().into());
 
-        let config = json!({
+        let config = serde_json::json!({
             "profiles": {
                 "dev": {
                     "base_url": "https://dev.splunk.com:8089",
@@ -507,7 +342,7 @@ mod tests {
             }
         });
 
-        let mut file = File::create(&config_path).unwrap();
+        let mut file = std::fs::File::create(&config_path).unwrap();
         writeln!(file, "{}", config).unwrap();
 
         config_path
@@ -825,44 +660,6 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_env_var_or_none_filters_empty_and_whitespace_strings() {
-        let _lock = env_lock().lock().unwrap();
-        // Direct unit test for the env_var_or_none helper function
-
-        // Test 1: Unset env var returns None
-        let key1 = "_SPLUNK_TEST_UNSET_VAR";
-        let result1 = ConfigLoader::env_var_or_none(key1);
-        assert!(result1.is_none(), "Unset env var should return None");
-
-        // Test 2: Empty string env var returns None
-        temp_env::with_vars([(key1, Some(""))], || {
-            let result2 = ConfigLoader::env_var_or_none(key1);
-            assert!(result2.is_none(), "Empty string env var should return None");
-        });
-
-        // Test 3: Whitespace-only string env var returns None
-        temp_env::with_vars([(key1, Some("   "))], || {
-            let result3 = ConfigLoader::env_var_or_none(key1);
-            assert!(
-                result3.is_none(),
-                "Whitespace-only env var should return None"
-            );
-        });
-
-        // Test 4: Non-empty string env var returns Some(value without trimming)
-        let key2 = "_SPLUNK_TEST_SET_VAR";
-        temp_env::with_vars([(key2, Some(" test-value "))], || {
-            let result4 = ConfigLoader::env_var_or_none(key2);
-            assert_eq!(
-                result4,
-                Some(" test-value ".to_string()), // Implementation doesn't trim the value, just checks if trimmed is empty
-                "Non-empty env var should return Some(value)"
-            );
-        });
-    }
-
-    #[test]
-    #[serial]
     fn test_whitespace_only_env_var_treated_as_unset() {
         let _lock = env_lock().lock().unwrap();
 
@@ -923,7 +720,7 @@ mod tests {
             [("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap()))],
             || {
                 // Verify that with_config_path would use the environment variable's path
-                let env_path = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").unwrap();
+                let env_path = env_var_or_none("SPLUNK_CONFIG_PATH").unwrap();
                 let path_from_env = std::path::PathBuf::from(env_path);
 
                 let loader = ConfigLoader::new()
@@ -945,7 +742,7 @@ mod tests {
 
         // Empty string in SPLUNK_CONFIG_PATH should be ignored
         temp_env::with_vars([("SPLUNK_CONFIG_PATH", Some(""))], || {
-            let result = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
+            let result = env_var_or_none("SPLUNK_CONFIG_PATH");
             assert!(
                 result.is_none(),
                 "Empty env var should be filtered by env_var_or_none"
@@ -954,7 +751,7 @@ mod tests {
 
         // Test with whitespace
         temp_env::with_vars([("SPLUNK_CONFIG_PATH", Some("   "))], || {
-            let result_ws = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH");
+            let result_ws = env_var_or_none("SPLUNK_CONFIG_PATH");
             assert!(
                 result_ws.is_none(),
                 "Whitespace env var should be filtered by env_var_or_none"

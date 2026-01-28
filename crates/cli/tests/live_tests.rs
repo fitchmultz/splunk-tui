@@ -21,7 +21,7 @@
 //! Run with: cargo test -p splunk-cli --test live_tests -- --ignored
 
 use predicates::prelude::*;
-use splunk_config::ConfigLoader;
+use splunk_config::env_var_or_none;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
@@ -104,19 +104,19 @@ impl LiveEnvGuard {
             dotenvy::from_path_override(env_test_path).ok();
         }
 
-        let base_url = match ConfigLoader::env_var_or_none("SPLUNK_BASE_URL") {
+        let base_url = match env_var_or_none("SPLUNK_BASE_URL") {
             Some(v) => v,
             None => {
                 eprintln!("Skipping live CLI tests: SPLUNK_BASE_URL is not set.");
                 return None;
             }
         };
-        if ConfigLoader::env_var_or_none("SPLUNK_API_TOKEN").is_none() {
-            if ConfigLoader::env_var_or_none("SPLUNK_USERNAME").is_none() {
+        if env_var_or_none("SPLUNK_API_TOKEN").is_none() {
+            if env_var_or_none("SPLUNK_USERNAME").is_none() {
                 eprintln!("Skipping live CLI tests: SPLUNK_USERNAME is not set.");
                 return None;
             }
-            if ConfigLoader::env_var_or_none("SPLUNK_PASSWORD").is_none() {
+            if env_var_or_none("SPLUNK_PASSWORD").is_none() {
                 eprintln!("Skipping live CLI tests: SPLUNK_PASSWORD is not set.");
                 return None;
             }
@@ -128,7 +128,7 @@ impl LiveEnvGuard {
         }
 
         // Self-signed TLS is typical for dev servers; keep existing behavior unless explicitly set.
-        if ConfigLoader::env_var_or_none("SPLUNK_SKIP_VERIFY").is_none() {
+        if env_var_or_none("SPLUNK_SKIP_VERIFY").is_none() {
             unsafe {
                 std::env::set_var("SPLUNK_SKIP_VERIFY", "true");
             }
@@ -149,17 +149,14 @@ fn create_test_client_from_env() -> splunk_client::SplunkClient {
     use splunk_client::AuthStrategy;
     use splunk_client::SplunkClient;
 
-    let base_url =
-        ConfigLoader::env_var_or_none("SPLUNK_BASE_URL").expect("SPLUNK_BASE_URL must be set");
-    let auth = if let Some(token) = ConfigLoader::env_var_or_none("SPLUNK_API_TOKEN") {
+    let base_url = env_var_or_none("SPLUNK_BASE_URL").expect("SPLUNK_BASE_URL must be set");
+    let auth = if let Some(token) = env_var_or_none("SPLUNK_API_TOKEN") {
         AuthStrategy::ApiToken {
             token: SecretString::new(token.into()),
         }
     } else {
-        let username =
-            ConfigLoader::env_var_or_none("SPLUNK_USERNAME").expect("SPLUNK_USERNAME must be set");
-        let password =
-            ConfigLoader::env_var_or_none("SPLUNK_PASSWORD").expect("SPLUNK_PASSWORD must be set");
+        let username = env_var_or_none("SPLUNK_USERNAME").expect("SPLUNK_USERNAME must be set");
+        let password = env_var_or_none("SPLUNK_PASSWORD").expect("SPLUNK_PASSWORD must be set");
         AuthStrategy::SessionToken {
             username,
             password: SecretString::new(password.into()),
@@ -167,7 +164,7 @@ fn create_test_client_from_env() -> splunk_client::SplunkClient {
     };
 
     let skip_verify = matches!(
-        ConfigLoader::env_var_or_none("SPLUNK_SKIP_VERIFY").as_deref(),
+        env_var_or_none("SPLUNK_SKIP_VERIFY").as_deref(),
         Some("1") | Some("true") | Some("TRUE") | Some("yes") | Some("YES")
     );
 

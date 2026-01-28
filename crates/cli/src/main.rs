@@ -23,7 +23,7 @@ use clap::{Parser, Subcommand};
 use std::path::{Path, PathBuf};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use splunk_config::ConfigLoader;
+use splunk_config::{ConfigLoader, env_var_or_none};
 
 use crate::cancellation::{
     CancellationToken, SIGINT_EXIT_CODE, is_cancelled_error, print_cancelled_message,
@@ -285,7 +285,7 @@ fn path_is_blank(path: &Path) -> bool {
 fn resolve_config_path(path: Option<PathBuf>) -> Option<PathBuf> {
     let path = path.filter(|p| !path_is_blank(p));
     if path.is_none() {
-        ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH")
+        env_var_or_none("SPLUNK_CONFIG_PATH")
             .map(PathBuf::from)
             .filter(|p| !path_is_blank(p))
     } else {

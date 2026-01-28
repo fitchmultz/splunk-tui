@@ -39,6 +39,7 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use splunk_client::{SplunkClient, models::HealthCheckOutput};
 use splunk_config::{
     AuthStrategy as ConfigAuthStrategy, Config, ConfigLoader, ConfigManager, SearchDefaults,
+    env_var_or_none,
 };
 
 /// Command-line arguments for splunk-tui.
@@ -218,7 +219,7 @@ async fn main() -> Result<()> {
     // CLI --config-path takes precedence over SPLUNK_CONFIG_PATH env var
     let config_manager = if let Some(config_path) = &cli.config_path {
         ConfigManager::new_with_path(config_path.clone())?
-    } else if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    } else if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
     } else {
         ConfigManager::new()?
@@ -249,7 +250,7 @@ async fn main() -> Result<()> {
         profile_name: cli
             .profile
             .clone()
-            .or_else(|| ConfigLoader::env_var_or_none("SPLUNK_PROFILE")),
+            .or_else(|| env_var_or_none("SPLUNK_PROFILE")),
         base_url: config.connection.base_url.clone(),
         auth_mode: match &config.auth.strategy {
             ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),
@@ -451,7 +452,7 @@ fn load_config_with_search_defaults(
     // Apply config path from CLI if provided (highest precedence)
     if let Some(config_path) = &cli.config_path {
         loader = loader.with_config_path(config_path.clone());
-    } else if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    } else if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         // Fall back to env var
         loader = loader.with_config_path(std::path::PathBuf::from(config_path));
     }
@@ -461,7 +462,7 @@ fn load_config_with_search_defaults(
     let profile_name = cli
         .profile
         .clone()
-        .or_else(|| ConfigLoader::env_var_or_none("SPLUNK_PROFILE"));
+        .or_else(|| env_var_or_none("SPLUNK_PROFILE"));
 
     if let Some(profile) = profile_name {
         loader = loader.with_profile_name(profile).from_profile()?;

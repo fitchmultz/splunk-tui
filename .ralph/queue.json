@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0169",
-      "status": "todo",
-      "title": "Split oversized config loader.rs into cohesive modules",
-      "priority": "medium",
-      "tags": [
-        "config",
-        "refactor"
-      ],
-      "scope": [
-        "crates/config/src/loader.rs"
-      ],
-      "evidence": [
-        "crates/config/src/loader.rs is 1306 lines (wc -l), above the 1000-line split requirement."
-      ],
-      "plan": [
-        "Extract env parsing, profile loading, and builder logic into submodules.",
-        "Add module-level docstrings for new files and keep public API minimal.",
-        "Run config crate tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0171",
       "status": "todo",
       "title": "Split oversized config persistence.rs into path/migration/state modules",

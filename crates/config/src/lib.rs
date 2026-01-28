@@ -4,11 +4,11 @@
 //! configuration from environment variables and files.
 
 pub mod keybind;
-mod loader;
+pub mod loader;
 pub mod persistence;
 pub mod types;
 
-pub use loader::{ConfigLoader, SearchDefaultConfig};
+pub use loader::{ConfigError, ConfigLoader, SearchDefaultConfig, env_var_or_none};
 pub use persistence::{ConfigManager, PersistedState, SearchDefaults};
 pub use types::{
     AuthConfig, AuthStrategy, ColorTheme, Config, ConnectionConfig, KeybindAction,

@@ -9,7 +9,7 @@
 
 #![allow(unused_unsafe)]
 
-use splunk_config::{ConfigLoader, ConfigManager};
+use splunk_config::{ConfigLoader, ConfigManager, env_var_or_none};
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 use tempfile::TempDir;
@@ -222,7 +222,7 @@ fn test_empty_splunk_config_path_uses_default() {
         std::env::set_var("SPLUNK_CONFIG_PATH", "");
     }
 
-    let should_use_custom = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").is_some();
+    let should_use_custom = env_var_or_none("SPLUNK_CONFIG_PATH").is_some();
     assert!(
         !should_use_custom,
         "Empty SPLUNK_CONFIG_PATH should not trigger custom path usage"
@@ -232,7 +232,7 @@ fn test_empty_splunk_config_path_uses_default() {
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "   ");
     }
-    let should_use_custom_ws = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH").is_some();
+    let should_use_custom_ws = env_var_or_none("SPLUNK_CONFIG_PATH").is_some();
     assert!(
         !should_use_custom_ws,
         "Whitespace-only SPLUNK_CONFIG_PATH should not trigger custom path usage"
@@ -249,7 +249,7 @@ fn test_empty_splunk_config_path_with_config_manager() {
     }
 
     // This simulates the actual TUI code pattern
-    let manager = if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    let manager = if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(config_path))
     } else {
         ConfigManager::new()
@@ -264,8 +264,7 @@ fn test_empty_splunk_config_path_with_config_manager() {
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "  ");
     }
-    let manager_ws = if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH")
-    {
+    let manager_ws = if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(config_path))
     } else {
         ConfigManager::new()
@@ -288,7 +287,7 @@ fn test_empty_splunk_config_path_with_config_loader() {
     let mut loader = ConfigLoader::new().load_dotenv().unwrap();
 
     // This simulates the actual TUI load_config code pattern
-    if let Some(config_path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         loader = loader.with_config_path(std::path::PathBuf::from(config_path));
     }
 
@@ -446,12 +445,12 @@ fn test_config_loader_with_profile_from_custom_path() {
     }
 
     // Check for SPLUNK_CONFIG_PATH override (TUI pattern)
-    if let Some(path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    if let Some(path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         loader = loader.with_config_path(std::path::PathBuf::from(path));
     }
 
     // Load from profile if SPLUNK_PROFILE is set
-    if let Some(profile_name) = ConfigLoader::env_var_or_none("SPLUNK_PROFILE") {
+    if let Some(profile_name) = env_var_or_none("SPLUNK_PROFILE") {
         loader = loader
             .with_profile_name(profile_name)
             .from_profile()
@@ -485,7 +484,7 @@ fn test_tui_pattern_matches_cli_pattern() {
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
-    let tui_result = if let Some(path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    let tui_result = if let Some(path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(path))
     } else {
         ConfigManager::new()
@@ -496,7 +495,7 @@ fn test_tui_pattern_matches_cli_pattern() {
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
-    let cli_result = if let Some(path) = ConfigLoader::env_var_or_none("SPLUNK_CONFIG_PATH") {
+    let cli_result = if let Some(path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
         ConfigManager::new_with_path(std::path::PathBuf::from(path))
     } else {
         ConfigManager::new()
