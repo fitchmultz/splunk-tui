@@ -76,6 +76,44 @@ struct Cli {
 /// Shared client wrapper for async tasks.
 type SharedClient = Arc<Mutex<SplunkClient>>;
 
+/// Guard that ensures terminal state is restored on drop.
+///
+/// This struct captures the terminal state configuration and restores
+/// it when dropped, ensuring cleanup happens even during panics.
+///
+/// # Invariants
+/// - Must be created after terminal setup is complete
+/// - Must live for the duration of the TUI session
+/// - Drop implementation must not panic
+struct TerminalGuard {
+    no_mouse: bool,
+}
+
+impl TerminalGuard {
+    /// Create a new terminal guard.
+    ///
+    /// # Arguments
+    /// * `no_mouse` - Whether mouse capture was disabled during setup
+    fn new(no_mouse: bool) -> Self {
+        Self { no_mouse }
+    }
+}
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        // Restore terminal state, ignoring errors since we're in drop
+        // and must not panic. The explicit cleanup in main() runs first
+        // on normal exit; this is a safety net for panics and signals.
+        let _ = disable_raw_mode();
+        let mut stdout = std::io::stdout();
+        if self.no_mouse {
+            let _ = execute!(stdout, LeaveAlternateScreen);
+        } else {
+            let _ = execute!(stdout, LeaveAlternateScreen, DisableMouseCapture);
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -115,6 +153,11 @@ async fn main() -> Result<()> {
     } else {
         execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     }
+
+    // Create guard to ensure terminal restoration on panic/unwind.
+    // This ensures the terminal is restored even if the application panics
+    // or receives a signal that causes unwinding.
+    let _terminal_guard = TerminalGuard::new(no_mouse);
 
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
