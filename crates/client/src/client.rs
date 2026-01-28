@@ -132,9 +132,15 @@ impl SplunkClientBuilder {
             .redirect(reqwest::redirect::Policy::limited(5));
 
         if self.skip_verify {
-            let https_only = base_url.starts_with("https://");
-            if https_only {
+            let is_https = base_url.starts_with("https://");
+            if is_https {
                 http_builder = http_builder.danger_accept_invalid_certs(true);
+            } else {
+                // skip_verify only affects TLS certificate verification.
+                // It has no effect on HTTP connections since there is no TLS layer.
+                tracing::warn!(
+                    "skip_verify=true has no effect on HTTP URLs. TLS verification only applies to HTTPS connections."
+                );
             }
         }
 
@@ -763,5 +769,37 @@ mod tests {
             .unwrap();
 
         assert_eq!(client.base_url(), "https://localhost:8089");
+    }
+
+    #[test]
+    fn test_skip_verify_with_https_url() {
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("test-token".to_string().into()),
+        };
+
+        // Should succeed with HTTPS URL
+        let client = SplunkClient::builder()
+            .base_url("https://localhost:8089".to_string())
+            .auth_strategy(strategy)
+            .skip_verify(true)
+            .build();
+
+        assert!(client.is_ok());
+    }
+
+    #[test]
+    fn test_skip_verify_with_http_url() {
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("test-token".to_string().into()),
+        };
+
+        // Should succeed but log warning about ineffective skip_verify
+        let client = SplunkClient::builder()
+            .base_url("http://localhost:8089".to_string())
+            .auth_strategy(strategy)
+            .skip_verify(true)
+            .build();
+
+        assert!(client.is_ok());
     }
 }
