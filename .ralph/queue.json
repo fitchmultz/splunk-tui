@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0167",
-      "status": "todo",
-      "title": "Split oversized CLI formatters.rs into resource-specific modules",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/src/formatters.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/formatters.rs is 3766 lines (wc -l), far above the 700-line guidance."
-      ],
-      "plan": [
-        "Group formatter implementations by resource type and extract into submodules.",
-        "Keep the public formatter API minimal and update module docs accordingly.",
-        "Run CLI formatter tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0175",
       "status": "todo",
       "title": "Split oversized client client.rs into builder/session/request modules",
