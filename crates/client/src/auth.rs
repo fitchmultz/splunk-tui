@@ -24,23 +24,54 @@ pub struct SessionManager {
     session_token: Option<SessionToken>,
 }
 
+/// Default buffer time before expiry to proactively refresh session tokens.
+/// This prevents race conditions where a token expires during an API call.
+const DEFAULT_EXPIRY_BUFFER_SECONDS: u64 = 60;
+
 /// Session token with expiry information.
 #[derive(Debug, Clone)]
 struct SessionToken {
     value: SecretString,
     expires_at: Option<Instant>,
+    expiry_buffer_seconds: u64,
 }
 
 impl SessionToken {
-    fn new(value: SecretString, ttl_seconds: Option<u64>) -> Self {
+    fn new(
+        value: SecretString,
+        ttl_seconds: Option<u64>,
+        expiry_buffer_seconds: Option<u64>,
+    ) -> Self {
         let expires_at =
             ttl_seconds.map(|ttl| Instant::now() + std::time::Duration::from_secs(ttl));
-        Self { value, expires_at }
+        Self {
+            value,
+            expires_at,
+            expiry_buffer_seconds: expiry_buffer_seconds.unwrap_or(DEFAULT_EXPIRY_BUFFER_SECONDS),
+        }
     }
 
+    /// Check if the token is past its actual expiry time.
     fn is_expired(&self) -> bool {
         self.expires_at
             .map(|exp| exp.saturating_duration_since(Instant::now()).is_zero())
+            .unwrap_or(false)
+    }
+
+    /// Check if the token will expire soon (within the buffer window).
+    ///
+    /// This is used to proactively refresh tokens before they expire,
+    /// preventing race conditions where a token expires during an API call.
+    fn will_expire_soon(&self) -> bool {
+        self.expires_at
+            .map(|exp| {
+                let buffer = std::time::Duration::from_secs(self.expiry_buffer_seconds);
+                // Calculate the effective expiry time (actual expiry minus buffer)
+                // If buffer is larger than remaining time, treat as expiring soon
+                let now = Instant::now();
+                let remaining = exp.saturating_duration_since(now);
+                remaining < buffer
+            })
             .unwrap_or(false)
     }
 }
@@ -77,10 +108,22 @@ impl SessionManager {
     }
 
     /// Set the session token (received from login response).
-    pub fn set_session_token(&mut self, token: String, ttl_seconds: Option<u64>) {
+    ///
+    /// # Arguments
+    /// * `token` - The session token string
+    /// * `ttl_seconds` - Time-to-live in seconds (None means no expiry)
+    /// * `expiry_buffer_seconds` - Buffer before expiry to trigger proactive refresh
+    ///   (None uses the default of 60 seconds)
+    pub fn set_session_token(
+        &mut self,
+        token: String,
+        ttl_seconds: Option<u64>,
+        expiry_buffer_seconds: Option<u64>,
+    ) {
         self.session_token = Some(SessionToken::new(
             SecretString::new(token.into()),
             ttl_seconds,
+            expiry_buffer_seconds,
         ));
     }
 
@@ -92,6 +135,19 @@ impl SessionManager {
         self.session_token
             .as_ref()
             .map(|t| t.is_expired())
+            .unwrap_or(true)
+    }
+
+    /// Check if the current session token will expire soon (within buffer).
+    ///
+    /// Returns false for API token auth (no expiry concerns).
+    pub fn session_expires_soon(&self) -> bool {
+        if self.is_api_token() {
+            return false;
+        }
+        self.session_token
+            .as_ref()
+            .map(|t| t.will_expire_soon())
             .unwrap_or(true)
     }
 
@@ -127,7 +183,7 @@ mod tests {
         assert!(manager.get_bearer_token().is_none());
         assert!(manager.is_session_expired());
 
-        manager.set_session_token("session-key".to_string(), None);
+        manager.set_session_token("session-key".to_string(), None, None);
         assert_eq!(manager.get_bearer_token(), Some("session-key"));
         // Without TTL, session never expires
         assert!(!manager.is_session_expired());
@@ -141,7 +197,7 @@ mod tests {
         };
         let mut manager = SessionManager::new(strategy);
 
-        manager.set_session_token("session-key".to_string(), Some(1));
+        manager.set_session_token("session-key".to_string(), Some(1), None);
         assert!(!manager.is_session_expired());
 
         // Note: Can't easily test actual expiry in unit test without time manipulation
@@ -222,7 +278,7 @@ mod tests {
 
         let mut manager = SessionManager::new(strategy);
         let session_token = "new-session-token-after-login-123";
-        manager.set_session_token(session_token.to_string(), Some(3600));
+        manager.set_session_token(session_token.to_string(), Some(3600), None);
 
         let debug_output = format!("{:?}", manager);
 
@@ -243,7 +299,7 @@ mod tests {
 
         let mut manager = SessionManager::new(strategy);
         let session_token = "session-to-be-cleared-456";
-        manager.set_session_token(session_token.to_string(), Some(3600));
+        manager.set_session_token(session_token.to_string(), Some(3600), None);
 
         // Clear the session
         manager.clear_session();
@@ -302,12 +358,106 @@ mod tests {
         };
 
         let mut manager = SessionManager::new(strategy);
-        manager.set_session_token("session-token-123".to_string(), Some(3600));
+        manager.set_session_token("session-token-123".to_string(), Some(3600), None);
 
         let debug_output = format!("{:?}", manager);
 
         // Neither password nor session token should appear
         assert!(!debug_output.contains("password1"));
         assert!(!debug_output.contains("session-token-123"));
+    }
+
+    // ============================================================================
+    // Session Expiry Buffer Tests
+    // ============================================================================
+
+    /// Test that will_expire_soon() returns false when outside buffer window.
+    #[test]
+    fn test_will_expire_soon_returns_false_outside_buffer() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let mut manager = SessionManager::new(strategy);
+
+        // Set token with 120s TTL and 60s buffer - expires in 120s, buffer ends at 60s
+        manager.set_session_token("session-key".to_string(), Some(120), Some(60));
+
+        // Should not expire soon immediately after setting
+        assert!(!manager.session_expires_soon());
+        assert!(!manager.is_session_expired());
+    }
+
+    /// Test that session_expires_soon() returns false for API token auth.
+    #[test]
+    fn test_session_expires_soon_returns_false_for_api_token() {
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("api-token".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy);
+
+        // API tokens never expire
+        assert!(!manager.session_expires_soon());
+        assert!(!manager.is_session_expired());
+    }
+
+    /// Test that session_expires_soon() returns true when no session token is set.
+    #[test]
+    fn test_session_expires_soon_returns_true_when_no_token() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy);
+
+        // No token set - should be considered expiring soon
+        assert!(manager.session_expires_soon());
+        assert!(manager.is_session_expired());
+    }
+
+    /// Test that buffer of 0 seconds behaves like original is_expired().
+    #[test]
+    fn test_zero_buffer_behaves_like_is_expired() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let mut manager = SessionManager::new(strategy);
+
+        // Set token with 120s TTL and 0s buffer
+        manager.set_session_token("session-key".to_string(), Some(120), Some(0));
+
+        // With 0 buffer, will_expire_soon should behave like is_expired
+        assert!(!manager.session_expires_soon());
+        assert!(!manager.is_session_expired());
+    }
+
+    /// Test that will_expire_soon returns true when within buffer window.
+    /// Note: This test uses a very short TTL to simulate expiry within the test.
+    #[test]
+    fn test_will_expire_soon_returns_true_within_buffer() {
+        // Create a session token directly with a very short TTL
+        let token = SessionToken::new(
+            SecretString::new("test-token".to_string().into()),
+            Some(1), // 1 second TTL
+            Some(2), // 2 second buffer (larger than TTL, so it expires immediately)
+        );
+
+        // Should be considered expiring soon because buffer > remaining time
+        assert!(token.will_expire_soon());
+    }
+
+    /// Test that default buffer is applied when not specified.
+    #[test]
+    fn test_default_buffer_applied() {
+        let token = SessionToken::new(
+            SecretString::new("test-token".to_string().into()),
+            Some(3600),
+            None, // Use default
+        );
+
+        // Should have the default buffer (60 seconds)
+        assert!(!token.is_expired());
+        assert!(!token.will_expire_soon());
     }
 }

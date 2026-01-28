@@ -89,6 +89,16 @@ pub struct ConnectionConfig {
     pub timeout: Duration,
     /// Maximum number of retries for failed requests
     pub max_retries: usize,
+    /// Buffer time before session expiry to proactively refresh tokens (in seconds)
+    /// This prevents race conditions where a token expires during an API call.
+    /// Default: 60 seconds
+    #[serde(default = "default_session_expiry_buffer")]
+    pub session_expiry_buffer_seconds: u64,
+}
+
+/// Default session expiry buffer in seconds.
+fn default_session_expiry_buffer() -> u64 {
+    60
 }
 
 /// Main configuration structure.
@@ -426,6 +436,10 @@ pub struct ProfileConfig {
     pub timeout_seconds: Option<u64>,
     /// Maximum number of retries for failed requests
     pub max_retries: Option<usize>,
+    /// Buffer time before session expiry to proactively refresh tokens (in seconds)
+    /// This prevents race conditions where a token expires during an API call.
+    /// Default: 60 seconds
+    pub session_expiry_buffer_seconds: Option<u64>,
 }
 
 /// An overridable keybinding action identifier.
@@ -488,6 +502,7 @@ impl Default for Config {
                 skip_verify: false,
                 timeout: Duration::from_secs(30),
                 max_retries: 3,
+                session_expiry_buffer_seconds: default_session_expiry_buffer(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken {
@@ -508,6 +523,7 @@ impl Config {
                 skip_verify: false,
                 timeout: Duration::from_secs(30),
                 max_retries: 3,
+                session_expiry_buffer_seconds: default_session_expiry_buffer(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::ApiToken { token },
@@ -523,6 +539,7 @@ impl Config {
                 skip_verify: false,
                 timeout: Duration::from_secs(30),
                 max_retries: 3,
+                session_expiry_buffer_seconds: default_session_expiry_buffer(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken { username, password },
@@ -584,6 +601,7 @@ mod tests {
             skip_verify: true,
             timeout: Duration::from_secs(60),
             max_retries: 5,
+            session_expiry_buffer_seconds: default_session_expiry_buffer(),
         };
 
         let json = serde_json::to_string(&config).unwrap();
@@ -604,6 +622,7 @@ mod tests {
             skip_verify: Some(true),
             timeout_seconds: Some(60),
             max_retries: Some(5),
+            session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
         };
 
         let json = serde_json::to_string(&original).unwrap();
@@ -755,6 +774,7 @@ mod tests {
             skip_verify: Some(false),
             timeout_seconds: Some(30),
             max_retries: Some(3),
+            session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
         };
 
         let debug_output = format!("{:?}", profile);
@@ -782,6 +802,7 @@ mod tests {
             skip_verify: Some(false),
             timeout_seconds: Some(30),
             max_retries: Some(3),
+            session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
         };
 
         let debug_output = format!("{:?}", profile);
@@ -830,6 +851,7 @@ mod tests {
             skip_verify: true,
             timeout: Duration::from_secs(60),
             max_retries: 5,
+            session_expiry_buffer_seconds: default_session_expiry_buffer(),
         };
 
         let debug_output = format!("{:?}", config);

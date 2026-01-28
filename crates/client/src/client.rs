@@ -190,10 +190,10 @@ impl SplunkClient {
             )
             .await?;
 
-            // Default session TTL is 1 hour
+            // Default session TTL is 1 hour, with 60s buffer for proactive refresh
             let token_clone = token.clone();
             self.session_manager
-                .set_session_token(token_clone, Some(3600));
+                .set_session_token(token_clone, Some(3600), Some(60));
 
             Ok(token)
         } else {
@@ -671,6 +671,9 @@ impl SplunkClient {
     }
 
     /// Get the current authentication token, logging in if necessary.
+    ///
+    /// Proactively refreshes the session if it will expire soon (within the buffer window)
+    /// to prevent race conditions where the token expires during an API call.
     async fn get_auth_token(&mut self) -> Result<String> {
         // For API token auth, just return the token
         if self.session_manager.is_api_token()
@@ -679,8 +682,9 @@ impl SplunkClient {
             return Ok(token.to_string());
         }
 
-        // For session auth, check if we need to login
-        if self.session_manager.is_session_expired() {
+        // For session auth, check if we need to login (expired OR will expire soon)
+        if self.session_manager.is_session_expired() || self.session_manager.session_expires_soon()
+        {
             self.login().await?;
         }
 

@@ -561,6 +561,7 @@ mod tests {
                 skip_verify: Some(true),
                 timeout_seconds: Some(60),
                 max_retries: Some(5),
+                session_expiry_buffer_seconds: Some(60),
             },
         );
 

@@ -77,6 +77,7 @@ pub struct ConfigLoader {
     skip_verify: Option<bool>,
     timeout: Option<Duration>,
     max_retries: Option<usize>,
+    session_expiry_buffer_seconds: Option<u64>,
     profile_name: Option<String>,
     profile_missing: Option<String>,
     config_path: Option<PathBuf>,
@@ -126,6 +127,7 @@ impl ConfigLoader {
             skip_verify: None,
             timeout: None,
             max_retries: None,
+            session_expiry_buffer_seconds: None,
             profile_name: None,
             profile_missing: None,
             config_path: None,
@@ -225,6 +227,9 @@ impl ConfigLoader {
         if let Some(retries) = profile.max_retries {
             self.max_retries = Some(retries);
         }
+        if let Some(buffer) = profile.session_expiry_buffer_seconds {
+            self.session_expiry_buffer_seconds = Some(buffer);
+        }
         Ok(())
     }
 
@@ -274,6 +279,18 @@ impl ConfigLoader {
                         .parse()
                         .map_err(|_| ConfigError::InvalidValue {
                             var: "SPLUNK_MAX_RETRIES".to_string(),
+                            message: "must be a number".to_string(),
+                        })?,
+                );
+        }
+        if let Some(buffer) = Self::env_var_or_none("SPLUNK_SESSION_EXPIRY_BUFFER") {
+            self.session_expiry_buffer_seconds =
+                Some(
+                    buffer
+                        .trim()
+                        .parse()
+                        .map_err(|_| ConfigError::InvalidValue {
+                            var: "SPLUNK_SESSION_EXPIRY_BUFFER".to_string(),
                             message: "must be a number".to_string(),
                         })?,
                 );
@@ -373,6 +390,7 @@ impl ConfigLoader {
                 skip_verify: self.skip_verify.unwrap_or(false),
                 timeout: self.timeout.unwrap_or(Duration::from_secs(30)),
                 max_retries: self.max_retries.unwrap_or(3),
+                session_expiry_buffer_seconds: self.session_expiry_buffer_seconds.unwrap_or(60),
             },
             auth: AuthConfig { strategy },
         })
