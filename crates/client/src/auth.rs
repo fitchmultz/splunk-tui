@@ -146,4 +146,168 @@ mod tests {
 
         // Note: Can't easily test actual expiry in unit test without time manipulation
     }
+
+    // ============================================================================
+    // Security-focused tests for secret handling
+    // ============================================================================
+
+    /// Test that API token is not exposed in AuthStrategy Debug output.
+    #[test]
+    fn test_api_token_not_exposed_in_debug() {
+        let secret_token = "secret-api-token-12345";
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new(secret_token.to_string().into()),
+        };
+
+        let debug_output = format!("{:?}", strategy);
+
+        // The secret token should NOT appear in debug output
+        assert!(
+            !debug_output.contains(secret_token),
+            "Debug output should not contain the API token secret"
+        );
+
+        // But the variant name should be visible
+        assert!(debug_output.contains("ApiToken"));
+    }
+
+    /// Test that session password is not exposed in AuthStrategy Debug output.
+    #[test]
+    fn test_session_password_not_exposed_in_debug() {
+        let username = "admin";
+        let password = "secret-password-45678";
+
+        let strategy = AuthStrategy::SessionToken {
+            username: username.to_string(),
+            password: SecretString::new(password.to_string().into()),
+        };
+
+        let debug_output = format!("{:?}", strategy);
+
+        // The password should NOT appear in debug output
+        assert!(
+            !debug_output.contains(password),
+            "Debug output should not contain the password"
+        );
+
+        // But the username SHOULD be visible (it's not a secret)
+        assert!(debug_output.contains(username));
+    }
+
+    /// Test that SessionManager does not expose tokens in Debug output.
+    #[test]
+    fn test_session_manager_not_exposed_in_debug() {
+        let secret_token = "session-manager-secret-token";
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new(secret_token.to_string().into()),
+        };
+
+        let manager = SessionManager::new(strategy);
+        let debug_output = format!("{:?}", manager);
+
+        // The secret token should NOT appear in debug output
+        assert!(
+            !debug_output.contains(secret_token),
+            "Debug output should not contain the token"
+        );
+    }
+
+    /// Test that session tokens set after login are not exposed in Debug output.
+    #[test]
+    fn test_set_session_token_not_exposed_in_debug() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("password".to_string().into()),
+        };
+
+        let mut manager = SessionManager::new(strategy);
+        let session_token = "new-session-token-after-login-123";
+        manager.set_session_token(session_token.to_string(), Some(3600));
+
+        let debug_output = format!("{:?}", manager);
+
+        // The session token should NOT appear in debug output
+        assert!(
+            !debug_output.contains(session_token),
+            "Debug output should not contain the session token"
+        );
+    }
+
+    /// Test that clearing a session doesn't expose the token in Debug output.
+    #[test]
+    fn test_clear_session_not_exposed_in_debug() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("password".to_string().into()),
+        };
+
+        let mut manager = SessionManager::new(strategy);
+        let session_token = "session-to-be-cleared-456";
+        manager.set_session_token(session_token.to_string(), Some(3600));
+
+        // Clear the session
+        manager.clear_session();
+
+        let debug_output = format!("{:?}", manager);
+
+        // Even after clearing, the old token should not appear
+        assert!(
+            !debug_output.contains(session_token),
+            "Debug output should not contain cleared session token"
+        );
+    }
+
+    /// Test that API token auth never expires while session auth does.
+    #[test]
+    fn test_api_token_vs_session_expiration() {
+        // API token auth - should never expire
+        let api_strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("api-token".to_string().into()),
+        };
+        let api_manager = SessionManager::new(api_strategy);
+        assert!(!api_manager.is_session_expired());
+        assert!(api_manager.is_api_token());
+
+        // Session token auth without setting token - should be expired
+        let session_strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let session_manager = SessionManager::new(session_strategy);
+        assert!(session_manager.is_session_expired());
+        assert!(!session_manager.is_api_token());
+    }
+
+    /// Test that bearer token can be accessed programmatically via ExposeSecret.
+    #[test]
+    fn test_bearer_token_accessible_via_expose_secret() {
+        let secret_token = "bearer-token-secret-789";
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new(secret_token.to_string().into()),
+        };
+
+        let manager = SessionManager::new(strategy);
+
+        // Token should be accessible via get_bearer_token (for API calls)
+        let bearer = manager.get_bearer_token();
+        assert_eq!(bearer, Some(secret_token));
+    }
+
+    /// Test that multiple secrets in SessionManager are all protected.
+    #[test]
+    fn test_multiple_secrets_protected() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("password1".to_string().into()),
+        };
+
+        let mut manager = SessionManager::new(strategy);
+        manager.set_session_token("session-token-123".to_string(), Some(3600));
+
+        let debug_output = format!("{:?}", manager);
+
+        // Neither password nor session token should appear
+        assert!(!debug_output.contains("password1"));
+        assert!(!debug_output.contains("session-token-123"));
+    }
 }

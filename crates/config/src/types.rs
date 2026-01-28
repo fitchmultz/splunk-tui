@@ -660,4 +660,238 @@ mod tests {
         let resolved = val.resolve().unwrap();
         assert_eq!(resolved.expose_secret(), secret.expose_secret());
     }
+
+    // ============================================================================
+    // Security-focused tests for secret handling
+    // ============================================================================
+
+    /// Test that AuthConfig Debug output does not expose API token secrets.
+    #[test]
+    fn test_auth_config_debug_does_not_expose_api_token() {
+        let token = SecretString::new("api-token-secret-123".to_string().into());
+        let auth_config = AuthConfig {
+            strategy: AuthStrategy::ApiToken { token },
+        };
+
+        let debug_output = format!("{:?}", auth_config);
+
+        // The secret token should NOT appear in debug output
+        assert!(
+            !debug_output.contains("api-token-secret-123"),
+            "Debug output should not contain the API token"
+        );
+    }
+
+    /// Test that AuthConfig Debug output does not expose session password.
+    #[test]
+    fn test_auth_config_debug_does_not_expose_password() {
+        let password = SecretString::new("session-password-456".to_string().into());
+        let auth_config = AuthConfig {
+            strategy: AuthStrategy::SessionToken {
+                username: "admin".to_string(),
+                password,
+            },
+        };
+
+        let debug_output = format!("{:?}", auth_config);
+
+        // The password should NOT appear in debug output
+        assert!(
+            !debug_output.contains("session-password-456"),
+            "Debug output should not contain the password"
+        );
+
+        // But the username SHOULD be visible
+        assert!(debug_output.contains("admin"));
+    }
+
+    /// Test that Config Debug output does not expose secrets.
+    #[test]
+    fn test_config_debug_does_not_expose_secrets() {
+        let password = SecretString::new("my-secret-password".to_string().into());
+        let config = Config::with_session_token(
+            "https://localhost:8089".to_string(),
+            "admin".to_string(),
+            password,
+        );
+
+        let debug_output = format!("{:?}", config);
+
+        // The password should NOT appear in debug output
+        assert!(
+            !debug_output.contains("my-secret-password"),
+            "Debug output should not contain the password"
+        );
+
+        // But non-sensitive data should be visible
+        assert!(debug_output.contains("admin"));
+        assert!(debug_output.contains("https://localhost:8089"));
+    }
+
+    /// Test that Config with API token does not expose token in Debug output.
+    #[test]
+    fn test_config_with_api_token_debug_redaction() {
+        let token = SecretString::new("super-secret-api-token".to_string().into());
+        let config = Config::with_api_token("https://splunk.example.com:8089".to_string(), token);
+
+        let debug_output = format!("{:?}", config);
+
+        // The token should NOT appear in debug output
+        assert!(
+            !debug_output.contains("super-secret-api-token"),
+            "Debug output should not contain the API token"
+        );
+    }
+
+    /// Test that ProfileConfig Debug output does not expose secrets.
+    #[test]
+    fn test_profile_config_debug_does_not_expose_secrets() {
+        let password = SecretString::new("profile-password-789".to_string().into());
+        let profile = ProfileConfig {
+            base_url: Some("https://localhost:8089".to_string()),
+            username: Some("admin".to_string()),
+            password: Some(SecureValue::Plain(password)),
+            api_token: None,
+            skip_verify: Some(false),
+            timeout_seconds: Some(30),
+            max_retries: Some(3),
+        };
+
+        let debug_output = format!("{:?}", profile);
+
+        // The password should NOT appear in debug output
+        assert!(
+            !debug_output.contains("profile-password-789"),
+            "Debug output should not contain the password"
+        );
+
+        // Non-sensitive data should be visible
+        assert!(debug_output.contains("admin"));
+        assert!(debug_output.contains("https://localhost:8089"));
+    }
+
+    /// Test that ProfileConfig with API token does not expose token.
+    #[test]
+    fn test_profile_config_api_token_not_exposed() {
+        let token = SecretString::new("profile-api-token-xyz".to_string().into());
+        let profile = ProfileConfig {
+            base_url: Some("https://localhost:8089".to_string()),
+            username: Some("admin".to_string()),
+            password: None,
+            api_token: Some(SecureValue::Plain(token)),
+            skip_verify: Some(false),
+            timeout_seconds: Some(30),
+            max_retries: Some(3),
+        };
+
+        let debug_output = format!("{:?}", profile);
+
+        // The API token should NOT appear in debug output
+        assert!(
+            !debug_output.contains("profile-api-token-xyz"),
+            "Debug output should not contain the API token"
+        );
+    }
+
+    /// Test that SecureValue::Plain does not expose secret in Debug output.
+    #[test]
+    fn test_secure_value_plain_not_exposed_in_debug() {
+        let secret = SecretString::new("secure-value-secret".to_string().into());
+        let secure_value = SecureValue::Plain(secret);
+
+        let debug_output = format!("{:?}", secure_value);
+
+        // The secret should NOT appear in debug output
+        assert!(
+            !debug_output.contains("secure-value-secret"),
+            "Debug output should not contain the secret"
+        );
+    }
+
+    /// Test that SecureValue::Keyring does not expose any secret data.
+    #[test]
+    fn test_secure_value_keyring_not_exposed_in_debug() {
+        let secure_value = SecureValue::Keyring {
+            keyring_account: "splunk-admin".to_string(),
+        };
+
+        let debug_output = format!("{:?}", secure_value);
+
+        // The account name is not a secret and can be visible
+        assert!(debug_output.contains("splunk-admin"));
+        assert!(debug_output.contains("Keyring"));
+    }
+
+    /// Test that ConnectionConfig Debug output is safe (no secrets).
+    #[test]
+    fn test_connection_config_debug_safe() {
+        let config = ConnectionConfig {
+            base_url: "https://localhost:8089".to_string(),
+            skip_verify: true,
+            timeout: Duration::from_secs(60),
+            max_retries: 5,
+        };
+
+        let debug_output = format!("{:?}", config);
+
+        // Connection config should never contain secrets
+        // Just verify it formats correctly
+        assert!(debug_output.contains("https://localhost:8089"));
+        assert!(debug_output.contains("skip_verify: true"));
+    }
+
+    /// Test serialization of AuthStrategy includes secrets (for persistence).
+    ///
+    /// Note: This test verifies that serialization DOES include the secret,
+    /// which is intentional for config file persistence. The secrecy is for
+    /// logging safety, not persistence safety.
+    #[test]
+    fn test_auth_strategy_serialization_includes_secret() {
+        use secrecy::ExposeSecret;
+
+        let token = SecretString::new("serializable-token".to_string().into());
+        let strategy = AuthStrategy::ApiToken { token };
+
+        let json = serde_json::to_string(&strategy).unwrap();
+
+        // Serialization SHOULD include the secret for persistence
+        assert!(json.contains("serializable-token"));
+
+        // Deserialize and verify
+        let deserialized: AuthStrategy = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            AuthStrategy::ApiToken { token } => {
+                assert_eq!(token.expose_secret(), "serializable-token");
+            }
+            _ => panic!("Expected ApiToken variant"),
+        }
+    }
+
+    /// Test that serialization of session auth includes password.
+    #[test]
+    fn test_session_auth_serialization_includes_password() {
+        use secrecy::ExposeSecret;
+
+        let password = SecretString::new("serializable-password".to_string().into());
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password,
+        };
+
+        let json = serde_json::to_string(&strategy).unwrap();
+
+        // Serialization SHOULD include the password for persistence
+        assert!(json.contains("serializable-password"));
+        assert!(json.contains("admin"));
+
+        // Deserialize and verify
+        let deserialized: AuthStrategy = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            AuthStrategy::SessionToken { username, password } => {
+                assert_eq!(username, "admin");
+                assert_eq!(password.expose_secret(), "serializable-password");
+            }
+            _ => panic!("Expected SessionToken variant"),
+        }
+    }
 }
