@@ -5739,6 +5739,63 @@
       "completed_at": "2026-01-28T03:39:48.369562000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0113",
+      "status": "done",
+      "title": "Make Help and Docs consistent with runtime behavior (post-keymap change)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "docs",
+        "ux",
+        "keybindings"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/input/docs.rs",
+        "crates/tui/src/input/keymap/",
+        "crates/tui/tests/snapshot_tests.rs",
+        "crates/tui/src/bin/generate_tui_docs.rs",
+        "Makefile",
+        "make generate",
+        "make lint-docs",
+        "make ci"
+      ],
+      "evidence": [
+        "docs/usage.md: Contains TUI keybinding documentation between markers <!-- BEGIN TUI KEYBINDINGS --> and <!-- END TUI KEYBINDINGS --> that is auto-generated from the keymap.",
+        "crates/tui/src/ui/popup.rs: Renders help popup by calling help::help_text() which generates content from the centralized keymap - no longer uses static strings.",
+        "crates/tui/src/input/help.rs: Renders help text from keymap::keybindings() ensuring in-app help matches the keymap definition.",
+        "crates/tui/src/input/docs.rs: Renders markdown documentation from the same keymap for docs/usage.md.",
+        "crates/tui/src/bin/generate_tui_docs.rs: Binary that regenerates docs/usage.md keybinding section from the keymap.",
+        "Makefile: Contains 'make generate' target to regenerate docs and 'make lint-docs' to verify docs are up to date.",
+        "crates/tui/tests/snapshot_tests.rs: Contains snapshot_help_popup test that captures help rendering; snapshots must be updated if keybindings change.",
+        "make ci: Already includes lint-docs check to prevent documentation drift."
+      ],
+      "plan": [
+        "Verify docs/usage.md keybinding section is up to date by running 'make lint-docs'.",
+        "If docs are out of date, run 'make generate' to regenerate from keymap.",
+        "Run 'cargo test -p splunk-tui --test snapshot_tests snapshot_help_popup' to verify help snapshots.",
+        "If snapshots fail, review changes and update with 'cargo insta review' if the new behavior is correct.",
+        "Run 'make ci' to ensure full pipeline passes including lint-docs and tests."
+      ],
+      "notes": [
+        "Keymap has been centralized in crates/tui/src/input/keymap/ - single source of truth for keybindings.",
+        "Documentation is now auto-generated from keymap - manual editing of docs/usage.md between markers is not needed.",
+        "CI already enforces doc consistency via 'make lint-docs' which runs generate-tui-docs --check.",
+        "make lint-docs: PASSED - all docs up to date",
+        "Snapshot tests: PASSED - help popup snapshots match keymap",
+        "make ci: PASSED - full pipeline completed",
+        "Verified: keymap is single source of truth, help.rs and docs.rs both render from it"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T03:48:02.872902000Z",
+      "completed_at": "2026-01-28T03:48:02.872902000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

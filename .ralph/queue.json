@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0113",
-      "status": "todo",
-      "title": "Make Help and Docs consistent with runtime behavior (post-keymap change)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "docs",
-        "ux",
-        "keybindings"
-      ],
-      "scope": [
-        "docs/usage.md",
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/tests/snapshot_tests.rs",
-        "make ci"
-      ],
-      "evidence": [
-        "docs/usage.md: documents q Quit, e Export, and 0-9 navigation as primary controls; current runtime is already inconsistent (quit does not exit) and will change as keymap is redesigned.",
-        "crates/tui/src/ui/popup.rs: duplicates the same keybinding documentation as a static string, which can drift from code and from docs/usage.md.",
-        "crates/tui/tests/snapshot_tests.rs: snapshot_help_popup asserts a specific help rendering, requiring coordinated updates as help content changes."
-      ],
-      "plan": [
-        "After implementing the new keymap, update docs/usage.md TUI section to exactly match runtime behavior.",
-        "Ensure in-app help is generated from the same source of truth as docs (or at least kept in sync by tests).",
-        "Run make ci and visually review help + docs for completeness."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0117",
       "status": "todo",
       "title": "Add a future-proof keybinding configuration story (optional, post-stabilization)",
