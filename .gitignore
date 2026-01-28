@@ -28,6 +28,7 @@ docs/splunk-test-environment.md
 
 # Build artifacts
 /dist/
+.ralph/
 .ralph/lock
 .ralph/cache
 .ralph/queue.json
