@@ -44,6 +44,13 @@ pub enum PopupType {
     ConfirmEnableApp(String),
     /// Confirm disable app (holds app name)
     ConfirmDisableApp(String),
+    /// Profile selector popup with list of available profiles
+    ProfileSelector {
+        /// List of available profile names
+        profiles: Vec<String>,
+        /// Currently selected index
+        selected_index: usize,
+    },
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -146,6 +153,22 @@ impl PopupBuilder {
                 "Confirm Disable".to_string(),
                 format!("Disable app '{}'? (y/n)", name),
             ),
+            PopupType::ProfileSelector {
+                profiles,
+                selected_index,
+            } => {
+                let title = "Select Profile".to_string();
+                let mut content = String::from("Select a profile to switch to:\n\n");
+                for (i, profile) in profiles.iter().enumerate() {
+                    if i == *selected_index {
+                        content.push_str(&format!("> {} <\n", profile));
+                    } else {
+                        content.push_str(&format!("  {}\n", profile));
+                    }
+                }
+                content.push_str("\n↑/↓ to navigate, Enter to select, Esc to cancel");
+                (title, content)
+            }
         };
 
         Popup {
@@ -175,7 +198,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         PopupType::Help
         | PopupType::ExportSearch
         | PopupType::ErrorDetails
-        | PopupType::IndexDetails => theme.border,
+        | PopupType::IndexDetails
+        | PopupType::ProfileSelector { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -189,7 +213,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         PopupType::Help
         | PopupType::ExportSearch
         | PopupType::ErrorDetails
-        | PopupType::IndexDetails => Wrap { trim: false },
+        | PopupType::IndexDetails
+        | PopupType::ProfileSelector { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

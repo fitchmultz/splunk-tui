@@ -5846,6 +5846,62 @@
       "completed_at": "2026-01-28T04:19:08.190643000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0137",
+      "status": "done",
+      "title": "Add runtime profile switching in TUI (re-auth + reload without restarting)",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "distributed",
+        "config"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action.rs",
+        "crates/tui/src/app/actions.rs",
+        "crates/tui/src/ui/screens/settings.rs",
+        "crates/config/src/persistence.rs",
+        "docs/usage.md",
+        "crates/tui/tests/"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs: Profile selection only at startup via --profile or SPLUNK_PROFILE env var; client is created once in main() and wrapped in Arc<Mutex>.",
+        "crates/config/src/persistence.rs: ConfigManager has list_profiles(), save_profile(), delete_profile() methods for profile management.",
+        "crates/tui/src/ui/screens/settings.rs: Currently displays profile as read-only text (profile_info field); no interaction for switching.",
+        "crates/tui/src/app.rs: Connection context (profile_name, base_url, auth_mode) passed at startup via ConnectionContext and stored in App fields.",
+        "crates/tui/src/action.rs: No actions exist for profile switching or client rebuild; would need new Action variants.",
+        "RQ-0134 (completed) added connection banner displaying profile/base_url/auth_mode in header, providing foundation for active profile display."
+      ],
+      "plan": [
+        "Add new Action variants for profile switching (e.g., SwitchProfile, ProfileSwitched) and client rebuild.",
+        "Extend Settings screen with profile list UI (popup or inline) showing available profiles from ConfigManager.",
+        "Implement profile selection handler that loads new profile config and rebuilds SplunkClient with new credentials.",
+        "Add state reset logic: clear cached data (indexes, jobs, etc.) and reload current screen data after profile switch.",
+        "Update connection context (profile_name, base_url, auth_mode) in App and trigger header re-render.",
+        "Add integration tests for profile switching success/failure and state reset behavior.",
+        "Update docs/usage.md with profile switching keybindings and behavior."
+      ],
+      "notes": [
+        "RQ-0134 (connection banner) is completed and provides the header display for active profile - build on this foundation.",
+        "Consider security: ensure credentials from previous profile are cleared from memory when switching.",
+        "May need to handle auth failures gracefully with toast notifications and option to retry or revert.",
+        "Implemented runtime profile switching in TUI",
+        "Added 5 new Action variants for profile switching workflow",
+        "Added ProfileSelector popup with navigation and selection",
+        "Fixed screen reload after profile switch and added base_url validation",
+        "Added 15 integration tests covering all profile switch functionality"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-28T04:47:50.208931000Z",
+      "completed_at": "2026-01-28T04:47:50.208931000Z",
+      "depends_on": [
+        "RQ-0134"
+      ],
+      "custom_fields": {}
     }
   ]
 }

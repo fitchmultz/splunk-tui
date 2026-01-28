@@ -354,6 +354,69 @@ impl App {
                 // Return to jobs screen
                 self.current_screen = CurrentScreen::Jobs;
             }
+            // Profile switching actions
+            Action::OpenProfileSwitcher => {
+                // This action is handled in main.rs side effects which will
+                // send the profile list and trigger the popup opening
+            }
+            Action::OpenProfileSelectorWithList(profiles) => {
+                if !profiles.is_empty() {
+                    self.popup = Some(
+                        Popup::builder(PopupType::ProfileSelector {
+                            profiles,
+                            selected_index: 0,
+                        })
+                        .build(),
+                    );
+                }
+            }
+            Action::ProfileSelected(_) => {
+                // This action is handled in main.rs side effects
+                // It triggers the actual profile switch with new client creation
+            }
+            Action::ProfileSwitchResult(Ok(ctx)) => {
+                // Update connection context with new profile info
+                self.profile_name = ctx.profile_name;
+                self.base_url = Some(ctx.base_url);
+                self.auth_mode = Some(ctx.auth_mode);
+                // Clear server info until new health check loads
+                self.server_version = None;
+                self.server_build = None;
+                self.toasts.push(Toast::info(format!(
+                    "Switched to profile: {}",
+                    self.profile_name.as_deref().unwrap_or("default")
+                )));
+            }
+            Action::ProfileSwitchResult(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to switch profile: {}", e)));
+            }
+            Action::ClearAllData => {
+                // Clear all cached data after profile switch
+                self.indexes = None;
+                self.jobs = None;
+                self.saved_searches = None;
+                self.internal_logs = None;
+                self.cluster_info = None;
+                self.cluster_peers = None;
+                self.health_info = None;
+                self.apps = None;
+                self.users = None;
+                self.search_results.clear();
+                self.search_sid = None;
+                self.search_results_total_count = None;
+                self.search_has_more_results = false;
+                // Reset list states
+                self.indexes_state.select(Some(0));
+                self.jobs_state.select(Some(0));
+                self.saved_searches_state.select(Some(0));
+                self.internal_logs_state.select(Some(0));
+                self.cluster_peers_state.select(Some(0));
+                self.apps_state.select(Some(0));
+                self.users_state.select(Some(0));
+                // Trigger reload for current screen
+                // The load action will be sent by main.rs after this
+            }
             _ => {}
         }
     }

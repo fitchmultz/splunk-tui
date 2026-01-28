@@ -261,6 +261,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `d`: Toggle sort direction
 - `c`: Clear search history
 - `r`: Reload settings
+- `p`: Switch profile
 <!-- END TUI KEYBINDINGS -->
 
 - **Scrolling**:

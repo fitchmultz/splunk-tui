@@ -229,6 +229,61 @@ impl App {
                 self.popup = None;
                 None
             }
+            // Profile selector popup handling
+            (Some(PopupType::ProfileSelector { .. }), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (
+                Some(PopupType::ProfileSelector {
+                    profiles,
+                    selected_index,
+                }),
+                KeyCode::Up | KeyCode::Char('k'),
+            ) => {
+                let new_index = selected_index.saturating_sub(1);
+                self.popup = Some(
+                    Popup::builder(PopupType::ProfileSelector {
+                        profiles: profiles.clone(),
+                        selected_index: new_index,
+                    })
+                    .build(),
+                );
+                None
+            }
+            (
+                Some(PopupType::ProfileSelector {
+                    profiles,
+                    selected_index,
+                }),
+                KeyCode::Down | KeyCode::Char('j'),
+            ) => {
+                let new_index = (selected_index + 1).min(profiles.len().saturating_sub(1));
+                self.popup = Some(
+                    Popup::builder(PopupType::ProfileSelector {
+                        profiles: profiles.clone(),
+                        selected_index: new_index,
+                    })
+                    .build(),
+                );
+                None
+            }
+            (
+                Some(PopupType::ProfileSelector {
+                    profiles,
+                    selected_index,
+                }),
+                KeyCode::Enter,
+            ) => {
+                if let Some(profile_name) = profiles.get(*selected_index) {
+                    let name = profile_name.clone();
+                    self.popup = None;
+                    Some(Action::ProfileSelected(name))
+                } else {
+                    self.popup = None;
+                    None
+                }
+            }
             _ => None,
         }
     }

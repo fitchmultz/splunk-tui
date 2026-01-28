@@ -630,7 +630,33 @@ The Search screen has two input modes that affect how keys are handled:
 - `d`: Toggle sort direction
 - `c`: Clear search history
 - `r`: Reload settings
+- `p`: Switch profile
 <!-- END TUI KEYBINDINGS -->
+
+### Profile Switching
+
+The TUI supports switching between configured profiles at runtime without restarting. This allows you to quickly switch between different Splunk environments (e.g., dev, staging, production).
+
+**To switch profiles:**
+1. Navigate to the **Settings** screen (`Tab`/`Shift+Tab`)
+2. Press `p` to open the **Profile Selector** popup
+3. Use `↑`/`↓` or `j`/`k` to navigate the profile list
+4. Press `Enter` to select a profile
+5. Press `Esc` to cancel without switching
+
+**What happens during a profile switch:**
+- The TUI authenticates with the new profile's credentials
+- All cached data is cleared (jobs, indexes, searches, etc.)
+- The connection context header is updated with the new profile info
+- The current screen data is reloaded from the new server
+
+**Error handling:**
+- If authentication fails, an error toast is shown and you remain on the current profile
+- If no profiles are configured, an error message guides you to use `splunk-cli` to create profiles
+
+**Security notes:**
+- Credentials from the previous profile are cleared from memory when switching
+- The profile switch requires re-authentication; session tokens are not reused across profiles
 
 ### Index Details Popup
 

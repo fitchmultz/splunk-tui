@@ -299,11 +299,18 @@ async fn main() -> Result<()> {
                     }
                 } else {
                     let was_toggle = matches!(action, Action::ToggleClusterViewMode);
+                    let was_profile_switch = matches!(action, Action::ProfileSwitchResult(Ok(_)));
                     app.update(action.clone());
                     handle_side_effects(action, client.clone(), tx.clone(), config_manager.clone()).await;
                     // After toggle, if we're now in Peers view, trigger peers load
                     if was_toggle && app.cluster_view_mode == splunk_tui::app::ClusterViewMode::Peers {
                         handle_side_effects(Action::LoadClusterPeers, client.clone(), tx.clone(), config_manager.clone()).await;
+                    }
+                    // After successful profile switch, trigger reload for current screen
+                    if was_profile_switch
+                        && let Some(load_action) = app.load_action_for_screen()
+                    {
+                        handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
                     }
                 }
             }
@@ -887,6 +894,159 @@ async fn handle_side_effects(
                         .ok();
                     }
                 }
+            });
+        }
+        // Profile switching actions
+        Action::OpenProfileSwitcher => {
+            let config_manager_clone = config_manager.clone();
+            let tx_popup = tx.clone();
+            tokio::spawn(async move {
+                let cm = config_manager_clone.lock().await;
+                let profiles: Vec<String> = cm.list_profiles().keys().cloned().collect();
+                drop(cm); // Release lock before sending actions
+
+                if profiles.is_empty() {
+                    tx_popup
+                        .send(Action::Notify(
+                            ToastLevel::Error,
+                            "No profiles configured. Add profiles using splunk-cli.".to_string(),
+                        ))
+                        .ok();
+                } else {
+                    // Send the profile list to be opened as a popup
+                    tx_popup
+                        .send(Action::OpenProfileSelectorWithList(profiles))
+                        .ok();
+                }
+            });
+        }
+        Action::ProfileSelected(profile_name) => {
+            tx.send(Action::Loading(true)).ok();
+            let config_manager_clone = config_manager.clone();
+            let client_clone = client.clone();
+            tokio::spawn(async move {
+                let cm = config_manager_clone.lock().await;
+
+                // Get the profile config
+                let profiles = cm.list_profiles();
+                let Some(profile_config) = profiles.get(&profile_name) else {
+                    tx.send(Action::ProfileSwitchResult(Err(format!(
+                        "Profile '{}' not found",
+                        profile_name
+                    ))))
+                    .ok();
+                    return;
+                };
+
+                // Build new config from profile
+                let Some(base_url) = profile_config.base_url.clone() else {
+                    tx.send(Action::ProfileSwitchResult(Err(
+                        "Profile has no base_url configured".to_string(),
+                    )))
+                    .ok();
+                    return;
+                };
+                let auth_strategy = if let Some(token) = &profile_config.api_token {
+                    // API token auth
+                    match token.resolve() {
+                        Ok(resolved_token) => splunk_client::AuthStrategy::ApiToken {
+                            token: resolved_token,
+                        },
+                        Err(e) => {
+                            tx.send(Action::ProfileSwitchResult(Err(format!(
+                                "Failed to resolve API token: {}",
+                                e
+                            ))))
+                            .ok();
+                            return;
+                        }
+                    }
+                } else if let (Some(username), Some(password)) =
+                    (&profile_config.username, &profile_config.password)
+                {
+                    // Session token auth
+                    match password.resolve() {
+                        Ok(resolved_password) => splunk_client::AuthStrategy::SessionToken {
+                            username: username.clone(),
+                            password: resolved_password,
+                        },
+                        Err(e) => {
+                            tx.send(Action::ProfileSwitchResult(Err(format!(
+                                "Failed to resolve password: {}",
+                                e
+                            ))))
+                            .ok();
+                            return;
+                        }
+                    }
+                } else {
+                    tx.send(Action::ProfileSwitchResult(Err(
+                        "Profile has no authentication configured".to_string(),
+                    )))
+                    .ok();
+                    return;
+                };
+
+                // Build new client
+                let mut new_client = match SplunkClient::builder()
+                    .base_url(base_url.clone())
+                    .auth_strategy(auth_strategy)
+                    .skip_verify(profile_config.skip_verify.unwrap_or(false))
+                    .timeout(std::time::Duration::from_secs(
+                        profile_config.timeout_seconds.unwrap_or(30),
+                    ))
+                    .build()
+                {
+                    Ok(c) => c,
+                    Err(e) => {
+                        tx.send(Action::ProfileSwitchResult(Err(format!(
+                            "Failed to build client: {}",
+                            e
+                        ))))
+                        .ok();
+                        return;
+                    }
+                };
+
+                // Authenticate if using session tokens
+                if !new_client.is_api_token_auth()
+                    && let Err(e) = new_client.login().await
+                {
+                    tx.send(Action::ProfileSwitchResult(Err(format!(
+                        "Authentication failed: {}",
+                        e
+                    ))))
+                    .ok();
+                    return;
+                }
+
+                // Replace the shared client
+                let mut client_guard = client_clone.lock().await;
+                *client_guard = new_client;
+                drop(client_guard);
+
+                // Determine auth mode display string
+                let auth_mode = if profile_config.api_token.is_some() {
+                    "token".to_string()
+                } else if let Some(username) = &profile_config.username {
+                    format!("session ({})", username)
+                } else {
+                    "unknown".to_string()
+                };
+
+                // Send success result
+                let ctx = ConnectionContext {
+                    profile_name: Some(profile_name.clone()),
+                    base_url,
+                    auth_mode,
+                };
+                tx.send(Action::ProfileSwitchResult(Ok(ctx))).ok();
+
+                // Clear all cached data
+                tx.send(Action::ClearAllData).ok();
+
+                // Trigger reload for current screen
+                tx.send(Action::Loading(false)).ok();
             });
         }
         _ => {}

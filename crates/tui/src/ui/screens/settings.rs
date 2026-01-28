@@ -174,6 +174,11 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
                 Style::default().fg(theme.text_dim),
             ),
         ]),
+        Line::from(vec![
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("p", Style::default().fg(theme.accent)),
+            Span::styled("' to switch profile", Style::default().fg(theme.text_dim)),
+        ]),
     ];
 
     f.render_widget(

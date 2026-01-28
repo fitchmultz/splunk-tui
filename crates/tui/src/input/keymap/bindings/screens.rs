@@ -649,5 +649,17 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::SwitchToSettings),
             handles_input: true,
         },
+        Keybinding {
+            section: Section::Settings,
+            keys: "p",
+            description: "Switch profile",
+            scope: BindingScope::Screen(Settings),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('p'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::OpenProfileSwitcher),
+            handles_input: true,
+        },
     ]
 }

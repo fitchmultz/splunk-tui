@@ -19,6 +19,7 @@ use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
 use tokio::sync::mpsc::UnboundedSender;
 
+use crate::ConnectionContext;
 use crate::ui::ToastLevel;
 
 /// Supported export formats for search results.
@@ -259,6 +260,18 @@ pub enum Action {
     ShowErrorDetailsFromCurrent,
     /// Clear current error details (when popup is dismissed)
     ClearErrorDetails,
+
+    // Profile Switching
+    /// Open the profile selector popup
+    OpenProfileSwitcher,
+    /// Open profile selector with list of profiles (sent from main.rs side effects)
+    OpenProfileSelectorWithList(Vec<String>),
+    /// Profile selected by user (contains profile name)
+    ProfileSelected(String),
+    /// Result of profile switch operation (contains new connection context or error)
+    ProfileSwitchResult(Result<ConnectionContext, String>),
+    /// Clear all cached data after profile switch
+    ClearAllData,
 }
 
 /// Creates a progress callback that bridges the client's synchronous `FnMut(f64)`

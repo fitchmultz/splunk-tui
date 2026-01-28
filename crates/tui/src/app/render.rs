@@ -255,10 +255,7 @@ impl App {
                         sort_column: self.sort_state.column.as_str(),
                         sort_direction: self.sort_state.direction.as_str(),
                         search_history_count: self.search_history.len(),
-                        profile_info: splunk_config::ConfigLoader::env_var_or_none(
-                            "SPLUNK_PROFILE",
-                        )
-                        .as_deref(),
+                        profile_info: self.profile_name.as_deref(),
                         selected_theme: self.color_theme,
                         theme: &self.theme,
                         earliest_time: &self.search_defaults.earliest_time,

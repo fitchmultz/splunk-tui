@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0137",
-      "status": "todo",
-      "title": "Add runtime profile switching in TUI (re-auth + reload without restarting)",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "distributed",
-        "config"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/app.rs",
-        "crates/config/src/persistence.rs",
-        "docs/usage.md",
-        "crates/tui/tests/"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs supports selecting a profile only at startup via SPLUNK_PROFILE; changing environments requires restarting the app.",
-        "crates/config/src/persistence.rs supports multiple named profiles, and CLI supports --profile selection, so TUI lacks parity for multi-env workflows.",
-        "For Splunk admins managing multiple instances, switching environments is a core distributed-environment UX need."
-      ],
-      "plan": [
-        "Add a Settings workflow to list profiles and select an active profile at runtime.",
-        "Rebuild the client (and re-auth if needed) when profile changes; clear or reload screen data safely.",
-        "Show the active profile prominently (pair with RQ-0134 connection banner).",
-        "Add tests covering profile switching success/failure and state reset behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0139",
       "status": "todo",
       "title": "Add multi-profile list-all aggregation (distributed visibility across environments)",
