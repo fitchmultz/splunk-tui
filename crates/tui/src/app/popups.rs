@@ -16,6 +16,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle keyboard input when a popup is active.
     pub fn handle_popup_input(&mut self, key: KeyEvent) -> Option<Action> {
+        // Check for global quit first (Ctrl+Q works from any popup)
+        if key.code == KeyCode::Char('q') && key.modifiers.contains(KeyModifiers::CONTROL) {
+            return Some(Action::Quit);
+        }
+
         match (self.popup.as_ref().map(|p| &p.kind), key.code) {
             (Some(PopupType::Help), KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('?')) => {
                 self.popup = None;
@@ -364,5 +369,116 @@ mod tests {
         let action = app.handle_popup_input(key(KeyCode::Esc));
         assert!(action.is_none());
         assert!(app.popup.is_none());
+    }
+
+    // Global quit tests (Ctrl+Q from any popup)
+
+    fn ctrl_key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
+    }
+
+    #[test]
+    fn test_global_quit_from_help_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::Help).build());
+
+        // Ctrl+Q should quit even from help popup
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_error_details_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_confirm_cancel_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ConfirmCancel("test-sid".to_string())).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_confirm_delete_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ConfirmDelete("test-sid".to_string())).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_confirm_cancel_batch_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::ConfirmCancelBatch(vec![
+                "sid1".to_string(),
+                "sid2".to_string(),
+            ]))
+            .build(),
+        );
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_confirm_delete_batch_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::ConfirmDeleteBatch(vec![
+                "sid1".to_string(),
+                "sid2".to_string(),
+            ]))
+            .build(),
+        );
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_confirm_enable_app_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup =
+            Some(Popup::builder(PopupType::ConfirmEnableApp("test-app".to_string())).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_confirm_disable_app_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup =
+            Some(Popup::builder(PopupType::ConfirmDisableApp("test-app".to_string())).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_export_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ExportSearch).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_index_details_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
     }
 }

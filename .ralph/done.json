@@ -5265,6 +5265,53 @@
       "completed_at": "2026-01-28T00:46:44.212582000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0116",
+      "status": "done",
+      "title": "Allow quitting from any popup/modal (consistent global quit behavior)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "popups"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/popups.rs",
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/src/input/keymap/bindings/global_search.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/popups.rs:20: when PopupType::Help is open, KeyCode::Char('q') is treated as 'close help' rather than quit, conflicting with the idea of global quit.",
+        "crates/tui/src/app/popups.rs:137: ErrorDetails popup close handler accepts KeyCode::Char('e') as a close key (surprising/inconsistent), and confirmation popups use y/n without a consistent global quit.",
+        "crates/tui/src/input/keymap/bindings/global_search.rs:36-47: help text advertises 'q' Quit globally, but popup-specific behavior in popups.rs overrides it.",
+        "crates/tui/src/app.rs:469-472: handle_input routes to handle_popup_input when popup is active, bypassing global keymap resolution.",
+        "crates/tui/tests/app_tests.rs:725-760: existing quit tests verify 'q' quits from main screens but do not cover popup contexts."
+      ],
+      "plan": [
+        "Define a true global quit key (recommended: Ctrl+Q) that always quits, even when a popup is open.",
+        "Modify handle_popup_input to check for global quit key before popup-local handling.",
+        "Ensure popup-local keys remain (Esc to close, y/n for confirms) but do not block global quit.",
+        "Add tests covering quit behavior from help popup, error details popup, and confirmation dialogs."
+      ],
+      "notes": [
+        "Popup handling was refactored into crates/tui/src/app/popups.rs since task creation.",
+        "Keybindings are now centralized in crates/tui/src/input/keymap/ with help text generated from bindings.",
+        "Global quit 'q' is defined in global_search.rs but overridden by popup-specific handlers.",
+        "Implemented Ctrl+Q global quit keybinding that works from any popup",
+        "Added 10 comprehensive tests covering all popup types",
+        "Updated documentation and snapshots",
+        "make ci passes cleanly"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T00:55:46.553806000Z",
+      "completed_at": "2026-01-28T00:55:46.553806000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

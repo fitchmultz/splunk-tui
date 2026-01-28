@@ -144,6 +144,7 @@ Configuration values are loaded in the following order (highest to lowest):
 
 - `?`: Help
 - `q`: Quit
+- `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen
 - `Shift+Tab`: Previous screen
 - `Ctrl+c`: Copy to clipboard

@@ -533,6 +533,7 @@ Before the server info is loaded, the header shows "Connecting..." as a placehol
 
 - `?`: Help
 - `q`: Quit
+- `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen
 - `Shift+Tab`: Previous screen
 - `Ctrl+c`: Copy to clipboard

@@ -164,6 +164,7 @@ Launch the interactive interface with `splunk-tui`.
 
 - `?`: Help
 - `q`: Quit
+- `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen
 - `Shift+Tab`: Previous screen
 - `Ctrl+c`: Copy to clipboard
