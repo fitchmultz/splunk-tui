@@ -5641,6 +5641,58 @@
       "completed_at": "2026-01-28T03:00:03.263502000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0140",
+      "status": "done",
+      "title": "Investigate and fix test flakiness in CI gate",
+      "priority": "high",
+      "tags": [
+        "testing",
+        "ci",
+        "flakiness",
+        "reliability"
+      ],
+      "scope": [
+        "crates/config/src/persistence.rs",
+        "crates/tui/tests/cli_tests.rs",
+        "crates/cli/tests/",
+        "Cargo.toml",
+        "make ci"
+      ],
+      "evidence": [
+        "User reports test flakiness during CI gate runs - tests occasionally fail in batch but pass individually",
+        "test_migration_legacy_to_new_moves_file_and_preserves_content located in crates/config/src/persistence.rs:911 - uses global_test_lock() and capture_warn_messages() but may have race conditions with filesystem operations",
+        "test_profile_short_flag_accepted located in crates/tui/tests/cli_tests.rs:186 - requires pre-built binary (CARGO_BIN_EXE_splunk-tui), may fail if binary not built",
+        "persistence tests use TempDir for isolation but migration test uses custom directory structure that could conflict",
+        "No [profile.test] or test-threads configuration found in workspace Cargo.toml - tests run with default parallelism",
+        "capture_warn_messages() uses a global mutex lock via global_test_lock() which suggests awareness of concurrency issues"
+      ],
+      "plan": [
+        "Examine the persistence migration test for filesystem race conditions - TempDir may not be fully isolated",
+        "Check if test_profile_short_flag_accepted requires binary to be built first (CARGO_BIN_EXE_splunk-tui dependency)",
+        "Review if global_test_lock() is sufficient or if file-based locks are needed for migration tests",
+        "Consider adding [profile.test] configuration with test-threads=1 or serial_test crate for problematic tests",
+        "Identify any shared resources (keyring, filesystem paths) that could cause cross-test interference",
+        "Run make ci multiple times to verify flakiness is resolved"
+      ],
+      "notes": [
+        "test_profile_short_flag_accepted is in TUI tests (crates/tui/tests/cli_tests.rs), not CLI tests",
+        "Migration test at persistence.rs:911 uses capture_warn_messages() which requires tracing subscriber setup",
+        "Keyring tests in persistence.rs may interact with system keyring and could fail in isolated CI environments",
+        "Added serial_test dependency and annotated flaky tests with #[serial]",
+        "Fixed 5 persistence tests that use capture_warn_messages() or keyring operations",
+        "Fixed 13 loader tests that use EnvVarGuard for env var mutation",
+        "Fixed 10 CLI tests that spawn subprocesses",
+        "Added build-test-bins Makefile target to ensure binaries are built before integration tests",
+        "Verified make ci passes consistently across multiple runs"
+      ],
+      "request": "I'm seeing some test flakiness and it needs to be resolved. When we run the CI gate, some tests occasionally fail, but when they are run individually, they work just fine. Maybe we were running too many in parallel or something. Here's the name of a test that recently hung up the CI gate, but I don't necessarily think it is at fault. test persistence::tests::test_migration_legacy_to_new_moves_file_and_preserves_content ... FAILED test_profile_short_flag_accepted",
+      "created_at": "2026-01-27T22:00:00Z",
+      "updated_at": "2026-01-28T03:24:37.115116000Z",
+      "completed_at": "2026-01-28T03:24:37.115116000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

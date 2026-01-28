@@ -461,6 +461,7 @@ impl ConfigManager {
 mod tests {
     use super::*;
     use secrecy::SecretString;
+    use serial_test::serial;
     use std::io::Write;
     use std::sync::{
         Arc, Mutex,
@@ -577,6 +578,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_move_password_to_keyring() {
         let temp_file = NamedTempFile::new().unwrap();
         let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
@@ -628,6 +630,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_move_token_to_keyring() {
         let temp_file = NamedTempFile::new().unwrap();
         let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
@@ -908,6 +911,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_migration_legacy_to_new_moves_file_and_preserves_content() {
         let temp_dir = TempDir::new().unwrap();
 
@@ -943,6 +947,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_migration_idempotent_second_run_noop() {
         let temp_dir = TempDir::new().unwrap();
 
@@ -964,6 +969,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_migration_failure_logged_but_not_fatal() {
         let temp_dir = TempDir::new().unwrap();
 

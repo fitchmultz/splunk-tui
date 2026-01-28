@@ -52,3 +52,4 @@ arboard = "3.4"
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }
 tempfile = "3.10"
+serial_test = { workspace = true }

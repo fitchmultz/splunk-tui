@@ -53,7 +53,7 @@ clean:
 test: test-all
 
 # Run all tests (workspace, all targets). This is the default "everything" gate.
-test-all:
+test-all: build-test-bins
 	cargo test --workspace --all-targets --all-features
 
 # Run unit tests (lib and bins)
@@ -61,8 +61,13 @@ test-unit:
 	cargo test --workspace --lib --bins --all-features
 
 # Run integration tests
-test-integration:
+test-integration: build-test-bins
 	cargo test --workspace --tests --all-features
+
+# Build binaries required for integration tests
+# This ensures CARGO_BIN_EXE_* env vars are populated for tests that need them
+build-test-bins:
+	cargo build --workspace --bins 2>/dev/null || true
 
 # Run live tests (requires a reachable Splunk server configured via env / .env.test)
 test-live:

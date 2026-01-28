@@ -50,6 +50,7 @@ time = { version = "0.3", features = ["serde", "formatting"] }
 mockito = "1.5"
 wiremock = "0.6"
 assert_cmd = "2.1"
+serial_test = "3.2"
 
 # Workspace crates
 splunk-client = { path = "crates/client" }

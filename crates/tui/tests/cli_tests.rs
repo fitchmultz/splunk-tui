@@ -15,6 +15,8 @@
 
 use std::process::Command;
 
+use serial_test::serial;
+
 /// Returns the path to the splunk-tui binary.
 /// Uses CARGO_BIN_EXE_splunk-tui when available (set by cargo during test runs).
 fn splunk_tui_bin() -> &'static str {
@@ -22,6 +24,7 @@ fn splunk_tui_bin() -> &'static str {
 }
 
 #[test]
+#[serial]
 fn test_help_exits_successfully() {
     let output = Command::new(splunk_tui_bin())
         .arg("--help")
@@ -33,6 +36,7 @@ fn test_help_exits_successfully() {
 }
 
 #[test]
+#[serial]
 fn test_help_contains_expected_options() {
     let output = Command::new(splunk_tui_bin())
         .arg("--help")
@@ -67,6 +71,7 @@ fn test_help_contains_expected_options() {
 }
 
 #[test]
+#[serial]
 fn test_help_contains_examples() {
     let output = Command::new(splunk_tui_bin())
         .arg("--help")
@@ -100,6 +105,7 @@ fn test_help_contains_examples() {
 }
 
 #[test]
+#[serial]
 fn test_version_exits_successfully() {
     let output = Command::new(splunk_tui_bin())
         .arg("--version")
@@ -114,6 +120,7 @@ fn test_version_exits_successfully() {
 }
 
 #[test]
+#[serial]
 fn test_version_contains_binary_name() {
     let output = Command::new(splunk_tui_bin())
         .arg("--version")
@@ -129,6 +136,7 @@ fn test_version_contains_binary_name() {
 }
 
 #[test]
+#[serial]
 fn test_help_short_flag() {
     let output = Command::new(splunk_tui_bin())
         .arg("-h")
@@ -146,6 +154,7 @@ fn test_help_short_flag() {
 }
 
 #[test]
+#[serial]
 fn test_version_short_flag() {
     let output = Command::new(splunk_tui_bin())
         .arg("-V")
@@ -163,6 +172,7 @@ fn test_version_short_flag() {
 }
 
 #[test]
+#[serial]
 fn test_invalid_argument_exits_with_error() {
     let output = Command::new(splunk_tui_bin())
         .arg("--invalid-argument")
@@ -183,6 +193,7 @@ fn test_invalid_argument_exits_with_error() {
 }
 
 #[test]
+#[serial]
 fn test_profile_short_flag_accepted() {
     // Test that -p is accepted as a short flag for --profile
     // Use --help to verify the flag is recognized without actually starting the TUI,
@@ -219,6 +230,7 @@ fn test_profile_short_flag_accepted() {
 }
 
 #[test]
+#[serial]
 fn test_help_output_snapshot() {
     let output = Command::new(splunk_tui_bin())
         .arg("--help")

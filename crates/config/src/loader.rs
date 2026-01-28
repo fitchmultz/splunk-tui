@@ -412,6 +412,7 @@ mod tests {
     use super::*;
     use secrecy::SecretString;
     use serde_json::json;
+    use serial_test::serial;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
@@ -583,6 +584,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_env_overrides_profile() {
         let _env = EnvVarGuard::new();
         let temp_dir = TempDir::new().unwrap();
@@ -614,6 +616,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_empty_env_vars_ignored() {
         let _env = EnvVarGuard::new();
         // Clean up first to ensure test isolation
@@ -652,6 +655,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_env_var_or_none_filters_empty_and_whitespace_strings() {
         let _env = EnvVarGuard::new();
         // Direct unit test for the env_var_or_none helper function
@@ -698,6 +702,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_whitespace_only_env_var_treated_as_unset() {
         let _env = EnvVarGuard::new();
         // Whitespace-only is filtered as empty/unset
@@ -726,6 +731,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_empty_and_whitespace_env_vars_ignored_for_non_string_fields() {
         let _env = EnvVarGuard::new();
         unsafe {
@@ -746,6 +752,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_splunk_config_path_env_var() {
         let _env = EnvVarGuard::new();
         let temp_dir = TempDir::new().unwrap();
@@ -775,6 +782,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_empty_splunk_config_path_ignored() {
         let _env = EnvVarGuard::new();
         // Empty string in SPLUNK_CONFIG_PATH should be ignored
@@ -804,6 +812,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_search_defaults_env_vars() {
         let _env = EnvVarGuard::new();
 
@@ -827,6 +836,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_search_defaults_env_vars_empty_ignored() {
         let _env = EnvVarGuard::new();
 
@@ -848,6 +858,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_build_search_defaults_with_persisted() {
         let _env = EnvVarGuard::new();
 
@@ -876,6 +887,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_build_search_defaults_without_persisted() {
         let _env = EnvVarGuard::new();
 
@@ -896,6 +908,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_search_defaults_env_vars_override_persisted() {
         let _env = EnvVarGuard::new();
 
@@ -925,6 +938,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_invalid_max_results_env_var() {
         let _env = EnvVarGuard::new();
 
