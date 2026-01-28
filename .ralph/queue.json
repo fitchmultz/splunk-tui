@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0168",
-      "status": "todo",
-      "title": "Split oversized client integration_tests.rs into per-endpoint test files",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/tests/integration_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/tests/integration_tests.rs is 2539 lines (wc -l), exceeding size guidance."
-      ],
-      "plan": [
-        "Split integration tests by endpoint or feature (auth, jobs, indexes, etc.) into separate test files.",
-        "Ensure each test module has a docstring and isolated fixtures.",
-        "Run client integration tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0173",
       "status": "todo",
       "title": "Split oversized client security_tests.rs into focused security test files",
