@@ -5693,6 +5693,52 @@
       "completed_at": "2026-01-28T03:24:37.115116000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0114",
+      "status": "done",
+      "title": "Improve Jobs filter UX: Esc cancels edit without clearing existing filter",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "ux",
+        "jobs",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/input.rs",
+        "crates/tui/src/app/jobs.rs",
+        "crates/tui/src/ui/screens/jobs.rs",
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/input.rs:249-254: handle_jobs_filter_input() treats Esc identically whether editing or not - always clears filter_input and returns Action::ClearSearch, which clears any previously applied filter.",
+        "crates/tui/src/ui/screens/jobs.rs:77-83: when a filter is applied, UI says \"(Press ESC to clear)\", but the same Esc is also used while actively editing, conflating cancel vs clear.",
+        "crates/tui/src/app.rs:101-106: App has filter state (search_filter, is_filtering, filter_input) but no field to track pre-edit filter value for cancellation.",
+        "crates/tui/tests/app_tests.rs:1114-1149: test_jobs_filter_cancel_with_escape() exists but documents current behavior (Esc clears existing filter) rather than desired cancel semantics."
+      ],
+      "plan": [
+        "Add a field to App to track the pre-edit filter value (e.g., filter_input_before_edit) when entering filter mode.",
+        "Modify handle_jobs_filter_input() to distinguish between: (a) Esc while actively editing -> revert to previous filter without clearing, and (b) Esc when filter is applied but not editing -> clear the filter.",
+        "Update UI hint text in jobs.rs to reflect the two different Esc behaviors.",
+        "Add/update tests in app_tests.rs for cancel-edit vs clear-filter semantics."
+      ],
+      "notes": [
+        "The jobs filtering logic is in crates/tui/src/app/input.rs (handle_jobs_filter_input), not in app.rs directly.",
+        "Consider whether a dedicated 'clear filter' key (e.g., Ctrl+L or 'c' key) is cleaner than overloading Esc with context-dependent behavior.",
+        "Implemented filter cancel semantics: Esc now reverts to previous filter when editing",
+        "Added filter_before_edit field to App struct for tracking pre-edit state",
+        "Updated UI hints to show 'Esc to cancel, Enter to apply' when editing",
+        "Added 4 comprehensive tests covering cancel, commit, and clear scenarios",
+        "All 176 tests pass, make ci passes cleanly"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T03:39:48.369562000Z",
+      "completed_at": "2026-01-28T03:39:48.369562000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

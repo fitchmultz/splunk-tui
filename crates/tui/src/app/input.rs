@@ -250,11 +250,21 @@ impl App {
         match key.code {
             KeyCode::Esc => {
                 self.is_filtering = false;
-                self.filter_input.clear();
-                Some(Action::ClearSearch)
+                // If we have a saved filter value, restore it (cancel edit)
+                // Otherwise clear the filter (no previous filter to restore)
+                if let Some(saved) = self.filter_before_edit.take() {
+                    self.search_filter = Some(saved);
+                    self.filter_input.clear();
+                    self.rebuild_filtered_indices();
+                    None
+                } else {
+                    self.filter_input.clear();
+                    Some(Action::ClearSearch)
+                }
             }
             KeyCode::Enter => {
                 self.is_filtering = false;
+                self.filter_before_edit = None; // Commit the edit, clear saved state
                 if !self.filter_input.is_empty() {
                     self.search_filter = Some(self.filter_input.clone());
                     self.filter_input.clear();

@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0114",
-      "status": "todo",
-      "title": "Improve Jobs filter UX: Esc cancels edit without clearing existing filter",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "ux",
-        "jobs",
-        "keybindings"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/jobs.rs",
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs: in jobs filtering branch, KeyCode::Esc exits filter mode and returns Action::ClearSearch, which clears any previously applied filter (no way to cancel an edit).",
-        "crates/tui/src/ui/screens/jobs.rs: when a filter is applied, UI says \"(Press ESC to clear)\", but the same Esc is also used while actively editing, conflating cancel vs clear.",
-        "crates/tui/tests/app_tests.rs: filter tests focus on apply/clear flows but do not cover cancel-edit semantics."
-      ],
-      "plan": [
-        "Track a previous filter value when entering filter edit mode so Esc can revert/cancel without clearing.",
-        "Reserve a distinct keybinding for clearing the applied filter (e.g., Ctrl+Esc or a dedicated \"clear\" key).",
-        "Update UI hint text and add tests for cancel vs clear."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0113",
       "status": "todo",
       "title": "Make Help and Docs consistent with runtime behavior (post-keymap change)",

@@ -75,7 +75,10 @@ impl App {
             Action::GoToBottom => self.go_to_bottom(),
             Action::EnterSearchMode => {
                 self.is_filtering = true;
-                self.filter_input.clear();
+                // Save current filter for potential cancel
+                self.filter_before_edit = self.search_filter.clone();
+                // Pre-populate filter_input with existing filter for editing
+                self.filter_input = self.search_filter.clone().unwrap_or_default();
             }
             Action::SearchInput(c) => {
                 self.filter_input.push(c);

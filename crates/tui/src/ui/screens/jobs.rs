@@ -75,9 +75,9 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     // Render filter input area if active
     if let Some(filter_area) = filter_area {
         let filter_text = if is_filtering {
-            format!("Filter: {}", filter_input)
+            format!("Filter: {} (Esc to cancel, Enter to apply)", filter_input)
         } else if let Some(f) = filter {
-            format!("Filter: {} (Press ESC to clear)", f)
+            format!("Filter: {} (Press / to edit, Esc to clear)", f)
         } else {
             String::new()
         };

@@ -1098,6 +1098,11 @@ fn test_jobs_filter_clear_with_empty_input() {
         app.update(a);
     }
     assert!(app.is_filtering);
+    // filter_input is pre-populated with existing filter
+    assert_eq!(app.filter_input, "existing");
+
+    // Clear the pre-populated input to simulate empty input
+    app.filter_input.clear();
 
     // Press Enter without typing anything (empty input)
     let action = app.handle_input(enter_key());
@@ -1111,7 +1116,137 @@ fn test_jobs_filter_clear_with_empty_input() {
 }
 
 #[test]
-fn test_jobs_filter_cancel_with_escape() {
+fn test_jobs_filter_cancel_with_escape_restores_previous_filter() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Set an existing filter
+    app.search_filter = Some("existing".to_string());
+
+    // Enter filter mode
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    assert!(app.is_filtering);
+    assert_eq!(app.filter_before_edit, Some("existing".to_string()));
+    assert_eq!(app.filter_input, "existing"); // Pre-populated with existing filter
+
+    // Type some new text (replacing the pre-populated text)
+    app.filter_input.clear();
+    app.handle_input(key('f'));
+    app.handle_input(key('o'));
+    app.handle_input(key('o'));
+    assert_eq!(app.filter_input, "foo");
+
+    // Press Esc to cancel without applying
+    let action = app.handle_input(esc_key());
+
+    // Esc should NOT return ClearSearch - it should restore the previous filter
+    assert!(
+        action.is_none(),
+        "Esc while editing should restore previous filter, not return ClearSearch"
+    );
+    assert!(!app.is_filtering, "Should exit filter mode");
+    assert!(
+        app.filter_input.is_empty(),
+        "Filter input should be cleared"
+    );
+    // The existing filter should be restored (new behavior)
+    assert_eq!(
+        app.search_filter,
+        Some("existing".to_string()),
+        "Previous filter should be restored after cancel"
+    );
+    assert!(
+        app.filter_before_edit.is_none(),
+        "filter_before_edit should be cleared after cancel"
+    );
+}
+
+#[test]
+fn test_jobs_filter_esc_clears_when_no_previous_filter() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+
+    // No existing filter - enter filter mode fresh
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    assert!(app.is_filtering);
+    assert_eq!(app.filter_before_edit, None); // No previous filter to save
+
+    // Type some text
+    app.handle_input(key('t'));
+    app.handle_input(key('e'));
+    app.handle_input(key('s'));
+    app.handle_input(key('t'));
+    assert_eq!(app.filter_input, "test");
+
+    // Press Esc to cancel
+    let action = app.handle_input(esc_key());
+
+    // Since there's no previous filter, Esc should return ClearSearch
+    assert!(
+        matches!(action, Some(Action::ClearSearch)),
+        "Esc should return ClearSearch when no previous filter exists"
+    );
+    assert!(!app.is_filtering, "Should exit filter mode");
+    assert_eq!(
+        app.search_filter, None,
+        "Filter should remain None when canceling with no previous filter"
+    );
+}
+
+#[test]
+fn test_jobs_filter_enter_commits_edit() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Set an existing filter
+    app.search_filter = Some("old_filter".to_string());
+
+    // Enter filter mode
+    let action = app.handle_input(key('/'));
+    if let Some(a) = action {
+        app.update(a);
+    }
+    assert!(app.is_filtering);
+    assert_eq!(app.filter_before_edit, Some("old_filter".to_string()));
+
+    // Type new filter text (clear pre-populated first)
+    app.filter_input.clear();
+    app.handle_input(key('n'));
+    app.handle_input(key('e'));
+    app.handle_input(key('w'));
+    assert_eq!(app.filter_input, "new");
+
+    // Press Enter to commit
+    let action = app.handle_input(enter_key());
+
+    assert!(
+        action.is_none(),
+        "Enter with non-empty input should not return an action"
+    );
+    assert!(!app.is_filtering, "Should exit filter mode");
+    assert_eq!(
+        app.search_filter,
+        Some("new".to_string()),
+        "New filter should be applied"
+    );
+    assert!(
+        app.filter_before_edit.is_none(),
+        "filter_before_edit should be cleared after commit"
+    );
+    assert!(
+        app.filter_input.is_empty(),
+        "filter_input should be cleared after commit"
+    );
+}
+
+#[test]
+fn test_jobs_filter_enter_with_empty_input_clears() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
@@ -1125,27 +1260,17 @@ fn test_jobs_filter_cancel_with_escape() {
     }
     assert!(app.is_filtering);
 
-    // Type some text
-    app.handle_input(key('f'));
-    app.handle_input(key('o'));
-    app.handle_input(key('o'));
-    assert_eq!(app.filter_input, "foo");
+    // Clear the pre-populated input (simulating user deleting all text)
+    app.filter_input.clear();
 
-    // Press Esc to cancel without applying
-    let action = app.handle_input(esc_key());
+    // Press Enter with empty input
+    let action = app.handle_input(enter_key());
 
-    // Esc should return ClearSearch
     assert!(
         matches!(action, Some(Action::ClearSearch)),
-        "Esc should return ClearSearch"
+        "Enter with empty input should return ClearSearch"
     );
     assert!(!app.is_filtering, "Should exit filter mode");
-    assert!(
-        app.filter_input.is_empty(),
-        "Filter input should be cleared"
-    );
-    // The existing filter should be cleared (current behavior)
-    // This is because ClearSearch sets search_filter to None
 }
 
 // Tests for filtered job selection (RQ-0009 fix)
@@ -1449,12 +1574,14 @@ fn test_clear_filter_rebuilds_indices() {
         "Filtered list should be shorter than full list"
     );
 
-    // Clear filter with Esc
+    // Clear filter by entering filter mode and pressing Enter with empty input
     let action = app.handle_input(key('/')); // Enter filter mode
     if let Some(a) = action {
         app.update(a);
     }
-    let action = app.handle_input(esc_key()); // Press Esc to clear
+    // Clear the pre-populated input and press Enter to clear filter
+    app.filter_input.clear();
+    let action = app.handle_input(enter_key()); // Press Enter with empty input to clear
     if let Some(a) = action {
         app.update(a);
     }

@@ -102,6 +102,9 @@ pub struct App {
     pub search_filter: Option<String>,
     pub is_filtering: bool,
     pub filter_input: String,
+    /// Stores the filter value before entering edit mode, used for cancel semantics.
+    /// When Some, pressing Esc reverts to this value instead of clearing.
+    pub filter_before_edit: Option<String>,
     /// Maps filtered view index → original jobs list index
     pub filtered_job_indices: Vec<usize>,
 
@@ -308,6 +311,7 @@ impl App {
             search_filter: None,
             is_filtering: false,
             filter_input: String::new(),
+            filter_before_edit: None,
             filtered_job_indices: Vec::new(),
             sort_state: SortState {
                 column: sort_column,
