@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
 
 pub async fn run(
@@ -13,7 +14,7 @@ pub async fn run(
     offset: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing indexes (count: {}, offset: {})", count, offset);
 
@@ -36,7 +37,10 @@ pub async fn run(
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
     let offset_param = if offset == 0 { None } else { Some(offset_u64) };
 
-    let indexes = client.list_indexes(Some(count_u64), offset_param).await?;
+    let indexes = tokio::select! {
+        res = client.list_indexes(Some(count_u64), offset_param) => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

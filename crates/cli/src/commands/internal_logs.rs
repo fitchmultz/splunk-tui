@@ -3,6 +3,7 @@
 use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 pub async fn run(
@@ -11,7 +12,7 @@ pub async fn run(
     earliest: String,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
@@ -27,9 +28,10 @@ pub async fn run(
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
 
-    let logs = client
-        .get_internal_logs(count as u64, Some(&earliest))
-        .await?;
+    let logs = tokio::select! {
+        res = client.get_internal_logs(count as u64, Some(&earliest)) => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     let output = formatter.format_logs(&logs)?;
     if let Some(ref path) = output_file {

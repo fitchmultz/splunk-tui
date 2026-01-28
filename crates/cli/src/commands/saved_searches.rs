@@ -5,6 +5,7 @@ use clap::Subcommand;
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::commands::convert_auth_strategy;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
@@ -44,14 +45,14 @@ pub async fn run(
     command: SavedSearchesCommand,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     match command {
         SavedSearchesCommand::List { count } => {
-            run_list(config, count, output_format, output_file.clone()).await
+            run_list(config, count, output_format, output_file.clone(), cancel).await
         }
         SavedSearchesCommand::Info { name } => {
-            run_info(config, &name, output_format, output_file.clone()).await
+            run_info(config, &name, output_format, output_file.clone(), cancel).await
         }
         SavedSearchesCommand::Run {
             name,
@@ -67,6 +68,7 @@ pub async fn run(
                 latest.as_deref(),
                 output_format,
                 output_file.clone(),
+                cancel,
             )
             .await
         }
@@ -78,6 +80,7 @@ async fn run_list(
     count: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing saved searches (count: {})", count);
 
@@ -92,7 +95,10 @@ async fn run_list(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let mut searches = client.list_saved_searches().await?;
+    let mut searches = tokio::select! {
+        res = client.list_saved_searches() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     // Truncate to requested count if needed
     if searches.len() > count {
@@ -122,6 +128,7 @@ async fn run_info(
     name: &str,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Getting saved search info for: {}", name);
 
@@ -136,7 +143,10 @@ async fn run_info(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let searches = client.list_saved_searches().await?;
+    let searches = tokio::select! {
+        res = client.list_saved_searches() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     let search = searches
         .iter()
@@ -161,6 +171,7 @@ async fn run_info(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_run(
     config: splunk_config::Config,
     name: &str,
@@ -169,6 +180,7 @@ async fn run_run(
     latest: Option<&str>,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Running saved search: {}", name);
 
@@ -183,7 +195,10 @@ async fn run_run(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let searches = client.list_saved_searches().await?;
+    let searches = tokio::select! {
+        res = client.list_saved_searches() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     let search = searches
         .iter()
@@ -191,9 +206,10 @@ async fn run_run(
         .with_context(|| format!("Saved search '{}' not found", name))?;
 
     info!("Executing search query: {}", search.search);
-    let results = client
-        .search(&search.search, wait, earliest, latest, Some(100))
-        .await?;
+    let results = tokio::select! {
+        res = client.search(&search.search, wait, earliest, latest, Some(100)) => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);

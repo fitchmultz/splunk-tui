@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0154",
-      "status": "todo",
-      "title": "Add cancellation token checks to all long-running operations",
-      "priority": "low",
-      "tags": [
-        "ux",
-        "cli",
-        "cancellation"
-      ],
-      "scope": [
-        "crates/cli/src/commands/"
-      ],
-      "evidence": [
-        "Cancellation token is passed to run_command() but not all commands check it",
-        "Some long-running operations may not respond to Ctrl+C",
-        "Inconsistent cancellation behavior across commands",
-        "Users expect consistent Ctrl+C handling"
-      ],
-      "plan": [
-        "Audit all command handlers for cancellation token usage",
-        "Add cancellation checks to long-running operations",
-        "Use tokio::select! pattern consistently",
-        "Test cancellation behavior for each command",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0155",
       "status": "todo",
       "title": "Add input channel backpressure handling for TUI",

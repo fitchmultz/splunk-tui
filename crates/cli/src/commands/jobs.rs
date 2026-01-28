@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[allow(clippy::too_many_arguments)]
@@ -17,6 +18,7 @@ pub async fn run(
     output_format: &str,
     quiet: bool,
     output_file: Option<std::path::PathBuf>,
+    cancel_token: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
 
@@ -37,7 +39,10 @@ pub async fn run(
     // Handle inspect action (NEW)
     if let Some(sid) = inspect {
         info!("Inspecting job: {}", sid);
-        let job = client.get_job_status(&sid).await?;
+        let job = tokio::select! {
+            res = client.get_job_status(&sid) => res?,
+            _ = cancel_token.cancelled() => return Err(Cancelled.into()),
+        };
 
         // Parse output format
         let format = OutputFormat::from_str(output_format)?;
@@ -62,7 +67,10 @@ pub async fn run(
     if let Some(sid) = cancel {
         info!("Canceling job: {}", sid);
         let spinner = crate::progress::Spinner::new(!quiet, format!("Canceling job {}", sid));
-        client.cancel_job(&sid).await?;
+        tokio::select! {
+            res = client.cancel_job(&sid) => res?,
+            _ = cancel_token.cancelled() => return Err(Cancelled.into()),
+        };
         spinner.finish();
         println!("Job {} canceled.", sid);
         return Ok(());
@@ -71,7 +79,10 @@ pub async fn run(
     if let Some(sid) = delete {
         info!("Deleting job: {}", sid);
         let spinner = crate::progress::Spinner::new(!quiet, format!("Deleting job {}", sid));
-        client.delete_job(&sid).await?;
+        tokio::select! {
+            res = client.delete_job(&sid) => res?,
+            _ = cancel_token.cancelled() => return Err(Cancelled.into()),
+        };
         spinner.finish();
         println!("Job {} deleted.", sid);
         return Ok(());
@@ -79,7 +90,10 @@ pub async fn run(
 
     if list {
         info!("Listing search jobs");
-        let jobs = client.list_jobs(Some(count as u64), None).await?;
+        let jobs = tokio::select! {
+            res = client.list_jobs(Some(count as u64), None) => res?,
+            _ = cancel_token.cancelled() => return Err(Cancelled.into()),
+        };
 
         // Parse output format
         let format = OutputFormat::from_str(output_format)?;

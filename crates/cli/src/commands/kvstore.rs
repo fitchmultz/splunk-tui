@@ -4,13 +4,14 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 pub async fn run(
     config: splunk_config::Config,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Fetching KVStore status...");
 
@@ -27,7 +28,10 @@ pub async fn run(
 
     info!("Connecting to {}", client.base_url());
 
-    let kvstore_status = client.get_kvstore_status().await?;
+    let kvstore_status = tokio::select! {
+        res = client.get_kvstore_status() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

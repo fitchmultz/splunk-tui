@@ -15,6 +15,7 @@ use clap::Args;
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{LicenseInfoOutput, OutputFormat, get_formatter, write_to_file};
 
 /// Display license information.
@@ -26,7 +27,7 @@ pub async fn run(
     config: splunk_config::Config,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Fetching license information...");
 
@@ -41,9 +42,18 @@ pub async fn run(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let usage = client.get_license_usage().await?;
-    let pools = client.list_license_pools().await?;
-    let stacks = client.list_license_stacks().await?;
+    let usage = tokio::select! {
+        res = client.get_license_usage() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+    let pools = tokio::select! {
+        res = client.list_license_pools() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+    let stacks = tokio::select! {
+        res = client.list_license_stacks() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     let output = LicenseInfoOutput {
         usage,

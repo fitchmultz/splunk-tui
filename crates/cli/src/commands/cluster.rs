@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::{info, warn};
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{
     ClusterInfoOutput, ClusterPeerOutput, OutputFormat, Pagination, TableFormatter, get_formatter,
     write_to_file,
@@ -16,7 +17,7 @@ pub async fn run(
     page_size: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!(
         "Fetching cluster information (detailed: {}, offset: {}, page_size: {})",
@@ -39,11 +40,20 @@ pub async fn run(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    match client.get_cluster_info().await {
+    let cluster_info = tokio::select! {
+        res = client.get_cluster_info() => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+
+    match cluster_info {
         Ok(cluster_info) => {
             // Fetch peers if detailed (fetch ALL once, then paginate locally)
             let (peers_output, peers_pagination) = if detailed {
-                match client.get_cluster_peers().await {
+                let peers_result = tokio::select! {
+                    res = client.get_cluster_peers() => res,
+                    _ = cancel.cancelled() => return Err(Cancelled.into()),
+                };
+                match peers_result {
                     Ok(peers) => {
                         let total = peers.len();
 

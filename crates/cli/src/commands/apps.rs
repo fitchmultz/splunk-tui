@@ -5,6 +5,7 @@ use clap::Subcommand;
 use splunk_client::SplunkClient;
 use tracing::info;
 
+use crate::cancellation::Cancelled;
 use crate::commands::convert_auth_strategy;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
@@ -41,17 +42,24 @@ pub async fn run(
     command: AppsCommand,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     match command {
         AppsCommand::List { count } => {
-            run_list(config, count, output_format, output_file.clone()).await
+            run_list(config, count, output_format, output_file.clone(), cancel).await
         }
         AppsCommand::Info { app_name } => {
-            run_info(config, &app_name, output_format, output_file.clone()).await
+            run_info(
+                config,
+                &app_name,
+                output_format,
+                output_file.clone(),
+                cancel,
+            )
+            .await
         }
-        AppsCommand::Enable { app_name } => run_enable(config, &app_name).await,
-        AppsCommand::Disable { app_name } => run_disable(config, &app_name).await,
+        AppsCommand::Enable { app_name } => run_enable(config, &app_name, cancel).await,
+        AppsCommand::Disable { app_name } => run_disable(config, &app_name, cancel).await,
     }
 }
 
@@ -60,6 +68,7 @@ async fn run_list(
     count: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Listing installed apps (count: {})", count);
 
@@ -73,7 +82,10 @@ async fn run_list(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let apps = client.list_apps(Some(count as u64), None).await?;
+    let apps = tokio::select! {
+        res = client.list_apps(Some(count as u64), None) => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -98,6 +110,7 @@ async fn run_info(
     app_name: &str,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Getting app info for: {}", app_name);
 
@@ -111,10 +124,11 @@ async fn run_info(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let app = client
-        .get_app(app_name)
-        .await
-        .with_context(|| format!("Failed to get app information for '{}'", app_name))?;
+    let app = tokio::select! {
+        res = client.get_app(app_name) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to get app information for '{}'", app_name))?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -134,7 +148,11 @@ async fn run_info(
     Ok(())
 }
 
-async fn run_enable(config: splunk_config::Config, app_name: &str) -> Result<()> {
+async fn run_enable(
+    config: splunk_config::Config,
+    app_name: &str,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
     info!("Enabling app: {}", app_name);
 
     let auth_strategy = convert_auth_strategy(&config.auth.strategy);
@@ -147,17 +165,22 @@ async fn run_enable(config: splunk_config::Config, app_name: &str) -> Result<()>
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    client
-        .enable_app(app_name)
-        .await
-        .with_context(|| format!("Failed to enable app '{}'", app_name))?;
+    tokio::select! {
+        res = client.enable_app(app_name) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to enable app '{}'", app_name))?;
 
     println!("App '{}' enabled successfully.", app_name);
 
     Ok(())
 }
 
-async fn run_disable(config: splunk_config::Config, app_name: &str) -> Result<()> {
+async fn run_disable(
+    config: splunk_config::Config,
+    app_name: &str,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
     info!("Disabling app: {}", app_name);
 
     let auth_strategy = convert_auth_strategy(&config.auth.strategy);
@@ -170,10 +193,11 @@ async fn run_disable(config: splunk_config::Config, app_name: &str) -> Result<()
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    client
-        .disable_app(app_name)
-        .await
-        .with_context(|| format!("Failed to disable app '{}'", app_name))?;
+    tokio::select! {
+        res = client.disable_app(app_name) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to disable app '{}'", app_name))?;
 
     println!("App '{}' disabled successfully.", app_name);
 

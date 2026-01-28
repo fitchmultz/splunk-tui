@@ -4,13 +4,14 @@ use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 use tracing::{info, warn};
 
+use crate::cancellation::Cancelled;
 use crate::formatters::{HealthCheckOutput, OutputFormat, get_formatter, write_to_file};
 
 pub async fn run(
     config: splunk_config::Config,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
-    _cancel: &crate::cancellation::CancellationToken,
+    cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!("Performing health check...");
 
@@ -29,38 +30,53 @@ pub async fn run(
 
     // Fetch health data parts
     // Server info is required for a basic health check
-    let server_info = Some(client.get_server_info().await?);
+    let server_info = Some(tokio::select! {
+        res = client.get_server_info() => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    });
 
-    let splunkd_health = match client.get_health().await {
-        Ok(health) => Some(health),
-        Err(e) => {
-            warn!("Failed to fetch splunkd health: {}", e);
-            None
-        }
+    let splunkd_health = tokio::select! {
+        res = client.get_health() => match res {
+            Ok(health) => Some(health),
+            Err(e) => {
+                warn!("Failed to fetch splunkd health: {}", e);
+                None
+            }
+        },
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
-    let license_usage = match client.get_license_usage().await {
-        Ok(usage) => Some(usage),
-        Err(e) => {
-            warn!("Failed to fetch license usage: {}", e);
-            None
-        }
+    let license_usage = tokio::select! {
+        res = client.get_license_usage() => match res {
+            Ok(usage) => Some(usage),
+            Err(e) => {
+                warn!("Failed to fetch license usage: {}", e);
+                None
+            }
+        },
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
-    let kvstore_status = match client.get_kvstore_status().await {
-        Ok(status) => Some(status),
-        Err(e) => {
-            warn!("Failed to fetch KVStore status: {}", e);
-            None
-        }
+    let kvstore_status = tokio::select! {
+        res = client.get_kvstore_status() => match res {
+            Ok(status) => Some(status),
+            Err(e) => {
+                warn!("Failed to fetch KVStore status: {}", e);
+                None
+            }
+        },
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
-    let log_parsing_health = match client.check_log_parsing_health().await {
-        Ok(health) => Some(health),
-        Err(e) => {
-            warn!("Failed to fetch log parsing health: {}", e);
-            None
-        }
+    let log_parsing_health = tokio::select! {
+        res = client.check_log_parsing_health() => match res {
+            Ok(health) => Some(health),
+            Err(e) => {
+                warn!("Failed to fetch log parsing health: {}", e);
+                None
+            }
+        },
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
     let health_output = HealthCheckOutput {

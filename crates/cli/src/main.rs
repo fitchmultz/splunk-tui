@@ -405,7 +405,7 @@ async fn main() -> Result<()> {
 async fn run_command(
     cli: Cli,
     config: ConfigCommandContext,
-    cancel: &CancellationToken,
+    cancel_token: &CancellationToken,
 ) -> Result<()> {
     match cli.command {
         Commands::Config { command } => {
@@ -436,7 +436,7 @@ async fn run_command(
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
@@ -453,7 +453,7 @@ async fn run_command(
                 offset,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
@@ -470,7 +470,7 @@ async fn run_command(
                 page_size,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
@@ -492,20 +492,24 @@ async fn run_command(
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),
+                cancel_token,
             )
             .await?;
         }
         Commands::Health => {
             let config = config.into_real_config()?;
-            commands::health::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
+            commands::health::run(config, &cli.output, cli.output_file.clone(), cancel_token)
+                .await?;
         }
         Commands::Kvstore => {
             let config = config.into_real_config()?;
-            commands::kvstore::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
+            commands::kvstore::run(config, &cli.output, cli.output_file.clone(), cancel_token)
+                .await?;
         }
         Commands::License(_args) => {
             let config = config.into_real_config()?;
-            commands::license::run(config, &cli.output, cli.output_file.clone(), cancel).await?;
+            commands::license::run(config, &cli.output, cli.output_file.clone(), cancel_token)
+                .await?;
         }
         Commands::Logs {
             count,
@@ -520,7 +524,7 @@ async fn run_command(
                 tail,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
@@ -532,14 +536,20 @@ async fn run_command(
                 earliest,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
         Commands::Users { count } => {
             let config = config.into_real_config()?;
-            commands::users::run(config, count, &cli.output, cli.output_file.clone(), cancel)
-                .await?;
+            commands::users::run(
+                config,
+                count,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
         }
         Commands::Apps { apps_command } => {
             let config = config.into_real_config()?;
@@ -548,7 +558,7 @@ async fn run_command(
                 apps_command,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
@@ -610,7 +620,7 @@ async fn run_command(
                 config_manager,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
@@ -621,7 +631,7 @@ async fn run_command(
                 command,
                 &cli.output,
                 cli.output_file.clone(),
-                cancel,
+                cancel_token,
             )
             .await?;
         }
