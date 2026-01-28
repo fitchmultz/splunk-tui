@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0155",
-      "status": "todo",
-      "title": "Add input channel backpressure handling for TUI",
-      "priority": "low",
-      "tags": [
-        "performance",
-        "tui",
-        "channel"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "main.rs lines 126-150: input event stream sends every key press as an action",
-        "Rapid key presses could saturate the unbounded channel",
-        "No backpressure handling or action coalescing",
-        "Could cause memory growth during high-frequency input"
-      ],
-      "plan": [
-        "Evaluate channel saturation risk",
-        "Consider adding action coalescing for high-frequency events",
-        "Add backpressure handling if needed",
-        "Test with rapid input scenarios",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0156",
       "status": "todo",
       "title": "Add tests for error handling paths",

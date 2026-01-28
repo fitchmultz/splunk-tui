@@ -3202,9 +3202,9 @@ fn test_pagination_no_trigger_while_loading() {
 #[test]
 fn test_progress_callback_bridge_sends_action() {
     use splunk_tui::action::progress_callback_to_action_sender;
-    use tokio::sync::mpsc::unbounded_channel;
+    use tokio::sync::mpsc::channel;
 
-    let (tx, mut rx) = unbounded_channel::<Action>();
+    let (tx, mut rx) = channel::<Action>(256);
     let mut callback = progress_callback_to_action_sender(tx);
 
     // Call the callback with a progress value
@@ -3221,9 +3221,9 @@ fn test_progress_callback_bridge_sends_action() {
 #[test]
 fn test_progress_callback_bridge_clamps_to_valid_range() {
     use splunk_tui::action::progress_callback_to_action_sender;
-    use tokio::sync::mpsc::unbounded_channel;
+    use tokio::sync::mpsc::channel;
 
-    let (tx, mut rx) = unbounded_channel::<Action>();
+    let (tx, mut rx) = channel::<Action>(256);
     let mut callback = progress_callback_to_action_sender(tx);
 
     // Test values outside [0.0, 1.0] range
@@ -3245,9 +3245,9 @@ fn test_progress_callback_bridge_clamps_to_valid_range() {
 #[test]
 fn test_progress_callback_bridge_preserves_valid_values() {
     use splunk_tui::action::progress_callback_to_action_sender;
-    use tokio::sync::mpsc::unbounded_channel;
+    use tokio::sync::mpsc::channel;
 
-    let (tx, mut rx) = unbounded_channel::<Action>();
+    let (tx, mut rx) = channel::<Action>(256);
     let mut callback = progress_callback_to_action_sender(tx);
 
     // Test boundary values

@@ -32,7 +32,7 @@ use splunk_tui::error_details::{build_search_error_details, search_error_message
 use splunk_tui::ui::ToastLevel;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc::unbounded_channel};
+use tokio::sync::{Mutex, mpsc::channel};
 use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
@@ -162,28 +162,50 @@ async fn main() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Create channel for actions
-    let (tx, mut rx) = unbounded_channel::<Action>();
+    // Create bounded channel for actions with backpressure handling
+    // Capacity chosen to handle normal input bursts without blocking
+    // while preventing unbounded growth under extreme load
+    const ACTION_CHANNEL_CAPACITY: usize = 256;
+    let (tx, mut rx) = channel::<Action>(ACTION_CHANNEL_CAPACITY);
 
-    // Spawn input stream task
+    // Spawn input stream task with backpressure handling
     let tx_input = tx.clone();
     tokio::spawn(async move {
         use crossterm::event::EventStream;
+        use tokio::sync::mpsc::error::TrySendError;
 
         let mut reader = EventStream::new();
         while let Some(event_result) = reader.next().await {
             match event_result {
-                Ok(event) => match event {
-                    crossterm::event::Event::Key(key) => {
-                        if key.kind == crossterm::event::KeyEventKind::Press {
-                            tx_input.send(Action::Input(key)).ok();
+                Ok(event) => {
+                    let action = match event {
+                        crossterm::event::Event::Key(key) => {
+                            if key.kind == crossterm::event::KeyEventKind::Press {
+                                Some(Action::Input(key))
+                            } else {
+                                None
+                            }
+                        }
+                        crossterm::event::Event::Mouse(mouse) => Some(Action::Mouse(mouse)),
+                        _ => None,
+                    };
+
+                    if let Some(action) = action {
+                        match tx_input.try_send(action) {
+                            Ok(()) => {}
+                            Err(TrySendError::Full(_)) => {
+                                // Channel full - drop input event (backpressure)
+                                // This is acceptable for input events as they're
+                                // time-sensitive; old input is less valuable than new
+                                tracing::debug!("Input channel full, dropping input event");
+                            }
+                            Err(TrySendError::Closed(_)) => {
+                                // Channel closed, exit task
+                                break;
+                            }
                         }
                     }
-                    crossterm::event::Event::Mouse(mouse) => {
-                        tx_input.send(Action::Mouse(mouse)).ok();
-                    }
-                    _ => {}
-                },
+                }
                 Err(_) => {
                     // Stream error, exit loop
                     break;
@@ -245,6 +267,8 @@ async fn main() -> Result<()> {
     let client_health = client.clone();
     let health_check_interval = config.connection.health_check_interval_seconds;
     tokio::spawn(async move {
+        use tokio::sync::mpsc::error::TrySendError;
+
         let mut interval =
             tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
         loop {
@@ -252,21 +276,29 @@ async fn main() -> Result<()> {
             let mut c = client_health.lock().await;
             match c.get_health().await {
                 Ok(health) => {
-                    if tx_health
-                        .send(Action::HealthStatusLoaded(Ok(health)))
-                        .is_err()
-                    {
-                        // Channel closed, exit task
-                        break;
+                    match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
+                        Ok(()) => {}
+                        Err(TrySendError::Full(_)) => {
+                            // Drop health status update if channel full - next tick will send another
+                            tracing::debug!("Health status channel full, dropping update");
+                        }
+                        Err(TrySendError::Closed(_)) => {
+                            // Channel closed, exit task
+                            break;
+                        }
                     }
                 }
                 Err(e) => {
-                    if tx_health
-                        .send(Action::HealthStatusLoaded(Err(e.to_string())))
-                        .is_err()
-                    {
-                        // Channel closed, exit task
-                        break;
+                    match tx_health.try_send(Action::HealthStatusLoaded(Err(e.to_string()))) {
+                        Ok(()) => {}
+                        Err(TrySendError::Full(_)) => {
+                            // Drop health status update if channel full - next tick will send another
+                            tracing::debug!("Health status channel full, dropping update");
+                        }
+                        Err(TrySendError::Closed(_)) => {
+                            // Channel closed, exit task
+                            break;
+                        }
                     }
                 }
             }
@@ -483,142 +515,147 @@ async fn create_client(config: &Config) -> Result<SplunkClient> {
 async fn handle_side_effects(
     action: Action,
     client: SharedClient,
-    tx: tokio::sync::mpsc::UnboundedSender<Action>,
+    tx: tokio::sync::mpsc::Sender<Action>,
     config_manager: Arc<Mutex<ConfigManager>>,
 ) {
     match action {
         Action::LoadIndexes => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.list_indexes(None, None).await {
                     Ok(indexes) => {
-                        tx.send(Action::IndexesLoaded(Ok(indexes))).ok();
+                        let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::IndexesLoaded(Err(e.to_string()))).ok();
+                        let _ = tx.send(Action::IndexesLoaded(Err(e.to_string()))).await;
                     }
                 }
             });
         }
         Action::LoadJobs => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.list_jobs(None, None).await {
                     Ok(jobs) => {
-                        tx.send(Action::JobsLoaded(Ok(jobs))).ok();
+                        let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::JobsLoaded(Err(e.to_string()))).ok();
+                        let _ = tx.send(Action::JobsLoaded(Err(e.to_string()))).await;
                     }
                 }
             });
         }
         Action::LoadClusterInfo => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.get_cluster_info().await {
                     Ok(info) => {
-                        tx.send(Action::ClusterInfoLoaded(Ok(info))).ok();
+                        let _ = tx.send(Action::ClusterInfoLoaded(Ok(info))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::ClusterInfoLoaded(Err(e.to_string()))).ok();
+                        let _ = tx.send(Action::ClusterInfoLoaded(Err(e.to_string()))).await;
                     }
                 }
             });
         }
         Action::LoadClusterPeers => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.get_cluster_peers().await {
                     Ok(peers) => {
-                        tx.send(Action::ClusterPeersLoaded(Ok(peers))).ok();
+                        let _ = tx.send(Action::ClusterPeersLoaded(Ok(peers))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::ClusterPeersLoaded(Err(e.to_string()))).ok();
+                        let _ = tx
+                            .send(Action::ClusterPeersLoaded(Err(e.to_string())))
+                            .await;
                     }
                 }
             });
         }
         Action::LoadSavedSearches => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.list_saved_searches().await {
                     Ok(searches) => {
-                        tx.send(Action::SavedSearchesLoaded(Ok(searches))).ok();
+                        let _ = tx.send(Action::SavedSearchesLoaded(Ok(searches))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::SavedSearchesLoaded(Err(e.to_string())))
-                            .ok();
+                        let _ = tx
+                            .send(Action::SavedSearchesLoaded(Err(e.to_string())))
+                            .await;
                     }
                 }
             });
         }
         Action::LoadInternalLogs => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 // Default to last 15 minutes of logs, 100 entries
                 match c.get_internal_logs(100, Some("-15m")).await {
                     Ok(logs) => {
-                        tx.send(Action::InternalLogsLoaded(Ok(logs))).ok();
+                        let _ = tx.send(Action::InternalLogsLoaded(Ok(logs))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::InternalLogsLoaded(Err(e.to_string()))).ok();
+                        let _ = tx
+                            .send(Action::InternalLogsLoaded(Err(e.to_string())))
+                            .await;
                     }
                 }
             });
         }
         Action::LoadApps => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.list_apps(None, None).await {
                     Ok(apps) => {
-                        tx.send(Action::AppsLoaded(Ok(apps))).ok();
+                        let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::AppsLoaded(Err(e.to_string()))).ok();
+                        let _ = tx.send(Action::AppsLoaded(Err(e.to_string()))).await;
                     }
                 }
             });
         }
         Action::LoadUsers => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.list_users(None, None).await {
                     Ok(users) => {
-                        tx.send(Action::UsersLoaded(Ok(users))).ok();
+                        let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
                     }
                     Err(e) => {
-                        tx.send(Action::UsersLoaded(Err(e.to_string()))).ok();
+                        let _ = tx.send(Action::UsersLoaded(Err(e.to_string()))).await;
                     }
                 }
             });
         }
         Action::SwitchToSettings => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             let config_manager_clone = config_manager.clone();
             tokio::spawn(async move {
                 let cm = config_manager_clone.lock().await;
                 let state = cm.load();
-                tx.send(Action::SettingsLoaded(state)).ok();
+                let _ = tx.send(Action::SettingsLoaded(state)).await;
             });
         }
         Action::RunSearch {
             query,
             search_defaults,
         } => {
-            tx.send(Action::Loading(true)).ok();
-            tx.send(Action::Progress(0.1)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
+            let _ = tx.send(Action::Progress(0.1)).await;
 
             // Store the query that is about to run for accurate status messages
-            tx.send(Action::SearchStarted(query.clone())).ok();
+            let _ = tx.send(Action::SearchStarted(query.clone())).await;
 
             let tx_clone = tx.clone();
             let query_clone = query.clone();
@@ -642,10 +679,10 @@ async fn handle_side_effects(
                     .await
                 {
                     Ok((results, sid, total)) => {
-                        tx_clone.send(Action::Progress(1.0)).ok();
-                        tx_clone
+                        let _ = tx_clone.send(Action::Progress(1.0)).await;
+                        let _ = tx_clone
                             .send(Action::SearchComplete(Ok((results, sid, total))))
-                            .ok();
+                            .await;
                     }
                     Err(e) => {
                         let details = build_search_error_details(
@@ -656,85 +693,91 @@ async fn handle_side_effects(
                         );
                         let error_msg = search_error_message(&e);
                         // Error details stored in SearchComplete handler; user can press 'e' to view
-                        tx_clone
+                        let _ = tx_clone
                             .send(Action::SearchComplete(Err((error_msg, details))))
-                            .ok();
+                            .await;
                     }
                 }
             });
         }
         Action::LoadMoreSearchResults { sid, offset, count } => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.get_search_results(&sid, count, offset).await {
                     Ok(results) => {
-                        tx.send(Action::MoreSearchResultsLoaded(Ok((
-                            results.results,
-                            offset,
-                            results.total,
-                        ))))
-                        .ok();
+                        let _ = tx
+                            .send(Action::MoreSearchResultsLoaded(Ok((
+                                results.results,
+                                offset,
+                                results.total,
+                            ))))
+                            .await;
                     }
                     Err(e) => {
-                        tx.send(Action::MoreSearchResultsLoaded(Err(e.to_string())))
-                            .ok();
+                        let _ = tx
+                            .send(Action::MoreSearchResultsLoaded(Err(e.to_string())))
+                            .await;
                     }
                 }
             });
         }
         Action::CancelJob(sid) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.cancel_job(&sid).await {
                     Ok(_) => {
-                        tx.send(Action::JobOperationComplete(format!(
-                            "Cancelled job: {}",
-                            sid
-                        )))
-                        .ok();
+                        let _ = tx
+                            .send(Action::JobOperationComplete(format!(
+                                "Cancelled job: {}",
+                                sid
+                            )))
+                            .await;
                         // Reload the job list
-                        tx.send(Action::LoadJobs).ok();
+                        let _ = tx.send(Action::LoadJobs).await;
                     }
                     Err(e) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Error,
-                            format!("Failed to cancel job: {}", e),
-                        ))
-                        .ok();
-                        tx.send(Action::Loading(false)).ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Error,
+                                format!("Failed to cancel job: {}", e),
+                            ))
+                            .await;
+                        let _ = tx.send(Action::Loading(false)).await;
                     }
                 }
             });
         }
         Action::DeleteJob(sid) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.delete_job(&sid).await {
                     Ok(_) => {
-                        tx.send(Action::JobOperationComplete(format!(
-                            "Deleted job: {}",
-                            sid
-                        )))
-                        .ok();
+                        let _ = tx
+                            .send(Action::JobOperationComplete(format!(
+                                "Deleted job: {}",
+                                sid
+                            )))
+                            .await;
                         // Reload the job list
-                        tx.send(Action::LoadJobs).ok();
+                        let _ = tx.send(Action::LoadJobs).await;
                     }
                     Err(e) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Error,
-                            format!("Failed to delete job: {}", e),
-                        ))
-                        .ok();
-                        tx.send(Action::Loading(false)).ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Error,
+                                format!("Failed to delete job: {}", e),
+                            ))
+                            .await;
+                        let _ = tx.send(Action::Loading(false)).await;
                     }
                 }
             });
         }
         Action::CancelJobsBatch(sids) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             let tx_clone = tx.clone();
             tokio::spawn(async move {
                 let mut c = client.lock().await;
@@ -760,16 +803,16 @@ async fn handle_side_effects(
 
                 if !error_messages.is_empty() {
                     for err in error_messages {
-                        tx_clone.send(Action::Notify(ToastLevel::Error, err)).ok();
+                        let _ = tx_clone.send(Action::Notify(ToastLevel::Error, err)).await;
                     }
                 }
 
-                tx_clone.send(Action::JobOperationComplete(msg)).ok();
-                tx_clone.send(Action::LoadJobs).ok();
+                let _ = tx_clone.send(Action::JobOperationComplete(msg)).await;
+                let _ = tx_clone.send(Action::LoadJobs).await;
             });
         }
         Action::DeleteJobsBatch(sids) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             let tx_clone = tx.clone();
             tokio::spawn(async move {
                 let mut c = client.lock().await;
@@ -795,66 +838,70 @@ async fn handle_side_effects(
 
                 if !error_messages.is_empty() {
                     for err in error_messages {
-                        tx_clone.send(Action::Notify(ToastLevel::Error, err)).ok();
+                        let _ = tx_clone.send(Action::Notify(ToastLevel::Error, err)).await;
                     }
                 }
 
-                tx_clone.send(Action::JobOperationComplete(msg)).ok();
-                tx_clone.send(Action::LoadJobs).ok();
+                let _ = tx_clone.send(Action::JobOperationComplete(msg)).await;
+                let _ = tx_clone.send(Action::LoadJobs).await;
             });
         }
         Action::EnableApp(name) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.enable_app(&name).await {
                     Ok(_) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Success,
-                            format!("App '{}' enabled successfully", name),
-                        ))
-                        .ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Success,
+                                format!("App '{}' enabled successfully", name),
+                            ))
+                            .await;
                         // Refresh apps list
-                        tx.send(Action::LoadApps).ok();
+                        let _ = tx.send(Action::LoadApps).await;
                     }
                     Err(e) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Error,
-                            format!("Failed to enable app '{}': {}", name, e),
-                        ))
-                        .ok();
-                        tx.send(Action::Loading(false)).ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Error,
+                                format!("Failed to enable app '{}': {}", name, e),
+                            ))
+                            .await;
+                        let _ = tx.send(Action::Loading(false)).await;
                     }
                 }
             });
         }
         Action::DisableApp(name) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
                 match c.disable_app(&name).await {
                     Ok(_) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Success,
-                            format!("App '{}' disabled successfully", name),
-                        ))
-                        .ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Success,
+                                format!("App '{}' disabled successfully", name),
+                            ))
+                            .await;
                         // Refresh apps list
-                        tx.send(Action::LoadApps).ok();
+                        let _ = tx.send(Action::LoadApps).await;
                     }
                     Err(e) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Error,
-                            format!("Failed to disable app '{}': {}", name, e),
-                        ))
-                        .ok();
-                        tx.send(Action::Loading(false)).ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Error,
+                                format!("Failed to disable app '{}': {}", name, e),
+                            ))
+                            .await;
+                        let _ = tx.send(Action::Loading(false)).await;
                     }
                 }
             });
         }
         Action::LoadHealth => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
 
@@ -913,11 +960,13 @@ async fn handle_side_effects(
 
                 if has_error {
                     let combined_error = error_messages.join("; ");
-                    tx.send(Action::HealthLoaded(Box::new(Err(combined_error))))
-                        .ok();
+                    let _ = tx
+                        .send(Action::HealthLoaded(Box::new(Err(combined_error))))
+                        .await;
                 } else {
-                    tx.send(Action::HealthLoaded(Box::new(Ok(health_output))))
-                        .ok();
+                    let _ = tx
+                        .send(Action::HealthLoaded(Box::new(Ok(health_output))))
+                        .await;
                 }
             });
         }
@@ -927,18 +976,20 @@ async fn handle_side_effects(
 
                 match result {
                     Ok(_) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Info,
-                            format!("Exported to {}", path.display()),
-                        ))
-                        .ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Info,
+                                format!("Exported to {}", path.display()),
+                            ))
+                            .await;
                     }
                     Err(e) => {
-                        tx.send(Action::Notify(
-                            ToastLevel::Error,
-                            format!("Export failed: {}", e),
-                        ))
-                        .ok();
+                        let _ = tx
+                            .send(Action::Notify(
+                                ToastLevel::Error,
+                                format!("Export failed: {}", e),
+                            ))
+                            .await;
                     }
                 }
             });
@@ -953,22 +1004,22 @@ async fn handle_side_effects(
                 drop(cm); // Release lock before sending actions
 
                 if profiles.is_empty() {
-                    tx_popup
+                    let _ = tx_popup
                         .send(Action::Notify(
                             ToastLevel::Error,
                             "No profiles configured. Add profiles using splunk-cli.".to_string(),
                         ))
-                        .ok();
+                        .await;
                 } else {
                     // Send the profile list to be opened as a popup
-                    tx_popup
+                    let _ = tx_popup
                         .send(Action::OpenProfileSelectorWithList(profiles))
-                        .ok();
+                        .await;
                 }
             });
         }
         Action::ProfileSelected(profile_name) => {
-            tx.send(Action::Loading(true)).ok();
+            let _ = tx.send(Action::Loading(true)).await;
             let config_manager_clone = config_manager.clone();
             let client_clone = client.clone();
             tokio::spawn(async move {
@@ -977,20 +1028,22 @@ async fn handle_side_effects(
                 // Get the profile config
                 let profiles = cm.list_profiles();
                 let Some(profile_config) = profiles.get(&profile_name) else {
-                    tx.send(Action::ProfileSwitchResult(Err(format!(
-                        "Profile '{}' not found",
-                        profile_name
-                    ))))
-                    .ok();
+                    let _ = tx
+                        .send(Action::ProfileSwitchResult(Err(format!(
+                            "Profile '{}' not found",
+                            profile_name
+                        ))))
+                        .await;
                     return;
                 };
 
                 // Build new config from profile
                 let Some(base_url) = profile_config.base_url.clone() else {
-                    tx.send(Action::ProfileSwitchResult(Err(
-                        "Profile has no base_url configured".to_string(),
-                    )))
-                    .ok();
+                    let _ = tx
+                        .send(Action::ProfileSwitchResult(Err(
+                            "Profile has no base_url configured".to_string(),
+                        )))
+                        .await;
                     return;
                 };
                 let auth_strategy = if let Some(token) = &profile_config.api_token {
@@ -1000,11 +1053,12 @@ async fn handle_side_effects(
                             token: resolved_token,
                         },
                         Err(e) => {
-                            tx.send(Action::ProfileSwitchResult(Err(format!(
-                                "Failed to resolve API token: {}",
-                                e
-                            ))))
-                            .ok();
+                            let _ = tx
+                                .send(Action::ProfileSwitchResult(Err(format!(
+                                    "Failed to resolve API token: {}",
+                                    e
+                                ))))
+                                .await;
                             return;
                         }
                     }
@@ -1018,19 +1072,21 @@ async fn handle_side_effects(
                             password: resolved_password,
                         },
                         Err(e) => {
-                            tx.send(Action::ProfileSwitchResult(Err(format!(
-                                "Failed to resolve password: {}",
-                                e
-                            ))))
-                            .ok();
+                            let _ = tx
+                                .send(Action::ProfileSwitchResult(Err(format!(
+                                    "Failed to resolve password: {}",
+                                    e
+                                ))))
+                                .await;
                             return;
                         }
                     }
                 } else {
-                    tx.send(Action::ProfileSwitchResult(Err(
-                        "Profile has no authentication configured".to_string(),
-                    )))
-                    .ok();
+                    let _ = tx
+                        .send(Action::ProfileSwitchResult(Err(
+                            "Profile has no authentication configured".to_string(),
+                        )))
+                        .await;
                     return;
                 };
 
@@ -1046,11 +1102,12 @@ async fn handle_side_effects(
                 {
                     Ok(c) => c,
                     Err(e) => {
-                        tx.send(Action::ProfileSwitchResult(Err(format!(
-                            "Failed to build client: {}",
-                            e
-                        ))))
-                        .ok();
+                        let _ = tx
+                            .send(Action::ProfileSwitchResult(Err(format!(
+                                "Failed to build client: {}",
+                                e
+                            ))))
+                            .await;
                         return;
                     }
                 };
@@ -1059,11 +1116,12 @@ async fn handle_side_effects(
                 if !new_client.is_api_token_auth()
                     && let Err(e) = new_client.login().await
                 {
-                    tx.send(Action::ProfileSwitchResult(Err(format!(
-                        "Authentication failed: {}",
-                        e
-                    ))))
-                    .ok();
+                    let _ = tx
+                        .send(Action::ProfileSwitchResult(Err(format!(
+                            "Authentication failed: {}",
+                            e
+                        ))))
+                        .await;
                     return;
                 }
 
@@ -1087,13 +1145,13 @@ async fn handle_side_effects(
                     base_url,
                     auth_mode,
                 };
-                tx.send(Action::ProfileSwitchResult(Ok(ctx))).ok();
+                let _ = tx.send(Action::ProfileSwitchResult(Ok(ctx))).await;
 
                 // Clear all cached data
-                tx.send(Action::ClearAllData).ok();
+                let _ = tx.send(Action::ClearAllData).await;
 
                 // Trigger reload for current screen
-                tx.send(Action::Loading(false)).ok();
+                let _ = tx.send(Action::Loading(false)).await;
             });
         }
         _ => {}

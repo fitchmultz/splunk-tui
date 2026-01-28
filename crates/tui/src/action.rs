@@ -17,7 +17,7 @@ use splunk_client::models::{
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{Sender, error::TrySendError};
 
 use crate::ConnectionContext;
 use crate::ui::ToastLevel;
@@ -393,12 +393,21 @@ pub enum Action {
 ///     .search_with_progress(query, true, earliest, latest, max_results, Some(&mut progress_callback))
 ///     .await?;
 /// ```
-pub fn progress_callback_to_action_sender(tx: UnboundedSender<Action>) -> impl FnMut(f64) + Send {
+pub fn progress_callback_to_action_sender(tx: Sender<Action>) -> impl FnMut(f64) + Send {
     move |progress: f64| {
         // Clamp progress to valid range [0.0, 1.0]
         let clamped = progress.clamp(0.0, 1.0);
-        // Send progress as f32 (TUI uses f32 for Progress action)
-        let _ = tx.send(Action::Progress(clamped as f32));
+        // Use try_send for synchronous callback - drop progress update if channel is full
+        // This is acceptable for progress updates as they're not critical
+        match tx.try_send(Action::Progress(clamped as f32)) {
+            Ok(()) => {}
+            Err(TrySendError::Full(_)) => {
+                // Channel full - drop progress update (backpressure)
+            }
+            Err(TrySendError::Closed(_)) => {
+                // Channel closed - nothing we can do in synchronous callback
+            }
+        }
     }
 }
 
