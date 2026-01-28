@@ -5098,6 +5098,61 @@
       "completed_at": "2026-01-27T23:41:11.427291000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0136",
+      "status": "done",
+      "title": "Add Cluster peers view in TUI (parity with CLI cluster --detailed)",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "feature-parity",
+        "cluster"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/client/src/client.rs",
+        "crates/client/src/models.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "docs/usage.md",
+        "docs/user-guide.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/cluster.rs:84 renders only ClusterInfo fields (id, mode, label, manager_uri, replication_factor, search_factor, status) and does not show peer details.",
+        "crates/client/src/client.rs:905 includes get_cluster_peers() -> Result<Vec<ClusterPeer>>, and CLI supports pagination options for cluster --detailed (docs/usage.md:209), indicating this is a needed admin feature.",
+        "crates/client/src/models.rs:353 ClusterPeer struct has fields: id, label, status, peer_state, site, guid, host, port, replication_count, replication_status, bundle_replication_count, is_captain.",
+        "crates/cli/src/commands/cluster.rs:44 calls get_cluster_peers() when detailed flag is set, with local pagination support.",
+        "Cluster admins need peer visibility (status, replication/search factors) to triage distributed environments."
+      ],
+      "plan": [
+        "Add cluster_peers: Option<Vec<ClusterPeer>> field to App state in crates/tui/src/app.rs.",
+        "Add cluster view mode toggle (Summary vs Peers) to App state.",
+        "Add client call to get_cluster_peers() when loading cluster screen or on demand.",
+        "Design the cluster peers UX (table with scrolling + pagination similar to CLI).",
+        "Add keybindings for toggling between summary and peers view (e.g., 'p' for peers, 's' for summary).",
+        "Update cluster.rs screen renderer to handle both view modes.",
+        "Add snapshots and targeted unit tests for navigation, view toggling, and rendering."
+      ],
+      "notes": [
+        "CLI cluster --detailed uses local pagination (offset/page-size) after fetching all peers; TUI should follow similar pattern or use lazy loading.",
+        "Consider reusing the table rendering pattern from jobs.rs for peer list display.",
+        "Implemented Cluster peers view in TUI with parity to CLI cluster --detailed",
+        "Added ClusterViewMode enum (Summary/Peers) with toggle functionality",
+        "Added LoadClusterPeers action and async handler in main.rs",
+        "Added keybindings: 'p' to toggle view, 'j/k/Up/Down' to navigate peers list",
+        "Added cluster peers table rendering with status colors and captain indicator",
+        "Fixed missing navigation support in navigation.rs for Cluster screen",
+        "Added comprehensive unit tests for cluster peers navigation",
+        "All 90 lib tests pass, 31 snapshot tests pass, make ci passes"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T16:39:47Z",
+      "updated_at": "2026-01-28T00:04:17.623178000Z",
+      "completed_at": "2026-01-28T00:04:17.623178000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

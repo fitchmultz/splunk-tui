@@ -28,7 +28,8 @@ mod popups;
 mod render;
 
 pub use state::{
-    CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, SortColumn, SortDirection, SortState,
+    ClusterViewMode, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, SortColumn,
+    SortDirection, SortState,
 };
 
 use crate::action::{Action, ExportFormat};
@@ -39,7 +40,7 @@ use crossterm::event::KeyEvent;
 use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
+    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, User,
 };
 use splunk_config::{ColorTheme, PersistedState, SearchDefaults, Theme};
@@ -69,6 +70,9 @@ pub struct App {
     pub internal_logs: Option<Vec<LogEntry>>,
     pub internal_logs_state: ratatui::widgets::TableState,
     pub cluster_info: Option<ClusterInfo>,
+    pub cluster_peers: Option<Vec<ClusterPeer>>,
+    pub cluster_peers_state: ratatui::widgets::TableState,
+    pub cluster_view_mode: crate::app::state::ClusterViewMode,
     pub health_info: Option<HealthCheckOutput>,
     pub apps: Option<Vec<SplunkApp>>,
     pub apps_state: ratatui::widgets::ListState,
@@ -185,6 +189,9 @@ impl App {
         let mut users_state = ratatui::widgets::ListState::default();
         users_state.select(Some(0));
 
+        let mut cluster_peers_state = ratatui::widgets::TableState::default();
+        cluster_peers_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -233,6 +240,9 @@ impl App {
             internal_logs: None,
             internal_logs_state,
             cluster_info: None,
+            cluster_peers: None,
+            cluster_peers_state,
+            cluster_view_mode: crate::app::state::ClusterViewMode::Summary,
             health_info: None,
             apps: None,
             apps_state,

@@ -288,8 +288,13 @@ async fn main() -> Result<()> {
                         }
                     }
                 } else {
+                    let was_toggle = matches!(action, Action::ToggleClusterViewMode);
                     app.update(action.clone());
                     handle_side_effects(action, client.clone(), tx.clone(), config_manager.clone()).await;
+                    // After toggle, if we're now in Peers view, trigger peers load
+                    if was_toggle && app.cluster_view_mode == splunk_tui::app::ClusterViewMode::Peers {
+                        handle_side_effects(Action::LoadClusterPeers, client.clone(), tx.clone(), config_manager.clone()).await;
+                    }
                 }
             }
             _ = tick_interval.tick() => {
@@ -456,6 +461,20 @@ async fn handle_side_effects(
                     }
                     Err(e) => {
                         tx.send(Action::ClusterInfoLoaded(Err(e.to_string()))).ok();
+                    }
+                }
+            });
+        }
+        Action::LoadClusterPeers => {
+            tx.send(Action::Loading(true)).ok();
+            tokio::spawn(async move {
+                let mut c = client.lock().await;
+                match c.get_cluster_peers().await {
+                    Ok(peers) => {
+                        tx.send(Action::ClusterPeersLoaded(Ok(peers))).ok();
+                    }
+                    Err(e) => {
+                        tx.send(Action::ClusterPeersLoaded(Err(e.to_string()))).ok();
                     }
                 }
             });

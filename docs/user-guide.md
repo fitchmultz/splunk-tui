@@ -208,6 +208,8 @@ Launch the interactive interface with `splunk-tui`.
 
 #### Cluster Screen
 - `r`: Refresh cluster info
+- `p`: Toggle peers view
+- `j/k or Up/Down`: Navigate peers list
 - `Ctrl+e`: Export cluster info
 - `Ctrl+c`: Copy cluster ID
 
@@ -288,7 +290,15 @@ Manage your search lifecycle in real-time.
 View Splunk cluster configuration and peer information.
 
 - **Refresh**: Press `r` to reload cluster information.
-- **Display**: Shows cluster master URI, replication status, and peer details.
+- **Summary View**: Shows cluster ID, mode, label, manager URI, replication factor, and search factor.
+- **Peers View**: Press `p` to toggle to the peers list view, which displays:
+  - Host name (with `[C]` indicator for the captain)
+  - Status (Up/Down/Pending with color coding)
+  - Peer state
+  - Site
+  - Port
+  - Replication count and status
+- **Navigation**: In Peers view, use `j/k` or `Up/Down` to navigate the peers list.
 
 ### The Health Screen
 

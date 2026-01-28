@@ -12,7 +12,7 @@
 use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, HealthCheckOutput, Index, LogEntry, SavedSearch,
+    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
@@ -156,8 +156,12 @@ pub enum Action {
     LoadApps,
     /// Load the list of users
     LoadUsers,
+    /// Load cluster peers (detailed view)
+    LoadClusterPeers,
     /// Switch to settings screen
     SwitchToSettings,
+    /// Toggle cluster view mode (Summary <-> Peers)
+    ToggleClusterViewMode,
     /// Run a search with the given query and search defaults.
     ///
     /// The search defaults (earliest_time, latest_time, max_results) are passed
@@ -189,6 +193,8 @@ pub enum Action {
     AppsLoaded(Result<Vec<SplunkApp>, String>),
     /// Result of loading users
     UsersLoaded(Result<Vec<User>, String>),
+    /// Result of loading cluster peers
+    ClusterPeersLoaded(Result<Vec<ClusterPeer>, String>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

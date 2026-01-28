@@ -200,6 +200,9 @@ impl App {
                     cluster::ClusterRenderConfig {
                         loading: self.loading,
                         cluster_info: self.cluster_info.as_ref(),
+                        cluster_peers: self.cluster_peers.as_deref(),
+                        view_mode: self.cluster_view_mode,
+                        peers_state: &mut self.cluster_peers_state,
                         theme: &self.theme,
                     },
                 );

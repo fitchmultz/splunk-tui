@@ -577,6 +577,8 @@ Before the server info is loaded, the header shows "Connecting..." as a placehol
 
 #### Cluster Screen
 - `r`: Refresh cluster info
+- `p`: Toggle peers view
+- `j/k or Up/Down`: Navigate peers list
 - `Ctrl+e`: Export cluster info
 - `Ctrl+c`: Copy cluster ID
 

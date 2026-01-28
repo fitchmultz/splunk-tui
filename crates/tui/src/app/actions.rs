@@ -12,7 +12,7 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::clipboard;
-use crate::app::state::{CurrentScreen, HealthState};
+use crate::app::state::{ClusterViewMode, CurrentScreen, HealthState};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
 
@@ -40,6 +40,14 @@ impl App {
             }
             Action::LoadClusterInfo => {
                 self.current_screen = CurrentScreen::Cluster;
+            }
+            Action::ToggleClusterViewMode => {
+                self.cluster_view_mode = self.cluster_view_mode.toggle();
+                // When switching to peers view, trigger peers load if not already loaded
+                if self.cluster_view_mode == ClusterViewMode::Peers && self.cluster_peers.is_none()
+                {
+                    // The side effect handler will trigger the actual load
+                }
             }
             Action::LoadJobs => {
                 self.current_screen = CurrentScreen::Jobs;
@@ -148,6 +156,15 @@ impl App {
             }
             Action::ClusterInfoLoaded(Ok(info)) => {
                 self.cluster_info = Some(info);
+                self.loading = false;
+            }
+            Action::ClusterPeersLoaded(Ok(peers)) => {
+                self.cluster_peers = Some(peers);
+                self.loading = false;
+            }
+            Action::ClusterPeersLoaded(Err(e)) => {
+                self.toasts
+                    .push(Toast::error(format!("Failed to load cluster peers: {}", e)));
                 self.loading = false;
             }
             Action::HealthLoaded(boxed_result) => match *boxed_result {

@@ -73,6 +73,16 @@ impl App {
                     }
                 }
             }
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers
+                    && let Some(peers) = &self.cluster_peers
+                {
+                    let i = self.cluster_peers_state.selected().unwrap_or(0);
+                    if i < peers.len().saturating_sub(1) {
+                        self.cluster_peers_state.select(Some(i + 1));
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -116,6 +126,14 @@ impl App {
                 let i = self.users_state.selected().unwrap_or(0);
                 if i > 0 {
                     self.users_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
+                    let i = self.cluster_peers_state.selected().unwrap_or(0);
+                    if i > 0 {
+                        self.cluster_peers_state.select(Some(i - 1));
+                    }
                 }
             }
             _ => {}
@@ -166,6 +184,16 @@ impl App {
                         .select(Some((i.saturating_add(10)).min(apps.len() - 1)));
                 }
             }
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers
+                    && let Some(peers) = &self.cluster_peers
+                    && !peers.is_empty()
+                {
+                    let i = self.cluster_peers_state.selected().unwrap_or(0);
+                    self.cluster_peers_state
+                        .select(Some((i.saturating_add(10)).min(peers.len() - 1)));
+                }
+            }
             _ => {}
         }
     }
@@ -196,6 +224,12 @@ impl App {
                 let i = self.apps_state.selected().unwrap_or(0);
                 self.apps_state.select(Some(i.saturating_sub(10)));
             }
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
+                    let i = self.cluster_peers_state.selected().unwrap_or(0);
+                    self.cluster_peers_state.select(Some(i.saturating_sub(10)));
+                }
+            }
             _ => {}
         }
     }
@@ -224,6 +258,11 @@ impl App {
             }
             CurrentScreen::Users => {
                 self.users_state.select(Some(0));
+            }
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
+                    self.cluster_peers_state.select(Some(0));
+                }
             }
             _ => {}
         }
@@ -273,7 +312,187 @@ impl App {
                     self.users_state.select(Some(users.len().saturating_sub(1)));
                 }
             }
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers
+                    && let Some(peers) = &self.cluster_peers
+                {
+                    self.cluster_peers_state
+                        .select(Some(peers.len().saturating_sub(1)));
+                }
+            }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ConnectionContext;
+    use crate::app::state::ClusterViewMode;
+    use splunk_client::models::ClusterPeer;
+
+    fn create_mock_peers(count: usize) -> Vec<ClusterPeer> {
+        (0..count)
+            .map(|i| ClusterPeer {
+                id: format!("peer-{}", i),
+                label: Some(format!("Peer {}", i)),
+                status: "Up".to_string(),
+                peer_state: "Active".to_string(),
+                site: Some("site1".to_string()),
+                guid: format!("guid-{}", i),
+                host: format!("host-{}", i),
+                port: 8080 + i as u32,
+                replication_count: Some(i as u32),
+                replication_status: Some("Complete".to_string()),
+                bundle_replication_count: None,
+                is_captain: Some(i == 0),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn test_cluster_peers_next_item() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(create_mock_peers(3));
+        app.cluster_peers_state.select(Some(0));
+
+        app.next_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(1));
+
+        app.next_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(2));
+
+        // Should not go past the end
+        app.next_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(2));
+    }
+
+    #[test]
+    fn test_cluster_peers_previous_item() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(create_mock_peers(3));
+        app.cluster_peers_state.select(Some(2));
+
+        app.previous_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(1));
+
+        app.previous_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(0));
+
+        // Should not go below 0
+        app.previous_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_cluster_peers_navigation_in_summary_mode() {
+        // Navigation should not work in Summary mode
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Summary;
+        app.cluster_peers = Some(create_mock_peers(3));
+        app.cluster_peers_state.select(Some(0));
+
+        app.next_item();
+        // Selection should remain unchanged
+        assert_eq!(app.cluster_peers_state.selected(), Some(0));
+
+        app.previous_item();
+        assert_eq!(app.cluster_peers_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_cluster_peers_go_to_top() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(create_mock_peers(5));
+        app.cluster_peers_state.select(Some(4));
+
+        app.go_to_top();
+        assert_eq!(app.cluster_peers_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_cluster_peers_go_to_bottom() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(create_mock_peers(5));
+        app.cluster_peers_state.select(Some(0));
+
+        app.go_to_bottom();
+        assert_eq!(app.cluster_peers_state.selected(), Some(4));
+    }
+
+    #[test]
+    fn test_cluster_peers_next_page() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(create_mock_peers(15));
+        app.cluster_peers_state.select(Some(0));
+
+        app.next_page();
+        assert_eq!(app.cluster_peers_state.selected(), Some(10));
+
+        // Should clamp at the end
+        app.next_page();
+        assert_eq!(app.cluster_peers_state.selected(), Some(14));
+    }
+
+    #[test]
+    fn test_cluster_peers_previous_page() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(create_mock_peers(15));
+        app.cluster_peers_state.select(Some(12));
+
+        app.previous_page();
+        assert_eq!(app.cluster_peers_state.selected(), Some(2));
+
+        // Should not go below 0
+        app.previous_page();
+        assert_eq!(app.cluster_peers_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_cluster_peers_navigation_no_peers() {
+        // Should not panic when peers is None
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = None;
+
+        app.next_item();
+        app.previous_item();
+        app.go_to_top();
+        app.go_to_bottom();
+        app.next_page();
+        app.previous_page();
+        // Test passes if no panic occurs
+    }
+
+    #[test]
+    fn test_cluster_peers_navigation_empty_peers() {
+        // Should not panic when peers is empty
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(vec![]);
+
+        app.next_item();
+        app.previous_item();
+        app.go_to_top();
+        app.go_to_bottom();
+        app.next_page();
+        app.previous_page();
+        // Test passes if no panic occurs
     }
 }

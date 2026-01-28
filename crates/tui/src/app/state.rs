@@ -162,6 +162,26 @@ pub struct SortState {
     pub direction: SortDirection,
 }
 
+/// View mode for the cluster screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ClusterViewMode {
+    /// Show cluster summary information.
+    #[default]
+    Summary,
+    /// Show cluster peers list.
+    Peers,
+}
+
+impl ClusterViewMode {
+    /// Toggle between summary and peers view.
+    pub fn toggle(self) -> Self {
+        match self {
+            Self::Summary => Self::Peers,
+            Self::Peers => Self::Summary,
+        }
+    }
+}
+
 impl Default for SortState {
     fn default() -> Self {
         Self::new()
@@ -288,5 +308,31 @@ mod tests {
         assert_eq!(parse_sort_direction("desc"), SortDirection::Desc);
         assert_eq!(parse_sort_direction("DESC"), SortDirection::Desc);
         assert_eq!(parse_sort_direction("unknown"), SortDirection::Asc); // Default fallback
+    }
+
+    #[test]
+    fn test_cluster_view_mode_default() {
+        let mode: ClusterViewMode = Default::default();
+        assert_eq!(mode, ClusterViewMode::Summary);
+    }
+
+    #[test]
+    fn test_cluster_view_mode_toggle() {
+        // Start with Summary, toggle to Peers
+        let mode = ClusterViewMode::Summary;
+        let toggled = mode.toggle();
+        assert_eq!(toggled, ClusterViewMode::Peers);
+
+        // Toggle back to Summary
+        let toggled_back = toggled.toggle();
+        assert_eq!(toggled_back, ClusterViewMode::Summary);
+    }
+
+    #[test]
+    fn test_cluster_view_mode_toggle_cycle() {
+        // Verify that toggling twice returns to original state
+        let mode = ClusterViewMode::Summary;
+        let after_two_toggles = mode.toggle().toggle();
+        assert_eq!(mode, after_two_toggles);
     }
 }

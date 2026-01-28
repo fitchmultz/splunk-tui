@@ -188,6 +188,8 @@ Configuration values are loaded in the following order (highest to lowest):
 
 #### Cluster Screen
 - `r`: Refresh cluster info
+- `p`: Toggle peers view
+- `j/k or Up/Down`: Navigate peers list
 - `Ctrl+e`: Export cluster info
 - `Ctrl+c`: Copy cluster ID
 

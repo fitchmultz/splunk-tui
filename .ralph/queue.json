@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0136",
-      "status": "todo",
-      "title": "Add Cluster peers view in TUI (parity with CLI cluster --detailed)",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "feature-parity",
-        "cluster"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/ui/screens/cluster.rs",
-        "crates/client/src/client.rs",
-        "crates/tui/tests/snapshot_tests.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/screens/cluster.rs renders only ClusterInfo fields and does not show peer details.",
-        "crates/client/src/client.rs includes get_cluster_peers(), and CLI supports pagination options for cluster --detailed (docs/usage.md), indicating this is a needed admin feature.",
-        "Cluster admins need peer visibility (status, replication/search factors) to triage distributed environments."
-      ],
-      "plan": [
-        "Design the cluster peers UX (table/list with scrolling + optional pagination).",
-        "Add client call(s) and App state to load and store peer list separately from cluster info.",
-        "Add keybindings for toggling between summary and peers view (or a dedicated peers screen).",
-        "Add snapshots and targeted unit tests for navigation and rendering."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T16:39:47Z",
-      "updated_at": "2026-01-27T16:39:47Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0135",
       "status": "todo",
       "title": "Add Apps enable/disable actions in TUI (feature parity with CLI)",
