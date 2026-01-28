@@ -13,9 +13,9 @@
 //!
 //! The retry logic respects the `Retry-After` response header when present
 //! for 429 responses, using the maximum of the calculated exponential backoff
-//! and the server's suggested delay. Currently, only the delay-seconds format
-//! is supported (e.g., "120" for 120 seconds). HTTP-date format is not
-//! currently implemented.
+//! and the server's suggested delay. Both delay-seconds format (e.g., "120")
+//! and HTTP-date format (e.g., "Wed, 21 Oct 2015 07:28:00 GMT") are supported
+//! per RFC 7231.
 //!
 //! For 5xx errors and transport errors, exponential backoff is used without
 //! Retry-After header support.
@@ -32,6 +32,8 @@
 
 use reqwest::{RequestBuilder, Response};
 use std::time::Duration;
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc2822;
 use tracing::{debug, warn};
 
 use crate::error::{ClientError, Result};
@@ -42,29 +44,43 @@ const DEFAULT_MAX_RETRIES: usize = 3;
 
 /// Parses the Retry-After header from an HTTP response.
 ///
-/// Supports delay-seconds format according to RFC 7231: a decimal integer
-/// number of seconds to delay before retrying (e.g., "120").
+/// Supports both delay-seconds and HTTP-date formats according to RFC 7231:
+/// - delay-seconds: a decimal integer number of seconds (e.g., "120")
+/// - HTTP-date: an IMF-fixdate (RFC 7231) / RFC 2822 format date string
+///   (e.g., "Wed, 21 Oct 2015 07:28:00 GMT")
 ///
-/// Returns `None` if the header is not present, cannot be parsed, is zero,
-/// or uses an unsupported format (e.g., HTTP-date).
+/// Returns `None` if the header is not present, cannot be parsed, is zero
+/// (for delay-seconds), or represents a time in the past (for HTTP-date).
 fn parse_retry_after(response: &Response) -> Option<Duration> {
     response
         .headers()
         .get("retry-after")
         .and_then(|header_value| header_value.to_str().ok())
         .and_then(|header_str| {
-            // Try delay-seconds format (e.g., "120")
+            // Try delay-seconds format first (e.g., "120")
             // This is the most common format for rate limiting
             if header_str.chars().all(|c| c.is_ascii_digit()) {
-                header_str
+                return header_str
                     .parse::<u64>()
                     .ok()
                     .filter(|&secs| secs > 0)
-                    .map(Duration::from_secs)
-            } else {
-                // HTTP-date format not currently supported
-                // This format is rarely used for rate limiting scenarios
-                None
+                    .map(Duration::from_secs);
+            }
+
+            // Try HTTP-date format (RFC 7231 / RFC 2822)
+            // e.g., "Wed, 21 Oct 2015 07:28:00 GMT"
+            match OffsetDateTime::parse(header_str, &Rfc2822) {
+                Ok(retry_time) => {
+                    let now = OffsetDateTime::now_utc();
+                    if retry_time > now {
+                        let duration = retry_time - now;
+                        Some(Duration::from_secs(duration.whole_seconds().max(0) as u64))
+                    } else {
+                        // Date is in the past, fall back to exponential backoff
+                        None
+                    }
+                }
+                Err(_) => None,
             }
         })
 }

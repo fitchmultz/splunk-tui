@@ -1810,6 +1810,178 @@ async fn test_retry_with_invalid_retry_after_header() {
     assert!(result.is_ok());
 }
 
+#[tokio::test]
+async fn test_retry_respects_retry_after_http_date() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // Calculate a future HTTP-date (10 seconds from now)
+    // Use a longer duration to account for test setup time
+    let future_time = time::OffsetDateTime::now_utc() + time::Duration::seconds(10);
+    let http_date = future_time
+        .format(&time::format_description::well_known::Rfc2822)
+        .unwrap();
+
+    // First response returns 429 with Retry-After as HTTP-date
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", http_date.as_str())
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Rate limited"}]
+                })),
+        )
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    assert!(result.is_ok());
+
+    // Should have waited at least 8 seconds (HTTP-date Retry-After value minus some tolerance)
+    // The HTTP-date is 10 seconds in the future, but some time passes during setup
+    assert!(
+        elapsed >= std::time::Duration::from_secs(8),
+        "Expected at least 8s but got {:?}",
+        elapsed
+    );
+}
+
+#[tokio::test]
+async fn test_retry_with_past_http_date() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // Use a past HTTP-date (RFC 7231 example date from 1994)
+    let past_http_date = "Sun, 06 Nov 1994 08:49:37 GMT";
+
+    // First response returns 429 with past Retry-After HTTP-date
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", past_http_date)
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Rate limited"}]
+                })),
+        )
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    assert!(result.is_ok());
+
+    // Should fall back to exponential backoff (1 second) since HTTP-date is in the past
+    assert!(elapsed >= std::time::Duration::from_secs(1));
+    // But less than 3 seconds (not waiting for the past date)
+    assert!(elapsed < std::time::Duration::from_secs(3));
+}
+
+#[tokio::test]
+async fn test_retry_with_invalid_http_date() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/create_job_success.json");
+
+    // First response returns 429 with invalid HTTP-date format
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "not-a-valid-date")
+                .set_body_json(serde_json::json!({
+                    "messages": [{"type": "ERROR", "text": "Rate limited"}]
+                })),
+        )
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second response returns 200
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let options = endpoints::CreateJobOptions {
+        wait: Some(false),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search index=main",
+        &options,
+        3,
+    )
+    .await;
+    let elapsed = start.elapsed();
+
+    assert!(result.is_ok());
+
+    // Should fall back to exponential backoff (1 second) since HTTP-date is invalid
+    assert!(elapsed >= std::time::Duration::from_secs(1));
+    // But less than 3 seconds
+    assert!(elapsed < std::time::Duration::from_secs(3));
+}
+
 // Internal logs tests with deterministic sorting
 
 #[tokio::test]
