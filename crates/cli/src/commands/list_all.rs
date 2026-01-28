@@ -17,6 +17,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use splunk_client::SplunkClient;
+use std::collections::HashSet;
 use std::time::Duration;
 use tokio::time;
 use tracing::{info, warn};
@@ -95,9 +96,18 @@ pub async fn run(
 ) -> Result<()> {
     info!("Listing all Splunk resources");
 
-    // Validate resource types first (fail fast)
-    let resources_to_fetch: Vec<String> =
-        resources_filter.unwrap_or_else(|| VALID_RESOURCES.iter().map(|s| s.to_string()).collect());
+    // Normalize and validate resource types (trim, lowercase, dedupe)
+    let resources_to_fetch: Vec<String> = resources_filter
+        .map(|resources| {
+            resources
+                .into_iter()
+                .map(|r| r.trim().to_lowercase())
+                .filter(|r| !r.is_empty())
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect()
+        })
+        .unwrap_or_else(|| VALID_RESOURCES.iter().map(|s| s.to_string()).collect());
 
     for resource in &resources_to_fetch {
         if !VALID_RESOURCES.contains(&resource.as_str()) {
@@ -120,8 +130,18 @@ pub async fn run(
             // Query all profiles from config file
             cm.list_profiles().keys().cloned().collect()
         } else {
-            // Query specified profiles
-            profile_names.unwrap_or_default()
+            // Query specified profiles - trim and dedupe (preserve case)
+            profile_names
+                .map(|profiles| {
+                    profiles
+                        .into_iter()
+                        .map(|p| p.trim().to_string())
+                        .filter(|p| !p.is_empty())
+                        .collect::<HashSet<_>>()
+                        .into_iter()
+                        .collect()
+                })
+                .unwrap_or_default()
         };
 
         if target_profiles.is_empty() {
