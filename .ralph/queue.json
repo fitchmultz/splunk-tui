@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0174",
-      "status": "todo",
-      "title": "Split oversized config types.rs into smaller type modules",
-      "priority": "medium",
-      "tags": [
-        "config",
-        "refactor"
-      ],
-      "scope": [
-        "crates/config/src/types.rs"
-      ],
-      "evidence": [
-        "crates/config/src/types.rs is 959 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Extract auth types, profile types, and helpers into separate modules.",
-        "Keep public API minimal (prefer pub(crate)); add docstrings.",
-        "Run config crate tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0170",
       "status": "todo",
       "title": "Split oversized TUI main.rs into runtime and UI modules",

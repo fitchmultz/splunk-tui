@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::types::KeybindAction;
+use crate::types::keybind::KeybindAction;
 
 /// Errors that can occur when parsing or validating keybindings.
 #[derive(Debug, Error, PartialEq)]
