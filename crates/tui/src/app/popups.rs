@@ -371,6 +371,17 @@ mod tests {
         assert!(app.popup.is_none());
     }
 
+    #[test]
+    fn test_popup_error_details_close_with_e() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+
+        // Close with 'e' key (should close the popup)
+        let action = app.handle_popup_input(key(KeyCode::Char('e')));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
     // Global quit tests (Ctrl+Q from any popup)
 
     fn ctrl_key(c: char) -> KeyEvent {

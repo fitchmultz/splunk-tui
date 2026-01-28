@@ -588,8 +588,10 @@ async fn handle_side_effects(
                             None, // SID not available on failure
                         );
                         let error_msg = search_error_message(&e);
-                        tx_clone.send(Action::ShowErrorDetails(details)).ok();
-                        tx_clone.send(Action::SearchComplete(Err(error_msg))).ok();
+                        // Error details stored in SearchComplete handler; user can press 'e' to view
+                        tx_clone
+                            .send(Action::SearchComplete(Err((error_msg, details))))
+                            .ok();
                     }
                 }
             });

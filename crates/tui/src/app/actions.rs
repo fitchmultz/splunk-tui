@@ -163,8 +163,11 @@ impl App {
                 self.loading = false;
             }
             Action::ClusterPeersLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load cluster peers: {}", e)));
+                let error_msg = format!("Failed to load cluster peers: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::HealthLoaded(boxed_result) => match *boxed_result {
@@ -182,8 +185,11 @@ impl App {
                     self.loading = false;
                 }
                 Err(e) => {
-                    self.toasts
-                        .push(Toast::error(format!("Failed to load health info: {}", e)));
+                    let error_msg = format!("Failed to load health info: {}", e);
+                    self.current_error = Some(
+                        crate::error_details::ErrorDetails::from_error_string(&error_msg),
+                    );
+                    self.toasts.push(Toast::error(error_msg));
                     self.loading = false;
                 }
             },
@@ -218,8 +224,11 @@ impl App {
                 self.loading = false;
             }
             Action::MoreSearchResultsLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load more results: {}", e)));
+                let error_msg = format!("Failed to load more results: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::JobOperationComplete(msg) => {
@@ -228,25 +237,35 @@ impl App {
                 self.loading = false;
             }
             Action::IndexesLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load indexes: {}", e)));
+                let error_msg = format!("Failed to load indexes: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::JobsLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load jobs: {}", e)));
+                let error_msg = format!("Failed to load jobs: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::SavedSearchesLoaded(Err(e)) => {
-                self.toasts.push(Toast::error(format!(
-                    "Failed to load saved searches: {}",
-                    e
-                )));
+                let error_msg = format!("Failed to load saved searches: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::InternalLogsLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load internal logs: {}", e)));
+                let error_msg = format!("Failed to load internal logs: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::AppsLoaded(Ok(apps)) => {
@@ -254,8 +273,11 @@ impl App {
                 self.loading = false;
             }
             Action::AppsLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load apps: {}", e)));
+                let error_msg = format!("Failed to load apps: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::UsersLoaded(Ok(users)) => {
@@ -263,8 +285,11 @@ impl App {
                 self.loading = false;
             }
             Action::UsersLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load users: {}", e)));
+                let error_msg = format!("Failed to load users: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::SettingsLoaded(state) => {
@@ -280,19 +305,26 @@ impl App {
                 self.loading = false;
             }
             Action::ClusterInfoLoaded(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to load cluster info: {}", e)));
+                let error_msg = format!("Failed to load cluster info: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+                    &error_msg,
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
-            Action::SearchComplete(Err(e)) => {
-                let details = crate::error_details::ErrorDetails::from_error_string(&e);
-                self.current_error = Some(details.clone());
-                self.toasts.push(Toast::error(details.to_summary()));
+            Action::SearchComplete(Err((error_msg, details))) => {
+                self.current_error = Some(details);
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::ShowErrorDetails(details) => {
                 self.current_error = Some(details);
                 self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+            }
+            Action::ShowErrorDetailsFromCurrent => {
+                if self.current_error.is_some() {
+                    self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+                }
             }
             Action::ClearErrorDetails => {
                 self.current_error = None;

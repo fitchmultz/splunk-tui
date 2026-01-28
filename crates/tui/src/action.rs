@@ -201,8 +201,11 @@ pub enum Action {
     SettingsLoaded(PersistedState),
     /// Result of background health status check
     HealthStatusLoaded(Result<SplunkHealth, String>),
-    /// Result of a search completion (results, sid, total_count)
-    SearchComplete(Result<(Vec<Value>, String, Option<u64>), String>),
+    /// Result of a search completion (results, sid, total_count) or (error_msg, error_details)
+    #[allow(clippy::type_complexity)]
+    SearchComplete(
+        Result<(Vec<Value>, String, Option<u64>), (String, crate::error_details::ErrorDetails)>,
+    ),
     /// Load more results for the current search (pagination)
     LoadMoreSearchResults {
         sid: String,
@@ -249,6 +252,8 @@ pub enum Action {
     // Error handling
     /// Display error details popup
     ShowErrorDetails(crate::error_details::ErrorDetails),
+    /// Show error details from current_error (when user presses 'e')
+    ShowErrorDetailsFromCurrent,
     /// Clear current error details (when popup is dismissed)
     ClearErrorDetails,
 }

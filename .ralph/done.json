@@ -5312,6 +5312,53 @@
       "completed_at": "2026-01-28T00:55:46.553806000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0104",
+      "status": "done",
+      "title": "Fix Error Details UX contract (toast hint vs auto-popup vs keybinding)",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "errors"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/popups.rs",
+        "crates/tui/src/ui/popup.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/toast.rs:245-249: error toasts render hint \"Press 'e' for details\" when has_error is true.",
+        "crates/tui/src/main.rs:591: on search error, Action::ShowErrorDetails is sent immediately, opening popup without waiting for user intent.",
+        "crates/tui/src/app/popups.rs:141-146: ErrorDetails popup close handler accepts Esc/q/e.",
+        "crates/tui/src/ui/popup.rs:130-133: ErrorDetails default content says \"Press Esc or q to close\" - does NOT mention 'e' (mismatch with handler).",
+        "docs/usage.md:660-677: documents 'e' key for error details but behavior is inconsistent (auto-popup happens)."
+      ],
+      "plan": [
+        "Decide intended UX: (A) toast-only until user opens details with 'e', or (B) auto-popup but remove toast hint and align close keys.",
+        "Implement chosen behavior consistently across all error sources (search, indexes, jobs, cluster, health, apps, users).",
+        "Fix popup default content to match actual close keys (add 'e' to text if keeping auto-popup, or remove toast hint if auto-popup).",
+        "Add/adjust tests in crates/tui/src/app/popups.rs for error popup behavior.",
+        "Update docs/usage.md error handling section to match final implementation."
+      ],
+      "notes": [
+        "Error sources to check: RunSearch (main.rs:591), LoadIndexes, LoadJobs, LoadClusterInfo, LoadClusterPeers, LoadSavedSearches, LoadInternalLogs, LoadApps, LoadUsers, LoadHealth.",
+        "Some errors send ShowErrorDetails immediately (search), others only send Notify toast (job ops) - this inconsistency is the core issue.",
+        "Fixed Error Details UX contract: All errors now consistently show only a toast. User presses 'e' to open error details. The 'e' key works globally when an error is present, taking precedence over screen-specific bindings. Popup content correctly mentions all close keys (Esc, q, e).",
+        "Changes: Removed auto-popup for search errors, added ShowErrorDetailsFromCurrent action, updated SearchComplete action type, set current_error for all error types, added global 'e' keybinding, fixed popup content text, added tests, updated docs.",
+        "All tests pass (make ci clean)."
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T01:10:24.801744000Z",
+      "completed_at": "2026-01-28T01:10:24.801744000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

@@ -129,7 +129,7 @@ impl PopupBuilder {
             ),
             PopupType::ErrorDetails => (
                 "Error Details".to_string(),
-                "Press Esc or q to close".to_string(),
+                "Press Esc, q, or e to close".to_string(),
             ),
             PopupType::IndexDetails => (
                 "Index Details".to_string(),

@@ -475,6 +475,16 @@ impl App {
             return self.handle_jobs_filter_input(key);
         }
 
+        // Global 'e' keybinding to show error details when an error is present.
+        // This takes precedence over screen-specific bindings (like "enable app" on Apps screen)
+        // because viewing error details is more urgent.
+        if key.code == KeyCode::Char('e')
+            && key.modifiers.is_empty()
+            && self.current_error.is_some()
+        {
+            return Some(Action::ShowErrorDetailsFromCurrent);
+        }
+
         // When in Search screen with QueryFocused mode, skip global binding resolution
         // for printable characters to allow typing (RQ-0101 fix).
         // Also skip Tab/BackTab to allow mode switching within the search screen.
@@ -570,5 +580,44 @@ mod tests {
 
         app.current_screen = CurrentScreen::Search;
         assert!(app.load_action_for_screen().is_none());
+    }
+
+    #[test]
+    fn test_global_e_keybinding_shows_error_details() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
+            "Test error",
+        ));
+
+        // Press 'e' key with no modifiers
+        let key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
+        let action = app.handle_input(key);
+
+        assert!(
+            matches!(action, Some(Action::ShowErrorDetailsFromCurrent)),
+            "Pressing 'e' when error exists should return ShowErrorDetailsFromCurrent action"
+        );
+    }
+
+    #[test]
+    fn test_global_e_keybinding_no_error_does_nothing() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+        let mut app = App::new(None, ConnectionContext::default());
+        // No error set
+        app.current_error = None;
+
+        // Press 'e' key on Apps screen (where 'e' normally enables selected app)
+        app.current_screen = CurrentScreen::Apps;
+        let key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
+        let action = app.handle_input(key);
+
+        // Should NOT return ShowErrorDetailsFromCurrent since no error
+        assert!(
+            !matches!(action, Some(Action::ShowErrorDetailsFromCurrent)),
+            "Pressing 'e' when no error exists should NOT return ShowErrorDetailsFromCurrent"
+        );
     }
 }

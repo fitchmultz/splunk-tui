@@ -659,22 +659,23 @@ Navigate the Index Details popup:
 
 ### Error Handling
 
-When a search fails, you will see an error toast in the bottom-right corner:
+When an operation fails, you will see an error toast in the bottom-right corner:
 - Errors show a brief summary of the issue
 - Press `e` when an error toast is visible to see full details
 - Error details popup shows:
-  - HTTP status code
-  - Request URL
-  - Splunk request ID (for support)
-  - Structured error messages from Splunk
-  - Raw error response body
+  - HTTP status code (when available)
+  - Request URL (when available)
+  - Error messages
+  - Raw error details
 
 Navigate error details popup:
 - `j` / `↓` - Scroll down
 - `k` / `↑` - Scroll up
 - `PageDown` - Page down
 - `PageUp` - Page up
-- `Esc` / `q` - Close popup
+- `Esc` / `q` / `e` - Close popup
+
+Note: The `e` key is globally bound to show error details when an error toast is visible. This takes precedence over screen-specific bindings (like "enable app" on the Apps screen) because viewing error details is more urgent.
 
 See the keybindings section above for screen-specific shortcuts.
 - `a`: Toggle auto-refresh (polls every 5 seconds)

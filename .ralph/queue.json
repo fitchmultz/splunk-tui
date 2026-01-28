@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0104",
-      "status": "todo",
-      "title": "Fix Error Details UX contract (toast hint vs auto-popup vs keybinding)",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "keybindings",
-        "errors"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/ui/toast.rs",
-        "crates/tui/src/app.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/toast.rs: error toasts render a hint \"Press 'e' for details\" when has_error is true.",
-        "crates/tui/src/main.rs: API error paths send Action::ShowErrorDetails immediately, which opens the error details popup without waiting for user intent.",
-        "crates/tui/src/app.rs: popup close handler for ErrorDetails accepts Esc/q/e, but PopupType::ErrorDetails default content says \"Press Esc or q to close\" (mismatch)."
-      ],
-      "plan": [
-        "Decide the intended UX: (A) toast-only until user opens details, or (B) auto-popup but remove the toast hint and align close keys.",
-        "Implement the chosen behavior consistently across all error sources (search, loads, job ops).",
-        "Add/adjust tests and snapshots to cover error toast rendering + opening/closing details.",
-        "Update docs/usage.md error handling section to match reality."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0105",
       "status": "todo",
       "title": "Make Help popup scrollable, left-aligned, and derived from actual keymap",
