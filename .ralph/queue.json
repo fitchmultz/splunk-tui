@@ -1,4 +1,629 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0159",
+      "status": "todo",
+      "title": "Respect --config-path for list-all multi-profile mode",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "config",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/tests/list_all_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs uses std::env::var(\"SPLUNK_CONFIG_PATH\") when building ConfigManager for list-all and ignores cli.config_path (see ListAll branch around lines 559-575).",
+        "crates/cli/src/main.rs defines --config-path and resolve_config_path, so ListAll multi-profile currently bypasses the normalized path."
+      ],
+      "plan": [
+        "Route list-all multi-profile ConfigManager creation through the resolved cli.config_path (fall back to env var only if cli config path is unset).",
+        "Add/adjust list-all tests to cover --config-path and SPLUNK_CONFIG_PATH precedence in multi-profile mode.",
+        "Run list-all related tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0160",
+      "status": "todo",
+      "title": "Fail list-all profiles with missing/invalid credentials instead of empty auth",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "auth",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all.rs",
+        "crates/cli/tests/list_all_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all.rs build_auth_strategy_from_profile returns SessionToken with empty username/password when no credentials resolve.",
+        "Profile credential resolution errors (keyring resolve failures) are silently ignored, leading to empty auth attempts."
+      ],
+      "plan": [
+        "Change build_auth_strategy_from_profile to return Result<AuthStrategy> or Option and surface missing/failed credential resolution as a ProfileResult error.",
+        "Update fetch_single_profile_resources to short-circuit with a clear error message when credentials are missing/invalid.",
+        "Add tests covering missing credentials and keyring resolution failure paths."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0161",
+      "status": "todo",
+      "title": "Normalize list-all resources/profiles inputs (trim/lowercase/dedupe)",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "ux",
+        "bug"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all.rs",
+        "crates/cli/src/main.rs",
+        "crates/cli/tests/list_all_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs defines ListAll resources as comma-delimited strings, but list_all::run validates resources directly against VALID_RESOURCES without trimming or lowercasing.",
+        "crates/cli/src/commands/list_all.rs rejects any resource string not matching VALID_RESOURCES exactly, so inputs like \"jobs, apps\" or \"Jobs\" are rejected."
+      ],
+      "plan": [
+        "Trim and lowercase resource strings (and profile names) before validation and execution; dedupe to avoid redundant calls.",
+        "Update validation error messaging to show normalized values.",
+        "Add list-all tests for whitespace and case normalization."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0162",
+      "status": "todo",
+      "title": "Make file_output_tests hermetic and avoid global cwd mutation",
+      "priority": "medium",
+      "tags": [
+        "tests",
+        "cli",
+        "reliability"
+      ],
+      "scope": [
+        "crates/cli/tests/file_output_tests.rs",
+        "crates/cli/tests/common/mod.rs"
+      ],
+      "evidence": [
+        "crates/cli/tests/file_output_tests.rs defines splunk_cli_cmd without DOTENV_DISABLED or env cleanup, unlike crates/cli/tests/common/mod.rs.",
+        "crates/cli/tests/file_output_tests.rs uses std::env::set_current_dir without restoring it, which can affect parallel tests."
+      ],
+      "plan": [
+        "Refactor file_output_tests to use the hermetic helper (or extend it) so DOTENV_DISABLED is set and env leakage is cleared.",
+        "Replace global set_current_dir with cmd.current_dir or a save/restore guard.",
+        "Run file_output_tests to confirm behavior and isolation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0164",
+      "status": "todo",
+      "title": "Support HTTP-date Retry-After parsing in request retry helper",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "retries",
+        "resilience"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs",
+        "crates/client/tests/security_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/request.rs parse_retry_after explicitly ignores HTTP-date format and documents it as unsupported."
+      ],
+      "plan": [
+        "Implement HTTP-date parsing for Retry-After header (using a stable parser) and fall back to existing seconds parsing.",
+        "Add unit tests for seconds and HTTP-date forms (including invalid values).",
+        "Run client tests that cover retry parsing."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0169",
+      "status": "todo",
+      "title": "Split oversized config loader.rs into cohesive modules",
+      "priority": "medium",
+      "tags": [
+        "config",
+        "refactor"
+      ],
+      "scope": [
+        "crates/config/src/loader.rs"
+      ],
+      "evidence": [
+        "crates/config/src/loader.rs is 1306 lines (wc -l), above the 1000-line split requirement."
+      ],
+      "plan": [
+        "Extract env parsing, profile loading, and builder logic into submodules.",
+        "Add module-level docstrings for new files and keep public API minimal.",
+        "Run config crate tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0171",
+      "status": "todo",
+      "title": "Split oversized config persistence.rs into path/migration/state modules",
+      "priority": "medium",
+      "tags": [
+        "config",
+        "refactor"
+      ],
+      "scope": [
+        "crates/config/src/persistence.rs"
+      ],
+      "evidence": [
+        "crates/config/src/persistence.rs is 1149 lines (wc -l), above the 1000-line split requirement."
+      ],
+      "plan": [
+        "Extract path/migration helpers, state serialization, and profile/keyring logic into submodules.",
+        "Ensure module docstrings cover responsibilities and non-responsibilities.",
+        "Run config crate tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0174",
+      "status": "todo",
+      "title": "Split oversized config types.rs into smaller type modules",
+      "priority": "medium",
+      "tags": [
+        "config",
+        "refactor"
+      ],
+      "scope": [
+        "crates/config/src/types.rs"
+      ],
+      "evidence": [
+        "crates/config/src/types.rs is 959 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Extract auth types, profile types, and helpers into separate modules.",
+        "Keep public API minimal (prefer pub(crate)); add docstrings.",
+        "Run config crate tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0170",
+      "status": "todo",
+      "title": "Split oversized TUI main.rs into runtime and UI modules",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs is 1170 lines (wc -l), exceeding the 1000-line split threshold."
+      ],
+      "plan": [
+        "Extract event loop, side effects, and setup into separate modules.",
+        "Keep main.rs focused on wiring + top-level orchestration with docstrings in new files.",
+        "Run TUI tests and any CLI smoke tests if needed."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0172",
+      "status": "todo",
+      "title": "Split oversized TUI action.rs into focused action/serialization modules",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/action.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/action.rs is 1144 lines (wc -l), exceeding the 1000-line split threshold."
+      ],
+      "plan": [
+        "Separate action definitions, redaction logic, and progress callbacks into submodules.",
+        "Preserve public API surface while adding docstrings to new files.",
+        "Run TUI unit tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0167",
+      "status": "todo",
+      "title": "Split oversized CLI formatters.rs into resource-specific modules",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/formatters.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters.rs is 3766 lines (wc -l), far above the 700-line guidance."
+      ],
+      "plan": [
+        "Group formatter implementations by resource type and extract into submodules.",
+        "Keep the public formatter API minimal and update module docs accordingly.",
+        "Run CLI formatter tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0175",
+      "status": "todo",
+      "title": "Split oversized client client.rs into builder/session/request modules",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/client.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client.rs is 832 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Separate builder/initialization, session handling, and endpoint wrappers into submodules.",
+        "Add module docstrings and keep the public API minimal.",
+        "Run client unit tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0168",
+      "status": "todo",
+      "title": "Split oversized client integration_tests.rs into per-endpoint test files",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/tests/integration_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/tests/integration_tests.rs is 2539 lines (wc -l), exceeding size guidance."
+      ],
+      "plan": [
+        "Split integration tests by endpoint or feature (auth, jobs, indexes, etc.) into separate test files.",
+        "Ensure each test module has a docstring and isolated fixtures.",
+        "Run client integration tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0173",
+      "status": "todo",
+      "title": "Split oversized client security_tests.rs into focused security test files",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/tests/security_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/tests/security_tests.rs is 994 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Group security tests by concern (TLS, logging redaction, auth) into separate files.",
+        "Add module docstrings for each test file.",
+        "Run client security tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0166",
+      "status": "todo",
+      "title": "Split oversized TUI app_tests.rs into focused test modules",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/tests/app_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/tests/app_tests.rs is 4226 lines (wc -l), exceeding the 700-line heuristic and 1000-line hard split guidance."
+      ],
+      "plan": [
+        "Identify logical test groupings (e.g., popups, navigation, search, jobs) and split into separate test files.",
+        "Ensure each new file has a module docstring and cohesive scope.",
+        "Run the relevant TUI tests to confirm coverage."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0180",
+      "status": "todo",
+      "title": "Split oversized list_all.rs command implementation into submodules",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all.rs is 830 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Extract resource fetchers and output formatters into submodules.",
+        "Keep command entrypoint minimal and add docstrings for new modules.",
+        "Run list-all tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [
+        "RQ-0159",
+        "RQ-0160",
+        "RQ-0161"
+      ],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0163",
+      "status": "todo",
+      "title": "Add module docstring + hermetic env setup to saved_searches_tests",
+      "priority": "low",
+      "tags": [
+        "tests",
+        "cli",
+        "docs"
+      ],
+      "scope": [
+        "crates/cli/tests/saved_searches_tests.rs",
+        "crates/cli/tests/common/mod.rs"
+      ],
+      "evidence": [
+        "crates/cli/tests/saved_searches_tests.rs starts with use statements and lacks a //! module docstring.",
+        "saved_searches_tests uses cargo_bin_cmd directly without DOTENV_DISABLED or env cleanup."
+      ],
+      "plan": [
+        "Add a module-level docstring describing responsibilities/non-responsibilities and invariants.",
+        "Use the shared hermetic command helper (or set DOTENV_DISABLED + env removals) in saved_searches_tests.",
+        "Run saved_searches_tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0165",
+      "status": "todo",
+      "title": "Document SPLUNK_CONFIG_PATH in .env.example (and usage docs)",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "config"
+      ],
+      "scope": [
+        ".env.example",
+        "docs/usage.md",
+        "README.md"
+      ],
+      "evidence": [
+        ".env.example lists SPLUNK_* vars but does not mention SPLUNK_CONFIG_PATH.",
+        "crates/cli/src/main.rs documents SPLUNK_CONFIG_PATH as a supported env var for --config-path."
+      ],
+      "plan": [
+        "Add a commented SPLUNK_CONFIG_PATH entry to .env.example with a short description.",
+        "Ensure usage docs mention the env var and precedence if needed.",
+        "Run lint-docs or targeted doc checks if required."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0176",
+      "status": "todo",
+      "title": "Split oversized client models.rs into per-resource model modules",
+      "priority": "low",
+      "tags": [
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/models.rs"
+      ],
+      "evidence": [
+        "crates/client/src/models.rs is 798 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Group models by endpoint/resource and extract into submodules.",
+        "Ensure new files carry module docstrings and preserve serde behavior.",
+        "Run client model/unit tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0177",
+      "status": "todo",
+      "title": "Split oversized TUI app/input.rs into per-screen input modules",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/app/input.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/input.rs is 774 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Extract per-screen input handlers into submodules while keeping App impl cohesive.",
+        "Add module docstrings and keep APIs private where possible.",
+        "Run TUI unit tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0178",
+      "status": "todo",
+      "title": "Split oversized CLI config_tests.rs into smaller test modules",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/tests/config_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/tests/config_tests.rs is 737 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Split config tests by topic (profiles, keyring, output) into separate files.",
+        "Add module docstrings for new test files.",
+        "Run CLI config tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0179",
+      "status": "todo",
+      "title": "Split oversized TUI snapshot_tests.rs into focused snapshot suites",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/tests/snapshot_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/tests/snapshot_tests.rs is 720 lines (wc -l), above the 700-line heuristic."
+      ],
+      "plan": [
+        "Break snapshot tests into per-screen or per-feature files.",
+        "Keep snapshot fixtures organized and add docstrings.",
+        "Run TUI snapshot tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-28T20:17:04Z",
+      "updated_at": "2026-01-28T20:17:04Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
