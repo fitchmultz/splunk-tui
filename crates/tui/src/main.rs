@@ -240,11 +240,13 @@ async fn main() -> Result<()> {
     // Create app with persisted state (now includes env var overrides for search defaults)
     let mut app = App::new(Some(persisted_state), connection_ctx);
 
-    // Spawn background health monitoring task (60-second interval)
+    // Spawn background health monitoring task (configurable interval, default 60s)
     let tx_health = tx.clone();
     let client_health = client.clone();
+    let health_check_interval = config.connection.health_check_interval_seconds;
     tokio::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60));
+        let mut interval =
+            tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
         loop {
             interval.tick().await;
             let mut c = client_health.lock().await;

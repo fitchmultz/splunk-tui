@@ -563,6 +563,7 @@ mod tests {
                 max_retries: Some(5),
                 session_expiry_buffer_seconds: Some(60),
                 session_ttl_seconds: Some(3600),
+                health_check_interval_seconds: None,
             },
         );
 

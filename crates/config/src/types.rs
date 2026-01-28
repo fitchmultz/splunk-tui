@@ -98,6 +98,10 @@ pub struct ConnectionConfig {
     /// Default: 3600 seconds (1 hour)
     #[serde(default = "default_session_ttl")]
     pub session_ttl_seconds: u64,
+    /// Health check interval in seconds (how often to poll server health)
+    /// Default: 60 seconds
+    #[serde(default = "default_health_check_interval")]
+    pub health_check_interval_seconds: u64,
 }
 
 /// Default session expiry buffer in seconds.
@@ -108,6 +112,11 @@ fn default_session_expiry_buffer() -> u64 {
 /// Default session TTL in seconds (1 hour).
 fn default_session_ttl() -> u64 {
     3600
+}
+
+/// Default health check interval in seconds.
+fn default_health_check_interval() -> u64 {
+    60
 }
 
 /// Main configuration structure.
@@ -452,6 +461,9 @@ pub struct ProfileConfig {
     /// Session time-to-live in seconds (how long tokens remain valid)
     /// Default: 3600 seconds (1 hour)
     pub session_ttl_seconds: Option<u64>,
+    /// Health check interval in seconds (how often to poll server health)
+    /// Default: 60 seconds
+    pub health_check_interval_seconds: Option<u64>,
 }
 
 /// An overridable keybinding action identifier.
@@ -516,6 +528,7 @@ impl Default for Config {
                 max_retries: 3,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
+                health_check_interval_seconds: default_health_check_interval(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken {
@@ -538,6 +551,7 @@ impl Config {
                 max_retries: 3,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
+                health_check_interval_seconds: default_health_check_interval(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::ApiToken { token },
@@ -555,6 +569,7 @@ impl Config {
                 max_retries: 3,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
+                health_check_interval_seconds: default_health_check_interval(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken { username, password },
@@ -618,6 +633,7 @@ mod tests {
             max_retries: 5,
             session_expiry_buffer_seconds: default_session_expiry_buffer(),
             session_ttl_seconds: default_session_ttl(),
+            health_check_interval_seconds: default_health_check_interval(),
         };
 
         let json = serde_json::to_string(&config).unwrap();
@@ -640,6 +656,7 @@ mod tests {
             max_retries: Some(5),
             session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
             session_ttl_seconds: Some(default_session_ttl()),
+            health_check_interval_seconds: Some(default_health_check_interval()),
         };
 
         let json = serde_json::to_string(&original).unwrap();
@@ -793,6 +810,7 @@ mod tests {
             max_retries: Some(3),
             session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
             session_ttl_seconds: Some(default_session_ttl()),
+            health_check_interval_seconds: Some(default_health_check_interval()),
         };
 
         let debug_output = format!("{:?}", profile);
@@ -822,6 +840,7 @@ mod tests {
             max_retries: Some(3),
             session_expiry_buffer_seconds: Some(default_session_expiry_buffer()),
             session_ttl_seconds: Some(default_session_ttl()),
+            health_check_interval_seconds: Some(default_health_check_interval()),
         };
 
         let debug_output = format!("{:?}", profile);
@@ -872,6 +891,7 @@ mod tests {
             max_retries: 5,
             session_expiry_buffer_seconds: default_session_expiry_buffer(),
             session_ttl_seconds: default_session_ttl(),
+            health_check_interval_seconds: default_health_check_interval(),
         };
 
         let debug_output = format!("{:?}", config);

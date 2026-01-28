@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0151",
-      "status": "todo",
-      "title": "Make health check interval configurable",
-      "priority": "medium",
-      "tags": [
-        "config",
-        "tui",
-        "health-check"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "main.rs line 204: 60-second health check interval is hardcoded",
-        "No way to adjust polling frequency for different environments",
-        "Some users may want more/less frequent health updates",
-        "Should be configurable via env var or config file"
-      ],
-      "plan": [
-        "Add SPLUNK_HEALTH_CHECK_INTERVAL env var support",
-        "Add health_check_interval to config if appropriate",
-        "Default to 60 seconds for backward compatibility",
-        "Update documentation",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0152",
       "status": "todo",
       "title": "Add request builder clone failure handling improvement",

@@ -592,6 +592,7 @@ async fn run_command(
                     max_retries: 3,
                     session_expiry_buffer_seconds: 60,
                     session_ttl_seconds: 3600,
+                    health_check_interval_seconds: 60,
                 },
                 auth: splunk_config::AuthConfig {
                     strategy: splunk_config::types::AuthStrategy::SessionToken {

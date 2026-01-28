@@ -79,6 +79,7 @@ pub struct ConfigLoader {
     max_retries: Option<usize>,
     session_expiry_buffer_seconds: Option<u64>,
     session_ttl_seconds: Option<u64>,
+    health_check_interval_seconds: Option<u64>,
     profile_name: Option<String>,
     profile_missing: Option<String>,
     config_path: Option<PathBuf>,
@@ -130,6 +131,7 @@ impl ConfigLoader {
             max_retries: None,
             session_expiry_buffer_seconds: None,
             session_ttl_seconds: None,
+            health_check_interval_seconds: None,
             profile_name: None,
             profile_missing: None,
             config_path: None,
@@ -235,6 +237,9 @@ impl ConfigLoader {
         if let Some(ttl) = profile.session_ttl_seconds {
             self.session_ttl_seconds = Some(ttl);
         }
+        if let Some(interval) = profile.health_check_interval_seconds {
+            self.health_check_interval_seconds = Some(interval);
+        }
         Ok(())
     }
 
@@ -306,6 +311,18 @@ impl ConfigLoader {
                     var: "SPLUNK_SESSION_TTL".to_string(),
                     message: "must be a number".to_string(),
                 })?);
+        }
+        if let Some(interval) = Self::env_var_or_none("SPLUNK_HEALTH_CHECK_INTERVAL") {
+            self.health_check_interval_seconds =
+                Some(
+                    interval
+                        .trim()
+                        .parse()
+                        .map_err(|_| ConfigError::InvalidValue {
+                            var: "SPLUNK_HEALTH_CHECK_INTERVAL".to_string(),
+                            message: "must be a number".to_string(),
+                        })?,
+                );
         }
         // Search defaults
         if let Some(earliest) = Self::env_var_or_none("SPLUNK_EARLIEST_TIME") {
@@ -404,6 +421,7 @@ impl ConfigLoader {
                 max_retries: self.max_retries.unwrap_or(3),
                 session_expiry_buffer_seconds: self.session_expiry_buffer_seconds.unwrap_or(60),
                 session_ttl_seconds: self.session_ttl_seconds.unwrap_or(3600),
+                health_check_interval_seconds: self.health_check_interval_seconds.unwrap_or(60),
             },
             auth: AuthConfig { strategy },
         })
@@ -503,6 +521,7 @@ mod tests {
             std::env::remove_var("SPLUNK_MAX_RESULTS");
             std::env::remove_var("SPLUNK_SESSION_EXPIRY_BUFFER");
             std::env::remove_var("SPLUNK_SESSION_TTL");
+            std::env::remove_var("SPLUNK_HEALTH_CHECK_INTERVAL");
         }
     }
 
@@ -1088,5 +1107,62 @@ mod tests {
         // Should use defaults
         assert_eq!(config.connection.session_ttl_seconds, 3600);
         assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
+    }
+
+    #[test]
+    #[serial]
+    fn test_health_check_interval_env_var() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_HEALTH_CHECK_INTERVAL", "120");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        assert_eq!(config.connection.health_check_interval_seconds, 120);
+    }
+
+    #[test]
+    #[serial]
+    fn test_health_check_interval_default() {
+        let _env = EnvVarGuard::new();
+
+        // Don't set health check interval env var
+        unsafe {
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let loader = ConfigLoader::new().from_env().unwrap();
+        let config = loader.build().unwrap();
+
+        // Should use default of 60 seconds
+        assert_eq!(config.connection.health_check_interval_seconds, 60);
+    }
+
+    #[test]
+    #[serial]
+    fn test_invalid_health_check_interval_env_var() {
+        let _env = EnvVarGuard::new();
+
+        unsafe {
+            std::env::set_var("SPLUNK_HEALTH_CHECK_INTERVAL", "not-a-number");
+            std::env::set_var("SPLUNK_BASE_URL", "https://localhost:8089");
+            std::env::set_var("SPLUNK_API_TOKEN", "test-token");
+        }
+
+        let result = ConfigLoader::new().from_env();
+
+        match result {
+            Err(ConfigError::InvalidValue { var, .. }) => {
+                assert_eq!(var, "SPLUNK_HEALTH_CHECK_INTERVAL");
+            }
+            Ok(_) => panic!("Expected an error for invalid SPLUNK_HEALTH_CHECK_INTERVAL"),
+            Err(_) => panic!("Expected InvalidValue error for SPLUNK_HEALTH_CHECK_INTERVAL"),
+        }
     }
 }
