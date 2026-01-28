@@ -6,12 +6,15 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::Style,
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{
+        Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
+    },
 };
 use splunk_config::Theme;
 
+use crate::app::App;
 use crate::input::help;
 
 /// Default popup dimensions as percentages of screen size.
@@ -159,7 +162,9 @@ impl PopupBuilder {
 ///
 /// * `f` - The frame to render to
 /// * `popup` - The popup to render
-pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
+/// * `theme` - The color theme to use
+/// * `app` - The app state (for accessing scroll offsets)
+pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
     let size = f.area();
     let popup_area = centered_rect(POPUP_WIDTH_PERCENT, POPUP_HEIGHT_PERCENT, size);
 
@@ -193,16 +198,58 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme) {
         | PopupType::ConfirmDisableApp(_) => Wrap { trim: true },
     };
 
-    let p = Paragraph::new(popup.content.as_str())
-        .block(
-            Block::default()
-                .title(popup.title.as_str())
-                .borders(Borders::ALL)
-                .style(Style::default().fg(border_color)),
-        )
-        .alignment(Alignment::Center)
-        .wrap(wrap_mode);
-    f.render_widget(p, popup_area);
+    // Determine alignment based on popup type
+    // Help popup uses left alignment for better readability of keybindings
+    let alignment = match &popup.kind {
+        PopupType::Help => Alignment::Left,
+        _ => Alignment::Center,
+    };
+
+    // For Help popup, apply scroll offset and render scrollbar if needed
+    if popup.kind == PopupType::Help {
+        let scroll_offset = app.help_scroll_offset;
+
+        let p = Paragraph::new(popup.content.as_str())
+            .block(
+                Block::default()
+                    .title(popup.title.as_str())
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(border_color)),
+            )
+            .alignment(alignment)
+            .wrap(wrap_mode)
+            .scroll((scroll_offset as u16, 0));
+        f.render_widget(p, popup_area);
+
+        // Calculate content height and render scrollbar if needed
+        // Content height is the number of lines in the content
+        let content_height = popup.content.lines().count();
+        let visible_lines = popup_area.height.saturating_sub(2) as usize; // Account for borders
+
+        if content_height > visible_lines {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓"));
+            let mut scrollbar_state =
+                ScrollbarState::new(content_height.saturating_sub(1)).position(scroll_offset);
+            f.render_stateful_widget(
+                scrollbar,
+                popup_area.inner(Margin::new(0, 1)),
+                &mut scrollbar_state,
+            );
+        }
+    } else {
+        let p = Paragraph::new(popup.content.as_str())
+            .block(
+                Block::default()
+                    .title(popup.title.as_str())
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(border_color)),
+            )
+            .alignment(alignment)
+            .wrap(wrap_mode);
+        f.render_widget(p, popup_area);
+    }
 }
 
 /// Create a centered rectangle with the given percentage of the screen size.

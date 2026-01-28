@@ -5359,6 +5359,57 @@
       "completed_at": "2026-01-28T01:10:24.801744000Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0105",
+      "status": "done",
+      "title": "Make Help popup scrollable, left-aligned, and derived from actual keymap",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "keybindings",
+        "help"
+      ],
+      "scope": [
+        "crates/tui/src/ui/popup.rs",
+        "crates/tui/tests/snapshot_tests.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/input/keymap/"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/popup.rs: render_popup() uses Alignment::Center for all popups including Help, and Paragraph has no scroll support - content truncates on small terminals.",
+        "crates/tui/src/ui/popup.rs: Help popup uses same fixed 60%x50% dimensions as other popups with no scroll offset tracking.",
+        "crates/tui/src/input/help.rs: help_text() already generates content from centralized keymap (bindings::all()), so keymap drift is solved.",
+        "crates/tui/tests/snapshot_tests.rs: snapshot_help_popup exists and will need update when alignment changes from center to left.",
+        "crates/tui/tests/snapshots/snapshot_tests__snapshot_help_popup.snap: Shows help content is center-aligned and truncated in 80x24 terminal."
+      ],
+      "plan": [
+        "Add help_scroll_offset field to App state (similar to error_scroll_offset and index_details_scroll_offset).",
+        "Modify render_popup() to support left-alignment for Help popup (keep center for others) and accept scroll offset.",
+        "Add scroll handlers (j/k, Up/Down, PgUp/PgDn) for Help popup in app/popups.rs.",
+        "Update snapshot_help_popup test and add snapshot_help_popup_small_terminal test for narrow terminal coverage.",
+        "Verify help-close keys (Esc, q, Ctrl+Q) still work after changes."
+      ],
+      "notes": [
+        "Keymap centralization already implemented: crates/tui/src/input/keymap/ with bindings/ submodules and help.rs generates text from it.",
+        "ErrorDetails and IndexDetails popups already have scroll implementation - use as reference pattern.",
+        "Help popup is now scrollable with j/k/Up/Down/PgUp/PgDn keys",
+        "Help content is left-aligned for better readability",
+        "Help content is derived from centralized keymap (help::help_text() from input/keymap/)",
+        "Added help_scroll_offset to App state with proper reset on close",
+        "Added unit tests for scroll behavior and close-reset",
+        "Added snapshot test for small terminal (40x20) coverage",
+        "All tests pass (107 unit + 32 snapshot tests)",
+        "make ci passes completely"
+      ],
+      "request": "scan finding",
+      "created_at": "2026-01-27T04:26:05Z",
+      "updated_at": "2026-01-28T01:26:09.837328000Z",
+      "completed_at": "2026-01-28T01:26:09.837328000Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }

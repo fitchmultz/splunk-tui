@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0105",
-      "status": "todo",
-      "title": "Make Help popup scrollable, left-aligned, and derived from actual keymap",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "keybindings",
-        "help"
-      ],
-      "scope": [
-        "crates/tui/src/ui/popup.rs",
-        "crates/tui/tests/snapshot_tests.rs",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/popup.rs: Help content is a long static string rendered via Paragraph with center alignment and no scroll support, so it will truncate on typical terminal sizes.",
-        "crates/tui/tests/snapshot_tests.rs: snapshot_help_popup asserts a specific help rendering, so keymap changes require coordinated updates and better structure.",
-        "crates/tui/src/app.rs: help popup is opened via KeyCode::Char('?') in many handlers, but help content is not generated from those handlers, enabling drift."
-      ],
-      "plan": [
-        "Change help popup rendering to support scrolling (similar to error details popup) and left-align the content for readability.",
-        "Generate help content from a centralized keymap definition (or at least a single source of truth) to prevent drift.",
-        "Update snapshot tests for help (and add a smaller-terminal snapshot) to ensure content remains accessible.",
-        "Verify all help-close keys still work after keymap changes."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-27T04:26:05Z",
-      "updated_at": "2026-01-27T04:26:05Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0115",
       "status": "todo",
       "title": "Add per-screen footer hints (discoverability without opening Help)",

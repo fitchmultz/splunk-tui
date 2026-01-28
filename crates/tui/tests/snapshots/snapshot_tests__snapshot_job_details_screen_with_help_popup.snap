@@ -1,5 +1,6 @@
 ---
 source: crates/tui/tests/snapshot_tests.rs
+assertion_line: 464
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -9,16 +10,16 @@ expression: harness.render()
 ┌Job Details───────────────────────────────────────────────────────────────────┐
 │                    Job: scheduler_admin_search_1234567890                    │
 └───────────────┌Help──────────────────────────────────────────┐───────────────┘
-┌───────────────│                 Global Keys:                 │───────────────┐
-│Status: Done   │                 ?          Help              │               │
-│Duration: 5.23 │                 q          Quit              │               │
-│Event Count: 50│            Ctrl+Q     Quit (global)          │               │
-│Scan Count: 150│             Tab        Next screen           │               │
-│Result Count: 1│           Shift+Tab  Previous screen         │               │
-│Disk Usage: 204│          Ctrl+c     Copy to clipboard        │               │
-│Priority: 5    │                                              │               │
-│Label: Schedule│                Search Screen:                │               │
-│Cursor Time: 20│              Enter     Run search            │               │
+┌───────────────│Global Keys:                                  ↑───────────────┐
+│Status: Done   │  ?          Help                             █               │
+│Duration: 5.23 │  q          Quit                             ║               │
+│Event Count: 50│  Ctrl+Q     Quit (global)                    ║               │
+│Scan Count: 150│  Tab        Next screen                      ║               │
+│Result Count: 1│  Shift+Tab  Previous screen                  ║               │
+│Disk Usage: 204│  Ctrl+c     Copy to clipboard                ║               │
+│Priority: 5    │                                              ║               │
+│Label: Schedule│Search Screen:                                ║               │
+│Cursor Time: 20│  Enter     Run search                        ↓               │
 │Finalized: No  └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

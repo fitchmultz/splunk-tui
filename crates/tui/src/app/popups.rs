@@ -24,6 +24,23 @@ impl App {
         match (self.popup.as_ref().map(|p| &p.kind), key.code) {
             (Some(PopupType::Help), KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('?')) => {
                 self.popup = None;
+                self.help_scroll_offset = 0;
+                None
+            }
+            (Some(PopupType::Help), KeyCode::Char('j') | KeyCode::Down) => {
+                self.help_scroll_offset = self.help_scroll_offset.saturating_add(1);
+                None
+            }
+            (Some(PopupType::Help), KeyCode::Char('k') | KeyCode::Up) => {
+                self.help_scroll_offset = self.help_scroll_offset.saturating_sub(1);
+                None
+            }
+            (Some(PopupType::Help), KeyCode::PageDown) => {
+                self.help_scroll_offset = self.help_scroll_offset.saturating_add(10);
+                None
+            }
+            (Some(PopupType::Help), KeyCode::PageUp) => {
+                self.help_scroll_offset = self.help_scroll_offset.saturating_sub(10);
                 None
             }
             (Some(PopupType::ConfirmCancel(_)), KeyCode::Char('y') | KeyCode::Enter) => {
@@ -242,6 +259,76 @@ mod tests {
         let action = app.handle_popup_input(key(KeyCode::Char('q')));
         assert!(action.is_none());
         assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_help_scroll() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::Help).build());
+        app.help_scroll_offset = 0;
+
+        // Scroll down with 'j'
+        let action = app.handle_popup_input(key(KeyCode::Char('j')));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 1);
+
+        // Scroll down with Down arrow
+        let action = app.handle_popup_input(key(KeyCode::Down));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 2);
+
+        // Scroll up with 'k'
+        let action = app.handle_popup_input(key(KeyCode::Char('k')));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 1);
+
+        // Scroll up with Up arrow
+        let action = app.handle_popup_input(key(KeyCode::Up));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 0);
+
+        // Scroll up at 0 should stay at 0 (saturating_sub)
+        let action = app.handle_popup_input(key(KeyCode::Up));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 0);
+
+        // Page down
+        let action = app.handle_popup_input(key(KeyCode::PageDown));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 10);
+
+        // Page up
+        let action = app.handle_popup_input(key(KeyCode::PageUp));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 0);
+
+        // Page up at 0 should stay at 0 (saturating_sub)
+        let action = app.handle_popup_input(key(KeyCode::PageUp));
+        assert!(action.is_none());
+        assert_eq!(app.help_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_popup_help_close_resets_scroll() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::Help).build());
+        app.help_scroll_offset = 5;
+
+        // Close with Esc should reset scroll offset
+        let action = app.handle_popup_input(key(KeyCode::Esc));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+        assert_eq!(app.help_scroll_offset, 0);
+
+        // Reopen and scroll
+        app.popup = Some(Popup::builder(PopupType::Help).build());
+        app.help_scroll_offset = 3;
+
+        // Close with 'q' should reset scroll offset
+        let action = app.handle_popup_input(key(KeyCode::Char('q')));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+        assert_eq!(app.help_scroll_offset, 0);
     }
 
     #[test]

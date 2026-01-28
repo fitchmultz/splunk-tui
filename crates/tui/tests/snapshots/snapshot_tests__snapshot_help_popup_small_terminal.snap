@@ -1,0 +1,25 @@
+---
+source: crates/tui/tests/snapshot_tests.rs
+assertion_line: 215
+expression: harness.render()
+---
+┌──────────────────────────────────────┐
+│Splunk TUI - Jobs | [?] Unknown       │
+│ |                                    │
+└──────────────────────────────────────┘
+┌Search Jobs───────────────────────────┐
+│ No job┌Help──────────────────┐efresh.│
+│       │Global Keys:          ↑       │
+│       │  ?          Help     █       │
+│       │  q          Quit     ║       │
+│       │  Ctrl+Q     Quit     ║       │
+│       │(global)              ║       │
+│       │  Tab        Next     ║       │
+│       │screen                ║       │
+│       │  Shift+Tab  Previous ↓       │
+│       └──────────────────────┘       │
+│                                      │
+└──────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│ Tab:Next Screen | Shift+Tab:Previous │
+└──────────────────────────────────────┘

@@ -139,7 +139,7 @@ impl App {
 
         // Render popup if active (on top of toasts)
         if let Some(ref popup) = self.popup {
-            crate::ui::popup::render_popup(f, popup, &self.theme);
+            crate::ui::popup::render_popup(f, popup, &self.theme, self);
         }
 
         // Render error details popup if active

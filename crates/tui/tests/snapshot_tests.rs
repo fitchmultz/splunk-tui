@@ -206,6 +206,16 @@ fn snapshot_help_popup() {
 }
 
 #[test]
+fn snapshot_help_popup_small_terminal() {
+    // Test with narrow terminal (40x20) to verify scroll behavior
+    let mut harness = TuiHarness::new(40, 20);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build());
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
 fn snapshot_confirm_cancel_popup() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;

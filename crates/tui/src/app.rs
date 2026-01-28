@@ -127,6 +127,9 @@ pub struct App {
     // Index details popup scroll offset
     pub index_details_scroll_offset: usize,
 
+    // Help popup scroll offset
+    pub help_scroll_offset: usize,
+
     // Layout tracking
     pub last_area: Rect,
 
@@ -299,6 +302,7 @@ impl App {
             current_error: None,
             error_scroll_offset: 0,
             index_details_scroll_offset: 0,
+            help_scroll_offset: 0,
             last_area: Rect::default(),
 
             // Connection context (RQ-0134)
