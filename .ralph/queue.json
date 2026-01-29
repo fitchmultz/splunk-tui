@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0189",
-      "status": "todo",
-      "title": "Add tests for terminal resize handling in TUI",
-      "priority": "medium",
-      "tags": [
-        "testing",
-        "tui",
-        "ux",
-        "coverage-gap"
-      ],
-      "scope": [
-        "crates/tui/src/"
-      ],
-      "evidence": [
-        "No tests found for terminal resize events",
-        "TUI layout depends on terminal dimensions",
-        "Resize could cause panics or rendering issues",
-        "crates/tui/src/app/render.rs likely handles layout but untested"
-      ],
-      "plan": [
-        "Identify where resize events are handled",
-        "Create tests for resize at various dimensions (small, large, zero)",
-        "Test edge cases: zero width/height, very large dimensions",
-        "Ensure no panics on resize",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: no tests for terminal resize handling",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0190",
       "status": "todo",
       "title": "Add MaxRetriesExceeded error context with original error",

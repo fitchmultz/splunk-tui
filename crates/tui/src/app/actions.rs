@@ -417,6 +417,10 @@ impl App {
                 // Trigger reload for current screen
                 // The load action will be sent by main.rs after this
             }
+            Action::Resize(width, height) => {
+                // Update last_area to reflect new terminal dimensions
+                self.last_area = ratatui::layout::Rect::new(0, 0, width, height);
+            }
             _ => {}
         }
     }

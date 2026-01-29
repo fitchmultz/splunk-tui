@@ -129,6 +129,9 @@ async fn main() -> Result<()> {
                             }
                         }
                         crossterm::event::Event::Mouse(mouse) => Some(Action::Mouse(mouse)),
+                        crossterm::event::Event::Resize(width, height) => {
+                            Some(Action::Resize(width, height))
+                        }
                         _ => None,
                     };
 

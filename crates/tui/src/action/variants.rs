@@ -69,6 +69,8 @@ pub enum Action {
     Input(KeyEvent),
     /// Raw mouse input event
     Mouse(crossterm::event::MouseEvent),
+    /// Terminal resize event with new dimensions (width, height)
+    Resize(u16, u16),
     /// Navigate down in current list/table
     NavigateDown,
     /// Navigate up in current list/table
