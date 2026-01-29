@@ -1,0 +1,61 @@
+{
+  "entry": [
+    {
+      "name": "search",
+      "id": "https://localhost:8089/services/apps/local/search",
+      "updated": "2024-01-20T10:00:00-08:00",
+      "links": {},
+      "author": "splunk",
+      "content": {
+        "name": "search",
+        "label": "Search & Reporting",
+        "version": "9.1.2",
+        "is_configured": true,
+        "is_visible": true,
+        "disabled": false,
+        "description": "Splunk Search app",
+        "author": "Splunk Inc."
+      }
+    },
+    {
+      "name": "Splunk_TA_example",
+      "id": "https://localhost:8089/services/apps/local/Splunk_TA_example",
+      "updated": "2024-01-20T10:00:00-08:00",
+      "links": {},
+      "author": "splunk",
+      "content": {
+        "name": "Splunk_TA_example",
+        "label": "Example Add-on",
+        "version": "1.2.3",
+        "is_configured": true,
+        "is_visible": false,
+        "disabled": false,
+        "description": "An example Splunk TA",
+        "author": "Splunk"
+      }
+    },
+    {
+      "name": "disabled_app",
+      "id": "https://localhost:8089/services/apps/local/disabled_app",
+      "updated": "2024-01-20T10:00:00-08:00",
+      "links": {},
+      "author": "splunk",
+      "content": {
+        "name": "disabled_app",
+        "label": "Disabled App",
+        "version": "1.0.0",
+        "is_configured": false,
+        "is_visible": true,
+        "disabled": true,
+        "description": "A disabled app",
+        "author": "Test Author"
+      }
+    }
+  ],
+  "paging": {
+    "total": 3,
+    "perPage": 30,
+    "offset": 0
+  },
+  "messages": []
+}

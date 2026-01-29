@@ -1,0 +1,27 @@
+{
+  "entry": [
+    {
+      "name": "test_app",
+      "id": "https://localhost:8089/services/apps/local/test_app",
+      "updated": "2024-01-20T10:00:00-08:00",
+      "links": {},
+      "author": "splunk",
+      "content": {
+        "name": "test_app",
+        "label": "Test App",
+        "version": "1.0.0",
+        "is_configured": true,
+        "is_visible": true,
+        "disabled": false,
+        "description": "Test app for updates",
+        "author": "Test Author"
+      }
+    }
+  ],
+  "paging": {
+    "total": 1,
+    "perPage": 30,
+    "offset": 0
+  },
+  "messages": []
+}
