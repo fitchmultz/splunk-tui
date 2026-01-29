@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0207",
-      "status": "todo",
-      "title": "Use structured errors for cluster detection in list-all",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "list-all",
-        "errors"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all/fetchers.rs",
-        "crates/client/src/error.rs",
-        "crates/cli/tests/list_all_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/list_all/fetchers.rs detects 'not clustered' by string-matching error messages for 'cluster', '404', or 'not configured'."
-      ],
-      "plan": [
-        "Update fetch_cluster to match on ClientError variants (ApiError status codes, NotFound, etc.) instead of string matching.",
-        "Ensure other error types still surface as error status.",
-        "Add/adjust tests to cover clustered, not-clustered (404), and unexpected error cases."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0208",
       "status": "todo",
       "title": "Parallelize list-all resource fetches and deduplicate timeout logic",
