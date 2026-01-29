@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0187",
-      "status": "todo",
-      "title": "Add architecture tests for file size limits",
-      "priority": "medium",
-      "tags": [
-        "testing",
-        "architecture",
-        "code-quality"
-      ],
-      "scope": [
-        "crates/"
-      ],
-      "evidence": [
-        "AGENTS.md specifies files over 700 LOC require justification, over 1000 LOC presumed mis-scoped",
-        "builder.rs at 1103 LOC was not caught early",
-        "No automated enforcement of file size guidelines",
-        "Manual review is the only way to catch oversized files"
-      ],
-      "plan": [
-        "Create tests/architecture/file_size_tests.rs",
-        "Write test that walks all .rs files and checks LOC",
-        "Files >700 LOC should generate warnings",
-        "Files >1000 LOC should fail the test",
-        "Add exclusions for generated files or justified cases",
-        "Run in make ci"
-      ],
-      "notes": [],
-      "request": "scan finding: no automated enforcement of file size limits",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0188",
       "status": "todo",
       "title": "Add tests for TUI async side effect handlers",
