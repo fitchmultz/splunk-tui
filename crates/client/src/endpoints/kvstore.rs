@@ -4,6 +4,7 @@ use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use crate::models::{KvStoreMember, KvStoreReplicationStatus, KvStoreStatus};
 
 /// Get KVStore status.
@@ -12,6 +13,7 @@ pub async fn get_kvstore_status(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<KvStoreStatus> {
     let url = format!("{}/services/kvstore/status", base_url);
 
@@ -19,7 +21,14 @@ pub async fn get_kvstore_status(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/kvstore/status",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 

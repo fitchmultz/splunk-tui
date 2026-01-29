@@ -26,6 +26,7 @@ use tracing::debug;
 use crate::auth::SessionManager;
 use crate::endpoints;
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use crate::models::{
     App, ClusterInfo, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     LogEntry, LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo,
@@ -105,6 +106,7 @@ pub struct SplunkClient {
     pub(crate) max_retries: usize,
     pub(crate) session_ttl_seconds: u64,
     pub(crate) session_expiry_buffer_seconds: u64,
+    pub(crate) metrics: Option<MetricsCollector>,
 }
 
 impl SplunkClient {
@@ -156,6 +158,7 @@ impl SplunkClient {
                 DEFAULT_POLL_INTERVAL_MS,
                 DEFAULT_MAX_WAIT_SECS,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await?;
         }
@@ -210,6 +213,7 @@ impl SplunkClient {
                 DEFAULT_MAX_WAIT_SECS,
                 self.max_retries,
                 progress_cb,
+                self.metrics.as_ref(),
             )
             .await?;
         }
@@ -237,6 +241,7 @@ impl SplunkClient {
                 query,
                 options,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -261,6 +266,7 @@ impl SplunkClient {
                 Some(offset),
                 endpoints::search::OutputMode::Json,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -277,6 +283,7 @@ impl SplunkClient {
                 &__token,
                 sid,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -298,6 +305,7 @@ impl SplunkClient {
                 count,
                 offset,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -308,8 +316,15 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::cancel_job(&self.http, &self.base_url, &__token, sid, self.max_retries,)
-                .await
+            endpoints::cancel_job(
+                &self.http,
+                &self.base_url,
+                &__token,
+                sid,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -318,8 +333,15 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::delete_job(&self.http, &self.base_url, &__token, sid, self.max_retries,)
-                .await
+            endpoints::delete_job(
+                &self.http,
+                &self.base_url,
+                &__token,
+                sid,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -339,6 +361,7 @@ impl SplunkClient {
                 count,
                 offset,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -349,8 +372,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::list_saved_searches(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::list_saved_searches(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -366,6 +395,7 @@ impl SplunkClient {
                 name,
                 search,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -382,6 +412,7 @@ impl SplunkClient {
                 &__token,
                 name,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -399,6 +430,7 @@ impl SplunkClient {
                 count,
                 offset,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -415,6 +447,7 @@ impl SplunkClient {
                 &__token,
                 app_name,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -432,6 +465,7 @@ impl SplunkClient {
                 app_name,
                 false,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -449,6 +483,7 @@ impl SplunkClient {
                 app_name,
                 true,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -470,6 +505,7 @@ impl SplunkClient {
                 count,
                 offset,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -480,8 +516,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::get_server_info(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::get_server_info(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -490,7 +532,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::get_health(&self.http, &self.base_url, &__token, self.max_retries,).await
+            endpoints::get_health(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -499,8 +548,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::get_cluster_info(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::get_cluster_info(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -509,8 +564,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::get_cluster_peers(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::get_cluster_peers(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -519,8 +580,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::get_license_usage(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::get_license_usage(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -529,8 +596,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::list_license_pools(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::list_license_pools(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -539,8 +612,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::list_license_stacks(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::list_license_stacks(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -549,8 +628,14 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::get_kvstore_status(&self.http, &self.base_url, &__token, self.max_retries,)
-                .await
+            endpoints::get_kvstore_status(
+                &self.http,
+                &self.base_url,
+                &__token,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
         )
     }
 
@@ -568,6 +653,7 @@ impl SplunkClient {
                 &self.base_url,
                 &__token,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )
@@ -589,6 +675,7 @@ impl SplunkClient {
                 count,
                 earliest,
                 self.max_retries,
+                self.metrics.as_ref(),
             )
             .await
         )

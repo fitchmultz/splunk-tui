@@ -29,6 +29,9 @@ tracing = { workspace = true }
 # Time
 time = { workspace = true }
 
+# Metrics
+metrics = "0.24"
+
 [dev-dependencies]
 dotenvy = { workspace = true }
 mockito = { workspace = true }

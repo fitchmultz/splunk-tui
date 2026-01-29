@@ -106,6 +106,7 @@ async fn test_pagination_partial_failure_retry() {
         Some(0),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
     assert!(result1.is_ok(), "Page 1 should succeed");
@@ -122,6 +123,7 @@ async fn test_pagination_partial_failure_retry() {
         Some(2),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -145,6 +147,7 @@ async fn test_pagination_partial_failure_retry() {
         Some(4),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
     assert!(result3.is_ok(), "Page 3 should succeed");
@@ -334,6 +337,7 @@ async fn test_non_cloneable_body_single_attempt() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -432,6 +436,7 @@ async fn test_pagination_retry_after_header() {
         Some(0),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
     assert!(result1.is_ok());
@@ -447,6 +452,7 @@ async fn test_pagination_retry_after_header() {
         Some(1),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -469,6 +475,7 @@ async fn test_pagination_retry_after_header() {
         Some(2),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -530,6 +537,7 @@ async fn test_pagination_retry_exhaustion() {
         Some(0),
         endpoints::OutputMode::Json,
         2, // max_retries = 2
+        None,
     )
     .await;
     assert!(result1.is_ok());
@@ -545,6 +553,7 @@ async fn test_pagination_retry_exhaustion() {
         Some(1),
         endpoints::OutputMode::Json,
         2, // max_retries = 2 (3 total attempts)
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -646,6 +655,7 @@ async fn test_pagination_mixed_error_types() {
             Some(offset),
             endpoints::OutputMode::Json,
             3,
+            None,
         )
         .await;
 

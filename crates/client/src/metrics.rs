@@ -1,0 +1,310 @@
+//! Metrics collection for API call performance.
+//!
+//! This module provides metrics collection for Splunk API calls, including:
+//! - Request latency histograms
+//! - Request counters (total, retries, errors)
+//! - Error categorization
+//!
+//! # What this module does NOT handle:
+//! - Metrics exposition/export (use a metrics exporter like `metrics-exporter-prometheus`)
+//! - Persistent storage of metrics
+//! - Alerting or threshold monitoring
+//!
+//! # Invariants
+//! - All metrics use consistent label names: `endpoint`, `method`, `status`, `error_category`
+//! - Metric recording is infallible (errors are silently ignored to prevent disrupting API calls)
+//! - Zero-cost when no metrics recorder is installed
+
+use crate::error::ClientError;
+use std::time::Duration;
+
+/// Metric name for request duration histogram.
+pub const METRIC_REQUEST_DURATION: &str = "splunk_api_request_duration_seconds";
+
+/// Metric name for total request counter.
+pub const METRIC_REQUESTS_TOTAL: &str = "splunk_api_requests_total";
+
+/// Metric name for retry counter.
+pub const METRIC_RETRIES_TOTAL: &str = "splunk_api_retries_total";
+
+/// Metric name for error counter.
+pub const METRIC_ERRORS_TOTAL: &str = "splunk_api_errors_total";
+
+/// Error categories for metrics labeling.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ErrorCategory {
+    /// Transport-level errors (connection refused, DNS, etc.)
+    Transport,
+    /// HTTP 4xx client errors
+    Http4xx,
+    /// HTTP 5xx server errors
+    Http5xx,
+    /// API-level errors (parsed from response body)
+    Api,
+    /// Request timeout
+    Timeout,
+    /// TLS/SSL errors
+    Tls,
+    /// Unknown/unclassified errors
+    Unknown,
+}
+
+impl ErrorCategory {
+    /// Returns the string label for this error category.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            ErrorCategory::Transport => "transport",
+            ErrorCategory::Http4xx => "http_4xx",
+            ErrorCategory::Http5xx => "http_5xx",
+            ErrorCategory::Api => "api",
+            ErrorCategory::Timeout => "timeout",
+            ErrorCategory::Tls => "tls",
+            ErrorCategory::Unknown => "unknown",
+        }
+    }
+}
+
+impl From<&ClientError> for ErrorCategory {
+    /// Categorize a ClientError for metrics purposes.
+    fn from(error: &ClientError) -> Self {
+        match error {
+            ClientError::Timeout(_) => ErrorCategory::Timeout,
+            ClientError::ConnectionRefused(_) => ErrorCategory::Transport,
+            ClientError::TlsError(_) => ErrorCategory::Tls,
+            ClientError::ApiError { status, .. } => {
+                if (400..500).contains(status) {
+                    ErrorCategory::Http4xx
+                } else if (500..600).contains(status) {
+                    ErrorCategory::Http5xx
+                } else {
+                    ErrorCategory::Api
+                }
+            }
+            ClientError::HttpError(e) => {
+                // Try to determine if it's a transport error or HTTP error
+                let err_str = e.to_string().to_lowercase();
+                if err_str.contains("connection")
+                    || err_str.contains("dns")
+                    || err_str.contains("reset")
+                    || err_str.contains("refused")
+                {
+                    ErrorCategory::Transport
+                } else {
+                    ErrorCategory::Unknown
+                }
+            }
+            ClientError::MaxRetriesExceeded(_, inner) => ErrorCategory::from(inner.as_ref()),
+            _ => ErrorCategory::Unknown,
+        }
+    }
+}
+
+/// Metrics collector for Splunk API calls.
+///
+/// This struct provides a lightweight wrapper around the `metrics` crate macros,
+/// providing type-safe methods for recording API metrics with consistent labels.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use splunk_client::metrics::MetricsCollector;
+///
+/// let collector = MetricsCollector::new();
+/// collector.record_request_duration("/services/search/jobs", "POST", Duration::from_millis(150), Some(200));
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct MetricsCollector {
+    /// Whether metrics collection is enabled.
+    enabled: bool,
+}
+
+impl MetricsCollector {
+    /// Create a new metrics collector.
+    ///
+    /// The collector is enabled by default. Use [`Self::disabled()`] to create
+    /// a collector that does not record any metrics.
+    pub fn new() -> Self {
+        Self { enabled: true }
+    }
+
+    /// Create a disabled metrics collector.
+    ///
+    /// This is useful when metrics are conditionally enabled and you need
+    /// a placeholder that implements the same interface but does nothing.
+    pub fn disabled() -> Self {
+        Self { enabled: false }
+    }
+
+    /// Check if metrics collection is enabled.
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Record the duration of an API request.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The API endpoint path (e.g., "/services/search/jobs")
+    /// * `method` - The HTTP method (e.g., "GET", "POST")
+    /// * `duration` - The request duration
+    /// * `status` - The HTTP status code, or None if the request failed before receiving a response
+    pub fn record_request_duration(
+        &self,
+        endpoint: &str,
+        method: &str,
+        duration: Duration,
+        status: Option<u16>,
+    ) {
+        if !self.enabled {
+            return;
+        }
+
+        let status_label = status.map_or("error".to_string(), |s| s.to_string());
+
+        metrics::histogram!(METRIC_REQUEST_DURATION,
+            "endpoint" => endpoint.to_string(),
+            "method" => method.to_string(),
+            "status" => status_label,
+        )
+        .record(duration.as_secs_f64());
+    }
+
+    /// Record a request attempt.
+    ///
+    /// This should be called for every request attempt, including retries.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The API endpoint path
+    /// * `method` - The HTTP method
+    pub fn record_request(&self, endpoint: &str, method: &str) {
+        if !self.enabled {
+            return;
+        }
+
+        metrics::counter!(METRIC_REQUESTS_TOTAL,
+            "endpoint" => endpoint.to_string(),
+            "method" => method.to_string(),
+        )
+        .increment(1);
+    }
+
+    /// Record a retry attempt.
+    ///
+    /// This should be called for each retry attempt (not the initial request).
+    ///
+    /// # Arguments
+    /// * `endpoint` - The API endpoint path
+    /// * `method` - The HTTP method
+    /// * `attempt` - The retry attempt number (1-based)
+    pub fn record_retry(&self, endpoint: &str, method: &str, attempt: usize) {
+        if !self.enabled {
+            return;
+        }
+
+        metrics::counter!(METRIC_RETRIES_TOTAL,
+            "endpoint" => endpoint.to_string(),
+            "method" => method.to_string(),
+            "attempt" => attempt.to_string(),
+        )
+        .increment(1);
+    }
+
+    /// Record an error.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The API endpoint path
+    /// * `method` - The HTTP method
+    /// * `category` - The error category
+    pub fn record_error(&self, endpoint: &str, method: &str, category: ErrorCategory) {
+        if !self.enabled {
+            return;
+        }
+
+        metrics::counter!(METRIC_ERRORS_TOTAL,
+            "endpoint" => endpoint.to_string(),
+            "method" => method.to_string(),
+            "error_category" => category.as_str(),
+        )
+        .increment(1);
+    }
+
+    /// Record an error from a ClientError.
+    ///
+    /// This is a convenience method that categorizes the error automatically.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The API endpoint path
+    /// * `method` - The HTTP method
+    /// * `error` - The client error
+    pub fn record_client_error(&self, endpoint: &str, method: &str, error: &ClientError) {
+        let category = ErrorCategory::from(error);
+        self.record_error(endpoint, method, category);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_category_as_str() {
+        assert_eq!(ErrorCategory::Transport.as_str(), "transport");
+        assert_eq!(ErrorCategory::Http4xx.as_str(), "http_4xx");
+        assert_eq!(ErrorCategory::Http5xx.as_str(), "http_5xx");
+        assert_eq!(ErrorCategory::Api.as_str(), "api");
+        assert_eq!(ErrorCategory::Timeout.as_str(), "timeout");
+        assert_eq!(ErrorCategory::Tls.as_str(), "tls");
+        assert_eq!(ErrorCategory::Unknown.as_str(), "unknown");
+    }
+
+    #[test]
+    fn test_error_categorization() {
+        let timeout_err = ClientError::Timeout(Duration::from_secs(1));
+        assert_eq!(ErrorCategory::from(&timeout_err), ErrorCategory::Timeout);
+
+        let conn_err = ClientError::ConnectionRefused("localhost:8089".to_string());
+        assert_eq!(ErrorCategory::from(&conn_err), ErrorCategory::Transport);
+
+        let tls_err = ClientError::TlsError("cert error".to_string());
+        assert_eq!(ErrorCategory::from(&tls_err), ErrorCategory::Tls);
+
+        let api_400 = ClientError::ApiError {
+            status: 400,
+            url: "test".to_string(),
+            message: "bad request".to_string(),
+            request_id: None,
+        };
+        assert_eq!(ErrorCategory::from(&api_400), ErrorCategory::Http4xx);
+
+        let api_500 = ClientError::ApiError {
+            status: 500,
+            url: "test".to_string(),
+            message: "server error".to_string(),
+            request_id: None,
+        };
+        assert_eq!(ErrorCategory::from(&api_500), ErrorCategory::Http5xx);
+
+        let api_200 = ClientError::ApiError {
+            status: 200,
+            url: "test".to_string(),
+            message: "ok".to_string(),
+            request_id: None,
+        };
+        assert_eq!(ErrorCategory::from(&api_200), ErrorCategory::Api);
+    }
+
+    #[test]
+    fn test_max_retries_exceeded_categorization() {
+        let inner = ClientError::Timeout(Duration::from_secs(1));
+        let outer = ClientError::MaxRetriesExceeded(3, Box::new(inner));
+        assert_eq!(ErrorCategory::from(&outer), ErrorCategory::Timeout);
+    }
+
+    #[test]
+    fn test_metrics_collector_enabled() {
+        let collector = MetricsCollector::new();
+        assert!(collector.is_enabled());
+
+        let disabled = MetricsCollector::disabled();
+        assert!(!disabled.is_enabled());
+    }
+}

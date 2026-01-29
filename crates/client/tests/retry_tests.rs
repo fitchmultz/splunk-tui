@@ -63,6 +63,7 @@ async fn test_retry_on_429_success() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -92,8 +93,15 @@ async fn test_retry_on_429_exhaustion() {
 
     let client = Client::new();
     let start = std::time::Instant::now();
-    let result =
-        endpoints::get_job_status(&client, &mock_server.uri(), "test-token", "test-sid", 2).await;
+    let result = endpoints::get_job_status(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "test-sid",
+        2,
+        None,
+    )
+    .await;
     let elapsed = start.elapsed();
 
     // Should fail after exhausting retries
@@ -384,6 +392,7 @@ async fn test_retry_respects_retry_after_header() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -435,6 +444,7 @@ async fn test_retry_with_max_of_backoff_and_retry_after() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -484,6 +494,7 @@ async fn test_retry_falls_back_to_exponential_backoff() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -536,6 +547,7 @@ async fn test_retry_with_invalid_retry_after_header() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
 
@@ -591,6 +603,7 @@ async fn test_retry_respects_retry_after_http_date() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -650,6 +663,7 @@ async fn test_retry_with_past_http_date() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -703,6 +717,7 @@ async fn test_retry_with_invalid_http_date() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -753,6 +768,7 @@ async fn test_retry_on_503_success() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -802,6 +818,7 @@ async fn test_retry_on_502_success() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
     )
     .await;
     let elapsed = start.elapsed();
@@ -848,6 +865,7 @@ async fn test_retry_on_504_success() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
     )
     .await;
 
@@ -870,8 +888,15 @@ async fn test_retry_on_5xx_exhaustion() {
 
     let client = Client::new();
     let start = std::time::Instant::now();
-    let result =
-        endpoints::get_job_status(&client, &mock_server.uri(), "test-token", "test-sid", 2).await;
+    let result = endpoints::get_job_status(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "test-sid",
+        2,
+        None,
+    )
+    .await;
     let elapsed = start.elapsed();
 
     // Should fail after exhausting retries
@@ -898,8 +923,15 @@ async fn test_no_retry_on_500_or_501() {
 
     let client = Client::new();
     let start = std::time::Instant::now();
-    let result =
-        endpoints::get_job_status(&client, &mock_server.uri(), "test-token", "test-sid", 3).await;
+    let result = endpoints::get_job_status(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "test-sid",
+        3,
+        None,
+    )
+    .await;
     let elapsed = start.elapsed();
 
     // Should fail immediately without retry
@@ -959,6 +991,7 @@ async fn test_retry_mixed_503_and_429() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
     )
     .await;
 
@@ -1018,6 +1051,7 @@ async fn test_retry_on_timeout() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
     )
     .await;
     let elapsed = start.elapsed();

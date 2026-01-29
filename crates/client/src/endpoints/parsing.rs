@@ -7,6 +7,7 @@ use crate::endpoints::search::{
     CreateJobOptions, OutputMode, create_job, get_results, wait_for_job,
 };
 use crate::error::Result;
+use crate::metrics::MetricsCollector;
 use crate::models::{LogParsingError, LogParsingHealth};
 
 /// Search query for detecting log parsing errors in Splunk's internal logs.
@@ -40,6 +41,7 @@ pub async fn check_log_parsing_health(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<LogParsingHealth> {
     debug!("Checking log parsing health");
 
@@ -58,13 +60,24 @@ pub async fn check_log_parsing_health(
         PARSING_ERROR_SEARCH_QUERY,
         &options,
         max_retries,
+        metrics,
     )
     .await?;
 
     debug!("Created search job {} for parsing health check", sid);
 
     // Wait for job completion with reasonable timeout (60 seconds)
-    let _status = wait_for_job(client, base_url, auth_token, &sid, 500, 60, max_retries).await?;
+    let _status = wait_for_job(
+        client,
+        base_url,
+        auth_token,
+        &sid,
+        500,
+        60,
+        max_retries,
+        metrics,
+    )
+    .await?;
 
     debug!("Search job {} completed, fetching results", sid);
 
@@ -77,6 +90,7 @@ pub async fn check_log_parsing_health(
         None,
         OutputMode::Json,
         max_retries,
+        metrics,
     )
     .await?;
 

@@ -4,6 +4,7 @@ use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use crate::models::{SearchJobListResponse, SearchJobStatus};
 
 /// Get a specific search job.
@@ -13,6 +14,7 @@ pub async fn get_job(
     auth_token: &str,
     sid: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<SearchJobStatus> {
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
@@ -20,7 +22,14 @@ pub async fn get_job(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs/{sid}",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -36,6 +45,7 @@ pub async fn list_jobs(
     count: Option<u64>,
     offset: Option<u64>,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<SearchJobStatus>> {
     let url = format!("{}/services/search/jobs", base_url);
 
@@ -53,7 +63,14 @@ pub async fn list_jobs(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: SearchJobListResponse = response.json().await?;
 
@@ -84,6 +101,7 @@ pub async fn cancel_job(
     auth_token: &str,
     sid: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
     let url = format!("{}/services/search/jobs/{}/control", base_url, sid);
 
@@ -91,7 +109,14 @@ pub async fn cancel_job(
         .post(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .form(&[("action", "cancel")]);
-    let _response = send_request_with_retry(builder, max_retries).await?;
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs/{sid}/control",
+        "POST",
+        metrics,
+    )
+    .await?;
 
     Ok(())
 }
@@ -103,13 +128,21 @@ pub async fn delete_job(
     auth_token: &str,
     sid: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
     let builder = client
         .delete(&url)
         .header("Authorization", format!("Bearer {}", auth_token));
-    let _response = send_request_with_retry(builder, max_retries).await?;
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs/{sid}",
+        "DELETE",
+        metrics,
+    )
+    .await?;
 
     Ok(())
 }

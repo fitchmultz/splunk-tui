@@ -30,7 +30,8 @@ async fn test_get_kvstore_status() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::get_kvstore_status(&client, &mock_server.uri(), "test-token", 3).await;
+    let result =
+        endpoints::get_kvstore_status(&client, &mock_server.uri(), "test-token", 3, None).await;
 
     assert!(result.is_ok());
     let status = result.unwrap();

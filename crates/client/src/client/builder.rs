@@ -21,6 +21,7 @@ use std::time::Duration;
 use crate::auth::{AuthStrategy, SessionManager};
 use crate::client::SplunkClient;
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use splunk_config::constants::{
     DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_MAX_REDIRECTS, DEFAULT_MAX_RETRIES,
     DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
@@ -54,6 +55,7 @@ pub struct SplunkClientBuilder {
     max_retries: usize,
     session_ttl_seconds: u64,
     session_expiry_buffer_seconds: u64,
+    metrics: Option<MetricsCollector>,
 }
 
 impl Default for SplunkClientBuilder {
@@ -66,6 +68,7 @@ impl Default for SplunkClientBuilder {
             max_retries: DEFAULT_MAX_RETRIES,
             session_ttl_seconds: DEFAULT_SESSION_TTL_SECS,
             session_expiry_buffer_seconds: DEFAULT_EXPIRY_BUFFER_SECS,
+            metrics: None,
         }
     }
 }
@@ -142,6 +145,30 @@ impl SplunkClientBuilder {
         self
     }
 
+    /// Set the metrics collector for API call performance tracking.
+    ///
+    /// When set, the client will record metrics for:
+    /// - Request latency histograms
+    /// - Request counters (total, retries, errors)
+    /// - Error categorization
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use splunk_client::{SplunkClient, MetricsCollector};
+    ///
+    /// let metrics = MetricsCollector::new();
+    /// let client = SplunkClient::builder()
+    ///     .base_url("https://localhost:8089".to_string())
+    ///     .auth_strategy(auth_strategy)
+    ///     .metrics(metrics)
+    ///     .build()?;
+    /// ```
+    pub fn metrics(mut self, metrics: MetricsCollector) -> Self {
+        self.metrics = Some(metrics);
+        self
+    }
+
     /// Normalize a base URL by removing trailing slashes.
     ///
     /// This prevents double slashes when concatenating with endpoint paths.
@@ -198,6 +225,7 @@ impl SplunkClientBuilder {
             max_retries: self.max_retries,
             session_ttl_seconds: self.session_ttl_seconds,
             session_expiry_buffer_seconds: self.session_expiry_buffer_seconds,
+            metrics: self.metrics,
         })
     }
 }

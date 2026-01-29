@@ -32,7 +32,8 @@ async fn test_get_license_usage() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::get_license_usage(&client, &mock_server.uri(), "test-token", 3).await;
+    let result =
+        endpoints::get_license_usage(&client, &mock_server.uri(), "test-token", 3, None).await;
 
     assert!(result.is_ok());
     let usage = result.unwrap();
@@ -61,7 +62,8 @@ async fn test_list_license_pools() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::list_license_pools(&client, &mock_server.uri(), "test-token", 3).await;
+    let result =
+        endpoints::list_license_pools(&client, &mock_server.uri(), "test-token", 3, None).await;
 
     assert!(result.is_ok());
     let pools = result.unwrap();
@@ -83,7 +85,8 @@ async fn test_list_license_stacks() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::list_license_stacks(&client, &mock_server.uri(), "test-token", 3).await;
+    let result =
+        endpoints::list_license_stacks(&client, &mock_server.uri(), "test-token", 3, None).await;
 
     assert!(result.is_ok());
     let stacks = result.unwrap();

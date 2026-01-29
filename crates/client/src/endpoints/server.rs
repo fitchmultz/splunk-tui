@@ -4,6 +4,7 @@ use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use crate::models::{App, AppListResponse, ServerInfo, SplunkHealth};
 use crate::name_merge::attach_entry_name;
 
@@ -13,6 +14,7 @@ pub async fn get_server_info(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<ServerInfo> {
     let url = format!("{}/services/server/info", base_url);
 
@@ -20,7 +22,14 @@ pub async fn get_server_info(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/server/info",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -46,6 +55,7 @@ pub async fn get_health(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<SplunkHealth> {
     let url = format!("{}/services/server/health/splunkd", base_url);
 
@@ -53,7 +63,14 @@ pub async fn get_health(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/server/health/splunkd",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -79,6 +96,7 @@ pub async fn list_apps(
     count: Option<u64>,
     offset: Option<u64>,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<App>> {
     let url = format!("{}/services/apps/local", base_url);
 
@@ -95,7 +113,9 @@ pub async fn list_apps(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response =
+        send_request_with_retry(builder, max_retries, "/services/apps/local", "GET", metrics)
+            .await?;
 
     let resp: AppListResponse = response.json().await?;
 
@@ -113,6 +133,7 @@ pub async fn get_app(
     auth_token: &str,
     app_name: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<App> {
     let url = format!("{}/services/apps/local/{}", base_url, app_name);
 
@@ -120,7 +141,14 @@ pub async fn get_app(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode".to_string(), "json".to_string())]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/apps/local/{app_name}",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -149,6 +177,7 @@ pub async fn update_app(
     app_name: &str,
     disabled: bool,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
     let url = format!("{}/services/apps/local/{}", base_url, app_name);
 
@@ -162,7 +191,14 @@ pub async fn update_app(
         .header("Authorization", format!("Bearer {}", auth_token))
         .header("Content-Type", "application/json")
         .json(&body);
-    let _response = send_request_with_retry(builder, max_retries).await?;
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/apps/local/{app_name}",
+        "POST",
+        metrics,
+    )
+    .await?;
 
     Ok(())
 }

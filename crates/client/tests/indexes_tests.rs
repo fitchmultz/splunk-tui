@@ -36,6 +36,7 @@ async fn test_list_indexes() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 

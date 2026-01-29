@@ -4,6 +4,7 @@ use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
+use crate::metrics::MetricsCollector;
 use crate::models::{ClusterInfo, ClusterPeer};
 
 /// Get cluster configuration/status.
@@ -12,6 +13,7 @@ pub async fn get_cluster_info(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<ClusterInfo> {
     let url = format!("{}/services/cluster/master/config", base_url);
 
@@ -19,7 +21,14 @@ pub async fn get_cluster_info(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/cluster/master/config",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -42,6 +51,7 @@ pub async fn get_cluster_peers(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<ClusterPeer>> {
     let url = format!("{}/services/cluster/master/peers", base_url);
 
@@ -49,7 +59,14 @@ pub async fn get_cluster_peers(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/cluster/master/peers",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 

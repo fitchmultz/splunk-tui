@@ -33,7 +33,15 @@ async fn test_login_success() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::login(&client, &mock_server.uri(), "admin", "testpassword", 3).await;
+    let result = endpoints::login(
+        &client,
+        &mock_server.uri(),
+        "admin",
+        "testpassword",
+        3,
+        None,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("Login error: {:?}", e);
@@ -56,7 +64,15 @@ async fn test_login_invalid_credentials() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::login(&client, &mock_server.uri(), "admin", "wrongpassword", 3).await;
+    let result = endpoints::login(
+        &client,
+        &mock_server.uri(),
+        "admin",
+        "wrongpassword",
+        3,
+        None,
+    )
+    .await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -77,7 +93,15 @@ async fn test_login_response_format_regression() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::login(&client, &mock_server.uri(), "admin", "testpassword", 3).await;
+    let result = endpoints::login(
+        &client,
+        &mock_server.uri(),
+        "admin",
+        "testpassword",
+        3,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
     let token = result.unwrap();

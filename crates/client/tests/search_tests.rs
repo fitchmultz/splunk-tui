@@ -41,6 +41,7 @@ async fn test_get_search_results() {
         Some(0),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
 
@@ -76,6 +77,7 @@ async fn test_get_search_results_object_style() {
         Some(0),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
 
@@ -148,7 +150,8 @@ async fn test_get_internal_logs_with_sorting() {
 
     let client = Client::new();
     let result =
-        endpoints::get_internal_logs(&client, &mock_server.uri(), "test-token", 10, None, 3).await;
+        endpoints::get_internal_logs(&client, &mock_server.uri(), "test-token", 10, None, 3, None)
+            .await;
 
     assert!(result.is_ok());
     let logs = result.unwrap();

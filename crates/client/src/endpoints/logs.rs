@@ -5,6 +5,7 @@ use tracing::debug;
 
 use crate::endpoints::search::{CreateJobOptions, OutputMode, create_job, get_results};
 use crate::error::Result;
+use crate::metrics::MetricsCollector;
 use crate::models::LogEntry;
 
 /// Get internal logs from Splunk.
@@ -15,6 +16,7 @@ pub async fn get_internal_logs(
     count: u64,
     earliest: Option<&str>,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<LogEntry>> {
     debug!("Fetching internal logs (count={})", count);
 
@@ -32,7 +34,16 @@ pub async fn get_internal_logs(
         ..Default::default()
     };
 
-    let sid = create_job(client, base_url, auth_token, &query, &options, max_retries).await?;
+    let sid = create_job(
+        client,
+        base_url,
+        auth_token,
+        &query,
+        &options,
+        max_retries,
+        metrics,
+    )
+    .await?;
 
     let results = get_results(
         client,
@@ -43,6 +54,7 @@ pub async fn get_internal_logs(
         None,
         OutputMode::Json,
         max_retries,
+        metrics,
     )
     .await?;
 

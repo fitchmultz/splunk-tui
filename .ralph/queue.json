@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0198",
-      "status": "todo",
-      "title": "Add metrics for API call performance",
-      "priority": "low",
-      "tags": [
-        "enhancement",
-        "observability",
-        "client",
-        "performance"
-      ],
-      "scope": [
-        "crates/client/src/"
-      ],
-      "evidence": [
-        "No metrics for API call latency",
-        "No metrics for retry counts",
-        "No metrics for error rates",
-        "Debugging performance issues requires manual logging analysis",
-        "tracing is used but no structured metrics"
-      ],
-      "plan": [
-        "Add optional metrics collection to SplunkClient",
-        "Track request latency histograms",
-        "Track retry counts per endpoint",
-        "Track error rates by category",
-        "Export metrics in standard format (Prometheus, statsd)",
-        "Add tests for metrics accuracy",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: no API performance metrics collection",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0199",
       "status": "todo",
       "title": "Review and consolidate unwrap usage in non-test code",

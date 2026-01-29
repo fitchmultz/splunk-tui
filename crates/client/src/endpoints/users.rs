@@ -4,6 +4,7 @@ use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
+use crate::metrics::MetricsCollector;
 use crate::models::{User, UserListResponse};
 use crate::name_merge::attach_entry_name;
 
@@ -15,6 +16,7 @@ pub async fn list_users(
     count: Option<u64>,
     offset: Option<u64>,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<User>> {
     let url = format!("{}/services/authentication/users", base_url);
 
@@ -31,7 +33,14 @@ pub async fn list_users(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/authentication/users",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: UserListResponse = response.json().await?;
 

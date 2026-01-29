@@ -83,6 +83,7 @@ async fn test_none_callback_handling() {
         30,   // max_wait_secs
         3,    // max_retries
         None, // progress_cb: None
+        None, // metrics: None
     )
     .await;
 
@@ -134,6 +135,7 @@ async fn test_progress_accuracy() {
         30, // max_wait_secs
         3,  // max_retries
         Some(&mut callback),
+        None, // metrics: None
     )
     .await;
 
@@ -210,6 +212,7 @@ async fn test_progress_values_in_range() {
         30,
         3,
         Some(&mut callback),
+        None,
     )
     .await;
 
@@ -260,6 +263,7 @@ async fn test_rapid_progress_updates() {
         60,
         3,
         Some(&mut callback),
+        None, // metrics: None
     )
     .await;
 
@@ -316,6 +320,7 @@ async fn test_callback_with_shared_state_thread_safety() {
         30,
         3,
         Some(&mut callback),
+        None,
     )
     .await;
 
@@ -372,6 +377,7 @@ async fn test_blocking_callback() {
         30,
         3,
         Some(&mut callback),
+        None,
     )
     .await;
 
@@ -443,6 +449,7 @@ async fn test_callback_panic_propagates() {
             30,
             3,
             Some(&mut callback),
+            None,
         ))
     }));
 
@@ -486,6 +493,7 @@ async fn test_wait_for_job_uses_none_callback() {
         10,
         30,
         3,
+        None,
     )
     .await;
 
@@ -527,6 +535,7 @@ async fn test_progress_callback_with_timeout() {
         1,  // 1 second max wait
         3,
         Some(&mut callback),
+        None,
     )
     .await;
 

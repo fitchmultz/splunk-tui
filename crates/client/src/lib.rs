@@ -7,6 +7,7 @@
 mod auth;
 pub mod client;
 pub mod error;
+pub mod metrics;
 pub mod models;
 mod name_merge;
 mod serde_helpers;
@@ -17,6 +18,7 @@ pub use auth::{AuthStrategy, SessionManager};
 pub use client::SplunkClient;
 pub use client::builder::SplunkClientBuilder;
 pub use error::{ClientError, Result};
+pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
     App, AppListResponse, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, IndexListResponse,
     KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack,

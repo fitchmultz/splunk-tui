@@ -6,6 +6,7 @@ use tracing::debug;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use crate::models::{SavedSearchListResponse, SearchJobResults, SearchJobStatus};
 use crate::name_merge::attach_entry_name;
 
@@ -89,6 +90,7 @@ pub async fn create_job(
     query: &str,
     options: &CreateJobOptions,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<String> {
     debug!("Creating search job: {}", query);
 
@@ -130,7 +132,14 @@ pub async fn create_job(
         .post(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .form(&form_data);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs",
+        "POST",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -159,6 +168,7 @@ pub async fn get_job_status(
     auth_token: &str,
     sid: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<SearchJobStatus> {
     debug!("Getting status for job: {}", sid);
 
@@ -168,7 +178,14 @@ pub async fn get_job_status(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs/{sid}",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: serde_json::Value = response.json().await?;
 
@@ -177,6 +194,7 @@ pub async fn get_job_status(
 }
 
 /// Wait for a search job to complete.
+#[allow(clippy::too_many_arguments)]
 pub async fn wait_for_job(
     client: &Client,
     base_url: &str,
@@ -185,6 +203,7 @@ pub async fn wait_for_job(
     poll_interval_ms: u64,
     max_wait_secs: u64,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<SearchJobStatus> {
     wait_for_job_with_progress(
         client,
@@ -195,6 +214,7 @@ pub async fn wait_for_job(
         max_wait_secs,
         max_retries,
         None,
+        metrics,
     )
     .await
 }
@@ -213,12 +233,14 @@ pub async fn wait_for_job_with_progress(
     max_wait_secs: u64,
     max_retries: usize,
     mut progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<SearchJobStatus> {
     let start = std::time::Instant::now();
     let max_wait = std::time::Duration::from_secs(max_wait_secs);
 
     loop {
-        let status = get_job_status(client, base_url, auth_token, sid, max_retries).await?;
+        let status =
+            get_job_status(client, base_url, auth_token, sid, max_retries, metrics).await?;
 
         if let Some(cb) = progress_cb.as_deref_mut() {
             cb(status.done_progress);
@@ -248,6 +270,7 @@ pub async fn get_results(
     offset: Option<u64>,
     output_mode: OutputMode,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<SearchJobResults> {
     debug!("Getting results for job: {}", sid);
 
@@ -267,7 +290,14 @@ pub async fn get_results(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/search/jobs/{sid}/results",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let body = response.text().await?;
     if body.trim().is_empty() {
@@ -311,6 +341,7 @@ pub async fn list_saved_searches(
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<crate::models::SavedSearch>> {
     debug!("Listing saved searches");
 
@@ -320,7 +351,14 @@ pub async fn list_saved_searches(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json"), ("count", "0")]);
-    let response = send_request_with_retry(builder, max_retries).await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/saved/searches",
+        "GET",
+        metrics,
+    )
+    .await?;
 
     let resp: SavedSearchListResponse = response.json().await.map_err(|e| {
         ClientError::InvalidResponse(format!("Failed to parse saved searches response: {}", e))
@@ -343,6 +381,7 @@ pub async fn create_saved_search(
     name: &str,
     search: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
     debug!("Creating saved search: {}", name);
 
@@ -354,7 +393,14 @@ pub async fn create_saved_search(
         .query(&[("output_mode", "json")])
         .form(&[("name", name), ("search", search)]);
 
-    let _response = send_request_with_retry(builder, max_retries).await?;
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/saved/searches",
+        "POST",
+        metrics,
+    )
+    .await?;
     Ok(())
 }
 
@@ -367,6 +413,7 @@ pub async fn delete_saved_search(
     auth_token: &str,
     name: &str,
     max_retries: usize,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
     debug!("Deleting saved search: {}", name);
 
@@ -377,7 +424,14 @@ pub async fn delete_saved_search(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&[("output_mode", "json")]);
 
-    let _response = send_request_with_retry(builder, max_retries).await?;
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/saved/searches/{name}",
+        "DELETE",
+        metrics,
+    )
+    .await?;
     Ok(())
 }
 

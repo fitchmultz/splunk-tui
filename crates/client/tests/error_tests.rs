@@ -44,6 +44,7 @@ async fn test_unauthorized_access() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 
@@ -65,7 +66,8 @@ async fn test_forbidden_access() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3).await;
+    let result =
+        endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3, None).await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -92,6 +94,7 @@ async fn test_internal_server_error() {
         "search index=main",
         &Default::default(),
         3,
+        None,
     )
     .await;
 
@@ -118,6 +121,7 @@ async fn test_malformed_json_response() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 
@@ -153,6 +157,7 @@ async fn test_timeout_handling() {
         Some(0),
         endpoints::OutputMode::Json,
         3,
+        None,
     )
     .await;
 
@@ -185,6 +190,7 @@ async fn test_api_error_details() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 
@@ -237,6 +243,7 @@ async fn test_connection_refused_error() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 
@@ -269,6 +276,7 @@ async fn test_invalid_url_error_at_request_time() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 
@@ -311,6 +319,7 @@ async fn test_not_found_error() {
         Some(10),
         Some(0),
         3,
+        None,
     )
     .await;
 
@@ -411,6 +420,7 @@ async fn test_request_builder_clone_failure_single_attempt() {
         "search index=main",
         &options,
         3,
+        None,
     )
     .await;
 
@@ -436,6 +446,7 @@ async fn test_connection_error_fails_quickly() {
         Some(10),
         Some(0),
         3, // max_retries = 3
+        None,
     )
     .await;
 
@@ -470,6 +481,7 @@ async fn test_connection_refused_completes_quickly() {
         "test-token",
         "test-sid",
         3,
+        None,
     )
     .await;
     let elapsed = start.elapsed();

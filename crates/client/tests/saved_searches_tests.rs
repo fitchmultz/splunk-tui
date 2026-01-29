@@ -35,7 +35,8 @@ async fn test_list_saved_searches() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::list_saved_searches(&client, &mock_server.uri(), "test-token", 3).await;
+    let result =
+        endpoints::list_saved_searches(&client, &mock_server.uri(), "test-token", 3, None).await;
 
     assert!(result.is_ok());
     let searches = result.unwrap();
@@ -70,6 +71,7 @@ async fn test_create_saved_search() {
         "my-search",
         "| makeresults",
         3,
+        None,
     )
     .await;
 
@@ -88,9 +90,15 @@ async fn test_delete_saved_search() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::delete_saved_search(&client, &mock_server.uri(), "test-token", "my-search", 3)
-            .await;
+    let result = endpoints::delete_saved_search(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "my-search",
+        3,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
 }

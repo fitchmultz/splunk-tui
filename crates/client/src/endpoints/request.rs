@@ -31,12 +31,13 @@
 //! bodies or implement application-level retry logic.
 
 use reqwest::{RequestBuilder, Response};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc2822;
 use tracing::{debug, warn};
 
 use crate::error::{ClientError, Result};
+use crate::metrics::MetricsCollector;
 use crate::models::SplunkMessages;
 
 /// Maximum number of retry attempts for rate-limited requests.
@@ -120,11 +121,15 @@ fn is_retryable_transport_error(error: &reqwest::Error) -> bool {
 /// - Respects the `max_retries` parameter
 /// - Logs retry attempts with `tracing::debug`
 /// - Returns `MaxRetriesExceeded` error when retries are exhausted
+/// - Records metrics for request duration, retries, and errors (if metrics collector provided)
 ///
 /// # Arguments
 ///
 /// * `builder` - The `reqwest::RequestBuilder` to execute
 /// * `max_retries` - Maximum number of retry attempts (defaults to 3 if 0)
+/// * `endpoint` - The API endpoint path for metrics labeling (e.g., "/services/search/jobs")
+/// * `method` - The HTTP method for metrics labeling (e.g., "GET", "POST")
+/// * `metrics` - Optional metrics collector for recording request metrics
 ///
 /// # Returns
 ///
@@ -143,12 +148,22 @@ fn is_retryable_transport_error(error: &reqwest::Error) -> bool {
 pub async fn send_request_with_retry(
     builder: RequestBuilder,
     max_retries: usize,
+    endpoint: &str,
+    method: &str,
+    metrics: Option<&MetricsCollector>,
 ) -> Result<Response> {
     let max_retries = if max_retries == 0 {
         DEFAULT_MAX_RETRIES
     } else {
         max_retries
     };
+
+    let start_time = Instant::now();
+
+    // Record the initial request attempt
+    if let Some(m) = metrics {
+        m.record_request(endpoint, method);
+    }
 
     for attempt in 0..=max_retries {
         // Try to clone the builder for this attempt
@@ -163,15 +178,31 @@ pub async fn send_request_with_retry(
                 // on the first attempt.
                 if attempt == 0 {
                     warn!("Request builder cannot be cloned, single attempt only");
-                    return builder.send().await.map_err(ClientError::from);
+                    let result = builder.send().await.map_err(ClientError::from);
+                    // Record metrics for the result
+                    if let Some(m) = metrics {
+                        let duration = start_time.elapsed();
+                        let status = result.as_ref().ok().map(|r| r.status().as_u16());
+                        m.record_request_duration(endpoint, method, duration, status);
+                        if let Err(ref e) = result {
+                            m.record_client_error(endpoint, method, e);
+                        }
+                    }
+                    return result;
                 } else {
                     warn!("Cannot clone request builder for retry");
-                    return Err(ClientError::MaxRetriesExceeded(
+                    let err = ClientError::MaxRetriesExceeded(
                         attempt,
                         Box::new(ClientError::InvalidResponse(
                             "Request body cannot be cloned for retry (streaming body may have been consumed)".to_string()
                         ))
-                    ));
+                    );
+                    if let Some(m) = metrics {
+                        let duration = start_time.elapsed();
+                        m.record_request_duration(endpoint, method, duration, None);
+                        m.record_client_error(endpoint, method, &err);
+                    }
+                    return Err(err);
                 }
             }
         };
@@ -185,6 +216,15 @@ pub async fn send_request_with_retry(
                     if attempt > 0 {
                         debug!(attempt = attempt + 1, "Request succeeded after retry");
                     }
+                    if let Some(m) = metrics {
+                        let duration = start_time.elapsed();
+                        m.record_request_duration(
+                            endpoint,
+                            method,
+                            duration,
+                            Some(status.as_u16()),
+                        );
+                    }
                     return Ok(response);
                 }
 
@@ -193,6 +233,11 @@ pub async fn send_request_with_retry(
                 // Check for retryable status codes (429 or 5xx)
                 if ClientError::is_retryable_status(status_u16) {
                     if attempt < max_retries {
+                        // Record retry metric
+                        if let Some(m) = metrics {
+                            m.record_retry(endpoint, method, attempt + 1);
+                        }
+
                         // Calculate exponential backoff: 2^attempt seconds
                         let backoff_secs = 2u64.pow(attempt as u32);
 
@@ -264,7 +309,7 @@ pub async fn send_request_with_retry(
                             body
                         };
 
-                        return Err(ClientError::MaxRetriesExceeded(
+                        let err = ClientError::MaxRetriesExceeded(
                             max_retries + 1,
                             Box::new(ClientError::ApiError {
                                 status: status_u16,
@@ -272,7 +317,13 @@ pub async fn send_request_with_retry(
                                 message,
                                 request_id,
                             }),
-                        ));
+                        );
+                        if let Some(m) = metrics {
+                            let duration = start_time.elapsed();
+                            m.record_request_duration(endpoint, method, duration, Some(status_u16));
+                            m.record_client_error(endpoint, method, &err);
+                        }
+                        return Err(err);
                     }
                 } else {
                     // Non-retryable error: extract details and return ApiError
@@ -298,17 +349,28 @@ pub async fn send_request_with_retry(
                         body
                     };
 
-                    return Err(ClientError::ApiError {
+                    let err = ClientError::ApiError {
                         status: status_u16,
                         url,
                         message,
                         request_id,
-                    });
+                    };
+                    if let Some(m) = metrics {
+                        let duration = start_time.elapsed();
+                        m.record_request_duration(endpoint, method, duration, Some(status_u16));
+                        m.record_client_error(endpoint, method, &err);
+                    }
+                    return Err(err);
                 }
             }
             Err(e) => {
                 // Check if this is a retryable transport error
                 if is_retryable_transport_error(&e) && attempt < max_retries {
+                    // Record retry metric
+                    if let Some(m) = metrics {
+                        m.record_retry(endpoint, method, attempt + 1);
+                    }
+
                     let backoff_secs = 2u64.pow(attempt as u32);
 
                     debug!(
@@ -322,17 +384,29 @@ pub async fn send_request_with_retry(
                     tokio::time::sleep(tokio::time::Duration::from_secs(backoff_secs)).await;
                 } else {
                     // Non-retryable error: propagate immediately
-                    return Err(ClientError::from(e));
+                    let err = ClientError::from(e);
+                    if let Some(m) = metrics {
+                        let duration = start_time.elapsed();
+                        m.record_request_duration(endpoint, method, duration, None);
+                        m.record_client_error(endpoint, method, &err);
+                    }
+                    return Err(err);
                 }
             }
         }
     }
 
     // This should never be reached, but handle it for completeness
-    Err(ClientError::MaxRetriesExceeded(
+    let err = ClientError::MaxRetriesExceeded(
         max_retries + 1,
         Box::new(ClientError::InvalidResponse(
             "Retry loop exited without resolution".to_string(),
         )),
-    ))
+    );
+    if let Some(m) = metrics {
+        let duration = start_time.elapsed();
+        m.record_request_duration(endpoint, method, duration, None);
+        m.record_client_error(endpoint, method, &err);
+    }
+    Err(err)
 }
