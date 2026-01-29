@@ -1,33 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0179",
-      "status": "todo",
-      "title": "Split oversized TUI snapshot_tests.rs into focused snapshot suites",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/tests/snapshot_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/tests/snapshot_tests.rs is 720 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Break snapshot tests into per-screen or per-feature files.",
-        "Keep snapshot fixtures organized and add docstrings.",
-        "Run TUI snapshot tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }
