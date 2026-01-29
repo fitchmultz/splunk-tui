@@ -447,6 +447,71 @@ pub async fn delete_saved_search(
     Ok(())
 }
 
+/// Get a single saved search by name.
+///
+/// This endpoint retrieves a specific saved search directly by name,
+/// avoiding the need to list all saved searches and scan for the target.
+///
+/// # Arguments
+/// * `client` - The reqwest client
+/// * `base_url` - The Splunk base URL
+/// * `auth_token` - Authentication token
+/// * `name` - The name of the saved search
+/// * `max_retries` - Maximum number of retries for transient failures
+/// * `metrics` - Optional metrics collector
+///
+/// # Returns
+/// The `SavedSearch` if found, or `ClientError::NotFound` if it doesn't exist.
+pub async fn get_saved_search(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    name: &str,
+    max_retries: usize,
+    metrics: Option<&MetricsCollector>,
+) -> Result<crate::models::SavedSearch> {
+    debug!("Getting saved search: {}", name);
+
+    let url = format!("{}/services/saved/searches/{}", base_url, name);
+
+    let builder = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json")]);
+
+    let response = match send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/saved/searches/{name}",
+        "GET",
+        metrics,
+    )
+    .await
+    {
+        Ok(resp) => resp,
+        Err(ClientError::ApiError { status: 404, .. }) => {
+            return Err(ClientError::NotFound(format!(
+                "Saved search '{}' not found",
+                name
+            )));
+        }
+        Err(e) => return Err(e),
+    };
+
+    let body: SavedSearchListResponse = response.json().await.map_err(|e| {
+        ClientError::InvalidResponse(format!("Failed to parse saved search response: {}", e))
+    })?;
+
+    // Extract the first entry's content (Splunk returns single entry for single-resource GET)
+    let entry = body
+        .entry
+        .into_iter()
+        .next()
+        .ok_or_else(|| ClientError::NotFound(format!("Saved search '{}' not found", name)))?;
+
+    Ok(attach_entry_name(entry.name, entry.content))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

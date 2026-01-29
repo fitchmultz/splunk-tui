@@ -24,7 +24,8 @@ pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
 pub use search::{
     CreateJobOptions, OutputMode, create_job, create_saved_search, delete_saved_search,
-    get_job_status, get_results, list_saved_searches, wait_for_job, wait_for_job_with_progress,
+    get_job_status, get_results, get_saved_search, list_saved_searches, wait_for_job,
+    wait_for_job_with_progress,
 };
 pub use server::*;
 pub use users::list_users;

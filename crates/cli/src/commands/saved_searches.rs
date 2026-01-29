@@ -143,19 +143,14 @@ async fn run_info(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let searches = tokio::select! {
-        res = client.list_saved_searches(None, None) => res?,
+    let search = tokio::select! {
+        res = client.get_saved_search(name) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
-    let search = searches
-        .iter()
-        .find(|s| s.name == name)
-        .with_context(|| format!("Saved search '{}' not found", name))?;
-
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
-    let output = formatter.format_saved_search_info(search)?;
+    let output = formatter.format_saved_search_info(&search)?;
     if let Some(ref path) = output_file {
         write_to_file(&output, path)
             .with_context(|| format!("Failed to write output to {}", path.display()))?;
@@ -196,15 +191,10 @@ async fn run_run(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let searches = tokio::select! {
-        res = client.list_saved_searches(None, None) => res?,
+    let search = tokio::select! {
+        res = client.get_saved_search(name) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
-
-    let search = searches
-        .iter()
-        .find(|s| s.name == name)
-        .with_context(|| format!("Saved search '{}' not found", name))?;
 
     info!("Executing search query: {}", search.search);
     let results = tokio::select! {

@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0205",
-      "status": "todo",
-      "title": "Implement get_saved_search endpoint to avoid full-list scans",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "cli",
-        "performance"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search.rs",
-        "crates/client/src/client/mod.rs",
-        "crates/cli/src/commands/saved_searches.rs",
-        "crates/client/tests/saved_searches_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/saved_searches.rs run_info and run_run call list_saved_searches and then scan for the name.",
-        "crates/client/src/endpoints/search.rs does not expose a get-by-name saved search endpoint."
-      ],
-      "plan": [
-        "Add a client endpoint for GET /services/saved/searches/{name} and a corresponding SplunkClient method.",
-        "Update CLI saved-searches info/run to use the new endpoint instead of full list scans.",
-        "Add wiremock tests and fixtures for get_saved_search success and not-found cases."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0206",
       "status": "todo",
       "title": "Make list-all output ordering deterministic",

@@ -424,6 +424,29 @@ impl SplunkClient {
         )
     }
 
+    /// Get a single saved search by name.
+    ///
+    /// # Arguments
+    /// * `name` - The name of the saved search
+    ///
+    /// # Returns
+    /// The `SavedSearch` if found, or `ClientError::NotFound` if it doesn't exist.
+    pub async fn get_saved_search(&mut self, name: &str) -> Result<SavedSearch> {
+        retry_call!(
+            self,
+            __token,
+            endpoints::get_saved_search(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
     /// List all installed apps.
     pub async fn list_apps(&mut self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
         retry_call!(

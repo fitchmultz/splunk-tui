@@ -192,3 +192,112 @@ async fn test_list_saved_searches_with_pagination() {
     .await;
     assert!(result.is_ok());
 }
+
+#[tokio::test]
+async fn test_get_saved_search_success() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/get_saved_search.json");
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/services/saved/searches/Errors%20in%20the%20last%2024%20hours",
+        ))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::get_saved_search(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "Errors in the last 24 hours",
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+    let search = result.unwrap();
+    assert_eq!(search.name, "Errors in the last 24 hours");
+    assert_eq!(
+        search.search,
+        "index=_internal sourcetype=splunkd log_level=ERROR | head 100"
+    );
+    assert_eq!(
+        search.description,
+        Some("Finds error messages in internal logs".to_string())
+    );
+    assert!(!search.disabled);
+}
+
+#[tokio::test]
+async fn test_get_saved_search_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/saved/searches/NonExistentSearch"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(404).set_body_string("Not Found"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::get_saved_search(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "NonExistentSearch",
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(
+        err.to_string().contains("not found"),
+        "Error should indicate resource not found: {}",
+        err
+    );
+}
+
+#[tokio::test]
+async fn test_splunk_client_get_saved_search() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("search/get_saved_search.json");
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/services/saved/searches/Errors%20in%20the%20last%2024%20hours",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    use secrecy::SecretString;
+    use splunk_client::{AuthStrategy, SplunkClient};
+
+    let strategy = AuthStrategy::ApiToken {
+        token: SecretString::new("test-token".to_string().into()),
+    };
+
+    let mut client = SplunkClient::builder()
+        .base_url(mock_server.uri())
+        .auth_strategy(strategy)
+        .build()
+        .unwrap();
+
+    let result = client.get_saved_search("Errors in the last 24 hours").await;
+
+    assert!(result.is_ok());
+    let search = result.unwrap();
+    assert_eq!(search.name, "Errors in the last 24 hours");
+    assert_eq!(
+        search.search,
+        "index=_internal sourcetype=splunkd log_level=ERROR | head 100"
+    );
+}
