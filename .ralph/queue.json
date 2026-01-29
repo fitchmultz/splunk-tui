@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0208",
-      "status": "todo",
-      "title": "Parallelize list-all resource fetches and deduplicate timeout logic",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "list-all",
-        "performance"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all/fetchers.rs",
-        "crates/cli/tests/list_all_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/list_all/fetchers.rs loops resource_types sequentially, awaiting each fetch before starting the next.",
-        "Each fetch_* function repeats the same timeout + error mapping pattern."
-      ],
-      "plan": [
-        "Introduce a helper to run a fetch with timeout and map to ResourceSummary.",
-        "Dispatch per-resource futures concurrently (join_all), preserving output order.",
-        "Update tests to ensure timeouts and error mapping still behave as expected."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0209",
       "status": "todo",
       "title": "Centralize SplunkClient construction in CLI commands",

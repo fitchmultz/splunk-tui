@@ -13,6 +13,9 @@
 //! Invariants:
 //! - Each resource fetch has a 30-second timeout.
 //! - Errors are captured in ResourceSummary, not propagated as Err.
+//! - Resources are fetched sequentially because SplunkClient requires &mut self
+//!   for session management (token refresh). True parallelization would require
+//!   either interior mutability in SplunkClient or multiple client instances.
 
 use crate::cancellation::{CancellationToken, Cancelled};
 use anyhow::Result;
@@ -23,166 +26,149 @@ use tracing::warn;
 
 use super::types::ResourceSummary;
 
+const TIMEOUT_DURATION: Duration = Duration::from_secs(30);
+
 /// Fetch all requested resources from a single client.
+///
+/// Note: Resources are fetched sequentially because `SplunkClient` requires
+/// `&mut self` for session management (authentication token refresh). Each
+/// fetch has its own 30-second timeout, so slow endpoints don't block others
+/// indefinitely, but they do run serially.
 pub async fn fetch_all_resources(
     client: &mut SplunkClient,
     resource_types: Vec<String>,
     cancel: &CancellationToken,
 ) -> Result<Vec<ResourceSummary>> {
-    let mut resources = Vec::new();
+    // Check for cancellation before starting
+    if cancel.is_cancelled() {
+        return Err(Cancelled.into());
+    }
+
+    let mut resources = Vec::with_capacity(resource_types.len());
 
     for resource_type in resource_types {
-        let summary: ResourceSummary = tokio::select! {
-            res = async {
-                match resource_type.as_str() {
-                    "indexes" => fetch_indexes(client).await,
-                    "jobs" => fetch_jobs(client).await,
-                    "apps" => fetch_apps(client).await,
-                    "users" => fetch_users(client).await,
-                    "cluster" => fetch_cluster(client).await,
-                    "health" => fetch_health(client).await,
-                    "kvstore" => fetch_kvstore(client).await,
-                    "license" => fetch_license(client).await,
-                    "saved-searches" => fetch_saved_searches(client).await,
-                    _ => unreachable!(),
-                }
-            } => res,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        // Check cancellation before each fetch
+        if cancel.is_cancelled() {
+            return Err(Cancelled.into());
+        }
+
+        let summary = match resource_type.as_str() {
+            "indexes" => fetch_indexes(client).await,
+            "jobs" => fetch_jobs(client).await,
+            "apps" => fetch_apps(client).await,
+            "users" => fetch_users(client).await,
+            "cluster" => fetch_cluster(client).await,
+            "health" => fetch_health(client).await,
+            "kvstore" => fetch_kvstore(client).await,
+            "license" => fetch_license(client).await,
+            "saved-searches" => fetch_saved_searches(client).await,
+            _ => unreachable!(),
         };
+
         resources.push(summary);
     }
 
     Ok(resources)
 }
 
-async fn fetch_indexes(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.list_indexes(Some(1000), None)).await {
-        Ok(Ok(indexes)) => ResourceSummary {
-            resource_type: "indexes".to_string(),
-            count: indexes.len() as u64,
-            status: "ok".to_string(),
+/// Generic fetch helper that applies timeout and maps results to ResourceSummary.
+///
+/// # Type Parameters
+/// - `T`: The successful response type from the API call
+/// - `F`: The future type returned by the fetch function
+/// - `E`: The error type from the API call (must implement Display)
+///
+/// # Arguments
+/// - `resource_type`: The resource type name for the summary
+/// - `status_error`: The status string for failed fetches
+/// - `fetch_fn`: The async function that performs the actual fetch
+/// - `extract_count`: Function to extract the count from a successful response
+/// - `extract_status`: Function to extract/derive the status from a successful response
+async fn fetch_with_timeout<T, F, E>(
+    resource_type: &str,
+    status_error: &str,
+    fetch_fn: impl FnOnce() -> F,
+    extract_count: impl FnOnce(&T) -> u64,
+    extract_status: impl FnOnce(&T) -> String,
+) -> ResourceSummary
+where
+    F: std::future::Future<Output = Result<T, E>>,
+    E: std::fmt::Display,
+{
+    match time::timeout(TIMEOUT_DURATION, fetch_fn()).await {
+        Ok(Ok(response)) => ResourceSummary {
+            resource_type: resource_type.to_string(),
+            count: extract_count(&response),
+            status: extract_status(&response),
             error: None,
         },
         Ok(Err(e)) => {
-            warn!("Failed to fetch indexes: {}", e);
+            warn!("Failed to fetch {}: {}", resource_type, e);
             ResourceSummary {
-                resource_type: "indexes".to_string(),
+                resource_type: resource_type.to_string(),
                 count: 0,
-                status: "error".to_string(),
+                status: status_error.to_string(),
                 error: Some(e.to_string()),
             }
         }
         Err(_) => {
-            warn!("Timeout fetching indexes");
+            warn!("Timeout fetching {}", resource_type);
             ResourceSummary {
-                resource_type: "indexes".to_string(),
+                resource_type: resource_type.to_string(),
                 count: 0,
                 status: "timeout".to_string(),
                 error: Some("Request timeout after 30 seconds".to_string()),
             }
         }
     }
+}
+
+async fn fetch_indexes(client: &mut SplunkClient) -> ResourceSummary {
+    fetch_with_timeout(
+        "indexes",
+        "error",
+        || client.list_indexes(Some(1000), None),
+        |indexes| indexes.len() as u64,
+        |_| "ok".to_string(),
+    )
+    .await
 }
 
 async fn fetch_jobs(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.list_jobs(Some(100), None)).await {
-        Ok(Ok(jobs)) => ResourceSummary {
-            resource_type: "jobs".to_string(),
-            count: jobs.len() as u64,
-            status: "active".to_string(),
-            error: None,
-        },
-        Ok(Err(e)) => {
-            warn!("Failed to fetch jobs: {}", e);
-            ResourceSummary {
-                resource_type: "jobs".to_string(),
-                count: 0,
-                status: "error".to_string(),
-                error: Some(e.to_string()),
-            }
-        }
-        Err(_) => {
-            warn!("Timeout fetching jobs");
-            ResourceSummary {
-                resource_type: "jobs".to_string(),
-                count: 0,
-                status: "timeout".to_string(),
-                error: Some("Request timeout after 30 seconds".to_string()),
-            }
-        }
-    }
+    fetch_with_timeout(
+        "jobs",
+        "error",
+        || client.list_jobs(Some(100), None),
+        |jobs| jobs.len() as u64,
+        |_| "active".to_string(),
+    )
+    .await
 }
 
 async fn fetch_apps(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.list_apps(Some(1000), None)).await {
-        Ok(Ok(apps)) => ResourceSummary {
-            resource_type: "apps".to_string(),
-            count: apps.len() as u64,
-            status: "installed".to_string(),
-            error: None,
-        },
-        Ok(Err(e)) => {
-            warn!("Failed to fetch apps: {}", e);
-            ResourceSummary {
-                resource_type: "apps".to_string(),
-                count: 0,
-                status: "error".to_string(),
-                error: Some(e.to_string()),
-            }
-        }
-        Err(_) => {
-            warn!("Timeout fetching apps");
-            ResourceSummary {
-                resource_type: "apps".to_string(),
-                count: 0,
-                status: "timeout".to_string(),
-                error: Some("Request timeout after 30 seconds".to_string()),
-            }
-        }
-    }
+    fetch_with_timeout(
+        "apps",
+        "error",
+        || client.list_apps(Some(1000), None),
+        |apps| apps.len() as u64,
+        |_| "installed".to_string(),
+    )
+    .await
 }
 
 async fn fetch_users(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.list_users(Some(1000), None)).await {
-        Ok(Ok(users)) => ResourceSummary {
-            resource_type: "users".to_string(),
-            count: users.len() as u64,
-            status: "active".to_string(),
-            error: None,
-        },
-        Ok(Err(e)) => {
-            warn!("Failed to fetch users: {}", e);
-            ResourceSummary {
-                resource_type: "users".to_string(),
-                count: 0,
-                status: "error".to_string(),
-                error: Some(e.to_string()),
-            }
-        }
-        Err(_) => {
-            warn!("Timeout fetching users");
-            ResourceSummary {
-                resource_type: "users".to_string(),
-                count: 0,
-                status: "timeout".to_string(),
-                error: Some("Request timeout after 30 seconds".to_string()),
-            }
-        }
-    }
+    fetch_with_timeout(
+        "users",
+        "error",
+        || client.list_users(Some(1000), None),
+        |users| users.len() as u64,
+        |_| "active".to_string(),
+    )
+    .await
 }
 
 async fn fetch_cluster(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.get_cluster_info()).await {
+    match time::timeout(TIMEOUT_DURATION, client.get_cluster_info()).await {
         Ok(Ok(cluster)) => ResourceSummary {
             resource_type: "cluster".to_string(),
             count: 1,
@@ -236,71 +222,29 @@ async fn fetch_cluster(client: &mut SplunkClient) -> ResourceSummary {
 }
 
 async fn fetch_health(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.get_health()).await {
-        Ok(Ok(health)) => ResourceSummary {
-            resource_type: "health".to_string(),
-            count: 1,
-            status: health.health.clone(),
-            error: None,
-        },
-        Ok(Err(e)) => {
-            warn!("Failed to fetch health: {}", e);
-            ResourceSummary {
-                resource_type: "health".to_string(),
-                count: 0,
-                status: "error".to_string(),
-                error: Some(e.to_string()),
-            }
-        }
-        Err(_) => {
-            warn!("Timeout fetching health");
-            ResourceSummary {
-                resource_type: "health".to_string(),
-                count: 0,
-                status: "timeout".to_string(),
-                error: Some("Request timeout after 30 seconds".to_string()),
-            }
-        }
-    }
+    fetch_with_timeout(
+        "health",
+        "error",
+        || client.get_health(),
+        |_| 1,
+        |health| health.health.clone(),
+    )
+    .await
 }
 
 async fn fetch_kvstore(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.get_kvstore_status()).await {
-        Ok(Ok(status)) => ResourceSummary {
-            resource_type: "kvstore".to_string(),
-            count: 1,
-            status: status.current_member.status,
-            error: None,
-        },
-        Ok(Err(e)) => {
-            warn!("Failed to fetch KVStore status: {}", e);
-            ResourceSummary {
-                resource_type: "kvstore".to_string(),
-                count: 0,
-                status: "error".to_string(),
-                error: Some(e.to_string()),
-            }
-        }
-        Err(_) => {
-            warn!("Timeout fetching KVStore status");
-            ResourceSummary {
-                resource_type: "kvstore".to_string(),
-                count: 0,
-                status: "timeout".to_string(),
-                error: Some("Request timeout after 30 seconds".to_string()),
-            }
-        }
-    }
+    fetch_with_timeout(
+        "kvstore",
+        "error",
+        || client.get_kvstore_status(),
+        |_| 1,
+        |status| status.current_member.status.clone(),
+    )
+    .await
 }
 
 async fn fetch_license(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.get_license_usage()).await {
+    match time::timeout(TIMEOUT_DURATION, client.get_license_usage()).await {
         Ok(Ok(usage)) => {
             let total_usage: u64 =
                 usage.iter().map(|u| u.effective_used_bytes()).sum::<u64>() / 1024;
@@ -342,34 +286,14 @@ async fn fetch_license(client: &mut SplunkClient) -> ResourceSummary {
 }
 
 async fn fetch_saved_searches(client: &mut SplunkClient) -> ResourceSummary {
-    let timeout_duration = Duration::from_secs(30);
-
-    match time::timeout(timeout_duration, client.list_saved_searches(None, None)).await {
-        Ok(Ok(saved_searches)) => ResourceSummary {
-            resource_type: "saved-searches".to_string(),
-            count: saved_searches.len() as u64,
-            status: "available".to_string(),
-            error: None,
-        },
-        Ok(Err(e)) => {
-            warn!("Failed to fetch saved searches: {}", e);
-            ResourceSummary {
-                resource_type: "saved-searches".to_string(),
-                count: 0,
-                status: "error".to_string(),
-                error: Some(e.to_string()),
-            }
-        }
-        Err(_) => {
-            warn!("Timeout fetching saved searches");
-            ResourceSummary {
-                resource_type: "saved-searches".to_string(),
-                count: 0,
-                status: "timeout".to_string(),
-                error: Some("Request timeout after 30 seconds".to_string()),
-            }
-        }
-    }
+    fetch_with_timeout(
+        "saved-searches",
+        "error",
+        || client.list_saved_searches(None, None),
+        |saved_searches| saved_searches.len() as u64,
+        |_| "available".to_string(),
+    )
+    .await
 }
 
 #[cfg(test)]
