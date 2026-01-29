@@ -22,6 +22,7 @@ use std::path::Path;
 /// # Panics
 /// - If the fixture file cannot be read
 /// - If the file content is not valid JSON
+#[allow(dead_code)]
 pub fn load_fixture(fixture_path: &str) -> serde_json::Value {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let fixture_dir = manifest_dir.join("fixtures");

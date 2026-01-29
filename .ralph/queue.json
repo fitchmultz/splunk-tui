@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0194",
-      "status": "todo",
-      "title": "Add tests for progress callback edge cases",
-      "priority": "low",
-      "tags": [
-        "testing",
-        "client",
-        "search",
-        "coverage-gap"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search.rs",
-        "crates/client/tests/"
-      ],
-      "evidence": [
-        "search_with_progress has progress callback but edge cases untested",
-        "No tests for callback panics",
-        "No tests for very rapid progress updates",
-        "No tests for callback that blocks",
-        "Progress callback could affect search performance"
-      ],
-      "plan": [
-        "Create progress_callback_tests.rs",
-        "Test callback with various update frequencies",
-        "Test callback that panics (should not crash search)",
-        "Test callback that blocks (should not deadlock)",
-        "Test progress accuracy",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: progress callback edge cases not tested",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0195",
       "status": "todo",
       "title": "Review CLI formatter tests for table output edge cases",
