@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0184",
-      "status": "todo",
-      "title": "Add safety documentation for unsafe blocks in tests",
-      "priority": "medium",
-      "tags": [
-        "documentation",
-        "tests",
-        "safety",
-        "good-practice"
-      ],
-      "scope": [
-        "crates/tui/tests/config_loading_tests.rs"
-      ],
-      "evidence": [
-        "config_loading_tests.rs uses unsafe blocks for env var manipulation (lines 41-66)",
-        "Each unsafe block calls std::env::remove_var() without safety comments",
-        "The file has #![allow(unused_unsafe)] at the top (line 10)",
-        "According to Rust unsafe guidelines, every unsafe block should have a safety comment explaining why it's sound"
-      ],
-      "plan": [
-        "Add SAFETY comments before each unsafe block explaining why env var manipulation is safe in test context",
-        "Document the EnvVarGuard mechanism that serializes access",
-        "Consider if unsafe can be eliminated by using a safer env var manipulation crate",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: unsafe blocks lack safety documentation",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0185",
       "status": "todo",
       "title": "Document default credentials security implications",

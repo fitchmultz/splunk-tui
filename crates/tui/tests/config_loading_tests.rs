@@ -7,6 +7,9 @@
 //! These tests serialize all SPLUNK_* env-var mutations with a global mutex so
 //! they are safe under the default parallel test runner.
 
+// SAFETY: This directive prevents warnings on older Rust editions where
+// `std::env::set_var`/`remove_var` are safe. All unsafe blocks in this file
+// are properly serialized via `EnvVarGuard` which holds a global mutex.
 #![allow(unused_unsafe)]
 
 use splunk_config::{ConfigLoader, ConfigManager, env_var_or_none};
@@ -37,31 +40,62 @@ fn create_test_config_with_profile(dir: &TempDir, profile_name: &str, base_url: 
 
 /// Helper to clean up all Splunk-related environment variables.
 /// This ensures test isolation by clearing any env vars that might interfere.
+///
+/// # Safety
+/// This function is only called within tests that hold the `EnvVarGuard` lock.
+/// The global mutex ensures no concurrent access to environment variables.
 fn cleanup_env_vars() {
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_CONFIG_PATH");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_BASE_URL");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_API_TOKEN");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_USERNAME");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_PASSWORD");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_PROFILE");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_SKIP_VERIFY");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_TIMEOUT");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_MAX_RETRIES");
     }
@@ -73,6 +107,12 @@ fn env_lock() -> &'static Mutex<()> {
 }
 
 /// Serializes env-var usage and guarantees cleanup between tests.
+///
+/// # Safety Invariant
+/// This struct holds a mutex guard that serializes all environment variable
+/// access across tests. The global mutex ensures that only one test at a time
+/// can modify environment variables, making the unsafe `set_var`/`remove_var`
+/// operations sound by preventing concurrent access.
 struct EnvVarGuard {
     _lock: std::sync::MutexGuard<'static, ()>,
 }
@@ -105,6 +145,9 @@ fn test_config_manager_with_splunk_config_path() {
     );
 
     // Set SPLUNK_CONFIG_PATH environment variable
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
@@ -152,10 +195,16 @@ fn test_config_loader_with_splunk_config_path() {
     );
 
     // Set SPLUNK_CONFIG_PATH environment variable
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
     // Set SPLUNK_PROFILE to load the specific profile
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_PROFILE", "custom-profile");
     }
@@ -218,6 +267,9 @@ fn test_empty_splunk_config_path_uses_default() {
     let _env = EnvVarGuard::new();
 
     // Test that an empty SPLUNK_CONFIG_PATH is handled correctly
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "");
     }
@@ -229,6 +281,9 @@ fn test_empty_splunk_config_path_uses_default() {
     );
 
     // Test that whitespace-only SPLUNK_CONFIG_PATH is handled correctly
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "   ");
     }
@@ -244,6 +299,9 @@ fn test_empty_splunk_config_path_with_config_manager() {
     let _env = EnvVarGuard::new();
 
     // Test that ConfigManager uses default path when SPLUNK_CONFIG_PATH is empty
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "");
     }
@@ -261,6 +319,9 @@ fn test_empty_splunk_config_path_with_config_manager() {
     );
 
     // Test with whitespace
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "  ");
     }
@@ -280,6 +341,9 @@ fn test_empty_splunk_config_path_with_config_loader() {
     let _env = EnvVarGuard::new();
 
     // Test that ConfigLoader ignores empty SPLUNK_CONFIG_PATH
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", "");
     }
@@ -314,6 +378,9 @@ fn test_splunk_config_path_with_nonexistent_file() {
     let nonexistent_path = "/tmp/nonexistent_splunk_config_12345.json";
 
     // Set SPLUNK_CONFIG_PATH to a nonexistent file
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", nonexistent_path);
     }
@@ -346,6 +413,9 @@ fn test_config_manager_persistence_with_custom_path() {
     let config_path = temp_dir.path().join("test-persist.json");
 
     // Set SPLUNK_CONFIG_PATH
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", config_path.to_string_lossy().as_ref());
     }
@@ -420,9 +490,15 @@ fn test_config_loader_with_profile_from_custom_path() {
         create_test_config_with_profile(&temp_dir, "production", "https://prod.splunk.com:8089");
 
     // Set both SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_PROFILE", "production");
     }
@@ -431,15 +507,27 @@ fn test_config_loader_with_profile_from_custom_path() {
     let mut loader = ConfigLoader::new().load_dotenv().unwrap();
 
     // Clear env vars that were loaded from .env to ensure profile is used
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_BASE_URL");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_API_TOKEN");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_USERNAME");
     }
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::remove_var("SPLUNK_PASSWORD");
     }
@@ -481,6 +569,9 @@ fn test_tui_pattern_matches_cli_pattern() {
         create_test_config_with_profile(&temp_dir, "test", "https://test.example.com:8089");
 
     // Test TUI pattern
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
@@ -492,6 +583,9 @@ fn test_tui_pattern_matches_cli_pattern() {
     cleanup_env_vars();
 
     // Test CLI pattern
+    // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
+    // to environment variables. Environment mutations are serialized across all
+    // tests via the global mutex, preventing data races.
     unsafe {
         std::env::set_var("SPLUNK_CONFIG_PATH", &config_path);
     }
