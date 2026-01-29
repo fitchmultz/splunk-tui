@@ -100,15 +100,10 @@ async fn run_list(
         .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
         .build()?;
 
-    let mut searches = tokio::select! {
-        res = client.list_saved_searches() => res?,
+    let searches = tokio::select! {
+        res = client.list_saved_searches(Some(count as u64), None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
-
-    // Truncate to requested count if needed
-    if searches.len() > count {
-        searches.truncate(count);
-    }
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -149,7 +144,7 @@ async fn run_info(
         .build()?;
 
     let searches = tokio::select! {
-        res = client.list_saved_searches() => res?,
+        res = client.list_saved_searches(None, None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
@@ -202,7 +197,7 @@ async fn run_run(
         .build()?;
 
     let searches = tokio::select! {
-        res = client.list_saved_searches() => res?,
+        res = client.list_saved_searches(None, None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

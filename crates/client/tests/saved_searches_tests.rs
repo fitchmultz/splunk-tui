@@ -29,14 +29,21 @@ async fn test_list_saved_searches() {
     Mock::given(method("GET"))
         .and(path("/services/saved/searches"))
         .and(query_param("output_mode", "json"))
-        .and(query_param("count", "0"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::list_saved_searches(&client, &mock_server.uri(), "test-token", 3, None).await;
+    let result = endpoints::list_saved_searches(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        None,
+        None,
+        3,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
     let searches = result.unwrap();
@@ -128,10 +135,60 @@ async fn test_splunk_client_list_saved_searches() {
         .build()
         .unwrap();
 
-    let result = client.list_saved_searches().await;
+    let result = client.list_saved_searches(None, None).await;
 
     assert!(result.is_ok());
     let searches = result.unwrap();
     assert_eq!(searches.len(), 2);
     assert_eq!(searches[0].name, "Errors in the last 24 hours");
+}
+
+#[tokio::test]
+async fn test_list_saved_searches_with_pagination() {
+    let mock_server = MockServer::start().await;
+    let fixture = load_fixture("search/list_saved_searches.json");
+
+    // Test with count=1
+    Mock::given(method("GET"))
+        .and(path("/services/saved/searches"))
+        .and(query_param("output_mode", "json"))
+        .and(query_param("count", "1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_saved_searches(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(1),
+        None,
+        3,
+        None,
+    )
+    .await;
+    assert!(result.is_ok());
+
+    // Test with offset
+    Mock::given(method("GET"))
+        .and(path("/services/saved/searches"))
+        .and(query_param("output_mode", "json"))
+        .and(query_param("count", "10"))
+        .and(query_param("offset", "5"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let result = endpoints::list_saved_searches(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(5),
+        3,
+        None,
+    )
+    .await;
+    assert!(result.is_ok());
 }

@@ -332,7 +332,7 @@ async fn fetch_license(client: &mut SplunkClient) -> ResourceSummary {
 async fn fetch_saved_searches(client: &mut SplunkClient) -> ResourceSummary {
     let timeout_duration = Duration::from_secs(30);
 
-    match time::timeout(timeout_duration, client.list_saved_searches()).await {
+    match time::timeout(timeout_duration, client.list_saved_searches(None, None)).await {
         Ok(Ok(saved_searches)) => ResourceSummary {
             resource_type: "saved-searches".to_string(),
             count: saved_searches.len() as u64,

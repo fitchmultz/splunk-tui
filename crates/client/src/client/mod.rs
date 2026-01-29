@@ -368,7 +368,11 @@ impl SplunkClient {
     }
 
     /// List all saved searches.
-    pub async fn list_saved_searches(&mut self) -> Result<Vec<SavedSearch>> {
+    pub async fn list_saved_searches(
+        &mut self,
+        count: Option<u64>,
+        offset: Option<u64>,
+    ) -> Result<Vec<SavedSearch>> {
         retry_call!(
             self,
             __token,
@@ -376,6 +380,8 @@ impl SplunkClient {
                 &self.http,
                 &self.base_url,
                 &__token,
+                count,
+                offset,
                 self.max_retries,
                 self.metrics.as_ref(),
             )

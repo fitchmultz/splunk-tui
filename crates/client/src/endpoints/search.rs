@@ -340,6 +340,8 @@ pub async fn list_saved_searches(
     client: &Client,
     base_url: &str,
     auth_token: &str,
+    count: Option<u64>,
+    offset: Option<u64>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<crate::models::SavedSearch>> {
@@ -347,10 +349,20 @@ pub async fn list_saved_searches(
 
     let url = format!("{}/services/saved/searches", base_url);
 
+    let mut query_params: Vec<(String, String)> =
+        vec![("output_mode".to_string(), "json".to_string())];
+
+    if let Some(c) = count {
+        query_params.push(("count".to_string(), c.to_string()));
+    }
+    if let Some(o) = offset {
+        query_params.push(("offset".to_string(), o.to_string()));
+    }
+
     let builder = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&[("output_mode", "json"), ("count", "0")]);
+        .query(&query_params);
     let response = send_request_with_retry(
         builder,
         max_retries,

@@ -533,7 +533,7 @@ async fn test_live_list_apps_and_users_and_saved_searches() {
 
     // Saved searches may be empty depending on instance configuration; this is a smoke test.
     let _saved_searches = client
-        .list_saved_searches()
+        .list_saved_searches(None, None)
         .await
         .expect("Failed to list saved searches");
 }
@@ -555,7 +555,7 @@ async fn test_live_create_list_and_delete_saved_search() {
         .expect("Failed to create saved search");
 
     let searches = client
-        .list_saved_searches()
+        .list_saved_searches(None, None)
         .await
         .expect("Failed to list saved searches");
     let created = searches

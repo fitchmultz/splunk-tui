@@ -179,7 +179,7 @@ pub async fn handle_side_effects(
             let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
-                match c.list_saved_searches().await {
+                match c.list_saved_searches(None, None).await {
                     Ok(searches) => {
                         let _ = tx.send(Action::SavedSearchesLoaded(Ok(searches))).await;
                     }
