@@ -202,6 +202,51 @@ impl SearchInputMode {
     }
 }
 
+/// Pagination state for list screens (indexes, jobs, apps, users).
+#[derive(Debug, Clone, Copy)]
+pub struct ListPaginationState {
+    /// Number of items per page.
+    pub page_size: u64,
+    /// Current offset (number of items already loaded).
+    pub current_offset: u64,
+    /// Whether more items may be available.
+    pub has_more: bool,
+    /// Total number of items loaded so far.
+    pub total_loaded: usize,
+}
+
+impl ListPaginationState {
+    /// Create new pagination state with the given page size.
+    pub fn new(page_size: u64) -> Self {
+        Self {
+            page_size,
+            current_offset: 0,
+            has_more: false,
+            total_loaded: 0,
+        }
+    }
+
+    /// Reset pagination state (e.g., on refresh).
+    pub fn reset(&mut self) {
+        self.current_offset = 0;
+        self.has_more = false;
+        self.total_loaded = 0;
+    }
+
+    /// Update state after loading items.
+    pub fn update_loaded(&mut self, count: usize) {
+        self.total_loaded += count;
+        self.current_offset = self.total_loaded as u64;
+        // If we got a full page, there might be more
+        self.has_more = count >= self.page_size as usize;
+    }
+
+    /// Mark that there are no more items.
+    pub fn mark_complete(&mut self) {
+        self.has_more = false;
+    }
+}
+
 impl Default for SortState {
     fn default() -> Self {
         Self::new()
@@ -354,5 +399,96 @@ mod tests {
         let mode = ClusterViewMode::Summary;
         let after_two_toggles = mode.toggle().toggle();
         assert_eq!(mode, after_two_toggles);
+    }
+
+    #[test]
+    fn test_list_pagination_state_new() {
+        let state = ListPaginationState::new(100);
+        assert_eq!(state.page_size, 100);
+        assert_eq!(state.current_offset, 0);
+        assert!(!state.has_more);
+        assert_eq!(state.total_loaded, 0);
+    }
+
+    #[test]
+    fn test_list_pagination_state_update_loaded_partial_page() {
+        let mut state = ListPaginationState::new(100);
+        state.update_loaded(50);
+
+        assert_eq!(state.total_loaded, 50);
+        assert_eq!(state.current_offset, 50);
+        assert!(!state.has_more, "Partial page means no more items");
+    }
+
+    #[test]
+    fn test_list_pagination_state_update_loaded_full_page() {
+        let mut state = ListPaginationState::new(100);
+        state.update_loaded(100);
+
+        assert_eq!(state.total_loaded, 100);
+        assert_eq!(state.current_offset, 100);
+        assert!(state.has_more, "Full page means there might be more items");
+    }
+
+    #[test]
+    fn test_list_pagination_state_update_loaded_multiple_pages() {
+        let mut state = ListPaginationState::new(50);
+
+        // First page
+        state.update_loaded(50);
+        assert_eq!(state.total_loaded, 50);
+        assert_eq!(state.current_offset, 50);
+        assert!(state.has_more);
+
+        // Second page
+        state.update_loaded(50);
+        assert_eq!(state.total_loaded, 100);
+        assert_eq!(state.current_offset, 100);
+        assert!(state.has_more);
+
+        // Partial third page
+        state.update_loaded(25);
+        assert_eq!(state.total_loaded, 125);
+        assert_eq!(state.current_offset, 125);
+        assert!(!state.has_more);
+    }
+
+    #[test]
+    fn test_list_pagination_state_reset() {
+        let mut state = ListPaginationState::new(100);
+        state.update_loaded(100);
+        assert!(state.has_more);
+
+        state.reset();
+
+        assert_eq!(state.current_offset, 0);
+        assert!(!state.has_more);
+        assert_eq!(state.total_loaded, 0);
+        // page_size should remain unchanged
+        assert_eq!(state.page_size, 100);
+    }
+
+    #[test]
+    fn test_list_pagination_state_mark_complete() {
+        let mut state = ListPaginationState::new(100);
+        state.update_loaded(100);
+        assert!(state.has_more);
+
+        state.mark_complete();
+
+        assert!(!state.has_more);
+        // Other fields should remain unchanged
+        assert_eq!(state.total_loaded, 100);
+        assert_eq!(state.current_offset, 100);
+    }
+
+    #[test]
+    fn test_list_pagination_state_empty_page() {
+        let mut state = ListPaginationState::new(100);
+        state.update_loaded(0);
+
+        assert_eq!(state.total_loaded, 0);
+        assert_eq!(state.current_offset, 0);
+        assert!(!state.has_more, "Empty page means no more items");
     }
 }

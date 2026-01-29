@@ -291,15 +291,25 @@ fn test_load_action_for_screen_after_profile_switch() {
 
     // Test that each screen returns the correct load action
     app.current_screen = CurrentScreen::Indexes;
+    let action = app.load_action_for_screen();
+    assert!(action.is_some());
     assert!(matches!(
-        app.load_action_for_screen(),
-        Some(Action::LoadIndexes)
+        action.unwrap(),
+        Action::LoadIndexes {
+            count: _,
+            offset: _
+        }
     ));
 
     app.current_screen = CurrentScreen::Jobs;
+    let action = app.load_action_for_screen();
+    assert!(action.is_some());
     assert!(matches!(
-        app.load_action_for_screen(),
-        Some(Action::LoadJobs)
+        action.unwrap(),
+        Action::LoadJobs {
+            count: _,
+            offset: _
+        }
     ));
 
     app.current_screen = CurrentScreen::Cluster;

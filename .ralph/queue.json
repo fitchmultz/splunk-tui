@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0201",
-      "status": "todo",
-      "title": "Add pagination or configurable limits for TUI list screens",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "ux",
-        "pagination"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects.rs",
-        "crates/client/src/endpoints/indexes.rs",
-        "crates/client/src/endpoints/users.rs",
-        "crates/client/src/endpoints/server.rs",
-        "crates/client/src/endpoints/jobs.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/runtime/side_effects.rs calls list_indexes(None, None), list_jobs(None, None), list_apps(None, None), and list_users(None, None).",
-        "crates/client/src/endpoints/indexes.rs, users.rs, and server.rs default `count` to 30 when None, so TUI lists can silently truncate data."
-      ],
-      "plan": [
-        "Decide on a pagination strategy (page size + offset) or a configurable max count for TUI lists.",
-        "Update the side effects and UI state to request/track pagination and show that data is partial when applicable.",
-        "Add tests covering pagination/limit behavior and empty/overflow cases."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0202",
       "status": "todo",
       "title": "Preserve job fields in list_jobs mapping",

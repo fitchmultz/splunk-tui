@@ -35,8 +35,13 @@ impl App {
             Action::PreviousScreen => {
                 self.current_screen = self.current_screen.previous();
             }
-            Action::LoadIndexes => {
+            Action::LoadIndexes {
+                count: _,
+                offset: _,
+            } => {
                 self.current_screen = CurrentScreen::Indexes;
+                // Reset pagination state for fresh load
+                self.indexes_pagination.reset();
             }
             Action::LoadClusterInfo => {
                 self.current_screen = CurrentScreen::Cluster;
@@ -49,8 +54,13 @@ impl App {
                     // The side effect handler will trigger the actual load
                 }
             }
-            Action::LoadJobs => {
+            Action::LoadJobs {
+                count: _,
+                offset: _,
+            } => {
                 self.current_screen = CurrentScreen::Jobs;
+                // Reset pagination state for fresh load
+                self.jobs_pagination.reset();
             }
             Action::LoadHealth => {
                 self.current_screen = CurrentScreen::Health;
@@ -61,11 +71,28 @@ impl App {
             Action::LoadInternalLogs => {
                 self.current_screen = CurrentScreen::InternalLogs;
             }
-            Action::LoadApps => {
+            Action::LoadApps {
+                count: _,
+                offset: _,
+            } => {
                 self.current_screen = CurrentScreen::Apps;
+                // Reset pagination state for fresh load
+                self.apps_pagination.reset();
             }
-            Action::LoadUsers => {
+            Action::LoadUsers {
+                count: _,
+                offset: _,
+            } => {
                 self.current_screen = CurrentScreen::Users;
+                // Reset pagination state for fresh load
+                self.users_pagination.reset();
+            }
+            // LoadMore actions - handled by main loop which has access to state
+            Action::LoadMoreIndexes
+            | Action::LoadMoreJobs
+            | Action::LoadMoreApps
+            | Action::LoadMoreUsers => {
+                // These are handled in the main loop which has access to pagination state
             }
             Action::NavigateDown => self.next_item(),
             Action::NavigateUp => self.previous_item(),
@@ -129,12 +156,34 @@ impl App {
                 self.toasts.retain(|t| !t.is_expired());
             }
             Action::IndexesLoaded(Ok(indexes)) => {
+                let count = indexes.len();
                 self.indexes = Some(indexes);
+                self.indexes_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreIndexesLoaded(Ok(indexes)) => {
+                let count = indexes.len();
+                if let Some(ref mut existing) = self.indexes {
+                    existing.extend(indexes);
+                } else {
+                    self.indexes = Some(indexes);
+                }
+                self.indexes_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreIndexesLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more indexes: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::JobsLoaded(Ok(jobs)) => {
                 let sel = self.jobs_state.selected();
+                let count = jobs.len();
                 self.jobs = Some(jobs);
+                self.jobs_pagination.update_loaded(count);
                 self.loading = false;
                 // Rebuild filtered indices and restore selection clamped to new bounds
                 self.rebuild_filtered_indices();
@@ -143,6 +192,32 @@ impl App {
                     sel.map(|i| i.min(filtered_len.saturating_sub(1)))
                         .or(Some(0)),
                 );
+            }
+            Action::MoreJobsLoaded(Ok(jobs)) => {
+                let sel = self.jobs_state.selected();
+                let count = jobs.len();
+                if let Some(ref mut existing) = self.jobs {
+                    existing.extend(jobs);
+                } else {
+                    self.jobs = Some(jobs);
+                }
+                self.jobs_pagination.update_loaded(count);
+                self.loading = false;
+                // Rebuild filtered indices to include new items
+                self.rebuild_filtered_indices();
+                let filtered_len = self.filtered_jobs_len();
+                self.jobs_state.select(
+                    sel.map(|i| i.min(filtered_len.saturating_sub(1)))
+                        .or(Some(0)),
+                );
+            }
+            Action::MoreJobsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more jobs: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
             }
             Action::SavedSearchesLoaded(Ok(searches)) => {
                 self.saved_searches = Some(searches);
@@ -280,7 +355,27 @@ impl App {
                 self.loading = false;
             }
             Action::AppsLoaded(Ok(apps)) => {
+                let count = apps.len();
                 self.apps = Some(apps);
+                self.apps_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreAppsLoaded(Ok(apps)) => {
+                let count = apps.len();
+                if let Some(ref mut existing) = self.apps {
+                    existing.extend(apps);
+                } else {
+                    self.apps = Some(apps);
+                }
+                self.apps_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreAppsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more apps: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::AppsLoaded(Err(e)) => {
@@ -292,7 +387,27 @@ impl App {
                 self.loading = false;
             }
             Action::UsersLoaded(Ok(users)) => {
+                let count = users.len();
                 self.users = Some(users);
+                self.users_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreUsersLoaded(Ok(users)) => {
+                let count = users.len();
+                if let Some(ref mut existing) = self.users {
+                    existing.extend(users);
+                } else {
+                    self.users = Some(users);
+                }
+                self.users_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreUsersLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more users: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::UsersLoaded(Err(e)) => {

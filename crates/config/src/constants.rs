@@ -74,6 +74,16 @@ pub const DEFAULT_REFRESH_INTERVAL_SECS: u64 = 5;
 /// Default scroll threshold for triggering pagination (items from end).
 pub const DEFAULT_SCROLL_THRESHOLD: usize = 10;
 
+// =============================================================================
+// List Pagination Defaults (for TUI list screens)
+// =============================================================================
+
+/// Default page size for list screens (indexes, jobs, apps, users).
+pub const DEFAULT_LIST_PAGE_SIZE: u64 = 100;
+
+/// Default maximum items to load for list screens (safety limit).
+pub const DEFAULT_LIST_MAX_ITEMS: u64 = 1000;
+
 /// Default maximum number of search history items to retain.
 pub const DEFAULT_HISTORY_MAX_ITEMS: usize = 50;
 

@@ -103,10 +103,20 @@ pub enum Action {
     CopyToClipboard(String),
 
     // API Triggers
-    /// Load the list of indexes
-    LoadIndexes,
-    /// Load the list of search jobs
-    LoadJobs,
+    /// Load the list of indexes with pagination
+    LoadIndexes {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load the list of search jobs with pagination
+    LoadJobs {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
     /// Load cluster information
     LoadClusterInfo,
     /// Load health check information
@@ -115,12 +125,30 @@ pub enum Action {
     LoadSavedSearches,
     /// Load internal logs from index=_internal
     LoadInternalLogs,
-    /// Load the list of apps
-    LoadApps,
-    /// Load the list of users
-    LoadUsers,
+    /// Load the list of apps with pagination
+    LoadApps {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load the list of users with pagination
+    LoadUsers {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
     /// Load cluster peers (detailed view)
     LoadClusterPeers,
+    /// Load more indexes (pagination)
+    LoadMoreIndexes,
+    /// Load more jobs (pagination)
+    LoadMoreJobs,
+    /// Load more apps (pagination)
+    LoadMoreApps,
+    /// Load more users (pagination)
+    LoadMoreUsers,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -158,6 +186,14 @@ pub enum Action {
     UsersLoaded(Result<Vec<User>, Arc<ClientError>>),
     /// Result of loading cluster peers
     ClusterPeersLoaded(Result<Vec<ClusterPeer>, Arc<ClientError>>),
+    /// Result of loading more indexes (pagination)
+    MoreIndexesLoaded(Result<Vec<Index>, Arc<ClientError>>),
+    /// Result of loading more jobs (pagination)
+    MoreJobsLoaded(Result<Vec<SearchJobStatus>, Arc<ClientError>>),
+    /// Result of loading more apps (pagination)
+    MoreAppsLoaded(Result<Vec<SplunkApp>, Arc<ClientError>>),
+    /// Result of loading more users (pagination)
+    MoreUsersLoaded(Result<Vec<User>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

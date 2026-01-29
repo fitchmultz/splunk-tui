@@ -38,7 +38,15 @@ async fn test_load_indexes_success() {
         .await;
 
     // Handle the action
-    let actions = harness.handle_and_collect(Action::LoadIndexes, 2).await;
+    let actions = harness
+        .handle_and_collect(
+            Action::LoadIndexes {
+                count: 100,
+                offset: 0,
+            },
+            2,
+        )
+        .await;
 
     // Verify actions sent
     assert!(
@@ -78,7 +86,15 @@ async fn test_load_indexes_error() {
         .mount(&harness.mock_server)
         .await;
 
-    let actions = harness.handle_and_collect(Action::LoadIndexes, 2).await;
+    let actions = harness
+        .handle_and_collect(
+            Action::LoadIndexes {
+                count: 100,
+                offset: 0,
+            },
+            2,
+        )
+        .await;
 
     // Should still send Loading actions and error result
     assert!(
@@ -104,7 +120,15 @@ async fn test_load_jobs_success() {
         .mount(&harness.mock_server)
         .await;
 
-    let actions = harness.handle_and_collect(Action::LoadJobs, 2).await;
+    let actions = harness
+        .handle_and_collect(
+            Action::LoadJobs {
+                count: 100,
+                offset: 0,
+            },
+            2,
+        )
+        .await;
 
     assert!(
         actions.iter().any(|a| matches!(a, Action::Loading(true))),
@@ -138,7 +162,15 @@ async fn test_load_jobs_error() {
         .mount(&harness.mock_server)
         .await;
 
-    let actions = harness.handle_and_collect(Action::LoadJobs, 2).await;
+    let actions = harness
+        .handle_and_collect(
+            Action::LoadJobs {
+                count: 100,
+                offset: 0,
+            },
+            2,
+        )
+        .await;
 
     assert!(
         actions
@@ -361,7 +393,15 @@ async fn test_load_apps_success() {
         .mount(&harness.mock_server)
         .await;
 
-    let actions = harness.handle_and_collect(Action::LoadApps, 2).await;
+    let actions = harness
+        .handle_and_collect(
+            Action::LoadApps {
+                count: 100,
+                offset: 0,
+            },
+            2,
+        )
+        .await;
 
     assert!(
         actions.iter().any(|a| matches!(a, Action::Loading(true))),
@@ -398,7 +438,15 @@ async fn test_load_users_success() {
         .mount(&harness.mock_server)
         .await;
 
-    let actions = harness.handle_and_collect(Action::LoadUsers, 2).await;
+    let actions = harness
+        .handle_and_collect(
+            Action::LoadUsers {
+                count: 100,
+                offset: 0,
+            },
+            2,
+        )
+        .await;
 
     assert!(
         actions.iter().any(|a| matches!(a, Action::Loading(true))),
@@ -629,7 +677,7 @@ async fn test_cancel_job_success() {
         "Should send JobOperationComplete"
     );
     assert!(
-        actions.iter().any(|a| matches!(a, Action::LoadJobs)),
+        actions.iter().any(|a| matches!(a, Action::LoadJobs { .. })),
         "Should send LoadJobs to refresh"
     );
 }
@@ -689,7 +737,7 @@ async fn test_delete_job_success() {
         "Should send JobOperationComplete"
     );
     assert!(
-        actions.iter().any(|a| matches!(a, Action::LoadJobs)),
+        actions.iter().any(|a| matches!(a, Action::LoadJobs { .. })),
         "Should send LoadJobs to refresh"
     );
 }
@@ -759,7 +807,7 @@ async fn test_cancel_jobs_batch_all_success() {
         "Should report 2 jobs cancelled"
     );
     assert!(
-        actions.iter().any(|a| matches!(a, Action::LoadJobs)),
+        actions.iter().any(|a| matches!(a, Action::LoadJobs { .. })),
         "Should send LoadJobs to refresh"
     );
 }
@@ -927,7 +975,7 @@ async fn test_enable_app_success() {
         "Should send success notification"
     );
     assert!(
-        actions.iter().any(|a| matches!(a, Action::LoadApps)),
+        actions.iter().any(|a| matches!(a, Action::LoadApps { .. })),
         "Should send LoadApps to refresh"
     );
 }
@@ -989,7 +1037,7 @@ async fn test_disable_app_success() {
         "Should send success notification"
     );
     assert!(
-        actions.iter().any(|a| matches!(a, Action::LoadApps)),
+        actions.iter().any(|a| matches!(a, Action::LoadApps { .. })),
         "Should send LoadApps to refresh"
     );
 }

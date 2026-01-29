@@ -29,8 +29,8 @@ mod popups;
 mod render;
 
 pub use state::{
-    ClusterViewMode, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, SearchInputMode,
-    SortColumn, SortDirection, SortState,
+    ClusterViewMode, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, ListPaginationState,
+    SearchInputMode, SortColumn, SortDirection, SortState,
 };
 
 use crate::action::{Action, ExportFormat};
@@ -48,7 +48,9 @@ use splunk_config::constants::{
     DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
     DEFAULT_SEARCH_PAGE_SIZE,
 };
-use splunk_config::{ColorTheme, KeybindOverrides, PersistedState, SearchDefaults, Theme};
+use splunk_config::{
+    ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
+};
 use std::collections::HashSet;
 
 /// Main application state.
@@ -131,6 +133,15 @@ pub struct App {
 
     // Keybinding overrides (persisted)
     pub keybind_overrides: KeybindOverrides,
+
+    // List defaults (persisted)
+    pub list_defaults: ListDefaults,
+
+    // Pagination state for list screens
+    pub indexes_pagination: ListPaginationState,
+    pub jobs_pagination: ListPaginationState,
+    pub apps_pagination: ListPaginationState,
+    pub users_pagination: ListPaginationState,
 
     // Export state
     pub export_input: String,
@@ -258,6 +269,7 @@ impl App {
             color_theme,
             search_defaults,
             keybind_overrides,
+            list_defaults,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -268,6 +280,7 @@ impl App {
                 state.selected_theme,
                 state.search_defaults,
                 state.keybind_overrides,
+                state.list_defaults,
             ),
             None => (
                 false,
@@ -278,6 +291,7 @@ impl App {
                 ColorTheme::Default,
                 SearchDefaults::default(),
                 KeybindOverrides::default(),
+                ListDefaults::default(),
             ),
         };
 
@@ -334,6 +348,15 @@ impl App {
             saved_search_input: String::new(),
             search_defaults,
             keybind_overrides,
+            list_defaults: list_defaults.clone(),
+            indexes_pagination: ListPaginationState::new(
+                list_defaults.page_size_for(ListType::Indexes),
+            ),
+            jobs_pagination: ListPaginationState::new(list_defaults.page_size_for(ListType::Jobs)),
+            apps_pagination: ListPaginationState::new(list_defaults.page_size_for(ListType::Apps)),
+            users_pagination: ListPaginationState::new(
+                list_defaults.page_size_for(ListType::Users),
+            ),
             export_input: String::new(),
             export_format: ExportFormat::Json,
             export_target: None,
@@ -372,6 +395,7 @@ impl App {
             selected_theme: self.color_theme,
             search_defaults: self.search_defaults.clone(),
             keybind_overrides: self.keybind_overrides.clone(),
+            list_defaults: self.list_defaults.clone(),
         }
     }
 
@@ -426,16 +450,75 @@ impl App {
     pub fn load_action_for_screen(&self) -> Option<Action> {
         match self.current_screen {
             CurrentScreen::Search => None, // Search doesn't need pre-loading
-            CurrentScreen::Indexes => Some(Action::LoadIndexes),
+            CurrentScreen::Indexes => Some(Action::LoadIndexes {
+                count: self.indexes_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Cluster => Some(Action::LoadClusterInfo),
-            CurrentScreen::Jobs => Some(Action::LoadJobs),
+            CurrentScreen::Jobs => Some(Action::LoadJobs {
+                count: self.jobs_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::JobInspect => None, // Already loaded when entering inspect mode
             CurrentScreen::Health => Some(Action::LoadHealth),
             CurrentScreen::SavedSearches => Some(Action::LoadSavedSearches),
             CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs),
-            CurrentScreen::Apps => Some(Action::LoadApps),
-            CurrentScreen::Users => Some(Action::LoadUsers),
+            CurrentScreen::Apps => Some(Action::LoadApps {
+                count: self.apps_pagination.page_size,
+                offset: 0,
+            }),
+            CurrentScreen::Users => Some(Action::LoadUsers {
+                count: self.users_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
+        }
+    }
+
+    /// Returns a load-more action for the current screen if pagination is available.
+    pub fn load_more_action_for_current_screen(&self) -> Option<Action> {
+        match self.current_screen {
+            CurrentScreen::Indexes => {
+                if self.indexes_pagination.has_more {
+                    Some(Action::LoadIndexes {
+                        count: self.indexes_pagination.page_size,
+                        offset: self.indexes_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Jobs => {
+                if self.jobs_pagination.has_more {
+                    Some(Action::LoadJobs {
+                        count: self.jobs_pagination.page_size,
+                        offset: self.jobs_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Apps => {
+                if self.apps_pagination.has_more {
+                    Some(Action::LoadApps {
+                        count: self.apps_pagination.page_size,
+                        offset: self.apps_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Users => {
+                if self.users_pagination.has_more {
+                    Some(Action::LoadUsers {
+                        count: self.users_pagination.page_size,
+                        offset: self.users_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            _ => None,
         }
     }
 
@@ -552,7 +635,11 @@ impl App {
             && self.popup.is_none()
             && !self.is_filtering
         {
-            Some(Action::LoadJobs)
+            // Auto-refresh resets pagination to get fresh data
+            Some(Action::LoadJobs {
+                count: self.jobs_pagination.page_size,
+                offset: 0,
+            })
         } else if self.current_screen == CurrentScreen::InternalLogs
             && self.auto_refresh
             && self.popup.is_none()
@@ -611,15 +698,25 @@ mod tests {
         let mut app = App::new(None, ConnectionContext::default());
 
         app.current_screen = CurrentScreen::Indexes;
+        let action = app.load_action_for_screen();
+        assert!(action.is_some());
         assert!(matches!(
-            app.load_action_for_screen(),
-            Some(Action::LoadIndexes)
+            action.unwrap(),
+            Action::LoadIndexes {
+                count: _,
+                offset: _
+            }
         ));
 
         app.current_screen = CurrentScreen::Jobs;
+        let action = app.load_action_for_screen();
+        assert!(action.is_some());
         assert!(matches!(
-            app.load_action_for_screen(),
-            Some(Action::LoadJobs)
+            action.unwrap(),
+            Action::LoadJobs {
+                count: _,
+                offset: _
+            }
         ));
 
         app.current_screen = CurrentScreen::Search;

@@ -119,11 +119,11 @@ pub async fn handle_side_effects(
     config_manager: Arc<Mutex<ConfigManager>>,
 ) {
     match action {
-        Action::LoadIndexes => {
+        Action::LoadIndexes { count, offset } => {
             let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
-                match c.list_indexes(None, None).await {
+                match c.list_indexes(Some(count), Some(offset)).await {
                     Ok(indexes) => {
                         let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
                     }
@@ -133,11 +133,11 @@ pub async fn handle_side_effects(
                 }
             });
         }
-        Action::LoadJobs => {
+        Action::LoadJobs { count, offset } => {
             let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
-                match c.list_jobs(None, None).await {
+                match c.list_jobs(Some(count), Some(offset)).await {
                     Ok(jobs) => {
                         let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
                     }
@@ -204,11 +204,11 @@ pub async fn handle_side_effects(
                 }
             });
         }
-        Action::LoadApps => {
+        Action::LoadApps { count, offset } => {
             let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
-                match c.list_apps(None, None).await {
+                match c.list_apps(Some(count), Some(offset)).await {
                     Ok(apps) => {
                         let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
                     }
@@ -218,11 +218,11 @@ pub async fn handle_side_effects(
                 }
             });
         }
-        Action::LoadUsers => {
+        Action::LoadUsers { count, offset } => {
             let _ = tx.send(Action::Loading(true)).await;
             tokio::spawn(async move {
                 let mut c = client.lock().await;
-                match c.list_users(None, None).await {
+                match c.list_users(Some(count), Some(offset)).await {
                     Ok(users) => {
                         let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
                     }
@@ -231,6 +231,20 @@ pub async fn handle_side_effects(
                     }
                 }
             });
+        }
+        // LoadMore actions for pagination - these require state access, handled in main loop
+        Action::LoadMoreIndexes => {
+            // This action is handled by the main loop which has access to state
+            // It reads current pagination state and sends LoadIndexes with updated offset
+        }
+        Action::LoadMoreJobs => {
+            // This action is handled by the main loop which has access to state
+        }
+        Action::LoadMoreApps => {
+            // This action is handled by the main loop which has access to state
+        }
+        Action::LoadMoreUsers => {
+            // This action is handled by the main loop which has access to state
         }
         Action::SwitchToSettings => {
             let _ = tx.send(Action::Loading(true)).await;
@@ -328,8 +342,13 @@ pub async fn handle_side_effects(
                                 sid
                             )))
                             .await;
-                        // Reload the job list
-                        let _ = tx.send(Action::LoadJobs).await;
+                        // Reload the job list (reset pagination)
+                        let _ = tx
+                            .send(Action::LoadJobs {
+                                count: 100,
+                                offset: 0,
+                            })
+                            .await;
                     }
                     Err(e) => {
                         let _ = tx
@@ -355,8 +374,13 @@ pub async fn handle_side_effects(
                                 sid
                             )))
                             .await;
-                        // Reload the job list
-                        let _ = tx.send(Action::LoadJobs).await;
+                        // Reload the job list (reset pagination)
+                        let _ = tx
+                            .send(Action::LoadJobs {
+                                count: 100,
+                                offset: 0,
+                            })
+                            .await;
                     }
                     Err(e) => {
                         let _ = tx
@@ -406,7 +430,12 @@ pub async fn handle_side_effects(
                 }
 
                 let _ = tx_clone.send(Action::JobOperationComplete(msg)).await;
-                let _ = tx_clone.send(Action::LoadJobs).await;
+                let _ = tx_clone
+                    .send(Action::LoadJobs {
+                        count: 100,
+                        offset: 0,
+                    })
+                    .await;
             });
         }
         Action::DeleteJobsBatch(sids) => {
@@ -444,7 +473,12 @@ pub async fn handle_side_effects(
                 }
 
                 let _ = tx_clone.send(Action::JobOperationComplete(msg)).await;
-                let _ = tx_clone.send(Action::LoadJobs).await;
+                let _ = tx_clone
+                    .send(Action::LoadJobs {
+                        count: 100,
+                        offset: 0,
+                    })
+                    .await;
             });
         }
         Action::EnableApp(name) => {
@@ -459,8 +493,13 @@ pub async fn handle_side_effects(
                                 format!("App '{}' enabled successfully", name),
                             ))
                             .await;
-                        // Refresh apps list
-                        let _ = tx.send(Action::LoadApps).await;
+                        // Refresh apps list (reset pagination)
+                        let _ = tx
+                            .send(Action::LoadApps {
+                                count: 100,
+                                offset: 0,
+                            })
+                            .await;
                     }
                     Err(e) => {
                         let _ = tx
@@ -486,8 +525,13 @@ pub async fn handle_side_effects(
                                 format!("App '{}' disabled successfully", name),
                             ))
                             .await;
-                        // Refresh apps list
-                        let _ = tx.send(Action::LoadApps).await;
+                        // Refresh apps list (reset pagination)
+                        let _ = tx
+                            .send(Action::LoadApps {
+                                count: 100,
+                                offset: 0,
+                            })
+                            .await;
                     }
                     Err(e) => {
                         let _ = tx

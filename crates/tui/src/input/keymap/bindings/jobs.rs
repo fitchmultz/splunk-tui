@@ -30,7 +30,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::LoadJobs),
+            action: Some(Action::LoadMoreJobs),
             handles_input: true,
         },
         Keybinding {

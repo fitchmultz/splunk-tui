@@ -30,7 +30,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::LoadIndexes),
+            action: Some(Action::LoadMoreIndexes),
             handles_input: true,
         },
         Keybinding {
@@ -416,7 +416,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::LoadApps),
+            action: Some(Action::LoadMoreApps),
             handles_input: true,
         },
         Keybinding {
@@ -519,7 +519,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::LoadUsers),
+            action: Some(Action::LoadMoreUsers),
             handles_input: true,
         },
         Keybinding {

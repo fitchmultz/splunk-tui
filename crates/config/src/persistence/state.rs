@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::constants::{DEFAULT_LIST_MAX_ITEMS, DEFAULT_LIST_PAGE_SIZE};
 use crate::types::{ColorTheme, KeybindOverrides, ProfileConfig};
 
 /// Default search parameters to avoid unbounded searches.
@@ -60,6 +61,62 @@ impl Default for SearchDefaults {
     }
 }
 
+/// Default list pagination settings for TUI list screens.
+///
+/// These settings control how many items are fetched per page and the
+/// maximum number of items to load for list screens (indexes, jobs, apps, users).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ListDefaults {
+    /// Default page size for list screens.
+    pub page_size: u64,
+    /// Maximum number of items to load (safety limit).
+    pub max_items: u64,
+    /// Per-list override: indexes page size (None = use page_size).
+    pub indexes_page_size: Option<u64>,
+    /// Per-list override: jobs page size (None = use page_size).
+    pub jobs_page_size: Option<u64>,
+    /// Per-list override: apps page size (None = use page_size).
+    pub apps_page_size: Option<u64>,
+    /// Per-list override: users page size (None = use page_size).
+    pub users_page_size: Option<u64>,
+}
+
+impl Default for ListDefaults {
+    fn default() -> Self {
+        Self {
+            page_size: DEFAULT_LIST_PAGE_SIZE,
+            max_items: DEFAULT_LIST_MAX_ITEMS,
+            indexes_page_size: None,
+            jobs_page_size: None,
+            apps_page_size: None,
+            users_page_size: None,
+        }
+    }
+}
+
+impl ListDefaults {
+    /// Get the effective page size for a specific list type.
+    pub fn page_size_for(&self, list_type: ListType) -> u64 {
+        let override_size = match list_type {
+            ListType::Indexes => self.indexes_page_size,
+            ListType::Jobs => self.jobs_page_size,
+            ListType::Apps => self.apps_page_size,
+            ListType::Users => self.users_page_size,
+        };
+        override_size.unwrap_or(self.page_size)
+    }
+}
+
+/// List type for retrieving per-list pagination settings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ListType {
+    Indexes,
+    Jobs,
+    Apps,
+    Users,
+}
+
 /// User preferences that persist across application runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersistedState {
@@ -83,6 +140,9 @@ pub struct PersistedState {
     /// User-defined keybinding overrides.
     #[serde(default)]
     pub keybind_overrides: KeybindOverrides,
+    /// Default list pagination settings.
+    #[serde(default)]
+    pub list_defaults: ListDefaults,
 }
 
 impl Default for PersistedState {
@@ -96,6 +156,7 @@ impl Default for PersistedState {
             selected_theme: ColorTheme::Default,
             search_defaults: SearchDefaults::default(),
             keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults::default(),
         }
     }
 }
@@ -194,6 +255,7 @@ mod tests {
                 max_results: 500,
             },
             keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -222,6 +284,7 @@ mod tests {
             selected_theme: ColorTheme::Default,
             search_defaults: SearchDefaults::default(),
             keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults::default(),
         };
 
         writeln!(
@@ -291,6 +354,7 @@ mod tests {
                 max_results: 2000,
             },
             keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -337,6 +401,7 @@ mod tests {
             selected_theme: ColorTheme::Default,
             search_defaults: SearchDefaults::default(),
             keybind_overrides: KeybindOverrides { overrides },
+            list_defaults: ListDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -372,5 +437,141 @@ mod tests {
         let deserialized: PersistedState = serde_json::from_str(json).unwrap();
         // Should use defaults for missing keybind_overrides
         assert!(deserialized.keybind_overrides.is_empty());
+    }
+
+    #[test]
+    fn test_list_defaults_default() {
+        let defaults = ListDefaults::default();
+        assert_eq!(defaults.page_size, DEFAULT_LIST_PAGE_SIZE);
+        assert_eq!(defaults.max_items, DEFAULT_LIST_MAX_ITEMS);
+        assert!(defaults.indexes_page_size.is_none());
+        assert!(defaults.jobs_page_size.is_none());
+        assert!(defaults.apps_page_size.is_none());
+        assert!(defaults.users_page_size.is_none());
+    }
+
+    #[test]
+    fn test_list_defaults_page_size_for_with_overrides() {
+        let defaults = ListDefaults {
+            page_size: 100,
+            max_items: 1000,
+            indexes_page_size: Some(50),
+            jobs_page_size: Some(200),
+            apps_page_size: None,
+            users_page_size: Some(75),
+        };
+
+        assert_eq!(defaults.page_size_for(ListType::Indexes), 50);
+        assert_eq!(defaults.page_size_for(ListType::Jobs), 200);
+        assert_eq!(defaults.page_size_for(ListType::Apps), 100); // Falls back to default
+        assert_eq!(defaults.page_size_for(ListType::Users), 75);
+    }
+
+    #[test]
+    fn test_list_defaults_page_size_for_no_overrides() {
+        let defaults = ListDefaults {
+            page_size: 100,
+            max_items: 1000,
+            indexes_page_size: None,
+            jobs_page_size: None,
+            apps_page_size: None,
+            users_page_size: None,
+        };
+
+        assert_eq!(defaults.page_size_for(ListType::Indexes), 100);
+        assert_eq!(defaults.page_size_for(ListType::Jobs), 100);
+        assert_eq!(defaults.page_size_for(ListType::Apps), 100);
+        assert_eq!(defaults.page_size_for(ListType::Users), 100);
+    }
+
+    #[test]
+    fn test_list_defaults_serialization() {
+        let defaults = ListDefaults {
+            page_size: 50,
+            max_items: 500,
+            indexes_page_size: Some(25),
+            jobs_page_size: Some(100),
+            apps_page_size: None,
+            users_page_size: None,
+        };
+
+        let json = serde_json::to_string(&defaults).unwrap();
+        assert!(json.contains("50"));
+        assert!(json.contains("500"));
+        assert!(json.contains("25"));
+        assert!(json.contains("100"));
+
+        let deserialized: ListDefaults = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.page_size, 50);
+        assert_eq!(deserialized.max_items, 500);
+        assert_eq!(deserialized.indexes_page_size, Some(25));
+        assert_eq!(deserialized.jobs_page_size, Some(100));
+        assert_eq!(deserialized.apps_page_size, None);
+    }
+
+    #[test]
+    fn test_list_defaults_deserialization_uses_defaults_for_missing_fields() {
+        // Test that missing fields use default values
+        let json = r#"{}"#;
+        let deserialized: ListDefaults = serde_json::from_str(json).unwrap();
+        assert_eq!(deserialized.page_size, DEFAULT_LIST_PAGE_SIZE);
+        assert_eq!(deserialized.max_items, DEFAULT_LIST_MAX_ITEMS);
+        assert!(deserialized.indexes_page_size.is_none());
+    }
+
+    #[test]
+    fn test_persisted_state_backward_compatibility_without_list_defaults() {
+        // Simulate an old config file without list_defaults
+        let json = r#"{
+            "auto_refresh": false,
+            "sort_column": "sid",
+            "sort_direction": "asc",
+            "last_search_query": null,
+            "search_history": [],
+            "selected_theme": "default",
+            "search_defaults": {
+                "earliest_time": "-24h",
+                "latest_time": "now",
+                "max_results": 1000
+            },
+            "keybind_overrides": {}
+        }"#;
+
+        let deserialized: PersistedState = serde_json::from_str(json).unwrap();
+        // Should use defaults for missing list_defaults
+        assert_eq!(deserialized.list_defaults.page_size, DEFAULT_LIST_PAGE_SIZE);
+        assert_eq!(deserialized.list_defaults.max_items, DEFAULT_LIST_MAX_ITEMS);
+    }
+
+    #[test]
+    fn test_persisted_state_with_list_defaults_round_trip() {
+        let state = PersistedState {
+            auto_refresh: true,
+            sort_column: "status".to_string(),
+            sort_direction: "desc".to_string(),
+            last_search_query: None,
+            search_history: vec![],
+            selected_theme: ColorTheme::Default,
+            search_defaults: SearchDefaults::default(),
+            keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults {
+                page_size: 75,
+                max_items: 750,
+                indexes_page_size: Some(50),
+                jobs_page_size: Some(100),
+                apps_page_size: None,
+                users_page_size: Some(25),
+            },
+        };
+
+        let json = serde_json::to_string(&state).unwrap();
+        let deserialized: PersistedState = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.list_defaults.page_size, 75);
+        assert_eq!(deserialized.list_defaults.max_items, 750);
+        assert_eq!(deserialized.list_defaults.indexes_page_size, Some(50));
+        assert_eq!(deserialized.list_defaults.jobs_page_size, Some(100));
+        assert_eq!(deserialized.list_defaults.apps_page_size, None);
+        assert_eq!(deserialized.list_defaults.users_page_size, Some(25));
     }
 }

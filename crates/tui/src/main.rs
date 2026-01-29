@@ -275,6 +275,15 @@ async fn main() -> Result<()> {
                     break;
                 }
 
+                // Handle LoadMore* actions by converting to Load* with pagination params
+                let action = match action {
+                    Action::LoadMoreIndexes => app.load_more_action_for_current_screen().unwrap_or(action),
+                    Action::LoadMoreJobs => app.load_more_action_for_current_screen().unwrap_or(action),
+                    Action::LoadMoreApps => app.load_more_action_for_current_screen().unwrap_or(action),
+                    Action::LoadMoreUsers => app.load_more_action_for_current_screen().unwrap_or(action),
+                    _ => action,
+                };
+
                 // Handle input -> Action
                 if let Action::Input(key) = action {
                     if let Some(a) = app.handle_input(key) {

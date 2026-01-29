@@ -90,7 +90,7 @@ fn test_tick_suppressed_during_popup() {
     // Without popup, tick should return LoadJobs action
     let action = app.handle_tick();
     assert!(
-        matches!(action, Some(Action::LoadJobs)),
+        matches!(action, Some(Action::LoadJobs { .. })),
         "Tick should return LoadJobs when no popup"
     );
 
@@ -127,11 +127,11 @@ fn test_refresh_jobs_action() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
-    // Press 'r' to refresh
+    // Press 'r' to refresh (now returns LoadMoreJobs which gets converted)
     let action = app.handle_input(key('r'));
     assert!(
-        matches!(action, Some(Action::LoadJobs)),
-        "Should return LoadJobs action"
+        matches!(action, Some(Action::LoadMoreJobs)),
+        "Should return LoadMoreJobs action"
     );
 }
 

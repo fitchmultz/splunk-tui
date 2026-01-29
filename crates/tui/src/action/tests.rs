@@ -678,6 +678,7 @@ fn test_redact_settings_loaded() {
         selected_theme: splunk_config::ColorTheme::Dark,
         search_defaults: SearchDefaults::default(),
         keybind_overrides: splunk_config::KeybindOverrides::default(),
+        list_defaults: splunk_config::ListDefaults::default(),
     };
     let action = Action::SettingsLoaded(state);
     let output = redacted_debug(&action);
