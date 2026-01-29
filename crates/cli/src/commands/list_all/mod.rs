@@ -21,7 +21,6 @@ pub mod output;
 pub mod types;
 
 use anyhow::{Context, Result};
-use std::collections::HashSet;
 use tracing::info;
 
 use crate::cancellation::CancellationToken;
@@ -48,15 +47,15 @@ pub async fn run(
 ) -> Result<()> {
     info!("Listing all Splunk resources");
 
-    // Normalize and validate resource types (trim, lowercase, dedupe)
+    // Normalize and validate resource types (trim, lowercase, dedupe, preserve order)
     let resources_to_fetch: Vec<String> = resources_filter
         .map(|resources| {
+            let mut seen = std::collections::HashSet::new();
             resources
                 .into_iter()
                 .map(|r| r.trim().to_lowercase())
                 .filter(|r| !r.is_empty())
-                .collect::<HashSet<_>>()
-                .into_iter()
+                .filter(|r| seen.insert(r.clone()))
                 .collect()
         })
         .unwrap_or_else(|| VALID_RESOURCES.iter().map(|s| s.to_string()).collect());
@@ -82,15 +81,15 @@ pub async fn run(
             // Query all profiles from config file
             cm.list_profiles().keys().cloned().collect()
         } else {
-            // Query specified profiles - trim and dedupe (preserve case)
+            // Query specified profiles - trim and dedupe (preserve case, preserve order)
             profile_names
                 .map(|profiles| {
+                    let mut seen = std::collections::HashSet::new();
                     profiles
                         .into_iter()
                         .map(|p| p.trim().to_string())
                         .filter(|p| !p.is_empty())
-                        .collect::<HashSet<_>>()
-                        .into_iter()
+                        .filter(|p| seen.insert(p.clone()))
                         .collect()
                 })
                 .unwrap_or_default()

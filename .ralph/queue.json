@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0206",
-      "status": "todo",
-      "title": "Make list-all output ordering deterministic",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "list-all",
-        "determinism"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all/mod.rs",
-        "crates/cli/tests/list_all_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/list_all/mod.rs uses HashSet to dedupe resource filters and profile names, which loses ordering.",
-        "Output order for list-all depends on the order of resources/profiles, so HashSet introduces nondeterministic output."
-      ],
-      "plan": [
-        "Replace HashSet-based dedupe with an ordered dedupe (Vec + seen set) that preserves user-specified order.",
-        "Ensure default resource ordering follows VALID_RESOURCES consistently.",
-        "Add tests to assert deterministic ordering for resources and profile lists."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0207",
       "status": "todo",
       "title": "Use structured errors for cluster detection in list-all",
