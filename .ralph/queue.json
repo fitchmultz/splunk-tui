@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0213",
-      "status": "todo",
-      "title": "Split TUI action tests by feature",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/action/tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/action/tests.rs is ~740 lines (wc -l), exceeding the 700 LOC warning threshold."
-      ],
-      "plan": [
-        "Identify logical groups of action tests (search, jobs, navigation, etc.).",
-        "Split into multiple test modules under crates/tui/src/action/tests/ or similar.",
-        "Keep test helpers shared via a common module."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0214",
       "status": "todo",
       "title": "Split CLI table formatter module",
