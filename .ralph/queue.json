@@ -1,4 +1,509 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0200",
+      "status": "todo",
+      "title": "Stop ignoring build errors in build-test-bins",
+      "priority": "high",
+      "tags": [
+        "ci",
+        "build",
+        "makefile"
+      ],
+      "scope": [
+        "Makefile",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "Makefile build-test-bins target runs `cargo build --workspace --bins 2>/dev/null || true`, which suppresses build failures entirely."
+      ],
+      "plan": [
+        "Remove the `|| true` and stderr suppression from build-test-bins so failures surface.",
+        "If needed, add a short error message that explains how to reproduce failures locally.",
+        "Run `make test` (or at least the integration tests) to confirm failures are visible."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0201",
+      "status": "todo",
+      "title": "Add pagination or configurable limits for TUI list screens",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "pagination"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects.rs",
+        "crates/client/src/endpoints/indexes.rs",
+        "crates/client/src/endpoints/users.rs",
+        "crates/client/src/endpoints/server.rs",
+        "crates/client/src/endpoints/jobs.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects.rs calls list_indexes(None, None), list_jobs(None, None), list_apps(None, None), and list_users(None, None).",
+        "crates/client/src/endpoints/indexes.rs, users.rs, and server.rs default `count` to 30 when None, so TUI lists can silently truncate data."
+      ],
+      "plan": [
+        "Decide on a pagination strategy (page size + offset) or a configurable max count for TUI lists.",
+        "Update the side effects and UI state to request/track pagination and show that data is partial when applicable.",
+        "Add tests covering pagination/limit behavior and empty/overflow cases."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0202",
+      "status": "todo",
+      "title": "Preserve job fields in list_jobs mapping",
+      "priority": "high",
+      "tags": [
+        "client",
+        "jobs",
+        "data-integrity"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/jobs.rs",
+        "crates/client/src/models/jobs.rs",
+        "crates/client/tests/jobs_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/jobs.rs maps SearchJobStatus with disk_usage set to 0 and priority/label set to None, even though SearchJobStatus supports these fields.",
+        "crates/client/src/models/jobs.rs JobContent does not expose diskUsage/priority/label, so list_jobs cannot surface them."
+      ],
+      "plan": [
+        "Extend JobContent (or parse SearchJobStatus directly) to capture diskUsage/priority/label from the API response.",
+        "Update list_jobs mapping to populate those fields instead of hard-coded defaults.",
+        "Add/extend tests in `crates/client/tests/jobs_tests.rs` to verify field preservation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0203",
+      "status": "todo",
+      "title": "Use configurable max results for saved-searches run",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "saved-searches",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/saved_searches.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/saved_searches.rs run_run uses `client.search(..., Some(100))`, hard-coding max results for saved-searches run."
+      ],
+      "plan": [
+        "Introduce a `--count` (or reuse existing search defaults) for saved-searches run.",
+        "Thread the configured max results into the client call instead of the hard-coded 100.",
+        "Update docs/tests to cover the new behavior and default value."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0204",
+      "status": "todo",
+      "title": "Add count/offset support to list_saved_searches",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "cli",
+        "performance"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/client/tests/saved_searches_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/search.rs list_saved_searches always requests count=0 (fetch all).",
+        "crates/cli/src/commands/saved_searches.rs run_list truncates the full list client-side instead of using API-level count/offset."
+      ],
+      "plan": [
+        "Add count/offset parameters to the client endpoint and public method.",
+        "Update CLI saved-searches list to pass count/offset through the client instead of truncating locally.",
+        "Expand saved_searches tests to validate count/offset query params and pagination behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0205",
+      "status": "todo",
+      "title": "Implement get_saved_search endpoint to avoid full-list scans",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "cli",
+        "performance"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/client/tests/saved_searches_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/saved_searches.rs run_info and run_run call list_saved_searches and then scan for the name.",
+        "crates/client/src/endpoints/search.rs does not expose a get-by-name saved search endpoint."
+      ],
+      "plan": [
+        "Add a client endpoint for GET /services/saved/searches/{name} and a corresponding SplunkClient method.",
+        "Update CLI saved-searches info/run to use the new endpoint instead of full list scans.",
+        "Add wiremock tests and fixtures for get_saved_search success and not-found cases."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0206",
+      "status": "todo",
+      "title": "Make list-all output ordering deterministic",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "list-all",
+        "determinism"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all/mod.rs",
+        "crates/cli/tests/list_all_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all/mod.rs uses HashSet to dedupe resource filters and profile names, which loses ordering.",
+        "Output order for list-all depends on the order of resources/profiles, so HashSet introduces nondeterministic output."
+      ],
+      "plan": [
+        "Replace HashSet-based dedupe with an ordered dedupe (Vec + seen set) that preserves user-specified order.",
+        "Ensure default resource ordering follows VALID_RESOURCES consistently.",
+        "Add tests to assert deterministic ordering for resources and profile lists."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0207",
+      "status": "todo",
+      "title": "Use structured errors for cluster detection in list-all",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "list-all",
+        "errors"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all/fetchers.rs",
+        "crates/client/src/error.rs",
+        "crates/cli/tests/list_all_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all/fetchers.rs detects 'not clustered' by string-matching error messages for 'cluster', '404', or 'not configured'."
+      ],
+      "plan": [
+        "Update fetch_cluster to match on ClientError variants (ApiError status codes, NotFound, etc.) instead of string matching.",
+        "Ensure other error types still surface as error status.",
+        "Add/adjust tests to cover clustered, not-clustered (404), and unexpected error cases."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0208",
+      "status": "todo",
+      "title": "Parallelize list-all resource fetches and deduplicate timeout logic",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "list-all",
+        "performance"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all/fetchers.rs",
+        "crates/cli/tests/list_all_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/list_all/fetchers.rs loops resource_types sequentially, awaiting each fetch before starting the next.",
+        "Each fetch_* function repeats the same timeout + error mapping pattern."
+      ],
+      "plan": [
+        "Introduce a helper to run a fetch with timeout and map to ResourceSummary.",
+        "Dispatch per-resource futures concurrently (join_all), preserving output order.",
+        "Update tests to ensure timeouts and error mapping still behave as expected."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0209",
+      "status": "todo",
+      "title": "Centralize SplunkClient construction in CLI commands",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/commands",
+        "crates/cli/src/commands/mod.rs"
+      ],
+      "evidence": [
+        "Multiple CLI command modules repeat the same SplunkClient::builder() chain (indexes.rs, logs.rs, users.rs, apps.rs, jobs.rs, search.rs, saved_searches.rs, etc.)."
+      ],
+      "plan": [
+        "Add a helper (e.g., build_client_from_config) in commands/mod.rs or a new module.",
+        "Refactor command modules to use the shared helper for consistent configuration.",
+        "Update tests if signatures or behavior change."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0210",
+      "status": "todo",
+      "title": "Add client endpoint tests for apps",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "tests",
+        "apps"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/server.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/client/tests"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/server.rs implements list_apps/get_app/update_app but there is no corresponding apps endpoint test file in crates/client/tests/.",
+        "crates/client/src/client/mod.rs exposes list_apps/get_app/enable_app/disable_app methods without direct endpoint tests."
+      ],
+      "plan": [
+        "Add a new apps endpoint test module using wiremock fixtures for list/get/update.",
+        "Cover enable/disable paths (POST with disabled flag) and error responses.",
+        "Add fixtures under crates/client/fixtures/apps/ and update tests to use them."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0211",
+      "status": "todo",
+      "title": "Split oversized client module",
+      "priority": "low",
+      "tags": [
+        "client",
+        "refactor",
+        "architecture"
+      ],
+      "scope": [
+        "crates/client/src/client/mod.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/mod.rs is ~765 lines (wc -l), exceeding the 700 LOC warning threshold."
+      ],
+      "plan": [
+        "Identify cohesive groups of client methods (search, jobs, apps, etc.).",
+        "Move groups into submodules and re-export from mod.rs.",
+        "Update tests/imports and ensure public API remains stable."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0212",
+      "status": "todo",
+      "title": "Split TUI side_effects runtime module",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "refactor",
+        "architecture"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects.rs is ~773 lines (wc -l), exceeding the 700 LOC warning threshold."
+      ],
+      "plan": [
+        "Group side-effect handlers by feature area (search/jobs/indexes/settings/etc.).",
+        "Move handlers into submodules and route through a thin dispatcher.",
+        "Update tests and module exports accordingly."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0213",
+      "status": "todo",
+      "title": "Split TUI action tests by feature",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/action/tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/action/tests.rs is ~740 lines (wc -l), exceeding the 700 LOC warning threshold."
+      ],
+      "plan": [
+        "Identify logical groups of action tests (search, jobs, navigation, etc.).",
+        "Split into multiple test modules under crates/tui/src/action/tests/ or similar.",
+        "Keep test helpers shared via a common module."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0214",
+      "status": "todo",
+      "title": "Split CLI table formatter module",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "formatters",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/table.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters/table.rs is ~896 lines (wc -l), exceeding the 700 LOC warning threshold."
+      ],
+      "plan": [
+        "Break table formatter into per-resource submodules (indexes/jobs/users/etc.).",
+        "Keep shared table helpers in a common module.",
+        "Update formatter dispatch and tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0215",
+      "status": "todo",
+      "title": "Split CLI XML formatter module",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "formatters",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/xml.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters/xml.rs is ~827 lines (wc -l), exceeding the 700 LOC warning threshold."
+      ],
+      "plan": [
+        "Extract per-resource XML formatting into submodules.",
+        "Keep shared XML helpers in a common module.",
+        "Update formatter dispatch and tests."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0216",
+      "status": "todo",
+      "title": "Split config loader builder_tests module",
+      "priority": "low",
+      "tags": [
+        "config",
+        "tests",
+        "refactor"
+      ],
+      "scope": [
+        "crates/config/src/loader/builder_tests.rs"
+      ],
+      "evidence": [
+        "crates/config/src/loader/builder_tests.rs is ~1202 lines (wc -l), exceeding the 1000 LOC failure threshold in architecture tests if counted as LOC."
+      ],
+      "plan": [
+        "Split builder_tests into smaller modules by feature area (env, profiles, validation, search defaults).",
+        "Ensure module-level docs remain in each new test file.",
+        "Update mod.rs test wiring as needed."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T14:27:50+00:00",
+      "updated_at": "2026-01-29T14:27:50+00:00",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
