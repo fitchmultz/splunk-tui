@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0193",
-      "status": "todo",
-      "title": "Add integration tests for error recovery paths",
-      "priority": "low",
-      "tags": [
-        "testing",
-        "client",
-        "reliability",
-        "coverage-gap"
-      ],
-      "scope": [
-        "crates/client/tests/"
-      ],
-      "evidence": [
-        "Limited tests for error recovery scenarios",
-        "Retry logic is tested but not all failure modes",
-        "No tests for partial failures during search pagination",
-        "No tests for auth failure recovery",
-        "client/mod.rs retry_call! macro not directly tested"
-      ],
-      "plan": [
-        "Create error_recovery_tests.rs",
-        "Test retry with eventual success",
-        "Test auth failure and re-authentication",
-        "Test partial failure during multi-page results",
-        "Test network interruption recovery",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: limited error recovery path testing",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0194",
       "status": "todo",
       "title": "Add tests for progress callback edge cases",
