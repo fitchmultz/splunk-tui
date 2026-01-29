@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0176",
-      "status": "todo",
-      "title": "Split oversized client models.rs into per-resource model modules",
-      "priority": "low",
-      "tags": [
-        "client",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/models.rs"
-      ],
-      "evidence": [
-        "crates/client/src/models.rs is 798 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Group models by endpoint/resource and extract into submodules.",
-        "Ensure new files carry module docstrings and preserve serde behavior.",
-        "Run client model/unit tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0177",
       "status": "todo",
       "title": "Split oversized TUI app/input.rs into per-screen input modules",
