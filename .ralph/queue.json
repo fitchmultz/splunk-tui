@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0214",
-      "status": "todo",
-      "title": "Split CLI table formatter module",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "formatters",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/table.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/formatters/table.rs is ~896 lines (wc -l), exceeding the 700 LOC warning threshold."
-      ],
-      "plan": [
-        "Break table formatter into per-resource submodules (indexes/jobs/users/etc.).",
-        "Keep shared table helpers in a common module.",
-        "Update formatter dispatch and tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0215",
       "status": "todo",
       "title": "Split CLI XML formatter module",
