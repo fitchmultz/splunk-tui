@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0173",
-      "status": "todo",
-      "title": "Split oversized client security_tests.rs into focused security test files",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/tests/security_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/tests/security_tests.rs is 994 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Group security tests by concern (TLS, logging redaction, auth) into separate files.",
-        "Add module docstrings for each test file.",
-        "Run client security tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0166",
       "status": "todo",
       "title": "Split oversized TUI app_tests.rs into focused test modules",
