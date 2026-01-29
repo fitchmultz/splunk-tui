@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0178",
-      "status": "todo",
-      "title": "Split oversized CLI config_tests.rs into smaller test modules",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/tests/config_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/tests/config_tests.rs is 737 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Split config tests by topic (profiles, keyring, output) into separate files.",
-        "Add module docstrings for new test files.",
-        "Run CLI config tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0179",
       "status": "todo",
       "title": "Split oversized TUI snapshot_tests.rs into focused snapshot suites",
