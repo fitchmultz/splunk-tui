@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0196",
-      "status": "todo",
-      "title": "Add timeout configuration validation",
-      "priority": "low",
-      "tags": [
-        "enhancement",
-        "config",
-        "validation"
-      ],
-      "scope": [
-        "crates/config/src/loader/",
-        "crates/config/src/types/"
-      ],
-      "evidence": [
-        "Timeout values can be configured but not validated",
-        "Zero or negative timeouts could cause issues",
-        "Very large timeouts could cause resource exhaustion",
-        "No validation for timeout < expiry_buffer combinations"
-      ],
-      "plan": [
-        "Add validation for timeout > 0",
-        "Add validation for session_ttl > expiry_buffer",
-        "Add validation for reasonable maximum values",
-        "Add helpful error messages for invalid configurations",
-        "Add tests for validation",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: timeout configuration lacks validation",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0197",
       "status": "todo",
       "title": "Document retry logic behavior for streaming requests",

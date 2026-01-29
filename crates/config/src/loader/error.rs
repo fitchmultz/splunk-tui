@@ -49,6 +49,15 @@ pub enum ConfigError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("invalid timeout: {message}")]
+    InvalidTimeout { message: String },
+
+    #[error("invalid session TTL configuration: {message}")]
+    InvalidSessionTtl { message: String },
+
+    #[error("invalid health check interval: {message}")]
+    InvalidHealthCheckInterval { message: String },
 }
 
 impl From<ConfigFileError> for ConfigError {

@@ -20,6 +20,19 @@ pub const DEFAULT_EXPIRY_BUFFER_SECS: u64 = 60;
 /// Default health check polling interval in seconds.
 pub const DEFAULT_HEALTH_CHECK_INTERVAL_SECS: u64 = 60;
 
+// =============================================================================
+// Timeout Configuration Bounds
+// =============================================================================
+
+/// Maximum allowed connection timeout in seconds (1 hour).
+pub const MAX_TIMEOUT_SECS: u64 = 3600;
+
+/// Maximum allowed session TTL in seconds (24 hours).
+pub const MAX_SESSION_TTL_SECS: u64 = 86400;
+
+/// Maximum allowed health check interval in seconds (1 hour).
+pub const MAX_HEALTH_CHECK_INTERVAL_SECS: u64 = 3600;
+
 /// Default Splunk management port.
 pub const DEFAULT_SPLUNK_PORT: u16 = 8089;
 

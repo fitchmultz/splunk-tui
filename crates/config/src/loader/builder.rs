@@ -26,7 +26,8 @@ use super::error::ConfigError;
 use super::profile::apply_profile;
 use crate::constants::{
     DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_MAX_RETRIES,
-    DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
+    DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS, MAX_HEALTH_CHECK_INTERVAL_SECS,
+    MAX_SESSION_TTL_SECS, MAX_TIMEOUT_SECS,
 };
 use crate::persistence::SearchDefaults;
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
@@ -201,24 +202,96 @@ impl ConfigLoader {
             return Err(ConfigError::MissingAuth);
         };
 
+        let connection = ConnectionConfig {
+            base_url,
+            skip_verify: self.skip_verify.unwrap_or(false),
+            timeout: self
+                .timeout
+                .unwrap_or(Duration::from_secs(DEFAULT_TIMEOUT_SECS)),
+            max_retries: self.max_retries.unwrap_or(DEFAULT_MAX_RETRIES),
+            session_expiry_buffer_seconds: self
+                .session_expiry_buffer_seconds
+                .unwrap_or(DEFAULT_EXPIRY_BUFFER_SECS),
+            session_ttl_seconds: self.session_ttl_seconds.unwrap_or(DEFAULT_SESSION_TTL_SECS),
+            health_check_interval_seconds: self
+                .health_check_interval_seconds
+                .unwrap_or(DEFAULT_HEALTH_CHECK_INTERVAL_SECS),
+        };
+
+        // Validate timeout configuration
+        Self::validate_timeout_config(&connection)?;
+
         Ok(Config {
-            connection: ConnectionConfig {
-                base_url,
-                skip_verify: self.skip_verify.unwrap_or(false),
-                timeout: self
-                    .timeout
-                    .unwrap_or(Duration::from_secs(DEFAULT_TIMEOUT_SECS)),
-                max_retries: self.max_retries.unwrap_or(DEFAULT_MAX_RETRIES),
-                session_expiry_buffer_seconds: self
-                    .session_expiry_buffer_seconds
-                    .unwrap_or(DEFAULT_EXPIRY_BUFFER_SECS),
-                session_ttl_seconds: self.session_ttl_seconds.unwrap_or(DEFAULT_SESSION_TTL_SECS),
-                health_check_interval_seconds: self
-                    .health_check_interval_seconds
-                    .unwrap_or(DEFAULT_HEALTH_CHECK_INTERVAL_SECS),
-            },
+            connection,
             auth: AuthConfig { strategy },
         })
+    }
+
+    /// Validates timeout-related configuration values.
+    ///
+    /// Checks:
+    /// - timeout is greater than 0 and not exceeding MAX_TIMEOUT_SECS
+    /// - session_ttl_seconds is greater than session_expiry_buffer_seconds
+    /// - session_ttl_seconds does not exceed MAX_SESSION_TTL_SECS
+    /// - health_check_interval_seconds is greater than 0 and not exceeding MAX_HEALTH_CHECK_INTERVAL_SECS
+    fn validate_timeout_config(connection: &ConnectionConfig) -> Result<(), ConfigError> {
+        let timeout_secs = connection.timeout.as_secs();
+
+        // Validate timeout > 0
+        if timeout_secs == 0 {
+            return Err(ConfigError::InvalidTimeout {
+                message: "timeout must be greater than 0 seconds".to_string(),
+            });
+        }
+
+        // Validate timeout <= MAX_TIMEOUT_SECS
+        if timeout_secs > MAX_TIMEOUT_SECS {
+            return Err(ConfigError::InvalidTimeout {
+                message: format!(
+                    "timeout exceeds maximum allowed value of {} seconds",
+                    MAX_TIMEOUT_SECS
+                ),
+            });
+        }
+
+        // Validate session_ttl_seconds > session_expiry_buffer_seconds
+        if connection.session_ttl_seconds <= connection.session_expiry_buffer_seconds {
+            return Err(ConfigError::InvalidSessionTtl {
+                message: format!(
+                    "session_ttl_seconds ({}) must be greater than session_expiry_buffer_seconds ({})",
+                    connection.session_ttl_seconds, connection.session_expiry_buffer_seconds
+                ),
+            });
+        }
+
+        // Validate session_ttl_seconds <= MAX_SESSION_TTL_SECS
+        if connection.session_ttl_seconds > MAX_SESSION_TTL_SECS {
+            return Err(ConfigError::InvalidSessionTtl {
+                message: format!(
+                    "session_ttl_seconds exceeds maximum allowed value of {} seconds",
+                    MAX_SESSION_TTL_SECS
+                ),
+            });
+        }
+
+        // Validate health_check_interval_seconds > 0
+        if connection.health_check_interval_seconds == 0 {
+            return Err(ConfigError::InvalidHealthCheckInterval {
+                message: "health_check_interval_seconds must be greater than 0".to_string(),
+            });
+        }
+
+        // Validate health_check_interval_seconds <= MAX_HEALTH_CHECK_INTERVAL_SECS
+        if connection.health_check_interval_seconds > MAX_HEALTH_CHECK_INTERVAL_SECS {
+            return Err(ConfigError::InvalidHealthCheckInterval {
+                message: format!(
+                    "health_check_interval_seconds exceeds maximum allowed value of {} seconds",
+                    MAX_HEALTH_CHECK_INTERVAL_SECS
+                ),
+            });
+        }
+
+        Ok(())
     }
 
     /// Build the search default configuration from loaded values.
