@@ -67,7 +67,7 @@ test-integration: build-test-bins
 # Build binaries required for integration tests
 # This ensures CARGO_BIN_EXE_* env vars are populated for tests that need them
 build-test-bins:
-	cargo build --workspace --bins 2>/dev/null || true
+	cargo build --workspace --bins
 
 # Run live tests (requires a reachable Splunk server configured via env / .env.test)
 test-live:

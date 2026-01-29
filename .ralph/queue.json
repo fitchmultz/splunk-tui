@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0200",
-      "status": "todo",
-      "title": "Stop ignoring build errors in build-test-bins",
-      "priority": "high",
-      "tags": [
-        "ci",
-        "build",
-        "makefile"
-      ],
-      "scope": [
-        "Makefile",
-        "make test",
-        "make ci"
-      ],
-      "evidence": [
-        "Makefile build-test-bins target runs `cargo build --workspace --bins 2>/dev/null || true`, which suppresses build failures entirely."
-      ],
-      "plan": [
-        "Remove the `|| true` and stderr suppression from build-test-bins so failures surface.",
-        "If needed, add a short error message that explains how to reproduce failures locally.",
-        "Run `make test` (or at least the integration tests) to confirm failures are visible."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0201",
       "status": "todo",
       "title": "Add pagination or configurable limits for TUI list screens",
