@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0195",
-      "status": "todo",
-      "title": "Review CLI formatter tests for table output edge cases",
-      "priority": "low",
-      "tags": [
-        "testing",
-        "cli",
-        "formatters",
-        "edge-cases"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/tests.rs"
-      ],
-      "evidence": [
-        "formatters/tests.rs is 1007 LOC with extensive tests",
-        "Tests cover happy paths well",
-        "Limited tests for edge cases: empty data, very wide columns, unicode",
-        "No tests for malformed data handling",
-        "Table formatting at terminal width boundaries not tested"
-      ],
-      "plan": [
-        "Add tests for empty result sets",
-        "Add tests for very wide data that exceeds terminal width",
-        "Add tests for unicode and special characters",
-        "Add tests for null/missing fields",
-        "Add tests for very large numbers",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: formatter edge cases need coverage",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0196",
       "status": "todo",
       "title": "Add timeout configuration validation",

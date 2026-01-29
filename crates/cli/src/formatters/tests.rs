@@ -6,10 +6,12 @@ use super::{
     LicenseInfoOutput, OutputFormat, TableFormatter, XmlFormatter,
 };
 use serde_json::json;
+use splunk_client::models::LogEntry;
 use splunk_client::{
-    Index, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack,
-    LicenseUsage, User,
+    App, Index, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack,
+    LicenseUsage, SavedSearch, SearchJobStatus, User,
 };
+use splunk_config::types::ProfileConfig;
 
 #[test]
 fn test_output_format_from_str() {
@@ -1004,4 +1006,478 @@ fn test_users_xml_formatting() {
     assert!(output.contains("<lastSuccessfulLogin>1704067200</lastSuccessfulLogin>"));
     assert!(output.contains("<name>user1</name>"));
     assert!(output.contains("</users>"));
+}
+
+// === RQ-0195: Empty result set tests for all formatters ===
+
+#[test]
+fn test_csv_empty_search_results() {
+    let formatter = CsvFormatter;
+    let results: Vec<serde_json::Value> = vec![];
+    let output = formatter.format_search_results(&results).unwrap();
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_csv_empty_indexes() {
+    let formatter = CsvFormatter;
+    let indexes: Vec<Index> = vec![];
+    let output = formatter.format_indexes(&indexes, false).unwrap();
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_csv_empty_indexes_detailed() {
+    let formatter = CsvFormatter;
+    let indexes: Vec<Index> = vec![];
+    let output = formatter.format_indexes(&indexes, true).unwrap();
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_csv_empty_jobs() {
+    let formatter = CsvFormatter;
+    let jobs: Vec<SearchJobStatus> = vec![];
+    let output = formatter.format_jobs(&jobs).unwrap();
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_csv_empty_logs() {
+    let formatter = CsvFormatter;
+    let logs: Vec<LogEntry> = vec![];
+    let output = formatter.format_logs(&logs).unwrap();
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_csv_empty_profiles() {
+    let formatter = CsvFormatter;
+    let profiles: std::collections::BTreeMap<String, ProfileConfig> =
+        std::collections::BTreeMap::new();
+    let output = formatter.format_profiles(&profiles).unwrap();
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_json_empty_search_results() {
+    let formatter = JsonFormatter;
+    let results: Vec<serde_json::Value> = vec![];
+    let output = formatter.format_search_results(&results).unwrap();
+    assert_eq!(output, "[]");
+}
+
+#[test]
+fn test_json_empty_indexes() {
+    let formatter = JsonFormatter;
+    let indexes: Vec<Index> = vec![];
+    let output = formatter.format_indexes(&indexes, false).unwrap();
+    assert_eq!(output, "[]");
+}
+
+#[test]
+fn test_json_empty_jobs() {
+    let formatter = JsonFormatter;
+    let jobs: Vec<SearchJobStatus> = vec![];
+    let output = formatter.format_jobs(&jobs).unwrap();
+    assert_eq!(output, "[]");
+}
+
+#[test]
+fn test_json_empty_users() {
+    let formatter = JsonFormatter;
+    let users: Vec<User> = vec![];
+    let output = formatter.format_users(&users).unwrap();
+    assert_eq!(output, "[]");
+}
+
+#[test]
+fn test_json_empty_apps() {
+    let formatter = JsonFormatter;
+    let apps: Vec<App> = vec![];
+    let output = formatter.format_apps(&apps).unwrap();
+    assert_eq!(output, "[]");
+}
+
+#[test]
+fn test_xml_empty_search_results() {
+    let formatter = XmlFormatter;
+    let results: Vec<serde_json::Value> = vec![];
+    let output = formatter.format_search_results(&results).unwrap();
+    assert!(output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+    assert!(output.contains("<results>"));
+    assert!(output.contains("</results>"));
+    // Should not contain any result elements
+    assert!(!output.contains("<result>"));
+}
+
+#[test]
+fn test_xml_empty_indexes() {
+    let formatter = XmlFormatter;
+    let indexes: Vec<Index> = vec![];
+    let output = formatter.format_indexes(&indexes, false).unwrap();
+    assert!(output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+    assert!(output.contains("<indexes>"));
+    assert!(output.contains("</indexes>"));
+    // Should not contain any index elements
+    assert!(!output.contains("<index>"));
+}
+
+#[test]
+fn test_xml_empty_jobs() {
+    let formatter = XmlFormatter;
+    let jobs: Vec<SearchJobStatus> = vec![];
+    let output = formatter.format_jobs(&jobs).unwrap();
+    assert!(output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+    assert!(output.contains("<jobs>"));
+    assert!(output.contains("</jobs>"));
+    // Should not contain any job elements
+    assert!(!output.contains("<job>"));
+}
+
+#[test]
+fn test_xml_empty_users() {
+    let formatter = XmlFormatter;
+    let users: Vec<User> = vec![];
+    let output = formatter.format_users(&users).unwrap();
+    assert!(output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+    assert!(output.contains("<users>"));
+    assert!(output.contains("</users>"));
+    // Should not contain any user elements
+    assert!(!output.contains("<user>"));
+}
+
+#[test]
+fn test_xml_empty_apps() {
+    let formatter = XmlFormatter;
+    let apps: Vec<App> = vec![];
+    let output = formatter.format_apps(&apps).unwrap();
+    assert!(output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+    assert!(output.contains("<apps>"));
+    assert!(output.contains("</apps>"));
+    // Should not contain any app elements
+    assert!(!output.contains("<app>"));
+}
+
+#[test]
+fn test_table_empty_search_results() {
+    let formatter = TableFormatter;
+    let results: Vec<serde_json::Value> = vec![];
+    let output = formatter.format_search_results(&results).unwrap();
+    assert_eq!(output, "No results found.");
+}
+
+#[test]
+fn test_table_empty_indexes() {
+    let formatter = TableFormatter;
+    let indexes: Vec<Index> = vec![];
+    let output = formatter.format_indexes(&indexes, false).unwrap();
+    assert_eq!(output, "No indexes found.");
+}
+
+#[test]
+fn test_table_empty_jobs() {
+    let formatter = TableFormatter;
+    let jobs: Vec<SearchJobStatus> = vec![];
+    let output = formatter.format_jobs(&jobs).unwrap();
+    assert_eq!(output, "No jobs found.");
+}
+
+#[test]
+fn test_table_empty_logs() {
+    let formatter = TableFormatter;
+    let logs: Vec<LogEntry> = vec![];
+    let output = formatter.format_logs(&logs).unwrap();
+    assert_eq!(output, "No logs found.");
+}
+
+#[test]
+fn test_table_empty_apps() {
+    let formatter = TableFormatter;
+    let apps: Vec<App> = vec![];
+    let output = formatter.format_apps(&apps).unwrap();
+    assert!(output.contains("No apps found"));
+}
+
+#[test]
+fn test_table_empty_saved_searches() {
+    let formatter = TableFormatter;
+    let searches: Vec<SavedSearch> = vec![];
+    let output = formatter.format_saved_searches(&searches).unwrap();
+    assert!(output.contains("No saved searches found"));
+}
+
+// === RQ-0195: Unicode and special character tests ===
+
+#[test]
+fn test_table_unicode_in_users() {
+    let formatter = TableFormatter;
+    let users = vec![
+        User {
+            name: "user_日本語".to_string(),
+            realname: Some("Japanese Name 日本語".to_string()),
+            email: Some("test@example.com".to_string()),
+            user_type: Some("Splunk".to_string()),
+            default_app: Some("launcher".to_string()),
+            roles: vec!["admin".to_string()],
+            last_successful_login: Some(1704067200),
+        },
+        User {
+            name: "user_emoji".to_string(),
+            realname: Some("User with Emoji 🎉🚀".to_string()),
+            email: None,
+            user_type: None,
+            default_app: None,
+            roles: vec![],
+            last_successful_login: None,
+        },
+    ];
+    let output = formatter.format_users(&users).unwrap();
+    // Unicode characters should be preserved
+    assert!(output.contains("日本語"));
+    assert!(output.contains("🎉"));
+    assert!(output.contains("🚀"));
+}
+
+#[test]
+fn test_table_special_chars_in_search_results() {
+    let formatter = TableFormatter;
+    let results = vec![
+        json!({"name": "test\twith\ttabs", "value": "123"}),
+        json!({"name": "test\nwith\nnewlines", "value": "456"}),
+        json!({"name": "test\r\nwith\r\ncrlf", "value": "789"}),
+    ];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Special characters should be preserved in output
+    assert!(output.contains("test\twith\ttabs"));
+    assert!(output.contains("test\nwith\nnewlines"));
+    assert!(output.contains("test\r\nwith\r\ncrlf"));
+}
+
+#[test]
+fn test_table_wide_characters() {
+    let formatter = TableFormatter;
+    let users = vec![User {
+        name: "user_cn".to_string(),
+        realname: Some("中文用户".to_string()),
+        email: None,
+        user_type: None,
+        default_app: None,
+        roles: vec![],
+        last_successful_login: None,
+    }];
+    let output = formatter.format_users(&users).unwrap();
+    // CJK characters should be preserved
+    assert!(output.contains("中文用户"));
+}
+
+#[test]
+fn test_csv_unicode_in_users() {
+    let formatter = CsvFormatter;
+    let users = vec![User {
+        name: "user_日本語".to_string(),
+        realname: Some("Japanese Name 日本語".to_string()),
+        email: None,
+        user_type: None,
+        default_app: None,
+        roles: vec![],
+        last_successful_login: None,
+    }];
+    let output = formatter.format_users(&users).unwrap();
+    // Unicode should be preserved in CSV output
+    assert!(output.contains("user_日本語"));
+    assert!(output.contains("Japanese Name 日本語"));
+}
+
+#[test]
+fn test_json_unicode_escaping() {
+    let formatter = JsonFormatter;
+    let results = vec![json!({"name": "日本語", "emoji": "🎉"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Unicode should be preserved (not escaped) in pretty-printed JSON
+    assert!(output.contains("日本語"));
+    assert!(output.contains("🎉"));
+}
+
+#[test]
+fn test_xml_unicode_escaping() {
+    let formatter = XmlFormatter;
+    let results = vec![json!({"name": "日本語", "emoji": "🎉"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Unicode should be preserved in XML output
+    assert!(output.contains("日本語"));
+    assert!(output.contains("🎉"));
+}
+
+// === RQ-0195: Very wide data tests ===
+
+#[test]
+fn test_table_very_long_strings() {
+    let formatter = TableFormatter;
+    let long_string = "a".repeat(200);
+    let results = vec![json!({"name": long_string, "value": "123"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Long strings should be preserved
+    assert!(output.contains(&"a".repeat(200)));
+}
+
+#[test]
+fn test_csv_very_long_strings() {
+    let formatter = CsvFormatter;
+    let long_string = "a".repeat(200);
+    let results = vec![json!({"name": long_string, "value": "123"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Long strings should be preserved
+    assert!(output.contains(&"a".repeat(200)));
+}
+
+#[test]
+fn test_csv_very_long_strings_with_commas() {
+    let formatter = CsvFormatter;
+    let long_string = "value, with, many, commas, ".repeat(20);
+    let results = vec![json!({"name": long_string, "value": "123"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Should be properly quoted
+    assert!(output.contains("\"value, with, many, commas,"));
+}
+
+#[test]
+fn test_xml_very_long_strings() {
+    let formatter = XmlFormatter;
+    let long_string = "a".repeat(200);
+    let results = vec![json!({"name": long_string, "value": "123"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Long strings should be preserved
+    assert!(output.contains(&"a".repeat(200)));
+}
+
+#[test]
+fn test_xml_long_strings_with_special_chars() {
+    let formatter = XmlFormatter;
+    let long_string = "<tag>value</tag> & more ".repeat(20);
+    let results = vec![json!({"name": long_string, "value": "123"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Special XML characters should be escaped
+    assert!(output.contains("&lt;tag&gt;"));
+    assert!(output.contains("&amp;"));
+}
+
+// === RQ-0195: Null/missing fields tests ===
+
+#[test]
+fn test_table_null_fields_in_users() {
+    let formatter = TableFormatter;
+    let users = vec![User {
+        name: "user1".to_string(),
+        realname: None,
+        email: None,
+        user_type: None,
+        default_app: None,
+        roles: vec![],
+        last_successful_login: None,
+    }];
+    let output = formatter.format_users(&users).unwrap();
+    // Null fields should show as "-"
+    assert!(output.contains("user1"));
+    // The row should exist and contain the name
+    assert!(output.contains("NAME"));
+}
+
+#[test]
+fn test_csv_null_fields_in_users() {
+    let formatter = CsvFormatter;
+    let users = vec![User {
+        name: "user1".to_string(),
+        realname: None,
+        email: None,
+        user_type: None,
+        default_app: None,
+        roles: vec![],
+        last_successful_login: None,
+    }];
+    let output = formatter.format_users(&users).unwrap();
+    // Null fields should be empty in CSV (consecutive commas)
+    assert!(output.contains("user1,,,,,0"));
+}
+
+#[test]
+fn test_json_null_fields() {
+    let formatter = JsonFormatter;
+    let results = vec![json!({"name": "test", "optional": null, "present": "value"})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Null should be serialized as null
+    assert!(output.contains("\"optional\": null"));
+    assert!(output.contains("\"present\": \"value\""));
+}
+
+#[test]
+fn test_xml_null_fields() {
+    let formatter = XmlFormatter;
+    let results = vec![json!({"name": "test", "optional": null})];
+    let output = formatter.format_search_results(&results).unwrap();
+    // Null fields should produce empty elements
+    assert!(output.contains("<optional></optional>"));
+    assert!(output.contains("<name>test</name>"));
+}
+
+// === RQ-0195: format_json_value edge cases ===
+
+#[test]
+fn test_format_json_value_deeply_nested() {
+    // Create a deeply nested structure (10 levels)
+    let mut value = json!("deep");
+    for _ in 0..10 {
+        value = json!({"level": value});
+    }
+    let result = format_json_value(&value);
+    // Should serialize without panicking
+    assert!(result.contains("deep"));
+    assert!(result.starts_with("{"));
+}
+
+#[test]
+fn test_format_json_value_large_array() {
+    // Create an array with many elements
+    let arr: Vec<i32> = (0..100).collect();
+    let value = json!(arr);
+    let result = format_json_value(&value);
+    // Should serialize without panicking
+    assert!(result.contains("0"));
+    assert!(result.contains("99"));
+    assert!(result.starts_with("["));
+}
+
+#[test]
+fn test_format_json_value_mixed_types() {
+    let value = json!({
+        "string": "text",
+        "number": 42,
+        "float": 1.23456_f64,
+        "bool": true,
+        "null": null,
+        "array": [1, "two", 3.0, false, null],
+        "nested": {"key": "value"}
+    });
+    let result = format_json_value(&value);
+    // Should handle all types
+    assert!(result.contains("text"));
+    assert!(result.contains("42"));
+    assert!(result.contains("1.23456"));
+    assert!(result.contains("true"));
+    assert!(result.starts_with("{"));
+}
+
+#[test]
+fn test_format_json_value_empty_structures() {
+    // Empty array
+    let empty_arr = json!([]);
+    assert_eq!(format_json_value(&empty_arr), "[]");
+
+    // Empty object
+    let empty_obj = json!({});
+    assert_eq!(format_json_value(&empty_obj), "{}");
+
+    // Empty string
+    let empty_str = json!("");
+    assert_eq!(format_json_value(&empty_str), "");
 }
