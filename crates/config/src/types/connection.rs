@@ -16,6 +16,10 @@
 //! - Default values are provided via `Default` impl, not magic numbers.
 //! - `Config::default()` provides sensible development defaults (localhost:8089).
 
+use crate::constants::{
+    DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_MAX_RETRIES,
+    DEFAULT_SESSION_TTL_SECS, DEFAULT_SPLUNK_PORT, DEFAULT_TIMEOUT_SECS,
+};
 use crate::types::auth::{AuthConfig, AuthStrategy};
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
@@ -71,17 +75,17 @@ pub struct ConnectionConfig {
 
 /// Default session expiry buffer in seconds.
 pub(crate) fn default_session_expiry_buffer() -> u64 {
-    60
+    DEFAULT_EXPIRY_BUFFER_SECS
 }
 
 /// Default session TTL in seconds (1 hour).
 pub(crate) fn default_session_ttl() -> u64 {
-    3600
+    DEFAULT_SESSION_TTL_SECS
 }
 
 /// Default health check interval in seconds.
 pub(crate) fn default_health_check_interval() -> u64 {
-    60
+    DEFAULT_HEALTH_CHECK_INTERVAL_SECS
 }
 
 /// Main configuration structure.
@@ -97,10 +101,10 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             connection: ConnectionConfig {
-                base_url: "https://localhost:8089".to_string(),
+                base_url: format!("https://localhost:{}", DEFAULT_SPLUNK_PORT),
                 skip_verify: false,
-                timeout: Duration::from_secs(30),
-                max_retries: 3,
+                timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+                max_retries: DEFAULT_MAX_RETRIES,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
                 health_check_interval_seconds: default_health_check_interval(),
@@ -122,8 +126,8 @@ impl Config {
             connection: ConnectionConfig {
                 base_url,
                 skip_verify: false,
-                timeout: Duration::from_secs(30),
-                max_retries: 3,
+                timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+                max_retries: DEFAULT_MAX_RETRIES,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
                 health_check_interval_seconds: default_health_check_interval(),
@@ -140,8 +144,8 @@ impl Config {
             connection: ConnectionConfig {
                 base_url,
                 skip_verify: false,
-                timeout: Duration::from_secs(30),
-                max_retries: 3,
+                timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+                max_retries: DEFAULT_MAX_RETRIES,
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
                 health_check_interval_seconds: default_health_check_interval(),

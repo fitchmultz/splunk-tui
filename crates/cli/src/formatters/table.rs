@@ -16,6 +16,7 @@ use splunk_client::models::LogEntry;
 use splunk_client::{
     App, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
+use splunk_config::constants::DEFAULT_LICENSE_ALERT_PCT;
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
@@ -354,7 +355,11 @@ impl Formatter for TableFormatter {
                 } else {
                     0.0
                 };
-                let alert = if pct > 90.0 { "!" } else { "" };
+                let alert = if pct > DEFAULT_LICENSE_ALERT_PCT {
+                    "!"
+                } else {
+                    ""
+                };
                 output.push_str(&format!(
                     "{}\t{}\t{}\t{}\t{:.1}%\t{}\n",
                     u.name,

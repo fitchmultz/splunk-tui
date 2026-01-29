@@ -24,6 +24,10 @@ use super::defaults::SearchDefaultConfig;
 use super::env::apply_env;
 use super::error::ConfigError;
 use super::profile::apply_profile;
+use crate::constants::{
+    DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_MAX_RETRIES,
+    DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
+};
 use crate::persistence::SearchDefaults;
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
 
@@ -201,11 +205,17 @@ impl ConfigLoader {
             connection: ConnectionConfig {
                 base_url,
                 skip_verify: self.skip_verify.unwrap_or(false),
-                timeout: self.timeout.unwrap_or(Duration::from_secs(30)),
-                max_retries: self.max_retries.unwrap_or(3),
-                session_expiry_buffer_seconds: self.session_expiry_buffer_seconds.unwrap_or(60),
-                session_ttl_seconds: self.session_ttl_seconds.unwrap_or(3600),
-                health_check_interval_seconds: self.health_check_interval_seconds.unwrap_or(60),
+                timeout: self
+                    .timeout
+                    .unwrap_or(Duration::from_secs(DEFAULT_TIMEOUT_SECS)),
+                max_retries: self.max_retries.unwrap_or(DEFAULT_MAX_RETRIES),
+                session_expiry_buffer_seconds: self
+                    .session_expiry_buffer_seconds
+                    .unwrap_or(DEFAULT_EXPIRY_BUFFER_SECS),
+                session_ttl_seconds: self.session_ttl_seconds.unwrap_or(DEFAULT_SESSION_TTL_SECS),
+                health_check_interval_seconds: self
+                    .health_check_interval_seconds
+                    .unwrap_or(DEFAULT_HEALTH_CHECK_INTERVAL_SECS),
             },
             auth: AuthConfig { strategy },
         })

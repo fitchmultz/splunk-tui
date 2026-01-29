@@ -21,6 +21,10 @@ use std::time::Duration;
 use crate::auth::{AuthStrategy, SessionManager};
 use crate::client::SplunkClient;
 use crate::error::{ClientError, Result};
+use splunk_config::constants::{
+    DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_MAX_REDIRECTS, DEFAULT_MAX_RETRIES,
+    DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
+};
 
 /// Builder for creating a new [`SplunkClient`].
 ///
@@ -58,10 +62,10 @@ impl Default for SplunkClientBuilder {
             base_url: None,
             auth_strategy: None,
             skip_verify: false,
-            timeout: Duration::from_secs(30),
-            max_retries: 3,
-            session_ttl_seconds: 3600,
-            session_expiry_buffer_seconds: 60,
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+            max_retries: DEFAULT_MAX_RETRIES,
+            session_ttl_seconds: DEFAULT_SESSION_TTL_SECS,
+            session_expiry_buffer_seconds: DEFAULT_EXPIRY_BUFFER_SECS,
         }
     }
 }
@@ -170,7 +174,7 @@ impl SplunkClientBuilder {
 
         let mut http_builder = reqwest::Client::builder()
             .timeout(self.timeout)
-            .redirect(reqwest::redirect::Policy::limited(5));
+            .redirect(reqwest::redirect::Policy::limited(DEFAULT_MAX_REDIRECTS));
 
         if self.skip_verify {
             let is_https = base_url.starts_with("https://");

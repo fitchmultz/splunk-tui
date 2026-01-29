@@ -31,6 +31,9 @@ use crate::models::{
     LogEntry, LogParsingHealth, SavedSearch, SearchJobResults, SearchJobStatus, ServerInfo,
     SplunkHealth, User,
 };
+use splunk_config::constants::{
+    DEFAULT_MAX_RESULTS, DEFAULT_MAX_WAIT_SECS, DEFAULT_POLL_INTERVAL_MS,
+};
 
 /// Macro to wrap an async API call with automatic session retry on 401/403 errors.
 ///
@@ -150,15 +153,15 @@ impl SplunkClient {
                 &self.base_url,
                 &auth_token,
                 &sid,
-                500,
-                300,
+                DEFAULT_POLL_INTERVAL_MS,
+                DEFAULT_MAX_WAIT_SECS,
                 self.max_retries,
             )
             .await?;
         }
 
         let results = self
-            .get_search_results(&sid, max_results.unwrap_or(1000), 0)
+            .get_search_results(&sid, max_results.unwrap_or(DEFAULT_MAX_RESULTS), 0)
             .await?;
 
         Ok(results.results)
@@ -203,8 +206,8 @@ impl SplunkClient {
                 &self.base_url,
                 &auth_token,
                 &sid,
-                500,
-                300,
+                DEFAULT_POLL_INTERVAL_MS,
+                DEFAULT_MAX_WAIT_SECS,
                 self.max_retries,
                 progress_cb,
             )
@@ -212,7 +215,7 @@ impl SplunkClient {
         }
 
         let results = self
-            .get_search_results(&sid, max_results.unwrap_or(1000), 0)
+            .get_search_results(&sid, max_results.unwrap_or(DEFAULT_MAX_RESULTS), 0)
             .await?;
 
         Ok((results.results, sid, results.total))

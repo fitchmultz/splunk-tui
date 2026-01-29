@@ -44,6 +44,10 @@ use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, User,
 };
+use splunk_config::constants::{
+    DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
+    DEFAULT_SEARCH_PAGE_SIZE,
+};
 use splunk_config::{ColorTheme, KeybindOverrides, PersistedState, SearchDefaults, Theme};
 use std::collections::HashSet;
 
@@ -287,7 +291,7 @@ impl App {
             search_scroll_offset: 0,
             search_sid: None,
             search_results_total_count: None,
-            search_results_page_size: 100,
+            search_results_page_size: DEFAULT_SEARCH_PAGE_SIZE,
             search_has_more_results: false,
             indexes: None,
             indexes_state,
@@ -441,8 +445,8 @@ impl App {
             return None;
         }
 
-        // Trigger fetch when user is within 10 items of the end
-        let threshold = 10;
+        // Trigger fetch when user is within threshold items of the end
+        let threshold = DEFAULT_SCROLL_THRESHOLD;
         let loaded_count = self.search_results.len();
         let visible_end = self.search_scroll_offset.saturating_add(threshold);
 
@@ -470,9 +474,9 @@ impl App {
 
         self.search_history.insert(0, query);
 
-        // Truncate to 50 items
-        if self.search_history.len() > 50 {
-            self.search_history.truncate(50);
+        // Truncate to max items
+        if self.search_history.len() > DEFAULT_HISTORY_MAX_ITEMS {
+            self.search_history.truncate(DEFAULT_HISTORY_MAX_ITEMS);
         }
 
         // Reset history navigation
@@ -484,7 +488,7 @@ impl App {
         // Normalize whitespace for toasts (avoid multi-line notifications).
         let normalized = content.replace(['\n', '\r', '\t'], " ");
 
-        let max_chars = 30usize;
+        let max_chars = DEFAULT_CLIPBOARD_PREVIEW_CHARS;
         let ellipsis = "...";
 
         let char_count = normalized.chars().count();

@@ -36,6 +36,9 @@ use tokio::sync::{Mutex, mpsc::channel};
 use tracing_appender::non_blocking;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
+use splunk_config::constants::{
+    DEFAULT_CHANNEL_CAPACITY, DEFAULT_REFRESH_INTERVAL_SECS, DEFAULT_UI_TICK_MS,
+};
 use splunk_config::{
     AuthStrategy as ConfigAuthStrategy, ConfigManager, SearchDefaults, env_var_or_none,
 };
@@ -99,7 +102,7 @@ async fn main() -> Result<()> {
     // Create bounded channel for actions with backpressure handling
     // Capacity chosen to handle normal input bursts without blocking
     // while preventing unbounded growth under extreme load
-    const ACTION_CHANNEL_CAPACITY: usize = 256;
+    const ACTION_CHANNEL_CAPACITY: usize = DEFAULT_CHANNEL_CAPACITY;
     let (tx, mut rx) = channel::<Action>(ACTION_CHANNEL_CAPACITY);
 
     // Spawn input stream task with backpressure handling
@@ -239,11 +242,14 @@ async fn main() -> Result<()> {
         }
     });
 
-    // Create UI tick interval for smooth animations (250ms)
-    let mut tick_interval = tokio::time::interval(tokio::time::Duration::from_millis(250));
+    // Create UI tick interval for smooth animations
+    let mut tick_interval =
+        tokio::time::interval(tokio::time::Duration::from_millis(DEFAULT_UI_TICK_MS));
 
-    // Create data refresh interval (5 seconds, decoupled from UI tick)
-    let mut refresh_interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
+    // Create data refresh interval (decoupled from UI tick)
+    let mut refresh_interval = tokio::time::interval(tokio::time::Duration::from_secs(
+        DEFAULT_REFRESH_INTERVAL_SECS,
+    ));
 
     // Main event loop
     loop {

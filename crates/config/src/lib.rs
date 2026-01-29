@@ -3,6 +3,7 @@
 //! This crate provides types and loaders for managing Splunk connection
 //! configuration from environment variables and files.
 
+pub mod constants;
 pub mod keybind;
 pub mod loader;
 pub mod persistence;

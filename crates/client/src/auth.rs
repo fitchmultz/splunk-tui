@@ -1,6 +1,7 @@
 //! Authentication strategies and session management.
 
 use secrecy::{ExposeSecret, SecretString};
+use splunk_config::constants::DEFAULT_EXPIRY_BUFFER_SECS;
 use std::time::Instant;
 
 /// Strategy for authenticating with Splunk.
@@ -24,10 +25,6 @@ pub struct SessionManager {
     session_token: Option<SessionToken>,
 }
 
-/// Default buffer time before expiry to proactively refresh session tokens.
-/// This prevents race conditions where a token expires during an API call.
-const DEFAULT_EXPIRY_BUFFER_SECONDS: u64 = 60;
-
 /// Session token with expiry information.
 #[derive(Debug, Clone)]
 struct SessionToken {
@@ -47,7 +44,7 @@ impl SessionToken {
         Self {
             value,
             expires_at,
-            expiry_buffer_seconds: expiry_buffer_seconds.unwrap_or(DEFAULT_EXPIRY_BUFFER_SECONDS),
+            expiry_buffer_seconds: expiry_buffer_seconds.unwrap_or(DEFAULT_EXPIRY_BUFFER_SECS),
         }
     }
 
@@ -160,6 +157,7 @@ impl SessionManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use splunk_config::constants::DEFAULT_SESSION_TTL_SECS;
 
     #[test]
     fn test_api_token_bypasses_session() {
@@ -278,7 +276,11 @@ mod tests {
 
         let mut manager = SessionManager::new(strategy);
         let session_token = "new-session-token-after-login-123";
-        manager.set_session_token(session_token.to_string(), Some(3600), None);
+        manager.set_session_token(
+            session_token.to_string(),
+            Some(DEFAULT_SESSION_TTL_SECS),
+            None,
+        );
 
         let debug_output = format!("{:?}", manager);
 
@@ -299,7 +301,11 @@ mod tests {
 
         let mut manager = SessionManager::new(strategy);
         let session_token = "session-to-be-cleared-456";
-        manager.set_session_token(session_token.to_string(), Some(3600), None);
+        manager.set_session_token(
+            session_token.to_string(),
+            Some(DEFAULT_SESSION_TTL_SECS),
+            None,
+        );
 
         // Clear the session
         manager.clear_session();
@@ -358,7 +364,11 @@ mod tests {
         };
 
         let mut manager = SessionManager::new(strategy);
-        manager.set_session_token("session-token-123".to_string(), Some(3600), None);
+        manager.set_session_token(
+            "session-token-123".to_string(),
+            Some(DEFAULT_SESSION_TTL_SECS),
+            None,
+        );
 
         let debug_output = format!("{:?}", manager);
 
@@ -381,7 +391,11 @@ mod tests {
         let mut manager = SessionManager::new(strategy);
 
         // Set token with 120s TTL and 60s buffer - expires in 120s, buffer ends at 60s
-        manager.set_session_token("session-key".to_string(), Some(120), Some(60));
+        manager.set_session_token(
+            "session-key".to_string(),
+            Some(120),
+            Some(DEFAULT_EXPIRY_BUFFER_SECS),
+        );
 
         // Should not expire soon immediately after setting
         assert!(!manager.session_expires_soon());
@@ -452,7 +466,7 @@ mod tests {
     fn test_default_buffer_applied() {
         let token = SessionToken::new(
             SecretString::new("test-token".to_string().into()),
-            Some(3600),
+            Some(DEFAULT_SESSION_TTL_SECS),
             None, // Use default
         );
 

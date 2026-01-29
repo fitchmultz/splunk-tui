@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0182",
-      "status": "todo",
-      "title": "Centralize magic numbers into constants module",
-      "priority": "high",
-      "tags": [
-        "refactor",
-        "constants",
-        "code-quality",
-        "maintainability"
-      ],
-      "scope": [
-        "crates/config/src/types/connection.rs",
-        "crates/client/src/client/mod.rs",
-        "crates/client/src/client/builder.rs",
-        "crates/tui/src/main.rs",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "Duration::from_secs(30) timeout appears in 5+ locations (connection.rs:102, builder.rs:61, etc.)",
-        "3600 seconds (session TTL) appears in 10+ locations across auth.rs and tests",
-        "60 seconds (expiry buffer) appears in 8+ locations",
-        "Port 8089 appears in 15+ locations as hardcoded default",
-        "Magic numbers in client/mod.rs:153-154 (500ms poll, 300s max wait), line 161 (1000 max results)",
-        "Magic numbers in tui/main.rs:102 (256 channel capacity), 243 (250ms tick), 246 (5s refresh)",
-        "Magic numbers in app.rs:445 (10 scroll threshold), 474 (50 history items), 487 (30 clipboard preview)",
-        "Magic number 90.0 in cli/formatters/table.rs:357 (license alert threshold)"
-      ],
-      "plan": [
-        "Create crates/config/src/constants.rs with all default values as pub const",
-        "Define constants: DEFAULT_TIMEOUT_SECS, DEFAULT_SESSION_TTL_SECS, DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_POLL_INTERVAL_MS, DEFAULT_MAX_WAIT_SECS, DEFAULT_MAX_RESULTS, DEFAULT_CHANNEL_CAPACITY, DEFAULT_UI_TICK_MS, DEFAULT_REFRESH_INTERVAL_SECS, DEFAULT_SCROLL_THRESHOLD, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_LICENSE_ALERT_PCT, DEFAULT_SPLUNK_PORT",
-        "Replace all magic numbers with constants across the codebase",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: magic numbers duplicated across codebase",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0183",
       "status": "todo",
       "title": "Preserve structured error types in TUI side effects",
