@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0215",
-      "status": "todo",
-      "title": "Split CLI XML formatter module",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "formatters",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/xml.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/formatters/xml.rs is ~827 lines (wc -l), exceeding the 700 LOC warning threshold."
-      ],
-      "plan": [
-        "Extract per-resource XML formatting into submodules.",
-        "Keep shared XML helpers in a common module.",
-        "Update formatter dispatch and tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0216",
       "status": "todo",
       "title": "Split config loader builder_tests module",
