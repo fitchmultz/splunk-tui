@@ -1,7 +1,6 @@
 //! Indexes command implementation.
 
 use anyhow::{Context, Result};
-use splunk_client::SplunkClient;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
@@ -18,16 +17,7 @@ pub async fn run(
 ) -> Result<()> {
     info!("Listing indexes (count: {}, offset: {})", count, offset);
 
-    let auth_strategy = crate::commands::convert_auth_strategy(&config.auth.strategy);
-
-    let mut client = SplunkClient::builder()
-        .base_url(config.connection.base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .session_ttl_seconds(config.connection.session_ttl_seconds)
-        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
-        .build()?;
+    let mut client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 =
         u64::try_from(count).context("Invalid --count (value too large for this platform)")?;

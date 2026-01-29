@@ -15,7 +15,8 @@ pub mod saved_searches;
 pub mod search;
 pub mod users;
 
-use splunk_client::AuthStrategy as ClientAuth;
+use anyhow::Result;
+use splunk_client::{AuthStrategy as ClientAuth, SplunkClient};
 use splunk_config::AuthStrategy as ConfigAuth;
 
 /// Convert configuration authentication strategy to client authentication strategy.
@@ -38,6 +39,33 @@ pub fn convert_auth_strategy(config_auth: &ConfigAuth) -> ClientAuth {
             token: token.clone(),
         },
     }
+}
+
+/// Build a SplunkClient from configuration.
+///
+/// This helper centralizes client construction to avoid duplication
+/// across all CLI command modules.
+///
+/// # Arguments
+/// * `config` - The loaded configuration containing connection and auth settings
+///
+/// # Returns
+/// A configured SplunkClient ready for API calls
+///
+/// # Errors
+/// Returns an error if the client builder fails (e.g., invalid base_url)
+pub fn build_client_from_config(config: &splunk_config::Config) -> Result<SplunkClient> {
+    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
+
+    SplunkClient::builder()
+        .base_url(config.connection.base_url.clone())
+        .auth_strategy(auth_strategy)
+        .skip_verify(config.connection.skip_verify)
+        .timeout(config.connection.timeout)
+        .session_ttl_seconds(config.connection.session_ttl_seconds)
+        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
+        .build()
+        .map_err(|e| e.into())
 }
 
 #[cfg(test)]

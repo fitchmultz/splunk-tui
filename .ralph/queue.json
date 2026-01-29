@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0209",
-      "status": "todo",
-      "title": "Centralize SplunkClient construction in CLI commands",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/src/commands",
-        "crates/cli/src/commands/mod.rs"
-      ],
-      "evidence": [
-        "Multiple CLI command modules repeat the same SplunkClient::builder() chain (indexes.rs, logs.rs, users.rs, apps.rs, jobs.rs, search.rs, saved_searches.rs, etc.)."
-      ],
-      "plan": [
-        "Add a helper (e.g., build_client_from_config) in commands/mod.rs or a new module.",
-        "Refactor command modules to use the shared helper for consistent configuration.",
-        "Update tests if signatures or behavior change."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0210",
       "status": "todo",
       "title": "Add client endpoint tests for apps",

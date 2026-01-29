@@ -24,7 +24,7 @@ use anyhow::{Context, Result};
 use tracing::info;
 
 use crate::cancellation::CancellationToken;
-use crate::commands::convert_auth_strategy;
+use crate::commands::build_client_from_config;
 use crate::formatters::{OutputFormat, write_to_file};
 
 pub use types::{ListAllMultiOutput, ListAllOutput, ProfileResult, VALID_RESOURCES};
@@ -121,16 +121,7 @@ pub async fn run(
             .await?
     } else {
         // Single-profile mode (backward compatible)
-        let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-
-        let mut client = splunk_client::SplunkClient::builder()
-            .base_url(config.connection.base_url.clone())
-            .auth_strategy(auth_strategy)
-            .skip_verify(config.connection.skip_verify)
-            .timeout(config.connection.timeout)
-            .session_ttl_seconds(config.connection.session_ttl_seconds)
-            .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
-            .build()?;
+        let mut client = build_client_from_config(&config)?;
 
         let resources =
             fetchers::fetch_all_resources(&mut client, resources_to_fetch, cancel).await?;

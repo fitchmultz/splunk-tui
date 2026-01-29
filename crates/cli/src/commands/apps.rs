@@ -2,11 +2,9 @@
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
-use splunk_client::SplunkClient;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::commands::convert_auth_strategy;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
 #[derive(Subcommand)]
@@ -72,15 +70,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing installed apps (count: {})", count);
 
-    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-    let mut client = SplunkClient::builder()
-        .base_url(config.connection.base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .session_ttl_seconds(config.connection.session_ttl_seconds)
-        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
-        .build()?;
+    let mut client = crate::commands::build_client_from_config(&config)?;
 
     let apps = tokio::select! {
         res = client.list_apps(Some(count as u64), None) => res?,
@@ -114,15 +104,7 @@ async fn run_info(
 ) -> Result<()> {
     info!("Getting app info for: {}", app_name);
 
-    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-    let mut client = SplunkClient::builder()
-        .base_url(config.connection.base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .session_ttl_seconds(config.connection.session_ttl_seconds)
-        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
-        .build()?;
+    let mut client = crate::commands::build_client_from_config(&config)?;
 
     let app = tokio::select! {
         res = client.get_app(app_name) => res,
@@ -155,15 +137,7 @@ async fn run_enable(
 ) -> Result<()> {
     info!("Enabling app: {}", app_name);
 
-    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-    let mut client = SplunkClient::builder()
-        .base_url(config.connection.base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .session_ttl_seconds(config.connection.session_ttl_seconds)
-        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
-        .build()?;
+    let mut client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.enable_app(app_name) => res,
@@ -183,15 +157,7 @@ async fn run_disable(
 ) -> Result<()> {
     info!("Disabling app: {}", app_name);
 
-    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-    let mut client = SplunkClient::builder()
-        .base_url(config.connection.base_url)
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .session_ttl_seconds(config.connection.session_ttl_seconds)
-        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
-        .build()?;
+    let mut client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.disable_app(app_name) => res,
