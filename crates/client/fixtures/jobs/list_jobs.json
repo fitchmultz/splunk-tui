@@ -10,7 +10,10 @@
         "runDuration": 5.25,
         "scanCount": 1000,
         "eventCount": 500,
-        "resultCount": 250
+        "resultCount": 250,
+        "diskUsage": 1024,
+        "priority": 5,
+        "label": "Test Job 1"
       }
     },
     {
@@ -23,7 +26,10 @@
         "runDuration": 10.5,
         "scanCount": 5000,
         "eventCount": 2000,
-        "resultCount": 1000
+        "resultCount": 1000,
+        "diskUsage": 2048,
+        "priority": 3,
+        "label": null
       }
     }
   ],

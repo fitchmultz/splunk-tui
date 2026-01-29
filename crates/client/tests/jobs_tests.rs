@@ -164,6 +164,15 @@ async fn test_list_jobs() {
     assert_eq!(jobs.len(), 2);
     assert!(!jobs[0].is_done);
     assert!(jobs[1].is_done);
+
+    // Verify field preservation from fixture
+    assert_eq!(jobs[0].disk_usage, 1024);
+    assert_eq!(jobs[0].priority, Some(5));
+    assert_eq!(jobs[0].label, Some("Test Job 1".to_string()));
+
+    assert_eq!(jobs[1].disk_usage, 2048);
+    assert_eq!(jobs[1].priority, Some(3));
+    assert_eq!(jobs[1].label, None);
 }
 
 #[tokio::test]

@@ -87,9 +87,9 @@ pub async fn list_jobs(
             scan_count: e.content.scanCount,
             event_count: e.content.eventCount,
             result_count: e.content.resultCount,
-            disk_usage: 0,
-            priority: None,
-            label: None,
+            disk_usage: e.content.diskUsage,
+            priority: e.content.priority,
+            label: e.content.label.clone(),
         })
         .collect())
 }

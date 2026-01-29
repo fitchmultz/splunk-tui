@@ -84,6 +84,15 @@ pub struct JobContent {
         deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
     )]
     pub resultCount: u64,
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+    )]
+    pub diskUsage: u64,
+    #[serde(default)]
+    pub priority: Option<i32>,
+    #[serde(default)]
+    pub label: Option<String>,
 }
 
 /// Search job status (detailed).

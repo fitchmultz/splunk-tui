@@ -2,37 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0202",
-      "status": "todo",
-      "title": "Preserve job fields in list_jobs mapping",
-      "priority": "high",
-      "tags": [
-        "client",
-        "jobs",
-        "data-integrity"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/jobs.rs",
-        "crates/client/src/models/jobs.rs",
-        "crates/client/tests/jobs_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/jobs.rs maps SearchJobStatus with disk_usage set to 0 and priority/label set to None, even though SearchJobStatus supports these fields.",
-        "crates/client/src/models/jobs.rs JobContent does not expose diskUsage/priority/label, so list_jobs cannot surface them."
-      ],
-      "plan": [
-        "Extend JobContent (or parse SearchJobStatus directly) to capture diskUsage/priority/label from the API response.",
-        "Update list_jobs mapping to populate those fields instead of hard-coded defaults.",
-        "Add/extend tests in `crates/client/tests/jobs_tests.rs` to verify field preservation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0203",
       "status": "todo",
       "title": "Use configurable max results for saved-searches run",
