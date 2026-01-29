@@ -1,4 +1,781 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0235",
+      "status": "todo",
+      "title": "Remove unnecessary search query redaction from TUI",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "logging",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/tui/src/action/redaction.rs"
+      ],
+      "evidence": [
+        "User request: RQ-0219 is incorrect - search queries are NOT sensitive data and are useful in logging.",
+        "crates/tui/src/action/redaction.rs treats search queries as sensitive data and redacts them in logs unnecessarily."
+      ],
+      "plan": [
+        "Review crates/tui/src/action/redaction.rs to identify search query redaction logic.",
+        "Remove or modify the redaction to allow search queries in logs (they are operational data, not secrets).",
+        "Update any tests that expect redacted search queries."
+      ],
+      "notes": [],
+      "request": "RQ-0219 is stupid. a search query is NOT sensitive data and could be useful in logging. modify the task",
+      "created_at": "2026-01-29T23:42:00Z",
+      "updated_at": "2026-01-29T23:42:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0220",
+      "status": "todo",
+      "title": "Fix logs --tail streaming output format",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "logs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/commands/logs.rs",
+        "crates/cli/src/formatters/table/logs.rs",
+        "crates/cli/src/formatters/csv.rs",
+        "crates/cli/src/formatters/json.rs",
+        "crates/cli/src/formatters/xml/logs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/logs.rs prints formatter.format_logs output on every tail poll.",
+        "crates/cli/src/formatters/table/logs.rs and crates/cli/src/formatters/csv.rs always emit headers, causing repeated headers in tail mode.",
+        "crates/cli/src/formatters/json.rs returns a full JSON array each call, which is invalid as a continuous tail stream."
+      ],
+      "plan": [
+        "Define tail output behavior per format (e.g., header-once for table/csv, NDJSON for json).",
+        "Update logs tail path to use streaming-safe formatting and avoid repeated headers.",
+        "Add tests covering tail output for table/csv/json/xml and update docs if behavior changes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0221",
+      "status": "todo",
+      "title": "Handle internal log entries without serial/index_time in tail cursor",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "logs",
+        "correctness"
+      ],
+      "scope": [
+        "crates/cli/src/commands/logs.rs",
+        "crates/client/src/models/logs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/logs.rs LogCursor::is_after returns false when serial is None, so entries without _serial are never considered new.",
+        "crates/client/src/models/logs.rs defines LogEntry.serial as Option<u64>, so missing serials are expected."
+      ],
+      "plan": [
+        "Define a fallback cursor strategy when serial or index_time is missing (e.g., compare time + message hash).",
+        "Update LogCursor::is_after and cursor update logic to handle missing fields safely.",
+        "Add tests that cover missing serial/index_time and verify new entries are not dropped."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0222",
+      "status": "todo",
+      "title": "Enforce deterministic ordering for log tail cursor updates",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "logs",
+        "correctness"
+      ],
+      "scope": [
+        "crates/cli/src/commands/logs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/logs.rs comments assume logs are sorted newest-first, but no sorting is performed before using new_logs.first() as the cursor.",
+        "The cursor update relies on new_logs.first() to represent the newest entry, which is unsafe if API order changes."
+      ],
+      "plan": [
+        "Sort fetched log entries by cursor key descending before filtering and cursor update.",
+        "Update cursor selection to use the max/newest entry regardless of input order.",
+        "Add tests to validate cursor behavior with reversed or unordered inputs."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0223",
+      "status": "todo",
+      "title": "Apply search defaults to CLI search when flags are omitted",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "config",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/search.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "docs/usage.md documents SPLUNK_EARLIEST_TIME, SPLUNK_LATEST_TIME, and SPLUNK_MAX_RESULTS as default search settings.",
+        "crates/cli/src/main.rs defines search count default as 100 and does not use SearchDefaultConfig.",
+        "crates/cli/src/commands/search.rs uses CLI earliest/latest/count directly without applying config defaults."
+      ],
+      "plan": [
+        "Load SearchDefaultConfig in the CLI and use it when earliest/latest/count flags are not provided.",
+        "Align CLI defaults with config/env defaults or document the intentional difference.",
+        "Add tests for env/profile search defaults and update docs accordingly."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0224",
+      "status": "todo",
+      "title": "Warn on default credentials in CLI",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "security",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs warns when config.is_using_default_credentials() is true.",
+        "crates/cli/src/main.rs builds config but does not warn about default credentials."
+      ],
+      "plan": [
+        "After CLI config load, call config.is_using_default_credentials() and emit a warning to stderr.",
+        "Ensure the warning does not include secrets and respects quiet/logging behavior.",
+        "Add a test or update docs to cover the warning path."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0225",
+      "status": "todo",
+      "title": "Enforce list_defaults.max_items cap in TUI pagination",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "config",
+        "performance"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/config/src/persistence/state.rs"
+      ],
+      "evidence": [
+        "crates/config/src/persistence/state.rs defines ListDefaults.max_items but no code references it outside config tests.",
+        "TUI pagination in crates/tui/src/app.rs and ListPaginationState lacks any max-items enforcement."
+      ],
+      "plan": [
+        "Wire list_defaults.max_items into ListPaginationState or App load-more logic.",
+        "Stop load-more requests when total_loaded >= max_items.",
+        "Add tests to verify the cap prevents further pagination."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0226",
+      "status": "todo",
+      "title": "Make TUI internal logs query/count configurable",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "logs",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/logs.rs",
+        "crates/tui/src/app.rs",
+        "crates/config/src/persistence/state.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/logs.rs fetches logs with hardcoded count=100 and earliest='-15m'.",
+        "Persisted state config has no internal logs settings, so users cannot adjust log window or count."
+      ],
+      "plan": [
+        "Add persisted settings for internal log count/time window (or reuse existing defaults config).",
+        "Expose controls in TUI settings or input handling to adjust these values.",
+        "Update log fetch logic to use persisted settings and add tests/docs."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0227",
+      "status": "todo",
+      "title": "Add TUI license usage screen for CLI parity",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "license",
+        "parity"
+      ],
+      "scope": [
+        "crates/cli/src/commands/license.rs",
+        "crates/tui/src/ui/screens/mod.rs",
+        "crates/tui/src/runtime/side_effects"
+      ],
+      "evidence": [
+        "CLI includes a dedicated license command in crates/cli/src/commands/license.rs.",
+        "TUI screens listed in crates/tui/src/ui/screens/mod.rs have no license screen."
+      ],
+      "plan": [
+        "Add a license load action and side-effect handler in the TUI.",
+        "Create a license screen with summary + pool detail rendering.",
+        "Add tests and update docs/usage and in-app help."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0228",
+      "status": "todo",
+      "title": "Add TUI KVStore status screen for CLI parity",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "kvstore",
+        "parity"
+      ],
+      "scope": [
+        "crates/cli/src/commands/kvstore.rs",
+        "crates/tui/src/ui/screens/mod.rs",
+        "crates/tui/src/runtime/side_effects"
+      ],
+      "evidence": [
+        "CLI includes a kvstore command in crates/cli/src/commands/kvstore.rs.",
+        "TUI screens listed in crates/tui/src/ui/screens/mod.rs do not include a KVStore view."
+      ],
+      "plan": [
+        "Add KVStore load action and side-effect handler in the TUI.",
+        "Create KVStore status screen rendering (members/replication/oplog).",
+        "Add tests and update docs/usage and help text."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0229",
+      "status": "todo",
+      "title": "Add TUI list-all overview screen for CLI parity",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "cli-parity",
+        "overview"
+      ],
+      "scope": [
+        "crates/cli/src/commands/list_all/mod.rs",
+        "crates/tui/src/ui/screens/mod.rs",
+        "crates/tui/src/runtime/side_effects"
+      ],
+      "evidence": [
+        "CLI provides list-all aggregation under crates/cli/src/commands/list_all/.",
+        "TUI screens listed in crates/tui/src/ui/screens/mod.rs lack an overview/list-all screen."
+      ],
+      "plan": [
+        "Define a TUI overview data model that mirrors list-all resource summaries.",
+        "Add side-effects to load summary data using client APIs.",
+        "Render a summary screen and add navigation/tests/docs updates."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0230",
+      "status": "todo",
+      "title": "Remove redundant internal-logs CLI command",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "ux",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/commands/internal_logs.rs",
+        "docs/usage.md",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs defines both Logs and InternalLogs commands.",
+        "crates/cli/src/commands/internal_logs.rs and crates/cli/src/commands/logs.rs both call get_internal_logs."
+      ],
+      "plan": [
+        "Decide on a single command (likely logs) and add deprecation/alias behavior for internal-logs.",
+        "Remove redundant wiring and update docs/usage accordingly.",
+        "Update or add tests to cover the new command behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0231",
+      "status": "todo",
+      "title": "Add examples to splunk-cli --help output",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "docs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs does not include an after_help example block for splunk-cli.",
+        "crates/tui/src/cli.rs includes an after_help examples block, indicating expected pattern."
+      ],
+      "plan": [
+        "Add an after_help section with common splunk-cli examples.",
+        "Ensure examples align with docs/usage.",
+        "Update CLI help snapshot tests if present."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0232",
+      "status": "todo",
+      "title": "Document --quiet flag in usage guide",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "cli",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/main.rs defines a global --quiet flag for progress suppression.",
+        "docs/usage.md does not mention --quiet (no occurrences found)."
+      ],
+      "plan": [
+        "Add --quiet to the CLI options table/section in docs/usage.md.",
+        "Describe that it suppresses progress output but not command results.",
+        "Verify docs remain consistent with CLI help output."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0233",
+      "status": "todo",
+      "title": "Respect NO_COLOR in test-live-server.sh output",
+      "priority": "low",
+      "tags": [
+        "scripts",
+        "ux",
+        "workflow"
+      ],
+      "scope": [
+        "scripts/test-live-server.sh"
+      ],
+      "evidence": [
+        "scripts/test-live-server.sh always defines ANSI color codes without checking NO_COLOR or TTY.",
+        "scripts/check-secrets.sh already implements NO_COLOR and TTY handling for colors."
+      ],
+      "plan": [
+        "Add NO_COLOR + TTY detection to test-live-server.sh color setup.",
+        "Keep help output examples intact.",
+        "Manually verify color/no-color behavior."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0234",
+      "status": "todo",
+      "title": "Split oversized list_all_tests.rs to avoid size warnings",
+      "priority": "low",
+      "tags": [
+        "tests",
+        "cli",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/cli/tests/list_all_tests.rs",
+        "crates/architecture-tests/tests/file_size_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/tests/list_all_tests.rs is ~704 LOC, above the 700 LOC warning threshold.",
+        "crates/architecture-tests/tests/file_size_tests.rs flags files >700 LOC as needing justification."
+      ],
+      "plan": [
+        "Split list_all tests into multiple files by scenario (single-profile, multi-profile, error cases).",
+        "Update test modules/helpers as needed to share fixtures.",
+        "Run tests and ensure architecture size warnings clear."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-29T23:05:51Z",
+      "updated_at": "2026-01-29T23:05:51Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0236",
+      "status": "todo",
+      "title": "Add forwarder management CLI command and TUI screen",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tui",
+        "forwarders",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/forwarders.rs",
+        "crates/client/src/endpoints/forwarders.rs",
+        "crates/client/src/models/forwarders.rs",
+        "crates/cli/src/commands/forwarders.rs",
+        "crates/tui/src/ui/screens/forwarders.rs"
+      ],
+      "evidence": [
+        "Splunk admins frequently need to monitor and manage forwarders (universal/heavy forwarders).",
+        "Splunk REST API provides /services/deployment/server/clients for forwarder management.",
+        "No forwarder support currently exists in the client, CLI, or TUI."
+      ],
+      "plan": [
+        "Add forwarder models (Forwarder, ForwarderListResponse) to client.",
+        "Implement forwarders endpoint and client methods (list, filter by status/hostname).",
+        "Add CLI forwarders command with list, filter, and status options.",
+        "Create TUI forwarders screen with filtering and detail view.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature gap for Splunk admin experience",
+      "created_at": "2026-01-29T23:50:00Z",
+      "updated_at": "2026-01-29T23:50:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0237",
+      "status": "todo",
+      "title": "Add distributed search peer management",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tui",
+        "distributed-search",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/search_peers.rs",
+        "crates/client/src/endpoints/search_peers.rs",
+        "crates/client/src/models/search_peers.rs",
+        "crates/cli/src/commands/search_peers.rs",
+        "crates/tui/src/ui/screens/search_peers.rs"
+      ],
+      "evidence": [
+        "Distributed search is a core Splunk feature; admins need visibility into search peers.",
+        "Splunk REST API provides /services/search/distributed/peers for peer management.",
+        "Current cluster support is limited to indexer cluster, not search head clustering."
+      ],
+      "plan": [
+        "Add search peer models (SearchPeer, SearchPeerStatus) to client.",
+        "Implement search peers endpoint and client methods.",
+        "Add CLI search-peers command with status and filtering.",
+        "Create TUI search peers screen.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature gap for Splunk admin experience",
+      "created_at": "2026-01-29T23:51:00Z",
+      "updated_at": "2026-01-29T23:51:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0238",
+      "status": "todo",
+      "title": "Add data inputs management (TCP/UDP/Monitor)",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "inputs",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/inputs.rs",
+        "crates/client/src/endpoints/inputs.rs",
+        "crates/client/src/models/inputs.rs",
+        "crates/cli/src/commands/inputs.rs",
+        "crates/tui/src/ui/screens/inputs.rs"
+      ],
+      "evidence": [
+        "Splunk admins need to view and manage data inputs (TCP, UDP, monitor, scripts).",
+        "Splunk REST API provides /services/data/inputs for input management.",
+        "No input management currently exists in the tool."
+      ],
+      "plan": [
+        "Add input models (TcpInput, UdpInput, MonitorInput) to client.",
+        "Implement inputs endpoint and client methods (list, enable, disable).",
+        "Add CLI inputs command for listing and managing inputs.",
+        "Create TUI inputs screen with filtering.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature gap for Splunk admin experience",
+      "created_at": "2026-01-29T23:52:00Z",
+      "updated_at": "2026-01-29T23:52:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0239",
+      "status": "todo",
+      "title": "Add configuration file viewer and comparison",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "config",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/configs.rs",
+        "crates/client/src/endpoints/configs.rs",
+        "crates/cli/src/commands/configs.rs",
+        "crates/tui/src/ui/screens/configs.rs"
+      ],
+      "evidence": [
+        "Splunk admins frequently need to view and compare configuration files (props.conf, transforms.conf, etc.).",
+        "Splunk REST API provides /services/configs for configuration access.",
+        "No configuration management currently exists in the tool."
+      ],
+      "plan": [
+        "Add config models to client for accessing Splunk .conf files.",
+        "Implement configs endpoint and client methods (list, view).",
+        "Add CLI configs command for viewing and searching configs.",
+        "Create TUI configs screen for browsing and viewing.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature gap for Splunk admin experience",
+      "created_at": "2026-01-29T23:53:00Z",
+      "updated_at": "2026-01-29T23:53:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0240",
+      "status": "todo",
+      "title": "Add search assistant/SPL validation in TUI",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "search",
+        "ux",
+        "feature"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/client/src/client/search.rs"
+      ],
+      "evidence": [
+        "Splunk's REST API provides parser endpoint for validating SPL syntax.",
+        "Real-time SPL validation helps admins catch syntax errors before running searches.",
+        "Search assistant with command suggestions improves usability."
+      ],
+      "plan": [
+        "Add SPL parser/validate endpoint to client.",
+        "Implement real-time validation in TUI search screen (debounced).",
+        "Add visual indicators for syntax errors with helpful messages.",
+        "Optionally add command suggestions dropdown.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature for improved Splunk admin/developer experience",
+      "created_at": "2026-01-29T23:54:00Z",
+      "updated_at": "2026-01-29T23:54:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0241",
+      "status": "todo",
+      "title": "Add alert and trigger management",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "alerts",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/alerts.rs",
+        "crates/client/src/endpoints/alerts.rs",
+        "crates/client/src/models/alerts.rs",
+        "crates/cli/src/commands/alerts.rs",
+        "crates/tui/src/ui/screens/alerts.rs"
+      ],
+      "evidence": [
+        "Saved searches exist but alert actions/triggers are separate in Splunk.",
+        "Splunk REST API provides /services/alerts for alert management.",
+        "Admins need to monitor and manage alert firing history and status."
+      ],
+      "plan": [
+        "Add alert models (Alert, AlertTrigger, AlertAction) to client.",
+        "Implement alerts endpoint and client methods.",
+        "Add CLI alerts command for listing and managing alerts.",
+        "Create TUI alerts screen with trigger history.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature gap for Splunk admin experience",
+      "created_at": "2026-01-29T23:55:00Z",
+      "updated_at": "2026-01-29T23:55:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0242",
+      "status": "todo",
+      "title": "Add multi-instance dashboard for TUI",
+      "priority": "low",
+      "tags": [
+        "tui",
+        "multi-instance",
+        "feature"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/dashboard.rs",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "CLI has list-all for multi-profile aggregation.",
+        "TUI only shows single-instance views.",
+        "Admins managing multiple Splunk instances need a consolidated dashboard view."
+      ],
+      "plan": [
+        "Create a dashboard screen showing aggregated health/status from multiple profiles.",
+        "Use existing ConfigManager to iterate profiles.",
+        "Show summary cards for each instance (health status, job count, license usage).",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature for multi-instance Splunk admins",
+      "created_at": "2026-01-29T23:56:00Z",
+      "updated_at": "2026-01-29T23:56:00Z",
+      "depends_on": ["RQ-0229"],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0243",
+      "status": "todo",
+      "title": "Add lookup table management",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "lookups",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/lookups.rs",
+        "crates/cli/src/commands/lookups.rs",
+        "crates/tui/src/ui/screens/lookups.rs"
+      ],
+      "evidence": [
+        "Splunk admins frequently manage lookup tables (CSV, KV store lookups).",
+        "Splunk REST API provides /services/data/lookup-table-files for lookup management.",
+        "No lookup management currently exists in the tool."
+      ],
+      "plan": [
+        "Add lookup models to client for listing lookup tables.",
+        "Implement lookups endpoint and client methods.",
+        "Add CLI lookups command for listing.",
+        "Create TUI lookups screen.",
+        "Add tests and documentation updates."
+      ],
+      "notes": [],
+      "request": "Feature gap for Splunk admin experience",
+      "created_at": "2026-01-29T23:57:00Z",
+      "updated_at": "2026-01-29T23:57:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
