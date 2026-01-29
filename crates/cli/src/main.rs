@@ -367,7 +367,17 @@ async fn main() -> Result<()> {
             loader = loader.with_skip_verify(true);
         }
 
-        Some(loader.build()?)
+        let config = loader.build()?;
+
+        // Warn if using default credentials (security check)
+        if config.is_using_default_credentials() {
+            tracing::warn!(
+                "Using default Splunk credentials (admin/changeme). \
+                 These are for local development only - change before production use."
+            );
+        }
+
+        Some(config)
     } else {
         None
     };

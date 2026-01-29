@@ -77,6 +77,14 @@ async fn main() -> Result<()> {
     // Also get search defaults with env var overrides applied
     let (search_default_config, config) = load_config_with_search_defaults(&cli)?;
 
+    // Warn if using default credentials (security check)
+    if config.is_using_default_credentials() {
+        tracing::warn!(
+            "Using default Splunk credentials (admin/changeme). \
+             These are for local development only - change before production use."
+        );
+    }
+
     // Build and authenticate client
     let client: SharedClient = Arc::new(Mutex::new(create_client(&config).await?));
 

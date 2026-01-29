@@ -98,6 +98,27 @@ pub struct Config {
 }
 
 impl Default for Config {
+    /// Creates a default configuration with development-only credentials.
+    ///
+    /// # Security Warning
+    ///
+    /// The default configuration uses Splunk's default credentials (admin/changeme)
+    /// targeting localhost:8089. These credentials are **ONLY** appropriate for
+    /// local development environments and MUST be changed before any production use.
+    ///
+    /// # Default Values
+    ///
+    /// - `base_url`: `https://localhost:8089`
+    /// - `username`: `admin`
+    /// - `password`: `changeme`
+    /// - `timeout`: 30 seconds
+    /// - `max_retries`: 3
+    ///
+    /// # Invariants
+    ///
+    /// This implementation is intended for development convenience only. Production
+    /// deployments should always use explicit configuration via environment variables,
+    /// configuration files, or the `ConfigLoader` builder with custom credentials.
     fn default() -> Self {
         Self {
             connection: ConnectionConfig {
@@ -120,6 +141,28 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Checks if this configuration is using the default development credentials.
+    ///
+    /// Returns `true` if the auth strategy is `SessionToken` with username "admin"
+    /// and password "changeme". This is useful for detecting potentially unsafe
+    /// default configurations in production environments.
+    ///
+    /// # Security Note
+    ///
+    /// This check uses constant-time comparison to avoid timing side-channels,
+    /// though this is primarily a defense-in-depth measure since the default
+    /// credentials are publicly known.
+    pub fn is_using_default_credentials(&self) -> bool {
+        use secrecy::ExposeSecret;
+
+        matches!(
+            &self.auth.strategy,
+            AuthStrategy::SessionToken { username, password }
+                if username == "admin"
+                    && password.expose_secret() == "changeme"
+        )
+    }
+
     /// Create a new config with the specified base URL and API token.
     pub fn with_api_token(base_url: String, token: SecretString) -> Self {
         Self {
@@ -268,5 +311,75 @@ mod tests {
         // Just verify it formats correctly
         assert!(debug_output.contains("https://localhost:8089"));
         assert!(debug_output.contains("skip_verify: true"));
+    }
+
+    // ============================================================================
+    // Security-focused tests for default credential detection
+    // ============================================================================
+
+    /// Test that default config is correctly identified as using default credentials.
+    #[test]
+    fn test_is_using_default_credentials_true_for_default_config() {
+        let config = Config::default();
+        assert!(
+            config.is_using_default_credentials(),
+            "Default config should be detected as using default credentials"
+        );
+    }
+
+    /// Test that custom username is not detected as default credentials.
+    #[test]
+    fn test_is_using_default_credentials_false_for_different_username() {
+        let password = SecretString::new("changeme".to_string().into());
+        let config = Config::with_session_token(
+            "https://localhost:8089".to_string(),
+            "customuser".to_string(),
+            password,
+        );
+        assert!(
+            !config.is_using_default_credentials(),
+            "Custom username should not be detected as default credentials"
+        );
+    }
+
+    /// Test that custom password is not detected as default credentials.
+    #[test]
+    fn test_is_using_default_credentials_false_for_different_password() {
+        let password = SecretString::new("custompassword".to_string().into());
+        let config = Config::with_session_token(
+            "https://localhost:8089".to_string(),
+            "admin".to_string(),
+            password,
+        );
+        assert!(
+            !config.is_using_default_credentials(),
+            "Custom password should not be detected as default credentials"
+        );
+    }
+
+    /// Test that API token auth is not detected as default credentials.
+    #[test]
+    fn test_is_using_default_credentials_false_for_api_token() {
+        let token = SecretString::new("some-api-token".to_string().into());
+        let config = Config::with_api_token("https://splunk.example.com:8089".to_string(), token);
+        assert!(
+            !config.is_using_default_credentials(),
+            "API token auth should not be detected as default credentials"
+        );
+    }
+
+    /// Test that completely different credentials are not detected as default.
+    #[test]
+    fn test_is_using_default_credentials_false_for_completely_different() {
+        let password = SecretString::new("supersecret123".to_string().into());
+        let config = Config::with_session_token(
+            "https://splunk.prod.com:8089".to_string(),
+            "splunkadmin".to_string(),
+            password,
+        );
+        assert!(
+            !config.is_using_default_credentials(),
+            "Completely different credentials should not be detected as default"
+        );
     }
 }

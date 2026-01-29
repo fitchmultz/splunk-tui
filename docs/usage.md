@@ -36,6 +36,11 @@ The file uses JSON format and can contain multiple named profiles:
 }
 ```
 
+> **Security Warning:** The example above shows Splunk's default credentials (`admin`/`changeme`).
+> These credentials are **only appropriate for local development** against a local Splunk instance.
+> **Always change default credentials before connecting to production Splunk servers.**
+> Consider using API tokens or the system keyring for secure credential storage (see below).
+
 ### Secure Credential Storage
 
 `splunk-tui` supports storing sensitive credentials (passwords and API tokens) in your system's secure keyring (e.g., macOS Keychain, Windows Credential Locker, or Linux Secret Service).

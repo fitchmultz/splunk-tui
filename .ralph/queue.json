@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0185",
-      "status": "todo",
-      "title": "Document default credentials security implications",
-      "priority": "medium",
-      "tags": [
-        "documentation",
-        "security",
-        "config"
-      ],
-      "scope": [
-        "crates/config/src/types/connection.rs"
-      ],
-      "evidence": [
-        "connection.rs:109-112 defines default credentials: username 'admin', password 'changeme'",
-        "These are Splunk's default credentials, which is acceptable for development",
-        "No documentation warns users to change these before production use",
-        "The Default impl is used when no other config is provided"
-      ],
-      "plan": [
-        "Add prominent doc comment on Config::default() warning about default credentials",
-        "Add warning log when default credentials are used",
-        "Update docs/usage.md to mention changing default credentials",
-        "Consider failing in production mode if default credentials detected"
-      ],
-      "notes": [],
-      "request": "scan finding: default credentials need security documentation",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0186",
       "status": "todo",
       "title": "Replace panics in CLI with proper error handling",
