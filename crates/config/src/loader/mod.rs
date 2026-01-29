@@ -21,7 +21,7 @@ mod error;
 mod profile;
 
 #[cfg(test)]
-mod builder_tests;
+mod tests;
 
 pub use builder::ConfigLoader;
 pub use defaults::SearchDefaultConfig;

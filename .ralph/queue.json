@@ -1,33 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0216",
-      "status": "todo",
-      "title": "Split config loader builder_tests module",
-      "priority": "low",
-      "tags": [
-        "config",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/config/src/loader/builder_tests.rs"
-      ],
-      "evidence": [
-        "crates/config/src/loader/builder_tests.rs is ~1202 lines (wc -l), exceeding the 1000 LOC failure threshold in architecture tests if counted as LOC."
-      ],
-      "plan": [
-        "Split builder_tests into smaller modules by feature area (env, profiles, validation, search defaults).",
-        "Ensure module-level docs remain in each new test file.",
-        "Update mod.rs test wiring as needed."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }

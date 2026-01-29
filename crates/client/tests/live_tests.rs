@@ -679,14 +679,22 @@ async fn test_live_create_list_and_delete_saved_search() {
         .await
         .expect("Failed to create saved search");
 
-    let searches = client
-        .list_saved_searches(None, None)
-        .await
-        .expect("Failed to list saved searches");
-    let created = searches
-        .iter()
-        .find(|s| s.name == name)
-        .expect("created saved search should be listed");
+    // Retry with delay to allow Splunk to propagate the saved search
+    // Splunk may take time to index the saved search in the list
+    let mut created = None;
+    for _attempt in 0..10 {
+        // Use a high count to ensure we get all saved searches (default is 30)
+        let searches = client
+            .list_saved_searches(Some(1000), None)
+            .await
+            .expect("Failed to list saved searches");
+        if let Some(s) = searches.iter().find(|s| s.name == name) {
+            created = Some(s.clone());
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    let created = created.expect("created saved search should be listed");
     assert_eq!(
         created.search, search,
         "created saved search should retain its search query"
