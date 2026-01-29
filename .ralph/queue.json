@@ -2,33 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0177",
-      "status": "todo",
-      "title": "Split oversized TUI app/input.rs into per-screen input modules",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/app/input.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app/input.rs is 774 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Extract per-screen input handlers into submodules while keeping App impl cohesive.",
-        "Add module docstrings and keep APIs private where possible.",
-        "Run TUI unit tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0178",
       "status": "todo",
       "title": "Split oversized CLI config_tests.rs into smaller test modules",

@@ -21,7 +21,7 @@ pub mod state;
 mod actions;
 mod export;
 pub mod footer_layout;
-mod input;
+pub mod input;
 mod jobs;
 mod mouse;
 mod navigation;
