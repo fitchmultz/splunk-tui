@@ -380,7 +380,8 @@ Splunk TUI uses standard SPL (Search Processing Language). Here are a few tips f
 - **`HttpError / TlsError`**: Usually caused by connectivity issues or untrusted SSL certificates. Try setting `SPLUNK_SKIP_VERIFY=true`.
 - **`ApiError (404)`**: The endpoint might not exist on your version of Splunk. Ensure you are running v9.0+.
 - **`SessionExpired`**: The TUI handles auto-renewal, but if you leave it idle for a very long time, you might need to restart.
-- **`RateLimited (429)`**: Splunk is throttling requests. The tool will automatically retry with backoff, but you may need to reduce search frequency.
+- **`RateLimited (429)`**: Splunk is throttling requests. The client automatically retries with exponential backoff, respecting the `Retry-After` header if present. If retries are exhausted, you'll see a `MaxRetriesExceeded` error. Reduce search frequency or increase `SPLUNK_MAX_RETRIES` if this occurs frequently.
+- **`MaxRetriesExceeded`**: All retry attempts were exhausted. This can occur due to sustained rate limiting (429), transient server errors (502/503/504), or network issues. The error includes the underlying cause and the number of attempts made. Consider increasing `SPLUNK_MAX_RETRIES` or implementing application-level circuit breaking.
 
 ### Connectivity Check
 
@@ -390,3 +391,22 @@ curl -k -u admin:password https://your-splunk-host:8089/services/server/info
 ```
 
 If `curl` works but the TUI doesn't, check your `.env` settings and profile configuration.
+
+### Retry Behavior and Limitations
+
+The client implements automatic retry with exponential backoff for transient failures. Understanding when retries occur (and when they don't) can help diagnose issues:
+
+**When Retries Occur:**
+- HTTP 429 (rate limiting), 502, 503, 504 (transient server errors)
+- Transport errors: connection refused, reset, timeout, DNS failures
+- Default: 3 retries with 1s, 2s, 4s delays
+
+**When Retries Do NOT Occur:**
+- Streaming requests (file uploads, large data streams) cannot be retried because the body is consumed on the first attempt
+- Client errors (400, 401, 403, 404) fail immediately
+- Server error 500 (Internal Server Error) is not retried as it typically indicates a bug, not a transient issue
+
+**Tuning Retry Behavior:**
+- Increase `SPLUNK_MAX_RETRIES` for unreliable networks or heavily loaded servers
+- The client respects `Retry-After` headers for rate-limited responses
+- For streaming uploads that must be reliable, buffer data in memory or implement application-level retry

@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0197",
-      "status": "todo",
-      "title": "Document retry logic behavior for streaming requests",
-      "priority": "low",
-      "tags": [
-        "documentation",
-        "client",
-        "retry-logic"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/request.rs"
-      ],
-      "evidence": [
-        "request.rs:24-31 documents that streaming requests cannot be retried",
-        "This is a significant limitation that users should know about",
-        "No mention in user-facing documentation",
-        "try_clone() failure behavior not well documented"
-      ],
-      "plan": [
-        "Add user-facing documentation about retry limitations",
-        "Document which operations support retry vs which don't",
-        "Add examples of how to handle non-retryable operations",
-        "Update API docs for methods that may not retry",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: retry limitations need user documentation",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0198",
       "status": "todo",
       "title": "Add metrics for API call performance",

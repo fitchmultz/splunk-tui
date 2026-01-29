@@ -84,6 +84,56 @@ Environment variables take precedence over the configuration file.
 | `SPLUNK_LATEST_TIME` | Default latest time for searches (e.g., `now`) [default: `now`] |
 | `SPLUNK_MAX_RESULTS` | Default maximum number of results per search [default: `1000`] |
 
+#### Retry Behavior
+
+The client automatically retries transient failures using exponential backoff. This improves reliability when Splunk is temporarily overloaded or experiencing transient issues.
+
+**Default Configuration:**
+- Maximum retries: 3 (configurable via `SPLUNK_MAX_RETRIES` or the `--max-retries` CLI flag)
+- Backoff delays: 1s, 2s, 4s (exponential: 2^attempt seconds)
+
+**Retryable Conditions:**
+
+The client retries requests that fail with:
+
+- **HTTP 429** (Too Many Requests): Rate limiting from Splunk
+- **HTTP 502** (Bad Gateway): Transient upstream server error
+- **HTTP 503** (Service Unavailable): Transient server unavailability
+- **HTTP 504** (Gateway Timeout): Transient timeout from upstream
+- **Transport errors**: Connection refused, connection reset, broken pipe, timeout, DNS failures
+
+**Retry-After Header Support:**
+
+For 429 responses, the client respects the `Retry-After` header when present:
+- Supports delay-seconds format (e.g., `"120"` for 120 seconds)
+- Supports HTTP-date format (e.g., `"Wed, 21 Oct 2015 07:28:00 GMT"`)
+- Uses the maximum of the server's suggested delay and the exponential backoff
+
+**Streaming Request Limitation:**
+
+Requests with streaming bodies (e.g., file uploads, large data streams) **cannot be retried** because the body can only be consumed once. If such a request fails with a retryable error:
+- The request fails immediately without retry attempts
+- A warning is logged indicating the request cannot be cloned for retry
+
+Applications requiring retry guarantees for large uploads should buffer the data in memory or use non-streaming request bodies.
+
+**Error Handling Example:**
+
+When retries are exhausted, the client returns a `MaxRetriesExceeded` error containing the underlying failure:
+
+```rust
+use splunk_client::ClientError;
+
+match client.search("index=main | head 10").await {
+    Err(ClientError::MaxRetriesExceeded(attempts, cause)) => {
+        eprintln!("Request failed after {} attempts: {}", attempts, cause);
+        // Consider implementing circuit breaker or backing off longer
+    }
+    Err(e) => eprintln!("Request failed: {}", e),
+    Ok(results) => println!("Results: {:?}", results),
+}
+```
+
 #### Session Configuration
 
 The session TTL and expiry buffer work together to control session token lifecycle:
