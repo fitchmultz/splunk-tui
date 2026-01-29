@@ -50,9 +50,11 @@ pub(crate) fn migrate_config_file_if_needed(legacy_path: &Path, new_path: &Path)
         return false;
     }
 
-    if let Some(Err(e)) = new_path.parent().map(std::fs::create_dir_all) {
+    if let Some(parent) = new_path.parent()
+        && let Err(e) = std::fs::create_dir_all(parent)
+    {
         tracing::warn!(
-            new_parent = %new_path.parent().unwrap().display(),
+            new_parent = %parent.display(),
             error = %e,
             "Could not create config directory for migrated config"
         );

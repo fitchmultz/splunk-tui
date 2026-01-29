@@ -1,40 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0199",
-      "status": "todo",
-      "title": "Review and consolidate unwrap usage in non-test code",
-      "priority": "low",
-      "tags": [
-        "refactor",
-        "robustness",
-        "code-quality"
-      ],
-      "scope": [
-        "crates/"
-      ],
-      "evidence": [
-        "617 unwrap() occurrences found across 68 files",
-        "Many are in tests (acceptable)",
-        "Some in production code could be replaced with proper error handling",
-        "unwrap() in production can cause panics",
-        "No audit of which unwraps are truly safe vs potentially problematic"
-      ],
-      "plan": [
-        "Audit all unwrap() in production (non-test) code",
-        "Categorize: truly safe (invariant guaranteed) vs potentially problematic",
-        "Replace problematic unwraps with proper error handling",
-        "Add expect() with justification for safe unwraps",
-        "Create lint rule to prevent new unwrap in production code",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: unwrap usage in production code needs audit",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }
