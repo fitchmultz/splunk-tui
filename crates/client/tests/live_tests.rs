@@ -256,6 +256,39 @@ async fn test_live_list_indexes() {
 
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
+async fn test_live_list_indexes_pagination() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    // Test count limit
+    let limited = client
+        .list_indexes(Some(1), Some(0))
+        .await
+        .expect("Failed to list indexes");
+    assert_eq!(limited.len(), 1, "count=1 should return exactly 1 index");
+
+    // Test offset
+    let first_page = client
+        .list_indexes(Some(10), Some(0))
+        .await
+        .expect("Failed to list indexes");
+    let second_page = client
+        .list_indexes(Some(10), Some(1))
+        .await
+        .expect("Failed to list indexes");
+
+    // Second page should not contain the first item from first page
+    if !first_page.is_empty() && !second_page.is_empty() {
+        assert_ne!(
+            first_page[0].name, second_page[0].name,
+            "offset should shift results"
+        );
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
 async fn test_live_search_and_get_results() {
     let Some(mut client) = create_test_client_or_skip() else {
         return;
@@ -372,6 +405,17 @@ async fn test_live_cluster_info() {
 
     // This may fail on standalone instances - just verify we can make the call
     let _result = client.get_cluster_info().await;
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
+async fn test_live_get_cluster_peers() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    // This may return empty on standalone instances - just verify we can make the call
+    let _peers = client.get_cluster_peers().await;
 }
 
 #[tokio::test]
@@ -540,6 +584,87 @@ async fn test_live_list_apps_and_users_and_saved_searches() {
 
 #[tokio::test]
 #[ignore = "requires live Splunk server"]
+async fn test_live_get_app() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    // Test getting the "search" app which always exists
+    let app = client.get_app("search").await.expect("Failed to get app");
+    assert_eq!(app.name, "search");
+    assert!(!app.label.as_deref().unwrap_or("").is_empty());
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
+async fn test_live_enable_disable_app() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    // Find an app that's safe to toggle (not a core system app)
+    // Get the list of apps and find one that's not critical
+    let apps = client
+        .list_apps(Some(50), Some(0))
+        .await
+        .expect("Failed to list apps");
+
+    // Look for a non-critical app that's visible and configured
+    // Avoid: search, splunk_instrumentation, splunk_assist, etc.
+    let test_app = apps
+        .iter()
+        .find(|a| {
+            !a.disabled
+                && a.is_visible.unwrap_or(false)
+                && !matches!(
+                    a.name.as_str(),
+                    "search"
+                        | "splunk_instrumentation"
+                        | "splunk_assist"
+                        | "splunk_instance_monitoring"
+                        | "splunk_metrics_workspace"
+                        | "splunk_monitoring_console"
+                        | "splunk_rapid_diagnosis"
+                        | "launcher"
+                        | "learned"
+                        | "legacy"
+                        | "sample_app"
+                        | "splunk_archiver"
+                        | "splunk_httpinput"
+                        | "splunk_internal_metrics"
+                        | "splunk_secure_gateway"
+                        | "splunk_telemetry"
+                        | "introspection_generator_addon"
+                        | "journald_input"
+                        | "python_upgrade_readiness_app"
+                        | "splunk_essentials_9_4"
+                        | "splunk_gdi"
+                        | "splunk_ingest_actions"
+                        | "splunk_react_ui"
+                        | "splunk_wft"
+                        | "user_prefs"
+                )
+        })
+        .map(|a| a.name.clone());
+
+    let Some(app_name) = test_app else {
+        eprintln!("Skipping enable/disable test: no suitable test app found");
+        return;
+    };
+
+    // First disable, then re-enable to restore state
+    client
+        .disable_app(&app_name)
+        .await
+        .expect("Failed to disable app");
+    client
+        .enable_app(&app_name)
+        .await
+        .expect("Failed to enable app");
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
 async fn test_live_create_list_and_delete_saved_search() {
     let Some(mut client) = create_test_client_or_skip() else {
         return;
@@ -571,4 +696,28 @@ async fn test_live_create_list_and_delete_saved_search() {
         .delete_saved_search(&name)
         .await
         .expect("Failed to delete saved search");
+}
+
+#[tokio::test]
+#[ignore = "requires live Splunk server"]
+async fn test_live_get_saved_search() {
+    let Some(mut client) = create_test_client_or_skip() else {
+        return;
+    };
+
+    let name = unique_name("codex_get_saved_search");
+    let _cleanup = SavedSearchCleanup::new(name.clone());
+
+    let search = r#"| makeresults | eval foo="get-saved-search" | table foo"#;
+    client
+        .create_saved_search(&name, search)
+        .await
+        .expect("Failed to create saved search");
+
+    let retrieved = client
+        .get_saved_search(&name)
+        .await
+        .expect("Failed to get saved search");
+    assert_eq!(retrieved.name, name);
+    assert_eq!(retrieved.search, search);
 }

@@ -152,49 +152,78 @@ pub async fn get_app(
 
     let resp: serde_json::Value = response.json().await?;
 
-    // Extract content from first entry
-    let content = resp
-        .get("entry")
-        .and_then(|e| e.get(0))
-        .and_then(|e| e.get("content"))
-        .ok_or_else(|| {
-            ClientError::InvalidResponse(format!(
-                "Missing entry content in get_app response for '{}'",
-                app_name
-            ))
-        })?;
+    // Extract entry name and content from first entry
+    let entry = resp.get("entry").and_then(|e| e.get(0)).ok_or_else(|| {
+        ClientError::InvalidResponse(format!(
+            "Missing entry in get_app response for '{}'",
+            app_name
+        ))
+    })?;
 
-    // Deserialize content into App struct
-    serde_json::from_value(content.clone())
-        .map_err(|e| ClientError::InvalidResponse(format!("Failed to parse app info: {}", e)))
+    let entry_name = entry
+        .get("name")
+        .and_then(|n| n.as_str())
+        .unwrap_or(app_name)
+        .to_string();
+
+    let content = entry.get("content").ok_or_else(|| {
+        ClientError::InvalidResponse(format!(
+            "Missing entry content in get_app response for '{}'",
+            app_name
+        ))
+    })?;
+
+    // Deserialize content into App struct and attach the entry name
+    let app: App = serde_json::from_value(content.clone())
+        .map_err(|e| ClientError::InvalidResponse(format!("Failed to parse app info: {}", e)))?;
+
+    Ok(crate::name_merge::attach_entry_name(entry_name, app))
 }
 
-/// Update app configuration (enable/disable).
-pub async fn update_app(
+/// Enable an app by name.
+pub async fn enable_app(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     app_name: &str,
-    disabled: bool,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
-    let url = format!("{}/services/apps/local/{}", base_url, app_name);
-
-    // Build request body with disabled flag
-    let body = serde_json::json!({
-        "disabled": disabled
-    });
+    let url = format!("{}/services/apps/local/{}/enable", base_url, app_name);
 
     let builder = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", auth_token))
-        .header("Content-Type", "application/json")
-        .json(&body);
+        .header("Authorization", format!("Bearer {}", auth_token));
     let _response = send_request_with_retry(
         builder,
         max_retries,
-        "/services/apps/local/{app_name}",
+        "/services/apps/local/{app_name}/enable",
+        "POST",
+        metrics,
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Disable an app by name.
+pub async fn disable_app(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    app_name: &str,
+    max_retries: usize,
+    metrics: Option<&MetricsCollector>,
+) -> Result<()> {
+    let url = format!("{}/services/apps/local/{}/disable", base_url, app_name);
+
+    let builder = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", auth_token));
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/apps/local/{app_name}/disable",
         "POST",
         metrics,
     )

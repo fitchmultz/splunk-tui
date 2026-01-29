@@ -949,7 +949,7 @@ async fn test_enable_app_success() {
     let mut harness = SideEffectsTestHarness::new().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/apps/local/test-app"))
+        .and(path("/services/apps/local/test-app/enable"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&harness.mock_server)
         .await;
@@ -985,7 +985,7 @@ async fn test_enable_app_error() {
     let mut harness = SideEffectsTestHarness::new().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/apps/local/test-app"))
+        .and(path("/services/apps/local/test-app/enable"))
         .respond_with(ResponseTemplate::new(404).set_body_string("App not found"))
         .mount(&harness.mock_server)
         .await;
@@ -1011,7 +1011,7 @@ async fn test_disable_app_success() {
     let mut harness = SideEffectsTestHarness::new().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/apps/local/test-app"))
+        .and(path("/services/apps/local/test-app/disable"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&harness.mock_server)
         .await;
@@ -1047,7 +1047,7 @@ async fn test_disable_app_error() {
     let mut harness = SideEffectsTestHarness::new().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/apps/local/test-app"))
+        .and(path("/services/apps/local/test-app/disable"))
         .respond_with(ResponseTemplate::new(500).set_body_string("Server error"))
         .mount(&harness.mock_server)
         .await;

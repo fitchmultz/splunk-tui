@@ -487,12 +487,11 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::update_app(
+            endpoints::enable_app(
                 &self.http,
                 &self.base_url,
                 &__token,
                 app_name,
-                false,
                 self.max_retries,
                 self.metrics.as_ref(),
             )
@@ -505,12 +504,11 @@ impl SplunkClient {
         retry_call!(
             self,
             __token,
-            endpoints::update_app(
+            endpoints::disable_app(
                 &self.http,
                 &self.base_url,
                 &__token,
                 app_name,
-                true,
                 self.max_retries,
                 self.metrics.as_ref(),
             )

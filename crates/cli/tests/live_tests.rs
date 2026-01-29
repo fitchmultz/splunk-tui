@@ -237,6 +237,93 @@ fn test_live_cli_health_json() {
 
 #[test]
 #[ignore = "requires live Splunk server"]
+fn test_live_cli_server_info() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    // Server info is included in health command output
+    cmd.args(["--output", "json", "health"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("server_info"))
+        .stdout(predicate::str::contains("serverName"))
+        .stdout(predicate::str::contains("version"));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_cluster_info() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    // This may fail on standalone instances - just verify we can make the call
+    let _assert = cmd.args(["--output", "json", "cluster", "info"]).assert();
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_jobs_list() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    // Jobs command uses --list flag (which is the default)
+    cmd.args(["--output", "json", "jobs", "--count", "5"])
+        .assert()
+        .success();
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_table_output() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    // Table output for indexes uses "Name" as header
+    cmd.args(["--output", "table", "indexes", "--count", "3"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Name"));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_xml_output() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    cmd.args(["--output", "xml", "health"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("<?xml"));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_get_app() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    // Apps command uses 'info' subcommand, not 'get'
+    cmd.args(["--output", "json", "apps", "info", "search"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("search"));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
 fn test_live_cli_search_wait_json() {
     let Some(_env) = LiveEnvGuard::new_or_skip() else {
         return;

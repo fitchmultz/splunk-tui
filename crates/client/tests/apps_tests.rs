@@ -156,18 +156,17 @@ async fn test_enable_app() {
     let fixture = load_fixture("apps/update_app.json");
 
     Mock::given(method("POST"))
-        .and(path("/services/apps/local/test_app"))
+        .and(path("/services/apps/local/test_app/enable"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
 
     let client = Client::new();
-    let result = endpoints::update_app(
+    let result = endpoints::enable_app(
         &client,
         &mock_server.uri(),
         "test-token",
         "test_app",
-        false, // disabled = false means enable
         3,
         None,
     )
@@ -183,18 +182,17 @@ async fn test_disable_app() {
     let fixture = load_fixture("apps/update_app.json");
 
     Mock::given(method("POST"))
-        .and(path("/services/apps/local/test_app"))
+        .and(path("/services/apps/local/test_app/disable"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
 
     let client = Client::new();
-    let result = endpoints::update_app(
+    let result = endpoints::disable_app(
         &client,
         &mock_server.uri(),
         "test-token",
         "test_app",
-        true, // disabled = true means disable
         3,
         None,
     )

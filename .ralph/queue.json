@@ -2,57 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0218",
-      "status": "todo",
-      "title": "Increase coverage of live tests using real Splunk server",
-      "priority": "medium",
-      "tags": [
-        "tests",
-        "live-tests",
-        "client",
-        "cli"
-      ],
-      "scope": [
-        "crates/client/tests/live_tests.rs",
-        "crates/cli/tests/live_tests.rs"
-      ],
-      "evidence": [
-        "crates/client/tests/live_tests.rs has 16 live tests but gaps exist for: get_app(), enable_app(), disable_app(), get_cluster_peers(), get_saved_search()",
-        "crates/client/src/client/mod.rs:469-519 exposes get_app(), enable_app(), disable_app() with no live test coverage.",
-        "crates/client/src/client/mod.rs:592-605 exposes get_cluster_peers() with no live test coverage.",
-        "crates/client/src/client/mod.rs:434 exposes get_saved_search() but live tests only test list_saved_searches() not get by name.",
-        "crates/cli/tests/live_tests.rs has 7 live tests covering basic JSON output for indexes, users, apps, health, search, license, saved-searches - needs coverage for table/xml output formats and more commands."
-      ],
-      "plan": [
-        "Add client live tests to crates/client/tests/live_tests.rs:",
-        "  - test_live_get_app(): Test get_app() for a known app (e.g., 'search').",
-        "  - test_live_enable_disable_app(): Test enable_app() and disable_app() roundtrip on a test app.",
-        "  - test_live_get_cluster_peers(): Test get_cluster_peers() endpoint.",
-        "  - test_live_get_saved_search(): Test get_saved_search() by name after creating one.",
-        "  - test_live_list_indexes_pagination(): Test pagination params (count/offset) work correctly.",
-        "Add CLI live tests to crates/cli/tests/live_tests.rs:",
-        "  - test_live_cli_server_info(): Test 'splunk-cli server-info' command.",
-        "  - test_live_cli_cluster_info(): Test 'splunk-cli cluster info' command.",
-        "  - test_live_cli_jobs_list(): Test 'splunk-cli jobs list' command.",
-        "  - test_live_cli_table_output(): Test table output format for at least one command.",
-        "  - test_live_cli_xml_output(): Test xml output format for at least one command.",
-        "  - test_live_cli_get_app(): Test 'splunk-cli apps get <name>' command.",
-        "Run cargo test -p splunk-client --test live_tests -- --ignored to verify client tests.",
-        "Run cargo test -p splunk-cli --test live_tests -- --ignored to verify CLI tests."
-      ],
-      "notes": [
-        "Follow existing live test patterns: use create_test_client_or_skip() and LiveEnvGuard::new_or_skip() helpers.",
-        "For app enable/disable tests, use a test app that won't disrupt core functionality.",
-        "Cluster peers test may return empty on standalone instances - that's acceptable.",
-        "Use unique_name() helper for any resources created to avoid collisions."
-      ],
-      "request": "Increase coverage of live tests using the real Splunk server.",
-      "created_at": "2026-01-29T21:10:00+00:00",
-      "updated_at": "2026-01-29T21:10:00+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0211",
       "status": "todo",
       "title": "Split oversized client module",
