@@ -2,34 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0166",
-      "status": "todo",
-      "title": "Split oversized TUI app_tests.rs into focused test modules",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "tests",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/tests/app_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/tests/app_tests.rs is 4226 lines (wc -l), exceeding the 700-line heuristic and 1000-line hard split guidance."
-      ],
-      "plan": [
-        "Identify logical test groupings (e.g., popups, navigation, search, jobs) and split into separate test files.",
-        "Ensure each new file has a module docstring and cohesive scope.",
-        "Run the relevant TUI tests to confirm coverage."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0180",
       "status": "todo",
       "title": "Split oversized list_all.rs command implementation into submodules",
