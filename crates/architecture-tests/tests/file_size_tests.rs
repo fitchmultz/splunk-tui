@@ -27,6 +27,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "retry_tests.rs",
         "Retry logic integration tests - test files may be large for coverage",
     ),
+    (
+        "side_effects_tests.rs",
+        "Comprehensive side effect handler tests - covers 23 async API operations",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

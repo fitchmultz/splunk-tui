@@ -17,9 +17,6 @@
 //! - Configuration precedence: CLI args > env vars > profile config > defaults.
 //! - Mouse capture is enabled by default unless `--no-mouse` is specified.
 
-mod cli;
-mod runtime;
-
 use anyhow::Result;
 use clap::Parser;
 use crossterm::{
@@ -31,6 +28,7 @@ use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
 use splunk_tui::action::Action;
 use splunk_tui::app::{App, ConnectionContext};
+use splunk_tui::cli::Cli;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::channel};
 use tracing_appender::non_blocking;
@@ -43,8 +41,7 @@ use splunk_config::{
     AuthStrategy as ConfigAuthStrategy, ConfigManager, SearchDefaults, env_var_or_none,
 };
 
-use crate::cli::Cli;
-use crate::runtime::{
+use splunk_tui::runtime::{
     client::create_client,
     config::{load_config_with_search_defaults, save_and_quit},
     side_effects::{SharedClient, handle_side_effects},

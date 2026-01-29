@@ -15,12 +15,12 @@
 //! - Results are always sent back via the action channel.
 //! - Loading state is set before API calls and cleared after.
 
+use crate::action::{Action, progress_callback_to_action_sender};
+use crate::app::ConnectionContext;
+use crate::error_details::{build_search_error_details, search_error_message};
+use crate::ui::ToastLevel;
 use splunk_client::{AuthStrategy, ClientError, SplunkClient, models::HealthCheckOutput};
 use splunk_config::ConfigManager;
-use splunk_tui::action::{Action, progress_callback_to_action_sender};
-use splunk_tui::app::ConnectionContext;
-use splunk_tui::error_details::{build_search_error_details, search_error_message};
-use splunk_tui::ui::ToastLevel;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::Sender};
 
@@ -502,7 +502,7 @@ pub async fn handle_side_effects(
         }
         Action::ExportData(data, path, format) => {
             tokio::spawn(async move {
-                let result = splunk_tui::export::export_value(&data, &path, format);
+                let result = crate::export::export_value(&data, &path, format);
 
                 match result {
                     Ok(_) => {

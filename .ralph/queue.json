@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0188",
-      "status": "todo",
-      "title": "Add tests for TUI async side effect handlers",
-      "priority": "medium",
-      "tags": [
-        "testing",
-        "tui",
-        "async",
-        "coverage-gap"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects.rs"
-      ],
-      "evidence": [
-        "side_effects.rs at 692 LOC has no dedicated tests",
-        "Contains critical async logic for all API operations",
-        "22 tokio::spawn calls handling indexes, jobs, cluster info, searches, etc.",
-        "Error handling paths not tested",
-        "No tests for progress callback handling"
-      ],
-      "plan": [
-        "Create crates/tui/tests/side_effects_tests.rs",
-        "Mock SplunkClient for testing side effects",
-        "Test each action handler: LoadIndexes, LoadJobs, LoadClusterInfo, etc.",
-        "Test error handling paths",
-        "Test progress callback integration",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: no tests for async side effect handlers",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0189",
       "status": "todo",
       "title": "Add tests for terminal resize handling in TUI",

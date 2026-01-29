@@ -15,9 +15,9 @@
 //! - `load_dotenv()` is called before loading configuration.
 //! - ConfigManager is wrapped in Arc<Mutex<>> for thread-safe access.
 
+use crate::app::App;
 use anyhow::{Result, anyhow};
 use splunk_config::{Config, ConfigLoader, ConfigManager, SearchDefaultConfig, env_var_or_none};
-use splunk_tui::app::App;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;

@@ -53,3 +53,6 @@ arboard = "3.4"
 insta = { version = "1.39", features = ["filters"] }
 tempfile = "3.10"
 serial_test = { workspace = true }
+wiremock = "0.6"
+reqwest = { workspace = true }
+secrecy = { workspace = true }
