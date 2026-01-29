@@ -2,37 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0180",
-      "status": "todo",
-      "title": "Split oversized list_all.rs command implementation into submodules",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "refactor"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/list_all.rs is 830 lines (wc -l), above the 700-line heuristic."
-      ],
-      "plan": [
-        "Extract resource fetchers and output formatters into submodules.",
-        "Keep command entrypoint minimal and add docstrings for new modules.",
-        "Run list-all tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [
-        "RQ-0159",
-        "RQ-0160",
-        "RQ-0161"
-      ],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0163",
       "status": "todo",
       "title": "Add module docstring + hermetic env setup to saved_searches_tests",
