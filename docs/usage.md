@@ -460,6 +460,7 @@ splunk-cli saved-searches run "Errors Last 24 Hours" --wait --output json
   - `-w, --wait`: Wait for the search to complete before returning results
   - `-e, --earliest <TIME>`: Earliest time for the search (e.g., `-24h`, `2024-01-01T00:00:00`)
   - `-l, --latest <TIME>`: Latest time for the search (e.g., `now`, `2024-01-02T00:00:00`)
+  - `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
   - `-o, --output <FORMAT>`: Output format for search results (table, json, csv, xml) [default: table]
 
 **Output Formats:**

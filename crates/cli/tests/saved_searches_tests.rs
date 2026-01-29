@@ -46,7 +46,8 @@ fn test_saved_searches_run_help() {
         .success()
         .stdout(predicate::str::contains("--wait"))
         .stdout(predicate::str::contains("--earliest"))
-        .stdout(predicate::str::contains("--latest"));
+        .stdout(predicate::str::contains("--latest"))
+        .stdout(predicate::str::contains("--count"));
 }
 
 #[test]

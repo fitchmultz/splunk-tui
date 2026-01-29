@@ -37,6 +37,9 @@ pub enum SavedSearchesCommand {
         /// Latest time for the search (e.g., 'now', '2024-01-02T00:00:00')
         #[arg(short, long, allow_hyphen_values = true)]
         latest: Option<String>,
+        /// Maximum number of results to return
+        #[arg(short, long, default_value = "100")]
+        count: usize,
     },
 }
 
@@ -59,6 +62,7 @@ pub async fn run(
             wait,
             earliest,
             latest,
+            count,
         } => {
             run_run(
                 config,
@@ -66,6 +70,7 @@ pub async fn run(
                 wait,
                 earliest.as_deref(),
                 latest.as_deref(),
+                count,
                 output_format,
                 output_file.clone(),
                 cancel,
@@ -178,6 +183,7 @@ async fn run_run(
     wait: bool,
     earliest: Option<&str>,
     latest: Option<&str>,
+    max_results: usize,
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
@@ -207,7 +213,7 @@ async fn run_run(
 
     info!("Executing search query: {}", search.search);
     let results = tokio::select! {
-        res = client.search(&search.search, wait, earliest, latest, Some(100)) => res?,
+        res = client.search(&search.search, wait, earliest, latest, Some(max_results as u64)) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

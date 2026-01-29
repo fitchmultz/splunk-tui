@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0203",
-      "status": "todo",
-      "title": "Use configurable max results for saved-searches run",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "saved-searches",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/commands/saved_searches.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/saved_searches.rs run_run uses `client.search(..., Some(100))`, hard-coding max results for saved-searches run."
-      ],
-      "plan": [
-        "Introduce a `--count` (or reuse existing search defaults) for saved-searches run.",
-        "Thread the configured max results into the client call instead of the hard-coded 100.",
-        "Update docs/tests to cover the new behavior and default value."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T14:27:50+00:00",
-      "updated_at": "2026-01-29T14:27:50+00:00",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0204",
       "status": "todo",
       "title": "Add count/offset support to list_saved_searches",
