@@ -56,3 +56,8 @@ serial_test = { workspace = true }
 wiremock = "0.6"
 reqwest = { workspace = true }
 secrecy = { workspace = true }
+criterion = { version = "0.5", features = ["async_tokio"] }
+
+[[bench]]
+name = "spawn_overhead"
+harness = false

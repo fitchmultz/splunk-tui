@@ -14,6 +14,73 @@
 //! - All API calls are spawned as separate tokio tasks.
 //! - Results are always sent back via the action channel.
 //! - Loading state is set before API calls and cleared after.
+//!
+//! # Design Rationale: Task Spawning Pattern
+//!
+//! This module uses `tokio::spawn` for all async operations (21 handlers as of
+//! this writing). This design is intentional and addresses specific constraints:
+//!
+//! ## Why Spawn Tasks?
+//!
+//! 1. **UI Responsiveness**: The TUI event loop must never block. Even brief
+//!    async operations (like acquiring a mutex) can cause frame drops if they
+//!    contend with the render thread.
+//!
+//! 2. **Consistent Error Boundaries**: Each spawned task is an isolated failure
+//!    domain. A panic in one API call handler won't crash the entire application.
+//!
+//! 3. **Cancellation Safety**: Tasks can be dropped without cleanup concerns
+//!    (the client mutex is released on drop, and API calls are stateless).
+//!
+//! ## The Mutex Bottleneck
+//!
+//! All API calls share a single `Arc<Mutex<SplunkClient>>`. This means:
+//! - **API calls are serialized** regardless of how many tasks are spawned
+//! - Multiple concurrent tasks simply queue for the client lock
+//! - Task spawn overhead is negligible compared to network I/O latency
+//!
+//! This is a deliberate trade-off: the SplunkClient requires `&mut self` for
+//! session token refresh, so true parallel API calls would require significant
+//! architectural changes (e.g., connection pooling or token refresh decoupling).
+//!
+//! ## Sequential Operations
+//!
+//! Some operations intentionally sequential:
+//!
+//! - **Health checks** (`LoadHealth`): 5 API calls run sequentially within one
+//!   spawned task due to the `&mut self` requirement. Parallelizing would require
+//!   either spawning 5 separate tasks (each waiting for the lock) or refactoring
+//!   the client to support concurrent access.
+//!
+//! - **Batch operations** (`CancelJobsBatch`, `DeleteJobsBatch`): Jobs are
+//!   processed sequentially to avoid overwhelming the Splunk API and to provide
+//!   clear per-job error reporting.
+//!
+//! ## Performance Considerations
+//!
+//! Tokio task spawning has minimal overhead (~microseconds). Given that:
+//! - Network I/O dominates latency (milliseconds to seconds)
+//! - The client mutex serializes actual API calls
+//! - No measured bottleneck exists in task scheduling
+//!
+//! The current pattern is not a performance concern. Optimization would only be
+//! warranted if profiling shows significant time in task scheduling overhead.
+//!
+//! ## Future Optimization Paths
+//!
+//! If performance data indicates a need:
+//!
+//! 1. **Semaphore-based limiting**: Add a `tokio::sync::Semaphore` to cap
+//!    concurrent spawned tasks (prevents unbounded memory growth under load).
+//!
+//! 2. **Non-API operations**: `SwitchToSettings`, `ExportData`, and
+//!    `OpenProfileSwitcher` don't make API calls and could run without spawn.
+//!
+//! 3. **Parallel health checks**: Spawn separate tasks per health endpoint
+//!    (each would still serialize on the client lock, but they'd pipeline better).
+//!
+//! 4. **Parallel batch operations**: Use `futures::future::join_all` for batch
+//!    job operations (with rate limiting to avoid API throttling).
 
 use crate::action::{Action, progress_callback_to_action_sender};
 use crate::app::ConnectionContext;
@@ -311,6 +378,10 @@ pub async fn handle_side_effects(
                 let mut success_count = 0;
                 let mut error_messages = Vec::new();
 
+                // Process jobs sequentially to avoid overwhelming the API
+                // and to provide clear per-job error reporting.
+                // Parallelizing with join_all would require careful rate limiting
+                // to avoid triggering Splunk's API throttling.
                 for sid in sids {
                     match c.cancel_job(&sid).await {
                         Ok(_) => {
@@ -346,6 +417,9 @@ pub async fn handle_side_effects(
                 let mut success_count = 0;
                 let mut error_messages = Vec::new();
 
+                // Process jobs sequentially to avoid overwhelming the API
+                // and to provide clear per-job error reporting.
+                // See CancelJobsBatch for parallelization considerations.
                 for sid in sids {
                     match c.delete_job(&sid).await {
                         Ok(_) => {
@@ -443,7 +517,17 @@ pub async fn handle_side_effects(
 
                 let mut first_error: Option<ClientError> = None;
 
-                // Collect health info sequentially (due to &mut self requirement)
+                // Collect health info sequentially due to the &mut self requirement
+                // on client methods. Each call may need to refresh the session token,
+                // requiring exclusive access to the client.
+                //
+                // Parallelization options:
+                // 1. Spawn 5 separate tasks (each waits for the same mutex - minimal gain)
+                // 2. Refactor client to support concurrent calls (significant effort)
+                // 3. Use a connection pool (adds complexity for health checks only)
+                //
+                // Given that health checks run infrequently and network latency
+                // dominates, sequential execution is the pragmatic choice.
                 match c.get_server_info().await {
                     Ok(info) => health_output.server_info = Some(info),
                     Err(e) => {

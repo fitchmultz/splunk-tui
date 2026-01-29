@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0192",
-      "status": "todo",
-      "title": "Review and optimize tokio::spawn usage in side_effects",
-      "priority": "low",
-      "tags": [
-        "performance",
-        "tui",
-        "async",
-        "optimization"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects.rs"
-      ],
-      "evidence": [
-        "side_effects.rs spawns 22+ tokio tasks for each API call",
-        "Each spawn has overhead of task creation and scheduling",
-        "Many operations are simple and may not need separate tasks",
-        "No limit on concurrent spawned tasks could overwhelm system"
-      ],
-      "plan": [
-        "Analyze which operations truly need separate tasks vs can be async fn calls",
-        "Consider using a semaphore to limit concurrent operations",
-        "Consider batching small operations",
-        "Measure performance impact",
-        "Document rationale for spawn vs non-spawn decisions"
-      ],
-      "notes": [],
-      "request": "scan finding: excessive tokio::spawn may impact performance",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0193",
       "status": "todo",
       "title": "Add integration tests for error recovery paths",
