@@ -1,8 +1,23 @@
+//! Integration tests for `splunk-cli saved-searches` command.
+//!
+//! Tests cover:
+//! - Help text verification for all subcommands (list, run, info)
+//! - Output format parsing validation (json, table, csv, xml)
+//!
+//! Does NOT:
+//! - Test live Splunk server interactions (see `test-live` in Makefile).
+//!
+//! Invariants / Assumptions:
+//! - All tests use hermetic CLI commands via `splunk_cmd()` to prevent env leakage.
+
+mod common;
+
+use common::splunk_cmd;
 use predicates::prelude::*;
 
 #[test]
 fn test_saved_searches_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["saved-searches", "--help"])
         .assert()
@@ -14,7 +29,7 @@ fn test_saved_searches_help() {
 
 #[test]
 fn test_saved_searches_list_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["saved-searches", "list", "--help"])
         .assert()
@@ -24,7 +39,7 @@ fn test_saved_searches_list_help() {
 
 #[test]
 fn test_saved_searches_run_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["saved-searches", "run", "--help"])
         .assert()
@@ -36,7 +51,7 @@ fn test_saved_searches_run_help() {
 
 #[test]
 fn test_saved_searches_info_help() {
-    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    let mut cmd = splunk_cmd();
 
     cmd.args(["saved-searches", "info", "--help"])
         .assert()
@@ -49,7 +64,7 @@ fn test_saved_searches_list_output_format_parsing() {
     let formats = ["json", "table", "csv", "xml"];
 
     for format in formats {
-        let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+        let mut cmd = splunk_cmd();
         cmd.args(["saved-searches", "list", "--output", format, "--help"])
             .assert()
             .success();

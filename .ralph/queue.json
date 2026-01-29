@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0163",
-      "status": "todo",
-      "title": "Add module docstring + hermetic env setup to saved_searches_tests",
-      "priority": "low",
-      "tags": [
-        "tests",
-        "cli",
-        "docs"
-      ],
-      "scope": [
-        "crates/cli/tests/saved_searches_tests.rs",
-        "crates/cli/tests/common/mod.rs"
-      ],
-      "evidence": [
-        "crates/cli/tests/saved_searches_tests.rs starts with use statements and lacks a //! module docstring.",
-        "saved_searches_tests uses cargo_bin_cmd directly without DOTENV_DISABLED or env cleanup."
-      ],
-      "plan": [
-        "Add a module-level docstring describing responsibilities/non-responsibilities and invariants.",
-        "Use the shared hermetic command helper (or set DOTENV_DISABLED + env removals) in saved_searches_tests.",
-        "Run saved_searches_tests."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0165",
       "status": "todo",
       "title": "Document SPLUNK_CONFIG_PATH in .env.example (and usage docs)",
