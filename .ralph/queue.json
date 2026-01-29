@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0165",
-      "status": "todo",
-      "title": "Document SPLUNK_CONFIG_PATH in .env.example (and usage docs)",
-      "priority": "low",
-      "tags": [
-        "docs",
-        "config"
-      ],
-      "scope": [
-        ".env.example",
-        "docs/usage.md",
-        "README.md"
-      ],
-      "evidence": [
-        ".env.example lists SPLUNK_* vars but does not mention SPLUNK_CONFIG_PATH.",
-        "crates/cli/src/main.rs documents SPLUNK_CONFIG_PATH as a supported env var for --config-path."
-      ],
-      "plan": [
-        "Add a commented SPLUNK_CONFIG_PATH entry to .env.example with a short description.",
-        "Ensure usage docs mention the env var and precedence if needed.",
-        "Run lint-docs or targeted doc checks if required."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-28T20:17:04Z",
-      "updated_at": "2026-01-28T20:17:04Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0176",
       "status": "todo",
       "title": "Split oversized client models.rs into per-resource model modules",

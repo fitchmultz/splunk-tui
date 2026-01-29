@@ -116,7 +116,7 @@ The TUI supports several command-line options for configuration:
 # Use a specific profile
 splunk-tui --profile production
 
-# Custom config file location
+# Custom config file location (or set SPLUNK_CONFIG_PATH env var)
 splunk-tui --config-path /path/to/config.json
 
 # Disable mouse support
