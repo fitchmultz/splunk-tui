@@ -99,7 +99,7 @@ async fn test_retry_on_429_exhaustion() {
     // Should fail after exhausting retries
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::MaxRetriesExceeded(3))); // 2 retries + 1 initial attempt = 3 total
+    assert!(matches!(err, ClientError::MaxRetriesExceeded(3, _))); // 2 retries + 1 initial attempt = 3 total
 
     // Should have taken at least 1 + 2 = 3 seconds (exponential backoff: 1s, 2s)
     assert!(elapsed >= std::time::Duration::from_secs(2));
@@ -877,7 +877,7 @@ async fn test_retry_on_5xx_exhaustion() {
     // Should fail after exhausting retries
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::MaxRetriesExceeded(3))); // 2 retries + 1 initial attempt = 3 total
+    assert!(matches!(err, ClientError::MaxRetriesExceeded(3, _))); // 2 retries + 1 initial attempt = 3 total
 
     // Should have taken at least 1 + 2 = 3 seconds (exponential backoff: 1s, 2s)
     assert!(elapsed >= std::time::Duration::from_secs(2));

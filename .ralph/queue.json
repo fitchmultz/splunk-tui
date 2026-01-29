@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0190",
-      "status": "todo",
-      "title": "Add MaxRetriesExceeded error context with original error",
-      "priority": "low",
-      "tags": [
-        "enhancement",
-        "error-handling",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/error.rs",
-        "crates/client/src/endpoints/request.rs"
-      ],
-      "evidence": [
-        "ClientError::MaxRetriesExceeded(usize) only contains attempt count",
-        "Original error that caused retries is lost",
-        "Users cannot see what error was being retried",
-        "request.rs:241 and 298 return MaxRetriesExceeded without context"
-      ],
-      "plan": [
-        "Change MaxRetriesExceeded to include original error: MaxRetriesExceeded(usize, Box<ClientError>)",
-        "Update all call sites to pass the original error",
-        "Update Display impl to show original error",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: MaxRetriesExceeded lacks original error context",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0191",
       "status": "todo",
       "title": "Add SessionExpired error context with session details",

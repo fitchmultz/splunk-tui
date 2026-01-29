@@ -166,7 +166,12 @@ pub async fn send_request_with_retry(
                     return builder.send().await.map_err(ClientError::from);
                 } else {
                     warn!("Cannot clone request builder for retry");
-                    return Err(ClientError::MaxRetriesExceeded(attempt));
+                    return Err(ClientError::MaxRetriesExceeded(
+                        attempt,
+                        Box::new(ClientError::InvalidResponse(
+                            "Request body cannot be cloned for retry (streaming body may have been consumed)".to_string()
+                        ))
+                    ));
                 }
             }
         };
@@ -238,7 +243,36 @@ pub async fn send_request_with_retry(
                             status = status_u16,
                             "Max retries exhausted for retryable request"
                         );
-                        return Err(ClientError::MaxRetriesExceeded(max_retries + 1));
+                        let url = response.url().to_string();
+                        let request_id = response
+                            .headers()
+                            .get("X-Splunk-Request-Id")
+                            .and_then(|h| h.to_str().ok())
+                            .map(|s| s.to_string());
+                        let body = response
+                            .text()
+                            .await
+                            .unwrap_or_else(|_| "Could not read error response body".to_string());
+
+                        let message = if let Ok(m) = serde_json::from_str::<SplunkMessages>(&body) {
+                            m.messages
+                                .iter()
+                                .map(|msg| format!("{}: {}", msg.message_type, msg.text))
+                                .collect::<Vec<_>>()
+                                .join("; ")
+                        } else {
+                            body
+                        };
+
+                        return Err(ClientError::MaxRetriesExceeded(
+                            max_retries + 1,
+                            Box::new(ClientError::ApiError {
+                                status: status_u16,
+                                url,
+                                message,
+                                request_id,
+                            }),
+                        ));
                     }
                 } else {
                     // Non-retryable error: extract details and return ApiError
@@ -295,5 +329,10 @@ pub async fn send_request_with_retry(
     }
 
     // This should never be reached, but handle it for completeness
-    Err(ClientError::MaxRetriesExceeded(max_retries + 1))
+    Err(ClientError::MaxRetriesExceeded(
+        max_retries + 1,
+        Box::new(ClientError::InvalidResponse(
+            "Retry loop exited without resolution".to_string(),
+        )),
+    ))
 }

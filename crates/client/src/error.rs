@@ -51,8 +51,8 @@ pub enum ClientError {
     TlsError(String),
 
     /// Maximum retries exceeded.
-    #[error("Maximum retries exceeded ({0} attempts)")]
-    MaxRetriesExceeded(usize),
+    #[error("Maximum retries exceeded ({0} attempts): {1}")]
+    MaxRetriesExceeded(usize, Box<ClientError>),
 
     /// Invalid URL.
     #[error("Invalid URL: {0}")]

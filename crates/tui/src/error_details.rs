@@ -99,8 +99,9 @@ impl ErrorDetails {
             splunk_client::ClientError::TlsError(msg) => {
                 details.summary = format!("TLS error: {}", msg);
             }
-            splunk_client::ClientError::MaxRetriesExceeded(count) => {
-                details.summary = format!("Maximum retries exceeded ({} attempts)", count);
+            splunk_client::ClientError::MaxRetriesExceeded(count, source) => {
+                details.summary =
+                    format!("Maximum retries exceeded ({} attempts): {}", count, source);
             }
             splunk_client::ClientError::InvalidUrl(msg) => {
                 details.summary = format!("Invalid URL: {}", msg);
