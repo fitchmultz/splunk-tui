@@ -150,7 +150,9 @@ fn test_search_error_message_auth_failed() {
 
 #[test]
 fn test_search_error_message_session_expired() {
-    let error = splunk_client::ClientError::SessionExpired;
+    let error = splunk_client::ClientError::SessionExpired {
+        username: "admin".to_string(),
+    };
     let message = error_details::search_error_message(&error);
     assert_eq!(
         message, "Session expired",

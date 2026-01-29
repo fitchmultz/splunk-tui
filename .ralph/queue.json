@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0191",
-      "status": "todo",
-      "title": "Add SessionExpired error context with session details",
-      "priority": "low",
-      "tags": [
-        "enhancement",
-        "error-handling",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/error.rs",
-        "crates/client/src/auth.rs"
-      ],
-      "evidence": [
-        "ClientError::SessionExpired has no context about which session expired",
-        "Error message is static: 'Session expired, please re-authenticate'",
-        "Multiple sessions could exist in complex setups",
-        "auth.rs session management could provide context"
-      ],
-      "plan": [
-        "Add context to SessionExpired: username or session identifier",
-        "Update auth.rs to provide session context when error occurs",
-        "Update Display impl to show session info",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: SessionExpired lacks context about which session",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0192",
       "status": "todo",
       "title": "Review and optimize tokio::spawn usage in side_effects",

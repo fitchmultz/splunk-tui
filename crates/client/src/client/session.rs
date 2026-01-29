@@ -51,7 +51,13 @@ impl SplunkClient {
         self.session_manager
             .get_bearer_token()
             .map(|s| s.to_string())
-            .ok_or_else(|| ClientError::SessionExpired)
+            .ok_or_else(|| {
+                let username = match self.session_manager.strategy() {
+                    AuthStrategy::SessionToken { username, .. } => username.clone(),
+                    AuthStrategy::ApiToken { .. } => "api-token".to_string(),
+                };
+                ClientError::SessionExpired { username }
+            })
     }
 
     /// Check if the client is using API token authentication.

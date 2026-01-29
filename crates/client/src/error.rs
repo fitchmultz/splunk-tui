@@ -27,8 +27,8 @@ pub enum ClientError {
     },
 
     /// Session expired and could not be renewed.
-    #[error("Session expired, please re-authenticate")]
-    SessionExpired,
+    #[error("Session expired for user '{username}', please re-authenticate")]
+    SessionExpired { username: String },
 
     /// Invalid response format from Splunk.
     #[error("Invalid response format: {0}")]
@@ -96,7 +96,7 @@ impl ClientError {
     pub fn is_auth_error(&self) -> bool {
         matches!(
             self,
-            Self::AuthFailed(_) | Self::SessionExpired | Self::Unauthorized(_)
+            Self::AuthFailed(_) | Self::SessionExpired { .. } | Self::Unauthorized(_)
         )
     }
 }
@@ -119,7 +119,9 @@ mod tests {
         let err = ClientError::AuthFailed("test".to_string());
         assert!(err.is_auth_error());
 
-        let err = ClientError::SessionExpired;
+        let err = ClientError::SessionExpired {
+            username: "admin".to_string(),
+        };
         assert!(err.is_auth_error());
 
         let err = ClientError::Timeout(Duration::from_secs(1));
@@ -150,5 +152,32 @@ mod tests {
         // Success codes
         assert!(!ClientError::is_retryable_status(200));
         assert!(!ClientError::is_retryable_status(201));
+    }
+
+    #[test]
+    fn test_session_expired_error_message() {
+        let err = ClientError::SessionExpired {
+            username: "admin".to_string(),
+        };
+        let msg = err.to_string();
+        assert!(
+            msg.contains("admin"),
+            "Error message should contain username"
+        );
+        assert!(
+            msg.contains("Session expired"),
+            "Error message should mention session expiry"
+        );
+    }
+
+    #[test]
+    fn test_session_expired_is_auth_error() {
+        let err = ClientError::SessionExpired {
+            username: "testuser".to_string(),
+        };
+        assert!(
+            err.is_auth_error(),
+            "SessionExpired should be an auth error"
+        );
     }
 }

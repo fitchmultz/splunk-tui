@@ -80,8 +80,9 @@ impl ErrorDetails {
                     details.url = Some(url.to_string());
                 }
             }
-            splunk_client::ClientError::SessionExpired => {
-                details.summary = "Session expired, please re-authenticate".to_string();
+            splunk_client::ClientError::SessionExpired { username } => {
+                details.summary =
+                    format!("Session expired for user '{username}', please re-authenticate");
             }
             splunk_client::ClientError::InvalidResponse(msg) => {
                 details.summary = msg.clone();
@@ -197,7 +198,7 @@ pub fn search_error_message(error: &splunk_client::ClientError) -> String {
     match error {
         splunk_client::ClientError::Timeout(_) => "Search timeout".to_string(),
         splunk_client::ClientError::AuthFailed(_) => "Authentication failed".to_string(),
-        splunk_client::ClientError::SessionExpired => "Session expired".to_string(),
+        splunk_client::ClientError::SessionExpired { .. } => "Session expired".to_string(),
         splunk_client::ClientError::RateLimited(_) => "Rate limited".to_string(),
         splunk_client::ClientError::ConnectionRefused(_) => "Connection refused".to_string(),
         _ => error.to_string(),
