@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0181",
-      "status": "todo",
-      "title": "Split oversized config loader builder.rs into focused modules",
-      "priority": "high",
-      "tags": [
-        "refactor",
-        "config",
-        "file-size",
-        "code-quality"
-      ],
-      "scope": [
-        "crates/config/src/loader/builder.rs"
-      ],
-      "evidence": [
-        "File builder.rs is 1103 LOC, exceeding the 1000 LOC limit per AGENTS.md heuristics",
-        "File contains both builder logic (~500 LOC) and extensive tests (~600 LOC)",
-        "Lines 500-1103 are all test code mixed with production code"
-      ],
-      "plan": [
-        "Extract all test code from builder.rs into crates/config/src/loader/builder_tests.rs",
-        "Add #[cfg(test)] mod builder_tests; to builder.rs",
-        "Verify make ci passes after the split",
-        "Ensure no functional changes, only code movement"
-      ],
-      "notes": [],
-      "request": "scan finding: file exceeds size limit",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0182",
       "status": "todo",
       "title": "Centralize magic numbers into constants module",

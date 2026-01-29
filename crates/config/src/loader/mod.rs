@@ -20,6 +20,9 @@ mod env;
 mod error;
 mod profile;
 
+#[cfg(test)]
+mod builder_tests;
+
 pub use builder::ConfigLoader;
 pub use defaults::SearchDefaultConfig;
 pub use env::env_var_or_none;
