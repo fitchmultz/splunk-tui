@@ -37,7 +37,7 @@ impl SearchProgress {
         pb.set_draw_target(ProgressDrawTarget::stderr());
         pb.set_style(
             ProgressStyle::with_template("{spinner} {msg} [{bar:40.cyan/blue}] {pos:>3}%")
-                .expect("valid progress bar template")
+                .expect("template is a compile-time constant with valid syntax")
                 .progress_chars("=>-"),
         );
         pb.set_message(label.clone());
@@ -105,7 +105,8 @@ impl Spinner {
         let pb = ProgressBar::new_spinner();
         pb.set_draw_target(ProgressDrawTarget::stderr());
         pb.set_style(
-            ProgressStyle::with_template("{spinner} {msg}").expect("valid spinner template"),
+            ProgressStyle::with_template("{spinner} {msg}")
+                .expect("template is a compile-time constant with valid syntax"),
         );
         pb.set_message(label.clone());
         pb.enable_steady_tick(Duration::from_millis(100));

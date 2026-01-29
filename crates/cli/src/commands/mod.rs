@@ -61,7 +61,9 @@ mod tests {
                 assert_eq!(username, "test_user");
                 assert_eq!(password.expose_secret(), "test_pass");
             }
-            _ => panic!("Expected SessionToken variant"),
+            _ => unreachable!(
+                "convert_auth_strategy always returns SessionToken for SessionToken input"
+            ),
         }
     }
 
@@ -79,7 +81,7 @@ mod tests {
             ClientAuth::ApiToken { token } => {
                 assert_eq!(token.expose_secret(), "test_token");
             }
-            _ => panic!("Expected ApiToken variant"),
+            _ => unreachable!("convert_auth_strategy always returns ApiToken for ApiToken input"),
         }
     }
 }

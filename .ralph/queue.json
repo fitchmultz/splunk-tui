@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0186",
-      "status": "todo",
-      "title": "Replace panics in CLI with proper error handling",
-      "priority": "medium",
-      "tags": [
-        "bug",
-        "error-handling",
-        "cli",
-        "robustness"
-      ],
-      "scope": [
-        "crates/cli/src/commands/mod.rs",
-        "crates/cli/src/progress.rs"
-      ],
-      "evidence": [
-        "commands/mod.rs:64 has panic!: '_ => panic!(\"Expected SessionToken variant\")' in test code",
-        "commands/mod.rs:82 has panic!: '_ => panic!(\"Expected ApiToken variant\")' in test code",
-        "progress.rs:40 has .expect(\"valid progress bar template\")",
-        "progress.rs:108 has .expect(\"valid spinner template\")",
-        "These panics could crash the CLI instead of graceful error handling"
-      ],
-      "plan": [
-        "Replace panics in test assertions with proper assert! macros",
-        "Replace .expect() calls with proper error propagation using anyhow::Context",
-        "Return Result from functions that can fail instead of panicking",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: panics used instead of error handling",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0187",
       "status": "todo",
       "title": "Add architecture tests for file size limits",
