@@ -4,6 +4,7 @@
 //! to ensure sensitive data is never logged.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
@@ -245,8 +246,8 @@ fn test_redact_more_search_results_loaded_ok() {
 
 #[test]
 fn test_redact_more_search_results_loaded_err() {
-    let action =
-        Action::MoreSearchResultsLoaded(Err("Failed to fetch results for user bob".to_string()));
+    let error = splunk_client::ClientError::ConnectionRefused("test".to_string());
+    let action = Action::MoreSearchResultsLoaded(Err(Arc::new(error)));
     let output = redacted_debug(&action);
 
     assert!(
@@ -313,7 +314,8 @@ fn test_redact_indexes_loaded() {
 
 #[test]
 fn test_redact_indexes_loaded_err() {
-    let action = Action::IndexesLoaded(Err("Failed to load indexes".to_string()));
+    let error = splunk_client::ClientError::InvalidResponse("test".to_string());
+    let action = Action::IndexesLoaded(Err(Arc::new(error)));
     let output = redacted_debug(&action);
 
     assert!(

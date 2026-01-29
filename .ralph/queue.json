@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0183",
-      "status": "todo",
-      "title": "Preserve structured error types in TUI side effects",
-      "priority": "high",
-      "tags": [
-        "bug",
-        "error-handling",
-        "tui",
-        "type-safety"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects.rs"
-      ],
-      "evidence": [
-        "side_effects.rs:64 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:78 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:92 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:107 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:123 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:140 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:155 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:169 converts ClientError to string: Err(e.to_string())",
-        "side_effects.rs:252 converts ClientError to string: Err(e.to_string())",
-        "This loses error context that could be used for retry logic, user-friendly messages, or debugging"
-      ],
-      "plan": [
-        "Change Action variants to accept ClientError instead of String for error cases",
-        "Update side_effects.rs to pass structured errors: Err(e) instead of Err(e.to_string())",
-        "Update all action handlers to work with structured errors",
-        "Add error conversion/display logic where errors are shown to users",
-        "Verify make ci passes"
-      ],
-      "notes": [],
-      "request": "scan finding: error context lost via to_string() conversion",
-      "created_at": "2026-01-28T00:00:00Z",
-      "updated_at": "2026-01-28T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0184",
       "status": "todo",
       "title": "Add safety documentation for unsafe blocks in tests",

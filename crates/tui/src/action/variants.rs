@@ -30,12 +30,14 @@
 
 use crossterm::event::KeyEvent;
 use serde_json::Value;
+use splunk_client::ClientError;
 use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
     SearchJobStatus, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::ConnectionContext;
 use crate::action::format::ExportFormat;
@@ -137,27 +139,27 @@ pub enum Action {
 
     // API Results
     /// Result of loading indexes
-    IndexesLoaded(Result<Vec<Index>, String>),
+    IndexesLoaded(Result<Vec<Index>, Arc<ClientError>>),
     /// Result of loading jobs
-    JobsLoaded(Result<Vec<SearchJobStatus>, String>),
+    JobsLoaded(Result<Vec<SearchJobStatus>, Arc<ClientError>>),
     /// Result of loading cluster info
-    ClusterInfoLoaded(Result<ClusterInfo, String>),
+    ClusterInfoLoaded(Result<ClusterInfo, Arc<ClientError>>),
     /// Result of loading health check
-    HealthLoaded(Box<Result<HealthCheckOutput, String>>),
+    HealthLoaded(Box<Result<HealthCheckOutput, Arc<ClientError>>>),
     /// Result of loading saved searches
-    SavedSearchesLoaded(Result<Vec<SavedSearch>, String>),
+    SavedSearchesLoaded(Result<Vec<SavedSearch>, Arc<ClientError>>),
     /// Result of loading internal logs
-    InternalLogsLoaded(Result<Vec<LogEntry>, String>),
+    InternalLogsLoaded(Result<Vec<LogEntry>, Arc<ClientError>>),
     /// Result of loading apps
-    AppsLoaded(Result<Vec<SplunkApp>, String>),
+    AppsLoaded(Result<Vec<SplunkApp>, Arc<ClientError>>),
     /// Result of loading users
-    UsersLoaded(Result<Vec<User>, String>),
+    UsersLoaded(Result<Vec<User>, Arc<ClientError>>),
     /// Result of loading cluster peers
-    ClusterPeersLoaded(Result<Vec<ClusterPeer>, String>),
+    ClusterPeersLoaded(Result<Vec<ClusterPeer>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check
-    HealthStatusLoaded(Result<SplunkHealth, String>),
+    HealthStatusLoaded(Result<SplunkHealth, Arc<ClientError>>),
     /// Signals that a search has started with the given query.
     /// Stores the query for accurate status messaging even if search_input is edited.
     SearchStarted(String),
@@ -173,7 +175,7 @@ pub enum Action {
         count: u64,
     },
     /// Result of loading more results
-    MoreSearchResultsLoaded(Result<(Vec<Value>, u64, Option<u64>), String>),
+    MoreSearchResultsLoaded(Result<(Vec<Value>, u64, Option<u64>), Arc<ClientError>>),
 
     // Job Operations
     /// Cancel a job by SID

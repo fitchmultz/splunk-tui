@@ -15,7 +15,7 @@
 //! - Results are always sent back via the action channel.
 //! - Loading state is set before API calls and cleared after.
 
-use splunk_client::{AuthStrategy, SplunkClient, models::HealthCheckOutput};
+use splunk_client::{AuthStrategy, ClientError, SplunkClient, models::HealthCheckOutput};
 use splunk_config::ConfigManager;
 use splunk_tui::action::{Action, progress_callback_to_action_sender};
 use splunk_tui::app::ConnectionContext;
@@ -61,7 +61,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
                     }
                     Err(e) => {
-                        let _ = tx.send(Action::IndexesLoaded(Err(e.to_string()))).await;
+                        let _ = tx.send(Action::IndexesLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -75,7 +75,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
                     }
                     Err(e) => {
-                        let _ = tx.send(Action::JobsLoaded(Err(e.to_string()))).await;
+                        let _ = tx.send(Action::JobsLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -89,7 +89,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::ClusterInfoLoaded(Ok(info))).await;
                     }
                     Err(e) => {
-                        let _ = tx.send(Action::ClusterInfoLoaded(Err(e.to_string()))).await;
+                        let _ = tx.send(Action::ClusterInfoLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -103,9 +103,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::ClusterPeersLoaded(Ok(peers))).await;
                     }
                     Err(e) => {
-                        let _ = tx
-                            .send(Action::ClusterPeersLoaded(Err(e.to_string())))
-                            .await;
+                        let _ = tx.send(Action::ClusterPeersLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -119,9 +117,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::SavedSearchesLoaded(Ok(searches))).await;
                     }
                     Err(e) => {
-                        let _ = tx
-                            .send(Action::SavedSearchesLoaded(Err(e.to_string())))
-                            .await;
+                        let _ = tx.send(Action::SavedSearchesLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -136,9 +132,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::InternalLogsLoaded(Ok(logs))).await;
                     }
                     Err(e) => {
-                        let _ = tx
-                            .send(Action::InternalLogsLoaded(Err(e.to_string())))
-                            .await;
+                        let _ = tx.send(Action::InternalLogsLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -152,7 +146,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
                     }
                     Err(e) => {
-                        let _ = tx.send(Action::AppsLoaded(Err(e.to_string()))).await;
+                        let _ = tx.send(Action::AppsLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -166,7 +160,7 @@ pub async fn handle_side_effects(
                         let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
                     }
                     Err(e) => {
-                        let _ = tx.send(Action::UsersLoaded(Err(e.to_string()))).await;
+                        let _ = tx.send(Action::UsersLoaded(Err(Arc::new(e)))).await;
                     }
                 }
             });
@@ -249,7 +243,7 @@ pub async fn handle_side_effects(
                     }
                     Err(e) => {
                         let _ = tx
-                            .send(Action::MoreSearchResultsLoaded(Err(e.to_string())))
+                            .send(Action::MoreSearchResultsLoaded(Err(Arc::new(e))))
                             .await;
                     }
                 }
@@ -447,54 +441,57 @@ pub async fn handle_side_effects(
                     log_parsing_health: None,
                 };
 
-                let mut has_error = false;
-                let mut error_messages = Vec::new();
+                let mut first_error: Option<ClientError> = None;
 
                 // Collect health info sequentially (due to &mut self requirement)
                 match c.get_server_info().await {
                     Ok(info) => health_output.server_info = Some(info),
                     Err(e) => {
-                        has_error = true;
-                        error_messages.push(format!("Server info: {}", e));
+                        if first_error.is_none() {
+                            first_error = Some(e);
+                        }
                     }
                 }
 
                 match c.get_health().await {
                     Ok(health) => health_output.splunkd_health = Some(health),
                     Err(e) => {
-                        has_error = true;
-                        error_messages.push(format!("Splunkd health: {}", e));
+                        if first_error.is_none() {
+                            first_error = Some(e);
+                        }
                     }
                 }
 
                 match c.get_license_usage().await {
                     Ok(license) => health_output.license_usage = Some(license),
                     Err(e) => {
-                        has_error = true;
-                        error_messages.push(format!("License usage: {}", e));
+                        if first_error.is_none() {
+                            first_error = Some(e);
+                        }
                     }
                 }
 
                 match c.get_kvstore_status().await {
                     Ok(kvstore) => health_output.kvstore_status = Some(kvstore),
                     Err(e) => {
-                        has_error = true;
-                        error_messages.push(format!("KVStore status: {}", e));
+                        if first_error.is_none() {
+                            first_error = Some(e);
+                        }
                     }
                 }
 
                 match c.check_log_parsing_health().await {
                     Ok(log_parsing) => health_output.log_parsing_health = Some(log_parsing),
                     Err(e) => {
-                        has_error = true;
-                        error_messages.push(format!("Log parsing health: {}", e));
+                        if first_error.is_none() {
+                            first_error = Some(e);
+                        }
                     }
                 }
 
-                if has_error {
-                    let combined_error = error_messages.join("; ");
+                if let Some(e) = first_error {
                     let _ = tx
-                        .send(Action::HealthLoaded(Box::new(Err(combined_error))))
+                        .send(Action::HealthLoaded(Box::new(Err(Arc::new(e)))))
                         .await;
                 } else {
                     let _ = tx

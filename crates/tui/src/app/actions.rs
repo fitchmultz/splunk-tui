@@ -167,8 +167,8 @@ impl App {
             }
             Action::ClusterPeersLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load cluster peers: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
@@ -190,7 +190,7 @@ impl App {
                 Err(e) => {
                     let error_msg = format!("Failed to load health info: {}", e);
                     self.current_error = Some(
-                        crate::error_details::ErrorDetails::from_error_string(&error_msg),
+                        crate::error_details::ErrorDetails::from_client_error(e.as_ref()),
                     );
                     self.toasts.push(Toast::error(error_msg));
                     self.loading = false;
@@ -236,8 +236,8 @@ impl App {
             }
             Action::MoreSearchResultsLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load more results: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
@@ -249,32 +249,32 @@ impl App {
             }
             Action::IndexesLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load indexes: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::JobsLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load jobs: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::SavedSearchesLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load saved searches: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
             Action::InternalLogsLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load internal logs: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
@@ -285,8 +285,8 @@ impl App {
             }
             Action::AppsLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load apps: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
@@ -297,8 +297,8 @@ impl App {
             }
             Action::UsersLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load users: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
@@ -317,8 +317,8 @@ impl App {
             }
             Action::ClusterInfoLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load cluster info: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-                    &error_msg,
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
                 ));
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
@@ -427,6 +427,7 @@ mod tests {
     use super::*;
     use crate::ConnectionContext;
     use splunk_client::models::{HealthCheckOutput, SplunkHealth};
+    use std::sync::Arc;
 
     #[test]
     fn test_health_status_loaded_action_ok() {
@@ -449,9 +450,8 @@ mod tests {
         app.health_state = HealthState::Healthy;
 
         // Simulate error - should set to unhealthy
-        app.update(Action::HealthStatusLoaded(Err(
-            "Connection failed".to_string()
-        )));
+        let error = splunk_client::ClientError::ConnectionRefused("test".to_string());
+        app.update(Action::HealthStatusLoaded(Err(Arc::new(error))));
 
         assert_eq!(app.health_state, HealthState::Unhealthy);
         // Should emit toast since we went from Healthy to Unhealthy

@@ -18,6 +18,7 @@
 mod helpers;
 use helpers::*;
 use splunk_tui::{CurrentScreen, ToastLevel, action::Action, app::App, app::ConnectionContext};
+use std::sync::Arc;
 
 fn create_mock_search_results(count: usize) -> Vec<serde_json::Value> {
     (0..count)
@@ -590,9 +591,8 @@ fn test_more_search_results_loaded_error_handling() {
     app.loading = true;
 
     // Simulate error loading more results
-    app.update(Action::MoreSearchResultsLoaded(Err(
-        "Connection timeout".to_string()
-    )));
+    let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+    app.update(Action::MoreSearchResultsLoaded(Err(Arc::new(error))));
 
     // Results should be unchanged
     assert_eq!(app.search_results.len(), 50);

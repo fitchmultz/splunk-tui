@@ -226,7 +226,7 @@ async fn main() -> Result<()> {
                     }
                 }
                 Err(e) => {
-                    match tx_health.try_send(Action::HealthStatusLoaded(Err(e.to_string()))) {
+                    match tx_health.try_send(Action::HealthStatusLoaded(Err(Arc::new(e)))) {
                         Ok(()) => {}
                         Err(TrySendError::Full(_)) => {
                             // Drop health status update if channel full - next tick will send another
