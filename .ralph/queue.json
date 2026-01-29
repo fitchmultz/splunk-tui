@@ -1,4 +1,671 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0181",
+      "status": "todo",
+      "title": "Split oversized config loader builder.rs into focused modules",
+      "priority": "high",
+      "tags": [
+        "refactor",
+        "config",
+        "file-size",
+        "code-quality"
+      ],
+      "scope": [
+        "crates/config/src/loader/builder.rs"
+      ],
+      "evidence": [
+        "File builder.rs is 1103 LOC, exceeding the 1000 LOC limit per AGENTS.md heuristics",
+        "File contains both builder logic (~500 LOC) and extensive tests (~600 LOC)",
+        "Lines 500-1103 are all test code mixed with production code"
+      ],
+      "plan": [
+        "Extract all test code from builder.rs into crates/config/src/loader/builder_tests.rs",
+        "Add #[cfg(test)] mod builder_tests; to builder.rs",
+        "Verify make ci passes after the split",
+        "Ensure no functional changes, only code movement"
+      ],
+      "notes": [],
+      "request": "scan finding: file exceeds size limit",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0182",
+      "status": "todo",
+      "title": "Centralize magic numbers into constants module",
+      "priority": "high",
+      "tags": [
+        "refactor",
+        "constants",
+        "code-quality",
+        "maintainability"
+      ],
+      "scope": [
+        "crates/config/src/types/connection.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/client/src/client/builder.rs",
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "Duration::from_secs(30) timeout appears in 5+ locations (connection.rs:102, builder.rs:61, etc.)",
+        "3600 seconds (session TTL) appears in 10+ locations across auth.rs and tests",
+        "60 seconds (expiry buffer) appears in 8+ locations",
+        "Port 8089 appears in 15+ locations as hardcoded default",
+        "Magic numbers in client/mod.rs:153-154 (500ms poll, 300s max wait), line 161 (1000 max results)",
+        "Magic numbers in tui/main.rs:102 (256 channel capacity), 243 (250ms tick), 246 (5s refresh)",
+        "Magic numbers in app.rs:445 (10 scroll threshold), 474 (50 history items), 487 (30 clipboard preview)",
+        "Magic number 90.0 in cli/formatters/table.rs:357 (license alert threshold)"
+      ],
+      "plan": [
+        "Create crates/config/src/constants.rs with all default values as pub const",
+        "Define constants: DEFAULT_TIMEOUT_SECS, DEFAULT_SESSION_TTL_SECS, DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_POLL_INTERVAL_MS, DEFAULT_MAX_WAIT_SECS, DEFAULT_MAX_RESULTS, DEFAULT_CHANNEL_CAPACITY, DEFAULT_UI_TICK_MS, DEFAULT_REFRESH_INTERVAL_SECS, DEFAULT_SCROLL_THRESHOLD, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_LICENSE_ALERT_PCT, DEFAULT_SPLUNK_PORT",
+        "Replace all magic numbers with constants across the codebase",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: magic numbers duplicated across codebase",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0183",
+      "status": "todo",
+      "title": "Preserve structured error types in TUI side effects",
+      "priority": "high",
+      "tags": [
+        "bug",
+        "error-handling",
+        "tui",
+        "type-safety"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects.rs"
+      ],
+      "evidence": [
+        "side_effects.rs:64 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:78 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:92 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:107 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:123 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:140 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:155 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:169 converts ClientError to string: Err(e.to_string())",
+        "side_effects.rs:252 converts ClientError to string: Err(e.to_string())",
+        "This loses error context that could be used for retry logic, user-friendly messages, or debugging"
+      ],
+      "plan": [
+        "Change Action variants to accept ClientError instead of String for error cases",
+        "Update side_effects.rs to pass structured errors: Err(e) instead of Err(e.to_string())",
+        "Update all action handlers to work with structured errors",
+        "Add error conversion/display logic where errors are shown to users",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: error context lost via to_string() conversion",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0184",
+      "status": "todo",
+      "title": "Add safety documentation for unsafe blocks in tests",
+      "priority": "medium",
+      "tags": [
+        "documentation",
+        "tests",
+        "safety",
+        "good-practice"
+      ],
+      "scope": [
+        "crates/tui/tests/config_loading_tests.rs"
+      ],
+      "evidence": [
+        "config_loading_tests.rs uses unsafe blocks for env var manipulation (lines 41-66)",
+        "Each unsafe block calls std::env::remove_var() without safety comments",
+        "The file has #![allow(unused_unsafe)] at the top (line 10)",
+        "According to Rust unsafe guidelines, every unsafe block should have a safety comment explaining why it's sound"
+      ],
+      "plan": [
+        "Add SAFETY comments before each unsafe block explaining why env var manipulation is safe in test context",
+        "Document the EnvVarGuard mechanism that serializes access",
+        "Consider if unsafe can be eliminated by using a safer env var manipulation crate",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: unsafe blocks lack safety documentation",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0185",
+      "status": "todo",
+      "title": "Document default credentials security implications",
+      "priority": "medium",
+      "tags": [
+        "documentation",
+        "security",
+        "config"
+      ],
+      "scope": [
+        "crates/config/src/types/connection.rs"
+      ],
+      "evidence": [
+        "connection.rs:109-112 defines default credentials: username 'admin', password 'changeme'",
+        "These are Splunk's default credentials, which is acceptable for development",
+        "No documentation warns users to change these before production use",
+        "The Default impl is used when no other config is provided"
+      ],
+      "plan": [
+        "Add prominent doc comment on Config::default() warning about default credentials",
+        "Add warning log when default credentials are used",
+        "Update docs/usage.md to mention changing default credentials",
+        "Consider failing in production mode if default credentials detected"
+      ],
+      "notes": [],
+      "request": "scan finding: default credentials need security documentation",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0186",
+      "status": "todo",
+      "title": "Replace panics in CLI with proper error handling",
+      "priority": "medium",
+      "tags": [
+        "bug",
+        "error-handling",
+        "cli",
+        "robustness"
+      ],
+      "scope": [
+        "crates/cli/src/commands/mod.rs",
+        "crates/cli/src/progress.rs"
+      ],
+      "evidence": [
+        "commands/mod.rs:64 has panic!: '_ => panic!(\"Expected SessionToken variant\")' in test code",
+        "commands/mod.rs:82 has panic!: '_ => panic!(\"Expected ApiToken variant\")' in test code",
+        "progress.rs:40 has .expect(\"valid progress bar template\")",
+        "progress.rs:108 has .expect(\"valid spinner template\")",
+        "These panics could crash the CLI instead of graceful error handling"
+      ],
+      "plan": [
+        "Replace panics in test assertions with proper assert! macros",
+        "Replace .expect() calls with proper error propagation using anyhow::Context",
+        "Return Result from functions that can fail instead of panicking",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: panics used instead of error handling",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0187",
+      "status": "todo",
+      "title": "Add architecture tests for file size limits",
+      "priority": "medium",
+      "tags": [
+        "testing",
+        "architecture",
+        "code-quality"
+      ],
+      "scope": [
+        "crates/"
+      ],
+      "evidence": [
+        "AGENTS.md specifies files over 700 LOC require justification, over 1000 LOC presumed mis-scoped",
+        "builder.rs at 1103 LOC was not caught early",
+        "No automated enforcement of file size guidelines",
+        "Manual review is the only way to catch oversized files"
+      ],
+      "plan": [
+        "Create tests/architecture/file_size_tests.rs",
+        "Write test that walks all .rs files and checks LOC",
+        "Files >700 LOC should generate warnings",
+        "Files >1000 LOC should fail the test",
+        "Add exclusions for generated files or justified cases",
+        "Run in make ci"
+      ],
+      "notes": [],
+      "request": "scan finding: no automated enforcement of file size limits",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0188",
+      "status": "todo",
+      "title": "Add tests for TUI async side effect handlers",
+      "priority": "medium",
+      "tags": [
+        "testing",
+        "tui",
+        "async",
+        "coverage-gap"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects.rs"
+      ],
+      "evidence": [
+        "side_effects.rs at 692 LOC has no dedicated tests",
+        "Contains critical async logic for all API operations",
+        "22 tokio::spawn calls handling indexes, jobs, cluster info, searches, etc.",
+        "Error handling paths not tested",
+        "No tests for progress callback handling"
+      ],
+      "plan": [
+        "Create crates/tui/tests/side_effects_tests.rs",
+        "Mock SplunkClient for testing side effects",
+        "Test each action handler: LoadIndexes, LoadJobs, LoadClusterInfo, etc.",
+        "Test error handling paths",
+        "Test progress callback integration",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: no tests for async side effect handlers",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0189",
+      "status": "todo",
+      "title": "Add tests for terminal resize handling in TUI",
+      "priority": "medium",
+      "tags": [
+        "testing",
+        "tui",
+        "ux",
+        "coverage-gap"
+      ],
+      "scope": [
+        "crates/tui/src/"
+      ],
+      "evidence": [
+        "No tests found for terminal resize events",
+        "TUI layout depends on terminal dimensions",
+        "Resize could cause panics or rendering issues",
+        "crates/tui/src/app/render.rs likely handles layout but untested"
+      ],
+      "plan": [
+        "Identify where resize events are handled",
+        "Create tests for resize at various dimensions (small, large, zero)",
+        "Test edge cases: zero width/height, very large dimensions",
+        "Ensure no panics on resize",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: no tests for terminal resize handling",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0190",
+      "status": "todo",
+      "title": "Add MaxRetriesExceeded error context with original error",
+      "priority": "low",
+      "tags": [
+        "enhancement",
+        "error-handling",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/error.rs",
+        "crates/client/src/endpoints/request.rs"
+      ],
+      "evidence": [
+        "ClientError::MaxRetriesExceeded(usize) only contains attempt count",
+        "Original error that caused retries is lost",
+        "Users cannot see what error was being retried",
+        "request.rs:241 and 298 return MaxRetriesExceeded without context"
+      ],
+      "plan": [
+        "Change MaxRetriesExceeded to include original error: MaxRetriesExceeded(usize, Box<ClientError>)",
+        "Update all call sites to pass the original error",
+        "Update Display impl to show original error",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: MaxRetriesExceeded lacks original error context",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0191",
+      "status": "todo",
+      "title": "Add SessionExpired error context with session details",
+      "priority": "low",
+      "tags": [
+        "enhancement",
+        "error-handling",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/error.rs",
+        "crates/client/src/auth.rs"
+      ],
+      "evidence": [
+        "ClientError::SessionExpired has no context about which session expired",
+        "Error message is static: 'Session expired, please re-authenticate'",
+        "Multiple sessions could exist in complex setups",
+        "auth.rs session management could provide context"
+      ],
+      "plan": [
+        "Add context to SessionExpired: username or session identifier",
+        "Update auth.rs to provide session context when error occurs",
+        "Update Display impl to show session info",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: SessionExpired lacks context about which session",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0192",
+      "status": "todo",
+      "title": "Review and optimize tokio::spawn usage in side_effects",
+      "priority": "low",
+      "tags": [
+        "performance",
+        "tui",
+        "async",
+        "optimization"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects.rs"
+      ],
+      "evidence": [
+        "side_effects.rs spawns 22+ tokio tasks for each API call",
+        "Each spawn has overhead of task creation and scheduling",
+        "Many operations are simple and may not need separate tasks",
+        "No limit on concurrent spawned tasks could overwhelm system"
+      ],
+      "plan": [
+        "Analyze which operations truly need separate tasks vs can be async fn calls",
+        "Consider using a semaphore to limit concurrent operations",
+        "Consider batching small operations",
+        "Measure performance impact",
+        "Document rationale for spawn vs non-spawn decisions"
+      ],
+      "notes": [],
+      "request": "scan finding: excessive tokio::spawn may impact performance",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0193",
+      "status": "todo",
+      "title": "Add integration tests for error recovery paths",
+      "priority": "low",
+      "tags": [
+        "testing",
+        "client",
+        "reliability",
+        "coverage-gap"
+      ],
+      "scope": [
+        "crates/client/tests/"
+      ],
+      "evidence": [
+        "Limited tests for error recovery scenarios",
+        "Retry logic is tested but not all failure modes",
+        "No tests for partial failures during search pagination",
+        "No tests for auth failure recovery",
+        "client/mod.rs retry_call! macro not directly tested"
+      ],
+      "plan": [
+        "Create error_recovery_tests.rs",
+        "Test retry with eventual success",
+        "Test auth failure and re-authentication",
+        "Test partial failure during multi-page results",
+        "Test network interruption recovery",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: limited error recovery path testing",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0194",
+      "status": "todo",
+      "title": "Add tests for progress callback edge cases",
+      "priority": "low",
+      "tags": [
+        "testing",
+        "client",
+        "search",
+        "coverage-gap"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs",
+        "crates/client/tests/"
+      ],
+      "evidence": [
+        "search_with_progress has progress callback but edge cases untested",
+        "No tests for callback panics",
+        "No tests for very rapid progress updates",
+        "No tests for callback that blocks",
+        "Progress callback could affect search performance"
+      ],
+      "plan": [
+        "Create progress_callback_tests.rs",
+        "Test callback with various update frequencies",
+        "Test callback that panics (should not crash search)",
+        "Test callback that blocks (should not deadlock)",
+        "Test progress accuracy",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: progress callback edge cases not tested",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0195",
+      "status": "todo",
+      "title": "Review CLI formatter tests for table output edge cases",
+      "priority": "low",
+      "tags": [
+        "testing",
+        "cli",
+        "formatters",
+        "edge-cases"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/tests.rs"
+      ],
+      "evidence": [
+        "formatters/tests.rs is 1007 LOC with extensive tests",
+        "Tests cover happy paths well",
+        "Limited tests for edge cases: empty data, very wide columns, unicode",
+        "No tests for malformed data handling",
+        "Table formatting at terminal width boundaries not tested"
+      ],
+      "plan": [
+        "Add tests for empty result sets",
+        "Add tests for very wide data that exceeds terminal width",
+        "Add tests for unicode and special characters",
+        "Add tests for null/missing fields",
+        "Add tests for very large numbers",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: formatter edge cases need coverage",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0196",
+      "status": "todo",
+      "title": "Add timeout configuration validation",
+      "priority": "low",
+      "tags": [
+        "enhancement",
+        "config",
+        "validation"
+      ],
+      "scope": [
+        "crates/config/src/loader/",
+        "crates/config/src/types/"
+      ],
+      "evidence": [
+        "Timeout values can be configured but not validated",
+        "Zero or negative timeouts could cause issues",
+        "Very large timeouts could cause resource exhaustion",
+        "No validation for timeout < expiry_buffer combinations"
+      ],
+      "plan": [
+        "Add validation for timeout > 0",
+        "Add validation for session_ttl > expiry_buffer",
+        "Add validation for reasonable maximum values",
+        "Add helpful error messages for invalid configurations",
+        "Add tests for validation",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: timeout configuration lacks validation",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0197",
+      "status": "todo",
+      "title": "Document retry logic behavior for streaming requests",
+      "priority": "low",
+      "tags": [
+        "documentation",
+        "client",
+        "retry-logic"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs"
+      ],
+      "evidence": [
+        "request.rs:24-31 documents that streaming requests cannot be retried",
+        "This is a significant limitation that users should know about",
+        "No mention in user-facing documentation",
+        "try_clone() failure behavior not well documented"
+      ],
+      "plan": [
+        "Add user-facing documentation about retry limitations",
+        "Document which operations support retry vs which don't",
+        "Add examples of how to handle non-retryable operations",
+        "Update API docs for methods that may not retry",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: retry limitations need user documentation",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0198",
+      "status": "todo",
+      "title": "Add metrics for API call performance",
+      "priority": "low",
+      "tags": [
+        "enhancement",
+        "observability",
+        "client",
+        "performance"
+      ],
+      "scope": [
+        "crates/client/src/"
+      ],
+      "evidence": [
+        "No metrics for API call latency",
+        "No metrics for retry counts",
+        "No metrics for error rates",
+        "Debugging performance issues requires manual logging analysis",
+        "tracing is used but no structured metrics"
+      ],
+      "plan": [
+        "Add optional metrics collection to SplunkClient",
+        "Track request latency histograms",
+        "Track retry counts per endpoint",
+        "Track error rates by category",
+        "Export metrics in standard format (Prometheus, statsd)",
+        "Add tests for metrics accuracy",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: no API performance metrics collection",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0199",
+      "status": "todo",
+      "title": "Review and consolidate unwrap usage in non-test code",
+      "priority": "low",
+      "tags": [
+        "refactor",
+        "robustness",
+        "code-quality"
+      ],
+      "scope": [
+        "crates/"
+      ],
+      "evidence": [
+        "617 unwrap() occurrences found across 68 files",
+        "Many are in tests (acceptable)",
+        "Some in production code could be replaced with proper error handling",
+        "unwrap() in production can cause panics",
+        "No audit of which unwraps are truly safe vs potentially problematic"
+      ],
+      "plan": [
+        "Audit all unwrap() in production (non-test) code",
+        "Categorize: truly safe (invariant guaranteed) vs potentially problematic",
+        "Replace problematic unwraps with proper error handling",
+        "Add expect() with justification for safe unwraps",
+        "Create lint rule to prevent new unwrap in production code",
+        "Verify make ci passes"
+      ],
+      "notes": [],
+      "request": "scan finding: unwrap usage in production code needs audit",
+      "created_at": "2026-01-28T00:00:00Z",
+      "updated_at": "2026-01-28T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    }
+  ]
 }
