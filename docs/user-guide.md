@@ -302,6 +302,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `r`: Refresh overview
 - `Ctrl+e`: Export overview
 - `Ctrl+c`: Copy overview summary
+
+#### Multi-Instance Dashboard Screen
+- `r`: Refresh multi-instance dashboard
+- `Ctrl+e`: Export multi-instance data
+- `Ctrl+c`: Copy instance summary
+- `j/k or Up/Down`: Navigate instances
 <!-- END TUI KEYBINDINGS -->
 
 - **Scrolling**:

@@ -41,6 +41,7 @@ pub enum Section {
     FiredAlerts,
     Settings,
     Overview,
+    MultiInstance,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -181,6 +182,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::FiredAlerts => Section::FiredAlerts,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
+        CurrentScreen::MultiInstance => Section::MultiInstance,
     }
 }
 
@@ -267,6 +269,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::SearchPeers => &["r", "j/k or Up/Down", "Ctrl+e"],
         CurrentScreen::Settings => &["t", "a", "s", "d", "c", "r"],
         CurrentScreen::Overview => &["r", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::MultiInstance => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Inputs => &["r", "e", "d", "j/k or Up/Down"],
         CurrentScreen::Configs => &["r", "Enter", "h", "j/k or Up/Down"],
         CurrentScreen::FiredAlerts => &["r", "j/k or Up/Down", "Ctrl+c"],

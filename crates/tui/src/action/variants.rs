@@ -84,6 +84,39 @@ pub struct OverviewData {
     pub resources: Vec<OverviewResource>,
 }
 
+/// Per-instance overview data for multi-instance dashboard.
+///
+/// Represents the health and resource status of a single Splunk instance
+/// within the multi-instance dashboard view.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct InstanceOverview {
+    /// Profile name for this instance
+    pub profile_name: String,
+    /// Base URL of the Splunk instance
+    pub base_url: String,
+    /// Resource summaries for this instance
+    pub resources: Vec<OverviewResource>,
+    /// Error message if connection failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    /// Health status (green/yellow/red)
+    pub health_status: String,
+    /// Job count (for quick reference)
+    pub job_count: u64,
+}
+
+/// Aggregated multi-instance overview data.
+///
+/// Contains overview data for all configured Splunk instances,
+/// enabling administrators to monitor multiple instances from a single view.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct MultiInstanceOverviewData {
+    /// Timestamp of the data fetch
+    pub timestamp: String,
+    /// Overview data per instance
+    pub instances: Vec<InstanceOverview>,
+}
+
 /// Unified action type for async TUI event handling.
 ///
 /// Actions flow through a channel from input handlers and async tasks
@@ -191,6 +224,8 @@ pub enum Action {
     },
     /// Load overview information (all resources)
     LoadOverview,
+    /// Load multi-instance overview from all profiles
+    LoadMultiInstanceOverview,
     /// Load cluster peers (detailed view)
     LoadClusterPeers,
     /// Load more indexes (pagination)
@@ -292,6 +327,8 @@ pub enum Action {
     ClusterPeersLoaded(Result<Vec<ClusterPeer>, Arc<ClientError>>),
     /// Result of loading overview
     OverviewLoaded(OverviewData),
+    /// Multi-instance overview data loaded
+    MultiInstanceOverviewLoaded(MultiInstanceOverviewData),
     /// Result of loading more indexes (pagination)
     MoreIndexesLoaded(Result<Vec<Index>, Arc<ClientError>>),
     /// Result of loading more jobs (pagination)

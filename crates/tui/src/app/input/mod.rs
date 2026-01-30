@@ -21,6 +21,7 @@ pub mod job_inspect;
 pub mod jobs;
 pub mod kvstore;
 pub mod license;
+pub mod multi_instance;
 pub mod overview;
 pub mod saved_searches;
 pub mod search;
@@ -54,6 +55,7 @@ impl App {
             CurrentScreen::Configs => self.handle_configs_input(key),
             CurrentScreen::Settings => self.handle_settings_input(key),
             CurrentScreen::Overview => self.handle_overview_input(key),
+            CurrentScreen::MultiInstance => self.handle_multi_instance_input(key),
             CurrentScreen::FiredAlerts => self.handle_fired_alerts_input(key),
         }
     }

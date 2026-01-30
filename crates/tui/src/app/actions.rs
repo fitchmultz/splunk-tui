@@ -589,6 +589,10 @@ impl App {
                 self.overview_data = Some(data);
                 self.loading = false;
             }
+            Action::MultiInstanceOverviewLoaded(data) => {
+                self.multi_instance_data = Some(data);
+                self.loading = false;
+            }
             Action::ClusterInfoLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load cluster info: {}", e);
                 self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(

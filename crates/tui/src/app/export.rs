@@ -30,6 +30,7 @@ pub enum ExportTarget {
     Overview,
     SearchPeers,
     FiredAlerts,
+    MultiInstance,
 }
 
 impl ExportTarget {
@@ -49,6 +50,7 @@ impl ExportTarget {
             ExportTarget::Overview => "Export Overview",
             ExportTarget::SearchPeers => "Export Search Peers",
             ExportTarget::FiredAlerts => "Export Fired Alerts",
+            ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
         }
     }
 
@@ -68,6 +70,7 @@ impl ExportTarget {
             ExportTarget::Overview => "overview",
             ExportTarget::SearchPeers => "search-peers",
             ExportTarget::FiredAlerts => "fired-alerts",
+            ExportTarget::MultiInstance => "multi-instance",
         };
 
         let ext = match format {
@@ -146,6 +149,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::FiredAlerts => self
                 .fired_alerts
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::MultiInstance => self
+                .multi_instance_data
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
         }

@@ -34,7 +34,12 @@ fn test_settings_screen_navigation() {
     // Verify screen switched to Overview
     assert_eq!(app.current_screen, CurrentScreen::Overview);
 
-    // Tab from Overview should wrap to Search
+    // Tab from Overview should go to MultiInstance
+    let action = app.handle_input(tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::MultiInstance);
+
+    // Tab from MultiInstance should wrap to Search
     let action = app.handle_input(tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Search);

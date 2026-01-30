@@ -101,6 +101,10 @@ pub struct App {
     pub inputs_pagination: crate::app::state::ListPaginationState,
     pub overview_data: Option<crate::action::OverviewData>,
 
+    // Multi-instance dashboard state
+    pub multi_instance_data: Option<crate::action::MultiInstanceOverviewData>,
+    pub multi_instance_selected_index: usize,
+
     // Fired alerts state
     pub fired_alerts: Option<Vec<splunk_client::models::FiredAlert>>,
     pub fired_alerts_state: ratatui::widgets::ListState,
@@ -398,6 +402,8 @@ impl App {
             inputs_state,
             inputs_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             overview_data: None,
+            multi_instance_data: None,
+            multi_instance_selected_index: 0,
             fired_alerts: None,
             fired_alerts_state,
             fired_alerts_pagination: crate::app::state::ListPaginationState::new(30, 1000),
@@ -587,6 +593,7 @@ impl App {
             CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
+            CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
         }
     }
 

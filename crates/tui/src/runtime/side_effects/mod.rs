@@ -94,6 +94,7 @@ mod jobs;
 mod kvstore;
 mod license;
 mod logs;
+mod multi_instance;
 mod overview;
 mod profiles;
 mod search_peers;
@@ -257,6 +258,9 @@ pub async fn handle_side_effects(
         }
         Action::LoadOverview => {
             overview::handle_load_overview(client, tx).await;
+        }
+        Action::LoadMultiInstanceOverview => {
+            multi_instance::handle_load_multi_instance_overview(config_manager, tx).await;
         }
         Action::ExportData(data, path, format) => {
             export::handle_export_data(data, path, format, tx).await;

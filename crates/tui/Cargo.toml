@@ -23,6 +23,9 @@ splunk-config = { path = "../config" }
 tokio = { workspace = true }
 futures-util = "0.3"
 
+# Date/Time
+chrono = { workspace = true }
+
 # TUI
 ratatui = { workspace = true }
 crossterm = { workspace = true, features = ["event-stream"] }

@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0242",
-      "status": "todo",
-      "title": "Add multi-instance dashboard for TUI",
-      "priority": "low",
-      "tags": [
-        "tui",
-        "multi-instance",
-        "feature"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/dashboard.rs",
-        "crates/tui/src/app.rs"
-      ],
-      "evidence": [
-        "CLI has list-all for multi-profile aggregation.",
-        "TUI only shows single-instance views.",
-        "Admins managing multiple Splunk instances need a consolidated dashboard view."
-      ],
-      "plan": [
-        "Create a dashboard screen showing aggregated health/status from multiple profiles.",
-        "Use existing ConfigManager to iterate profiles.",
-        "Show summary cards for each instance (health status, job count, license usage).",
-        "Add tests and documentation updates."
-      ],
-      "notes": [],
-      "request": "Feature for multi-instance Splunk admins",
-      "created_at": "2026-01-29T23:56:00Z",
-      "updated_at": "2026-01-29T23:56:00Z",
-      "depends_on": [
-        "RQ-0229"
-      ],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0243",
       "status": "todo",
       "title": "Add lookup table management",

@@ -86,6 +86,7 @@ fn screen_sections() -> Vec<Section> {
         Section::FiredAlerts,
         Section::Settings,
         Section::Overview,
+        Section::MultiInstance,
     ]
 }
 
@@ -109,6 +110,7 @@ fn section_heading(section: Section) -> &'static str {
         Section::FiredAlerts => "Fired Alerts Screen",
         Section::Settings => "Settings Screen",
         Section::Overview => "Overview Screen",
+        Section::MultiInstance => "Multi-Instance Dashboard Screen",
         Section::Global => "Global Keys",
     }
 }
