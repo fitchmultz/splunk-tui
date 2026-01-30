@@ -88,6 +88,7 @@ mod export;
 mod health;
 mod indexes;
 mod jobs;
+mod license;
 mod logs;
 mod profiles;
 mod searches;
@@ -201,6 +202,9 @@ pub async fn handle_side_effects(
         }
         Action::LoadHealth => {
             health::handle_load_health(client, tx).await;
+        }
+        Action::LoadLicense => {
+            license::handle_load_license(client, tx).await;
         }
         Action::ExportData(data, path, format) => {
             export::handle_export_data(data, path, format, tx).await;

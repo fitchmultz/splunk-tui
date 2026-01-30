@@ -13,7 +13,9 @@ use crate::app::App;
 use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState};
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
-use crate::ui::screens::{apps, cluster, health, indexes, saved_searches, search, settings, users};
+use crate::ui::screens::{
+    apps, cluster, health, indexes, license, saved_searches, search, settings, users,
+};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -84,6 +86,7 @@ impl App {
                         CurrentScreen::Jobs => "Jobs",
                         CurrentScreen::JobInspect => "Job Details",
                         CurrentScreen::Health => "Health",
+                        CurrentScreen::License => "License",
                         CurrentScreen::SavedSearches => "Saved Searches",
                         CurrentScreen::InternalLogs => "Internal Logs",
                         CurrentScreen::Apps => "Apps",
@@ -205,6 +208,17 @@ impl App {
                     health::HealthRenderConfig {
                         loading: self.loading,
                         health_info: self.health_info.as_ref(),
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::License => {
+                license::render_license(
+                    f,
+                    area,
+                    license::LicenseRenderConfig {
+                        loading: self.loading,
+                        license_info: self.license_info.as_ref(),
                         theme: &self.theme,
                     },
                 );

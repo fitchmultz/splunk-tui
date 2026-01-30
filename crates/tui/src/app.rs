@@ -33,7 +33,7 @@ pub use state::{
     SearchInputMode, SortColumn, SortDirection, SortState,
 };
 
-use crate::action::{Action, ExportFormat};
+use crate::action::{Action, ExportFormat, LicenseData};
 use crate::app::export::ExportTarget;
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
@@ -87,6 +87,7 @@ pub struct App {
     pub cluster_peers_state: ratatui::widgets::TableState,
     pub cluster_view_mode: crate::app::state::ClusterViewMode,
     pub health_info: Option<HealthCheckOutput>,
+    pub license_info: Option<LicenseData>,
     pub apps: Option<Vec<SplunkApp>>,
     pub apps_state: ratatui::widgets::ListState,
     pub users: Option<Vec<User>>,
@@ -326,6 +327,7 @@ impl App {
             cluster_peers_state,
             cluster_view_mode: crate::app::state::ClusterViewMode::Summary,
             health_info: None,
+            license_info: None,
             apps: None,
             apps_state,
             users: None,
@@ -477,6 +479,7 @@ impl App {
             }),
             CurrentScreen::JobInspect => None, // Already loaded when entering inspect mode
             CurrentScreen::Health => Some(Action::LoadHealth),
+            CurrentScreen::License => Some(Action::LoadLicense),
             CurrentScreen::SavedSearches => Some(Action::LoadSavedSearches),
             CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs {
                 count: self.internal_logs_defaults.count,

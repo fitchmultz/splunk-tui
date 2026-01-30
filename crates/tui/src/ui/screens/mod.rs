@@ -9,6 +9,7 @@ pub mod indexes;
 pub mod internal_logs;
 pub mod job_details;
 pub mod jobs;
+pub mod license;
 pub mod saved_searches;
 pub mod search;
 pub mod settings;

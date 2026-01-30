@@ -16,6 +16,7 @@ pub mod indexes;
 pub mod internal_logs;
 pub mod job_inspect;
 pub mod jobs;
+pub mod license;
 pub mod saved_searches;
 pub mod search;
 pub mod settings;
@@ -36,6 +37,7 @@ impl App {
             CurrentScreen::Cluster => self.handle_cluster_input(key),
             CurrentScreen::JobInspect => self.handle_job_inspect_input(key),
             CurrentScreen::Health => self.handle_health_input(key),
+            CurrentScreen::License => self.handle_license_input(key),
             CurrentScreen::SavedSearches => self.handle_saved_searches_input(key),
             CurrentScreen::InternalLogs => self.handle_internal_logs_input(key),
             CurrentScreen::Apps => self.handle_apps_input(key),

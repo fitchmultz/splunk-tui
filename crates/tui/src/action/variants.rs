@@ -32,8 +32,8 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
-    SearchJobStatus, SplunkHealth, User,
+    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LicensePool,
+    LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -121,6 +121,8 @@ pub enum Action {
     LoadClusterInfo,
     /// Load health check information
     LoadHealth,
+    /// Load license information (usage, pools, stacks)
+    LoadLicense,
     /// Load the list of saved searches
     LoadSavedSearches,
     /// Load internal logs from index=_internal
@@ -183,6 +185,8 @@ pub enum Action {
     ClusterInfoLoaded(Result<ClusterInfo, Arc<ClientError>>),
     /// Result of loading health check
     HealthLoaded(Box<Result<HealthCheckOutput, Arc<ClientError>>>),
+    /// Result of loading license information
+    LicenseLoaded(Box<Result<LicenseData, Arc<ClientError>>>),
     /// Result of loading saved searches
     SavedSearchesLoaded(Result<Vec<SavedSearch>, Arc<ClientError>>),
     /// Result of loading internal logs
@@ -275,4 +279,18 @@ pub enum Action {
     ProfileSwitchResult(Result<ConnectionContext, String>),
     /// Clear all cached data after profile switch
     ClearAllData,
+}
+
+/// Aggregated license data from multiple API endpoints.
+///
+/// This struct combines license usage, pools, and stacks into a single
+/// data structure for the TUI license screen.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LicenseData {
+    /// License usage information (quota and used bytes)
+    pub usage: Vec<LicenseUsage>,
+    /// License pools
+    pub pools: Vec<LicensePool>,
+    /// License stacks
+    pub stacks: Vec<LicenseStack>,
 }

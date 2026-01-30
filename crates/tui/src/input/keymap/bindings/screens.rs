@@ -230,6 +230,37 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None,
             handles_input: false,
         },
+        // License
+        Keybinding {
+            section: Section::License,
+            keys: "r",
+            description: "Refresh license info",
+            scope: BindingScope::Screen(License),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadLicense),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::License,
+            keys: "Ctrl+e",
+            description: "Export license info",
+            scope: BindingScope::Screen(License),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::License,
+            keys: "Ctrl+c",
+            description: "Copy license summary",
+            scope: BindingScope::Screen(License),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
         // Saved Searches
         Keybinding {
             section: Section::SavedSearches,

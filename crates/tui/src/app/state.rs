@@ -51,6 +51,7 @@ pub enum CurrentScreen {
     Jobs,
     JobInspect,
     Health,
+    License,
     SavedSearches,
     InternalLogs,
     Apps,
@@ -68,7 +69,8 @@ impl CurrentScreen {
             CurrentScreen::Cluster => CurrentScreen::Jobs,
             CurrentScreen::Jobs => CurrentScreen::Health,
             CurrentScreen::JobInspect => CurrentScreen::Jobs, // Special case: return to Jobs
-            CurrentScreen::Health => CurrentScreen::SavedSearches,
+            CurrentScreen::Health => CurrentScreen::License,
+            CurrentScreen::License => CurrentScreen::SavedSearches,
             CurrentScreen::SavedSearches => CurrentScreen::InternalLogs,
             CurrentScreen::InternalLogs => CurrentScreen::Apps,
             CurrentScreen::Apps => CurrentScreen::Users,
@@ -87,7 +89,8 @@ impl CurrentScreen {
             CurrentScreen::Jobs => CurrentScreen::Cluster,
             CurrentScreen::JobInspect => CurrentScreen::Jobs, // Special case: return to Jobs
             CurrentScreen::Health => CurrentScreen::Jobs,
-            CurrentScreen::SavedSearches => CurrentScreen::Health,
+            CurrentScreen::License => CurrentScreen::Health,
+            CurrentScreen::SavedSearches => CurrentScreen::License,
             CurrentScreen::InternalLogs => CurrentScreen::SavedSearches,
             CurrentScreen::Apps => CurrentScreen::InternalLogs,
             CurrentScreen::Users => CurrentScreen::Apps,

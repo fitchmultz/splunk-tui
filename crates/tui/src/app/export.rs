@@ -24,6 +24,7 @@ pub enum ExportTarget {
     ClusterInfo,
     Jobs,
     Health,
+    License,
     InternalLogs,
 }
 
@@ -38,6 +39,7 @@ impl ExportTarget {
             ExportTarget::ClusterInfo => "Export Cluster Info",
             ExportTarget::Jobs => "Export Jobs",
             ExportTarget::Health => "Export Health",
+            ExportTarget::License => "Export License",
             ExportTarget::InternalLogs => "Export Internal Logs",
         }
     }
@@ -52,6 +54,7 @@ impl ExportTarget {
             ExportTarget::ClusterInfo => "cluster-info",
             ExportTarget::Jobs => "jobs",
             ExportTarget::Health => "health",
+            ExportTarget::License => "license",
             ExportTarget::InternalLogs => "internal-logs",
         };
 
@@ -107,6 +110,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::Health => self
                 .health_info
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::License => self
+                .license_info
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::InternalLogs => self

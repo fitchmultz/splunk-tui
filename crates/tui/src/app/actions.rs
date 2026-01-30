@@ -65,6 +65,9 @@ impl App {
             Action::LoadHealth => {
                 self.current_screen = CurrentScreen::Health;
             }
+            Action::LoadLicense => {
+                self.current_screen = CurrentScreen::License;
+            }
             Action::LoadSavedSearches => {
                 self.current_screen = CurrentScreen::SavedSearches;
             }
@@ -267,6 +270,20 @@ impl App {
                 }
                 Err(e) => {
                     let error_msg = format!("Failed to load health info: {}", e);
+                    self.current_error = Some(
+                        crate::error_details::ErrorDetails::from_client_error(e.as_ref()),
+                    );
+                    self.toasts.push(Toast::error(error_msg));
+                    self.loading = false;
+                }
+            },
+            Action::LicenseLoaded(boxed_result) => match *boxed_result {
+                Ok(ref data) => {
+                    self.license_info = Some(data.clone());
+                    self.loading = false;
+                }
+                Err(e) => {
+                    let error_msg = format!("Failed to load license info: {}", e);
                     self.current_error = Some(
                         crate::error_details::ErrorDetails::from_client_error(e.as_ref()),
                     );

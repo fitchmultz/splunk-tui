@@ -732,6 +732,11 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export health info
 - `Ctrl+c`: Copy health status
 
+#### License Screen
+- `r`: Refresh license info
+- `Ctrl+e`: Export license info
+- `Ctrl+c`: Copy license summary
+
 #### Saved Searches Screen
 - `r`: Refresh saved searches
 - `Ctrl+e`: Export saved searches

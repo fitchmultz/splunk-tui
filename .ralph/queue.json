@@ -2,33 +2,45 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0227",
+      "id": "RQ-0244",
       "status": "todo",
-      "title": "Add TUI license usage screen for CLI parity",
-      "priority": "medium",
+      "title": "Fix TUI search returning 400 error despite successful auth",
+      "priority": "critical",
       "tags": [
         "tui",
-        "license",
-        "parity"
+        "search",
+        "bug",
+        "400-error"
       ],
       "scope": [
-        "crates/cli/src/commands/license.rs",
-        "crates/tui/src/ui/screens/mod.rs",
-        "crates/tui/src/runtime/side_effects"
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/client/src/client/search.rs",
+        "crates/client/src/endpoints/search.rs",
+        "crates/tui/src/runtime/side_effects/search.rs",
+        "make test-live"
       ],
       "evidence": [
-        "CLI includes a dedicated license command in crates/cli/src/commands/license.rs.",
-        "TUI screens listed in crates/tui/src/ui/screens/mod.rs have no license screen."
+        "User reports: TUI authenticates successfully but every search returns 400 error",
+        "User reports: 'search index=banking' has data but still fails",
+        "User states: 'The live tests MUST work' indicating this is a regression or critical bug",
+        "400 error suggests malformed request payload, missing parameters, or incorrect API call"
       ],
       "plan": [
-        "Add a license load action and side-effect handler in the TUI.",
-        "Create a license screen with summary + pool detail rendering.",
-        "Add tests and update docs/usage and in-app help."
+        "Run make test-live to reproduce and identify the exact failure",
+        "Examine search endpoint request construction in crates/client/src/endpoints/search.rs",
+        "Check search side-effect handler in crates/tui/src/runtime/side_effects/search.rs for parameter issues",
+        "Compare working CLI search vs TUI search to identify differences",
+        "Fix the root cause (likely missing or incorrect search job parameters)",
+        "Verify fix with make test-live and manual TUI testing"
       ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
+      "notes": [
+        "Auth works (not a credential issue)",
+        "400 Bad Request typically indicates malformed request body or missing required fields",
+        "Check search job creation parameters: search query, exec_mode, earliest/latest time formats"
+      ],
+      "request": "I opened the TUI and tried to run a search against the instance in the .env and was able to auth but get a 400 error every search. search index=banking has data. This is nonsense. The live tests MUST work. FIX THIS.",
+      "created_at": "2026-01-30T03:38:15Z",
+      "updated_at": "2026-01-30T03:38:15Z",
       "depends_on": [],
       "custom_fields": {}
     },
