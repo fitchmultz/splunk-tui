@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0234",
-      "status": "todo",
-      "title": "Split oversized list_all_tests.rs to avoid size warnings",
-      "priority": "low",
-      "tags": [
-        "tests",
-        "cli",
-        "maintainability"
-      ],
-      "scope": [
-        "crates/cli/tests/list_all_tests.rs",
-        "crates/architecture-tests/tests/file_size_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/tests/list_all_tests.rs is ~704 LOC, above the 700 LOC warning threshold.",
-        "crates/architecture-tests/tests/file_size_tests.rs flags files >700 LOC as needing justification."
-      ],
-      "plan": [
-        "Split list_all tests into multiple files by scenario (single-profile, multi-profile, error cases).",
-        "Update test modules/helpers as needed to share fixtures.",
-        "Run tests and ensure architecture size warnings clear."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0236",
       "status": "todo",
       "title": "Add forwarder management CLI command and TUI screen",
