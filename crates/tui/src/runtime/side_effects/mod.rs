@@ -282,6 +282,16 @@ pub async fn handle_side_effects(
         Action::DeleteIndex { name } => {
             indexes::handle_delete_index(client, tx, name).await;
         }
+        // User operations
+        Action::CreateUser { params } => {
+            users::handle_create_user(client, tx, params).await;
+        }
+        Action::ModifyUser { name, params } => {
+            users::handle_modify_user(client, tx, name, params).await;
+        }
+        Action::DeleteUser { name } => {
+            users::handle_delete_user(client, tx, name).await;
+        }
         _ => {}
     }
 }

@@ -205,7 +205,7 @@ fn test_live_cli_users_json() {
     };
     let mut cmd = splunk_cli_cmd();
 
-    cmd.args(["--output", "json", "users", "--count", "5"])
+    cmd.args(["--output", "json", "users", "list", "--count", "5"])
         .assert()
         .success()
         .stdout(predicate::str::contains("admin"));

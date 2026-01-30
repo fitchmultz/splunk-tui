@@ -35,6 +35,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "keymap/bindings/screens.rs",
         "Keybinding definitions for all TUI screens - each screen requires multiple keybinding entries",
     ),
+    (
+        "app/popups.rs",
+        "Popup input handling for all TUI popup types - each popup type requires dedicated input handlers",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

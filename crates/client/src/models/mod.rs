@@ -46,4 +46,4 @@ pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};
-pub use users::{User, UserEntry, UserListResponse};
+pub use users::{CreateUserParams, ModifyUserParams, User, UserEntry, UserListResponse};

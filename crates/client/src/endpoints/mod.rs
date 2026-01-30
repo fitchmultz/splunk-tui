@@ -40,4 +40,4 @@ pub use search::{
 };
 pub use search_peers::list_search_peers;
 pub use server::*;
-pub use users::list_users;
+pub use users::{create_user, delete_user, list_users, modify_user};

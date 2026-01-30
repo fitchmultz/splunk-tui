@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0246",
-      "status": "todo",
-      "title": "Add user creation and management capabilities",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "tui",
-        "users",
-        "feature",
-        "security"
-      ],
-      "scope": [
-        "crates/client/src/client/users.rs",
-        "crates/client/src/endpoints/users.rs",
-        "crates/cli/src/commands/users.rs",
-        "crates/tui/src/ui/screens/users.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client/users.rs:7 explicitly states 'Creating or modifying users (not yet implemented)'.",
-        "Current users support is read-only (list only).",
-        "Splunk REST API supports POST /services/authentication/users for user management."
-      ],
-      "plan": [
-        "Add create_user() method to client with role assignment.",
-        "Add update_user() method for modifying user properties.",
-        "Add delete_user() method for user removal.",
-        "Extend CLI users command with create, update, delete subcommands.",
-        "Add user management UI to TUI users screen.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0247",
       "status": "todo",
       "title": "Add app installation and removal capabilities",

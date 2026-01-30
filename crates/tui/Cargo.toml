@@ -52,6 +52,9 @@ uuid = { version = "1.11", features = ["v4"] }
 # Clipboard
 arboard = "3.4"
 
+# Secrets handling
+secrecy = { workspace = true }
+
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }
 tempfile = "3.10"

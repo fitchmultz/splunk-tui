@@ -85,6 +85,30 @@ pub enum PopupType {
     },
     /// Index deletion confirmation
     DeleteIndexConfirm { index_name: String },
+    /// User creation dialog
+    CreateUser {
+        name_input: String,
+        password_input: String,
+        roles_input: String,
+        realname_input: String,
+        email_input: String,
+        default_app_input: String,
+    },
+    /// User modification dialog
+    ModifyUser {
+        user_name: String,
+        current_roles: Vec<String>,
+        current_realname: Option<String>,
+        current_email: Option<String>,
+        current_default_app: Option<String>,
+        password_input: String,
+        roles_input: String,
+        realname_input: String,
+        email_input: String,
+        default_app_input: String,
+    },
+    /// User deletion confirmation
+    DeleteUserConfirm { user_name: String },
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -222,8 +246,32 @@ impl PopupBuilder {
             PopupType::DeleteIndexConfirm { index_name } => {
                 let title = "Confirm Delete".to_string();
                 let content = format!(
-                    "Delete index '{}'?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    "Delete index '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
                     index_name
+                );
+                (title, content)
+            }
+            PopupType::CreateUser { name_input, .. } => {
+                let title = "Create User".to_string();
+                let content = format!(
+                    "Create new user:\n\nName: {}\n\nEnter name and press Enter to create, Esc to cancel",
+                    name_input
+                );
+                (title, content)
+            }
+            PopupType::ModifyUser { user_name, .. } => {
+                let title = "Modify User".to_string();
+                let content = format!(
+                    "Modify user '{}':\n\nPress Enter to apply changes, Esc to cancel",
+                    user_name
+                );
+                (title, content)
+            }
+            PopupType::DeleteUserConfirm { user_name } => {
+                let title = "Confirm Delete".to_string();
+                let content = format!(
+                    "Delete user '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    user_name
                 );
                 (title, content)
             }
@@ -259,14 +307,17 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::IndexDetails
         | PopupType::ProfileSelector { .. }
         | PopupType::CreateIndex { .. }
-        | PopupType::ModifyIndex { .. } => theme.border,
+        | PopupType::ModifyIndex { .. }
+        | PopupType::CreateUser { .. }
+        | PopupType::ModifyUser { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
         | PopupType::ConfirmDeleteBatch(_)
         | PopupType::ConfirmEnableApp(_)
         | PopupType::ConfirmDisableApp(_)
-        | PopupType::DeleteIndexConfirm { .. } => theme.error,
+        | PopupType::DeleteIndexConfirm { .. }
+        | PopupType::DeleteUserConfirm { .. } => theme.error,
     };
 
     // Determine wrapping behavior based on popup type
@@ -278,7 +329,10 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ProfileSelector { .. }
         | PopupType::CreateIndex { .. }
         | PopupType::ModifyIndex { .. }
-        | PopupType::DeleteIndexConfirm { .. } => Wrap { trim: false },
+        | PopupType::DeleteIndexConfirm { .. }
+        | PopupType::CreateUser { .. }
+        | PopupType::ModifyUser { .. }
+        | PopupType::DeleteUserConfirm { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

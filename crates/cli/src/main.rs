@@ -271,9 +271,8 @@ enum Commands {
 
     /// List and manage users
     Users {
-        /// Maximum number of users to list
-        #[arg(short, long, default_value = "30")]
-        count: usize,
+        #[command(subcommand)]
+        command: commands::users::UsersCommand,
     },
 
     /// List and manage installed Splunk apps
@@ -631,11 +630,11 @@ async fn run_command(
             )
             .await?;
         }
-        Commands::Users { count } => {
+        Commands::Users { command } => {
             let config = config.into_real_config()?;
             commands::users::run(
                 config,
-                count,
+                command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,

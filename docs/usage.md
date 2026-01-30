@@ -443,14 +443,48 @@ splunk-cli -o json license
 ```
 
 #### `users`
-List all Splunk users.
+List and manage Splunk users.
 
 ```bash
-splunk-cli users
-splunk-cli users --count 10 --output table
+# List all users
+splunk-cli users list
+splunk-cli users list --count 10 --output table
+
+# Create a new user
+splunk-cli users create johndoe --roles user,power --email john@example.com --realname "John Doe"
+splunk-cli users create janedoe --roles admin --password "secure123"
+
+# Modify an existing user
+splunk-cli users modify johndoe --roles power --email newemail@example.com
+splunk-cli users modify janedoe --password "newpassword456"
+
+# Delete a user
+splunk-cli users delete johndoe
+splunk-cli users delete janedoe --force
 ```
 
+**List options:**
 - `-c, --count <NUMBER>`: Maximum number of users to list [default: 30]
+
+**Create options:**
+- `name`: Username (required)
+- `-p, --password <PASSWORD>`: Initial password (will prompt if not provided)
+- `-r, --roles <ROLES>`: Roles to assign (comma-separated, at least one required)
+- `--realname <NAME>`: Real name of the user
+- `--email <EMAIL>`: Email address of the user
+- `--default-app <APP>`: Default app for the user
+
+**Modify options:**
+- `name`: Username (required)
+- `-p, --password <PASSWORD>`: New password
+- `-r, --roles <ROLES>`: Roles to assign (comma-separated, replaces existing)
+- `--realname <NAME>`: Real name of the user
+- `--email <EMAIL>`: Email address of the user
+- `--default-app <APP>`: Default app for the user
+
+**Delete options:**
+- `name`: Username (required)
+- `-f, --force`: Skip confirmation prompt
 
 #### `apps`
 List and manage installed Splunk apps.

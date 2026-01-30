@@ -423,6 +423,31 @@ pub enum Action {
     /// Result of deleting an index
     IndexDeleted(Result<String, Arc<ClientError>>),
 
+    // User Operations
+    /// Create a new user
+    CreateUser {
+        params: splunk_client::CreateUserParams,
+    },
+    /// Modify an existing user
+    ModifyUser {
+        name: String,
+        params: splunk_client::ModifyUserParams,
+    },
+    /// Delete a user
+    DeleteUser { name: String },
+    /// Open user creation dialog
+    OpenCreateUserDialog,
+    /// Open user modification dialog
+    OpenModifyUserDialog { name: String },
+    /// Open user deletion confirmation
+    OpenDeleteUserConfirm { name: String },
+    /// Result of creating a user
+    UserCreated(Result<User, Arc<ClientError>>),
+    /// Result of modifying a user
+    UserModified(Result<User, Arc<ClientError>>),
+    /// Result of deleting a user
+    UserDeleted(Result<String, Arc<ClientError>>),
+
     /// Inspect currently selected job
     InspectJob,
     /// Exit job inspection mode

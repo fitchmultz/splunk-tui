@@ -2,6 +2,7 @@
 //!
 //! This module contains types for listing and managing Splunk users.
 
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 
 /// Splunk user information.
@@ -36,6 +37,38 @@ pub struct UserEntry {
 #[derive(Debug, Deserialize, Clone)]
 pub struct UserListResponse {
     pub entry: Vec<UserEntry>,
+}
+
+/// Parameters for creating a new user.
+#[derive(Debug, Clone, Default)]
+pub struct CreateUserParams {
+    /// The username for the new user (required).
+    pub name: String,
+    /// The initial password for the user (required).
+    pub password: SecretString,
+    /// Roles to assign to the user (required, at least one).
+    pub roles: Vec<String>,
+    /// Real name of the user (optional).
+    pub realname: Option<String>,
+    /// Email address of the user (optional).
+    pub email: Option<String>,
+    /// Default app for the user (optional).
+    pub default_app: Option<String>,
+}
+
+/// Parameters for modifying an existing user.
+#[derive(Debug, Clone, Default)]
+pub struct ModifyUserParams {
+    /// New password for the user (optional).
+    pub password: Option<SecretString>,
+    /// Roles to assign to the user (replaces existing roles, optional).
+    pub roles: Option<Vec<String>>,
+    /// Real name of the user (optional).
+    pub realname: Option<String>,
+    /// Email address of the user (optional).
+    pub email: Option<String>,
+    /// Default app for the user (optional).
+    pub default_app: Option<String>,
 }
 
 #[cfg(test)]

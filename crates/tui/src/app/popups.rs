@@ -442,6 +442,187 @@ impl App {
                 self.popup = None;
                 None
             }
+            // User creation popup handling
+            (Some(PopupType::CreateUser { .. }), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::CreateUser { name_input, .. }), KeyCode::Enter) => {
+                if name_input.is_empty() {
+                    return None;
+                }
+                let name = name_input.clone();
+                // Extract other fields from the popup state
+                if let Some(Popup {
+                    kind:
+                        PopupType::CreateUser {
+                            password_input,
+                            roles_input,
+                            realname_input,
+                            email_input,
+                            default_app_input,
+                            ..
+                        },
+                    ..
+                }) = self.popup.take()
+                {
+                    let password = secrecy::SecretString::from(password_input);
+                    let roles: Vec<String> = roles_input
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect();
+                    let realname = if realname_input.is_empty() {
+                        None
+                    } else {
+                        Some(realname_input)
+                    };
+                    let email = if email_input.is_empty() {
+                        None
+                    } else {
+                        Some(email_input)
+                    };
+                    let default_app = if default_app_input.is_empty() {
+                        None
+                    } else {
+                        Some(default_app_input)
+                    };
+                    let params = splunk_client::CreateUserParams {
+                        name,
+                        password,
+                        roles,
+                        realname,
+                        email,
+                        default_app,
+                    };
+                    Some(Action::CreateUser { params })
+                } else {
+                    None
+                }
+            }
+            (
+                Some(PopupType::CreateUser {
+                    name_input,
+                    password_input,
+                    roles_input,
+                    realname_input,
+                    email_input,
+                    default_app_input,
+                }),
+                KeyCode::Char(c),
+            ) => {
+                let mut new_name = name_input.clone();
+                new_name.push(c);
+                self.popup = Some(
+                    Popup::builder(PopupType::CreateUser {
+                        name_input: new_name,
+                        password_input: password_input.clone(),
+                        roles_input: roles_input.clone(),
+                        realname_input: realname_input.clone(),
+                        email_input: email_input.clone(),
+                        default_app_input: default_app_input.clone(),
+                    })
+                    .build(),
+                );
+                None
+            }
+            (
+                Some(PopupType::CreateUser {
+                    name_input,
+                    password_input,
+                    roles_input,
+                    realname_input,
+                    email_input,
+                    default_app_input,
+                }),
+                KeyCode::Backspace,
+            ) => {
+                let mut new_name = name_input.clone();
+                new_name.pop();
+                self.popup = Some(
+                    Popup::builder(PopupType::CreateUser {
+                        name_input: new_name,
+                        password_input: password_input.clone(),
+                        roles_input: roles_input.clone(),
+                        realname_input: realname_input.clone(),
+                        email_input: email_input.clone(),
+                        default_app_input: default_app_input.clone(),
+                    })
+                    .build(),
+                );
+                None
+            }
+            // User modification popup handling
+            (Some(PopupType::ModifyUser { .. }), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::ModifyUser { user_name, .. }), KeyCode::Enter) => {
+                let name = user_name.clone();
+                if let Some(Popup {
+                    kind:
+                        PopupType::ModifyUser {
+                            password_input,
+                            roles_input,
+                            realname_input,
+                            email_input,
+                            default_app_input,
+                            ..
+                        },
+                    ..
+                }) = self.popup.take()
+                {
+                    let password = if password_input.is_empty() {
+                        None
+                    } else {
+                        Some(secrecy::SecretString::from(password_input))
+                    };
+                    let roles: Vec<String> = roles_input
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect();
+                    let roles = if roles.is_empty() { None } else { Some(roles) };
+                    let realname = if realname_input.is_empty() {
+                        None
+                    } else {
+                        Some(realname_input)
+                    };
+                    let email = if email_input.is_empty() {
+                        None
+                    } else {
+                        Some(email_input)
+                    };
+                    let default_app = if default_app_input.is_empty() {
+                        None
+                    } else {
+                        Some(default_app_input)
+                    };
+                    let params = splunk_client::ModifyUserParams {
+                        password,
+                        roles,
+                        realname,
+                        email,
+                        default_app,
+                    };
+                    Some(Action::ModifyUser { name, params })
+                } else {
+                    None
+                }
+            }
+            // User deletion confirmation popup handling
+            (
+                Some(PopupType::DeleteUserConfirm { user_name }),
+                KeyCode::Char('y') | KeyCode::Enter,
+            ) => {
+                let name = user_name.clone();
+                self.popup = None;
+                Some(Action::DeleteUser { name })
+            }
+            (Some(PopupType::DeleteUserConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
             _ => None,
         }
     }
