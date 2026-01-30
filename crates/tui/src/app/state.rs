@@ -62,6 +62,7 @@ pub enum CurrentScreen {
     Configs,
     Settings,
     Overview,
+    FiredAlerts,
 }
 
 impl CurrentScreen {
@@ -83,7 +84,8 @@ impl CurrentScreen {
             CurrentScreen::Users => CurrentScreen::SearchPeers,
             CurrentScreen::SearchPeers => CurrentScreen::Inputs,
             CurrentScreen::Inputs => CurrentScreen::Configs,
-            CurrentScreen::Configs => CurrentScreen::Settings,
+            CurrentScreen::Configs => CurrentScreen::FiredAlerts,
+            CurrentScreen::FiredAlerts => CurrentScreen::Settings,
             CurrentScreen::Settings => CurrentScreen::Overview,
             CurrentScreen::Overview => CurrentScreen::Search, // Wrap around
         }
@@ -108,7 +110,8 @@ impl CurrentScreen {
             CurrentScreen::SearchPeers => CurrentScreen::Users,
             CurrentScreen::Inputs => CurrentScreen::SearchPeers,
             CurrentScreen::Configs => CurrentScreen::Inputs,
-            CurrentScreen::Settings => CurrentScreen::Configs,
+            CurrentScreen::FiredAlerts => CurrentScreen::Configs,
+            CurrentScreen::Settings => CurrentScreen::FiredAlerts,
             CurrentScreen::Overview => CurrentScreen::Settings,
         }
     }

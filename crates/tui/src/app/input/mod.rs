@@ -12,6 +12,7 @@
 pub mod apps;
 pub mod cluster;
 pub mod configs;
+pub mod fired_alerts;
 pub mod health;
 pub mod indexes;
 pub mod inputs;
@@ -53,6 +54,7 @@ impl App {
             CurrentScreen::Configs => self.handle_configs_input(key),
             CurrentScreen::Settings => self.handle_settings_input(key),
             CurrentScreen::Overview => self.handle_overview_input(key),
+            CurrentScreen::FiredAlerts => self.handle_fired_alerts_input(key),
         }
     }
 }

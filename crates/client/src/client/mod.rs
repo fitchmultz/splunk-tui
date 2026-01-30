@@ -32,6 +32,7 @@ pub mod builder;
 mod session;
 
 // API method submodules
+mod alerts;
 mod apps;
 mod cluster;
 mod configs;

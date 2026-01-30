@@ -31,6 +31,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "side_effects_tests.rs",
         "Comprehensive side effect handler tests - covers 23 async API operations",
     ),
+    (
+        "keymap/bindings/screens.rs",
+        "Keybinding definitions for all TUI screens - each screen requires multiple keybinding entries",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

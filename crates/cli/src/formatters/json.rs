@@ -192,4 +192,12 @@ impl Formatter for JsonFormatter {
     fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
         Ok(serde_json::to_string_pretty(stanza)?)
     }
+
+    fn format_fired_alerts(&self, alerts: &[splunk_client::models::FiredAlert]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(alerts)?)
+    }
+
+    fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
+        Ok(serde_json::to_string_pretty(alert)?)
+    }
 }

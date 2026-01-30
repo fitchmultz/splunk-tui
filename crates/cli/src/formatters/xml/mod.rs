@@ -17,6 +17,7 @@ use splunk_client::{
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
+mod alerts;
 mod apps;
 mod cluster;
 mod configs;
@@ -140,5 +141,13 @@ impl Formatter for XmlFormatter {
 
     fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
         configs::format_config_stanza(stanza)
+    }
+
+    fn format_fired_alerts(&self, alerts: &[splunk_client::models::FiredAlert]) -> Result<String> {
+        alerts::format_fired_alerts(alerts)
+    }
+
+    fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
+        alerts::format_fired_alert_info(alert)
     }
 }

@@ -32,9 +32,9 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, HealthCheckOutput, Index,
-    Input, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch,
-    SearchJobStatus, SearchPeer, SplunkHealth, User,
+    App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
+    HealthCheckOutput, Index, Input, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    LogEntry, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -232,6 +232,10 @@ pub enum Action {
         /// Offset for pagination
         offset: u64,
     },
+    /// Load the list of fired alerts
+    LoadFiredAlerts,
+    /// Load more fired alerts (pagination)
+    LoadMoreFiredAlerts,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -308,6 +312,10 @@ pub enum Action {
     ConfigFilesLoaded(Result<Vec<ConfigFile>, Arc<ClientError>>),
     /// Result of loading config stanzas
     ConfigStanzasLoaded(Result<Vec<ConfigStanza>, Arc<ClientError>>),
+    /// Result of loading fired alerts
+    FiredAlertsLoaded(Result<Vec<FiredAlert>, Arc<ClientError>>),
+    /// Result of loading more fired alerts (pagination)
+    MoreFiredAlertsLoaded(Result<Vec<FiredAlert>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

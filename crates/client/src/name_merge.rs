@@ -12,7 +12,9 @@
 //! - Callers should invoke this for endpoints where `content.name` may be missing/empty.
 //! - This is crate-internal glue; it is not part of the public API contract.
 
-use crate::models::{App, ConfigStanza, Forwarder, Index, Input, SavedSearch, SearchPeer, User};
+use crate::models::{
+    App, ConfigStanza, FiredAlert, Forwarder, Index, Input, SavedSearch, SearchPeer, User,
+};
 
 pub(crate) trait HasName {
     fn set_name(&mut self, name: String);
@@ -66,6 +68,12 @@ impl HasName for Input {
 }
 
 impl HasName for ConfigStanza {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+}
+
+impl HasName for FiredAlert {
     fn set_name(&mut self, name: String) {
         self.name = name;
     }

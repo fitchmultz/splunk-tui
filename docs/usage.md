@@ -252,6 +252,46 @@ Long-running commands can be interrupted with `Ctrl+C`:
 
 ### Commands
 
+#### `alerts`
+View fired alerts and alert history.
+
+```bash
+# List all fired alerts
+splunk-cli alerts list
+
+# List with count limit
+splunk-cli alerts list --count 50
+
+# List in different formats
+splunk-cli alerts list --output json
+splunk-cli alerts list --output csv
+splunk-cli alerts list --output xml
+
+# Show details for a specific fired alert
+splunk-cli alerts info "scheduler__admin__search__MyAlert_at_1351181001_5.31_1351181987"
+```
+
+**Subcommands:**
+- `list` [options]: List fired alerts
+  - `-c, --count <NUMBER>`: Maximum number of fired alerts to list [default: 30]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+
+- `info <NAME>`: Show detailed information about a fired alert
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+
+**Output Fields:**
+- **Name**: The alert identifier (scheduler format)
+- **Saved Search**: Name of the saved search that triggered the alert
+- **Severity**: Alert severity level (Info, Low, Medium, High, Critical)
+- **Actions**: Actions triggered (email, webhook, etc.)
+- **Trigger Time**: When the alert fired
+- **Alert Type**: Type of alert (scheduled, realtime, etc.)
+
+**Notes:**
+- Fired alerts are read-only historical records
+- Alert configuration is managed via `saved-searches` command
+- Use `--output json` for full alert details including SID and trigger metadata
+
 #### `search`
 Execute a search query and return results.
 
@@ -806,6 +846,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `r`: Refresh config files
 - `Enter`: View stanza details
 - `h`: Go back
+- `j/k or Up/Down`: Navigate list
+
+#### Fired Alerts Screen
+- `r`: Refresh fired alerts
+- `Ctrl+e`: Export fired alerts
+- `Ctrl+c`: Copy selected alert name
 - `j/k or Up/Down`: Navigate list
 
 #### Settings Screen

@@ -82,6 +82,7 @@
 //! 4. **Parallel batch operations**: Use `futures::future::join_all` for batch
 //!    job operations (with rate limiting to avoid API throttling).
 
+mod alerts;
 mod apps;
 mod cluster;
 mod configs;
@@ -191,6 +192,13 @@ pub async fn handle_side_effects(
         }
         Action::LoadConfigFiles => {
             configs::handle_load_config_files(client, tx).await;
+        }
+        Action::LoadFiredAlerts => {
+            alerts::handle_load_fired_alerts(client, tx).await;
+        }
+        Action::LoadMoreFiredAlerts => {
+            // This action is handled by the main loop which has access to state
+            // It reads fired_alerts_pagination and sends LoadFiredAlerts with updated offset
         }
         Action::LoadConfigStanzas {
             config_file,

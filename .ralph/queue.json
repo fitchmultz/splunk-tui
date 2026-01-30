@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0241",
-      "status": "todo",
-      "title": "Add alert and trigger management",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "alerts",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/alerts.rs",
-        "crates/client/src/endpoints/alerts.rs",
-        "crates/client/src/models/alerts.rs",
-        "crates/cli/src/commands/alerts.rs",
-        "crates/tui/src/ui/screens/alerts.rs"
-      ],
-      "evidence": [
-        "Saved searches exist but alert actions/triggers are separate in Splunk.",
-        "Splunk REST API provides /services/alerts for alert management.",
-        "Admins need to monitor and manage alert firing history and status."
-      ],
-      "plan": [
-        "Add alert models (Alert, AlertTrigger, AlertAction) to client.",
-        "Implement alerts endpoint and client methods.",
-        "Add CLI alerts command for listing and managing alerts.",
-        "Create TUI alerts screen with trigger history.",
-        "Add tests and documentation updates."
-      ],
-      "notes": [],
-      "request": "Feature gap for Splunk admin experience",
-      "created_at": "2026-01-29T23:55:00Z",
-      "updated_at": "2026-01-29T23:55:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0242",
       "status": "todo",
       "title": "Add multi-instance dashboard for TUI",

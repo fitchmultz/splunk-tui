@@ -96,6 +96,7 @@ impl App {
                         CurrentScreen::SearchPeers => "Search Peers",
                         CurrentScreen::Inputs => "Data Inputs",
                         CurrentScreen::Configs => "Config Files",
+                        CurrentScreen::FiredAlerts => "Fired Alerts",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                     },
@@ -347,6 +348,18 @@ impl App {
                         view_mode: self.config_view_mode,
                         files_state: &mut self.config_files_state,
                         stanzas_state: &mut self.config_stanzas_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::FiredAlerts => {
+                crate::ui::screens::alerts::render_fired_alerts(
+                    f,
+                    area,
+                    crate::ui::screens::alerts::FiredAlertsRenderConfig {
+                        loading: self.loading,
+                        fired_alerts: self.fired_alerts.as_deref(),
+                        state: &mut self.fired_alerts_state,
                         theme: &self.theme,
                     },
                 );

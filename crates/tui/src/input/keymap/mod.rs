@@ -38,6 +38,7 @@ pub enum Section {
     SearchPeers,
     Inputs,
     Configs,
+    FiredAlerts,
     Settings,
     Overview,
 }
@@ -177,6 +178,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::SearchPeers => Section::SearchPeers,
         CurrentScreen::Inputs => Section::Inputs,
         CurrentScreen::Configs => Section::Configs,
+        CurrentScreen::FiredAlerts => Section::FiredAlerts,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
     }
@@ -267,6 +269,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Overview => &["r", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Inputs => &["r", "e", "d", "j/k or Up/Down"],
         CurrentScreen::Configs => &["r", "Enter", "h", "j/k or Up/Down"],
+        CurrentScreen::FiredAlerts => &["r", "j/k or Up/Down", "Ctrl+c"],
     };
 
     // Sort hints by priority order

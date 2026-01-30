@@ -283,6 +283,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `h`: Go back
 - `j/k or Up/Down`: Navigate list
 
+#### Fired Alerts Screen
+- `r`: Refresh fired alerts
+- `Ctrl+e`: Export fired alerts
+- `Ctrl+c`: Copy selected alert name
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

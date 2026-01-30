@@ -15,7 +15,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::models::{ConfigFile, ConfigStanza, Input, LogEntry, SearchPeer};
+use splunk_client::models::{ConfigFile, ConfigStanza, FiredAlert, Input, LogEntry, SearchPeer};
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     SavedSearch, SearchJobStatus, User,
@@ -161,6 +161,12 @@ pub trait Formatter {
 
     /// Format a single config stanza in detail.
     fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String>;
+
+    /// Format fired alerts list.
+    fn format_fired_alerts(&self, alerts: &[FiredAlert]) -> Result<String>;
+
+    /// Format detailed fired alert information.
+    fn format_fired_alert_info(&self, alert: &FiredAlert) -> Result<String>;
 }
 
 /// Cluster peer output structure.

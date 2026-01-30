@@ -17,6 +17,7 @@ use splunk_client::{
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
+use super::alerts;
 use super::apps;
 use super::cluster;
 use super::configs;
@@ -152,6 +153,14 @@ impl Formatter for TableFormatter {
 
     fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
         configs::format_config_stanza_detail(stanza)
+    }
+
+    fn format_fired_alerts(&self, alerts: &[splunk_client::models::FiredAlert]) -> Result<String> {
+        alerts::format_fired_alerts(alerts)
+    }
+
+    fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
+        alerts::format_fired_alert_info(alert)
     }
 }
 

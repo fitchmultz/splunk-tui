@@ -96,6 +96,7 @@ fn section_title(section: Section) -> &'static str {
         Section::SearchPeers => "Search Peers Screen:",
         Section::Inputs => "Data Inputs Screen:",
         Section::Configs => "Configuration Files Screen:",
+        Section::FiredAlerts => "Fired Alerts Screen:",
         Section::Settings => "Settings Screen:",
         Section::Overview => "Overview Screen:",
     }

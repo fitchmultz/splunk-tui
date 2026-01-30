@@ -904,4 +904,91 @@ impl Formatter for CsvFormatter {
 
         Ok(output)
     }
+
+    fn format_fired_alerts(&self, alerts: &[splunk_client::models::FiredAlert]) -> Result<String> {
+        let mut output = String::new();
+
+        if alerts.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Header
+        output.push_str(&escape_csv("Name"));
+        output.push(',');
+        output.push_str(&escape_csv("SavedSearch"));
+        output.push(',');
+        output.push_str(&escape_csv("Severity"));
+        output.push(',');
+        output.push_str(&escape_csv("TriggerTime"));
+        output.push(',');
+        output.push_str(&escape_csv("SID"));
+        output.push(',');
+        output.push_str(&escape_csv("Actions"));
+        output.push('\n');
+
+        for alert in alerts {
+            output.push_str(&escape_csv(&alert.name));
+            output.push(',');
+            output.push_str(&escape_csv(alert.savedsearch_name.as_deref().unwrap_or("")));
+            output.push(',');
+            output.push_str(&escape_csv(alert.severity.as_deref().unwrap_or("Medium")));
+            output.push(',');
+            output.push_str(&escape_csv(
+                alert.trigger_time_rendered.as_deref().unwrap_or(""),
+            ));
+            output.push(',');
+            output.push_str(&escape_csv(alert.sid.as_deref().unwrap_or("")));
+            output.push(',');
+            output.push_str(&escape_csv(alert.actions.as_deref().unwrap_or("")));
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str(&escape_csv("Property"));
+        output.push(',');
+        output.push_str(&escape_csv("Value"));
+        output.push('\n');
+
+        // Data rows
+        let rows = vec![
+            ("Name", alert.name.clone()),
+            (
+                "SavedSearch",
+                alert.savedsearch_name.clone().unwrap_or_default(),
+            ),
+            (
+                "Severity",
+                alert
+                    .severity
+                    .clone()
+                    .unwrap_or_else(|| "Medium".to_string()),
+            ),
+            (
+                "TriggerTime",
+                alert.trigger_time_rendered.clone().unwrap_or_default(),
+            ),
+            ("SID", alert.sid.clone().unwrap_or_default()),
+            ("Actions", alert.actions.clone().unwrap_or_default()),
+            ("AlertType", alert.alert_type.clone().unwrap_or_default()),
+            (
+                "TriggeredAlerts",
+                alert.triggered_alerts.clone().unwrap_or_default(),
+            ),
+        ];
+
+        for (prop, value) in rows {
+            output.push_str(&escape_csv(prop));
+            output.push(',');
+            output.push_str(&escape_csv(&value));
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
 }

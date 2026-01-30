@@ -12,6 +12,7 @@ pub use self::imp::Pagination;
 pub use self::imp::TableFormatter;
 
 // Submodules containing individual format_* implementations
+mod alerts;
 mod apps;
 mod cluster;
 mod configs;

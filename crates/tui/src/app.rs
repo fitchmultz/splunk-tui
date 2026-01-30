@@ -101,6 +101,11 @@ pub struct App {
     pub inputs_pagination: crate::app::state::ListPaginationState,
     pub overview_data: Option<crate::action::OverviewData>,
 
+    // Fired alerts state
+    pub fired_alerts: Option<Vec<splunk_client::models::FiredAlert>>,
+    pub fired_alerts_state: ratatui::widgets::ListState,
+    pub fired_alerts_pagination: crate::app::state::ListPaginationState,
+
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,
     pub config_files_state: ratatui::widgets::TableState,
@@ -314,6 +319,9 @@ impl App {
         let mut config_stanzas_state = ratatui::widgets::TableState::default();
         config_stanzas_state.select(Some(0));
 
+        let mut fired_alerts_state = ratatui::widgets::ListState::default();
+        fired_alerts_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -390,6 +398,9 @@ impl App {
             inputs_state,
             inputs_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             overview_data: None,
+            fired_alerts: None,
+            fired_alerts_state,
+            fired_alerts_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             config_files: None,
             config_files_state,
             selected_config_file: None,
@@ -573,6 +584,7 @@ impl App {
                 offset: 0,
             }),
             CurrentScreen::Configs => Some(Action::LoadConfigFiles),
+            CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
         }

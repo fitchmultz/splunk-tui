@@ -324,6 +324,12 @@ enum Commands {
         #[command(subcommand)]
         command: commands::configs::ConfigsCommand,
     },
+
+    /// List and manage fired alerts
+    Alerts {
+        #[command(subcommand)]
+        command: commands::alerts::AlertsCommand,
+    },
 }
 
 /// Returns true if the path is empty or contains only whitespace.
@@ -738,6 +744,17 @@ async fn run_command(
         Commands::Configs { command } => {
             let config = config.into_real_config()?;
             commands::configs::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::Alerts { command } => {
+            let config = config.into_real_config()?;
+            commands::alerts::run(
                 config,
                 command,
                 &cli.output,

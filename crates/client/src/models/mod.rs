@@ -4,6 +4,7 @@
 //! Types are organized by resource in submodules and re-exported here
 //! for convenient access.
 
+pub mod alerts;
 pub mod apps;
 pub mod auth;
 pub mod cluster;
@@ -22,6 +23,7 @@ pub mod server;
 pub mod users;
 
 // Re-exports for backward compatibility
+pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
 pub use apps::{App, AppEntry, AppListResponse};
 pub use auth::AuthResponse;
 pub use cluster::{ClusterInfo, ClusterPeer};

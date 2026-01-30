@@ -112,13 +112,19 @@ impl App {
                 // Reset pagination state for fresh load
                 self.inputs_pagination.reset();
             }
+            Action::LoadFiredAlerts => {
+                self.current_screen = CurrentScreen::FiredAlerts;
+                // Reset pagination state for fresh load
+                self.fired_alerts_pagination.reset();
+            }
             // LoadMore actions - handled by main loop which has access to state
             Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
             | Action::LoadMoreUsers
             | Action::LoadMoreSearchPeers
-            | Action::LoadMoreInputs => {
+            | Action::LoadMoreInputs
+            | Action::LoadMoreFiredAlerts => {
                 // These are handled in the main loop which has access to pagination state
             }
             Action::NavigateDown => self.next_item(),
@@ -535,6 +541,38 @@ impl App {
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
+            Action::FiredAlertsLoaded(Ok(alerts)) => {
+                let count = alerts.len();
+                self.fired_alerts = Some(alerts);
+                self.fired_alerts_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreFiredAlertsLoaded(Ok(alerts)) => {
+                let count = alerts.len();
+                if let Some(ref mut existing) = self.fired_alerts {
+                    existing.extend(alerts);
+                } else {
+                    self.fired_alerts = Some(alerts);
+                }
+                self.fired_alerts_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreFiredAlertsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more fired alerts: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::FiredAlertsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load fired alerts: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
             Action::SettingsLoaded(state) => {
                 self.auto_refresh = state.auto_refresh;
                 self.sort_state.column = crate::app::state::parse_sort_column(&state.sort_column);
@@ -654,6 +692,7 @@ impl App {
                 self.apps = None;
                 self.users = None;
                 self.search_peers = None;
+                self.fired_alerts = None;
                 self.search_results.clear();
                 self.search_sid = None;
                 self.search_results_total_count = None;
@@ -667,6 +706,7 @@ impl App {
                 self.apps_state.select(Some(0));
                 self.users_state.select(Some(0));
                 self.search_peers_state.select(Some(0));
+                self.fired_alerts_state.select(Some(0));
                 // Trigger reload for current screen
                 // The load action will be sent by main.rs after this
             }

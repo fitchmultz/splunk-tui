@@ -29,6 +29,7 @@ pub enum ExportTarget {
     InternalLogs,
     Overview,
     SearchPeers,
+    FiredAlerts,
 }
 
 impl ExportTarget {
@@ -47,6 +48,7 @@ impl ExportTarget {
             ExportTarget::InternalLogs => "Export Internal Logs",
             ExportTarget::Overview => "Export Overview",
             ExportTarget::SearchPeers => "Export Search Peers",
+            ExportTarget::FiredAlerts => "Export Fired Alerts",
         }
     }
 
@@ -65,6 +67,7 @@ impl ExportTarget {
             ExportTarget::InternalLogs => "internal-logs",
             ExportTarget::Overview => "overview",
             ExportTarget::SearchPeers => "search-peers",
+            ExportTarget::FiredAlerts => "fired-alerts",
         };
 
         let ext = match format {
@@ -139,6 +142,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::SearchPeers => self
                 .search_peers
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::FiredAlerts => self
+                .fired_alerts
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
         }
