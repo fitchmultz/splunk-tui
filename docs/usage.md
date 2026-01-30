@@ -252,6 +252,40 @@ Long-running commands can be interrupted with `Ctrl+C`:
 
 ### Commands
 
+#### `lookups`
+List lookup tables (CSV-based lookups).
+
+```bash
+# List all lookup tables
+splunk-cli lookups
+
+# List with count limit
+splunk-cli lookups --count 50
+
+# List with offset (pagination)
+splunk-cli lookups --count 30 --offset 30
+
+# List in different formats
+splunk-cli lookups --output json
+splunk-cli lookups --output csv
+splunk-cli lookups --output xml
+```
+
+- `-c, --count <NUMBER>`: Maximum number of lookup tables to list [default: 30]
+- `--offset <NUMBER>`: Offset into the lookup table list (zero-based) [default: 0]
+
+**Output Fields:**
+- **Name**: The lookup table name
+- **Filename**: The actual filename of the lookup
+- **Owner**: Owner of the lookup
+- **App**: App context where the lookup is defined
+- **Sharing**: Sharing level (user, app, global)
+- **Size**: File size in human-readable format (table output) or bytes (CSV/JSON/XML)
+
+**Notes:**
+- Only CSV-based lookup files are listed (KV store lookups use a different endpoint)
+- File sizes are shown in human-readable format (B, KB, MB, GB) in table output
+
 #### `alerts`
 View fired alerts and alert history.
 

@@ -25,6 +25,7 @@ mod jobs;
 mod license;
 mod list_all;
 mod logs;
+mod lookups;
 mod profiles;
 mod saved_searches;
 mod search;

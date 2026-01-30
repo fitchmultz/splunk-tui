@@ -135,6 +135,9 @@ pub trait Formatter {
     /// Format detailed job information.
     fn format_job_details(&self, job: &SearchJobStatus) -> Result<String>;
 
+    /// Format lookup tables list.
+    fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String>;
+
     /// Format profile configuration.
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String>;
 

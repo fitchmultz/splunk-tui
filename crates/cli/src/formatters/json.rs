@@ -200,4 +200,8 @@ impl Formatter for JsonFormatter {
     fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
         Ok(serde_json::to_string_pretty(alert)?)
     }
+
+    fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(lookups)?)
+    }
 }

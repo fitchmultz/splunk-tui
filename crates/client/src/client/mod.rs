@@ -43,6 +43,7 @@ mod jobs;
 mod kvstore;
 mod license;
 mod logs;
+mod lookups;
 mod search;
 mod search_peers;
 mod server;

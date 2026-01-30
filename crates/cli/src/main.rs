@@ -330,6 +330,17 @@ enum Commands {
         #[command(subcommand)]
         command: commands::alerts::AlertsCommand,
     },
+
+    /// List lookup tables (CSV-based lookups)
+    Lookups {
+        /// Maximum number of lookup tables to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+
+        /// Offset into the lookup table list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
 }
 
 /// Returns true if the path is empty or contains only whitespace.
@@ -757,6 +768,18 @@ async fn run_command(
             commands::alerts::run(
                 config,
                 command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::Lookups { count, offset } => {
+            let config = config.into_real_config()?;
+            commands::lookups::run(
+                config,
+                count,
+                offset,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,

@@ -29,6 +29,7 @@ use super::jobs;
 use super::license;
 use super::list_all;
 use super::logs;
+use super::lookups;
 use super::profiles;
 use super::saved_searches;
 use super::search;
@@ -121,6 +122,10 @@ impl Formatter for TableFormatter {
 
     fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
         jobs::format_job_details(job)
+    }
+
+    fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
+        lookups::format_lookups(lookups)
     }
 
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {

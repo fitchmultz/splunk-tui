@@ -23,6 +23,7 @@ pub use models::{
     App, AppListResponse, ClusterInfo, ClusterPeer, Forwarder, ForwarderListResponse,
     HealthCheckOutput, Index, IndexListResponse, KvStoreMember, KvStoreReplicationStatus,
     KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, LogParsingHealth,
-    SavedSearch, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo,
-    SplunkHealth, SplunkResponse, User, UserListResponse,
+    LookupTable, LookupTableEntry, LookupTableListResponse, SavedSearch, SearchJob,
+    SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
+    SplunkResponse, User, UserListResponse,
 };

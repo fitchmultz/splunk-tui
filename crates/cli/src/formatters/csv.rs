@@ -991,4 +991,43 @@ impl Formatter for CsvFormatter {
 
         Ok(output)
     }
+
+    fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
+        let mut output = String::new();
+
+        if lookups.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Header
+        output.push_str(&escape_csv("Name"));
+        output.push(',');
+        output.push_str(&escape_csv("Filename"));
+        output.push(',');
+        output.push_str(&escape_csv("Owner"));
+        output.push(',');
+        output.push_str(&escape_csv("App"));
+        output.push(',');
+        output.push_str(&escape_csv("Sharing"));
+        output.push(',');
+        output.push_str(&escape_csv("Size"));
+        output.push('\n');
+
+        for lookup in lookups {
+            output.push_str(&escape_csv(&lookup.name));
+            output.push(',');
+            output.push_str(&escape_csv(&lookup.filename));
+            output.push(',');
+            output.push_str(&escape_csv(&lookup.owner));
+            output.push(',');
+            output.push_str(&escape_csv(&lookup.app));
+            output.push(',');
+            output.push_str(&escape_csv(&lookup.sharing));
+            output.push(',');
+            output.push_str(&lookup.size.to_string());
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
 }

@@ -150,4 +150,39 @@ impl Formatter for XmlFormatter {
     fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
         alerts::format_fired_alert_info(alert)
     }
+
+    fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<lookups>\n");
+        for lookup in lookups {
+            output.push_str("  <lookup>\n");
+            output.push_str(&format!("    <name>{}</name>\n", escape_xml(&lookup.name)));
+            output.push_str(&format!(
+                "    <filename>{}</filename>\n",
+                escape_xml(&lookup.filename)
+            ));
+            output.push_str(&format!(
+                "    <owner>{}</owner>\n",
+                escape_xml(&lookup.owner)
+            ));
+            output.push_str(&format!("    <app>{}</app>\n", escape_xml(&lookup.app)));
+            output.push_str(&format!(
+                "    <sharing>{}</sharing>\n",
+                escape_xml(&lookup.sharing)
+            ));
+            output.push_str(&format!("    <size>{}</size>\n", lookup.size));
+            output.push_str("  </lookup>\n");
+        }
+        output.push_str("</lookups>\n");
+        Ok(output)
+    }
+}
+
+fn escape_xml(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }

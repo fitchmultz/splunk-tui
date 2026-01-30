@@ -17,6 +17,7 @@ pub mod jobs;
 pub mod kvstore;
 pub mod license;
 pub mod logs;
+pub mod lookups;
 pub mod saved_searches;
 pub mod search_peers;
 pub mod server;
@@ -41,6 +42,7 @@ pub use jobs::{
 pub use kvstore::{KvStoreMember, KvStoreReplicationStatus, KvStoreStatus};
 pub use license::{LicensePool, LicenseStack, LicenseUsage, SlavesUsageBytes};
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
+pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};
