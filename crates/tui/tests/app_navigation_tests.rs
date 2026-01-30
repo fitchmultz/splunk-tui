@@ -238,9 +238,9 @@ fn test_shift_tab_navigates_to_previous_screen() {
 #[test]
 fn test_tab_cycles_through_screens() {
     let mut app = App::new(None, ConnectionContext::default());
-    app.current_screen = CurrentScreen::Settings;
+    app.current_screen = CurrentScreen::Overview;
 
-    // Tab from Settings should wrap to Search
+    // Tab from Overview should wrap to Search
     let action = app.handle_input(tab_key());
     assert!(matches!(action, Some(Action::NextScreen)));
     app.update(action.unwrap());
@@ -273,7 +273,12 @@ fn test_shift_tab_cycles_backwards() {
     // Switch to ResultsFocused mode first so Shift+Tab can navigate
     app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
 
-    // Shift+Tab from Search (in ResultsFocused mode) should wrap to Settings
+    // Shift+Tab from Search (in ResultsFocused mode) should wrap to Overview
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Overview);
+
+    // Shift+Tab from Overview should go to Settings
     let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Settings);

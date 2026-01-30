@@ -44,6 +44,46 @@ use crate::ConnectionContext;
 use crate::action::format::ExportFormat;
 use crate::ui::ToastLevel;
 
+/// Aggregated license data from multiple API endpoints.
+///
+/// This struct combines license usage, pools, and stacks into a single
+/// data structure for the TUI license screen.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LicenseData {
+    /// License usage information (quota and used bytes)
+    pub usage: Vec<LicenseUsage>,
+    /// License pools
+    pub pools: Vec<LicensePool>,
+    /// License stacks
+    pub stacks: Vec<LicenseStack>,
+}
+
+/// Per-resource summary for the overview screen.
+///
+/// Mirrors the CLI's ResourceSummary type for CLI/TUI parity.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct OverviewResource {
+    /// The resource type name (e.g., "indexes", "jobs", "apps")
+    pub resource_type: String,
+    /// Count of items for this resource type
+    pub count: u64,
+    /// Status string (e.g., "ok", "error", "timeout")
+    pub status: String,
+    /// Optional error message if the fetch failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+/// Aggregated overview data for all Splunk resources.
+///
+/// This is the TUI equivalent of the CLI's list-all output,
+/// providing a unified dashboard view of resource counts and status.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct OverviewData {
+    /// List of resource summaries
+    pub resources: Vec<OverviewResource>,
+}
+
 /// Unified action type for async TUI event handling.
 ///
 /// Actions flow through a channel from input handlers and async tasks
@@ -149,6 +189,8 @@ pub enum Action {
         /// Offset for pagination
         offset: u64,
     },
+    /// Load overview information (all resources)
+    LoadOverview,
     /// Load cluster peers (detailed view)
     LoadClusterPeers,
     /// Load more indexes (pagination)
@@ -202,6 +244,8 @@ pub enum Action {
     UsersLoaded(Result<Vec<User>, Arc<ClientError>>),
     /// Result of loading cluster peers
     ClusterPeersLoaded(Result<Vec<ClusterPeer>, Arc<ClientError>>),
+    /// Result of loading overview
+    OverviewLoaded(OverviewData),
     /// Result of loading more indexes (pagination)
     MoreIndexesLoaded(Result<Vec<Index>, Arc<ClientError>>),
     /// Result of loading more jobs (pagination)
@@ -284,18 +328,4 @@ pub enum Action {
     ProfileSwitchResult(Result<ConnectionContext, String>),
     /// Clear all cached data after profile switch
     ClearAllData,
-}
-
-/// Aggregated license data from multiple API endpoints.
-///
-/// This struct combines license usage, pools, and stacks into a single
-/// data structure for the TUI license screen.
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct LicenseData {
-    /// License usage information (quota and used bytes)
-    pub usage: Vec<LicenseUsage>,
-    /// License pools
-    pub pools: Vec<LicensePool>,
-    /// License stacks
-    pub stacks: Vec<LicenseStack>,
 }

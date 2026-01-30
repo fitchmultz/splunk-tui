@@ -93,6 +93,7 @@ pub struct App {
     pub apps_state: ratatui::widgets::ListState,
     pub users: Option<Vec<User>>,
     pub users_state: ratatui::widgets::ListState,
+    pub overview_data: Option<crate::action::OverviewData>,
 
     // UI State
     pub loading: bool,
@@ -334,6 +335,7 @@ impl App {
             apps_state,
             users: None,
             users_state,
+            overview_data: None,
             loading: false,
             progress: 0.0,
             toasts: Vec::new(),
@@ -497,6 +499,7 @@ impl App {
                 offset: 0,
             }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
+            CurrentScreen::Overview => Some(Action::LoadOverview),
         }
     }
 

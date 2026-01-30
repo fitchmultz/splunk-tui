@@ -58,6 +58,7 @@ pub enum CurrentScreen {
     Apps,
     Users,
     Settings,
+    Overview,
 }
 
 impl CurrentScreen {
@@ -77,7 +78,8 @@ impl CurrentScreen {
             CurrentScreen::InternalLogs => CurrentScreen::Apps,
             CurrentScreen::Apps => CurrentScreen::Users,
             CurrentScreen::Users => CurrentScreen::Settings,
-            CurrentScreen::Settings => CurrentScreen::Search, // Wrap around
+            CurrentScreen::Settings => CurrentScreen::Overview,
+            CurrentScreen::Overview => CurrentScreen::Search, // Wrap around
         }
     }
 
@@ -85,7 +87,7 @@ impl CurrentScreen {
     /// Excludes JobInspect from the cycle (it's only accessible via InspectJob action).
     pub fn previous(self) -> Self {
         match self {
-            CurrentScreen::Search => CurrentScreen::Settings, // Wrap around
+            CurrentScreen::Search => CurrentScreen::Overview, // Wrap around
             CurrentScreen::Indexes => CurrentScreen::Search,
             CurrentScreen::Cluster => CurrentScreen::Indexes,
             CurrentScreen::Jobs => CurrentScreen::Cluster,
@@ -98,6 +100,7 @@ impl CurrentScreen {
             CurrentScreen::Apps => CurrentScreen::InternalLogs,
             CurrentScreen::Users => CurrentScreen::Apps,
             CurrentScreen::Settings => CurrentScreen::Users,
+            CurrentScreen::Overview => CurrentScreen::Settings,
         }
     }
 }
@@ -324,12 +327,14 @@ mod tests {
         // Test next navigation
         assert_eq!(CurrentScreen::Search.next(), CurrentScreen::Indexes);
         assert_eq!(CurrentScreen::Indexes.next(), CurrentScreen::Cluster);
-        assert_eq!(CurrentScreen::Settings.next(), CurrentScreen::Search); // Wrap around
+        assert_eq!(CurrentScreen::Settings.next(), CurrentScreen::Overview);
+        assert_eq!(CurrentScreen::Overview.next(), CurrentScreen::Search); // Wrap around
 
         // Test previous navigation
         assert_eq!(CurrentScreen::Indexes.previous(), CurrentScreen::Search);
         assert_eq!(CurrentScreen::Cluster.previous(), CurrentScreen::Indexes);
-        assert_eq!(CurrentScreen::Search.previous(), CurrentScreen::Settings); // Wrap around
+        assert_eq!(CurrentScreen::Overview.previous(), CurrentScreen::Settings);
+        assert_eq!(CurrentScreen::Search.previous(), CurrentScreen::Overview); // Wrap around
 
         // Test JobInspect special case
         assert_eq!(CurrentScreen::JobInspect.next(), CurrentScreen::Jobs);

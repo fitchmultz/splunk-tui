@@ -2,37 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0229",
-      "status": "todo",
-      "title": "Add TUI list-all overview screen for CLI parity",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "cli-parity",
-        "overview"
-      ],
-      "scope": [
-        "crates/cli/src/commands/list_all/mod.rs",
-        "crates/tui/src/ui/screens/mod.rs",
-        "crates/tui/src/runtime/side_effects"
-      ],
-      "evidence": [
-        "CLI provides list-all aggregation under crates/cli/src/commands/list_all/.",
-        "TUI screens listed in crates/tui/src/ui/screens/mod.rs lack an overview/list-all screen."
-      ],
-      "plan": [
-        "Define a TUI overview data model that mirrors list-all resource summaries.",
-        "Add side-effects to load summary data using client APIs.",
-        "Render a summary screen and add navigation/tests/docs updates."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0230",
       "status": "todo",
       "title": "Remove redundant internal-logs CLI command",

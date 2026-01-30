@@ -31,7 +31,7 @@ pub mod variants;
 
 pub use format::ExportFormat;
 pub use redaction::RedactedAction;
-pub use variants::{Action, LicenseData};
+pub use variants::{Action, LicenseData, OverviewData, OverviewResource};
 
 #[cfg(test)]
 mod tests;

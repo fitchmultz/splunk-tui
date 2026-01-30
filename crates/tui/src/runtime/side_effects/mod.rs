@@ -91,6 +91,7 @@ mod jobs;
 mod kvstore;
 mod license;
 mod logs;
+mod overview;
 mod profiles;
 mod searches;
 mod users;
@@ -209,6 +210,9 @@ pub async fn handle_side_effects(
         }
         Action::LoadKvstore => {
             kvstore::handle_load_kvstore(client, tx).await;
+        }
+        Action::LoadOverview => {
+            overview::handle_load_overview(client, tx).await;
         }
         Action::ExportData(data, path, format) => {
             export::handle_export_data(data, path, format, tx).await;

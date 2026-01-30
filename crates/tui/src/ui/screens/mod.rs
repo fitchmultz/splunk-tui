@@ -11,6 +11,7 @@ pub mod job_details;
 pub mod jobs;
 pub mod kvstore;
 pub mod license;
+pub mod overview;
 pub mod saved_searches;
 pub mod search;
 pub mod settings;

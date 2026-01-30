@@ -272,6 +272,11 @@ The Search screen has two input modes that affect how keys are handled:
 - `c`: Clear search history
 - `r`: Reload settings
 - `p`: Switch profile
+
+#### Overview Screen
+- `r`: Refresh overview
+- `Ctrl+e`: Export overview
+- `Ctrl+c`: Copy overview summary
 <!-- END TUI KEYBINDINGS -->
 
 - **Scrolling**:

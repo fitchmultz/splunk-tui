@@ -723,5 +723,36 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::OpenProfileSwitcher),
             handles_input: true,
         },
+        // Overview
+        Keybinding {
+            section: Section::Overview,
+            keys: "r",
+            description: "Refresh overview",
+            scope: BindingScope::Screen(Overview),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadOverview),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Overview,
+            keys: "Ctrl+e",
+            description: "Export overview",
+            scope: BindingScope::Screen(Overview),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Overview,
+            keys: "Ctrl+c",
+            description: "Copy overview summary",
+            scope: BindingScope::Screen(Overview),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
     ]
 }

@@ -27,6 +27,7 @@ pub enum ExportTarget {
     License,
     Kvstore,
     InternalLogs,
+    Overview,
 }
 
 impl ExportTarget {
@@ -43,6 +44,7 @@ impl ExportTarget {
             ExportTarget::License => "Export License",
             ExportTarget::Kvstore => "Export KVStore",
             ExportTarget::InternalLogs => "Export Internal Logs",
+            ExportTarget::Overview => "Export Overview",
         }
     }
 
@@ -59,6 +61,7 @@ impl ExportTarget {
             ExportTarget::License => "license",
             ExportTarget::Kvstore => "kvstore",
             ExportTarget::InternalLogs => "internal-logs",
+            ExportTarget::Overview => "overview",
         };
 
         let ext = match format {
@@ -125,6 +128,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::InternalLogs => self
                 .internal_logs
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Overview => self
+                .overview_data
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
         }

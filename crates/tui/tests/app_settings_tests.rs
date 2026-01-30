@@ -23,15 +23,20 @@ fn test_settings_screen_navigation() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Settings;
 
-    // Test navigation with Tab - should wrap to Search
+    // Test navigation with Tab - should go to Overview
     let action = app.handle_input(tab_key());
     assert!(
         matches!(action, Some(Action::NextScreen)),
-        "Tab from Settings should return NextScreen and wrap to Search"
+        "Tab from Settings should return NextScreen and go to Overview"
     );
 
     app.update(action.unwrap());
-    // Verify screen switched to Search (wraps around)
+    // Verify screen switched to Overview
+    assert_eq!(app.current_screen, CurrentScreen::Overview);
+
+    // Tab from Overview should wrap to Search
+    let action = app.handle_input(tab_key());
+    app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Search);
 }
 

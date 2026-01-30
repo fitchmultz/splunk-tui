@@ -36,6 +36,7 @@ pub enum Section {
     Apps,
     Users,
     Settings,
+    Overview,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -171,6 +172,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::Apps => Section::Apps,
         CurrentScreen::Users => Section::Users,
         CurrentScreen::Settings => Section::Settings,
+        CurrentScreen::Overview => Section::Overview,
     }
 }
 
@@ -255,6 +257,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Apps => &["r", "e", "d", "j/k or Up/Down"],
         CurrentScreen::Users => &["r", "j/k or Up/Down"],
         CurrentScreen::Settings => &["t", "a", "s", "d", "c", "r"],
+        CurrentScreen::Overview => &["r", "Ctrl+e", "Ctrl+c"],
     };
 
     // Sort hints by priority order
