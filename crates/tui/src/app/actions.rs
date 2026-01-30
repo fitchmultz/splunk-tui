@@ -104,12 +104,21 @@ impl App {
                 // Reset pagination state for fresh load
                 self.search_peers_pagination.reset();
             }
+            Action::LoadInputs {
+                count: _,
+                offset: _,
+            } => {
+                self.current_screen = CurrentScreen::Inputs;
+                // Reset pagination state for fresh load
+                self.inputs_pagination.reset();
+            }
             // LoadMore actions - handled by main loop which has access to state
             Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
             | Action::LoadMoreUsers
-            | Action::LoadMoreSearchPeers => {
+            | Action::LoadMoreSearchPeers
+            | Action::LoadMoreInputs => {
                 // These are handled in the main loop which has access to pagination state
             }
             Action::NavigateDown => self.next_item(),
@@ -488,6 +497,38 @@ impl App {
             }
             Action::SearchPeersLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load search peers: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::InputsLoaded(Ok(inputs)) => {
+                let count = inputs.len();
+                self.inputs = Some(inputs);
+                self.inputs_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreInputsLoaded(Ok(inputs)) => {
+                let count = inputs.len();
+                if let Some(ref mut existing) = self.inputs {
+                    existing.extend(inputs);
+                } else {
+                    self.inputs = Some(inputs);
+                }
+                self.inputs_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreInputsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more inputs: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::InputsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load inputs: {}", e);
                 self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
                     e.as_ref(),
                 ));

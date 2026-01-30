@@ -312,6 +312,12 @@ enum Commands {
         #[command(subcommand)]
         command: commands::saved_searches::SavedSearchesCommand,
     },
+
+    /// List and manage data inputs (TCP, UDP, Monitor, Script)
+    Inputs {
+        #[command(subcommand)]
+        command: commands::inputs::InputsCommand,
+    },
 }
 
 /// Returns true if the path is empty or contains only whitespace.
@@ -704,6 +710,17 @@ async fn run_command(
         Commands::SavedSearches { command } => {
             let config = config.into_real_config()?;
             commands::saved_searches::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::Inputs { command } => {
+            let config = config.into_real_config()?;
+            commands::inputs::run(
                 config,
                 command,
                 &cli.output,

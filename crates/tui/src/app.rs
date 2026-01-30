@@ -96,6 +96,9 @@ pub struct App {
     pub search_peers: Option<Vec<SearchPeer>>,
     pub search_peers_state: ratatui::widgets::TableState,
     pub search_peers_pagination: crate::app::state::ListPaginationState,
+    pub inputs: Option<Vec<splunk_client::models::Input>>,
+    pub inputs_state: ratatui::widgets::TableState,
+    pub inputs_pagination: crate::app::state::ListPaginationState,
     pub overview_data: Option<crate::action::OverviewData>,
 
     // UI State
@@ -272,6 +275,9 @@ impl App {
         let mut search_peers_state = ratatui::widgets::TableState::default();
         search_peers_state.select(Some(0));
 
+        let mut inputs_state = ratatui::widgets::TableState::default();
+        inputs_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -344,6 +350,9 @@ impl App {
             search_peers: None,
             search_peers_state,
             search_peers_pagination: crate::app::state::ListPaginationState::new(30, 1000),
+            inputs: None,
+            inputs_state,
+            inputs_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             overview_data: None,
             loading: false,
             progress: 0.0,
@@ -509,6 +518,10 @@ impl App {
             }),
             CurrentScreen::SearchPeers => Some(Action::LoadSearchPeers {
                 count: self.search_peers_pagination.page_size,
+                offset: 0,
+            }),
+            CurrentScreen::Inputs => Some(Action::LoadInputs {
+                count: self.inputs_pagination.page_size,
                 offset: 0,
             }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),

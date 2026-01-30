@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0238",
-      "status": "todo",
-      "title": "Add data inputs management (TCP/UDP/Monitor)",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "inputs",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/inputs.rs",
-        "crates/client/src/endpoints/inputs.rs",
-        "crates/client/src/models/inputs.rs",
-        "crates/cli/src/commands/inputs.rs",
-        "crates/tui/src/ui/screens/inputs.rs"
-      ],
-      "evidence": [
-        "Splunk admins need to view and manage data inputs (TCP, UDP, monitor, scripts).",
-        "Splunk REST API provides /services/data/inputs for input management.",
-        "No input management currently exists in the tool."
-      ],
-      "plan": [
-        "Add input models (TcpInput, UdpInput, MonitorInput) to client.",
-        "Implement inputs endpoint and client methods (list, enable, disable).",
-        "Add CLI inputs command for listing and managing inputs.",
-        "Create TUI inputs screen with filtering.",
-        "Add tests and documentation updates."
-      ],
-      "notes": [],
-      "request": "Feature gap for Splunk admin experience",
-      "created_at": "2026-01-29T23:52:00Z",
-      "updated_at": "2026-01-29T23:52:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0239",
       "status": "todo",
       "title": "Add configuration file viewer and comparison",

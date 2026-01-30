@@ -1,0 +1,141 @@
+//! Input management API methods for [`SplunkClient`].
+//!
+//! # What this module handles:
+//! - Listing data inputs (TCP, UDP, Monitor, Script)
+//! - Enabling/disabling inputs
+//!
+//! # What this module does NOT handle:
+//! - Creating or removing inputs (not yet implemented)
+//! - Low-level input endpoint HTTP calls (in [`crate::endpoints::inputs`])
+
+use crate::client::SplunkClient;
+use crate::endpoints;
+use crate::error::Result;
+use crate::models::Input;
+
+impl SplunkClient {
+    /// List all data inputs across all types.
+    ///
+    /// Fetches inputs from all types: tcp/raw, tcp/cooked, udp, monitor, script.
+    /// Results are concatenated into a single list.
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Maximum number of results to return per input type (default: 30)
+    /// * `offset` - Offset for pagination
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `Input` structs on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ClientError` if any request fails or the response cannot be parsed.
+    pub async fn list_inputs(
+        &mut self,
+        count: Option<u64>,
+        offset: Option<u64>,
+    ) -> Result<Vec<Input>> {
+        let input_types = ["tcp/raw", "tcp/cooked", "udp", "monitor", "script"];
+        let mut all_inputs = Vec::new();
+
+        for input_type in &input_types {
+            let inputs = self.list_inputs_by_type(input_type, count, offset).await?;
+            all_inputs.extend(inputs);
+        }
+
+        Ok(all_inputs)
+    }
+
+    /// List inputs of a specific type.
+    ///
+    /// # Arguments
+    ///
+    /// * `input_type` - The type of input (tcp/raw, tcp/cooked, udp, monitor, script)
+    /// * `count` - Maximum number of results to return (default: 30)
+    /// * `offset` - Offset for pagination
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `Input` structs on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ClientError` if the request fails or the response cannot be parsed.
+    pub async fn list_inputs_by_type(
+        &mut self,
+        input_type: &str,
+        count: Option<u64>,
+        offset: Option<u64>,
+    ) -> Result<Vec<Input>> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::list_inputs_by_type(
+                &self.http,
+                &self.base_url,
+                &__token,
+                input_type,
+                count,
+                offset,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Enable an input.
+    ///
+    /// # Arguments
+    ///
+    /// * `input_type` - The type of input (tcp/raw, tcp/cooked, udp, monitor, script)
+    /// * `name` - The name of the input to enable
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ClientError` if the request fails.
+    pub async fn enable_input(&mut self, input_type: &str, name: &str) -> Result<()> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::enable_input(
+                &self.http,
+                &self.base_url,
+                &__token,
+                input_type,
+                name,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Disable an input.
+    ///
+    /// # Arguments
+    ///
+    /// * `input_type` - The type of input (tcp/raw, tcp/cooked, udp, monitor, script)
+    /// * `name` - The name of the input to disable
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ClientError` if the request fails.
+    pub async fn disable_input(&mut self, input_type: &str, name: &str) -> Result<()> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::disable_input(
+                &self.http,
+                &self.base_url,
+                &__token,
+                input_type,
+                name,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+}

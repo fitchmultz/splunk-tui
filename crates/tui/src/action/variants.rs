@@ -32,7 +32,7 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, KvStoreStatus,
+    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, Input, KvStoreStatus,
     LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SearchPeer,
     SplunkHealth, User,
 };
@@ -212,6 +212,15 @@ pub enum Action {
     },
     /// Load more search peers (pagination)
     LoadMoreSearchPeers,
+    /// Load the list of data inputs with pagination
+    LoadInputs {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more inputs (pagination)
+    LoadMoreInputs,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -267,6 +276,10 @@ pub enum Action {
     SearchPeersLoaded(Result<Vec<SearchPeer>, Arc<ClientError>>),
     /// Result of loading more search peers (pagination)
     MoreSearchPeersLoaded(Result<Vec<SearchPeer>, Arc<ClientError>>),
+    /// Result of loading inputs
+    InputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
+    /// Result of loading more inputs (pagination)
+    MoreInputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check
@@ -305,6 +318,12 @@ pub enum Action {
     EnableApp(String),
     /// Disable an app by name
     DisableApp(String),
+
+    // Input Operations
+    /// Enable an input by type and name
+    EnableInput { input_type: String, name: String },
+    /// Disable an input by type and name
+    DisableInput { input_type: String, name: String },
     /// Inspect currently selected job
     InspectJob,
     /// Exit job inspection mode

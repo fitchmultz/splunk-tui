@@ -13,6 +13,7 @@ pub mod apps;
 pub mod cluster;
 pub mod health;
 pub mod indexes;
+pub mod inputs;
 pub mod internal_logs;
 pub mod job_inspect;
 pub mod jobs;
@@ -47,6 +48,7 @@ impl App {
             CurrentScreen::Apps => self.handle_apps_input(key),
             CurrentScreen::Users => self.handle_users_input(key),
             CurrentScreen::SearchPeers => self.handle_search_peers_input(key),
+            CurrentScreen::Inputs => self.handle_inputs_input(key),
             CurrentScreen::Settings => self.handle_settings_input(key),
             CurrentScreen::Overview => self.handle_overview_input(key),
         }

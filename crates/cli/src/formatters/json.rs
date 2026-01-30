@@ -11,6 +11,7 @@ use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
 use serde::Serialize;
+use splunk_client::models::Input;
 use splunk_client::models::LogEntry;
 use splunk_client::models::SearchPeer;
 use splunk_client::{
@@ -175,5 +176,10 @@ impl Formatter for JsonFormatter {
     fn format_search_peers(&self, peers: &[SearchPeer], _detailed: bool) -> Result<String> {
         // JSON formatter always outputs full SearchPeer struct regardless of detailed flag
         Ok(serde_json::to_string_pretty(peers)?)
+    }
+
+    fn format_inputs(&self, inputs: &[Input], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full Input struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(inputs)?)
     }
 }

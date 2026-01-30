@@ -18,6 +18,7 @@ mod forwarders;
 mod health;
 mod imp;
 mod indexes;
+mod inputs;
 mod jobs;
 mod license;
 mod list_all;

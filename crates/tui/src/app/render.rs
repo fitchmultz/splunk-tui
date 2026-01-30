@@ -14,7 +14,7 @@ use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
-    apps, cluster, health, indexes, kvstore, license, overview, saved_searches, search,
+    apps, cluster, health, indexes, inputs, kvstore, license, overview, saved_searches, search,
     search_peers, settings, users,
 };
 use ratatui::{
@@ -94,6 +94,7 @@ impl App {
                         CurrentScreen::Apps => "Apps",
                         CurrentScreen::Users => "Users",
                         CurrentScreen::SearchPeers => "Search Peers",
+                        CurrentScreen::Inputs => "Data Inputs",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                     },
@@ -314,6 +315,18 @@ impl App {
                     overview::OverviewRenderConfig {
                         loading: self.loading,
                         overview_data: self.overview_data.as_ref(),
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Inputs => {
+                inputs::render_inputs(
+                    f,
+                    area,
+                    inputs::InputsRenderConfig {
+                        loading: self.loading,
+                        inputs: self.inputs.as_deref(),
+                        state: &mut self.inputs_state,
                         theme: &self.theme,
                     },
                 );

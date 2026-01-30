@@ -6,6 +6,7 @@ pub mod apps;
 pub mod cluster;
 pub mod health;
 pub mod indexes;
+pub mod inputs;
 pub mod internal_logs;
 pub mod job_details;
 pub mod jobs;

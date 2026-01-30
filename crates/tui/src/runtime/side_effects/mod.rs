@@ -87,6 +87,7 @@ mod cluster;
 mod export;
 mod health;
 mod indexes;
+mod inputs;
 mod jobs;
 mod kvstore;
 mod license;
@@ -179,6 +180,19 @@ pub async fn handle_side_effects(
         Action::LoadMoreSearchPeers => {
             // This action is handled by the main loop which has access to state
             // It reads search_peers_pagination and sends LoadSearchPeers with updated offset
+        }
+        Action::LoadInputs { count, offset } => {
+            inputs::handle_load_inputs(client, tx, count, offset).await;
+        }
+        Action::LoadMoreInputs => {
+            // This action is handled by the main loop which has access to state
+            // It reads inputs_pagination and sends LoadInputs with updated offset
+        }
+        Action::EnableInput { input_type, name } => {
+            inputs::handle_enable_input(client, tx, input_type, name).await;
+        }
+        Action::DisableInput { input_type, name } => {
+            inputs::handle_disable_input(client, tx, input_type, name).await;
         }
         Action::SwitchToSettings => {
             profiles::handle_switch_to_settings(config_manager, tx).await;

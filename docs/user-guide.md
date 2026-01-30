@@ -270,6 +270,13 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected peer name
 - `j/k or Up/Down`: Navigate list
 
+#### Data Inputs Screen
+- `r`: Refresh inputs
+- `e`: Enable input
+- `d`: Disable input
+- `Ctrl+c`: Copy selected input name
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

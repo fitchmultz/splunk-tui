@@ -36,6 +36,7 @@ mod apps;
 mod cluster;
 mod forwarders;
 mod indexes;
+mod inputs;
 mod jobs;
 mod kvstore;
 mod license;

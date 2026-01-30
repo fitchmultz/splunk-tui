@@ -10,7 +10,7 @@
 
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
-use splunk_client::models::SearchPeer;
+use splunk_client::models::{Input, SearchPeer};
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -22,6 +22,7 @@ use super::cluster;
 use super::forwarders;
 use super::health;
 use super::indexes;
+use super::inputs;
 use super::jobs;
 use super::license;
 use super::list_all;
@@ -135,6 +136,10 @@ impl Formatter for TableFormatter {
     fn format_search_peers(&self, peers: &[SearchPeer], detailed: bool) -> Result<String> {
         search_peers::format_search_peers(peers, detailed)
     }
+
+    fn format_inputs(&self, inputs: &[Input], detailed: bool) -> Result<String> {
+        inputs::format_inputs(inputs, detailed)
+    }
 }
 
 impl TableFormatter {
@@ -226,6 +231,35 @@ impl TableFormatter {
         let mut output = self.format_search_peers(peers, detailed)?;
 
         if let Some(footer) = build_pagination_footer(pagination, peers.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for inputs with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for inputs (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_inputs_paginated(
+        &self,
+        inputs: &[Input],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if inputs.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!("No inputs found for offset {}.", pagination.offset));
+            }
+            return Ok("No inputs found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_inputs(inputs, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, inputs.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

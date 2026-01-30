@@ -6,6 +6,7 @@ pub mod config;
 pub mod forwarders;
 pub mod health;
 pub mod indexes;
+pub mod inputs;
 pub mod jobs;
 pub mod kvstore;
 pub mod license;

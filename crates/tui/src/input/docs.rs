@@ -81,6 +81,7 @@ fn screen_sections() -> Vec<Section> {
         Section::Apps,
         Section::Users,
         Section::SearchPeers,
+        Section::Inputs,
         Section::Settings,
         Section::Overview,
     ]
@@ -101,6 +102,7 @@ fn section_heading(section: Section) -> &'static str {
         Section::Apps => "Apps Screen",
         Section::Users => "Users Screen",
         Section::SearchPeers => "Search Peers Screen",
+        Section::Inputs => "Data Inputs Screen",
         Section::Settings => "Settings Screen",
         Section::Overview => "Overview Screen",
         Section::Global => "Global Keys",

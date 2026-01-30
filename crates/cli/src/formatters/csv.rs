@@ -12,6 +12,7 @@ use crate::commands::list_all::ListAllOutput;
 use crate::formatters::common::{escape_csv, flatten_json_object, get_all_flattened_keys};
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
+use splunk_client::models::Input;
 use splunk_client::models::LogEntry;
 use splunk_client::models::SearchPeer;
 use splunk_client::{
@@ -761,6 +762,65 @@ impl Formatter for CsvFormatter {
                     escape_csv(guid),
                     escape_csv(last_connected),
                     escape_csv(disabled)
+                ));
+            }
+
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    fn format_inputs(&self, inputs: &[Input], detailed: bool) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str("name,input_type,host,source,sourcetype,disabled");
+        if detailed {
+            output.push_str(
+                ",port,path,connection_host,blacklist,whitelist,recursive,command,interval",
+            );
+        }
+        output.push('\n');
+
+        for input in inputs {
+            let host = input.host.as_deref().unwrap_or("");
+            let source = input.source.as_deref().unwrap_or("");
+            let sourcetype = input.sourcetype.as_deref().unwrap_or("");
+            let disabled = if input.disabled { "true" } else { "false" };
+
+            output.push_str(&format!(
+                "{},{},{},{},{},{}",
+                escape_csv(&input.name),
+                escape_csv(&input.input_type),
+                escape_csv(host),
+                escape_csv(source),
+                escape_csv(sourcetype),
+                escape_csv(disabled)
+            ));
+
+            if detailed {
+                let port = input.port.as_deref().unwrap_or("");
+                let path = input.path.as_deref().unwrap_or("");
+                let connection_host = input.connection_host.as_deref().unwrap_or("");
+                let blacklist = input.blacklist.as_deref().unwrap_or("");
+                let whitelist = input.whitelist.as_deref().unwrap_or("");
+                let recursive = input
+                    .recursive
+                    .map(|r| if r { "true" } else { "false" })
+                    .unwrap_or("");
+                let command = input.command.as_deref().unwrap_or("");
+                let interval = input.interval.as_deref().unwrap_or("");
+                output.push_str(&format!(
+                    ",{},{},{},{},{},{},{},{}",
+                    escape_csv(port),
+                    escape_csv(path),
+                    escape_csv(connection_host),
+                    escape_csv(blacklist),
+                    escape_csv(whitelist),
+                    escape_csv(recursive),
+                    escape_csv(command),
+                    escape_csv(interval)
                 ));
             }
 

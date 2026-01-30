@@ -1,0 +1,164 @@
+//! Inputs command implementation.
+//!
+//! This module provides the CLI command for listing Splunk data inputs.
+//!
+//! # What this module handles:
+//! - Listing data inputs with optional type filtering
+//! - Multiple output formats (table, JSON, CSV, XML)
+//! - Cancellation support
+//!
+//! # What this module does NOT handle:
+//! - Direct HTTP API calls (delegated to client library)
+//! - Output formatting (delegated to formatters)
+
+use anyhow::{Context, Result};
+use clap::Subcommand;
+use tracing::info;
+
+use crate::cancellation::Cancelled;
+use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
+
+/// Inputs subcommands.
+#[derive(Subcommand)]
+pub enum InputsCommand {
+    /// List data inputs
+    List {
+        /// Show detailed information about each input
+        #[arg(short, long)]
+        detailed: bool,
+
+        /// Filter by input type (tcp/raw, tcp/cooked, udp, monitor, script)
+        #[arg(short, long)]
+        input_type: Option<String>,
+
+        /// Maximum number of inputs to list
+        #[arg(short, long, default_value = "100")]
+        count: usize,
+
+        /// Offset into the input list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+}
+
+/// Run the inputs command.
+///
+/// Lists data inputs from the Splunk server.
+///
+/// # Arguments
+///
+/// * `config` - The loaded Splunk configuration
+/// * `command` - The inputs subcommand to run
+/// * `output_format` - Output format (table, json, csv, xml)
+/// * `output_file` - Optional file path to write output to
+/// * `cancel` - Cancellation token for graceful shutdown
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success, or an error if the operation fails.
+pub async fn run(
+    config: splunk_config::Config,
+    command: InputsCommand,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    match command {
+        InputsCommand::List {
+            detailed,
+            input_type,
+            count,
+            offset,
+        } => {
+            run_list(
+                config,
+                detailed,
+                input_type,
+                count,
+                offset,
+                output_format,
+                output_file,
+                cancel,
+            )
+            .await
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_list(
+    config: splunk_config::Config,
+    detailed: bool,
+    input_type: Option<String>,
+    count: usize,
+    offset: usize,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Listing inputs (count: {}, offset: {})", count, offset);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let count_u64 =
+        u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
+    let offset_u64 =
+        u64::try_from(offset).context("Invalid --offset (value too large for this platform)")?;
+
+    // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
+    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+
+    let inputs = if let Some(input_type) = input_type {
+        tokio::select! {
+            res = client.list_inputs_by_type(&input_type, Some(count_u64), offset_param) => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        }
+    } else {
+        tokio::select! {
+            res = client.list_inputs(Some(count_u64), offset_param) => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        }
+    };
+
+    // Parse output format
+    let format = OutputFormat::from_str(output_format)?;
+
+    // Table output gets pagination footer; machine-readable formats must not.
+    if format == OutputFormat::Table {
+        let formatter = TableFormatter;
+        let pagination = Pagination {
+            offset,
+            page_size: count,
+            total: None, // server-side total is not available in current client response shape
+        };
+        let output = formatter.format_inputs_paginated(&inputs, detailed, pagination)?;
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
+        return Ok(());
+    }
+
+    let formatter = get_formatter(format);
+    let output = formatter.format_inputs(&inputs, detailed)?;
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
+
+    Ok(())
+}
