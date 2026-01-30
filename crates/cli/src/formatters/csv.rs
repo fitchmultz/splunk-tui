@@ -12,9 +12,7 @@ use crate::commands::list_all::ListAllOutput;
 use crate::formatters::common::{escape_csv, flatten_json_object, get_all_flattened_keys};
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
-use splunk_client::models::Input;
-use splunk_client::models::LogEntry;
-use splunk_client::models::SearchPeer;
+use splunk_client::models::{ConfigFile, ConfigStanza, Input, LogEntry, SearchPeer};
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -824,6 +822,83 @@ impl Formatter for CsvFormatter {
                 ));
             }
 
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    fn format_config_files(&self, files: &[ConfigFile]) -> Result<String> {
+        let mut output = String::new();
+
+        if files.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Header
+        output.push_str(&escape_csv("Name"));
+        output.push(',');
+        output.push_str(&escape_csv("Title"));
+        output.push(',');
+        output.push_str(&escape_csv("Description"));
+        output.push('\n');
+
+        for file in files {
+            output.push_str(&escape_csv(&file.name));
+            output.push(',');
+            output.push_str(&escape_csv(&file.title));
+            output.push(',');
+            output.push_str(&escape_csv(file.description.as_deref().unwrap_or("")));
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    fn format_config_stanzas(&self, stanzas: &[ConfigStanza]) -> Result<String> {
+        let mut output = String::new();
+
+        if stanzas.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Header
+        output.push_str(&escape_csv("Config File"));
+        output.push(',');
+        output.push_str(&escape_csv("Stanza Name"));
+        output.push('\n');
+
+        for stanza in stanzas {
+            output.push_str(&escape_csv(&stanza.config_file));
+            output.push(',');
+            output.push_str(&escape_csv(&stanza.name));
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
+        // For a single stanza, output as flattened key-value pairs
+        let mut output = String::new();
+
+        output.push_str(&escape_csv("Config File"));
+        output.push(',');
+        output.push_str(&escape_csv(&stanza.config_file));
+        output.push('\n');
+
+        output.push_str(&escape_csv("Stanza Name"));
+        output.push(',');
+        output.push_str(&escape_csv(&stanza.name));
+        output.push('\n');
+
+        output.push('\n');
+        output.push_str("Setting,Value\n");
+
+        for (key, value) in &stanza.settings {
+            output.push_str(&escape_csv(key));
+            output.push(',');
+            output.push_str(&escape_csv(&value.to_string()));
             output.push('\n');
         }
 

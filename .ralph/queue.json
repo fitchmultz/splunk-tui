@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0239",
-      "status": "todo",
-      "title": "Add configuration file viewer and comparison",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "config",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/configs.rs",
-        "crates/client/src/endpoints/configs.rs",
-        "crates/cli/src/commands/configs.rs",
-        "crates/tui/src/ui/screens/configs.rs"
-      ],
-      "evidence": [
-        "Splunk admins frequently need to view and compare configuration files (props.conf, transforms.conf, etc.).",
-        "Splunk REST API provides /services/configs for configuration access.",
-        "No configuration management currently exists in the tool."
-      ],
-      "plan": [
-        "Add config models to client for accessing Splunk .conf files.",
-        "Implement configs endpoint and client methods (list, view).",
-        "Add CLI configs command for viewing and searching configs.",
-        "Create TUI configs screen for browsing and viewing.",
-        "Add tests and documentation updates."
-      ],
-      "notes": [],
-      "request": "Feature gap for Splunk admin experience",
-      "created_at": "2026-01-29T23:53:00Z",
-      "updated_at": "2026-01-29T23:53:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0240",
       "status": "todo",
       "title": "Add search assistant/SPL validation in TUI",

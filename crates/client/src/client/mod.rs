@@ -34,6 +34,7 @@ mod session;
 // API method submodules
 mod apps;
 mod cluster;
+mod configs;
 mod forwarders;
 mod indexes;
 mod inputs;

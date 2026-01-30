@@ -14,8 +14,8 @@ use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
-    apps, cluster, health, indexes, inputs, kvstore, license, overview, saved_searches, search,
-    search_peers, settings, users,
+    apps, cluster, configs, health, indexes, inputs, kvstore, license, overview, saved_searches,
+    search, search_peers, settings, users,
 };
 use ratatui::{
     Frame,
@@ -95,6 +95,7 @@ impl App {
                         CurrentScreen::Users => "Users",
                         CurrentScreen::SearchPeers => "Search Peers",
                         CurrentScreen::Inputs => "Data Inputs",
+                        CurrentScreen::Configs => "Config Files",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                     },
@@ -327,6 +328,23 @@ impl App {
                         loading: self.loading,
                         inputs: self.inputs.as_deref(),
                         state: &mut self.inputs_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Configs => {
+                configs::render_configs(
+                    f,
+                    area,
+                    configs::ConfigsRenderConfig {
+                        loading: self.loading,
+                        config_files: self.config_files.as_deref(),
+                        selected_file: self.selected_config_file.as_deref(),
+                        stanzas: self.config_stanzas.as_deref(),
+                        selected_stanza: self.selected_stanza.as_ref(),
+                        view_mode: self.config_view_mode,
+                        files_state: &mut self.config_files_state,
+                        stanzas_state: &mut self.config_stanzas_state,
                         theme: &self.theme,
                     },
                 );

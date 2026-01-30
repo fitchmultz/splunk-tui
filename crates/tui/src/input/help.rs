@@ -29,6 +29,9 @@ pub(crate) fn help_text() -> String {
         Section::InternalLogs,
         Section::Apps,
         Section::Users,
+        Section::SearchPeers,
+        Section::Inputs,
+        Section::Configs,
         Section::Settings,
     ];
 
@@ -92,6 +95,7 @@ fn section_title(section: Section) -> &'static str {
         Section::Users => "Users Screen:",
         Section::SearchPeers => "Search Peers Screen:",
         Section::Inputs => "Data Inputs Screen:",
+        Section::Configs => "Configuration Files Screen:",
         Section::Settings => "Settings Screen:",
         Section::Overview => "Overview Screen:",
     }

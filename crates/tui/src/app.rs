@@ -101,6 +101,15 @@ pub struct App {
     pub inputs_pagination: crate::app::state::ListPaginationState,
     pub overview_data: Option<crate::action::OverviewData>,
 
+    // Configs state
+    pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,
+    pub config_files_state: ratatui::widgets::TableState,
+    pub selected_config_file: Option<String>,
+    pub config_stanzas: Option<Vec<splunk_client::models::ConfigStanza>>,
+    pub config_stanzas_state: ratatui::widgets::TableState,
+    pub selected_stanza: Option<splunk_client::models::ConfigStanza>,
+    pub config_view_mode: crate::ui::screens::configs::ConfigViewMode,
+
     // UI State
     pub loading: bool,
     pub progress: f32,
@@ -278,6 +287,12 @@ impl App {
         let mut inputs_state = ratatui::widgets::TableState::default();
         inputs_state.select(Some(0));
 
+        let mut config_files_state = ratatui::widgets::TableState::default();
+        config_files_state.select(Some(0));
+
+        let mut config_stanzas_state = ratatui::widgets::TableState::default();
+        config_stanzas_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -354,6 +369,13 @@ impl App {
             inputs_state,
             inputs_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             overview_data: None,
+            config_files: None,
+            config_files_state,
+            selected_config_file: None,
+            config_stanzas: None,
+            config_stanzas_state,
+            selected_stanza: None,
+            config_view_mode: crate::ui::screens::configs::ConfigViewMode::FileList,
             loading: false,
             progress: 0.0,
             toasts: Vec::new(),
@@ -524,6 +546,7 @@ impl App {
                 count: self.inputs_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::Configs => Some(Action::LoadConfigFiles),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
         }

@@ -802,6 +802,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected input name
 - `j/k or Up/Down`: Navigate list
 
+#### Configuration Files Screen
+- `r`: Refresh config files
+- `Enter`: View stanza details
+- `h`: Go back
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

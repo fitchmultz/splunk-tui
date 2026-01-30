@@ -1,0 +1,264 @@
+//! Configs command implementation.
+//!
+//! This module provides the CLI command for viewing Splunk configuration files.
+//!
+//! # What this module handles:
+//! - Listing configuration files
+//! - Listing configuration stanzas for a specific config file
+//! - Viewing specific configuration stanzas
+//! - Multiple output formats (table, JSON, CSV, XML)
+//! - Cancellation support
+//!
+//! # What this module does NOT handle:
+//! - Direct HTTP API calls (delegated to client library)
+//! - Output formatting (delegated to formatters)
+
+use anyhow::{Context, Result};
+use clap::Subcommand;
+use tracing::info;
+
+use crate::cancellation::Cancelled;
+use crate::formatters::{
+    Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file,
+};
+
+/// Configs subcommands.
+#[derive(Subcommand)]
+pub enum ConfigsCommand {
+    /// List configuration files or stanzas
+    List {
+        /// Specific config file to list stanzas from (e.g., "props", "transforms")
+        #[arg(short, long)]
+        config_file: Option<String>,
+
+        /// Maximum number of items to return
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+
+        /// Offset for pagination
+        #[arg(short, long, default_value = "0")]
+        offset: usize,
+    },
+
+    /// View a specific configuration stanza
+    View {
+        /// Configuration file name (e.g., "props", "transforms")
+        config_file: String,
+
+        /// Stanza name to view
+        stanza_name: String,
+    },
+}
+
+/// Run the configs command.
+///
+/// Handles configuration file operations.
+///
+/// # Arguments
+///
+/// * `config` - The loaded Splunk configuration
+/// * `command` - The configs subcommand to run
+/// * `output_format` - Output format (table, json, csv, xml)
+/// * `output_file` - Optional file path to write output to
+/// * `cancel` - Cancellation token for graceful shutdown
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success, or an error if the operation fails.
+pub async fn run(
+    config: splunk_config::Config,
+    command: ConfigsCommand,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    match command {
+        ConfigsCommand::List {
+            config_file,
+            count,
+            offset,
+        } => {
+            run_list(
+                config,
+                config_file,
+                count,
+                offset,
+                output_format,
+                output_file,
+                cancel,
+            )
+            .await
+        }
+        ConfigsCommand::View {
+            config_file,
+            stanza_name,
+        } => {
+            run_view(
+                config,
+                config_file,
+                stanza_name,
+                output_format,
+                output_file,
+                cancel,
+            )
+            .await
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_list(
+    config: splunk_config::Config,
+    config_file: Option<String>,
+    count: usize,
+    offset: usize,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let count_u64 =
+        u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
+    let offset_u64 =
+        u64::try_from(offset).context("Invalid --offset (value too large for this platform)")?;
+
+    // Avoid sending offset=0 unless user explicitly paginates
+    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+
+    if let Some(config_file) = config_file {
+        info!(
+            "Listing config stanzas for '{}' (count: {}, offset: {})",
+            config_file, count, offset
+        );
+
+        let stanzas = tokio::select! {
+            res = client.list_config_stanzas(&config_file, Some(count_u64), offset_param) => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        };
+
+        // Parse output format
+        let format = OutputFormat::from_str(output_format)?;
+
+        // Table output gets pagination footer; machine-readable formats must not.
+        if format == OutputFormat::Table {
+            let formatter = TableFormatter;
+            let pagination = Pagination {
+                offset,
+                page_size: count,
+                total: None,
+            };
+            let output = formatter.format_config_stanzas_paginated(&stanzas, pagination)?;
+            if let Some(ref path) = output_file {
+                write_to_file(&output, path)
+                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
+                eprintln!(
+                    "Results written to {} ({:?} format)",
+                    path.display(),
+                    format
+                );
+            } else {
+                print!("{}", output);
+            }
+            return Ok(());
+        }
+
+        let formatter = get_formatter(format);
+        let output = formatter.format_config_stanzas(&stanzas)?;
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
+    } else {
+        info!("Listing available config files");
+
+        let config_files = tokio::select! {
+            res = client.list_config_files() => res?,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        };
+
+        // Parse output format
+        let format = OutputFormat::from_str(output_format)?;
+
+        if format == OutputFormat::Table {
+            let formatter = TableFormatter;
+            let output = formatter.format_config_files(&config_files)?;
+            if let Some(ref path) = output_file {
+                write_to_file(&output, path)
+                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
+                eprintln!(
+                    "Results written to {} ({:?} format)",
+                    path.display(),
+                    format
+                );
+            } else {
+                print!("{}", output);
+            }
+            return Ok(());
+        }
+
+        let formatter = get_formatter(format);
+        let output = formatter.format_config_files(&config_files)?;
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_view(
+    config: splunk_config::Config,
+    config_file: String,
+    stanza_name: String,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!(
+        "Viewing config stanza '{}' from '{}'",
+        stanza_name, config_file
+    );
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let stanza = tokio::select! {
+        res = client.get_config_stanza(&config_file, &stanza_name) => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+
+    // Parse output format
+    let format = OutputFormat::from_str(output_format)?;
+
+    let formatter = get_formatter(format);
+    let output = formatter.format_config_stanza(&stanza)?;
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
+
+    Ok(())
+}

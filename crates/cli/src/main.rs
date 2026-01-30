@@ -318,6 +318,12 @@ enum Commands {
         #[command(subcommand)]
         command: commands::inputs::InputsCommand,
     },
+
+    /// View and manage configuration files (props.conf, transforms.conf, etc.)
+    Configs {
+        #[command(subcommand)]
+        command: commands::configs::ConfigsCommand,
+    },
 }
 
 /// Returns true if the path is empty or contains only whitespace.
@@ -721,6 +727,17 @@ async fn run_command(
         Commands::Inputs { command } => {
             let config = config.into_real_config()?;
             commands::inputs::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::Configs { command } => {
+            let config = config.into_real_config()?;
+            commands::configs::run(
                 config,
                 command,
                 &cli.output,

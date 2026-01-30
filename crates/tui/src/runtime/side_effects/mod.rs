@@ -84,6 +84,7 @@
 
 mod apps;
 mod cluster;
+mod configs;
 mod export;
 mod health;
 mod indexes;
@@ -187,6 +188,16 @@ pub async fn handle_side_effects(
         Action::LoadMoreInputs => {
             // This action is handled by the main loop which has access to state
             // It reads inputs_pagination and sends LoadInputs with updated offset
+        }
+        Action::LoadConfigFiles => {
+            configs::handle_load_config_files(client, tx).await;
+        }
+        Action::LoadConfigStanzas {
+            config_file,
+            count,
+            offset,
+        } => {
+            configs::handle_load_config_stanzas(client, tx, config_file, count, offset).await;
         }
         Action::EnableInput { input_type, name } => {
             inputs::handle_enable_input(client, tx, input_type, name).await;

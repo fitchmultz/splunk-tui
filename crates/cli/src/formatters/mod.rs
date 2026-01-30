@@ -15,7 +15,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::models::{Input, LogEntry, SearchPeer};
+use splunk_client::models::{ConfigFile, ConfigStanza, Input, LogEntry, SearchPeer};
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     SavedSearch, SearchJobStatus, User,
@@ -152,6 +152,15 @@ pub trait Formatter {
 
     /// Format data inputs list.
     fn format_inputs(&self, inputs: &[Input], detailed: bool) -> Result<String>;
+
+    /// Format config files list.
+    fn format_config_files(&self, files: &[ConfigFile]) -> Result<String>;
+
+    /// Format config stanzas list.
+    fn format_config_stanzas(&self, stanzas: &[ConfigStanza]) -> Result<String>;
+
+    /// Format a single config stanza in detail.
+    fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String>;
 }
 
 /// Cluster peer output structure.

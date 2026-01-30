@@ -10,7 +10,7 @@
 
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
-use splunk_client::models::{Input, SearchPeer};
+use splunk_client::models::{ConfigFile, ConfigStanza, Input, SearchPeer};
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -19,6 +19,7 @@ use std::collections::BTreeMap;
 
 use super::apps;
 use super::cluster;
+use super::configs;
 use super::forwarders;
 use super::health;
 use super::indexes;
@@ -140,6 +141,18 @@ impl Formatter for TableFormatter {
     fn format_inputs(&self, inputs: &[Input], detailed: bool) -> Result<String> {
         inputs::format_inputs(inputs, detailed)
     }
+
+    fn format_config_files(&self, files: &[ConfigFile]) -> Result<String> {
+        configs::format_config_files(files)
+    }
+
+    fn format_config_stanzas(&self, stanzas: &[ConfigStanza]) -> Result<String> {
+        configs::format_config_stanzas(stanzas)
+    }
+
+    fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
+        configs::format_config_stanza_detail(stanza)
+    }
 }
 
 impl TableFormatter {
@@ -260,6 +273,37 @@ impl TableFormatter {
         let mut output = self.format_inputs(inputs, detailed)?;
 
         if let Some(footer) = build_pagination_footer(pagination, inputs.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for config stanzas with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for config stanzas (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_config_stanzas_paginated(
+        &self,
+        stanzas: &[ConfigStanza],
+        pagination: Pagination,
+    ) -> Result<String> {
+        if stanzas.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No config stanzas found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No config stanzas found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_config_stanzas(stanzas)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, stanzas.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

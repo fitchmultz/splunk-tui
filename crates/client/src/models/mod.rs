@@ -8,6 +8,7 @@ pub mod apps;
 pub mod auth;
 pub mod cluster;
 pub mod common;
+pub mod configs;
 pub mod forwarders;
 pub mod indexes;
 pub mod inputs;
@@ -25,6 +26,9 @@ pub use apps::{App, AppEntry, AppListResponse};
 pub use auth::AuthResponse;
 pub use cluster::{ClusterInfo, ClusterPeer};
 pub use common::{Acl, Entry, Perms, SplunkMessage, SplunkMessages, SplunkResponse};
+pub use configs::{
+    ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,
+};
 pub use forwarders::{Forwarder, ForwarderEntry, ForwarderListResponse};
 pub use indexes::{Index, IndexEntry, IndexListResponse};
 pub use inputs::{Input, InputEntry, InputListResponse};

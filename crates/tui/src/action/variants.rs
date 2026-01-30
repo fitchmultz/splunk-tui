@@ -32,9 +32,9 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, Input, KvStoreStatus,
-    LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SearchPeer,
-    SplunkHealth, User,
+    App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, HealthCheckOutput, Index,
+    Input, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch,
+    SearchJobStatus, SearchPeer, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -221,6 +221,17 @@ pub enum Action {
     },
     /// Load more inputs (pagination)
     LoadMoreInputs,
+    /// Load the list of config files
+    LoadConfigFiles,
+    /// Load the list of config stanzas for a specific config file
+    LoadConfigStanzas {
+        /// The config file name (e.g., "props", "transforms")
+        config_file: String,
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -280,6 +291,10 @@ pub enum Action {
     InputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
     /// Result of loading more inputs (pagination)
     MoreInputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
+    /// Result of loading config files
+    ConfigFilesLoaded(Result<Vec<ConfigFile>, Arc<ClientError>>),
+    /// Result of loading config stanzas
+    ConfigStanzasLoaded(Result<Vec<ConfigStanza>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check
