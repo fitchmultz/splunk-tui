@@ -245,17 +245,6 @@ enum Commands {
         tail: bool,
     },
 
-    /// Show internal Splunk logs
-    InternalLogs {
-        /// Maximum number of log entries to show
-        #[arg(short, long, default_value = "50")]
-        count: usize,
-
-        /// Earliest time for logs (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long, default_value = "-15m", allow_hyphen_values = true)]
-        earliest: String,
-    },
-
     /// List and manage users
     Users {
         /// Maximum number of users to list
@@ -555,18 +544,6 @@ async fn run_command(
                 count,
                 earliest,
                 tail,
-                &cli.output,
-                cli.output_file.clone(),
-                cancel_token,
-            )
-            .await?;
-        }
-        Commands::InternalLogs { count, earliest } => {
-            let config = config.into_real_config()?;
-            commands::internal_logs::run(
-                config,
-                count,
-                earliest,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,

@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0230",
-      "status": "todo",
-      "title": "Remove redundant internal-logs CLI command",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "ux",
-        "cleanup"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/internal_logs.rs",
-        "docs/usage.md",
-        "crates/cli/tests"
-      ],
-      "evidence": [
-        "crates/cli/src/main.rs defines both Logs and InternalLogs commands.",
-        "crates/cli/src/commands/internal_logs.rs and crates/cli/src/commands/logs.rs both call get_internal_logs."
-      ],
-      "plan": [
-        "Decide on a single command (likely logs) and add deprecation/alias behavior for internal-logs.",
-        "Remove redundant wiring and update docs/usage accordingly.",
-        "Update or add tests to cover the new command behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0231",
       "status": "todo",
       "title": "Add examples to splunk-cli --help output",
