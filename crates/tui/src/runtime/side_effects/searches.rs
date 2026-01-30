@@ -40,6 +40,40 @@ pub async fn handle_run_search(
     query: String,
     search_defaults: SearchDefaults,
 ) {
+    tracing::debug!("handle_run_search called with query: {}", query);
+    tracing::debug!(
+        "search_defaults.earliest_time: {}",
+        search_defaults.earliest_time
+    );
+    tracing::debug!(
+        "search_defaults.latest_time: {}",
+        search_defaults.latest_time
+    );
+    tracing::debug!(
+        "search_defaults.max_results: {}",
+        search_defaults.max_results
+    );
+
+    // Validate search defaults to prevent 400 errors from Splunk
+    let earliest_time = if search_defaults.earliest_time.trim().is_empty() {
+        tracing::warn!("search_defaults.earliest_time is empty, using default '-24h'");
+        "-24h".to_string()
+    } else {
+        search_defaults.earliest_time.clone()
+    };
+    let latest_time = if search_defaults.latest_time.trim().is_empty() {
+        tracing::warn!("search_defaults.latest_time is empty, using default 'now'");
+        "now".to_string()
+    } else {
+        search_defaults.latest_time.clone()
+    };
+    let max_results = if search_defaults.max_results == 0 {
+        tracing::warn!("search_defaults.max_results is 0, using default 1000");
+        1000
+    } else {
+        search_defaults.max_results
+    };
+
     let _ = tx.send(Action::Loading(true)).await;
     let _ = tx.send(Action::Progress(0.1)).await;
 
@@ -60,9 +94,9 @@ pub async fn handle_run_search(
             .search_with_progress(
                 &query_clone,
                 true, // wait for completion
-                Some(&search_defaults.earliest_time),
-                Some(&search_defaults.latest_time),
-                Some(search_defaults.max_results),
+                Some(&earliest_time),
+                Some(&latest_time),
+                Some(max_results),
                 Some(&mut progress_callback),
             )
             .await

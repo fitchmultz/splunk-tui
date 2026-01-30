@@ -115,17 +115,33 @@ pub async fn create_job(
     if let Some(exec_time) = options.exec_time {
         form_data.push(("exec_time", exec_time.to_string()));
     }
+    // Only add time bounds if they are non-empty
+    // Empty strings can cause 400 errors from Splunk
     if let Some(earliest) = &options.earliest_time {
-        form_data.push(("earliest_time", earliest.clone()));
+        if !earliest.trim().is_empty() {
+            form_data.push(("earliest_time", earliest.clone()));
+        } else {
+            debug!("Skipping empty earliest_time parameter");
+        }
     }
     if let Some(latest) = &options.latest_time {
-        form_data.push(("latest_time", latest.clone()));
+        if !latest.trim().is_empty() {
+            form_data.push(("latest_time", latest.clone()));
+        } else {
+            debug!("Skipping empty latest_time parameter");
+        }
     }
     if let Some(max_count) = options.max_count {
         form_data.push(("max_count", max_count.to_string()));
     }
     if let Some(mode) = options.search_mode {
         form_data.push(("search_mode", mode.to_string()));
+    }
+
+    // Debug: Log the complete form data being sent
+    debug!("Search job form data: {:?}", form_data);
+    for (key, value) in &form_data {
+        debug!("  {}: {}", key, value);
     }
 
     let builder = client
