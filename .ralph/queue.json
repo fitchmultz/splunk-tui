@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0224",
-      "status": "todo",
-      "title": "Warn on default credentials in CLI",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "security",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs warns when config.is_using_default_credentials() is true.",
-        "crates/cli/src/main.rs builds config but does not warn about default credentials."
-      ],
-      "plan": [
-        "After CLI config load, call config.is_using_default_credentials() and emit a warning to stderr.",
-        "Ensure the warning does not include secrets and respects quiet/logging behavior.",
-        "Add a test or update docs to cover the warning path."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0225",
       "status": "todo",
       "title": "Enforce list_defaults.max_items cap in TUI pagination",
