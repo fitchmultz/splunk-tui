@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0223",
-      "status": "todo",
-      "title": "Apply search defaults to CLI search when flags are omitted",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "config",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/commands/search.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "docs/usage.md documents SPLUNK_EARLIEST_TIME, SPLUNK_LATEST_TIME, and SPLUNK_MAX_RESULTS as default search settings.",
-        "crates/cli/src/main.rs defines search count default as 100 and does not use SearchDefaultConfig.",
-        "crates/cli/src/commands/search.rs uses CLI earliest/latest/count directly without applying config defaults."
-      ],
-      "plan": [
-        "Load SearchDefaultConfig in the CLI and use it when earliest/latest/count flags are not provided.",
-        "Align CLI defaults with config/env defaults or document the intentional difference.",
-        "Add tests for env/profile search defaults and update docs accordingly."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0224",
       "status": "todo",
       "title": "Warn on default credentials in CLI",

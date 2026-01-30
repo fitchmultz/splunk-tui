@@ -20,6 +20,7 @@ mod progress;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use splunk_config::SearchDefaultConfig;
 use std::path::{Path, PathBuf};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
@@ -37,7 +38,8 @@ use crate::cancellation::{
 enum ConfigCommandContext {
     /// A real, validated config loaded from profiles/environment/CLI args.
     /// Used for actual Splunk API operations.
-    Real(splunk_config::Config),
+    /// Includes search defaults for applying env var overrides to search parameters.
+    Real(splunk_config::Config, SearchDefaultConfig),
     /// A placeholder config for commands that don't need real connection details.
     /// Only valid for Config commands and multi-profile ListAll operations.
     Placeholder,
@@ -49,7 +51,23 @@ impl ConfigCommandContext {
     /// Use this for commands that require actual connection details.
     fn into_real_config(self) -> anyhow::Result<splunk_config::Config> {
         match self {
-            ConfigCommandContext::Real(config) => Ok(config),
+            ConfigCommandContext::Real(config, _) => Ok(config),
+            ConfigCommandContext::Placeholder => {
+                anyhow::bail!(
+                    "Internal error: attempted to use placeholder config for an operation requiring real connection details"
+                )
+            }
+        }
+    }
+
+    /// Extract both the real config and search defaults, failing if this is a placeholder.
+    ///
+    /// Use this for commands that require actual connection details and search defaults.
+    fn into_real_config_with_search_defaults(
+        self,
+    ) -> anyhow::Result<(splunk_config::Config, SearchDefaultConfig)> {
+        match self {
+            ConfigCommandContext::Real(config, search_defaults) => Ok((config, search_defaults)),
             ConfigCommandContext::Placeholder => {
                 anyhow::bail!(
                     "Internal error: attempted to use placeholder config for an operation requiring real connection details"
@@ -146,8 +164,8 @@ enum Commands {
         latest: Option<String>,
 
         /// Maximum number of results to return
-        #[arg(short, long, default_value = "100")]
-        count: usize,
+        #[arg(short, long)]
+        count: Option<usize>,
     },
 
     /// List and manage indexes
@@ -367,6 +385,10 @@ async fn main() -> Result<()> {
             loader = loader.with_skip_verify(true);
         }
 
+        // Build search defaults with env var overrides (matching TUI behavior)
+        // Must be done before loader.build() since build() consumes the loader
+        let search_defaults = loader.build_search_defaults(None);
+
         let config = loader.build()?;
 
         // Warn if using default credentials (security check)
@@ -377,7 +399,7 @@ async fn main() -> Result<()> {
             );
         }
 
-        Some(config)
+        Some((config, search_defaults))
     } else {
         None
     };
@@ -395,8 +417,8 @@ async fn main() -> Result<()> {
     });
 
     // Wrap config in appropriate context based on command type
-    let config_context = if let Some(config) = config {
-        ConfigCommandContext::Real(config)
+    let config_context = if let Some((config, search_defaults)) = config {
+        ConfigCommandContext::Real(config, search_defaults)
     } else {
         ConfigCommandContext::Placeholder
     };
@@ -435,7 +457,7 @@ async fn run_command(
             latest,
             count,
         } => {
-            let config = config.into_real_config()?;
+            let (config, search_defaults) = config.into_real_config_with_search_defaults()?;
             commands::search::run(
                 config,
                 query,
@@ -443,6 +465,7 @@ async fn run_command(
                 earliest.as_deref(),
                 latest.as_deref(),
                 count,
+                &search_defaults,
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),

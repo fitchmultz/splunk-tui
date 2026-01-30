@@ -205,3 +205,338 @@ async fn test_search_wait_shows_progress_on_stderr_unless_quiet() {
     .success()
     .stderr(predicate::str::is_empty());
 }
+
+/// Test that SPLUNK_EARLIEST_TIME environment variable is applied to search.
+#[tokio::test]
+async fn test_search_earliest_time_env_var() {
+    let server = MockServer::start().await;
+
+    // Create job - should use earliest time from env var
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": { "sid": "test-sid" } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Job status (done immediately)
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": {
+                    "sid": "test-sid",
+                    "isDone": true,
+                    "isFinalized": true,
+                    "doneProgress": 1.0,
+                    "runDuration": 0.0,
+                    "cursorTime": null,
+                    "scanCount": 0,
+                    "eventCount": 0,
+                    "resultCount": 1,
+                    "diskUsage": 0,
+                    "priority": null,
+                    "label": null
+                } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Results
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid/results"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "results": [{"foo": "bar"}],
+            "preview": false,
+            "total": 1
+        })))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri())
+        .env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_EARLIEST_TIME", "-1h")
+        .args(["--output", "json", "search", TEST_QUERY, "--wait"])
+        .assert()
+        .success();
+}
+
+/// Test that SPLUNK_LATEST_TIME environment variable is applied to search.
+#[tokio::test]
+async fn test_search_latest_time_env_var() {
+    let server = MockServer::start().await;
+
+    // Create job
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": { "sid": "test-sid" } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Job status
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": {
+                    "sid": "test-sid",
+                    "isDone": true,
+                    "isFinalized": true,
+                    "doneProgress": 1.0,
+                    "runDuration": 0.0,
+                    "cursorTime": null,
+                    "scanCount": 0,
+                    "eventCount": 0,
+                    "resultCount": 1,
+                    "diskUsage": 0,
+                    "priority": null,
+                    "label": null
+                } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Results
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid/results"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "results": [{"foo": "bar"}],
+            "preview": false,
+            "total": 1
+        })))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri())
+        .env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_LATEST_TIME", "-1h")
+        .args(["--output", "json", "search", TEST_QUERY, "--wait"])
+        .assert()
+        .success();
+}
+
+/// Test that SPLUNK_MAX_RESULTS environment variable is applied to search.
+#[tokio::test]
+async fn test_search_max_results_env_var() {
+    let server = MockServer::start().await;
+
+    // Create job
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": { "sid": "test-sid" } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Job status
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": {
+                    "sid": "test-sid",
+                    "isDone": true,
+                    "isFinalized": true,
+                    "doneProgress": 1.0,
+                    "runDuration": 0.0,
+                    "cursorTime": null,
+                    "scanCount": 0,
+                    "eventCount": 0,
+                    "resultCount": 1,
+                    "diskUsage": 0,
+                    "priority": null,
+                    "label": null
+                } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Results
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid/results"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "results": [{"foo": "bar"}],
+            "preview": false,
+            "total": 1
+        })))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri())
+        .env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_MAX_RESULTS", "500")
+        .args(["--output", "json", "search", TEST_QUERY, "--wait"])
+        .assert()
+        .success();
+}
+
+/// Test that CLI --earliest flag overrides SPLUNK_EARLIEST_TIME env var.
+#[tokio::test]
+async fn test_search_earliest_cli_overrides_env() {
+    let server = MockServer::start().await;
+
+    // Create job
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": { "sid": "test-sid" } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Job status
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": {
+                    "sid": "test-sid",
+                    "isDone": true,
+                    "isFinalized": true,
+                    "doneProgress": 1.0,
+                    "runDuration": 0.0,
+                    "cursorTime": null,
+                    "scanCount": 0,
+                    "eventCount": 0,
+                    "resultCount": 1,
+                    "diskUsage": 0,
+                    "priority": null,
+                    "label": null
+                } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Results
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid/results"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "results": [{"foo": "bar"}],
+            "preview": false,
+            "total": 1
+        })))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri())
+        .env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_EARLIEST_TIME", "-1h")
+        .args([
+            "--output",
+            "json",
+            "search",
+            TEST_QUERY,
+            "--earliest",
+            "-24h",
+            "--wait",
+        ])
+        .assert()
+        .success();
+}
+
+/// Test that CLI --count flag overrides SPLUNK_MAX_RESULTS env var.
+#[tokio::test]
+async fn test_search_count_cli_overrides_env() {
+    let server = MockServer::start().await;
+
+    // Create job
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": { "sid": "test-sid" } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Job status
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "entry": [
+                { "content": {
+                    "sid": "test-sid",
+                    "isDone": true,
+                    "isFinalized": true,
+                    "doneProgress": 1.0,
+                    "runDuration": 0.0,
+                    "cursorTime": null,
+                    "scanCount": 0,
+                    "eventCount": 0,
+                    "resultCount": 1,
+                    "diskUsage": 0,
+                    "priority": null,
+                    "label": null
+                } }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    // Results
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-sid/results"))
+        .and(header("Authorization", "Bearer test-token"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "results": [{"foo": "bar"}],
+            "preview": false,
+            "total": 1
+        })))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri())
+        .env("SPLUNK_API_TOKEN", "test-token")
+        .env("SPLUNK_MAX_RESULTS", "500")
+        .args([
+            "--output", "json", "search", TEST_QUERY, "--count", "50", "--wait",
+        ])
+        .assert()
+        .success();
+}
