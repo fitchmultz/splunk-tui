@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0233",
-      "status": "todo",
-      "title": "Respect NO_COLOR in test-live-server.sh output",
-      "priority": "low",
-      "tags": [
-        "scripts",
-        "ux",
-        "workflow"
-      ],
-      "scope": [
-        "scripts/test-live-server.sh"
-      ],
-      "evidence": [
-        "scripts/test-live-server.sh always defines ANSI color codes without checking NO_COLOR or TTY.",
-        "scripts/check-secrets.sh already implements NO_COLOR and TTY handling for colors."
-      ],
-      "plan": [
-        "Add NO_COLOR + TTY detection to test-live-server.sh color setup.",
-        "Keep help output examples intact.",
-        "Manually verify color/no-color behavior."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0234",
       "status": "todo",
       "title": "Split oversized list_all_tests.rs to avoid size warnings",

@@ -4,12 +4,20 @@
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Respect NO_COLOR (https://no-color.org/) and non-tty output
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[1;33m'
+  BLUE='\033[0;34m'
+  NC='\033[0m'
+else
+  RED=''
+  GREEN=''
+  YELLOW=''
+  BLUE=''
+  NC=''
+fi
 
 # Function to display help
 show_help() {
