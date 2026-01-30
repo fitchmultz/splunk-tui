@@ -14,8 +14,8 @@ use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
-    apps, cluster, health, indexes, kvstore, license, overview, saved_searches, search, settings,
-    users,
+    apps, cluster, health, indexes, kvstore, license, overview, saved_searches, search,
+    search_peers, settings, users,
 };
 use ratatui::{
     Frame,
@@ -93,6 +93,7 @@ impl App {
                         CurrentScreen::InternalLogs => "Internal Logs",
                         CurrentScreen::Apps => "Apps",
                         CurrentScreen::Users => "Users",
+                        CurrentScreen::SearchPeers => "Search Peers",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                     },
@@ -270,6 +271,18 @@ impl App {
                         loading: self.loading,
                         users: self.users.as_deref(),
                         state: &mut self.users_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::SearchPeers => {
+                search_peers::render_search_peers(
+                    f,
+                    area,
+                    search_peers::SearchPeersRenderConfig {
+                        loading: self.loading,
+                        search_peers: self.search_peers.as_deref(),
+                        peers_state: &mut self.search_peers_state,
                         theme: &self.theme,
                     },
                 );

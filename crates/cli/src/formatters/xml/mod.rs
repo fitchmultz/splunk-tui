@@ -10,6 +10,7 @@
 
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
+use splunk_client::models::SearchPeer;
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -28,6 +29,7 @@ mod logs;
 mod profiles;
 mod saved_searches;
 mod search;
+mod search_peers;
 mod users;
 
 /// XML formatter.
@@ -116,5 +118,9 @@ impl Formatter for XmlFormatter {
 
     fn format_forwarders(&self, forwarders_list: &[Forwarder], detailed: bool) -> Result<String> {
         forwarders::format_forwarders(forwarders_list, detailed)
+    }
+
+    fn format_search_peers(&self, peers: &[SearchPeer], detailed: bool) -> Result<String> {
+        search_peers::format_search_peers(peers, detailed)
     }
 }

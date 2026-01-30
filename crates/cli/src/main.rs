@@ -201,6 +201,21 @@ enum Commands {
         offset: usize,
     },
 
+    /// List distributed search peers
+    SearchPeers {
+        /// Show detailed information about each search peer
+        #[arg(short, long)]
+        detailed: bool,
+
+        /// Maximum number of search peers to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+
+        /// Offset into the search peer list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+
     /// Show cluster status and configuration
     Cluster {
         /// Show detailed cluster information
@@ -504,6 +519,23 @@ async fn run_command(
         } => {
             let config = config.into_real_config()?;
             commands::forwarders::run(
+                config,
+                detailed,
+                count,
+                offset,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::SearchPeers {
+            detailed,
+            count,
+            offset,
+        } => {
+            let config = config.into_real_config()?;
+            commands::search_peers::run(
                 config,
                 detailed,
                 count,

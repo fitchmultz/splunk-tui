@@ -13,6 +13,7 @@ pub mod list_all;
 pub mod logs;
 pub mod saved_searches;
 pub mod search;
+pub mod search_peers;
 pub mod users;
 
 use anyhow::Result;

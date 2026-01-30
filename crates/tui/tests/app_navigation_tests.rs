@@ -283,7 +283,12 @@ fn test_shift_tab_cycles_backwards() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Settings);
 
-    // Shift+Tab from Settings should go to Users
+    // Shift+Tab from Settings should go to SearchPeers
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::SearchPeers);
+
+    // Shift+Tab from SearchPeers should go to Users
     let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Users);
@@ -301,6 +306,7 @@ fn test_navigation_from_all_screens() {
         CurrentScreen::InternalLogs,
         CurrentScreen::Apps,
         CurrentScreen::Users,
+        CurrentScreen::SearchPeers,
         CurrentScreen::Settings,
     ];
 

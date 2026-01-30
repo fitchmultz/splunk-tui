@@ -16,6 +16,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::LogEntry;
+use splunk_client::models::SearchPeer;
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     SavedSearch, SearchJobStatus, User,
@@ -146,6 +147,9 @@ pub trait Formatter {
 
     /// Format forwarders list.
     fn format_forwarders(&self, forwarders: &[Forwarder], detailed: bool) -> Result<String>;
+
+    /// Format search peers list.
+    fn format_search_peers(&self, peers: &[SearchPeer], detailed: bool) -> Result<String>;
 }
 
 /// Cluster peer output structure.

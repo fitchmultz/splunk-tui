@@ -41,6 +41,7 @@ mod kvstore;
 mod license;
 mod logs;
 mod search;
+mod search_peers;
 mod server;
 mod users;
 

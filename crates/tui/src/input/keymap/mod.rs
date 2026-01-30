@@ -35,6 +35,7 @@ pub enum Section {
     InternalLogs,
     Apps,
     Users,
+    SearchPeers,
     Settings,
     Overview,
 }
@@ -171,6 +172,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::InternalLogs => Section::InternalLogs,
         CurrentScreen::Apps => Section::Apps,
         CurrentScreen::Users => Section::Users,
+        CurrentScreen::SearchPeers => Section::SearchPeers,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
     }
@@ -256,6 +258,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::InternalLogs => &["r", "a", "j/k or Up/Down"],
         CurrentScreen::Apps => &["r", "e", "d", "j/k or Up/Down"],
         CurrentScreen::Users => &["r", "j/k or Up/Down"],
+        CurrentScreen::SearchPeers => &["r", "j/k or Up/Down", "Ctrl+e"],
         CurrentScreen::Settings => &["t", "a", "s", "d", "c", "r"],
         CurrentScreen::Overview => &["r", "Ctrl+e", "Ctrl+c"],
     };

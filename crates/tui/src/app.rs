@@ -42,7 +42,7 @@ use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, KvStoreStatus, LogEntry,
-    SavedSearch, SearchJobStatus, User,
+    SavedSearch, SearchJobStatus, SearchPeer, User,
 };
 use splunk_config::constants::{
     DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
@@ -93,6 +93,9 @@ pub struct App {
     pub apps_state: ratatui::widgets::ListState,
     pub users: Option<Vec<User>>,
     pub users_state: ratatui::widgets::ListState,
+    pub search_peers: Option<Vec<SearchPeer>>,
+    pub search_peers_state: ratatui::widgets::TableState,
+    pub search_peers_pagination: crate::app::state::ListPaginationState,
     pub overview_data: Option<crate::action::OverviewData>,
 
     // UI State
@@ -266,6 +269,9 @@ impl App {
         let mut cluster_peers_state = ratatui::widgets::TableState::default();
         cluster_peers_state.select(Some(0));
 
+        let mut search_peers_state = ratatui::widgets::TableState::default();
+        search_peers_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -335,6 +341,9 @@ impl App {
             apps_state,
             users: None,
             users_state,
+            search_peers: None,
+            search_peers_state,
+            search_peers_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             overview_data: None,
             loading: false,
             progress: 0.0,
@@ -498,6 +507,10 @@ impl App {
                 count: self.users_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::SearchPeers => Some(Action::LoadSearchPeers {
+                count: self.search_peers_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
         }
@@ -541,6 +554,16 @@ impl App {
                     Some(Action::LoadUsers {
                         count: self.users_pagination.page_size,
                         offset: self.users_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::SearchPeers => {
+                if self.search_peers_pagination.can_load_more() {
+                    Some(Action::LoadSearchPeers {
+                        count: self.search_peers_pagination.page_size,
+                        offset: self.search_peers_pagination.current_offset,
                     })
                 } else {
                     None

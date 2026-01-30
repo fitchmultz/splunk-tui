@@ -93,6 +93,7 @@ mod license;
 mod logs;
 mod overview;
 mod profiles;
+mod search_peers;
 mod searches;
 mod users;
 
@@ -171,6 +172,13 @@ pub async fn handle_side_effects(
         Action::LoadMoreInternalLogs => {
             // This action is handled by the main loop which has access to state
             // It reads internal_logs_defaults and sends LoadInternalLogs with parameters
+        }
+        Action::LoadSearchPeers { count, offset } => {
+            search_peers::handle_load_search_peers(client, tx, count, offset).await;
+        }
+        Action::LoadMoreSearchPeers => {
+            // This action is handled by the main loop which has access to state
+            // It reads search_peers_pagination and sends LoadSearchPeers with updated offset
         }
         Action::SwitchToSettings => {
             profiles::handle_switch_to_settings(config_manager, tx).await;

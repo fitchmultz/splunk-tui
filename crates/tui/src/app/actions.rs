@@ -96,11 +96,20 @@ impl App {
                 // Reset pagination state for fresh load
                 self.users_pagination.reset();
             }
+            Action::LoadSearchPeers {
+                count: _,
+                offset: _,
+            } => {
+                self.current_screen = CurrentScreen::SearchPeers;
+                // Reset pagination state for fresh load
+                self.search_peers_pagination.reset();
+            }
             // LoadMore actions - handled by main loop which has access to state
             Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
-            | Action::LoadMoreUsers => {
+            | Action::LoadMoreUsers
+            | Action::LoadMoreSearchPeers => {
                 // These are handled in the main loop which has access to pagination state
             }
             Action::NavigateDown => self.next_item(),
@@ -453,6 +462,38 @@ impl App {
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
+            Action::SearchPeersLoaded(Ok(peers)) => {
+                let count = peers.len();
+                self.search_peers = Some(peers);
+                self.search_peers_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreSearchPeersLoaded(Ok(peers)) => {
+                let count = peers.len();
+                if let Some(ref mut existing) = self.search_peers {
+                    existing.extend(peers);
+                } else {
+                    self.search_peers = Some(peers);
+                }
+                self.search_peers_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreSearchPeersLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more search peers: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::SearchPeersLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load search peers: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
             Action::SettingsLoaded(state) => {
                 self.auto_refresh = state.auto_refresh;
                 self.sort_state.column = crate::app::state::parse_sort_column(&state.sort_column);
@@ -558,6 +599,7 @@ impl App {
                 self.kvstore_status = None;
                 self.apps = None;
                 self.users = None;
+                self.search_peers = None;
                 self.search_results.clear();
                 self.search_sid = None;
                 self.search_results_total_count = None;
@@ -570,6 +612,7 @@ impl App {
                 self.cluster_peers_state.select(Some(0));
                 self.apps_state.select(Some(0));
                 self.users_state.select(Some(0));
+                self.search_peers_state.select(Some(0));
                 // Trigger reload for current screen
                 // The load action will be sent by main.rs after this
             }

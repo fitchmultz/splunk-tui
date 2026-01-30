@@ -33,8 +33,8 @@ use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, KvStoreStatus,
-    LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SplunkHealth,
-    User,
+    LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SearchPeer,
+    SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -203,6 +203,15 @@ pub enum Action {
     LoadMoreUsers,
     /// Load more internal logs (refresh)
     LoadMoreInternalLogs,
+    /// Load the list of search peers with pagination
+    LoadSearchPeers {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more search peers (pagination)
+    LoadMoreSearchPeers,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -254,6 +263,10 @@ pub enum Action {
     MoreAppsLoaded(Result<Vec<SplunkApp>, Arc<ClientError>>),
     /// Result of loading more users (pagination)
     MoreUsersLoaded(Result<Vec<User>, Arc<ClientError>>),
+    /// Result of loading search peers
+    SearchPeersLoaded(Result<Vec<SearchPeer>, Arc<ClientError>>),
+    /// Result of loading more search peers (pagination)
+    MoreSearchPeersLoaded(Result<Vec<SearchPeer>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

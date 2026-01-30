@@ -21,6 +21,7 @@ pub mod license;
 pub mod overview;
 pub mod saved_searches;
 pub mod search;
+pub mod search_peers;
 pub mod settings;
 pub mod users;
 
@@ -45,6 +46,7 @@ impl App {
             CurrentScreen::InternalLogs => self.handle_internal_logs_input(key),
             CurrentScreen::Apps => self.handle_apps_input(key),
             CurrentScreen::Users => self.handle_users_input(key),
+            CurrentScreen::SearchPeers => self.handle_search_peers_input(key),
             CurrentScreen::Settings => self.handle_settings_input(key),
             CurrentScreen::Overview => self.handle_overview_input(key),
         }

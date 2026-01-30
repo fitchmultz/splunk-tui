@@ -11,6 +11,7 @@ mod logs;
 mod parsing;
 mod request;
 pub mod search;
+mod search_peers;
 mod server;
 mod users;
 
@@ -29,5 +30,6 @@ pub use search::{
     get_job_status, get_results, get_saved_search, list_saved_searches, wait_for_job,
     wait_for_job_with_progress,
 };
+pub use search_peers::list_search_peers;
 pub use server::*;
 pub use users::list_users;

@@ -14,5 +14,6 @@ pub mod license;
 pub mod overview;
 pub mod saved_searches;
 pub mod search;
+pub mod search_peers;
 pub mod settings;
 pub mod users;

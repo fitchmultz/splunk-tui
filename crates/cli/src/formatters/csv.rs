@@ -13,6 +13,7 @@ use crate::formatters::common::{escape_csv, flatten_json_object, get_all_flatten
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
 use splunk_client::models::LogEntry;
+use splunk_client::models::SearchPeer;
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -717,6 +718,49 @@ impl Formatter for CsvFormatter {
                     escape_csv(utsname),
                     escape_csv(repo_loc),
                     escape_csv(&server_classes)
+                ));
+            }
+
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    fn format_search_peers(&self, peers: &[SearchPeer], detailed: bool) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str("name,host,port,status,version");
+        if detailed {
+            output.push_str(",guid,last_connected,disabled");
+        }
+        output.push('\n');
+
+        for peer in peers {
+            let version = peer.version.as_deref().unwrap_or("");
+
+            output.push_str(&format!(
+                "{},{},{},{},{}",
+                escape_csv(&peer.name),
+                escape_csv(&peer.host),
+                peer.port,
+                escape_csv(&peer.status),
+                escape_csv(version)
+            ));
+
+            if detailed {
+                let guid = peer.guid.as_deref().unwrap_or("");
+                let last_connected = peer.last_connected.as_deref().unwrap_or("");
+                let disabled = peer
+                    .disabled
+                    .map(|d| if d { "true" } else { "false" })
+                    .unwrap_or("");
+                output.push_str(&format!(
+                    ",{},{},{}",
+                    escape_csv(guid),
+                    escape_csv(last_connected),
+                    escape_csv(disabled)
                 ));
             }
 

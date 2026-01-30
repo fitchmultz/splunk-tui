@@ -264,6 +264,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected username
 - `j/k or Up/Down`: Navigate list
 
+#### Search Peers Screen
+- `r`: Refresh search peers
+- `Ctrl+e`: Export search peers
+- `Ctrl+c`: Copy selected peer name
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

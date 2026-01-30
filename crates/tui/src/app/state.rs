@@ -57,6 +57,7 @@ pub enum CurrentScreen {
     InternalLogs,
     Apps,
     Users,
+    SearchPeers,
     Settings,
     Overview,
 }
@@ -77,7 +78,8 @@ impl CurrentScreen {
             CurrentScreen::SavedSearches => CurrentScreen::InternalLogs,
             CurrentScreen::InternalLogs => CurrentScreen::Apps,
             CurrentScreen::Apps => CurrentScreen::Users,
-            CurrentScreen::Users => CurrentScreen::Settings,
+            CurrentScreen::Users => CurrentScreen::SearchPeers,
+            CurrentScreen::SearchPeers => CurrentScreen::Settings,
             CurrentScreen::Settings => CurrentScreen::Overview,
             CurrentScreen::Overview => CurrentScreen::Search, // Wrap around
         }
@@ -99,7 +101,8 @@ impl CurrentScreen {
             CurrentScreen::InternalLogs => CurrentScreen::SavedSearches,
             CurrentScreen::Apps => CurrentScreen::InternalLogs,
             CurrentScreen::Users => CurrentScreen::Apps,
-            CurrentScreen::Settings => CurrentScreen::Users,
+            CurrentScreen::SearchPeers => CurrentScreen::Users,
+            CurrentScreen::Settings => CurrentScreen::SearchPeers,
             CurrentScreen::Overview => CurrentScreen::Settings,
         }
     }

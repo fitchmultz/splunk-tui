@@ -28,6 +28,7 @@ pub enum ExportTarget {
     Kvstore,
     InternalLogs,
     Overview,
+    SearchPeers,
 }
 
 impl ExportTarget {
@@ -45,6 +46,7 @@ impl ExportTarget {
             ExportTarget::Kvstore => "Export KVStore",
             ExportTarget::InternalLogs => "Export Internal Logs",
             ExportTarget::Overview => "Export Overview",
+            ExportTarget::SearchPeers => "Export Search Peers",
         }
     }
 
@@ -62,6 +64,7 @@ impl ExportTarget {
             ExportTarget::Kvstore => "kvstore",
             ExportTarget::InternalLogs => "internal-logs",
             ExportTarget::Overview => "overview",
+            ExportTarget::SearchPeers => "search-peers",
         };
 
         let ext = match format {
@@ -132,6 +135,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::Overview => self
                 .overview_data
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::SearchPeers => self
+                .search_peers
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
         }

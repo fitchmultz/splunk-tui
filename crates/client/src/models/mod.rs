@@ -15,6 +15,7 @@ pub mod kvstore;
 pub mod license;
 pub mod logs;
 pub mod saved_searches;
+pub mod search_peers;
 pub mod server;
 pub mod users;
 
@@ -32,5 +33,6 @@ pub use kvstore::{KvStoreMember, KvStoreReplicationStatus, KvStoreStatus};
 pub use license::{LicensePool, LicenseStack, LicenseUsage, SlavesUsageBytes};
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
+pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};
 pub use users::{User, UserEntry, UserListResponse};
