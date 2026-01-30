@@ -82,7 +82,7 @@ impl ConfigCommandContext {
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
 #[command(version)]
 #[command(
-    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli health\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli -a $SPLUNK_API_TOKEN search 'index=_internal' --wait\n"
+    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli -a $SPLUNK_API_TOKEN search 'index=_internal' --wait\n"
 )]
 struct Cli {
     /// Base URL of the Splunk server (e.g., https://localhost:8089)
@@ -182,6 +182,21 @@ enum Commands {
         count: usize,
 
         /// Offset into the index list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+
+    /// List deployment clients (forwarders)
+    Forwarders {
+        /// Show detailed information about each forwarder
+        #[arg(short, long)]
+        detailed: bool,
+
+        /// Maximum number of forwarders to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+
+        /// Offset into the forwarder list (zero-based)
         #[arg(long, default_value = "0")]
         offset: usize,
     },
@@ -472,6 +487,23 @@ async fn run_command(
         } => {
             let config = config.into_real_config()?;
             commands::indexes::run(
+                config,
+                detailed,
+                count,
+                offset,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::Forwarders {
+            detailed,
+            count,
+            offset,
+        } => {
+            let config = config.into_real_config()?;
+            commands::forwarders::run(
                 config,
                 detailed,
                 count,

@@ -34,6 +34,7 @@ mod session;
 // API method submodules
 mod apps;
 mod cluster;
+mod forwarders;
 mod indexes;
 mod jobs;
 mod kvstore;

@@ -13,7 +13,7 @@ use anyhow::Result;
 use serde::Serialize;
 use splunk_client::models::LogEntry;
 use splunk_client::{
-    App, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -164,5 +164,10 @@ impl Formatter for JsonFormatter {
         Ok(serde_json::to_string_pretty(&Output {
             profiles: display_profiles,
         })?)
+    }
+
+    fn format_forwarders(&self, forwarders: &[Forwarder], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full Forwarder struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(forwarders)?)
     }
 }

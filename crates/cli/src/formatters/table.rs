@@ -14,6 +14,7 @@ pub use self::imp::TableFormatter;
 // Submodules containing individual format_* implementations
 mod apps;
 mod cluster;
+mod forwarders;
 mod health;
 mod imp;
 mod indexes;

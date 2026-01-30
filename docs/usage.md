@@ -279,6 +279,34 @@ splunk-cli indexes --count 30 --offset 30
 
 **Note (table output):** table output includes a pagination footer (e.g., `Showing 31-60 (page 2)`).
 
+#### `forwarders`
+List deployment clients (forwarders) that have checked in with the deployment server.
+
+```bash
+splunk-cli forwarders --detailed
+splunk-cli forwarders --count 30 --offset 30
+splunk-cli forwarders --output json
+```
+
+- `-d, --detailed`: Show detailed information about each forwarder (includes client name, utsname, repository location, and server classes)
+- `-c, --count <NUMBER>`: Maximum number of forwarders to list [default: 30]
+- `--offset <NUMBER>`: Offset into the forwarder list (zero-based) [default: 0]
+
+**Note (table output):** table output includes a pagination footer (e.g., `Showing 1-30 (page 1)`).
+
+**Output fields:**
+- **Name**: The forwarder identifier (typically hostname or client name)
+- **Hostname**: The reported hostname of the forwarder
+- **IP Address**: The IP address of the forwarder
+- **Version**: The Splunk version running on the forwarder
+- **Last Phone**: The last time the forwarder checked in with the deployment server
+
+In detailed mode, additional fields are shown:
+- **Client Name**: The configured client name on the forwarder
+- **Utsname**: System information from the forwarder (OS, kernel, architecture)
+- **Repository Location**: The configuration repository location for this forwarder
+- **Server Classes**: The server classes this forwarder belongs to
+
 #### `cluster`
 Show cluster status and configuration.
 

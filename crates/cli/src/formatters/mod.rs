@@ -17,8 +17,8 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::LogEntry;
 use splunk_client::{
-    App, ClusterPeer, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, SavedSearch,
-    SearchJobStatus, User,
+    App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    SavedSearch, SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 
@@ -143,6 +143,9 @@ pub trait Formatter {
         &self,
         profiles: &std::collections::BTreeMap<String, ProfileConfig>,
     ) -> Result<String>;
+
+    /// Format forwarders list.
+    fn format_forwarders(&self, forwarders: &[Forwarder], detailed: bool) -> Result<String>;
 }
 
 /// Cluster peer output structure.

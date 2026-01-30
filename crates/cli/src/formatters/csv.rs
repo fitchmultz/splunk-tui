@@ -14,7 +14,7 @@ use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
 use splunk_client::models::LogEntry;
 use splunk_client::{
-    App, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -673,6 +673,55 @@ impl Formatter for CsvFormatter {
             escape_csv(app.author.as_deref().unwrap_or("")),
             escape_csv(app.description.as_deref().unwrap_or(""))
         ));
+
+        Ok(output)
+    }
+
+    fn format_forwarders(&self, forwarders: &[Forwarder], detailed: bool) -> Result<String> {
+        let mut output = String::new();
+
+        // Header
+        output.push_str("name,hostname,client_name,ip_address,version,last_phone");
+        if detailed {
+            output.push_str(",utsname,repository_location,server_classes");
+        }
+        output.push('\n');
+
+        for forwarder in forwarders {
+            let hostname = forwarder.hostname.as_deref().unwrap_or("");
+            let client_name = forwarder.client_name.as_deref().unwrap_or("");
+            let ip = forwarder.ip_address.as_deref().unwrap_or("");
+            let version = forwarder.version.as_deref().unwrap_or("");
+            let last_phone = forwarder.last_phone.as_deref().unwrap_or("");
+
+            output.push_str(&format!(
+                "{},{},{},{},{},{}",
+                escape_csv(&forwarder.name),
+                escape_csv(hostname),
+                escape_csv(client_name),
+                escape_csv(ip),
+                escape_csv(version),
+                escape_csv(last_phone)
+            ));
+
+            if detailed {
+                let utsname = forwarder.utsname.as_deref().unwrap_or("");
+                let repo_loc = forwarder.repository_location.as_deref().unwrap_or("");
+                let server_classes = forwarder
+                    .server_classes
+                    .as_ref()
+                    .map(|sc| sc.join(";"))
+                    .unwrap_or_default();
+                output.push_str(&format!(
+                    ",{},{},{}",
+                    escape_csv(utsname),
+                    escape_csv(repo_loc),
+                    escape_csv(&server_classes)
+                ));
+            }
+
+            output.push('\n');
+        }
 
         Ok(output)
     }

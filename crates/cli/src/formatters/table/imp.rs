@@ -11,13 +11,14 @@
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
 use splunk_client::{
-    App, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
 use super::apps;
 use super::cluster;
+use super::forwarders;
 use super::health;
 use super::indexes;
 use super::jobs;
@@ -124,6 +125,10 @@ impl Formatter for TableFormatter {
     fn format_profiles(&self, profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
         profiles::format_profiles(profiles)
     }
+
+    fn format_forwarders(&self, forwarders_list: &[Forwarder], detailed: bool) -> Result<String> {
+        forwarders::format_forwarders(forwarders_list, detailed)
+    }
 }
 
 impl TableFormatter {
@@ -151,6 +156,38 @@ impl TableFormatter {
         let mut output = self.format_indexes(indexes, detailed)?;
 
         if let Some(footer) = build_pagination_footer(pagination, indexes.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for forwarders with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for forwarders (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_forwarders_paginated(
+        &self,
+        forwarders_list: &[Forwarder],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if forwarders_list.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No forwarders found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No forwarders found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_forwarders(forwarders_list, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, forwarders_list.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

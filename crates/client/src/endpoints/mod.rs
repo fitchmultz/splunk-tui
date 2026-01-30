@@ -2,6 +2,7 @@
 
 mod auth;
 mod cluster;
+mod forwarders;
 mod indexes;
 mod jobs;
 mod kvstore;
@@ -15,6 +16,7 @@ mod users;
 
 pub use auth::login;
 pub use cluster::{get_cluster_info, get_cluster_peers};
+pub use forwarders::list_forwarders;
 pub use indexes::list_indexes;
 pub use jobs::{cancel_job, delete_job, get_job, list_jobs};
 pub use kvstore::get_kvstore_status;

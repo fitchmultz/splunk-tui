@@ -11,13 +11,14 @@
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
 use splunk_client::{
-    App, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
 mod apps;
 mod cluster;
+mod forwarders;
 mod health;
 mod indexes;
 mod jobs;
@@ -111,5 +112,9 @@ impl Formatter for XmlFormatter {
 
     fn format_profiles(&self, profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
         profiles::format_profiles(profiles)
+    }
+
+    fn format_forwarders(&self, forwarders_list: &[Forwarder], detailed: bool) -> Result<String> {
+        forwarders::format_forwarders(forwarders_list, detailed)
     }
 }

@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0236",
-      "status": "todo",
-      "title": "Add forwarder management CLI command and TUI screen",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "tui",
-        "forwarders",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/forwarders.rs",
-        "crates/client/src/endpoints/forwarders.rs",
-        "crates/client/src/models/forwarders.rs",
-        "crates/cli/src/commands/forwarders.rs",
-        "crates/tui/src/ui/screens/forwarders.rs"
-      ],
-      "evidence": [
-        "Splunk admins frequently need to monitor and manage forwarders (universal/heavy forwarders).",
-        "Splunk REST API provides /services/deployment/server/clients for forwarder management.",
-        "No forwarder support currently exists in the client, CLI, or TUI."
-      ],
-      "plan": [
-        "Add forwarder models (Forwarder, ForwarderListResponse) to client.",
-        "Implement forwarders endpoint and client methods (list, filter by status/hostname).",
-        "Add CLI forwarders command with list, filter, and status options.",
-        "Create TUI forwarders screen with filtering and detail view.",
-        "Add tests and documentation updates."
-      ],
-      "notes": [],
-      "request": "Feature gap for Splunk admin experience",
-      "created_at": "2026-01-29T23:50:00Z",
-      "updated_at": "2026-01-29T23:50:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0237",
       "status": "todo",
       "title": "Add distributed search peer management",
