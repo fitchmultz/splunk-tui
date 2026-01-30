@@ -2,6 +2,7 @@
 
 use anyhow::{Context, Result};
 use splunk_client::models::LogEntry;
+use splunk_client::models::logs::sort_logs_newest_first;
 use tokio::time::{Duration, sleep};
 use tracing::info;
 
@@ -98,13 +99,19 @@ pub async fn run(
                     let logs: Vec<LogEntry> = logs;
                     if !logs.is_empty() {
                         // Filter out logs we've already seen
-                        let new_logs: Vec<_> = if let Some(ref cursor) = cursor {
+                        let mut new_logs: Vec<_> = if let Some(ref cursor) = cursor {
                             logs.into_iter().filter(|l| cursor.is_after(l)).collect()
                         } else {
                             logs
                         };
 
                         if !new_logs.is_empty() {
+                            // Ensure deterministic ordering before cursor update (defensive)
+                            // API returns sorted results, but client-side filtering could
+                            // theoretically disrupt ordering. Explicit sort adds resilience
+                            // against future changes to filtering or data flow.
+                            sort_logs_newest_first(&mut new_logs);
+
                             // Update cursor to the NEWEST new log (first in sorted descending list)
                             // This prevents re-querying same-timestamp events on next poll
                             if let Some(newest_new) = new_logs.first() {

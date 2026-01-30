@@ -52,6 +52,30 @@ impl LogEntry {
         (&self.time, &self.index_time, self.serial)
     }
 
+    /// Compares two log entries for sorting (newest first).
+    ///
+    /// Returns `Ordering::Less` if `self` is newer than `other` (should come first),
+    /// `Ordering::Greater` if `self` is older (should come later),
+    /// and `Ordering::Equal` if they are equivalent.
+    ///
+    /// Sort order: time DESC, index_time DESC, serial DESC.
+    /// Empty index_time sorts after non-empty (treated as older).
+    /// None serial sorts after Some (treated as older).
+    pub fn cmp_newest_first(&self, other: &Self) -> std::cmp::Ordering {
+        // Compare time descending (newer times first)
+        match other.time.cmp(&self.time) {
+            std::cmp::Ordering::Equal => {}
+            ord => return ord,
+        }
+        // Compare index_time descending
+        match other.index_time.cmp(&self.index_time) {
+            std::cmp::Ordering::Equal => {}
+            ord => return ord,
+        }
+        // Compare serial descending (None sorts after Some)
+        other.serial.cmp(&self.serial)
+    }
+
     /// Returns a content-based hash for cursor comparison when serial is missing.
     /// Uses time + index_time + message to create a stable identifier.
     pub fn content_hash(&self) -> u64 {
@@ -64,6 +88,43 @@ impl LogEntry {
         self.message.hash(&mut hasher);
         hasher.finish()
     }
+}
+
+/// Sorts logs by time, index_time, and serial in descending order (newest first).
+///
+/// This ensures deterministic ordering regardless of API response order.
+/// Sort order matches the Splunk API: time DESC, index_time DESC, serial DESC.
+///
+/// # Example
+///
+/// ```
+/// use splunk_client::models::LogEntry;
+///
+/// let mut logs = vec![
+///     LogEntry {
+///         time: "2025-01-20T10:00:00.000Z".to_string(),
+///         index_time: "2025-01-20T10:00:01.000Z".to_string(),
+///         serial: Some(1),
+///         level: "INFO".to_string(),
+///         component: "test".to_string(),
+///         message: "older".to_string(),
+///     },
+///     LogEntry {
+///         time: "2025-01-20T10:01:00.000Z".to_string(),
+///         index_time: "2025-01-20T10:01:01.000Z".to_string(),
+///         serial: Some(2),
+///         level: "INFO".to_string(),
+///         component: "test".to_string(),
+///         message: "newer".to_string(),
+///     },
+/// ];
+///
+/// splunk_client::models::logs::sort_logs_newest_first(&mut logs);
+/// assert_eq!(logs[0].message, "newer");
+/// assert_eq!(logs[1].message, "older");
+/// ```
+pub fn sort_logs_newest_first(logs: &mut [LogEntry]) {
+    logs.sort_by(LogEntry::cmp_newest_first);
 }
 
 /// Health check result for log parsing errors.
@@ -246,5 +307,234 @@ mod tests {
             base_entry.content_hash(),
             different_index_time.content_hash()
         );
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_by_time() {
+        let mut logs = vec![
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(1),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "oldest".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:02:00.000Z".to_string(),
+                index_time: "2025-01-20T10:02:01.000Z".to_string(),
+                serial: Some(3),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "newest".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:01:00.000Z".to_string(),
+                index_time: "2025-01-20T10:01:01.000Z".to_string(),
+                serial: Some(2),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "middle".to_string(),
+            },
+        ];
+
+        sort_logs_newest_first(&mut logs);
+
+        assert_eq!(logs[0].message, "newest");
+        assert_eq!(logs[1].message, "middle");
+        assert_eq!(logs[2].message, "oldest");
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_tie_breaker_index_time() {
+        // Same time, different index_time
+        let mut logs = vec![
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(1),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "older".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:03.000Z".to_string(),
+                serial: Some(3),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "newest".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:02.000Z".to_string(),
+                serial: Some(2),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "middle".to_string(),
+            },
+        ];
+
+        sort_logs_newest_first(&mut logs);
+
+        assert_eq!(logs[0].message, "newest");
+        assert_eq!(logs[1].message, "middle");
+        assert_eq!(logs[2].message, "older");
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_tie_breaker_serial() {
+        // Same time and index_time, different serial
+        let mut logs = vec![
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(10),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "older".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(30),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "newest".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(20),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "middle".to_string(),
+            },
+        ];
+
+        sort_logs_newest_first(&mut logs);
+
+        assert_eq!(logs[0].message, "newest");
+        assert_eq!(logs[1].message, "middle");
+        assert_eq!(logs[2].message, "older");
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_with_none_serial() {
+        // None serial should sort after Some (treated as older)
+        let mut logs = vec![
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: None,
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "no_serial".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(10),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "with_serial".to_string(),
+            },
+        ];
+
+        sort_logs_newest_first(&mut logs);
+
+        // Some(10) should come before None (newer)
+        assert_eq!(logs[0].message, "with_serial");
+        assert_eq!(logs[1].message, "no_serial");
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_with_empty_index_time() {
+        // Empty index_time should sort after non-empty (treated as older)
+        let mut logs = vec![
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "".to_string(),
+                serial: Some(1),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "empty_index".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: Some(2),
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "with_index".to_string(),
+            },
+        ];
+
+        sort_logs_newest_first(&mut logs);
+
+        // Non-empty index_time should come before empty (newer)
+        assert_eq!(logs[0].message, "with_index");
+        assert_eq!(logs[1].message, "empty_index");
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_empty_vec() {
+        let mut logs: Vec<LogEntry> = vec![];
+        sort_logs_newest_first(&mut logs);
+        assert!(logs.is_empty());
+    }
+
+    #[test]
+    fn test_sort_logs_newest_first_single_element() {
+        let mut logs = vec![LogEntry {
+            time: "2025-01-20T10:00:00.000Z".to_string(),
+            index_time: "2025-01-20T10:00:01.000Z".to_string(),
+            serial: Some(1),
+            level: "INFO".to_string(),
+            component: "test".to_string(),
+            message: "only".to_string(),
+        }];
+
+        sort_logs_newest_first(&mut logs);
+
+        assert_eq!(logs.len(), 1);
+        assert_eq!(logs[0].message, "only");
+    }
+
+    #[test]
+    fn test_cmp_newest_first_all_none_serials() {
+        // All entries with None serial should be sorted by time/index_time only
+        let mut logs = vec![
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:01.000Z".to_string(),
+                serial: None,
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "first".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:03.000Z".to_string(),
+                serial: None,
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "third".to_string(),
+            },
+            LogEntry {
+                time: "2025-01-20T10:00:00.000Z".to_string(),
+                index_time: "2025-01-20T10:00:02.000Z".to_string(),
+                serial: None,
+                level: "INFO".to_string(),
+                component: "test".to_string(),
+                message: "second".to_string(),
+            },
+        ];
+
+        sort_logs_newest_first(&mut logs);
+
+        assert_eq!(logs[0].message, "third");
+        assert_eq!(logs[1].message, "second");
+        assert_eq!(logs[2].message, "first");
     }
 }

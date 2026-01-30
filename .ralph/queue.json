@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0222",
-      "status": "todo",
-      "title": "Enforce deterministic ordering for log tail cursor updates",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "logs",
-        "correctness"
-      ],
-      "scope": [
-        "crates/cli/src/commands/logs.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/logs.rs comments assume logs are sorted newest-first, but no sorting is performed before using new_logs.first() as the cursor.",
-        "The cursor update relies on new_logs.first() to represent the newest entry, which is unsafe if API order changes."
-      ],
-      "plan": [
-        "Sort fetched log entries by cursor key descending before filtering and cursor update.",
-        "Update cursor selection to use the max/newest entry regardless of input order.",
-        "Add tests to validate cursor behavior with reversed or unordered inputs."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0223",
       "status": "todo",
       "title": "Apply search defaults to CLI search when flags are omitted",

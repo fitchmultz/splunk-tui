@@ -22,7 +22,7 @@ pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
     App, AppListResponse, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, IndexListResponse,
     KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack,
-    LicenseUsage, LogParsingHealth, SavedSearch, SearchJob, SearchJobListResponse,
+    LicenseUsage, LogEntry, LogParsingHealth, SavedSearch, SearchJob, SearchJobListResponse,
     SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth, SplunkResponse, User,
     UserListResponse,
 };
