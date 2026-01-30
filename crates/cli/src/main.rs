@@ -81,6 +81,9 @@ impl ConfigCommandContext {
 #[command(name = "splunk-cli")]
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
 #[command(version)]
+#[command(
+    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli health\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli -a $SPLUNK_API_TOKEN search 'index=_internal' --wait\n"
+)]
 struct Cli {
     /// Base URL of the Splunk server (e.g., https://localhost:8089)
     #[arg(short, long, global = true, env = "SPLUNK_BASE_URL")]

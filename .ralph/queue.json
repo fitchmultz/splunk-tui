@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0231",
-      "status": "todo",
-      "title": "Add examples to splunk-cli --help output",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "docs",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/cli/src/main.rs does not include an after_help example block for splunk-cli.",
-        "crates/tui/src/cli.rs includes an after_help examples block, indicating expected pattern."
-      ],
-      "plan": [
-        "Add an after_help section with common splunk-cli examples.",
-        "Ensure examples align with docs/usage.",
-        "Update CLI help snapshot tests if present."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0232",
       "status": "todo",
       "title": "Document --quiet flag in usage guide",
