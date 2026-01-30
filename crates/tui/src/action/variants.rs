@@ -124,7 +124,12 @@ pub enum Action {
     /// Load the list of saved searches
     LoadSavedSearches,
     /// Load internal logs from index=_internal
-    LoadInternalLogs,
+    LoadInternalLogs {
+        /// Number of log entries to fetch
+        count: u64,
+        /// Earliest time for the query (e.g., "-15m")
+        earliest: String,
+    },
     /// Load the list of apps with pagination
     LoadApps {
         /// Number of items to load
@@ -149,6 +154,8 @@ pub enum Action {
     LoadMoreApps,
     /// Load more users (pagination)
     LoadMoreUsers,
+    /// Load more internal logs (refresh)
+    LoadMoreInternalLogs,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)

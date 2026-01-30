@@ -1,5 +1,5 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_footer_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -20,8 +20,8 @@ expression: harness.render()
 │  Latest time:   now                                                          │
 │  Max results:   1000                                                         │
 │                                                                              │
-│Press 't' to cycle theme                                                      │
-│Press 'a' to toggle auto-refresh                                              │
+│Internal Logs Defaults                                                        │
+│  Count:         100                                                          │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Tab:Next Screen | Shift+Tab:Previous Screen | t:Theme a:Auto ...| ?:Help | q:│

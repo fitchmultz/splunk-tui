@@ -68,7 +68,10 @@ impl App {
             Action::LoadSavedSearches => {
                 self.current_screen = CurrentScreen::SavedSearches;
             }
-            Action::LoadInternalLogs => {
+            Action::LoadInternalLogs {
+                count: _,
+                earliest: _,
+            } => {
                 self.current_screen = CurrentScreen::InternalLogs;
             }
             Action::LoadApps {

@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0226",
-      "status": "todo",
-      "title": "Make TUI internal logs query/count configurable",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "logs",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/logs.rs",
-        "crates/tui/src/app.rs",
-        "crates/config/src/persistence/state.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/runtime/side_effects/logs.rs fetches logs with hardcoded count=100 and earliest='-15m'.",
-        "Persisted state config has no internal logs settings, so users cannot adjust log window or count."
-      ],
-      "plan": [
-        "Add persisted settings for internal log count/time window (or reuse existing defaults config).",
-        "Expose controls in TUI settings or input handling to adjust these values.",
-        "Update log fetch logic to use persisted settings and add tests/docs."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0227",
       "status": "todo",
       "title": "Add TUI license usage screen for CLI parity",

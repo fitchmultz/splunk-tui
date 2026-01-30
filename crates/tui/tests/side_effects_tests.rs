@@ -347,7 +347,13 @@ async fn test_load_internal_logs_success() {
         .await;
 
     let actions = harness
-        .handle_and_collect(Action::LoadInternalLogs, 3)
+        .handle_and_collect(
+            Action::LoadInternalLogs {
+                count: 100,
+                earliest: "-15m".to_string(),
+            },
+            3,
+        )
         .await;
 
     assert!(

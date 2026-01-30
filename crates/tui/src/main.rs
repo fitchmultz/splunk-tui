@@ -276,11 +276,15 @@ async fn main() -> Result<()> {
                 }
 
                 // Handle LoadMore* actions by converting to Load* with pagination params
-                let action = match action {
+                let action: Action = match action {
                     Action::LoadMoreIndexes => app.load_more_action_for_current_screen().unwrap_or(action),
                     Action::LoadMoreJobs => app.load_more_action_for_current_screen().unwrap_or(action),
                     Action::LoadMoreApps => app.load_more_action_for_current_screen().unwrap_or(action),
                     Action::LoadMoreUsers => app.load_more_action_for_current_screen().unwrap_or(action),
+                    Action::LoadMoreInternalLogs => Action::LoadInternalLogs {
+                        count: app.internal_logs_defaults.count,
+                        earliest: app.internal_logs_defaults.earliest_time.clone(),
+                    },
                     _ => action,
                 };
 

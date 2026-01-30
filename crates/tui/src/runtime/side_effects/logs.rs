@@ -14,12 +14,16 @@ use tokio::sync::mpsc::Sender;
 use super::SharedClient;
 
 /// Handle loading internal logs.
-pub async fn handle_load_internal_logs(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_internal_logs(
+    client: SharedClient,
+    tx: Sender<Action>,
+    count: u64,
+    earliest: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         let mut c = client.lock().await;
-        // Default to last 15 minutes of logs, 100 entries
-        match c.get_internal_logs(100, Some("-15m")).await {
+        match c.get_internal_logs(count, Some(&earliest)).await {
             Ok(logs) => {
                 let _ = tx.send(Action::InternalLogsLoaded(Ok(logs))).await;
             }

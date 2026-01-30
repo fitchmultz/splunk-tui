@@ -22,7 +22,9 @@ mod profiles;
 mod state;
 
 pub use profiles::ConfigManager;
-pub use state::{ConfigFileError, ListDefaults, ListType, PersistedState, SearchDefaults};
+pub use state::{
+    ConfigFileError, InternalLogsDefaults, ListDefaults, ListType, PersistedState, SearchDefaults,
+};
 
 // Internal re-exports for use by loader module
 pub(crate) use migration::migrate_config_file_if_needed;

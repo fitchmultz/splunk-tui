@@ -32,6 +32,10 @@ pub struct SettingsRenderConfig<'a> {
     pub latest_time: &'a str,
     /// Default maximum number of results per search.
     pub max_results: u64,
+    /// Default count for internal logs queries.
+    pub internal_logs_count: u64,
+    /// Default earliest time for internal logs queries.
+    pub internal_logs_earliest: &'a str,
 }
 
 /// Render the settings screen.
@@ -125,6 +129,25 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
             Span::styled("  Max results:   ", Style::default().fg(theme.title)),
             Span::styled(
                 format!("{}", config.max_results),
+                Style::default().fg(theme.text),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Internal Logs Defaults",
+            Style::default().fg(theme.title),
+        )]),
+        Line::from(vec![
+            Span::styled("  Count:         ", Style::default().fg(theme.title)),
+            Span::styled(
+                format!("{}", config.internal_logs_count),
+                Style::default().fg(theme.text),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("  Earliest time: ", Style::default().fg(theme.title)),
+            Span::styled(
+                config.internal_logs_earliest,
                 Style::default().fg(theme.text),
             ),
         ]),

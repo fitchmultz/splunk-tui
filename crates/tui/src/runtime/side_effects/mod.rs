@@ -142,8 +142,8 @@ pub async fn handle_side_effects(
         Action::LoadSavedSearches => {
             searches::handle_load_saved_searches(client, tx).await;
         }
-        Action::LoadInternalLogs => {
-            logs::handle_load_internal_logs(client, tx).await;
+        Action::LoadInternalLogs { count, earliest } => {
+            logs::handle_load_internal_logs(client, tx, count, earliest).await;
         }
         Action::LoadApps { count, offset } => {
             apps::handle_load_apps(client, tx, count, offset).await;
@@ -164,6 +164,10 @@ pub async fn handle_side_effects(
         }
         Action::LoadMoreUsers => {
             // This action is handled by the main loop which has access to state
+        }
+        Action::LoadMoreInternalLogs => {
+            // This action is handled by the main loop which has access to state
+            // It reads internal_logs_defaults and sends LoadInternalLogs with parameters
         }
         Action::SwitchToSettings => {
             profiles::handle_switch_to_settings(config_manager, tx).await;

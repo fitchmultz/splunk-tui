@@ -99,6 +99,7 @@ fn test_redact_settings_loaded() {
         search_defaults: SearchDefaults::default(),
         keybind_overrides: splunk_config::KeybindOverrides::default(),
         list_defaults: splunk_config::ListDefaults::default(),
+        internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
     };
     let action = Action::SettingsLoaded(state);
     let output = redacted_debug(&action);

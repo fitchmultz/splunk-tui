@@ -117,6 +117,28 @@ pub enum ListType {
     Users,
 }
 
+/// Default parameters for internal logs queries.
+///
+/// These values control how many internal log entries are fetched
+/// and the time range for the query.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct InternalLogsDefaults {
+    /// Number of log entries to fetch per query.
+    pub count: u64,
+    /// Earliest time for log queries (e.g., "-15m", "-1h", "2024-01-01T00:00:00").
+    pub earliest_time: String,
+}
+
+impl Default for InternalLogsDefaults {
+    fn default() -> Self {
+        Self {
+            count: 100,                        // Match current hardcoded value
+            earliest_time: "-15m".to_string(), // Match current hardcoded value
+        }
+    }
+}
+
 /// User preferences that persist across application runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersistedState {
@@ -143,6 +165,9 @@ pub struct PersistedState {
     /// Default list pagination settings.
     #[serde(default)]
     pub list_defaults: ListDefaults,
+    /// Default internal logs query parameters.
+    #[serde(default)]
+    pub internal_logs_defaults: InternalLogsDefaults,
 }
 
 impl Default for PersistedState {
@@ -157,6 +182,7 @@ impl Default for PersistedState {
             search_defaults: SearchDefaults::default(),
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults::default(),
         }
     }
 }
@@ -256,6 +282,7 @@ mod tests {
             },
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -285,6 +312,7 @@ mod tests {
             search_defaults: SearchDefaults::default(),
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults::default(),
         };
 
         writeln!(
@@ -355,6 +383,7 @@ mod tests {
             },
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -402,6 +431,7 @@ mod tests {
             search_defaults: SearchDefaults::default(),
             keybind_overrides: KeybindOverrides { overrides },
             list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -562,6 +592,7 @@ mod tests {
                 apps_page_size: None,
                 users_page_size: Some(25),
             },
+            internal_logs_defaults: InternalLogsDefaults::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -573,5 +604,90 @@ mod tests {
         assert_eq!(deserialized.list_defaults.jobs_page_size, Some(100));
         assert_eq!(deserialized.list_defaults.apps_page_size, None);
         assert_eq!(deserialized.list_defaults.users_page_size, Some(25));
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_default() {
+        let defaults = InternalLogsDefaults::default();
+        assert_eq!(defaults.count, 100);
+        assert_eq!(defaults.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_serialization() {
+        let defaults = InternalLogsDefaults {
+            count: 50,
+            earliest_time: "-1h".to_string(),
+        };
+
+        let json = serde_json::to_string(&defaults).unwrap();
+        assert!(json.contains("50"));
+        assert!(json.contains("-1h"));
+
+        let deserialized: InternalLogsDefaults = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.count, 50);
+        assert_eq!(deserialized.earliest_time, "-1h");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_deserialization_uses_defaults_for_missing_fields() {
+        // Test that missing fields use default values
+        let json = r#"{}"#;
+        let deserialized: InternalLogsDefaults = serde_json::from_str(json).unwrap();
+        assert_eq!(deserialized.count, 100);
+        assert_eq!(deserialized.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_persisted_state_backward_compatibility_without_internal_logs_defaults() {
+        // Simulate an old config file without internal_logs_defaults
+        let json = r#"{
+            "auto_refresh": false,
+            "sort_column": "sid",
+            "sort_direction": "asc",
+            "last_search_query": null,
+            "search_history": [],
+            "selected_theme": "default",
+            "search_defaults": {
+                "earliest_time": "-24h",
+                "latest_time": "now",
+                "max_results": 1000
+            },
+            "keybind_overrides": {},
+            "list_defaults": {
+                "page_size": 100,
+                "max_items": 1000
+            }
+        }"#;
+
+        let deserialized: PersistedState = serde_json::from_str(json).unwrap();
+        // Should use defaults for missing internal_logs_defaults
+        assert_eq!(deserialized.internal_logs_defaults.count, 100);
+        assert_eq!(deserialized.internal_logs_defaults.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_persisted_state_with_internal_logs_defaults_round_trip() {
+        let state = PersistedState {
+            auto_refresh: true,
+            sort_column: "status".to_string(),
+            sort_direction: "desc".to_string(),
+            last_search_query: None,
+            search_history: vec![],
+            selected_theme: ColorTheme::Default,
+            search_defaults: SearchDefaults::default(),
+            keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults {
+                count: 200,
+                earliest_time: "-30m".to_string(),
+            },
+        };
+
+        let json = serde_json::to_string(&state).unwrap();
+        let deserialized: PersistedState = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.internal_logs_defaults.count, 200);
+        assert_eq!(deserialized.internal_logs_defaults.earliest_time, "-30m");
     }
 }

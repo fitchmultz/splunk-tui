@@ -83,6 +83,8 @@ Environment variables take precedence over the configuration file.
 | `SPLUNK_EARLIEST_TIME` | Default earliest time for searches (e.g., `-24h`, `2024-01-01T00:00:00`) [default: `-24h`] |
 | `SPLUNK_LATEST_TIME` | Default latest time for searches (e.g., `now`) [default: `now`] |
 | `SPLUNK_MAX_RESULTS` | Default maximum number of results per search [default: `1000`] |
+| `SPLUNK_INTERNAL_LOGS_COUNT` | Default number of internal log entries to fetch in TUI [default: `100`] |
+| `SPLUNK_INTERNAL_LOGS_EARLIEST` | Default earliest time for internal logs in TUI [default: `-15m`] |
 
 #### Retry Behavior
 
@@ -859,6 +861,19 @@ You can customize these defaults using environment variables (see [Environment V
 The Settings screen displays the currently active search defaults. Values set via environment variables take precedence over persisted settings.
 
 Search defaults are persisted to the configuration file and will be restored on the next run. Environment variables always override persisted values.
+
+### Internal Logs Defaults
+
+The TUI applies default parameters when fetching internal logs from `index=_internal`:
+
+- **Count**: `100` (number of log entries to fetch)
+- **Earliest time**: `-15m` (last 15 minutes)
+
+You can customize these defaults using environment variables:
+- `SPLUNK_INTERNAL_LOGS_COUNT`: Override the default number of entries
+- `SPLUNK_INTERNAL_LOGS_EARLIEST`: Override the default earliest time (e.g., `-1h` for last hour)
+
+The Settings screen displays the currently active internal logs defaults. These defaults are persisted to the configuration file and will be restored on the next run.
 
 ### Keybinding Customization
 

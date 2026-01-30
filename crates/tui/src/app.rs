@@ -137,6 +137,9 @@ pub struct App {
     // List defaults (persisted)
     pub list_defaults: ListDefaults,
 
+    // Internal logs defaults (persisted)
+    pub internal_logs_defaults: splunk_config::InternalLogsDefaults,
+
     // Pagination state for list screens
     pub indexes_pagination: ListPaginationState,
     pub jobs_pagination: ListPaginationState,
@@ -270,6 +273,7 @@ impl App {
             search_defaults,
             keybind_overrides,
             list_defaults,
+            internal_logs_defaults,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -281,6 +285,7 @@ impl App {
                 state.search_defaults,
                 state.keybind_overrides,
                 state.list_defaults,
+                state.internal_logs_defaults,
             ),
             None => (
                 false,
@@ -292,6 +297,7 @@ impl App {
                 SearchDefaults::default(),
                 KeybindOverrides::default(),
                 ListDefaults::default(),
+                splunk_config::InternalLogsDefaults::default(),
             ),
         };
 
@@ -349,6 +355,7 @@ impl App {
             search_defaults,
             keybind_overrides,
             list_defaults: list_defaults.clone(),
+            internal_logs_defaults,
             indexes_pagination: ListPaginationState::new(
                 list_defaults.page_size_for(ListType::Indexes),
                 list_defaults.max_items,
@@ -404,6 +411,7 @@ impl App {
             search_defaults: self.search_defaults.clone(),
             keybind_overrides: self.keybind_overrides.clone(),
             list_defaults: self.list_defaults.clone(),
+            internal_logs_defaults: self.internal_logs_defaults.clone(),
         }
     }
 
@@ -470,7 +478,10 @@ impl App {
             CurrentScreen::JobInspect => None, // Already loaded when entering inspect mode
             CurrentScreen::Health => Some(Action::LoadHealth),
             CurrentScreen::SavedSearches => Some(Action::LoadSavedSearches),
-            CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs),
+            CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs {
+                count: self.internal_logs_defaults.count,
+                earliest: self.internal_logs_defaults.earliest_time.clone(),
+            }),
             CurrentScreen::Apps => Some(Action::LoadApps {
                 count: self.apps_pagination.page_size,
                 offset: 0,
@@ -652,7 +663,10 @@ impl App {
             && self.auto_refresh
             && self.popup.is_none()
         {
-            Some(Action::LoadInternalLogs)
+            Some(Action::LoadInternalLogs {
+                count: self.internal_logs_defaults.count,
+                earliest: self.internal_logs_defaults.earliest_time.clone(),
+            })
         } else {
             None
         }
