@@ -240,6 +240,9 @@ The CLI tool is named `splunk-cli`.
   - Success message is printed to stderr: "Results written to <path> (<format> format)"
   - Cannot be used with `--tail` mode (logs command)
   - Example: `splunk-cli search "index=main" --wait --output-file results.json`
+- `--quiet`: Suppress all progress output (spinners / progress bars)
+  - Progress indicators always write to STDERR; this flag disables them entirely
+  - Command results are still printed to stdout; only progress UI is suppressed
 
 #### Cancellation (Ctrl+C / SIGINT)
 Long-running commands can be interrupted with `Ctrl+C`:

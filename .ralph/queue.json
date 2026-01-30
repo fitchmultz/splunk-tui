@@ -2,36 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0232",
-      "status": "todo",
-      "title": "Document --quiet flag in usage guide",
-      "priority": "low",
-      "tags": [
-        "docs",
-        "cli",
-        "ux"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/cli/src/main.rs defines a global --quiet flag for progress suppression.",
-        "docs/usage.md does not mention --quiet (no occurrences found)."
-      ],
-      "plan": [
-        "Add --quiet to the CLI options table/section in docs/usage.md.",
-        "Describe that it suppresses progress output but not command results.",
-        "Verify docs remain consistent with CLI help output."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-29T23:05:51Z",
-      "updated_at": "2026-01-29T23:05:51Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0233",
       "status": "todo",
       "title": "Respect NO_COLOR in test-live-server.sh output",
