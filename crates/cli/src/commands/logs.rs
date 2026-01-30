@@ -69,6 +69,7 @@ pub async fn run(
     if tail {
         info!("Tailing internal logs...");
         let mut cursor: Option<LogCursor> = None;
+        let mut is_first = true;
 
         loop {
             let fetch_result: Result<Vec<LogEntry>> = tokio::select! {
@@ -94,11 +95,12 @@ pub async fn run(
                                 cursor = Some(LogCursor::from_entry(newest_new));
                             }
 
-                            // Print new logs (sorted newest-first, which is correct for tailing)
-                            let output = formatter.format_logs(&new_logs)?;
-                            if !output.trim().is_empty() {
-                                println!("{}", output.trim());
+                            // Print new logs using streaming formatter (sorted newest-first, which is correct for tailing)
+                            let output = formatter.format_logs_streaming(&new_logs, is_first)?;
+                            if !output.is_empty() {
+                                print!("{}", output);
                             }
+                            is_first = false;
                         }
                     }
                 }

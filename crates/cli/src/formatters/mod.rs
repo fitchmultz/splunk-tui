@@ -99,6 +99,20 @@ pub trait Formatter {
     /// Format internal logs.
     fn format_logs(&self, logs: &[LogEntry]) -> Result<String>;
 
+    /// Format logs for streaming/tail mode.
+    ///
+    /// Default implementation delegates to `format_logs`. Individual formatters
+    /// can override this to provide streaming-appropriate output (e.g., headers
+    /// only on first call, NDJSON for JSON format).
+    ///
+    /// # Arguments
+    /// * `logs` - The log entries to format
+    /// * `is_first` - True if this is the first batch in the stream
+    fn format_logs_streaming(&self, logs: &[LogEntry], is_first: bool) -> Result<String> {
+        let _ = is_first; // unused in default impl
+        self.format_logs(logs)
+    }
+
     /// Format users list.
     fn format_users(&self, users: &[User]) -> Result<String>;
 

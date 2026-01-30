@@ -393,6 +393,30 @@ impl Formatter for CsvFormatter {
         Ok(output)
     }
 
+    fn format_logs_streaming(&self, logs: &[LogEntry], is_first: bool) -> Result<String> {
+        let mut output = String::new();
+
+        if logs.is_empty() {
+            return Ok(output);
+        }
+
+        if is_first {
+            output.push_str("Time,Level,Component,Message\n");
+        }
+
+        for log in logs {
+            output.push_str(&format!(
+                "{},{},{},{}\n",
+                escape_csv(&log.time),
+                escape_csv(&log.level),
+                escape_csv(&log.component),
+                escape_csv(&log.message)
+            ));
+        }
+
+        Ok(output)
+    }
+
     fn format_users(&self, users: &[User]) -> Result<String> {
         let mut output = String::new();
 

@@ -59,6 +59,17 @@ impl Formatter for JsonFormatter {
         Ok(serde_json::to_string_pretty(logs)?)
     }
 
+    fn format_logs_streaming(&self, logs: &[LogEntry], _is_first: bool) -> Result<String> {
+        // NDJSON format: one JSON object per line
+        let mut output = String::new();
+        for log in logs {
+            let line = serde_json::to_string(log)?;
+            output.push_str(&line);
+            output.push('\n');
+        }
+        Ok(output)
+    }
+
     fn format_users(&self, users: &[User]) -> Result<String> {
         Ok(serde_json::to_string_pretty(users)?)
     }

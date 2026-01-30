@@ -417,6 +417,24 @@ splunk-cli logs --count 50 --earliest "-15m" --tail
 - `-e, --earliest <TIME>`: Earliest time for logs [default: "-15m"]
 - `-t, --tail`: Follow logs in real-time (streaming mode)
 
+**Tail Mode Output Formats:**
+
+When using `--tail`, output is streamed continuously with format-specific behavior:
+
+- **table/csv**: Header is printed once at the start, then log entries as they arrive
+- **json**: NDJSON format (one JSON object per line) suitable for streaming parsers
+- **xml**: XML declaration and root element printed once; note that the closing `</logs>` tag may not appear if the stream is interrupted
+
+Examples:
+
+```bash
+# Tail logs in NDJSON format for processing with jq
+splunk-cli logs --tail --output json | jq -r '.message'
+
+# Tail logs to a CSV file (header written once)
+splunk-cli logs --tail --output csv > logs.csv
+```
+
 #### `saved-searches`
 Manage Splunk saved searches.
 

@@ -81,6 +81,14 @@ impl Formatter for TableFormatter {
         logs::format_logs(logs)
     }
 
+    fn format_logs_streaming(
+        &self,
+        logs: &[splunk_client::models::LogEntry],
+        is_first: bool,
+    ) -> Result<String> {
+        logs::format_logs_streaming(logs, is_first)
+    }
+
     fn format_users(&self, users: &[User]) -> Result<String> {
         users::format_users(users)
     }
