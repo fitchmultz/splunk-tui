@@ -213,17 +213,25 @@ pub struct ListPaginationState {
     pub has_more: bool,
     /// Total number of items loaded so far.
     pub total_loaded: usize,
+    /// Maximum number of items to load (safety cap).
+    pub max_items: u64,
 }
 
 impl ListPaginationState {
-    /// Create new pagination state with the given page size.
-    pub fn new(page_size: u64) -> Self {
+    /// Create new pagination state with the given page size and max items cap.
+    pub fn new(page_size: u64, max_items: u64) -> Self {
         Self {
             page_size,
             current_offset: 0,
             has_more: false,
             total_loaded: 0,
+            max_items,
         }
+    }
+
+    /// Check if more items can be loaded without exceeding max_items cap.
+    pub fn can_load_more(&self) -> bool {
+        self.has_more && (self.total_loaded as u64) < self.max_items
     }
 
     /// Reset pagination state (e.g., on refresh).
@@ -403,16 +411,17 @@ mod tests {
 
     #[test]
     fn test_list_pagination_state_new() {
-        let state = ListPaginationState::new(100);
+        let state = ListPaginationState::new(100, 1000);
         assert_eq!(state.page_size, 100);
         assert_eq!(state.current_offset, 0);
         assert!(!state.has_more);
         assert_eq!(state.total_loaded, 0);
+        assert_eq!(state.max_items, 1000);
     }
 
     #[test]
     fn test_list_pagination_state_update_loaded_partial_page() {
-        let mut state = ListPaginationState::new(100);
+        let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(50);
 
         assert_eq!(state.total_loaded, 50);
@@ -422,7 +431,7 @@ mod tests {
 
     #[test]
     fn test_list_pagination_state_update_loaded_full_page() {
-        let mut state = ListPaginationState::new(100);
+        let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(100);
 
         assert_eq!(state.total_loaded, 100);
@@ -432,7 +441,7 @@ mod tests {
 
     #[test]
     fn test_list_pagination_state_update_loaded_multiple_pages() {
-        let mut state = ListPaginationState::new(50);
+        let mut state = ListPaginationState::new(50, 1000);
 
         // First page
         state.update_loaded(50);
@@ -455,7 +464,7 @@ mod tests {
 
     #[test]
     fn test_list_pagination_state_reset() {
-        let mut state = ListPaginationState::new(100);
+        let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(100);
         assert!(state.has_more);
 
@@ -464,13 +473,14 @@ mod tests {
         assert_eq!(state.current_offset, 0);
         assert!(!state.has_more);
         assert_eq!(state.total_loaded, 0);
-        // page_size should remain unchanged
+        // page_size and max_items should remain unchanged
         assert_eq!(state.page_size, 100);
+        assert_eq!(state.max_items, 1000);
     }
 
     #[test]
     fn test_list_pagination_state_mark_complete() {
-        let mut state = ListPaginationState::new(100);
+        let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(100);
         assert!(state.has_more);
 
@@ -484,11 +494,64 @@ mod tests {
 
     #[test]
     fn test_list_pagination_state_empty_page() {
-        let mut state = ListPaginationState::new(100);
+        let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(0);
 
         assert_eq!(state.total_loaded, 0);
         assert_eq!(state.current_offset, 0);
         assert!(!state.has_more, "Empty page means no more items");
+    }
+
+    #[test]
+    fn test_can_load_more_when_under_cap() {
+        let mut state = ListPaginationState::new(100, 1000);
+        state.update_loaded(100);
+        assert!(
+            state.can_load_more(),
+            "Should be able to load more when under cap"
+        );
+    }
+
+    #[test]
+    fn test_can_load_more_when_at_cap() {
+        let mut state = ListPaginationState::new(100, 100);
+        state.update_loaded(100);
+        assert!(
+            !state.can_load_more(),
+            "Should not be able to load more when at cap"
+        );
+    }
+
+    #[test]
+    fn test_can_load_more_when_over_cap() {
+        // This shouldn't happen in practice, but test the boundary
+        let mut state = ListPaginationState::new(100, 50);
+        state.update_loaded(100);
+        assert!(
+            !state.can_load_more(),
+            "Should not be able to load more when over cap"
+        );
+    }
+
+    #[test]
+    fn test_can_load_more_respects_has_more() {
+        let mut state = ListPaginationState::new(100, 1000);
+        state.update_loaded(50); // Partial page, has_more = false
+        assert!(
+            !state.can_load_more(),
+            "Should not be able to load more when has_more is false"
+        );
+    }
+
+    #[test]
+    fn test_can_load_more_when_both_conditions_met() {
+        let mut state = ListPaginationState::new(100, 1000);
+        state.update_loaded(100); // Full page, has_more = true
+        assert!(state.has_more);
+        assert!((state.total_loaded as u64) < state.max_items);
+        assert!(
+            state.can_load_more(),
+            "Should be able to load when both has_more is true and under cap"
+        );
     }
 }
