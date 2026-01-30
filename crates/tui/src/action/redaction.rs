@@ -8,8 +8,9 @@
 //! # Security Invariants
 //!
 //! - All Action variants containing sensitive data MUST be handled explicitly
-//! - Sensitive data includes: search queries, passwords, tokens, API responses,
-//!   user names, profile names, and error messages
+//! - Sensitive data includes: passwords, tokens, API responses, user names,
+//!   profile names, and error messages
+//! - Search queries are NOT considered sensitive (operational/debugging data)
 //! - Non-sensitive simple variants fall through to default Debug
 //!
 //! # What This Module Does NOT Handle
@@ -27,7 +28,7 @@
 //!     search_defaults: SearchDefaults::default(),
 //! };
 //! tracing::info!("Handling action: {:?}", RedactedAction(&action));
-//! // Logs: Handling action: RunSearch(<52 chars>)
+//! // Logs: Handling action: RunSearch("SELECT * FROM users WHERE password='secret'")
 //! ```
 
 use crate::action::variants::Action;
@@ -46,7 +47,7 @@ use crate::action::variants::Action;
 ///     search_defaults: SearchDefaults::default(),
 /// };
 /// tracing::info!("Handling action: {:?}", RedactedAction(&action));
-/// // Logs: Handling action: RunSearch(<52 chars>)
+/// // Logs: Handling action: RunSearch("SELECT * FROM users WHERE password='secret'")
 /// ```
 pub struct RedactedAction<'a>(pub &'a Action);
 
@@ -54,7 +55,7 @@ impl std::fmt::Debug for RedactedAction<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             Action::RunSearch { query, .. } => {
-                write!(f, "RunSearch(<{} chars>)", query.len())
+                write!(f, "RunSearch({:?})", query)
             }
             Action::CopyToClipboard(text) => {
                 write!(f, "CopyToClipboard(<{} chars>)", text.len())
@@ -84,7 +85,7 @@ impl std::fmt::Debug for RedactedAction<'_> {
 
             // Search-related actions with sensitive data
             Action::SearchStarted(query) => {
-                write!(f, "SearchStarted(<{} chars>)", query.len())
+                write!(f, "SearchStarted({:?})", query)
             }
             Action::SearchComplete(result) => match result {
                 Ok((results, sid, total)) => {

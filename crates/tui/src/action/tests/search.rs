@@ -13,13 +13,15 @@ fn test_redact_run_search() {
     };
     let output = redacted_debug(&action);
 
-    assert!(
-        !output.contains("password"),
-        "Should not contain sensitive password"
-    );
-    assert!(!output.contains("secret"), "Should not contain secret word");
     assert!(output.contains("RunSearch"), "Should contain action name");
-    assert!(output.contains("43 chars"), "Should show size indicator");
+    assert!(
+        output.contains("SELECT * FROM users"),
+        "Should contain query content"
+    );
+    assert!(
+        output.contains("password='secret'"),
+        "Should contain full query including password string"
+    );
 }
 
 #[test]
@@ -28,15 +30,17 @@ fn test_redact_search_started() {
     let output = redacted_debug(&action);
 
     assert!(
-        !output.contains("password"),
-        "Should not contain sensitive password"
-    );
-    assert!(!output.contains("secret"), "Should not contain secret word");
-    assert!(
         output.contains("SearchStarted"),
         "Should contain action name"
     );
-    assert!(output.contains("43 chars"), "Should show size indicator");
+    assert!(
+        output.contains("SELECT * FROM users"),
+        "Should contain query content"
+    );
+    assert!(
+        output.contains("password='secret'"),
+        "Should contain full query"
+    );
 }
 
 #[test]

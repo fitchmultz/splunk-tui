@@ -2,35 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0235",
-      "status": "todo",
-      "title": "Remove unnecessary search query redaction from TUI",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "logging",
-        "cleanup"
-      ],
-      "scope": [
-        "crates/tui/src/action/redaction.rs"
-      ],
-      "evidence": [
-        "User request: RQ-0219 is incorrect - search queries are NOT sensitive data and are useful in logging.",
-        "crates/tui/src/action/redaction.rs treats search queries as sensitive data and redacts them in logs unnecessarily."
-      ],
-      "plan": [
-        "Review crates/tui/src/action/redaction.rs to identify search query redaction logic.",
-        "Remove or modify the redaction to allow search queries in logs (they are operational data, not secrets).",
-        "Update any tests that expect redacted search queries."
-      ],
-      "notes": [],
-      "request": "RQ-0219 is stupid. a search query is NOT sensitive data and could be useful in logging. modify the task",
-      "created_at": "2026-01-29T23:42:00Z",
-      "updated_at": "2026-01-29T23:42:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0220",
       "status": "todo",
       "title": "Fix logs --tail streaming output format",
@@ -739,7 +710,9 @@
       "request": "Feature for multi-instance Splunk admins",
       "created_at": "2026-01-29T23:56:00Z",
       "updated_at": "2026-01-29T23:56:00Z",
-      "depends_on": ["RQ-0229"],
+      "depends_on": [
+        "RQ-0229"
+      ],
       "custom_fields": {}
     },
     {
