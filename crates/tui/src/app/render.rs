@@ -176,6 +176,8 @@ impl App {
                         search_results_total_count: self.search_results_total_count,
                         search_has_more_results: self.search_has_more_results,
                         theme: &self.theme,
+                        spl_validation_state: &self.spl_validation_state,
+                        spl_validation_pending: self.spl_validation_pending,
                     },
                 );
             }

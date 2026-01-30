@@ -1,6 +1,7 @@
 //! Search screen rendering.
 //!
 //! Renders the search input, status, and results for running Splunk searches.
+//! Includes real-time SPL validation feedback.
 
 use ratatui::{
     Frame,
@@ -10,6 +11,7 @@ use ratatui::{
     widgets::{Block, Borders, Gauge, Paragraph},
 };
 
+use crate::app::SplValidationState;
 use crate::ui::syntax::highlight_spl;
 use splunk_config::Theme;
 
@@ -37,6 +39,10 @@ pub struct SearchRenderConfig<'a> {
     pub search_has_more_results: bool,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// SPL validation state for real-time feedback.
+    pub spl_validation_state: &'a SplValidationState,
+    /// Whether validation is pending (debounced).
+    pub spl_validation_pending: bool,
 }
 
 /// Render the search screen.
@@ -59,6 +65,8 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         search_results_total_count,
         search_has_more_results,
         theme,
+        spl_validation_state,
+        spl_validation_pending,
     } = config;
 
     let chunks = Layout::default()
@@ -73,13 +81,37 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         )
         .split(area);
 
-    // Search input
+    // Search input with validation status
+    let (border_color, status_icon) = if loading {
+        (theme.border, "")
+    } else if spl_validation_pending {
+        (theme.info, "⏳ ")
+    } else {
+        match spl_validation_state.valid {
+            Some(true) => {
+                if spl_validation_state.warnings.is_empty() {
+                    (theme.success, "✓ ")
+                } else {
+                    (theme.warning, "⚠ ")
+                }
+            }
+            Some(false) => (theme.error, "✗ "),
+            None => (theme.border, ""),
+        }
+    };
+
+    let input_title = if search_input.len() < 3 {
+        "Search Query".to_string()
+    } else {
+        format!("{}Search Query", status_icon)
+    };
+
     let input = Paragraph::new(highlight_spl(search_input, theme)).block(
         Block::default()
             .borders(Borders::ALL)
-            .title("Search Query")
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .title(input_title)
+            .border_style(Style::default().fg(border_color))
+            .title_style(Style::default().fg(border_color)),
     );
     f.render_widget(input, chunks[0]);
 
@@ -106,7 +138,37 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         }
     }
 
-    // Status
+    // Status with validation feedback
+    let status_text: Line = if loading {
+        // During loading, just show the search status (gauge is rendered separately below)
+        Line::from(search_status)
+    } else if search_input.len() >= 3 && !spl_validation_pending {
+        // Show validation status
+        match spl_validation_state.valid {
+            Some(true) => {
+                if let Some(first_warning) = spl_validation_state.warnings.first() {
+                    Line::from(format!("⚠ Warning: {}", first_warning))
+                } else {
+                    Line::from("✓ SPL syntax is valid")
+                }
+            }
+            Some(false) => {
+                let error = spl_validation_state
+                    .errors
+                    .first()
+                    .map(|e| e.as_str())
+                    .unwrap_or("Invalid SPL syntax");
+                Line::from(format!("✗ Error: {}", error))
+            }
+            None => Line::from(search_status),
+        }
+    } else if spl_validation_pending {
+        Line::from("⏳ Validating...")
+    } else {
+        Line::from(search_status)
+    };
+
+    // Render status - either gauge (when loading) or paragraph
     if loading {
         let gauge = Gauge::default()
             .block(Block::default().borders(Borders::ALL).title("Status"))
@@ -120,7 +182,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             .label(format!("{} ({:.0}%)", search_status, progress * 100.0));
         f.render_widget(gauge, chunks[1]);
     } else {
-        let status = Paragraph::new(search_status).block(
+        let status = Paragraph::new(status_text).block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("Status")

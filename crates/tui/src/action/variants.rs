@@ -244,6 +244,19 @@ pub enum Action {
         query: String,
         search_defaults: SearchDefaults,
     },
+    /// Validate SPL syntax (debounced).
+    ///
+    /// Triggered when the user pauses typing in the search query input.
+    /// The validation is performed asynchronously via the search parser endpoint.
+    ValidateSpl { search: String },
+    /// SPL validation completed.
+    ///
+    /// Contains the validation result with any errors or warnings found.
+    SplValidationResult {
+        valid: bool,
+        errors: Vec<String>,
+        warnings: Vec<String>,
+    },
     /// Export data (pre-serialized as JSON) to a file.
     ///
     /// This payload is produced by the UI state machine so the main event loop

@@ -5,18 +5,56 @@
 //! - Handle result navigation (ResultsFocused mode)
 //! - Handle search history navigation
 //! - Handle Ctrl+C copy from results
+//! - Trigger SPL validation on input changes (debounced)
 //!
 //! Non-responsibilities:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
+//! - Does NOT perform actual validation (handled by side effects)
 
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
 use crate::app::state::SearchInputMode;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use std::time::Instant;
+
+/// Debounce delay for SPL validation in milliseconds.
+const VALIDATION_DEBOUNCE_MS: u64 = 500;
 
 impl App {
+    /// Trigger SPL validation with debouncing.
+    ///
+    /// Called whenever the search input changes. Sets up the validation
+    /// pending flag and timestamp so the tick handler can dispatch
+    /// the actual validation request after the debounce delay.
+    fn trigger_validation(&mut self) {
+        // Reset validation state for new input
+        self.spl_validation_pending = true;
+        self.last_input_change = Some(Instant::now());
+    }
+
+    /// Handle debounced validation in tick.
+    ///
+    /// Called from the main tick handler. If validation is pending and
+    /// the debounce delay has passed, dispatches the validation action.
+    pub fn handle_validation_tick(&mut self) -> Option<Action> {
+        if !self.spl_validation_pending {
+            return None;
+        }
+
+        if let Some(last_change) = self.last_input_change
+            && last_change.elapsed().as_millis() >= VALIDATION_DEBOUNCE_MS as u128
+        {
+            self.spl_validation_pending = false;
+            return Some(Action::ValidateSpl {
+                search: self.search_input.clone(),
+            });
+        }
+
+        None
+    }
+
     /// Handle input for the search screen.
     pub fn handle_search_input(&mut self, key: KeyEvent) -> Option<Action> {
         // Handle Ctrl+* shortcuts while in input
@@ -85,6 +123,7 @@ impl App {
                                 self.search_input.remove(pos - 1);
                                 self.search_cursor_position -= 1;
                             }
+                            self.trigger_validation();
                             None
                         }
                         KeyCode::Delete => {
@@ -94,6 +133,7 @@ impl App {
                                 let pos = self.search_cursor_position;
                                 self.search_input.remove(pos);
                             }
+                            self.trigger_validation();
                             None
                         }
                         KeyCode::Left => {
@@ -128,6 +168,7 @@ impl App {
                             }
                             // Move cursor to end of new text
                             self.search_cursor_position = self.search_input.len();
+                            self.trigger_validation();
                             None
                         }
                         KeyCode::Up => {
@@ -149,6 +190,7 @@ impl App {
                             }
                             // Move cursor to end of new text
                             self.search_cursor_position = self.search_input.len();
+                            self.trigger_validation();
                             None
                         }
                         KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -162,6 +204,7 @@ impl App {
                             // Insert character at cursor position
                             self.search_input.insert(self.search_cursor_position, c);
                             self.search_cursor_position += 1;
+                            self.trigger_validation();
                             None
                         }
                         _ => None,

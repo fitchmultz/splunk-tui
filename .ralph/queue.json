@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0240",
-      "status": "todo",
-      "title": "Add search assistant/SPL validation in TUI",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "search",
-        "ux",
-        "feature"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/search.rs",
-        "crates/client/src/client/search.rs"
-      ],
-      "evidence": [
-        "Splunk's REST API provides parser endpoint for validating SPL syntax.",
-        "Real-time SPL validation helps admins catch syntax errors before running searches.",
-        "Search assistant with command suggestions improves usability."
-      ],
-      "plan": [
-        "Add SPL parser/validate endpoint to client.",
-        "Implement real-time validation in TUI search screen (debounced).",
-        "Add visual indicators for syntax errors with helpful messages.",
-        "Optionally add command suggestions dropdown.",
-        "Add tests and documentation updates."
-      ],
-      "notes": [],
-      "request": "Feature for improved Splunk admin/developer experience",
-      "created_at": "2026-01-29T23:54:00Z",
-      "updated_at": "2026-01-29T23:54:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0241",
       "status": "todo",
       "title": "Add alert and trigger management",

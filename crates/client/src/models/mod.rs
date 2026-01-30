@@ -34,6 +34,7 @@ pub use indexes::{Index, IndexEntry, IndexListResponse};
 pub use inputs::{Input, InputEntry, InputListResponse};
 pub use jobs::{
     JobContent, JobEntry, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,
+    SplError, SplWarning, ValidateSplRequest, ValidateSplResponse,
 };
 pub use kvstore::{KvStoreMember, KvStoreReplicationStatus, KvStoreStatus};
 pub use license::{LicensePool, LicenseStack, LicenseUsage, SlavesUsageBytes};

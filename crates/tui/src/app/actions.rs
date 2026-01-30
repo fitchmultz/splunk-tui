@@ -565,6 +565,19 @@ impl App {
                 self.running_query = None; // Clear the running query on error
                 self.loading = false;
             }
+            Action::SplValidationResult {
+                valid,
+                errors,
+                warnings,
+            } => {
+                self.spl_validation_state = crate::app::SplValidationState {
+                    valid: Some(valid),
+                    errors,
+                    warnings,
+                    last_validated: Some(std::time::Instant::now()),
+                };
+                self.spl_validation_pending = false;
+            }
             Action::ShowErrorDetails(details) => {
                 self.current_error = Some(details);
                 self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());

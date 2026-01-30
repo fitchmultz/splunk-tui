@@ -4,6 +4,7 @@
 //! - Handle async API calls for search operations.
 //! - Execute searches with progress callbacks.
 //! - Load saved searches and pagination results.
+//! - SPL syntax validation.
 //!
 //! Does NOT handle:
 //! - Direct state modification (sends actions for that).
@@ -148,6 +149,52 @@ pub async fn handle_load_more_search_results(
             Err(e) => {
                 let _ = tx
                     .send(Action::MoreSearchResultsLoaded(Err(Arc::new(e))))
+                    .await;
+            }
+        }
+    });
+}
+
+/// Handle SPL validation request (debounced).
+///
+/// Validates SPL syntax without executing the search. Short queries (< 3 chars)
+/// are considered valid to reduce API load. Errors are logged but don't fail
+/// the UI - validation is best-effort.
+pub async fn handle_validate_spl(client: SharedClient, tx: Sender<Action>, search: String) {
+    // Skip validation for empty or very short queries
+    if search.len() < 3 {
+        let _ = tx
+            .send(Action::SplValidationResult {
+                valid: true,
+                errors: vec![],
+                warnings: vec![],
+            })
+            .await;
+        return;
+    }
+
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+
+        match c.validate_spl(&search).await {
+            Ok(result) => {
+                let _ = tx
+                    .send(Action::SplValidationResult {
+                        valid: result.valid,
+                        errors: result.errors.into_iter().map(|e| e.message).collect(),
+                        warnings: result.warnings.into_iter().map(|w| w.message).collect(),
+                    })
+                    .await;
+            }
+            Err(e) => {
+                // Log error but don't fail - validation is best-effort
+                tracing::debug!("SPL validation failed: {}", e);
+                let _ = tx
+                    .send(Action::SplValidationResult {
+                        valid: true, // Assume valid on error
+                        errors: vec![],
+                        warnings: vec!["Validation unavailable".to_string()],
+                    })
                     .await;
             }
         }

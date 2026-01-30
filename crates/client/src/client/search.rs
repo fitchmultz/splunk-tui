@@ -4,6 +4,7 @@
 //! - Creating and executing search jobs
 //! - Retrieving search results
 //! - Managing saved searches
+//! - SPL syntax validation
 //!
 //! # What this module does NOT handle:
 //! - Low-level search endpoint HTTP calls (in [`crate::endpoints::search`])
@@ -12,7 +13,7 @@
 use crate::client::SplunkClient;
 use crate::endpoints;
 use crate::error::Result;
-use crate::models::{SavedSearch, SearchJobResults, SearchJobStatus};
+use crate::models::{SavedSearch, SearchJobResults, SearchJobStatus, ValidateSplResponse};
 use splunk_config::constants::{
     DEFAULT_MAX_RESULTS, DEFAULT_MAX_WAIT_SECS, DEFAULT_POLL_INTERVAL_MS,
 };
@@ -258,6 +259,49 @@ impl SplunkClient {
                 &self.base_url,
                 &__token,
                 name,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Validate SPL syntax without executing the search.
+    ///
+    /// Sends the query to Splunk's search parser endpoint to check for
+    /// syntax errors and warnings before running the search.
+    ///
+    /// # Arguments
+    /// * `search` - The SPL query to validate
+    ///
+    /// # Returns
+    /// * `Ok(ValidateSplResponse)` - Validation result with errors/warnings
+    /// * `Err(ClientError)` - Transport or API error
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// # use splunk_client::SplunkClient;
+    /// # async fn example(client: &mut SplunkClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// let result = client.validate_spl("search index=main | stats count").await?;
+    /// if result.valid {
+    ///     println!("SPL is valid!");
+    /// } else {
+    ///     for error in result.errors {
+    ///         println!("Error: {}", error.message);
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn validate_spl(&mut self, search: &str) -> Result<ValidateSplResponse> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::search::validate_spl(
+                &self.http,
+                &self.base_url,
+                &__token,
+                search,
                 self.max_retries,
                 self.metrics.as_ref(),
             )

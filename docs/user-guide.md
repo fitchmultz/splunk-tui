@@ -308,6 +308,10 @@ The Search screen has two input modes that affect how keys are handled:
 The Search screen is optimized for rapid iteration.
 
 - **Executing Queries**: Type your SPL and press `Enter`.
+- **Real-time Validation**: As you type, SPL syntax is validated after a brief pause (500ms). The query box border shows:
+  - **Green** (`✓`): Valid SPL syntax
+  - **Yellow** (`⚠`): Valid with warnings
+  - **Red** (`✗`): Syntax errors (shown in status bar)
 - **History**: Use `Up` and `Down` arrows to navigate previous searches.
 - **Result Scrolling**: Use `Ctrl+j` and `Ctrl+k` to scroll the results while keeping focus on the input box.
 - **Viewing Results**: Results are rendered as pretty-printed JSON objects.

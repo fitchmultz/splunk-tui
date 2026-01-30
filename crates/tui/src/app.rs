@@ -199,6 +199,27 @@ pub struct App {
     /// When QueryFocused, printable characters insert into the query.
     /// When ResultsFocused, navigation keys work on results.
     pub search_input_mode: crate::app::state::SearchInputMode,
+
+    // SPL validation state (RQ-0240)
+    /// Current SPL validation state for real-time feedback.
+    pub spl_validation_state: SplValidationState,
+    /// Whether validation is pending (debounced).
+    pub spl_validation_pending: bool,
+    /// Timestamp of last input change for debouncing.
+    pub last_input_change: Option<std::time::Instant>,
+}
+
+/// SPL validation state for real-time feedback in the search screen.
+#[derive(Debug, Clone, Default)]
+pub struct SplValidationState {
+    /// Whether the SPL is valid (None = not validated yet)
+    pub valid: Option<bool>,
+    /// List of validation error messages
+    pub errors: Vec<String>,
+    /// List of validation warning messages
+    pub warnings: Vec<String>,
+    /// Timestamp of last validation
+    pub last_validated: Option<std::time::Instant>,
 }
 
 /// Connection context for the TUI header display.
@@ -436,6 +457,11 @@ impl App {
 
             // Search input mode (RQ-0101)
             search_input_mode: crate::app::state::SearchInputMode::QueryFocused,
+
+            // SPL validation state (RQ-0240)
+            spl_validation_state: SplValidationState::default(),
+            spl_validation_pending: false,
+            last_input_change: None,
         }
     }
 
@@ -716,7 +742,12 @@ impl App {
     }
 
     /// Handle periodic tick events - returns Action if one should be dispatched.
-    pub fn handle_tick(&self) -> Option<Action> {
+    pub fn handle_tick(&mut self) -> Option<Action> {
+        // Handle debounced SPL validation first
+        if let Some(action) = self.handle_validation_tick() {
+            return Some(action);
+        }
+
         if self.current_screen == CurrentScreen::Jobs
             && self.auto_refresh
             && self.popup.is_none()
