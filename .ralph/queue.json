@@ -376,6 +376,622 @@
       "updated_at": "2026-01-29T23:57:00Z",
       "depends_on": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0245",
+      "status": "todo",
+      "title": "Add index creation and modification capabilities",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tui",
+        "indexes",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/indexes.rs",
+        "crates/client/src/endpoints/indexes.rs",
+        "crates/cli/src/commands/indexes.rs",
+        "crates/tui/src/ui/screens/indexes.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/indexes.rs:7 explicitly states 'Creating or modifying indexes (not yet implemented)'.",
+        "Current indexes support is read-only (list only).",
+        "Splunk REST API supports POST /services/data/indexes for index creation and modification."
+      ],
+      "plan": [
+        "Add create_index() method to client with configurable parameters (name, maxDataSize, maxHotBuckets, etc.).",
+        "Add modify_index() method for updating existing index settings.",
+        "Add delete_index() method for index removal.",
+        "Extend CLI indexes command with create, modify, delete subcommands.",
+        "Add index management UI to TUI indexes screen (create button, edit dialog).",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0246",
+      "status": "todo",
+      "title": "Add user creation and management capabilities",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tui",
+        "users",
+        "feature",
+        "security"
+      ],
+      "scope": [
+        "crates/client/src/client/users.rs",
+        "crates/client/src/endpoints/users.rs",
+        "crates/cli/src/commands/users.rs",
+        "crates/tui/src/ui/screens/users.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/users.rs:7 explicitly states 'Creating or modifying users (not yet implemented)'.",
+        "Current users support is read-only (list only).",
+        "Splunk REST API supports POST /services/authentication/users for user management."
+      ],
+      "plan": [
+        "Add create_user() method to client with role assignment.",
+        "Add update_user() method for modifying user properties.",
+        "Add delete_user() method for user removal.",
+        "Extend CLI users command with create, update, delete subcommands.",
+        "Add user management UI to TUI users screen.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0247",
+      "status": "todo",
+      "title": "Add app installation and removal capabilities",
+      "priority": "high",
+      "tags": [
+        "cli",
+        "tui",
+        "apps",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/apps.rs",
+        "crates/client/src/endpoints/server.rs",
+        "crates/cli/src/commands/apps.rs",
+        "crates/tui/src/ui/screens/apps.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/apps.rs:9 explicitly states 'Installing or removing apps (not yet implemented)'.",
+        "Current apps support only enables/disables existing apps.",
+        "Splunk REST API supports app installation via /services/apps/appinstall."
+      ],
+      "plan": [
+        "Add install_app() method to client supporting .spl file upload or app name from Splunkbase.",
+        "Add remove_app() method for uninstalling apps.",
+        "Extend CLI apps command with install and remove subcommands.",
+        "Add app installation UI to TUI apps screen.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0248",
+      "status": "todo",
+      "title": "Add KVStore collection management",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "kvstore",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/kvstore.rs",
+        "crates/client/src/endpoints/kvstore.rs",
+        "crates/cli/src/commands/kvstore.rs",
+        "crates/tui/src/ui/screens/kvstore.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/kvstore.rs:7 explicitly states 'KVStore collection management (not yet implemented)'.",
+        "Current KVStore support only shows status, not collections or data.",
+        "Splunk REST API provides /servicesNS/{user}/{app}/storage/collections for KVStore management."
+      ],
+      "plan": [
+        "Add list_collections() method to client.",
+        "Add collection CRUD operations (create_collection, delete_collection).",
+        "Add collection data query methods.",
+        "Extend CLI kvstore command with collections subcommand.",
+        "Enhance TUI KVStore screen to show collections and basic stats.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0249",
+      "status": "todo",
+      "title": "Add license installation and configuration",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "license",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/license.rs",
+        "crates/client/src/endpoints/license.rs",
+        "crates/cli/src/commands/license.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/license.rs:9 explicitly states 'License installation or configuration (not yet implemented)'.",
+        "Current license support is read-only (view usage, pools, stacks).",
+        "Splunk REST API supports license management via /services/licenser/licenses."
+      ],
+      "plan": [
+        "Add install_license() method to client for license file upload.",
+        "Add license pool management methods (create_pool, modify_pool).",
+        "Extend CLI license command with install and pool subcommands.",
+        "Add license management UI to TUI license screen.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0250",
+      "status": "todo",
+      "title": "Add cluster configuration and management operations",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "cluster",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/cluster.rs",
+        "crates/client/src/endpoints/cluster.rs",
+        "crates/cli/src/commands/cluster.rs"
+      ],
+      "evidence": [
+        "crates/client/src/client/cluster.rs:8 explicitly states 'Cluster configuration or management operations (not yet implemented)'.",
+        "Current cluster support is read-only (view info and peers).",
+        "Splunk REST API provides cluster management endpoints for peer control and configuration."
+      ],
+      "plan": [
+        "Add cluster peer management methods (add_peer, remove_peer, decommission_peer).",
+        "Add cluster rebalance and maintenance mode controls.",
+        "Extend CLI cluster command with manage subcommand for operations.",
+        "Add cluster management UI to TUI cluster screen.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0251",
+      "status": "todo",
+      "title": "Add HEC (HTTP Event Collector) event ingestion support",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "client",
+        "hec",
+        "feature",
+        "ingestion"
+      ],
+      "scope": [
+        "crates/client/src/client/hec.rs",
+        "crates/client/src/endpoints/hec.rs",
+        "crates/cli/src/commands/hec.rs"
+      ],
+      "evidence": [
+        "No HEC support exists in the current codebase.",
+        "HEC is the primary API for sending events to Splunk programmatically.",
+        "Splunk HEC endpoint at /services/collector/event accepts JSON events."
+      ],
+      "plan": [
+        "Add HEC client with configurable token and SSL settings.",
+        "Implement send_event() and send_events_batch() methods.",
+        "Add HEC health check and acknowledgment support.",
+        "Create CLI hec command for sending events from files or stdin.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0252",
+      "status": "todo",
+      "title": "Add search macro management",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "macros",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/macros.rs",
+        "crates/client/src/endpoints/macros.rs",
+        "crates/cli/src/commands/macros.rs",
+        "crates/tui/src/ui/screens/macros.rs"
+      ],
+      "evidence": [
+        "No macro support exists in the current codebase.",
+        "Search macros are heavily used for reusable SPL snippets.",
+        "Splunk REST API provides /services/admin/macros for macro management."
+      ],
+      "plan": [
+        "Add macro models (Macro, MacroDefinition) to client.",
+        "Implement macro CRUD operations in client.",
+        "Add CLI macros command with list, create, update, delete subcommands.",
+        "Create TUI macros screen for viewing and managing macros.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0253",
+      "status": "todo",
+      "title": "Add data model management",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "datamodels",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/datamodels.rs",
+        "crates/client/src/endpoints/datamodels.rs",
+        "crates/cli/src/commands/datamodels.rs",
+        "crates/tui/src/ui/screens/datamodels.rs"
+      ],
+      "evidence": [
+        "No data model support exists in the current codebase.",
+        "Data models are used for Pivot and acceleration in Splunk.",
+        "Splunk REST API provides /services/datamodel for data model access."
+      ],
+      "plan": [
+        "Add data model models to client.",
+        "Implement data model listing and detail methods.",
+        "Add CLI datamodels command for listing and viewing.",
+        "Create TUI datamodels screen.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0254",
+      "status": "todo",
+      "title": "Add real-time search support to TUI and CLI",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "search",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs",
+        "crates/client/src/client/search.rs",
+        "crates/cli/src/commands/search.rs",
+        "crates/tui/src/ui/screens/search.rs"
+      ],
+      "evidence": [
+        "Splunk REST API supports search_mode=realtime for real-time searches.",
+        "Current search implementation only supports historical searches.",
+        "Real-time searches are essential for monitoring and alerting use cases."
+      ],
+      "plan": [
+        "Add search_mode parameter to search endpoint and client methods.",
+        "Add --realtime flag to CLI search command with optional window duration.",
+        "Add realtime mode toggle to TUI search screen.",
+        "Implement streaming results display for realtime searches.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0255",
+      "status": "todo",
+      "title": "Add search result pagination and cursor support",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "search",
+        "ux"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs",
+        "crates/client/src/client/search.rs",
+        "crates/tui/src/ui/screens/search.rs"
+      ],
+      "evidence": [
+        "Current search results are limited to max_results parameter.",
+        "Large result sets cannot be efficiently browsed without pagination.",
+        "Splunk REST API supports offset-based pagination for search results."
+      ],
+      "plan": [
+        "Add offset and pagination support to search results fetching.",
+        "Implement cursor-based navigation in TUI search results.",
+        "Add page navigation keys (PageUp/PageDown) to search screen.",
+        "Show result count and current page in TUI footer.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0256",
+      "status": "todo",
+      "title": "Add saved search editing capabilities",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "saved-searches",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs",
+        "crates/client/src/endpoints/search.rs",
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/tui/src/ui/screens/saved_searches.rs"
+      ],
+      "evidence": [
+        "Current saved search support includes list, info, and run - but no edit.",
+        "Splunk REST API supports POST /services/saved/searches/{name} for updates.",
+        "Users need to modify saved search queries, schedules, and alert actions."
+      ],
+      "plan": [
+        "Add update_saved_search() method to client.",
+        "Add modify subcommand to CLI saved-searches command.",
+        "Add edit dialog to TUI saved searches screen.",
+        "Support editing query, schedule, description, and dispatch parameters.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0257",
+      "status": "todo",
+      "title": "Add role and capability management",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "roles",
+        "security",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/roles.rs",
+        "crates/client/src/endpoints/roles.rs",
+        "crates/cli/src/commands/roles.rs",
+        "crates/tui/src/ui/screens/roles.rs"
+      ],
+      "evidence": [
+        "No role management exists in the current codebase.",
+        "Roles define Splunk permissions and capabilities.",
+        "Splunk REST API provides /services/authorization/roles for role management."
+      ],
+      "plan": [
+        "Add role models (Role, Capability) to client.",
+        "Implement role CRUD operations in client.",
+        "Add CLI roles command with list, create, update, delete subcommands.",
+        "Create TUI roles screen for viewing and managing roles.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0258",
+      "status": "todo",
+      "title": "Add workload management support",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "workload",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/workload.rs",
+        "crates/client/src/endpoints/workload.rs",
+        "crates/cli/src/commands/workload.rs",
+        "crates/tui/src/ui/screens/workload.rs"
+      ],
+      "evidence": [
+        "No workload management exists in the current codebase.",
+        "Workload management is important for resource allocation in multi-tenant Splunk.",
+        "Splunk REST API provides /services/workloads endpoints for pools and rules."
+      ],
+      "plan": [
+        "Add workload models (WorkloadPool, WorkloadRule) to client.",
+        "Implement workload listing and configuration methods.",
+        "Add CLI workload command for viewing and managing workloads.",
+        "Create TUI workload screen.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0259",
+      "status": "todo",
+      "title": "Add search head clustering (SHC) support",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "shc",
+        "cluster",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/shc.rs",
+        "crates/client/src/endpoints/shc.rs",
+        "crates/cli/src/commands/shc.rs",
+        "crates/tui/src/ui/screens/shc.rs"
+      ],
+      "evidence": [
+        "No search head clustering support exists in the current codebase.",
+        "Current cluster support is limited to indexer clustering.",
+        "Splunk REST API provides /services/shcluster endpoints for SHC management."
+      ],
+      "plan": [
+        "Add SHC models (ShcMember, ShcStatus) to client.",
+        "Implement SHC status and member listing methods.",
+        "Add CLI shc command for viewing cluster status.",
+        "Create TUI SHC screen showing member status and captain info.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0260",
+      "status": "todo",
+      "title": "Add audit logging and event viewing",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "audit",
+        "security",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/audit.rs",
+        "crates/client/src/endpoints/audit.rs",
+        "crates/cli/src/commands/audit.rs",
+        "crates/tui/src/ui/screens/audit.rs"
+      ],
+      "evidence": [
+        "No audit log viewing exists in the current codebase.",
+        "Audit logs track user actions and are important for compliance.",
+        "Splunk REST API provides /services/admin/audit for audit events."
+      ],
+      "plan": [
+        "Add audit event models to client.",
+        "Implement audit log querying with time range filters.",
+        "Add CLI audit command for viewing recent audit events.",
+        "Create TUI audit screen for browsing audit logs.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0261",
+      "status": "todo",
+      "title": "Add dashboard listing and viewing",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "dashboards",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/dashboards.rs",
+        "crates/client/src/endpoints/dashboards.rs",
+        "crates/cli/src/commands/dashboards.rs",
+        "crates/tui/src/ui/screens/dashboards.rs"
+      ],
+      "evidence": [
+        "No dashboard support exists in the current codebase.",
+        "Dashboards are a primary Splunk UI feature for visualization.",
+        "Splunk REST API provides /services/data/ui/views for dashboard access."
+      ],
+      "plan": [
+        "Add dashboard models to client.",
+        "Implement dashboard listing and detail methods.",
+        "Add CLI dashboards command for listing dashboards.",
+        "Create TUI dashboards screen for browsing available dashboards.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "custom_fields": {}
     }
   ]
 }
