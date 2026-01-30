@@ -272,6 +272,16 @@ pub async fn handle_side_effects(
         Action::ProfileSelected(profile_name) => {
             profiles::handle_profile_selected(client, config_manager, tx, profile_name).await;
         }
+        // Index operations
+        Action::CreateIndex { params } => {
+            indexes::handle_create_index(client, tx, params).await;
+        }
+        Action::ModifyIndex { name, params } => {
+            indexes::handle_modify_index(client, tx, name, params).await;
+        }
+        Action::DeleteIndex { name } => {
+            indexes::handle_delete_index(client, tx, name).await;
+        }
         _ => {}
     }
 }

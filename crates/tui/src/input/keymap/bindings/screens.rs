@@ -108,6 +108,42 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::NavigateUp),
             handles_input: true,
         },
+        Keybinding {
+            section: Section::Indexes,
+            keys: "c",
+            description: "Create new index",
+            scope: BindingScope::Screen(Indexes),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::OpenCreateIndexDialog),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Indexes,
+            keys: "m",
+            description: "Modify selected index",
+            scope: BindingScope::Screen(Indexes),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('m'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled by input handler
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Indexes,
+            keys: "d",
+            description: "Delete selected index",
+            scope: BindingScope::Screen(Indexes),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('d'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled by input handler
+            handles_input: false,
+        },
         // Cluster
         Keybinding {
             section: Section::Cluster,

@@ -1,12 +1,175 @@
 //! Indexes command implementation.
 
 use anyhow::{Context, Result};
+use clap::Subcommand;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
 
+#[derive(Subcommand)]
+pub enum IndexesCommand {
+    /// List all indexes (default)
+    List {
+        /// Show detailed information about each index
+        #[arg(short, long)]
+        detailed: bool,
+        /// Maximum number of indexes to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+        /// Offset into the index list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+    /// Create a new index
+    Create {
+        /// Index name (required)
+        name: String,
+        /// Maximum data size in MB
+        #[arg(long)]
+        max_data_size_mb: Option<u64>,
+        /// Maximum hot buckets
+        #[arg(long)]
+        max_hot_buckets: Option<u64>,
+        /// Maximum warm DB count
+        #[arg(long)]
+        max_warm_db_count: Option<u64>,
+        /// Frozen time period in seconds
+        #[arg(long)]
+        frozen_time_period_secs: Option<u64>,
+        /// Home path
+        #[arg(long)]
+        home_path: Option<String>,
+        /// Cold DB path
+        #[arg(long)]
+        cold_db_path: Option<String>,
+        /// Thawed path
+        #[arg(long)]
+        thawed_path: Option<String>,
+        /// Cold to frozen directory
+        #[arg(long)]
+        cold_to_frozen_dir: Option<String>,
+    },
+    /// Modify an existing index
+    Modify {
+        /// Index name (required)
+        name: String,
+        /// Maximum data size in MB
+        #[arg(long)]
+        max_data_size_mb: Option<u64>,
+        /// Maximum hot buckets
+        #[arg(long)]
+        max_hot_buckets: Option<u64>,
+        /// Maximum warm DB count
+        #[arg(long)]
+        max_warm_db_count: Option<u64>,
+        /// Frozen time period in seconds
+        #[arg(long)]
+        frozen_time_period_secs: Option<u64>,
+        /// Home path
+        #[arg(long)]
+        home_path: Option<String>,
+        /// Cold DB path
+        #[arg(long)]
+        cold_db_path: Option<String>,
+        /// Thawed path
+        #[arg(long)]
+        thawed_path: Option<String>,
+        /// Cold to frozen directory
+        #[arg(long)]
+        cold_to_frozen_dir: Option<String>,
+    },
+    /// Delete an index
+    Delete {
+        /// Index name (required)
+        name: String,
+        /// Skip confirmation prompt
+        #[arg(short, long)]
+        force: bool,
+    },
+}
+
 pub async fn run(
+    config: splunk_config::Config,
+    command: IndexesCommand,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    match command {
+        IndexesCommand::List {
+            detailed,
+            count,
+            offset,
+        } => {
+            run_list(
+                config,
+                detailed,
+                count,
+                offset,
+                output_format,
+                output_file,
+                cancel,
+            )
+            .await
+        }
+        IndexesCommand::Create {
+            name,
+            max_data_size_mb,
+            max_hot_buckets,
+            max_warm_db_count,
+            frozen_time_period_secs,
+            home_path,
+            cold_db_path,
+            thawed_path,
+            cold_to_frozen_dir,
+        } => {
+            run_create(
+                config,
+                &name,
+                max_data_size_mb,
+                max_hot_buckets,
+                max_warm_db_count,
+                frozen_time_period_secs,
+                home_path,
+                cold_db_path,
+                thawed_path,
+                cold_to_frozen_dir,
+                cancel,
+            )
+            .await
+        }
+        IndexesCommand::Modify {
+            name,
+            max_data_size_mb,
+            max_hot_buckets,
+            max_warm_db_count,
+            frozen_time_period_secs,
+            home_path,
+            cold_db_path,
+            thawed_path,
+            cold_to_frozen_dir,
+        } => {
+            run_modify(
+                config,
+                &name,
+                max_data_size_mb,
+                max_hot_buckets,
+                max_warm_db_count,
+                frozen_time_period_secs,
+                home_path,
+                cold_db_path,
+                thawed_path,
+                cold_to_frozen_dir,
+                cancel,
+            )
+            .await
+        }
+        IndexesCommand::Delete { name, force } => run_delete(config, &name, force, cancel).await,
+    }
+}
+
+async fn run_list(
     config: splunk_config::Config,
     detailed: bool,
     count: usize,
@@ -73,4 +236,117 @@ pub async fn run(
     }
 
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_create(
+    config: splunk_config::Config,
+    name: &str,
+    max_data_size_mb: Option<u64>,
+    max_hot_buckets: Option<u64>,
+    max_warm_db_count: Option<u64>,
+    frozen_time_period_secs: Option<u64>,
+    home_path: Option<String>,
+    cold_db_path: Option<String>,
+    thawed_path: Option<String>,
+    cold_to_frozen_dir: Option<String>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Creating index: {}", name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let params = splunk_client::CreateIndexParams {
+        name: name.to_string(),
+        max_data_size_mb,
+        max_hot_buckets,
+        max_warm_db_count,
+        frozen_time_period_in_secs: frozen_time_period_secs,
+        home_path,
+        cold_db_path,
+        thawed_path,
+        cold_to_frozen_dir,
+    };
+
+    tokio::select! {
+        res = client.create_index(&params) => {
+            let index = res?;
+            println!("Index '{}' created successfully.", index.name);
+            Ok(())
+        }
+        _ = cancel.cancelled() => Err(Cancelled.into()),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_modify(
+    config: splunk_config::Config,
+    name: &str,
+    max_data_size_mb: Option<u64>,
+    max_hot_buckets: Option<u64>,
+    max_warm_db_count: Option<u64>,
+    frozen_time_period_secs: Option<u64>,
+    home_path: Option<String>,
+    cold_db_path: Option<String>,
+    thawed_path: Option<String>,
+    cold_to_frozen_dir: Option<String>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Modifying index: {}", name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let params = splunk_client::ModifyIndexParams {
+        max_data_size_mb,
+        max_hot_buckets,
+        max_warm_db_count,
+        frozen_time_period_in_secs: frozen_time_period_secs,
+        home_path,
+        cold_db_path,
+        thawed_path,
+        cold_to_frozen_dir,
+    };
+
+    tokio::select! {
+        res = client.modify_index(name, &params) => {
+            let index = res?;
+            println!("Index '{}' modified successfully.", index.name);
+            Ok(())
+        }
+        _ = cancel.cancelled() => Err(Cancelled.into()),
+    }
+}
+
+async fn run_delete(
+    config: splunk_config::Config,
+    name: &str,
+    force: bool,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    if !force {
+        print!("Are you sure you want to delete index '{}'? [y/N] ", name);
+        use std::io::Write;
+        std::io::stdout().flush()?;
+
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+
+        if !input.trim().eq_ignore_ascii_case("y") {
+            println!("Delete cancelled.");
+            return Ok(());
+        }
+    }
+
+    info!("Deleting index: {}", name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    tokio::select! {
+        res = client.delete_index(name) => {
+            res?;
+            println!("Index '{}' deleted successfully.", name);
+            Ok(())
+        }
+        _ = cancel.cancelled() => Err(Cancelled.into()),
+    }
 }

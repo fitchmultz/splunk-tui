@@ -33,7 +33,7 @@ pub use configs::{
     ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,
 };
 pub use forwarders::{Forwarder, ForwarderEntry, ForwarderListResponse};
-pub use indexes::{Index, IndexEntry, IndexListResponse};
+pub use indexes::{CreateIndexParams, Index, IndexEntry, IndexListResponse, ModifyIndexParams};
 pub use inputs::{Input, InputEntry, InputListResponse};
 pub use jobs::{
     JobContent, JobEntry, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,

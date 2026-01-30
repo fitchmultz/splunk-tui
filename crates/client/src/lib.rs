@@ -20,10 +20,10 @@ pub use client::builder::SplunkClientBuilder;
 pub use error::{ClientError, Result};
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
-    App, AppListResponse, ClusterInfo, ClusterPeer, Forwarder, ForwarderListResponse,
-    HealthCheckOutput, Index, IndexListResponse, KvStoreMember, KvStoreReplicationStatus,
-    KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, LogParsingHealth,
-    LookupTable, LookupTableEntry, LookupTableListResponse, SavedSearch, SearchJob,
-    SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
-    SplunkResponse, User, UserListResponse,
+    App, AppListResponse, ClusterInfo, ClusterPeer, CreateIndexParams, Forwarder,
+    ForwarderListResponse, HealthCheckOutput, Index, IndexListResponse, KvStoreMember,
+    KvStoreReplicationStatus, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry,
+    LogParsingHealth, LookupTable, LookupTableEntry, LookupTableListResponse, ModifyIndexParams,
+    SavedSearch, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo,
+    SplunkHealth, SplunkResponse, User, UserListResponse,
 };

@@ -397,6 +397,32 @@ pub enum Action {
     EnableInput { input_type: String, name: String },
     /// Disable an input by type and name
     DisableInput { input_type: String, name: String },
+
+    // Index Operations
+    /// Create a new index
+    CreateIndex {
+        params: splunk_client::CreateIndexParams,
+    },
+    /// Modify an existing index
+    ModifyIndex {
+        name: String,
+        params: splunk_client::ModifyIndexParams,
+    },
+    /// Delete an index
+    DeleteIndex { name: String },
+    /// Open index creation dialog
+    OpenCreateIndexDialog,
+    /// Open index modification dialog
+    OpenModifyIndexDialog { name: String },
+    /// Open index deletion confirmation
+    OpenDeleteIndexConfirm { name: String },
+    /// Result of creating an index
+    IndexCreated(Result<Index, Arc<ClientError>>),
+    /// Result of modifying an index
+    IndexModified(Result<Index, Arc<ClientError>>),
+    /// Result of deleting an index
+    IndexDeleted(Result<String, Arc<ClientError>>),
+
     /// Inspect currently selected job
     InspectJob,
     /// Exit job inspection mode

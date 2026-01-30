@@ -51,6 +51,40 @@ pub enum PopupType {
         /// Currently selected index
         selected_index: usize,
     },
+    /// Index creation dialog
+    CreateIndex {
+        name_input: String,
+        max_data_size_mb: Option<u64>,
+        max_hot_buckets: Option<u64>,
+        max_warm_db_count: Option<u64>,
+        frozen_time_period_secs: Option<u64>,
+        home_path: Option<String>,
+        cold_db_path: Option<String>,
+        thawed_path: Option<String>,
+        cold_to_frozen_dir: Option<String>,
+    },
+    /// Index modification dialog
+    ModifyIndex {
+        index_name: String,
+        current_max_data_size_mb: Option<u64>,
+        current_max_hot_buckets: Option<u64>,
+        current_max_warm_db_count: Option<u64>,
+        current_frozen_time_period_secs: Option<u64>,
+        current_home_path: Option<String>,
+        current_cold_db_path: Option<String>,
+        current_thawed_path: Option<String>,
+        current_cold_to_frozen_dir: Option<String>,
+        new_max_data_size_mb: Option<u64>,
+        new_max_hot_buckets: Option<u64>,
+        new_max_warm_db_count: Option<u64>,
+        new_frozen_time_period_secs: Option<u64>,
+        new_home_path: Option<String>,
+        new_cold_db_path: Option<String>,
+        new_thawed_path: Option<String>,
+        new_cold_to_frozen_dir: Option<String>,
+    },
+    /// Index deletion confirmation
+    DeleteIndexConfirm { index_name: String },
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -169,6 +203,30 @@ impl PopupBuilder {
                 content.push_str("\n↑/↓ to navigate, Enter to select, Esc to cancel");
                 (title, content)
             }
+            PopupType::CreateIndex { name_input, .. } => {
+                let title = "Create Index".to_string();
+                let content = format!(
+                    "Create new index:\n\nName: {}\n\nEnter name and press Enter to create, Esc to cancel",
+                    name_input
+                );
+                (title, content)
+            }
+            PopupType::ModifyIndex { index_name, .. } => {
+                let title = "Modify Index".to_string();
+                let content = format!(
+                    "Modify index '{}':\n\nPress Enter to apply changes, Esc to cancel",
+                    index_name
+                );
+                (title, content)
+            }
+            PopupType::DeleteIndexConfirm { index_name } => {
+                let title = "Confirm Delete".to_string();
+                let content = format!(
+                    "Delete index '{}'?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    index_name
+                );
+                (title, content)
+            }
         };
 
         Popup {
@@ -199,13 +257,16 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ExportSearch
         | PopupType::ErrorDetails
         | PopupType::IndexDetails
-        | PopupType::ProfileSelector { .. } => theme.border,
+        | PopupType::ProfileSelector { .. }
+        | PopupType::CreateIndex { .. }
+        | PopupType::ModifyIndex { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
         | PopupType::ConfirmDeleteBatch(_)
         | PopupType::ConfirmEnableApp(_)
-        | PopupType::ConfirmDisableApp(_) => theme.error,
+        | PopupType::ConfirmDisableApp(_)
+        | PopupType::DeleteIndexConfirm { .. } => theme.error,
     };
 
     // Determine wrapping behavior based on popup type
@@ -214,7 +275,10 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ExportSearch
         | PopupType::ErrorDetails
         | PopupType::IndexDetails
-        | PopupType::ProfileSelector { .. } => Wrap { trim: false },
+        | PopupType::ProfileSelector { .. }
+        | PopupType::CreateIndex { .. }
+        | PopupType::ModifyIndex { .. }
+        | PopupType::DeleteIndexConfirm { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

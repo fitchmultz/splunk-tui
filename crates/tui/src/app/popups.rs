@@ -284,6 +284,164 @@ impl App {
                     None
                 }
             }
+            // Index creation popup handling
+            (Some(PopupType::CreateIndex { .. }), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::CreateIndex { name_input, .. }), KeyCode::Enter) => {
+                if name_input.is_empty() {
+                    return None;
+                }
+                let name = name_input.clone();
+                // Extract other fields from the popup state
+                if let Some(Popup {
+                    kind:
+                        PopupType::CreateIndex {
+                            max_data_size_mb,
+                            max_hot_buckets,
+                            max_warm_db_count,
+                            frozen_time_period_secs,
+                            home_path,
+                            cold_db_path,
+                            thawed_path,
+                            cold_to_frozen_dir,
+                            ..
+                        },
+                    ..
+                }) = self.popup.take()
+                {
+                    let params = splunk_client::CreateIndexParams {
+                        name,
+                        max_data_size_mb,
+                        max_hot_buckets,
+                        max_warm_db_count,
+                        frozen_time_period_in_secs: frozen_time_period_secs,
+                        home_path,
+                        cold_db_path,
+                        thawed_path,
+                        cold_to_frozen_dir,
+                    };
+                    Some(Action::CreateIndex { params })
+                } else {
+                    None
+                }
+            }
+            (
+                Some(PopupType::CreateIndex {
+                    name_input,
+                    max_data_size_mb,
+                    max_hot_buckets,
+                    max_warm_db_count,
+                    frozen_time_period_secs,
+                    home_path,
+                    cold_db_path,
+                    thawed_path,
+                    cold_to_frozen_dir,
+                }),
+                KeyCode::Char(c),
+            ) => {
+                let mut new_name = name_input.clone();
+                new_name.push(c);
+                self.popup = Some(
+                    Popup::builder(PopupType::CreateIndex {
+                        name_input: new_name,
+                        max_data_size_mb: *max_data_size_mb,
+                        max_hot_buckets: *max_hot_buckets,
+                        max_warm_db_count: *max_warm_db_count,
+                        frozen_time_period_secs: *frozen_time_period_secs,
+                        home_path: home_path.clone(),
+                        cold_db_path: cold_db_path.clone(),
+                        thawed_path: thawed_path.clone(),
+                        cold_to_frozen_dir: cold_to_frozen_dir.clone(),
+                    })
+                    .build(),
+                );
+                None
+            }
+            (
+                Some(PopupType::CreateIndex {
+                    name_input,
+                    max_data_size_mb,
+                    max_hot_buckets,
+                    max_warm_db_count,
+                    frozen_time_period_secs,
+                    home_path,
+                    cold_db_path,
+                    thawed_path,
+                    cold_to_frozen_dir,
+                }),
+                KeyCode::Backspace,
+            ) => {
+                let mut new_name = name_input.clone();
+                new_name.pop();
+                self.popup = Some(
+                    Popup::builder(PopupType::CreateIndex {
+                        name_input: new_name,
+                        max_data_size_mb: *max_data_size_mb,
+                        max_hot_buckets: *max_hot_buckets,
+                        max_warm_db_count: *max_warm_db_count,
+                        frozen_time_period_secs: *frozen_time_period_secs,
+                        home_path: home_path.clone(),
+                        cold_db_path: cold_db_path.clone(),
+                        thawed_path: thawed_path.clone(),
+                        cold_to_frozen_dir: cold_to_frozen_dir.clone(),
+                    })
+                    .build(),
+                );
+                None
+            }
+            // Index modification popup handling
+            (Some(PopupType::ModifyIndex { .. }), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::ModifyIndex { index_name, .. }), KeyCode::Enter) => {
+                let name = index_name.clone();
+                if let Some(Popup {
+                    kind:
+                        PopupType::ModifyIndex {
+                            new_max_data_size_mb,
+                            new_max_hot_buckets,
+                            new_max_warm_db_count,
+                            new_frozen_time_period_secs,
+                            new_home_path,
+                            new_cold_db_path,
+                            new_thawed_path,
+                            new_cold_to_frozen_dir,
+                            ..
+                        },
+                    ..
+                }) = self.popup.take()
+                {
+                    let params = splunk_client::ModifyIndexParams {
+                        max_data_size_mb: new_max_data_size_mb,
+                        max_hot_buckets: new_max_hot_buckets,
+                        max_warm_db_count: new_max_warm_db_count,
+                        frozen_time_period_in_secs: new_frozen_time_period_secs,
+                        home_path: new_home_path,
+                        cold_db_path: new_cold_db_path,
+                        thawed_path: new_thawed_path,
+                        cold_to_frozen_dir: new_cold_to_frozen_dir,
+                    };
+                    Some(Action::ModifyIndex { name, params })
+                } else {
+                    None
+                }
+            }
+            // Index deletion confirmation popup handling
+            (
+                Some(PopupType::DeleteIndexConfirm { index_name }),
+                KeyCode::Char('y') | KeyCode::Enter,
+            ) => {
+                let name = index_name.clone();
+                self.popup = None;
+                Some(Action::DeleteIndex { name })
+            }
+            (Some(PopupType::DeleteIndexConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
             _ => None,
         }
     }
@@ -630,6 +788,312 @@ mod tests {
     fn test_global_quit_from_index_details_popup() {
         let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    // Index creation popup tests
+
+    #[test]
+    fn test_popup_create_index_input() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::CreateIndex {
+                name_input: String::new(),
+                max_data_size_mb: None,
+                max_hot_buckets: None,
+                max_warm_db_count: None,
+                frozen_time_period_secs: None,
+                home_path: None,
+                cold_db_path: None,
+                thawed_path: None,
+                cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        // Type some characters
+        app.handle_popup_input(key(KeyCode::Char('t')));
+        app.handle_popup_input(key(KeyCode::Char('e')));
+        app.handle_popup_input(key(KeyCode::Char('s')));
+        app.handle_popup_input(key(KeyCode::Char('t')));
+
+        assert!(
+            matches!(app.popup, Some(Popup { kind: PopupType::CreateIndex { ref name_input, .. }, .. }) if name_input == "test")
+        );
+
+        // Backspace
+        app.handle_popup_input(key(KeyCode::Backspace));
+        assert!(
+            matches!(app.popup, Some(Popup { kind: PopupType::CreateIndex { ref name_input, .. }, .. }) if name_input == "tes")
+        );
+    }
+
+    #[test]
+    fn test_popup_create_index_submit() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::CreateIndex {
+                name_input: "test_index".to_string(),
+                max_data_size_mb: Some(1000),
+                max_hot_buckets: Some(10),
+                max_warm_db_count: None,
+                frozen_time_period_secs: None,
+                home_path: None,
+                cold_db_path: None,
+                thawed_path: None,
+                cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        // Submit with Enter
+        let action = app.handle_popup_input(key(KeyCode::Enter));
+        assert!(
+            matches!(action, Some(Action::CreateIndex { params }) if params.name == "test_index" && params.max_data_size_mb == Some(1000))
+        );
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_create_index_empty_name() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::CreateIndex {
+                name_input: String::new(),
+                max_data_size_mb: None,
+                max_hot_buckets: None,
+                max_warm_db_count: None,
+                frozen_time_period_secs: None,
+                home_path: None,
+                cold_db_path: None,
+                thawed_path: None,
+                cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        // Submit with empty name should not emit action
+        let action = app.handle_popup_input(key(KeyCode::Enter));
+        assert!(action.is_none());
+        assert!(app.popup.is_some());
+    }
+
+    #[test]
+    fn test_popup_create_index_cancel() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::CreateIndex {
+                name_input: "test".to_string(),
+                max_data_size_mb: None,
+                max_hot_buckets: None,
+                max_warm_db_count: None,
+                frozen_time_period_secs: None,
+                home_path: None,
+                cold_db_path: None,
+                thawed_path: None,
+                cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        // Cancel with Esc
+        let action = app.handle_popup_input(key(KeyCode::Esc));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    // Index modification popup tests
+
+    #[test]
+    fn test_popup_modify_index_submit() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::ModifyIndex {
+                index_name: "main".to_string(),
+                current_max_data_size_mb: Some(500000),
+                current_max_hot_buckets: Some(10),
+                current_max_warm_db_count: Some(300),
+                current_frozen_time_period_secs: Some(15552000),
+                current_home_path: Some("/splunk/main/db".to_string()),
+                current_cold_db_path: Some("/splunk/main/colddb".to_string()),
+                current_thawed_path: Some("/splunk/main/thaweddb".to_string()),
+                current_cold_to_frozen_dir: None,
+                new_max_data_size_mb: Some(2000),
+                new_max_hot_buckets: Some(15),
+                new_max_warm_db_count: Some(400),
+                new_frozen_time_period_secs: Some(2592000),
+                new_home_path: None,
+                new_cold_db_path: None,
+                new_thawed_path: None,
+                new_cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        // Submit with Enter
+        let action = app.handle_popup_input(key(KeyCode::Enter));
+        assert!(
+            matches!(action, Some(Action::ModifyIndex { name, params }) if name == "main" && params.max_data_size_mb == Some(2000))
+        );
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_modify_index_cancel() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::ModifyIndex {
+                index_name: "main".to_string(),
+                current_max_data_size_mb: None,
+                current_max_hot_buckets: None,
+                current_max_warm_db_count: None,
+                current_frozen_time_period_secs: None,
+                current_home_path: None,
+                current_cold_db_path: None,
+                current_thawed_path: None,
+                current_cold_to_frozen_dir: None,
+                new_max_data_size_mb: None,
+                new_max_hot_buckets: None,
+                new_max_warm_db_count: None,
+                new_frozen_time_period_secs: None,
+                new_home_path: None,
+                new_cold_db_path: None,
+                new_thawed_path: None,
+                new_cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        // Cancel with Esc
+        let action = app.handle_popup_input(key(KeyCode::Esc));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    // Index deletion popup tests
+
+    #[test]
+    fn test_popup_delete_index_confirm() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteIndexConfirm {
+                index_name: "test_index".to_string(),
+            })
+            .build(),
+        );
+
+        // Confirm with 'y'
+        let action = app.handle_popup_input(key(KeyCode::Char('y')));
+        assert!(matches!(action, Some(Action::DeleteIndex { name }) if name == "test_index"));
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_delete_index_confirm_with_enter() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteIndexConfirm {
+                index_name: "test_index".to_string(),
+            })
+            .build(),
+        );
+
+        // Confirm with Enter
+        let action = app.handle_popup_input(key(KeyCode::Enter));
+        assert!(matches!(action, Some(Action::DeleteIndex { name }) if name == "test_index"));
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_delete_index_cancel() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteIndexConfirm {
+                index_name: "test_index".to_string(),
+            })
+            .build(),
+        );
+
+        // Cancel with 'n'
+        let action = app.handle_popup_input(key(KeyCode::Char('n')));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+
+        // Reopen and cancel with Esc
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteIndexConfirm {
+                index_name: "test_index".to_string(),
+            })
+            .build(),
+        );
+        let action = app.handle_popup_input(key(KeyCode::Esc));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_global_quit_from_create_index_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::CreateIndex {
+                name_input: String::new(),
+                max_data_size_mb: None,
+                max_hot_buckets: None,
+                max_warm_db_count: None,
+                frozen_time_period_secs: None,
+                home_path: None,
+                cold_db_path: None,
+                thawed_path: None,
+                cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_modify_index_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::ModifyIndex {
+                index_name: "main".to_string(),
+                current_max_data_size_mb: None,
+                current_max_hot_buckets: None,
+                current_max_warm_db_count: None,
+                current_frozen_time_period_secs: None,
+                current_home_path: None,
+                current_cold_db_path: None,
+                current_thawed_path: None,
+                current_cold_to_frozen_dir: None,
+                new_max_data_size_mb: None,
+                new_max_hot_buckets: None,
+                new_max_warm_db_count: None,
+                new_frozen_time_period_secs: None,
+                new_home_path: None,
+                new_cold_db_path: None,
+                new_thawed_path: None,
+                new_cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+
+        let action = app.handle_popup_input(ctrl_key('q'));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_quit_from_delete_index_popup() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteIndexConfirm {
+                index_name: "test_index".to_string(),
+            })
+            .build(),
+        );
 
         let action = app.handle_popup_input(ctrl_key('q'));
         assert!(matches!(action, Some(Action::Quit)));

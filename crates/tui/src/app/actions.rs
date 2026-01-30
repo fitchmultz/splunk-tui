@@ -718,6 +718,22 @@ impl App {
                 // Update last_area to reflect new terminal dimensions
                 self.last_area = ratatui::layout::Rect::new(0, 0, width, height);
             }
+            Action::OpenCreateIndexDialog => {
+                self.popup = Some(
+                    Popup::builder(PopupType::CreateIndex {
+                        name_input: String::new(),
+                        max_data_size_mb: None,
+                        max_hot_buckets: None,
+                        max_warm_db_count: None,
+                        frozen_time_period_secs: None,
+                        home_path: None,
+                        cold_db_path: None,
+                        thawed_path: None,
+                        cold_to_frozen_dir: None,
+                    })
+                    .build(),
+                );
+            }
             _ => {}
         }
     }

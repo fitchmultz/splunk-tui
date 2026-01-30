@@ -9,7 +9,7 @@ use predicates::prelude::*;
 fn test_indexes_help_includes_offset() {
     let mut cmd = splunk_cmd();
 
-    cmd.args(["indexes", "--help"])
+    cmd.args(["indexes", "list", "--help"])
         .assert()
         .success()
         .stdout(predicate::str::contains("--offset").and(predicate::str::contains("Offset")));
@@ -22,7 +22,7 @@ fn test_indexes_offset_flag_attempts_connection() {
 
     // We only assert that clap accepts the flags and command attempts to run.
     // In CI/no-live-Splunk, this should fail with a connection error.
-    cmd.args(["indexes", "--count", "10", "--offset", "10"])
+    cmd.args(["indexes", "list", "--count", "10", "--offset", "10"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("Connection refused"));
@@ -32,7 +32,7 @@ fn test_indexes_offset_flag_attempts_connection() {
 fn test_indexes_offset_negative_rejected_by_clap() {
     let mut cmd = splunk_cmd();
 
-    cmd.args(["indexes", "--offset", "-1"])
+    cmd.args(["indexes", "list", "--offset", "-1"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("unexpected argument"));

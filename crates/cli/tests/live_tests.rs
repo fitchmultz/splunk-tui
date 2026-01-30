@@ -192,7 +192,7 @@ fn test_live_cli_indexes_json() {
     };
     let mut cmd = splunk_cli_cmd();
 
-    cmd.args(["--output", "json", "indexes", "--count", "5"])
+    cmd.args(["--output", "json", "indexes", "list", "--count", "5"])
         .assert()
         .success();
 }
@@ -287,7 +287,7 @@ fn test_live_cli_table_output() {
     let mut cmd = splunk_cli_cmd();
 
     // Table output for indexes uses "Name" as header
-    cmd.args(["--output", "table", "indexes", "--count", "3"])
+    cmd.args(["--output", "table", "indexes", "list", "--count", "3"])
         .assert()
         .success()
         .stdout(predicate::str::contains("Name"));

@@ -4,6 +4,50 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Parameters for creating a new index.
+#[derive(Debug, Clone, Default)]
+pub struct CreateIndexParams {
+    /// The name of the index to create (required).
+    pub name: String,
+    /// Maximum data size in MB.
+    pub max_data_size_mb: Option<u64>,
+    /// Maximum number of hot buckets.
+    pub max_hot_buckets: Option<u64>,
+    /// Maximum number of warm DBs.
+    pub max_warm_db_count: Option<u64>,
+    /// Frozen time period in seconds.
+    pub frozen_time_period_in_secs: Option<u64>,
+    /// Home path for the index.
+    pub home_path: Option<String>,
+    /// Cold DB path for the index.
+    pub cold_db_path: Option<String>,
+    /// Thawed path for the index.
+    pub thawed_path: Option<String>,
+    /// Cold to frozen directory.
+    pub cold_to_frozen_dir: Option<String>,
+}
+
+/// Parameters for modifying an existing index.
+#[derive(Debug, Clone, Default)]
+pub struct ModifyIndexParams {
+    /// Maximum data size in MB.
+    pub max_data_size_mb: Option<u64>,
+    /// Maximum number of hot buckets.
+    pub max_hot_buckets: Option<u64>,
+    /// Maximum number of warm DBs.
+    pub max_warm_db_count: Option<u64>,
+    /// Frozen time period in seconds.
+    pub frozen_time_period_in_secs: Option<u64>,
+    /// Home path for the index.
+    pub home_path: Option<String>,
+    /// Cold DB path for the index.
+    pub cold_db_path: Option<String>,
+    /// Thawed path for the index.
+    pub thawed_path: Option<String>,
+    /// Cold to frozen directory.
+    pub cold_to_frozen_dir: Option<String>,
+}
+
 /// Index information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Index {

@@ -24,7 +24,7 @@ pub use auth::login;
 pub use cluster::{get_cluster_info, get_cluster_peers};
 pub use configs::{get_config_stanza, list_config_files, list_config_stanzas};
 pub use forwarders::list_forwarders;
-pub use indexes::list_indexes;
+pub use indexes::{create_index, delete_index, list_indexes, modify_index};
 pub use inputs::{disable_input, enable_input, list_inputs_by_type};
 pub use jobs::{cancel_job, delete_job, get_job, list_jobs};
 pub use kvstore::get_kvstore_status;

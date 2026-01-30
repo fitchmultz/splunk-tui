@@ -173,17 +173,8 @@ enum Commands {
 
     /// List and manage indexes
     Indexes {
-        /// Show detailed information about each index
-        #[arg(short, long)]
-        detailed: bool,
-
-        /// Maximum number of indexes to list
-        #[arg(short, long, default_value = "30")]
-        count: usize,
-
-        /// Offset into the index list (zero-based)
-        #[arg(long, default_value = "0")]
-        offset: usize,
+        #[command(subcommand)]
+        command: commands::indexes::IndexesCommand,
     },
 
     /// List deployment clients (forwarders)
@@ -524,17 +515,11 @@ async fn run_command(
             )
             .await?;
         }
-        Commands::Indexes {
-            detailed,
-            count,
-            offset,
-        } => {
+        Commands::Indexes { command } => {
             let config = config.into_real_config()?;
             commands::indexes::run(
                 config,
-                detailed,
-                count,
-                offset,
+                command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,

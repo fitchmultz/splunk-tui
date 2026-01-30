@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0245",
-      "status": "todo",
-      "title": "Add index creation and modification capabilities",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "tui",
-        "indexes",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/indexes.rs",
-        "crates/client/src/endpoints/indexes.rs",
-        "crates/cli/src/commands/indexes.rs",
-        "crates/tui/src/ui/screens/indexes.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client/indexes.rs:7 explicitly states 'Creating or modifying indexes (not yet implemented)'.",
-        "Current indexes support is read-only (list only).",
-        "Splunk REST API supports POST /services/data/indexes for index creation and modification."
-      ],
-      "plan": [
-        "Add create_index() method to client with configurable parameters (name, maxDataSize, maxHotBuckets, etc.).",
-        "Add modify_index() method for updating existing index settings.",
-        "Add delete_index() method for index removal.",
-        "Extend CLI indexes command with create, modify, delete subcommands.",
-        "Add index management UI to TUI indexes screen (create button, edit dialog).",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0246",
       "status": "todo",
       "title": "Add user creation and management capabilities",
@@ -74,6 +37,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -110,6 +75,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -147,6 +114,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -182,6 +151,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -217,6 +188,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -253,6 +226,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -289,6 +264,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -325,6 +302,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -361,6 +340,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -396,6 +377,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -432,6 +415,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -469,6 +454,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -505,6 +492,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -542,6 +531,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -579,6 +570,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     },
     {
@@ -615,6 +608,8 @@
       "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
       "custom_fields": {}
     }
   ]

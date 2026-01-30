@@ -812,6 +812,9 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export indexes
 - `Ctrl+c`: Copy selected index name
 - `j/k or Up/Down`: Navigate list
+- `c`: Create new index
+- `m`: Modify selected index
+- `d`: Delete selected index
 
 #### Cluster Screen
 - `r`: Refresh cluster info
