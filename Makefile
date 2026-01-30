@@ -10,7 +10,7 @@ INSTALL_DIR := ~/.local/bin
 # Hermetic tests:
 # Prevent test runs from accidentally loading a developer's local `.env` file.
 # (The Rust config loader respects `DOTENV_DISABLED` in `crates/config/src/loader.rs`.)
-test test-all test-unit test-integration ci: export DOTENV_DISABLED=1
+test test-all test-unit test-integration ci: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
 
 # Fetch all dependencies (does not install binaries)
 install:
@@ -54,15 +54,15 @@ test: test-all
 
 # Run all tests (workspace, all targets). This is the default "everything" gate.
 test-all: build-test-bins
-	cargo test --workspace --all-targets --all-features
+	cargo test --workspace --all-targets --all-features --quiet
 
 # Run unit tests (lib and bins)
 test-unit:
-	cargo test --workspace --lib --bins --all-features
+	cargo test --workspace --lib --bins --all-features --quiet
 
 # Run integration tests
 test-integration: build-test-bins
-	cargo test --workspace --tests --all-features
+	cargo test --workspace --tests --all-features --quiet
 
 # Build binaries required for integration tests
 # This ensures CARGO_BIN_EXE_* env vars are populated for tests that need them
@@ -75,7 +75,7 @@ test-live:
 		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
 		exit 0; \
 	fi
-	cargo test --workspace --all-targets --all-features -- --ignored
+	cargo test --workspace --all-targets --all-features --quiet -- --ignored
 
 # Manual live server test script
 test-live-manual:

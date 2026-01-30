@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0262",
-      "status": "todo",
-      "title": "Optimize make ci to eliminate duplicate test runs and improve output",
-      "priority": "high",
-      "tags": [
-        "ci",
-        "build",
-        "performance",
-        "makefile"
-      ],
-      "scope": [
-        "Makefile",
-        "/tmp/splunktui-ci.log"
-      ],
-      "evidence": [
-        "CI log at /tmp/splunktui-ci.log shows tests running twice - once in 'cargo test --workspace --all-targets --all-features' and again in 'cargo test --workspace --all-targets --all-features -- --ignored' for test-live target.",
-        "Current test output shows every individual test name with 'ok' status, creating excessive noise when all tests pass.",
-        "User wants to see test result summaries (e.g., 'test result: ok. 124 passed; 0 failed...') but not individual passing test names.",
-        "User wants CI to fail fast if any step fails, ensuring no false impressions of success."
-      ],
-      "plan": [
-        "Review /tmp/splunktui-ci.log to identify all test runs and their durations.",
-        "Modify Makefile to eliminate duplicate test execution - tests should run exactly once each.",
-        "Configure test output to show summaries only (use --quiet or CARGO_TERM_VERBOSE=false) while preserving failure details.",
-        "Ensure 'make ci' fails immediately if any step fails (verify set -e behavior or add explicit error handling).",
-        "Run 'make ci' to verify the optimizations work and all tests still pass."
-      ],
-      "notes": [],
-      "request": "Review the 'make ci' gate command for inefficiencies or repeated effort leading to longer than desired run times. I don't want to remove any tests from the CI gate, I want all tests to run, but I want to make sure each test is ONLY running one time. Identify if any test(s) are taking a longer time than expected and flag them and fix them too. Do NOT remove any steps that could lead to a lesser likelihood of catching errors. See the log from a recent run in /tmp/splunktui-ci.log. Include this path in the task so the execution agent can review it. One thing that could totally be adjusted is the output of the command. I want it to fail if any tests or any of the steps fail so that we don't get any false Impressions that it completed successfully when it really didn't. But we don't really need to see every individual test name listed out with an OK next to it. If a test fails or multiple tests fail, we want to know and we want to know the specific tests that fail, but we don't need to see every single test being listed as okay. For example, this block is not reslly beneficial when all tests pass and are OK: test commands::list_all::fetchers::tests::test_fetch_cluster_handles_api_error_404 ... ok  35 test commands::list_all::fetchers::tests::test_resource_summary_clustered ... ok  36 test commands::list_all::fetchers::tests::test_resource_summary_error ... ok  37 test commands::list_all::fetchers::tests::test_fetch_cluster_handles_not_found ... ok  38 test commands::list_all::fetchers::tests::test_fetch_cluster_handles_cluster_in_message ... ok  39 test commands::list_all::fetchers::tests::test_fetch_cluster_handles_unexpected_errors ... ok  40 test commands::list_all::fetchers::tests::test_resource_summary_not_clustered ... ok  41 test commands::logs::tests::test_cursor_both_missing_serial_same_content ... ok  42 test commands::logs::tests::test_cursor_both_missing_serial_different_content ... ok  43 test commands::logs::tests::test_cursor_from_entry ... ok --- I do think it would be beneficial to still see the summaries, like this: test result: ok. 124 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s  Running tests/apps_tests.rs (target/debug/deps/apps_tests-bd509edc84a51f1a)  --- Because that way we still see the summary for each test block that ran, and we can still see how long it took. And then we have the name of the block of the next block block of like the following block of tests shown so that if I'm watching the log and it seems hung I know which block of tests it was on that it hung.",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0243",
       "status": "todo",
       "title": "Add lookup table management",
