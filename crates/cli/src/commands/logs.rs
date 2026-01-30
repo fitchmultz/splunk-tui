@@ -14,6 +14,7 @@ struct LogCursor {
     time: String,
     index_time: String,
     serial: Option<u64>,
+    content_hash: Option<u64>, // For entries without serial
 }
 
 impl LogCursor {
@@ -27,10 +28,24 @@ impl LogCursor {
         if entry.index_time != self.index_time {
             return entry.index_time > self.index_time;
         }
-        // Same index_time: compare by serial
+        // Same index_time: compare by serial or content hash
         match (self.serial, entry.serial) {
             (Some(s), Some(e)) => e > s,
-            _ => false, // Conservative: if no serial, assume already seen
+            (None, Some(_)) => {
+                // Cursor has no serial but entry does - entry is newer
+                true
+            }
+            (Some(_), None) => {
+                // Cursor has serial but entry doesn't - need content comparison
+                // Compare by content hash to detect if same entry
+                let entry_hash = entry.content_hash();
+                self.content_hash != Some(entry_hash)
+            }
+            (None, None) => {
+                // Neither has serial - compare by content hash
+                let entry_hash = entry.content_hash();
+                self.content_hash != Some(entry_hash)
+            }
         }
     }
 
@@ -40,6 +55,7 @@ impl LogCursor {
             time: entry.time.clone(),
             index_time: entry.index_time.clone(),
             serial: entry.serial,
+            content_hash: entry.serial.is_none().then(|| entry.content_hash()),
         }
     }
 }
@@ -158,6 +174,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: Some(100),
+            content_hash: None,
         };
 
         let entry1 = make_log_entry(
@@ -181,6 +198,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: Some(100),
+            content_hash: None,
         };
 
         let newer_entry = make_log_entry(
@@ -198,13 +216,15 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: Some(100),
+            content_hash: None,
         };
 
         let entry_no_serial =
             make_log_entry("2025-01-24T12:00:00.000Z", "2025-01-24T12:00:01.000Z", None);
 
-        // Conservative: if no serial, assume it's same entry
-        assert!(!cursor.is_after(&entry_no_serial));
+        // Cursor has serial but entry doesn't - use content hash comparison
+        // Since content differs, entry should be considered new
+        assert!(cursor.is_after(&entry_no_serial));
     }
 
     #[test]
@@ -227,6 +247,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: Some(100),
+            content_hash: None,
         };
 
         // Same time, same serial, different index_time (edge case)
@@ -246,6 +267,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: Some(100),
+            content_hash: None,
         };
 
         let entry_empty_idx = make_log_entry("2025-01-24T12:00:00.000Z", "", None);
@@ -258,6 +280,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "".to_string(),
             serial: None,
+            content_hash: None,
         };
 
         let entry_valid_idx = make_log_entry(
@@ -280,6 +303,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: Some(10),
+            content_hash: None,
         };
 
         // Simulate new logs returned from query (sorted descending by time, index_time, serial)
@@ -314,5 +338,97 @@ mod tests {
         assert!(!new_cursor.is_after(&new_logs[0]));
         assert!(!new_cursor.is_after(&new_logs[1]));
         assert!(!new_cursor.is_after(&new_logs[2]));
+    }
+
+    #[test]
+    fn test_cursor_both_missing_serial_same_content() {
+        // Both cursor and entry lack serial, same content - should NOT be after
+        let entry = make_log_entry("2025-01-24T12:00:00.000Z", "2025-01-24T12:00:01.000Z", None);
+        let cursor = LogCursor::from_entry(&entry);
+
+        // Same entry - should NOT be after
+        assert!(!cursor.is_after(&entry));
+    }
+
+    #[test]
+    fn test_cursor_both_missing_serial_different_content() {
+        // Both cursor and entry lack serial, different content - should be after
+        let cursor_entry = LogEntry {
+            time: "2025-01-24T12:00:00.000Z".to_string(),
+            index_time: "2025-01-24T12:00:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "test".to_string(),
+            message: "first message".to_string(),
+        };
+        let cursor = LogCursor::from_entry(&cursor_entry);
+
+        let new_entry = LogEntry {
+            time: "2025-01-24T12:00:00.000Z".to_string(),
+            index_time: "2025-01-24T12:00:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "test".to_string(),
+            message: "different message".to_string(),
+        };
+
+        // Different content - should be after
+        assert!(cursor.is_after(&new_entry));
+    }
+
+    #[test]
+    fn test_cursor_missing_serial_entry_has_serial() {
+        // Cursor lacks serial but entry has it - entry is newer
+        let cursor = LogCursor {
+            time: "2025-01-24T12:00:00.000Z".to_string(),
+            index_time: "2025-01-24T12:00:01.000Z".to_string(),
+            serial: None,
+            content_hash: None,
+        };
+
+        let entry_with_serial = make_log_entry(
+            "2025-01-24T12:00:00.000Z",
+            "2025-01-24T12:00:01.000Z",
+            Some(100),
+        );
+
+        // Entry has serial but cursor doesn't - entry is newer
+        assert!(cursor.is_after(&entry_with_serial));
+    }
+
+    #[test]
+    fn test_cursor_from_entry_captures_content_hash_when_no_serial() {
+        let entry = LogEntry {
+            time: "2025-01-24T12:00:00.000Z".to_string(),
+            index_time: "2025-01-24T12:00:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "test".to_string(),
+            message: "test message".to_string(),
+        };
+
+        let cursor = LogCursor::from_entry(&entry);
+
+        assert_eq!(cursor.time, "2025-01-24T12:00:00.000Z");
+        assert_eq!(cursor.index_time, "2025-01-24T12:00:01.000Z");
+        assert_eq!(cursor.serial, None);
+        assert!(cursor.content_hash.is_some());
+        assert_eq!(cursor.content_hash, Some(entry.content_hash()));
+    }
+
+    #[test]
+    fn test_cursor_from_entry_no_content_hash_when_has_serial() {
+        let entry = make_log_entry(
+            "2025-01-24T12:00:00.000Z",
+            "2025-01-24T12:00:01.000Z",
+            Some(42),
+        );
+
+        let cursor = LogCursor::from_entry(&entry);
+
+        assert_eq!(cursor.time, "2025-01-24T12:00:00.000Z");
+        assert_eq!(cursor.index_time, "2025-01-24T12:00:01.000Z");
+        assert_eq!(cursor.serial, Some(42));
+        assert!(cursor.content_hash.is_none());
     }
 }

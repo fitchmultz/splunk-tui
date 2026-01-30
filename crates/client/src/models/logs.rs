@@ -51,6 +51,19 @@ impl LogEntry {
     pub fn cursor_key(&self) -> (&str, &str, Option<u64>) {
         (&self.time, &self.index_time, self.serial)
     }
+
+    /// Returns a content-based hash for cursor comparison when serial is missing.
+    /// Uses time + index_time + message to create a stable identifier.
+    pub fn content_hash(&self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        self.time.hash(&mut hasher);
+        self.index_time.hash(&mut hasher);
+        self.message.hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
 /// Health check result for log parsing errors.
@@ -157,6 +170,81 @@ mod tests {
                 "2025-01-20T10:30:01.000Z",
                 Some(42)
             )
+        );
+    }
+
+    #[test]
+    fn test_content_hash_is_stable_for_same_entry() {
+        let entry1 = LogEntry {
+            time: "2025-01-20T10:30:00.000Z".to_string(),
+            index_time: "2025-01-20T10:30:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "Metrics".to_string(),
+            message: "test message content".to_string(),
+        };
+        let entry2 = LogEntry {
+            time: "2025-01-20T10:30:00.000Z".to_string(),
+            index_time: "2025-01-20T10:30:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "Metrics".to_string(),
+            message: "test message content".to_string(),
+        };
+
+        // Same content should produce same hash within the same process
+        assert_eq!(entry1.content_hash(), entry2.content_hash());
+    }
+
+    #[test]
+    fn test_content_hash_differs_for_different_content() {
+        let entry1 = LogEntry {
+            time: "2025-01-20T10:30:00.000Z".to_string(),
+            index_time: "2025-01-20T10:30:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "Metrics".to_string(),
+            message: "first message".to_string(),
+        };
+        let entry2 = LogEntry {
+            time: "2025-01-20T10:30:00.000Z".to_string(),
+            index_time: "2025-01-20T10:30:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "Metrics".to_string(),
+            message: "second message".to_string(),
+        };
+
+        // Different messages should produce different hashes
+        assert_ne!(entry1.content_hash(), entry2.content_hash());
+    }
+
+    #[test]
+    fn test_content_hash_considers_time_and_index_time() {
+        let base_entry = LogEntry {
+            time: "2025-01-20T10:30:00.000Z".to_string(),
+            index_time: "2025-01-20T10:30:01.000Z".to_string(),
+            serial: None,
+            level: "INFO".to_string(),
+            component: "Metrics".to_string(),
+            message: "test message".to_string(),
+        };
+
+        let different_time = LogEntry {
+            time: "2025-01-20T10:31:00.000Z".to_string(),
+            ..base_entry.clone()
+        };
+        let different_index_time = LogEntry {
+            index_time: "2025-01-20T10:30:02.000Z".to_string(),
+            ..base_entry.clone()
+        };
+
+        // Different time should produce different hash
+        assert_ne!(base_entry.content_hash(), different_time.content_hash());
+        // Different index_time should produce different hash
+        assert_ne!(
+            base_entry.content_hash(),
+            different_index_time.content_hash()
         );
     }
 }
