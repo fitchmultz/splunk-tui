@@ -41,8 +41,8 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LogEntry, SavedSearch,
-    SearchJobStatus, User,
+    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, KvStoreStatus, LogEntry,
+    SavedSearch, SearchJobStatus, User,
 };
 use splunk_config::constants::{
     DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
@@ -88,6 +88,7 @@ pub struct App {
     pub cluster_view_mode: crate::app::state::ClusterViewMode,
     pub health_info: Option<HealthCheckOutput>,
     pub license_info: Option<LicenseData>,
+    pub kvstore_status: Option<KvStoreStatus>,
     pub apps: Option<Vec<SplunkApp>>,
     pub apps_state: ratatui::widgets::ListState,
     pub users: Option<Vec<User>>,
@@ -328,6 +329,7 @@ impl App {
             cluster_view_mode: crate::app::state::ClusterViewMode::Summary,
             health_info: None,
             license_info: None,
+            kvstore_status: None,
             apps: None,
             apps_state,
             users: None,
@@ -480,6 +482,7 @@ impl App {
             CurrentScreen::JobInspect => None, // Already loaded when entering inspect mode
             CurrentScreen::Health => Some(Action::LoadHealth),
             CurrentScreen::License => Some(Action::LoadLicense),
+            CurrentScreen::Kvstore => Some(Action::LoadKvstore),
             CurrentScreen::SavedSearches => Some(Action::LoadSavedSearches),
             CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs {
                 count: self.internal_logs_defaults.count,

@@ -737,6 +737,11 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export license info
 - `Ctrl+c`: Copy license summary
 
+#### KVStore Screen
+- `r`: Refresh KVStore status
+- `Ctrl+e`: Export KVStore status
+- `Ctrl+c`: Copy KVStore status
+
 #### Saved Searches Screen
 - `r`: Refresh saved searches
 - `Ctrl+e`: Export saved searches

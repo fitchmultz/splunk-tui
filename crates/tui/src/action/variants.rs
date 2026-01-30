@@ -32,8 +32,9 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, LicensePool,
-    LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SplunkHealth, User,
+    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, KvStoreStatus,
+    LicensePool, LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SplunkHealth,
+    User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -123,6 +124,8 @@ pub enum Action {
     LoadHealth,
     /// Load license information (usage, pools, stacks)
     LoadLicense,
+    /// Load KVStore status information
+    LoadKvstore,
     /// Load the list of saved searches
     LoadSavedSearches,
     /// Load internal logs from index=_internal
@@ -187,6 +190,8 @@ pub enum Action {
     HealthLoaded(Box<Result<HealthCheckOutput, Arc<ClientError>>>),
     /// Result of loading license information
     LicenseLoaded(Box<Result<LicenseData, Arc<ClientError>>>),
+    /// Result of loading KVStore status
+    KvstoreLoaded(Result<KvStoreStatus, Arc<ClientError>>),
     /// Result of loading saved searches
     SavedSearchesLoaded(Result<Vec<SavedSearch>, Arc<ClientError>>),
     /// Result of loading internal logs

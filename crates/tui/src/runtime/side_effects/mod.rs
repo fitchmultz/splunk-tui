@@ -88,6 +88,7 @@ mod export;
 mod health;
 mod indexes;
 mod jobs;
+mod kvstore;
 mod license;
 mod logs;
 mod profiles;
@@ -205,6 +206,9 @@ pub async fn handle_side_effects(
         }
         Action::LoadLicense => {
             license::handle_load_license(client, tx).await;
+        }
+        Action::LoadKvstore => {
+            kvstore::handle_load_kvstore(client, tx).await;
         }
         Action::ExportData(data, path, format) => {
             export::handle_export_data(data, path, format, tx).await;

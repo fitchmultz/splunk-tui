@@ -261,6 +261,37 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None,
             handles_input: false,
         },
+        // KVStore
+        Keybinding {
+            section: Section::Kvstore,
+            keys: "r",
+            description: "Refresh KVStore status",
+            scope: BindingScope::Screen(Kvstore),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadKvstore),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Kvstore,
+            keys: "Ctrl+e",
+            description: "Export KVStore status",
+            scope: BindingScope::Screen(Kvstore),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Kvstore,
+            keys: "Ctrl+c",
+            description: "Copy KVStore status",
+            scope: BindingScope::Screen(Kvstore),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
         // Saved Searches
         Keybinding {
             section: Section::SavedSearches,

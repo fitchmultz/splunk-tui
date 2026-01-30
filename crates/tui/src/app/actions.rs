@@ -68,6 +68,9 @@ impl App {
             Action::LoadLicense => {
                 self.current_screen = CurrentScreen::License;
             }
+            Action::LoadKvstore => {
+                self.current_screen = CurrentScreen::Kvstore;
+            }
             Action::LoadSavedSearches => {
                 self.current_screen = CurrentScreen::SavedSearches;
             }
@@ -291,6 +294,18 @@ impl App {
                     self.loading = false;
                 }
             },
+            Action::KvstoreLoaded(Ok(status)) => {
+                self.kvstore_status = Some(status);
+                self.loading = false;
+            }
+            Action::KvstoreLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load KVStore status: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
             Action::HealthStatusLoaded(result) => match result {
                 Ok(health) => {
                     let new_state = HealthState::from_health_str(&health.health);
@@ -535,6 +550,8 @@ impl App {
                 self.cluster_info = None;
                 self.cluster_peers = None;
                 self.health_info = None;
+                self.license_info = None;
+                self.kvstore_status = None;
                 self.apps = None;
                 self.users = None;
                 self.search_results.clear();

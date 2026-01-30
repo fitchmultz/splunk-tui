@@ -14,7 +14,7 @@ use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
-    apps, cluster, health, indexes, license, saved_searches, search, settings, users,
+    apps, cluster, health, indexes, kvstore, license, saved_searches, search, settings, users,
 };
 use ratatui::{
     Frame,
@@ -87,6 +87,7 @@ impl App {
                         CurrentScreen::JobInspect => "Job Details",
                         CurrentScreen::Health => "Health",
                         CurrentScreen::License => "License",
+                        CurrentScreen::Kvstore => "KVStore",
                         CurrentScreen::SavedSearches => "Saved Searches",
                         CurrentScreen::InternalLogs => "Internal Logs",
                         CurrentScreen::Apps => "Apps",
@@ -219,6 +220,17 @@ impl App {
                     license::LicenseRenderConfig {
                         loading: self.loading,
                         license_info: self.license_info.as_ref(),
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Kvstore => {
+                kvstore::render_kvstore(
+                    f,
+                    area,
+                    kvstore::KvstoreRenderConfig {
+                        loading: self.loading,
+                        kvstore_status: self.kvstore_status.as_ref(),
                         theme: &self.theme,
                     },
                 );
