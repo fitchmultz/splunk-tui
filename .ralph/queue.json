@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0275",
-      "status": "todo",
-      "title": "Split TUI side_effects tests by feature area",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "tests",
-        "maintenance"
-      ],
-      "scope": [
-        "crates/tui/tests/side_effects_tests.rs",
-        "crates/tui/tests/common",
-        "crates/tui/tests"
-      ],
-      "evidence": [
-        "crates/tui/tests/side_effects_tests.rs is 1395 lines and covers data loading, search, jobs, apps, health, profiles, and settings in one file.",
-        "Repo rule: tests covering unrelated behavior must not be grouped together."
-      ],
-      "plan": [
-        "Split side_effects tests into per-feature files (indexes/jobs/search/apps/health/profiles/etc).",
-        "Keep shared harness in crates/tui/tests/common.",
-        "Verify all tests still run with existing fixtures."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0276",
       "status": "todo",
       "title": "Refactor CSV formatter to reduce LOC and duplication",

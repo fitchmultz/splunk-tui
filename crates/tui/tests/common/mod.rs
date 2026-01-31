@@ -14,6 +14,9 @@
 //! - TUI rendering or terminal management
 //! - Configuration file I/O (use temp directories for that)
 
+// Allow dead code since not all tests use all utilities
+#![allow(dead_code)]
+
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
