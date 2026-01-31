@@ -202,6 +202,30 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
             Span::styled("p", Style::default().fg(theme.accent)),
             Span::styled("' to switch profile", Style::default().fg(theme.text_dim)),
         ]),
+        Line::from(vec![
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("n", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to create new profile",
+                Style::default().fg(theme.text_dim),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("e", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to edit selected profile",
+                Style::default().fg(theme.text_dim),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Press '", Style::default().fg(theme.text_dim)),
+            Span::styled("x", Style::default().fg(theme.accent)),
+            Span::styled(
+                "' to delete selected profile",
+                Style::default().fg(theme.text_dim),
+            ),
+        ]),
     ];
 
     f.render_widget(

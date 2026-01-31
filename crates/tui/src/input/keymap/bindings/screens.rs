@@ -1038,6 +1038,42 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::OpenProfileSwitcher),
             handles_input: true,
         },
+        Keybinding {
+            section: Section::Settings,
+            keys: "n",
+            description: "Create new profile",
+            scope: BindingScope::Screen(Settings),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('n'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::OpenCreateProfileDialog),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Settings,
+            keys: "e",
+            description: "Edit selected profile",
+            scope: BindingScope::Screen(Settings),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('e'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled by input handler
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Settings,
+            keys: "x",
+            description: "Delete selected profile",
+            scope: BindingScope::Screen(Settings),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('x'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled by input handler
+            handles_input: false,
+        },
         // Overview
         Keybinding {
             section: Section::Overview,

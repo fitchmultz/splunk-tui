@@ -963,6 +963,9 @@ The Search screen has two input modes that affect how keys are handled:
 - `c`: Clear search history
 - `r`: Reload settings
 - `p`: Switch profile
+- `n`: Create new profile
+- `e`: Edit selected profile
+- `x`: Delete selected profile
 
 #### Overview Screen
 - `r`: Refresh overview

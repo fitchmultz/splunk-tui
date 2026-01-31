@@ -1,7 +1,8 @@
-//! Profile switching side effect handlers.
+//! Profile switching and management side effect handlers.
 //!
 //! Responsibilities:
 //! - Handle async operations for profile switching.
+//! - Handle profile CRUD operations (create, update, delete).
 //! - Load profile configurations and rebuild clients.
 //!
 //! Does NOT handle:
@@ -12,7 +13,7 @@ use crate::action::Action;
 use crate::app::ConnectionContext;
 use crate::ui::ToastLevel;
 use splunk_client::{AuthStrategy, SplunkClient};
-use splunk_config::ConfigManager;
+use splunk_config::{ConfigManager, ProfileConfig};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::Sender};
 
@@ -199,5 +200,168 @@ pub async fn handle_profile_selected(
 
         // Trigger reload for current screen
         let _ = tx.send(Action::Loading(false)).await;
+    });
+}
+
+/// Handle opening the profile edit dialog by loading profile data.
+pub async fn handle_open_edit_profile(
+    config_manager: Arc<Mutex<ConfigManager>>,
+    tx: Sender<Action>,
+    profile_name: String,
+) {
+    let config_manager_clone = config_manager.clone();
+    let tx_clone = tx.clone();
+    let name_clone = profile_name.clone();
+
+    tokio::spawn(async move {
+        let cm = config_manager_clone.lock().await;
+
+        // Get the profile config
+        let profiles = cm.list_profiles();
+        let Some(profile_config) = profiles.get(&name_clone) else {
+            let _ = tx_clone
+                .send(Action::Notify(
+                    ToastLevel::Error,
+                    format!("Profile '{}' not found", name_clone),
+                ))
+                .await;
+            return;
+        };
+
+        // Send action to open dialog with profile data
+        let _ = tx_clone
+            .send(Action::OpenEditProfileDialogWithData {
+                original_name: name_clone.clone(),
+                name_input: name_clone,
+                base_url_input: profile_config.base_url.clone().unwrap_or_default(),
+                username_input: profile_config.username.clone().unwrap_or_default(),
+                skip_verify: profile_config.skip_verify.unwrap_or(false),
+                timeout_seconds: profile_config.timeout_seconds.unwrap_or(30),
+                max_retries: profile_config.max_retries.unwrap_or(3),
+            })
+            .await;
+    });
+}
+
+/// Handle saving/creating a profile.
+pub async fn handle_save_profile(
+    config_manager: Arc<Mutex<ConfigManager>>,
+    tx: Sender<Action>,
+    name: String,
+    profile: ProfileConfig,
+    use_keyring: bool,
+) {
+    let config_manager_clone = config_manager.clone();
+    let tx_clone = tx.clone();
+    let name_clone = name.clone();
+
+    tokio::spawn(async move {
+        let mut cm = config_manager_clone.lock().await;
+
+        // If use_keyring is enabled, store credentials in keyring before saving
+        let mut profile_to_save = profile.clone();
+
+        if use_keyring {
+            // Store password in keyring if it's a plain value
+            if let (Some(username), Some(splunk_config::types::SecureValue::Plain(pw))) =
+                (&profile.username, &profile.password)
+            {
+                match cm.store_password_in_keyring(&name_clone, username, pw) {
+                    Ok(keyring_value) => {
+                        profile_to_save.password = Some(keyring_value);
+                    }
+                    Err(e) => {
+                        let _ = tx_clone
+                            .send(Action::Notify(
+                                ToastLevel::Warning,
+                                format!(
+                                    "Failed to store password in keyring: {}. Saving as plaintext.",
+                                    e
+                                ),
+                            ))
+                            .await;
+                    }
+                }
+            }
+
+            // Store API token in keyring if it's a plain value
+            if let Some(splunk_config::types::SecureValue::Plain(token)) = &profile.api_token {
+                match cm.store_token_in_keyring(&name_clone, token) {
+                    Ok(keyring_value) => {
+                        profile_to_save.api_token = Some(keyring_value);
+                    }
+                    Err(e) => {
+                        let _ = tx_clone
+                            .send(Action::Notify(
+                                ToastLevel::Warning,
+                                format!("Failed to store API token in keyring: {}. Saving as plaintext.", e),
+                            ))
+                            .await;
+                    }
+                }
+            }
+        }
+
+        // Save the profile
+        match cm.save_profile(&name_clone, profile_to_save) {
+            Ok(()) => {
+                let _ = tx_clone
+                    .send(Action::ProfileSaved(Ok(name_clone.clone())))
+                    .await;
+                let _ = tx_clone
+                    .send(Action::Notify(
+                        ToastLevel::Success,
+                        format!("Profile '{}' saved successfully", name_clone),
+                    ))
+                    .await;
+            }
+            Err(e) => {
+                let error_msg = format!("Failed to save profile '{}': {}", name_clone, e);
+                let _ = tx_clone
+                    .send(Action::ProfileSaved(Err(error_msg.clone())))
+                    .await;
+                let _ = tx_clone
+                    .send(Action::Notify(ToastLevel::Error, error_msg))
+                    .await;
+            }
+        }
+    });
+}
+
+/// Handle deleting a profile.
+pub async fn handle_delete_profile(
+    config_manager: Arc<Mutex<ConfigManager>>,
+    tx: Sender<Action>,
+    name: String,
+) {
+    let config_manager_clone = config_manager.clone();
+    let tx_clone = tx.clone();
+    let name_clone = name.clone();
+
+    tokio::spawn(async move {
+        let mut cm = config_manager_clone.lock().await;
+
+        match cm.delete_profile(&name_clone) {
+            Ok(()) => {
+                let _ = tx_clone
+                    .send(Action::ProfileDeleted(Ok(name_clone.clone())))
+                    .await;
+                let _ = tx_clone
+                    .send(Action::Notify(
+                        ToastLevel::Success,
+                        format!("Profile '{}' deleted successfully", name_clone),
+                    ))
+                    .await;
+            }
+            Err(e) => {
+                let error_msg = format!("Failed to delete profile '{}': {}", name_clone, e);
+                let _ = tx_clone
+                    .send(Action::ProfileDeleted(Err(error_msg.clone())))
+                    .await;
+                let _ = tx_clone
+                    .send(Action::Notify(ToastLevel::Error, error_msg))
+                    .await;
+            }
+        }
     });
 }

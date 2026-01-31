@@ -113,6 +113,90 @@ pub enum PopupType {
     ConfirmRemoveApp(String),
     /// App installation file path input dialog
     InstallAppDialog { file_input: String },
+    /// Profile creation dialog
+    CreateProfile {
+        name_input: String,
+        base_url_input: String,
+        username_input: String,
+        password_input: String,
+        api_token_input: String,
+        skip_verify: bool,
+        timeout_seconds: u64,
+        max_retries: u64,
+        use_keyring: bool,
+        selected_field: ProfileField,
+    },
+    /// Profile editing dialog
+    EditProfile {
+        original_name: String,
+        name_input: String,
+        base_url_input: String,
+        username_input: String,
+        password_input: String,
+        api_token_input: String,
+        skip_verify: bool,
+        timeout_seconds: u64,
+        max_retries: u64,
+        use_keyring: bool,
+        selected_field: ProfileField,
+    },
+    /// Profile deletion confirmation
+    DeleteProfileConfirm { profile_name: String },
+}
+
+/// Field selection for profile form navigation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProfileField {
+    /// Profile name field
+    Name,
+    /// Base URL field
+    BaseUrl,
+    /// Username field
+    Username,
+    /// Password field
+    Password,
+    /// API token field
+    ApiToken,
+    /// Skip TLS verification toggle
+    SkipVerify,
+    /// Timeout seconds field
+    Timeout,
+    /// Max retries field
+    MaxRetries,
+    /// Use keyring toggle
+    UseKeyring,
+}
+
+impl ProfileField {
+    /// Get the next field in the form (cycles through all fields).
+    pub fn next(self) -> Self {
+        match self {
+            ProfileField::Name => ProfileField::BaseUrl,
+            ProfileField::BaseUrl => ProfileField::Username,
+            ProfileField::Username => ProfileField::Password,
+            ProfileField::Password => ProfileField::ApiToken,
+            ProfileField::ApiToken => ProfileField::SkipVerify,
+            ProfileField::SkipVerify => ProfileField::Timeout,
+            ProfileField::Timeout => ProfileField::MaxRetries,
+            ProfileField::MaxRetries => ProfileField::UseKeyring,
+            ProfileField::UseKeyring => ProfileField::Name,
+        }
+    }
+
+    /// Get the previous field in the form (cycles through all fields).
+    pub fn previous(self) -> Self {
+        match self {
+            ProfileField::Name => ProfileField::UseKeyring,
+            ProfileField::BaseUrl => ProfileField::Name,
+            ProfileField::Username => ProfileField::BaseUrl,
+            ProfileField::Password => ProfileField::Username,
+            ProfileField::ApiToken => ProfileField::Password,
+            ProfileField::SkipVerify => ProfileField::ApiToken,
+            ProfileField::Timeout => ProfileField::SkipVerify,
+            ProfileField::MaxRetries => ProfileField::Timeout,
+            ProfileField::UseKeyring => ProfileField::MaxRetries,
+        }
+    }
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -295,6 +379,231 @@ impl PopupBuilder {
                 );
                 (title, content)
             }
+            PopupType::CreateProfile {
+                name_input,
+                base_url_input,
+                username_input,
+                password_input,
+                api_token_input,
+                skip_verify,
+                timeout_seconds,
+                max_retries,
+                use_keyring,
+                selected_field,
+            } => {
+                let title = "Create Profile".to_string();
+                let mut content = String::from("Create new profile:\n\n");
+
+                let name_marker = if *selected_field == ProfileField::Name {
+                    "> "
+                } else {
+                    "  "
+                };
+                let base_url_marker = if *selected_field == ProfileField::BaseUrl {
+                    "> "
+                } else {
+                    "  "
+                };
+                let username_marker = if *selected_field == ProfileField::Username {
+                    "> "
+                } else {
+                    "  "
+                };
+                let password_marker = if *selected_field == ProfileField::Password {
+                    "> "
+                } else {
+                    "  "
+                };
+                let api_token_marker = if *selected_field == ProfileField::ApiToken {
+                    "> "
+                } else {
+                    "  "
+                };
+                let skip_verify_marker = if *selected_field == ProfileField::SkipVerify {
+                    "> "
+                } else {
+                    "  "
+                };
+                let timeout_marker = if *selected_field == ProfileField::Timeout {
+                    "> "
+                } else {
+                    "  "
+                };
+                let max_retries_marker = if *selected_field == ProfileField::MaxRetries {
+                    "> "
+                } else {
+                    "  "
+                };
+                let use_keyring_marker = if *selected_field == ProfileField::UseKeyring {
+                    "> "
+                } else {
+                    "  "
+                };
+
+                content.push_str(&format!("{}Name: {}\n", name_marker, name_input));
+                content.push_str(&format!(
+                    "{}Base URL: {}\n",
+                    base_url_marker, base_url_input
+                ));
+                content.push_str(&format!(
+                    "{}Username: {}\n",
+                    username_marker, username_input
+                ));
+                let password_display = if password_input.is_empty() {
+                    "(empty)".to_string()
+                } else {
+                    "(set)".to_string()
+                };
+                content.push_str(&format!(
+                    "{}Password: {}\n",
+                    password_marker, password_display
+                ));
+                let token_display = if api_token_input.is_empty() {
+                    "(empty)".to_string()
+                } else {
+                    "(set)".to_string()
+                };
+                content.push_str(&format!(
+                    "{}API Token: {}\n",
+                    api_token_marker, token_display
+                ));
+                content.push_str(&format!(
+                    "{}Skip TLS Verify: {}\n",
+                    skip_verify_marker, skip_verify
+                ));
+                content.push_str(&format!(
+                    "{}Timeout (s): {}\n",
+                    timeout_marker, timeout_seconds
+                ));
+                content.push_str(&format!(
+                    "{}Max Retries: {}\n",
+                    max_retries_marker, max_retries
+                ));
+                content.push_str(&format!(
+                    "{}Use Keyring: {}\n",
+                    use_keyring_marker, use_keyring
+                ));
+
+                content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
+                (title, content)
+            }
+            PopupType::EditProfile {
+                original_name,
+                name_input,
+                base_url_input,
+                username_input,
+                password_input,
+                api_token_input,
+                skip_verify,
+                timeout_seconds,
+                max_retries,
+                use_keyring,
+                selected_field,
+            } => {
+                let title = format!("Edit Profile '{}'", original_name);
+                let mut content = String::from("Edit profile:\n\n");
+
+                let name_marker = if *selected_field == ProfileField::Name {
+                    "> "
+                } else {
+                    "  "
+                };
+                let base_url_marker = if *selected_field == ProfileField::BaseUrl {
+                    "> "
+                } else {
+                    "  "
+                };
+                let username_marker = if *selected_field == ProfileField::Username {
+                    "> "
+                } else {
+                    "  "
+                };
+                let password_marker = if *selected_field == ProfileField::Password {
+                    "> "
+                } else {
+                    "  "
+                };
+                let api_token_marker = if *selected_field == ProfileField::ApiToken {
+                    "> "
+                } else {
+                    "  "
+                };
+                let skip_verify_marker = if *selected_field == ProfileField::SkipVerify {
+                    "> "
+                } else {
+                    "  "
+                };
+                let timeout_marker = if *selected_field == ProfileField::Timeout {
+                    "> "
+                } else {
+                    "  "
+                };
+                let max_retries_marker = if *selected_field == ProfileField::MaxRetries {
+                    "> "
+                } else {
+                    "  "
+                };
+                let use_keyring_marker = if *selected_field == ProfileField::UseKeyring {
+                    "> "
+                } else {
+                    "  "
+                };
+
+                content.push_str(&format!("{}Name: {}\n", name_marker, name_input));
+                content.push_str(&format!(
+                    "{}Base URL: {}\n",
+                    base_url_marker, base_url_input
+                ));
+                content.push_str(&format!(
+                    "{}Username: {}\n",
+                    username_marker, username_input
+                ));
+                let password_display = if password_input.is_empty() {
+                    "(keep existing)".to_string()
+                } else {
+                    "(will update)".to_string()
+                };
+                content.push_str(&format!(
+                    "{}Password: {}\n",
+                    password_marker, password_display
+                ));
+                let token_display = if api_token_input.is_empty() {
+                    "(keep existing)".to_string()
+                } else {
+                    "(will update)".to_string()
+                };
+                content.push_str(&format!(
+                    "{}API Token: {}\n",
+                    api_token_marker, token_display
+                ));
+                content.push_str(&format!(
+                    "{}Skip TLS Verify: {}\n",
+                    skip_verify_marker, skip_verify
+                ));
+                content.push_str(&format!(
+                    "{}Timeout (s): {}\n",
+                    timeout_marker, timeout_seconds
+                ));
+                content.push_str(&format!(
+                    "{}Max Retries: {}\n",
+                    max_retries_marker, max_retries
+                ));
+                content.push_str(&format!(
+                    "{}Use Keyring: {}\n",
+                    use_keyring_marker, use_keyring
+                ));
+
+                content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
+                (title, content)
+            }
+            PopupType::DeleteProfileConfirm { profile_name } => {
+                let title = "Confirm Delete Profile".to_string();
+                let content = format!(
+                    "Delete profile '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    profile_name
+                );
+                (title, content)
+            }
         };
 
         Popup {
@@ -330,7 +639,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ModifyIndex { .. }
         | PopupType::CreateUser { .. }
         | PopupType::ModifyUser { .. }
-        | PopupType::InstallAppDialog { .. } => theme.border,
+        | PopupType::InstallAppDialog { .. }
+        | PopupType::CreateProfile { .. }
+        | PopupType::EditProfile { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -339,7 +650,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ConfirmDisableApp(_)
         | PopupType::DeleteIndexConfirm { .. }
         | PopupType::DeleteUserConfirm { .. }
-        | PopupType::ConfirmRemoveApp(_) => theme.error,
+        | PopupType::ConfirmRemoveApp(_)
+        | PopupType::DeleteProfileConfirm { .. } => theme.error,
     };
 
     // Determine wrapping behavior based on popup type
@@ -355,7 +667,10 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateUser { .. }
         | PopupType::ModifyUser { .. }
         | PopupType::DeleteUserConfirm { .. }
-        | PopupType::InstallAppDialog { .. } => Wrap { trim: false },
+        | PopupType::InstallAppDialog { .. }
+        | PopupType::CreateProfile { .. }
+        | PopupType::EditProfile { .. }
+        | PopupType::DeleteProfileConfirm { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

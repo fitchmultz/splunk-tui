@@ -734,6 +734,79 @@ impl App {
                     .build(),
                 );
             }
+            // Profile management actions
+            Action::OpenCreateProfileDialog => {
+                self.popup = Some(
+                    Popup::builder(PopupType::CreateProfile {
+                        name_input: String::new(),
+                        base_url_input: String::new(),
+                        username_input: String::new(),
+                        password_input: String::new(),
+                        api_token_input: String::new(),
+                        skip_verify: false,
+                        timeout_seconds: 30,
+                        max_retries: 3,
+                        use_keyring: false,
+                        selected_field: crate::ui::popup::ProfileField::Name,
+                    })
+                    .build(),
+                );
+            }
+            Action::OpenEditProfileDialogWithData {
+                original_name,
+                name_input,
+                base_url_input,
+                username_input,
+                skip_verify,
+                timeout_seconds,
+                max_retries,
+            } => {
+                self.popup = Some(
+                    Popup::builder(PopupType::EditProfile {
+                        original_name,
+                        name_input,
+                        base_url_input,
+                        username_input,
+                        password_input: String::new(), // Empty means "keep existing"
+                        api_token_input: String::new(), // Empty means "keep existing"
+                        skip_verify,
+                        timeout_seconds,
+                        max_retries: max_retries as u64,
+                        use_keyring: false,
+                        selected_field: crate::ui::popup::ProfileField::Name,
+                    })
+                    .build(),
+                );
+            }
+            Action::OpenDeleteProfileConfirm { name } => {
+                self.popup = Some(
+                    Popup::builder(PopupType::DeleteProfileConfirm { profile_name: name }).build(),
+                );
+            }
+            Action::ProfileSaved(Ok(profile_name)) => {
+                self.popup = None;
+                self.toasts.push(Toast::info(format!(
+                    "Profile '{}' saved successfully",
+                    profile_name
+                )));
+            }
+            Action::ProfileSaved(Err(error_msg)) => {
+                self.toasts.push(Toast::error(error_msg));
+            }
+            Action::ProfileDeleted(Ok(profile_name)) => {
+                self.popup = None;
+                self.toasts.push(Toast::info(format!(
+                    "Profile '{}' deleted successfully",
+                    profile_name
+                )));
+                // If the deleted profile was the current one, clear the connection context
+                if self.profile_name.as_ref() == Some(&profile_name) {
+                    self.profile_name = None;
+                }
+            }
+            Action::ProfileDeleted(Err(error_msg)) => {
+                self.toasts.push(Toast::error(error_msg));
+            }
             _ => {}
         }
     }

@@ -59,6 +59,32 @@ impl App {
                 self.toasts.push(Toast::info("Search history cleared"));
                 None
             }
+            KeyCode::Char('e') => {
+                // Open edit profile dialog for current profile (if selected)
+                if let Some(profile_name) = &self.profile_name {
+                    Some(Action::OpenEditProfileDialog {
+                        name: profile_name.clone(),
+                    })
+                } else {
+                    self.toasts.push(crate::ui::Toast::warning(
+                        "No profile selected to edit. Use 'p' to switch to a profile first.",
+                    ));
+                    None
+                }
+            }
+            KeyCode::Char('x') => {
+                // Open delete confirmation for current profile (if selected)
+                if let Some(profile_name) = &self.profile_name {
+                    Some(Action::OpenDeleteProfileConfirm {
+                        name: profile_name.clone(),
+                    })
+                } else {
+                    self.toasts.push(crate::ui::Toast::warning(
+                        "No profile selected to delete. Use 'p' to switch to a profile first.",
+                    ));
+                    None
+                }
+            }
             _ => None,
         }
     }

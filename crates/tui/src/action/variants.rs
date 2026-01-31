@@ -537,4 +537,35 @@ pub enum Action {
     ProfileSwitchResult(Result<ConnectionContext, String>),
     /// Clear all cached data after profile switch
     ClearAllData,
+
+    // Profile Management
+    /// Open profile creation dialog
+    OpenCreateProfileDialog,
+    /// Open profile editing dialog (triggers async load)
+    OpenEditProfileDialog { name: String },
+    /// Open profile editing dialog with pre-populated data
+    #[allow(clippy::type_complexity)]
+    OpenEditProfileDialogWithData {
+        original_name: String,
+        name_input: String,
+        base_url_input: String,
+        username_input: String,
+        skip_verify: bool,
+        timeout_seconds: u64,
+        max_retries: usize,
+    },
+    /// Open profile deletion confirmation
+    OpenDeleteProfileConfirm { name: String },
+    /// Save/create a profile
+    SaveProfile {
+        name: String,
+        profile: splunk_config::types::ProfileConfig,
+        use_keyring: bool,
+    },
+    /// Delete a profile
+    DeleteProfile { name: String },
+    /// Result of profile save operation
+    ProfileSaved(Result<String, String>),
+    /// Result of profile delete operation
+    ProfileDeleted(Result<String, String>),
 }

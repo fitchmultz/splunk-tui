@@ -298,6 +298,27 @@ pub async fn handle_side_effects(
         Action::DeleteUser { name } => {
             users::handle_delete_user(client, tx, name).await;
         }
+        // Profile management actions
+        Action::OpenEditProfileDialog { name } => {
+            profiles::handle_open_edit_profile(config_manager.clone(), tx.clone(), name).await;
+        }
+        Action::SaveProfile {
+            name,
+            profile,
+            use_keyring,
+        } => {
+            profiles::handle_save_profile(
+                config_manager.clone(),
+                tx.clone(),
+                name,
+                profile,
+                use_keyring,
+            )
+            .await;
+        }
+        Action::DeleteProfile { name } => {
+            profiles::handle_delete_profile(config_manager.clone(), tx.clone(), name).await;
+        }
         _ => {}
     }
 }
