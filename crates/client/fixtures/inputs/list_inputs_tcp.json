@@ -1,0 +1,30 @@
+{
+  "entry": [
+    {
+      "name": "9997",
+      "content": {
+        "name": "9997",
+        "input_type": "tcp/raw",
+        "disabled": false,
+        "host": "$decideOnStartup",
+        "source": "tcp:9997",
+        "sourcetype": "tcp",
+        "connection_host": "ip",
+        "port": "9997"
+      }
+    },
+    {
+      "name": "9998",
+      "content": {
+        "name": "9998",
+        "input_type": "tcp/raw",
+        "disabled": true,
+        "host": "$decideOnStartup",
+        "source": "tcp:9998",
+        "sourcetype": "tcp",
+        "connection_host": "ip",
+        "port": "9998"
+      }
+    }
+  ]
+}

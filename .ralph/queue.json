@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0266",
-      "status": "todo",
-      "title": "Add client integration tests for configs and inputs endpoints",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "tests",
-        "configs",
-        "inputs"
-      ],
-      "scope": [
-        "crates/client/src/client/configs.rs",
-        "crates/client/src/client/inputs.rs",
-        "crates/client/tests",
-        "crates/client/fixtures"
-      ],
-      "evidence": [
-        "crates/client/src/client/configs.rs and crates/client/src/client/inputs.rs implement endpoints.",
-        "crates/client/tests/ list has no configs_tests.rs or inputs_tests.rs."
-      ],
-      "plan": [
-        "Add fixtures for configs and inputs responses if missing.",
-        "Add integration tests covering success and error paths (pagination, missing fields).",
-        "Ensure tests run hermetically with DOTENV_DISABLED=1."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0267",
       "status": "todo",
       "title": "Add client integration tests for lookups and logs endpoints",

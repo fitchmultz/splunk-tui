@@ -1,0 +1,12 @@
+{
+  "entry": [
+    {
+      "name": "source::...",
+      "content": {
+        "sourcetype": "access_combined",
+        "TIME_PREFIX": "^\\[",
+        "TIME_FORMAT": "%d/%b/%Y:%H:%M:%S %z"
+      }
+    }
+  ]
+}
