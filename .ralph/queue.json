@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0276",
-      "status": "todo",
-      "title": "Refactor CSV formatter to reduce LOC and duplication",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "refactor",
-        "formatters"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/csv.rs",
-        "crates/cli/src/formatters/common.rs",
-        "crates/architecture-tests/tests/file_size_tests.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/formatters/csv.rs is 1033 lines (approx 850 LOC), exceeding the 700 LOC warning threshold.",
-        "crates/architecture-tests/tests/file_size_tests.rs defines >700 LOC as a warning threshold."
-      ],
-      "plan": [
-        "Extract shared CSV row/header helpers and split by resource modules.",
-        "Update formatter wiring to use the new helpers/modules.",
-        "Adjust formatter tests to cover refactored paths."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0277",
       "status": "todo",
       "title": "Refactor TUI App module to bring LOC under 700",

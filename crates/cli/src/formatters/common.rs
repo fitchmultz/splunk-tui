@@ -108,6 +108,29 @@ pub fn escape_csv(s: &str) -> String {
     format!("\"{}\"", s.replace('"', "\"\""))
 }
 
+/// Build a CSV header row from field names.
+///
+/// Escapes each field name and joins with commas, appending a newline.
+pub fn build_csv_header(fields: &[&str]) -> String {
+    let escaped: Vec<String> = fields.iter().map(|f| escape_csv(f)).collect();
+    format!("{}\n", escaped.join(","))
+}
+
+/// Build a CSV data row from field values.
+///
+/// Escapes each value and joins with commas, appending a newline.
+pub fn build_csv_row(values: &[String]) -> String {
+    let escaped: Vec<String> = values.iter().map(|v| escape_csv(v)).collect();
+    format!("{}\n", escaped.join(","))
+}
+
+/// Format an optional string for CSV output.
+///
+/// Returns the escaped value if present, otherwise returns the default.
+pub fn format_opt_str(opt: Option<&str>, default: &str) -> String {
+    escape_csv(opt.unwrap_or(default))
+}
+
 /// Escape special XML characters.
 pub fn escape_xml(s: &str) -> String {
     s.replace('&', "&amp;")
