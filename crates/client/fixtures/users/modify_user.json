@@ -1,0 +1,16 @@
+{
+  "entry": [
+    {
+      "name": "user1",
+      "content": {
+        "name": "user1",
+        "realname": "Updated User Name",
+        "email": "updated@example.com",
+        "type": "Splunk",
+        "defaultApp": "launcher",
+        "roles": ["user", "power"],
+        "lastSuccessfulLogin": 1737101345
+      }
+    }
+  ]
+}

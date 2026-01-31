@@ -1,0 +1,28 @@
+{
+  "entry": [
+    {
+      "name": "admin",
+      "content": {
+        "name": "admin",
+        "realname": "Administrator",
+        "email": "admin@example.com",
+        "type": "Splunk",
+        "defaultApp": "search",
+        "roles": ["admin", "power"],
+        "lastSuccessfulLogin": 1737712345
+      }
+    },
+    {
+      "name": "user1",
+      "content": {
+        "name": "user1",
+        "realname": "Test User",
+        "email": "user1@example.com",
+        "type": "Splunk",
+        "defaultApp": "search",
+        "roles": ["user"],
+        "lastSuccessfulLogin": 1737101345
+      }
+    }
+  ]
+}

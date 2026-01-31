@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0268",
-      "status": "todo",
-      "title": "Add client integration tests for search_peers and users endpoints",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "tests",
-        "search-peers",
-        "users"
-      ],
-      "scope": [
-        "crates/client/src/client/search_peers.rs",
-        "crates/client/src/client/users.rs",
-        "crates/client/tests",
-        "crates/client/fixtures"
-      ],
-      "evidence": [
-        "crates/client/src/client/search_peers.rs and crates/client/src/client/users.rs implement endpoints.",
-        "crates/client/tests/ list has no search_peers_tests.rs or users_tests.rs."
-      ],
-      "plan": [
-        "Add fixtures for search peers and users endpoints.",
-        "Add integration tests covering list/detail and error handling.",
-        "Validate sensitive fields remain redacted where appropriate."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0269",
       "status": "todo",
       "title": "Add CLI tests for forwarders and lookups commands",
