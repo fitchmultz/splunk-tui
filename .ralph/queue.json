@@ -34,6 +34,591 @@
       "notes": [],
       "request": "scan finding",
       "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-31T01:50:17.992693000Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0263",
+      "status": "todo",
+      "title": "Add TUI profile management (create/edit/delete) to match CLI config command",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "config",
+        "profiles",
+        "parity"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/profiles.rs",
+        "crates/tui/src/ui/screens/settings.rs",
+        "crates/tui/src/app/input/settings.rs",
+        "crates/tui/src/app/actions.rs",
+        "crates/cli/src/commands/config.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/config.rs provides CLI profile list/set/show/delete/edit commands.",
+        "crates/tui/src/runtime/side_effects/profiles.rs:50 shows toast 'No profiles configured. Add profiles using splunk-cli.', indicating missing TUI profile creation.",
+        "crates/tui/src/ui/screens/settings.rs renders settings-only view without profile CRUD controls."
+      ],
+      "plan": [
+        "Add a profile management UI (screen or popup) for list/create/edit/delete backed by ConfigManager.",
+        "Wire new actions and side effects for profile persistence and keyring handling.",
+        "Add TUI tests for profile CRUD and update docs/keybindings/help text."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0264",
+      "status": "todo",
+      "title": "Add TUI forwarders screen for CLI parity",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "forwarders",
+        "parity",
+        "feature"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens",
+        "crates/tui/src/app/input",
+        "crates/tui/src/runtime/side_effects",
+        "crates/client/src/client/forwarders.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/forwarders.rs implements forwarder listing with pagination.",
+        "crates/tui/src/ui/screens/ contains no forwarders screen; `rg -n \"forwarder\" crates/tui/src` returns no matches."
+      ],
+      "plan": [
+        "Add a forwarders screen + render config and state (list, selection, pagination).",
+        "Add input handlers and side effects calling SplunkClient::list_forwarders.",
+        "Add TUI tests and update docs/keybindings for the new screen."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0265",
+      "status": "todo",
+      "title": "Add TUI lookups screen for CLI parity",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "lookups",
+        "parity",
+        "feature"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens",
+        "crates/tui/src/app/input",
+        "crates/tui/src/runtime/side_effects",
+        "crates/client/src/client/lookups.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/lookups.rs lists lookup tables via the client.",
+        "crates/tui/src/ui/screens/ lacks a lookups screen (only syntax highlighting mentions lookup keywords)."
+      ],
+      "plan": [
+        "Add a lookups screen (table view + optional detail pane) with pagination.",
+        "Wire actions/input/side effects to list lookup tables via SplunkClient.",
+        "Add tests and update docs/keybindings for lookup management."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0266",
+      "status": "todo",
+      "title": "Add client integration tests for configs and inputs endpoints",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "tests",
+        "configs",
+        "inputs"
+      ],
+      "scope": [
+        "crates/client/src/client/configs.rs",
+        "crates/client/src/client/inputs.rs",
+        "crates/client/tests",
+        "crates/client/fixtures"
+      ],
+      "evidence": [
+        "crates/client/src/client/configs.rs and crates/client/src/client/inputs.rs implement endpoints.",
+        "crates/client/tests/ list has no configs_tests.rs or inputs_tests.rs."
+      ],
+      "plan": [
+        "Add fixtures for configs and inputs responses if missing.",
+        "Add integration tests covering success and error paths (pagination, missing fields).",
+        "Ensure tests run hermetically with DOTENV_DISABLED=1."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0267",
+      "status": "todo",
+      "title": "Add client integration tests for lookups and logs endpoints",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "tests",
+        "lookups",
+        "logs"
+      ],
+      "scope": [
+        "crates/client/src/client/lookups.rs",
+        "crates/client/src/client/logs.rs",
+        "crates/client/tests",
+        "crates/client/fixtures"
+      ],
+      "evidence": [
+        "crates/client/src/client/lookups.rs and crates/client/src/client/logs.rs exist.",
+        "crates/client/tests/ list contains no lookups_tests.rs or logs_tests.rs."
+      ],
+      "plan": [
+        "Add fixtures for lookup tables and log entries.",
+        "Add integration tests for success + failure cases and pagination/filters.",
+        "Validate parsing of log entries and lookup metadata shapes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0268",
+      "status": "todo",
+      "title": "Add client integration tests for search_peers and users endpoints",
+      "priority": "medium",
+      "tags": [
+        "client",
+        "tests",
+        "search-peers",
+        "users"
+      ],
+      "scope": [
+        "crates/client/src/client/search_peers.rs",
+        "crates/client/src/client/users.rs",
+        "crates/client/tests",
+        "crates/client/fixtures"
+      ],
+      "evidence": [
+        "crates/client/src/client/search_peers.rs and crates/client/src/client/users.rs implement endpoints.",
+        "crates/client/tests/ list has no search_peers_tests.rs or users_tests.rs."
+      ],
+      "plan": [
+        "Add fixtures for search peers and users endpoints.",
+        "Add integration tests covering list/detail and error handling.",
+        "Validate sensitive fields remain redacted where appropriate."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0269",
+      "status": "todo",
+      "title": "Add CLI tests for forwarders and lookups commands",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tests",
+        "forwarders",
+        "lookups"
+      ],
+      "scope": [
+        "crates/cli/src/commands/forwarders.rs",
+        "crates/cli/src/commands/lookups.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/forwarders.rs and crates/cli/src/commands/lookups.rs exist.",
+        "`rg -n \"forwarders\" crates/cli/tests` and `rg -n \"lookups\" crates/cli/tests` return no matches."
+      ],
+      "plan": [
+        "Add CLI integration tests for forwarders/lookups using wiremock fixtures.",
+        "Cover pagination, output formats, and error responses.",
+        "Keep tests hermetic under DOTENV_DISABLED=1."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0270",
+      "status": "todo",
+      "title": "Add CLI tests for configs and inputs commands",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tests",
+        "configs",
+        "inputs"
+      ],
+      "scope": [
+        "crates/cli/src/commands/configs.rs",
+        "crates/cli/src/commands/inputs.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/configs.rs and crates/cli/src/commands/inputs.rs exist.",
+        "`rg -n \"configs\" crates/cli/tests` and `rg -n \"inputs\" crates/cli/tests` return no matches."
+      ],
+      "plan": [
+        "Add CLI integration tests for configs/inputs using fixtures.",
+        "Cover list/detail flows and error cases.",
+        "Validate formatting across output modes."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0271",
+      "status": "todo",
+      "title": "Add CLI tests for search_peers command",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tests",
+        "search-peers"
+      ],
+      "scope": [
+        "crates/cli/src/commands/search_peers.rs",
+        "crates/cli/tests"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/search_peers.rs exists.",
+        "`rg -n \"search_peers|search peers\" crates/cli/tests` returns no matches."
+      ],
+      "plan": [
+        "Add CLI integration tests for search peers output.",
+        "Cover pagination and error handling.",
+        "Verify table/JSON formatting cases."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0272",
+      "status": "todo",
+      "title": "Implement configs screen search mode",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "configs",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/configs.rs",
+        "crates/tui/src/ui/screens/configs.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests"
+      ],
+      "evidence": [
+        "crates/tui/src/app/input/configs.rs:64 has TODO: Implement search mode."
+      ],
+      "plan": [
+        "Add search state and filtering for config stanzas/files.",
+        "Wire keybindings and update render to show search input/results.",
+        "Add TUI tests covering search interactions and empty results."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0273",
+      "status": "todo",
+      "title": "Implement configs screen help popup",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "configs",
+        "ux",
+        "help"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/configs.rs",
+        "crates/tui/src/ui/screens/configs.rs",
+        "crates/tui/src/ui/popup",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "crates/tui/src/app/input/configs.rs:70 has TODO: Show help popup."
+      ],
+      "plan": [
+        "Add help popup content for configs screen keybindings.",
+        "Wire '?' keybinding to open the popup and close behavior.",
+        "Add UI tests and update docs/help text if needed."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0274",
+      "status": "todo",
+      "title": "Split formatter tests into per-concept files",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tests",
+        "maintenance"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/tests.rs",
+        "crates/cli/src/formatters"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters/tests.rs is 1707 lines and covers multiple formatter behaviors in one file.",
+        "Repo rule: tests covering unrelated behavior must not be grouped together."
+      ],
+      "plan": [
+        "Split tests into separate files per formatter/util (csv, json, xml, table, common).",
+        "Update module declarations and ensure all tests still compile.",
+        "Keep coverage parity and run formatter tests under make test."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0275",
+      "status": "todo",
+      "title": "Split TUI side_effects tests by feature area",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "tests",
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/tests/side_effects_tests.rs",
+        "crates/tui/tests/common",
+        "crates/tui/tests"
+      ],
+      "evidence": [
+        "crates/tui/tests/side_effects_tests.rs is 1395 lines and covers data loading, search, jobs, apps, health, profiles, and settings in one file.",
+        "Repo rule: tests covering unrelated behavior must not be grouped together."
+      ],
+      "plan": [
+        "Split side_effects tests into per-feature files (indexes/jobs/search/apps/health/profiles/etc).",
+        "Keep shared harness in crates/tui/tests/common.",
+        "Verify all tests still run with existing fixtures."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0276",
+      "status": "todo",
+      "title": "Refactor CSV formatter to reduce LOC and duplication",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "refactor",
+        "formatters"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/csv.rs",
+        "crates/cli/src/formatters/common.rs",
+        "crates/architecture-tests/tests/file_size_tests.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/formatters/csv.rs is 1033 lines (approx 850 LOC), exceeding the 700 LOC warning threshold.",
+        "crates/architecture-tests/tests/file_size_tests.rs defines >700 LOC as a warning threshold."
+      ],
+      "plan": [
+        "Extract shared CSV row/header helpers and split by resource modules.",
+        "Update formatter wiring to use the new helpers/modules.",
+        "Adjust formatter tests to cover refactored paths."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0277",
+      "status": "todo",
+      "title": "Refactor TUI App module to bring LOC under 700",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "app"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app",
+        "crates/architecture-tests/tests/file_size_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs is 989 lines (approx 729 LOC), above the 700 LOC warning threshold.",
+        "crates/architecture-tests/tests/file_size_tests.rs defines >700 LOC as a warning threshold."
+      ],
+      "plan": [
+        "Split App responsibilities into submodules (state/init/helpers/tests).",
+        "Update module exports and imports.",
+        "Ensure app tests compile and behavior remains unchanged."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0278",
+      "status": "todo",
+      "title": "Refactor TUI App actions module to reduce LOC",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "refactor",
+        "actions"
+      ],
+      "scope": [
+        "crates/tui/src/app/actions.rs",
+        "crates/tui/src/app",
+        "crates/architecture-tests/tests/file_size_tests.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/actions.rs is 851 lines (approx 768 LOC), above the 700 LOC warning threshold.",
+        "crates/architecture-tests/tests/file_size_tests.rs defines >700 LOC as a warning threshold."
+      ],
+      "plan": [
+        "Split action handlers into domain modules (search/jobs/configs/etc).",
+        "Re-export action routing in app/actions mod.",
+        "Update tests and ensure no behavior regressions."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-31T02:21:50Z",
+      "updated_at": "2026-01-31T02:21:50Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0257",
+      "status": "todo",
+      "title": "Add role and capability management",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "roles",
+        "security",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/roles.rs",
+        "crates/client/src/endpoints/roles.rs",
+        "crates/cli/src/commands/roles.rs",
+        "crates/tui/src/ui/screens/roles.rs"
+      ],
+      "evidence": [
+        "No role management exists in the current codebase.",
+        "Roles define Splunk permissions and capabilities.",
+        "Splunk REST API provides /services/authorization/roles for role management."
+      ],
+      "plan": [
+        "Add role models (Role, Capability) to client.",
+        "Implement role CRUD operations in client.",
+        "Add CLI roles command with list, create, update, delete subcommands.",
+        "Create TUI roles screen for viewing and managing roles.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
       "updated_at": "2026-01-30T00:00:00Z",
       "depends_on": [],
       "blocks": [],
@@ -153,6 +738,44 @@
       "custom_fields": {}
     },
     {
+      "id": "RQ-0256",
+      "status": "todo",
+      "title": "Add saved search editing capabilities",
+      "priority": "medium",
+      "tags": [
+        "cli",
+        "tui",
+        "saved-searches",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs",
+        "crates/client/src/endpoints/search.rs",
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/tui/src/ui/screens/saved_searches.rs"
+      ],
+      "evidence": [
+        "Current saved search support includes list, info, and run - but no edit.",
+        "Splunk REST API supports POST /services/saved/searches/{name} for updates.",
+        "Users need to modify saved search queries, schedules, and alert actions."
+      ],
+      "plan": [
+        "Add update_saved_search() method to client.",
+        "Add modify subcommand to CLI saved-searches command.",
+        "Add edit dialog to TUI saved searches screen.",
+        "Support editing query, schedule, description, and dispatch parameters.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
       "id": "RQ-0252",
       "status": "todo",
       "title": "Add search macro management",
@@ -179,44 +802,6 @@
         "Implement macro CRUD operations in client.",
         "Add CLI macros command with list, create, update, delete subcommands.",
         "Create TUI macros screen for viewing and managing macros.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0253",
-      "status": "todo",
-      "title": "Add data model management",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "datamodels",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/datamodels.rs",
-        "crates/client/src/endpoints/datamodels.rs",
-        "crates/cli/src/commands/datamodels.rs",
-        "crates/tui/src/ui/screens/datamodels.rs"
-      ],
-      "evidence": [
-        "No data model support exists in the current codebase.",
-        "Data models are used for Pivot and acceleration in Splunk.",
-        "Splunk REST API provides /services/datamodel for data model access."
-      ],
-      "plan": [
-        "Add data model models to client.",
-        "Implement data model listing and detail methods.",
-        "Add CLI datamodels command for listing and viewing.",
-        "Create TUI datamodels screen.",
         "Add tests and update documentation."
       ],
       "notes": [],
@@ -304,32 +889,33 @@
       "custom_fields": {}
     },
     {
-      "id": "RQ-0256",
+      "id": "RQ-0260",
       "status": "todo",
-      "title": "Add saved search editing capabilities",
-      "priority": "medium",
+      "title": "Add audit logging and event viewing",
+      "priority": "low",
       "tags": [
         "cli",
         "tui",
-        "saved-searches",
+        "audit",
+        "security",
         "feature"
       ],
       "scope": [
-        "crates/client/src/client/search.rs",
-        "crates/client/src/endpoints/search.rs",
-        "crates/cli/src/commands/saved_searches.rs",
-        "crates/tui/src/ui/screens/saved_searches.rs"
+        "crates/client/src/client/audit.rs",
+        "crates/client/src/endpoints/audit.rs",
+        "crates/cli/src/commands/audit.rs",
+        "crates/tui/src/ui/screens/audit.rs"
       ],
       "evidence": [
-        "Current saved search support includes list, info, and run - but no edit.",
-        "Splunk REST API supports POST /services/saved/searches/{name} for updates.",
-        "Users need to modify saved search queries, schedules, and alert actions."
+        "No audit log viewing exists in the current codebase.",
+        "Audit logs track user actions and are important for compliance.",
+        "Splunk REST API provides /services/admin/audit for audit events."
       ],
       "plan": [
-        "Add update_saved_search() method to client.",
-        "Add modify subcommand to CLI saved-searches command.",
-        "Add edit dialog to TUI saved searches screen.",
-        "Support editing query, schedule, description, and dispatch parameters.",
+        "Add audit event models to client.",
+        "Implement audit log querying with time range filters.",
+        "Add CLI audit command for viewing recent audit events.",
+        "Create TUI audit screen for browsing audit logs.",
         "Add tests and update documentation."
       ],
       "notes": [],
@@ -342,33 +928,70 @@
       "custom_fields": {}
     },
     {
-      "id": "RQ-0257",
+      "id": "RQ-0261",
       "status": "todo",
-      "title": "Add role and capability management",
-      "priority": "medium",
+      "title": "Add dashboard listing and viewing",
+      "priority": "low",
       "tags": [
         "cli",
         "tui",
-        "roles",
-        "security",
+        "dashboards",
         "feature"
       ],
       "scope": [
-        "crates/client/src/client/roles.rs",
-        "crates/client/src/endpoints/roles.rs",
-        "crates/cli/src/commands/roles.rs",
-        "crates/tui/src/ui/screens/roles.rs"
+        "crates/client/src/client/dashboards.rs",
+        "crates/client/src/endpoints/dashboards.rs",
+        "crates/cli/src/commands/dashboards.rs",
+        "crates/tui/src/ui/screens/dashboards.rs"
       ],
       "evidence": [
-        "No role management exists in the current codebase.",
-        "Roles define Splunk permissions and capabilities.",
-        "Splunk REST API provides /services/authorization/roles for role management."
+        "No dashboard support exists in the current codebase.",
+        "Dashboards are a primary Splunk UI feature for visualization.",
+        "Splunk REST API provides /services/data/ui/views for dashboard access."
       ],
       "plan": [
-        "Add role models (Role, Capability) to client.",
-        "Implement role CRUD operations in client.",
-        "Add CLI roles command with list, create, update, delete subcommands.",
-        "Create TUI roles screen for viewing and managing roles.",
+        "Add dashboard models to client.",
+        "Implement dashboard listing and detail methods.",
+        "Add CLI dashboards command for listing dashboards.",
+        "Create TUI dashboards screen for browsing available dashboards.",
+        "Add tests and update documentation."
+      ],
+      "notes": [],
+      "request": "scan finding",
+      "created_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-01-30T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0253",
+      "status": "todo",
+      "title": "Add data model management",
+      "priority": "low",
+      "tags": [
+        "cli",
+        "tui",
+        "datamodels",
+        "feature"
+      ],
+      "scope": [
+        "crates/client/src/client/datamodels.rs",
+        "crates/client/src/endpoints/datamodels.rs",
+        "crates/cli/src/commands/datamodels.rs",
+        "crates/tui/src/ui/screens/datamodels.rs"
+      ],
+      "evidence": [
+        "No data model support exists in the current codebase.",
+        "Data models are used for Pivot and acceleration in Splunk.",
+        "Splunk REST API provides /services/datamodel for data model access."
+      ],
+      "plan": [
+        "Add data model models to client.",
+        "Implement data model listing and detail methods.",
+        "Add CLI datamodels command for listing and viewing.",
+        "Create TUI datamodels screen.",
         "Add tests and update documentation."
       ],
       "notes": [],
@@ -446,83 +1069,6 @@
         "Implement SHC status and member listing methods.",
         "Add CLI shc command for viewing cluster status.",
         "Create TUI SHC screen showing member status and captain info.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0260",
-      "status": "todo",
-      "title": "Add audit logging and event viewing",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "audit",
-        "security",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/audit.rs",
-        "crates/client/src/endpoints/audit.rs",
-        "crates/cli/src/commands/audit.rs",
-        "crates/tui/src/ui/screens/audit.rs"
-      ],
-      "evidence": [
-        "No audit log viewing exists in the current codebase.",
-        "Audit logs track user actions and are important for compliance.",
-        "Splunk REST API provides /services/admin/audit for audit events."
-      ],
-      "plan": [
-        "Add audit event models to client.",
-        "Implement audit log querying with time range filters.",
-        "Add CLI audit command for viewing recent audit events.",
-        "Create TUI audit screen for browsing audit logs.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
-      "id": "RQ-0261",
-      "status": "todo",
-      "title": "Add dashboard listing and viewing",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "dashboards",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/dashboards.rs",
-        "crates/client/src/endpoints/dashboards.rs",
-        "crates/cli/src/commands/dashboards.rs",
-        "crates/tui/src/ui/screens/dashboards.rs"
-      ],
-      "evidence": [
-        "No dashboard support exists in the current codebase.",
-        "Dashboards are a primary Splunk UI feature for visualization.",
-        "Splunk REST API provides /services/data/ui/views for dashboard access."
-      ],
-      "plan": [
-        "Add dashboard models to client.",
-        "Implement dashboard listing and detail methods.",
-        "Add CLI dashboards command for listing dashboards.",
-        "Create TUI dashboards screen for browsing available dashboards.",
         "Add tests and update documentation."
       ],
       "notes": [],
