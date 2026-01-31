@@ -1345,5 +1345,87 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::NavigateUp),
             handles_input: true,
         },
+        // Lookups
+        Keybinding {
+            section: Section::Lookups,
+            keys: "r",
+            description: "Refresh lookup tables",
+            scope: BindingScope::Screen(Lookups),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadLookups {
+                count: 30,
+                offset: 0,
+            }),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "Ctrl+e",
+            description: "Export lookup tables",
+            scope: BindingScope::Screen(Lookups),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "Ctrl+c",
+            description: "Copy selected lookup name",
+            scope: BindingScope::Screen(Lookups),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Lookups),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('j'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Lookups),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('k'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Lookups),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Lookups),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Up,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
     ]
 }

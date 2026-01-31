@@ -34,8 +34,8 @@ use splunk_client::ClientError;
 use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert, Forwarder,
     HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool,
-    LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth,
-    User,
+    LicenseStack, LicenseUsage, LogEntry, LookupTable, SavedSearch, SearchJobStatus, SearchPeer,
+    SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -257,6 +257,15 @@ pub enum Action {
     },
     /// Load more forwarders (pagination)
     LoadMoreForwarders,
+    /// Load the list of lookup tables with pagination
+    LoadLookups {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more lookup tables (pagination)
+    LoadMoreLookups,
     /// Load the list of data inputs with pagination
     LoadInputs {
         /// Number of items to load
@@ -355,6 +364,10 @@ pub enum Action {
     ForwardersLoaded(Result<Vec<Forwarder>, Arc<ClientError>>),
     /// Result of loading more forwarders (pagination)
     MoreForwardersLoaded(Result<Vec<Forwarder>, Arc<ClientError>>),
+    /// Result of loading lookup tables
+    LookupsLoaded(Result<Vec<LookupTable>, Arc<ClientError>>),
+    /// Result of loading more lookup tables (pagination)
+    MoreLookupsLoaded(Result<Vec<LookupTable>, Arc<ClientError>>),
     /// Result of loading inputs
     InputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
     /// Result of loading more inputs (pagination)

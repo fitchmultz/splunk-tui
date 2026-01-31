@@ -22,6 +22,7 @@ pub mod job_inspect;
 pub mod jobs;
 pub mod kvstore;
 pub mod license;
+pub mod lookups;
 pub mod multi_instance;
 pub mod overview;
 pub mod saved_searches;
@@ -59,6 +60,7 @@ impl App {
             CurrentScreen::MultiInstance => self.handle_multi_instance_input(key),
             CurrentScreen::FiredAlerts => self.handle_fired_alerts_input(key),
             CurrentScreen::Forwarders => self.handle_forwarders_input(key),
+            CurrentScreen::Lookups => self.handle_lookups_input(key),
         }
     }
 }

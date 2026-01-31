@@ -294,7 +294,12 @@ fn test_shift_tab_cycles_backwards() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Settings);
 
-    // Shift+Tab from Settings should go to Forwarders
+    // Shift+Tab from Settings should go to Lookups
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Lookups);
+
+    // Shift+Tab from Lookups should go to Forwarders
     let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Forwarders);

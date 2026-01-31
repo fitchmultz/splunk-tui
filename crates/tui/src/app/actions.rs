@@ -117,6 +117,14 @@ impl App {
                 // Reset pagination state for fresh load
                 self.fired_alerts_pagination.reset();
             }
+            Action::LoadLookups {
+                count: _,
+                offset: _,
+            } => {
+                self.current_screen = CurrentScreen::Lookups;
+                // Reset pagination state for fresh load
+                self.lookups_pagination.reset();
+            }
             // LoadMore actions - handled by main loop which has access to state
             Action::LoadMoreIndexes
             | Action::LoadMoreJobs
@@ -124,7 +132,8 @@ impl App {
             | Action::LoadMoreUsers
             | Action::LoadMoreSearchPeers
             | Action::LoadMoreInputs
-            | Action::LoadMoreFiredAlerts => {
+            | Action::LoadMoreFiredAlerts
+            | Action::LoadMoreLookups => {
                 // These are handled in the main loop which has access to pagination state
             }
             Action::NavigateDown => self.next_item(),
@@ -535,6 +544,38 @@ impl App {
             }
             Action::ForwardersLoaded(Err(e)) => {
                 let error_msg = format!("Failed to load forwarders: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::LookupsLoaded(Ok(lookups)) => {
+                let count = lookups.len();
+                self.lookups = Some(lookups);
+                self.lookups_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreLookupsLoaded(Ok(lookups)) => {
+                let count = lookups.len();
+                if let Some(ref mut existing) = self.lookups {
+                    existing.extend(lookups);
+                } else {
+                    self.lookups = Some(lookups);
+                }
+                self.lookups_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreLookupsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more lookups: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::LookupsLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load lookups: {}", e);
                 self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
                     e.as_ref(),
                 ));

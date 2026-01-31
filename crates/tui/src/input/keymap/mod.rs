@@ -40,6 +40,7 @@ pub enum Section {
     Configs,
     FiredAlerts,
     Forwarders,
+    Lookups,
     Settings,
     Overview,
     MultiInstance,
@@ -182,6 +183,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::Configs => Section::Configs,
         CurrentScreen::FiredAlerts => Section::FiredAlerts,
         CurrentScreen::Forwarders => Section::Forwarders,
+        CurrentScreen::Lookups => Section::Lookups,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
         CurrentScreen::MultiInstance => Section::MultiInstance,
@@ -251,6 +253,9 @@ fn shorten_description(desc: &'static str) -> &'static str {
         "Refresh forwarders" => "Refresh",
         "Export forwarders" => "Export",
         "Copy selected forwarder name" => "Copy",
+        "Refresh lookup tables" => "Refresh",
+        "Export lookup tables" => "Export",
+        "Copy selected lookup name" => "Copy",
         _ => desc,
     }
 }
@@ -279,6 +284,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Configs => &["r", "Enter", "h", "j/k or Up/Down"],
         CurrentScreen::FiredAlerts => &["r", "j/k or Up/Down", "Ctrl+c"],
         CurrentScreen::Forwarders => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Lookups => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
     };
 
     // Sort hints by priority order

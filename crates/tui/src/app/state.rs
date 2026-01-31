@@ -65,6 +65,7 @@ pub enum CurrentScreen {
     MultiInstance,
     FiredAlerts,
     Forwarders,
+    Lookups,
 }
 
 impl CurrentScreen {
@@ -88,7 +89,8 @@ impl CurrentScreen {
             CurrentScreen::Inputs => CurrentScreen::Configs,
             CurrentScreen::Configs => CurrentScreen::FiredAlerts,
             CurrentScreen::FiredAlerts => CurrentScreen::Forwarders,
-            CurrentScreen::Forwarders => CurrentScreen::Settings,
+            CurrentScreen::Forwarders => CurrentScreen::Lookups,
+            CurrentScreen::Lookups => CurrentScreen::Settings,
             CurrentScreen::Settings => CurrentScreen::Overview,
             CurrentScreen::Overview => CurrentScreen::MultiInstance,
             CurrentScreen::MultiInstance => CurrentScreen::Search, // Wrap around
@@ -116,7 +118,8 @@ impl CurrentScreen {
             CurrentScreen::Configs => CurrentScreen::Inputs,
             CurrentScreen::FiredAlerts => CurrentScreen::Configs,
             CurrentScreen::Forwarders => CurrentScreen::FiredAlerts,
-            CurrentScreen::Settings => CurrentScreen::Forwarders,
+            CurrentScreen::Settings => CurrentScreen::Lookups,
+            CurrentScreen::Lookups => CurrentScreen::Forwarders,
             CurrentScreen::Overview => CurrentScreen::Settings,
             CurrentScreen::MultiInstance => CurrentScreen::Overview,
         }

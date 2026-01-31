@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0265",
-      "status": "todo",
-      "title": "Add TUI lookups screen for CLI parity",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "lookups",
-        "parity",
-        "feature"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens",
-        "crates/tui/src/app/input",
-        "crates/tui/src/runtime/side_effects",
-        "crates/client/src/client/lookups.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/lookups.rs lists lookup tables via the client.",
-        "crates/tui/src/ui/screens/ lacks a lookups screen (only syntax highlighting mentions lookup keywords)."
-      ],
-      "plan": [
-        "Add a lookups screen (table view + optional detail pane) with pagination.",
-        "Wire actions/input/side effects to list lookup tables via SplunkClient.",
-        "Add tests and update docs/keybindings for lookup management."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0266",
       "status": "todo",
       "title": "Add client integration tests for configs and inputs endpoints",

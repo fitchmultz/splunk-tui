@@ -95,6 +95,7 @@ mod jobs;
 mod kvstore;
 mod license;
 mod logs;
+mod lookups;
 mod multi_instance;
 mod overview;
 mod profiles;
@@ -191,6 +192,13 @@ pub async fn handle_side_effects(
         Action::LoadMoreForwarders => {
             // This action is handled by the main loop which has access to state
             // It reads forwarders_pagination and sends LoadForwarders with updated offset
+        }
+        Action::LoadLookups { count, offset } => {
+            lookups::handle_load_lookups(client, tx, count, offset).await;
+        }
+        Action::LoadMoreLookups => {
+            // This action is handled by the main loop which has access to state
+            // It reads lookups_pagination and sends LoadLookups with updated offset
         }
         Action::LoadInputs { count, offset } => {
             inputs::handle_load_inputs(client, tx, count, offset).await;
