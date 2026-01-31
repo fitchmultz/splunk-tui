@@ -13,6 +13,7 @@ pub mod apps;
 pub mod cluster;
 pub mod configs;
 pub mod fired_alerts;
+pub mod forwarders;
 pub mod health;
 pub mod indexes;
 pub mod inputs;
@@ -57,6 +58,7 @@ impl App {
             CurrentScreen::Overview => self.handle_overview_input(key),
             CurrentScreen::MultiInstance => self.handle_multi_instance_input(key),
             CurrentScreen::FiredAlerts => self.handle_fired_alerts_input(key),
+            CurrentScreen::Forwarders => self.handle_forwarders_input(key),
         }
     }
 }

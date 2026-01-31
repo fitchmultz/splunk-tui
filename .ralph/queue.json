@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0264",
-      "status": "todo",
-      "title": "Add TUI forwarders screen for CLI parity",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "forwarders",
-        "parity",
-        "feature"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens",
-        "crates/tui/src/app/input",
-        "crates/tui/src/runtime/side_effects",
-        "crates/client/src/client/forwarders.rs",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/forwarders.rs implements forwarder listing with pagination.",
-        "crates/tui/src/ui/screens/ contains no forwarders screen; `rg -n \"forwarder\" crates/tui/src` returns no matches."
-      ],
-      "plan": [
-        "Add a forwarders screen + render config and state (list, selection, pagination).",
-        "Add input handlers and side effects calling SplunkClient::list_forwarders.",
-        "Add TUI tests and update docs/keybindings for the new screen."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0265",
       "status": "todo",
       "title": "Add TUI lookups screen for CLI parity",

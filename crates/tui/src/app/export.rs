@@ -30,6 +30,7 @@ pub enum ExportTarget {
     Overview,
     SearchPeers,
     FiredAlerts,
+    Forwarders,
     MultiInstance,
 }
 
@@ -50,6 +51,7 @@ impl ExportTarget {
             ExportTarget::Overview => "Export Overview",
             ExportTarget::SearchPeers => "Export Search Peers",
             ExportTarget::FiredAlerts => "Export Fired Alerts",
+            ExportTarget::Forwarders => "Export Forwarders",
             ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
         }
     }
@@ -70,6 +72,7 @@ impl ExportTarget {
             ExportTarget::Overview => "overview",
             ExportTarget::SearchPeers => "search-peers",
             ExportTarget::FiredAlerts => "fired-alerts",
+            ExportTarget::Forwarders => "forwarders",
             ExportTarget::MultiInstance => "multi-instance",
         };
 
@@ -149,6 +152,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::FiredAlerts => self
                 .fired_alerts
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Forwarders => self
+                .forwarders
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::MultiInstance => self

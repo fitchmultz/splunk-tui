@@ -14,8 +14,8 @@ use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
-    apps, cluster, configs, health, indexes, inputs, kvstore, license, multi_instance, overview,
-    saved_searches, search, search_peers, settings, users,
+    apps, cluster, configs, forwarders, health, indexes, inputs, kvstore, license, multi_instance,
+    overview, saved_searches, search, search_peers, settings, users,
 };
 use ratatui::{
     Frame,
@@ -97,6 +97,7 @@ impl App {
                         CurrentScreen::Inputs => "Data Inputs",
                         CurrentScreen::Configs => "Config Files",
                         CurrentScreen::FiredAlerts => "Fired Alerts",
+                        CurrentScreen::Forwarders => "Forwarders",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                         CurrentScreen::MultiInstance => "Multi-Instance",
@@ -373,6 +374,18 @@ impl App {
                         loading: self.loading,
                         fired_alerts: self.fired_alerts.as_deref(),
                         state: &mut self.fired_alerts_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Forwarders => {
+                forwarders::render_forwarders(
+                    f,
+                    area,
+                    forwarders::ForwardersRenderConfig {
+                        loading: self.loading,
+                        forwarders: self.forwarders.as_deref(),
+                        forwarders_state: &mut self.forwarders_state,
                         theme: &self.theme,
                     },
                 );

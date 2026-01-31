@@ -509,6 +509,38 @@ impl App {
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
             }
+            Action::ForwardersLoaded(Ok(forwarders)) => {
+                let count = forwarders.len();
+                self.forwarders = Some(forwarders);
+                self.forwarders_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreForwardersLoaded(Ok(forwarders)) => {
+                let count = forwarders.len();
+                if let Some(ref mut existing) = self.forwarders {
+                    existing.extend(forwarders);
+                } else {
+                    self.forwarders = Some(forwarders);
+                }
+                self.forwarders_pagination.update_loaded(count);
+                self.loading = false;
+            }
+            Action::MoreForwardersLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load more forwarders: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
+            Action::ForwardersLoaded(Err(e)) => {
+                let error_msg = format!("Failed to load forwarders: {}", e);
+                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
+                    e.as_ref(),
+                ));
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+            }
             Action::InputsLoaded(Ok(inputs)) => {
                 let count = inputs.len();
                 self.inputs = Some(inputs);

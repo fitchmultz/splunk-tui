@@ -110,6 +110,11 @@ pub struct App {
     pub fired_alerts_state: ratatui::widgets::ListState,
     pub fired_alerts_pagination: crate::app::state::ListPaginationState,
 
+    // Forwarders state
+    pub forwarders: Option<Vec<splunk_client::models::Forwarder>>,
+    pub forwarders_state: ratatui::widgets::TableState,
+    pub forwarders_pagination: crate::app::state::ListPaginationState,
+
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,
     pub config_files_state: ratatui::widgets::TableState,
@@ -326,6 +331,9 @@ impl App {
         let mut fired_alerts_state = ratatui::widgets::ListState::default();
         fired_alerts_state.select(Some(0));
 
+        let mut forwarders_state = ratatui::widgets::TableState::default();
+        forwarders_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -407,6 +415,9 @@ impl App {
             fired_alerts: None,
             fired_alerts_state,
             fired_alerts_pagination: crate::app::state::ListPaginationState::new(30, 1000),
+            forwarders: None,
+            forwarders_state,
+            forwarders_pagination: crate::app::state::ListPaginationState::new(30, 1000),
             config_files: None,
             config_files_state,
             selected_config_file: None,
@@ -591,6 +602,10 @@ impl App {
             }),
             CurrentScreen::Configs => Some(Action::LoadConfigFiles),
             CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts),
+            CurrentScreen::Forwarders => Some(Action::LoadForwarders {
+                count: self.forwarders_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
@@ -645,6 +660,16 @@ impl App {
                     Some(Action::LoadSearchPeers {
                         count: self.search_peers_pagination.page_size,
                         offset: self.search_peers_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Forwarders => {
+                if self.forwarders_pagination.can_load_more() {
+                    Some(Action::LoadForwarders {
+                        count: self.forwarders_pagination.page_size,
+                        offset: self.forwarders_pagination.current_offset,
                     })
                 } else {
                     None

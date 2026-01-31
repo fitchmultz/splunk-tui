@@ -6,6 +6,7 @@ pub mod alerts;
 pub mod apps;
 pub mod cluster;
 pub mod configs;
+pub mod forwarders;
 pub mod health;
 pub mod indexes;
 pub mod inputs;

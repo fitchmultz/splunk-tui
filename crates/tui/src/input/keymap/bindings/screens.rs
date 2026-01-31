@@ -1263,5 +1263,87 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::NavigateUp),
             handles_input: true,
         },
+        // Forwarders
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "r",
+            description: "Refresh forwarders",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::LoadForwarders {
+                count: 30,
+                offset: 0,
+            }),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "Ctrl+e",
+            description: "Export forwarders",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "Ctrl+c",
+            description: "Copy selected forwarder name",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('j'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('k'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Forwarders,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(Forwarders),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Up,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
     ]
 }

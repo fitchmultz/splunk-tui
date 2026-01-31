@@ -274,6 +274,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected alert name
 - `j/k or Up/Down`: Navigate list
 
+#### Forwarders Screen
+- `r`: Refresh forwarders
+- `Ctrl+e`: Export forwarders
+- `Ctrl+c`: Copy selected forwarder name
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

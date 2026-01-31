@@ -32,7 +32,7 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
+    App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert, Forwarder,
     HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool,
     LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth,
     User,
@@ -248,6 +248,15 @@ pub enum Action {
     },
     /// Load more search peers (pagination)
     LoadMoreSearchPeers,
+    /// Load the list of forwarders with pagination
+    LoadForwarders {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more forwarders (pagination)
+    LoadMoreForwarders,
     /// Load the list of data inputs with pagination
     LoadInputs {
         /// Number of items to load
@@ -342,6 +351,10 @@ pub enum Action {
     SearchPeersLoaded(Result<Vec<SearchPeer>, Arc<ClientError>>),
     /// Result of loading more search peers (pagination)
     MoreSearchPeersLoaded(Result<Vec<SearchPeer>, Arc<ClientError>>),
+    /// Result of loading forwarders
+    ForwardersLoaded(Result<Vec<Forwarder>, Arc<ClientError>>),
+    /// Result of loading more forwarders (pagination)
+    MoreForwardersLoaded(Result<Vec<Forwarder>, Arc<ClientError>>),
     /// Result of loading inputs
     InputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
     /// Result of loading more inputs (pagination)

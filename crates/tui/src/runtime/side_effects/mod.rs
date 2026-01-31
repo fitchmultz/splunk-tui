@@ -87,6 +87,7 @@ mod apps;
 mod cluster;
 mod configs;
 mod export;
+mod forwarders;
 mod health;
 mod indexes;
 mod inputs;
@@ -183,6 +184,13 @@ pub async fn handle_side_effects(
         Action::LoadMoreSearchPeers => {
             // This action is handled by the main loop which has access to state
             // It reads search_peers_pagination and sends LoadSearchPeers with updated offset
+        }
+        Action::LoadForwarders { count, offset } => {
+            forwarders::handle_load_forwarders(client, tx, count, offset).await;
+        }
+        Action::LoadMoreForwarders => {
+            // This action is handled by the main loop which has access to state
+            // It reads forwarders_pagination and sends LoadForwarders with updated offset
         }
         Action::LoadInputs { count, offset } => {
             inputs::handle_load_inputs(client, tx, count, offset).await;
