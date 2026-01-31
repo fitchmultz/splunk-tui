@@ -15,7 +15,10 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use splunk_client::models::{ConfigFile, ConfigStanza, FiredAlert, Input, LogEntry, SearchPeer};
+use splunk_client::models::{
+    ConfigFile, ConfigStanza, FiredAlert, Input, KvStoreCollection, KvStoreRecord, LogEntry,
+    SearchPeer,
+};
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     SavedSearch, SearchJobStatus, User,
@@ -92,6 +95,12 @@ pub trait Formatter {
 
     /// Format KVStore status.
     fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String>;
+
+    /// Format KVStore collections list.
+    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String>;
+
+    /// Format KVStore collection records.
+    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String>;
 
     /// Format license information.
     fn format_license(&self, license: &LicenseInfoOutput) -> Result<String>;

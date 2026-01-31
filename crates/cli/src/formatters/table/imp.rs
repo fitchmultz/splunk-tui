@@ -10,7 +10,9 @@
 
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
-use splunk_client::models::{ConfigFile, ConfigStanza, Input, SearchPeer};
+use splunk_client::models::{
+    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
+};
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -167,6 +169,14 @@ impl Formatter for TableFormatter {
     fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
         alerts::format_fired_alert_info(alert)
     }
+
+    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
+        super::kvstore::format_kvstore_collections(collections)
+    }
+
+    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
+        super::kvstore::format_kvstore_records(records)
+    }
 }
 
 impl TableFormatter {
@@ -318,6 +328,37 @@ impl TableFormatter {
         let mut output = self.format_config_stanzas(stanzas)?;
 
         if let Some(footer) = build_pagination_footer(pagination, stanzas.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for KVStore collections with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for collections (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_kvstore_collections_paginated(
+        &self,
+        collections: &[KvStoreCollection],
+        pagination: Pagination,
+    ) -> Result<String> {
+        if collections.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No KVStore collections found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No KVStore collections found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_kvstore_collections(collections)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, collections.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

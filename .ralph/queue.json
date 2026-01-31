@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0248",
-      "status": "todo",
-      "title": "Add KVStore collection management",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "kvstore",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/kvstore.rs",
-        "crates/client/src/endpoints/kvstore.rs",
-        "crates/cli/src/commands/kvstore.rs",
-        "crates/tui/src/ui/screens/kvstore.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client/kvstore.rs:7 explicitly states 'KVStore collection management (not yet implemented)'.",
-        "Current KVStore support only shows status, not collections or data.",
-        "Splunk REST API provides /servicesNS/{user}/{app}/storage/collections for KVStore management."
-      ],
-      "plan": [
-        "Add list_collections() method to client.",
-        "Add collection CRUD operations (create_collection, delete_collection).",
-        "Add collection data query methods.",
-        "Extend CLI kvstore command with collections subcommand.",
-        "Enhance TUI KVStore screen to show collections and basic stats.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-31T01:50:17.992693000Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0263",
       "status": "todo",
       "title": "Add TUI profile management (create/edit/delete) to match CLI config command",

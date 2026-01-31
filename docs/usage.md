@@ -428,10 +428,24 @@ splunk-cli health
 ```
 
 #### `kvstore`
-Show detailed KVStore status.
+Show detailed KVStore status and manage collections.
 
 ```bash
-splunk-cli kvstore
+# Show KVStore status
+splunk-cli kvstore status
+
+# List all collections
+splunk-cli kvstore list
+splunk-cli kvstore list --app search --count 50
+
+# Create a new collection
+splunk-cli kvstore create mycollection --app search
+
+# Delete a collection
+splunk-cli kvstore delete mycollection --app search
+
+# Query collection data
+splunk-cli kvstore data mycollection --query '{"field": "value"}'
 ```
 
 #### `license`

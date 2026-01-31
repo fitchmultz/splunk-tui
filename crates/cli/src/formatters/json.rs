@@ -11,7 +11,9 @@ use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
 use serde::Serialize;
-use splunk_client::models::{ConfigFile, ConfigStanza, Input, LogEntry, SearchPeer};
+use splunk_client::models::{
+    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
+};
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -49,6 +51,14 @@ impl Formatter for JsonFormatter {
 
     fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
         Ok(serde_json::to_string_pretty(status)?)
+    }
+
+    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(collections)?)
+    }
+
+    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(records)?)
     }
 
     fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {

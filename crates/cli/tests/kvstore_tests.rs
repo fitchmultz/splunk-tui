@@ -20,10 +20,11 @@ fn test_kvstore_invalid_format() {
 }
 
 #[test]
-fn test_kvstore_execution() {
+fn test_kvstore_status_execution() {
     let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
     cmd.arg("kvstore")
+        .arg("status")
         .assert()
         .failure()
         .stderr(predicate::str::contains("Connection refused"));

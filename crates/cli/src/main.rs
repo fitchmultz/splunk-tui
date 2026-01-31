@@ -248,8 +248,11 @@ enum Commands {
     /// Perform a comprehensive system health check
     Health,
 
-    /// Show KVStore status
-    Kvstore,
+    /// Show KVStore status and manage collections
+    Kvstore {
+        #[command(subcommand)]
+        command: commands::kvstore::KvstoreCommand,
+    },
 
     /// Show license information
     License(commands::license::LicenseArgs),
@@ -603,10 +606,16 @@ async fn run_command(
             commands::health::run(config, &cli.output, cli.output_file.clone(), cancel_token)
                 .await?;
         }
-        Commands::Kvstore => {
+        Commands::Kvstore { command } => {
             let config = config.into_real_config()?;
-            commands::kvstore::run(config, &cli.output, cli.output_file.clone(), cancel_token)
-                .await?;
+            commands::kvstore::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
         }
         Commands::License(_args) => {
             let config = config.into_real_config()?;

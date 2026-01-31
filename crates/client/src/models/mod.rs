@@ -39,7 +39,10 @@ pub use jobs::{
     JobContent, JobEntry, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,
     SplError, SplWarning, ValidateSplRequest, ValidateSplResponse,
 };
-pub use kvstore::{KvStoreMember, KvStoreReplicationStatus, KvStoreStatus};
+pub use kvstore::{
+    CollectionEntry, CollectionListResponse, CreateCollectionParams, KvStoreCollection,
+    KvStoreMember, KvStoreRecord, KvStoreReplicationStatus, KvStoreStatus, ModifyCollectionParams,
+};
 pub use license::{LicensePool, LicenseStack, LicenseUsage, SlavesUsageBytes};
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
 pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};

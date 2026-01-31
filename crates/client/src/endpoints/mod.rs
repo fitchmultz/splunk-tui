@@ -27,7 +27,10 @@ pub use forwarders::list_forwarders;
 pub use indexes::{create_index, delete_index, list_indexes, modify_index};
 pub use inputs::{disable_input, enable_input, list_inputs_by_type};
 pub use jobs::{cancel_job, delete_job, get_job, list_jobs};
-pub use kvstore::get_kvstore_status;
+pub use kvstore::{
+    create_collection, delete_collection, delete_collection_record, get_kvstore_status,
+    insert_collection_record, list_collection_records, list_collections, modify_collection,
+};
 pub use license::{get_license_usage, list_license_pools, list_license_stacks};
 pub use logs::get_internal_logs;
 pub use lookups::list_lookup_tables;

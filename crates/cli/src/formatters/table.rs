@@ -22,6 +22,7 @@ mod imp;
 mod indexes;
 mod inputs;
 mod jobs;
+mod kvstore;
 mod license;
 mod list_all;
 mod logs;

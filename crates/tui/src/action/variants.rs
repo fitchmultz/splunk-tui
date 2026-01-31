@@ -33,8 +33,9 @@ use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
     App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
-    HealthCheckOutput, Index, Input, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
-    LogEntry, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth, User,
+    HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool,
+    LicenseStack, LicenseUsage, LogEntry, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth,
+    User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -451,6 +452,54 @@ pub enum Action {
     UserModified(Result<User, Arc<ClientError>>),
     /// Result of deleting a user
     UserDeleted(Result<String, Arc<ClientError>>),
+
+    // KVStore Collection Operations
+    /// Load KVStore collections list
+    LoadCollections {
+        /// App context (None for all apps)
+        app: Option<String>,
+        /// Owner context (None for nobody)
+        owner: Option<String>,
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Create a new KVStore collection
+    CreateCollection {
+        params: splunk_client::models::CreateCollectionParams,
+    },
+    /// Delete a KVStore collection
+    DeleteCollection {
+        name: String,
+        app: String,
+        owner: String,
+    },
+    /// Load collection records
+    LoadCollectionRecords {
+        collection_name: String,
+        app: String,
+        owner: String,
+        query: Option<String>,
+        count: u64,
+        offset: u64,
+    },
+    /// Open collection creation dialog
+    OpenCreateCollectionDialog,
+    /// Open collection deletion confirmation
+    OpenDeleteCollectionConfirm {
+        name: String,
+        app: String,
+        owner: String,
+    },
+    /// Result of loading collections
+    CollectionsLoaded(Result<Vec<KvStoreCollection>, Arc<ClientError>>),
+    /// Result of creating a collection
+    CollectionCreated(Result<KvStoreCollection, Arc<ClientError>>),
+    /// Result of deleting a collection
+    CollectionDeleted(Result<(String, String, String), Arc<ClientError>>),
+    /// Result of loading collection records
+    CollectionRecordsLoaded(Result<Vec<KvStoreRecord>, Arc<ClientError>>),
 
     /// Inspect currently selected job
     InspectJob,

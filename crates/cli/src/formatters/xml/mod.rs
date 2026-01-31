@@ -10,7 +10,9 @@
 
 use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
 use anyhow::Result;
-use splunk_client::models::{ConfigFile, ConfigStanza, Input, SearchPeer};
+use splunk_client::models::{
+    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
+};
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
 };
@@ -26,6 +28,7 @@ mod health;
 mod indexes;
 mod inputs;
 mod jobs;
+mod kvstore;
 mod license;
 mod list_all;
 mod logs;
@@ -149,6 +152,14 @@ impl Formatter for XmlFormatter {
 
     fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
         alerts::format_fired_alert_info(alert)
+    }
+
+    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
+        kvstore::format_kvstore_collections(collections)
+    }
+
+    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
+        kvstore::format_kvstore_records(records)
     }
 
     fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
