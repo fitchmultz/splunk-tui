@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0269",
-      "status": "todo",
-      "title": "Add CLI tests for forwarders and lookups commands",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tests",
-        "forwarders",
-        "lookups"
-      ],
-      "scope": [
-        "crates/cli/src/commands/forwarders.rs",
-        "crates/cli/src/commands/lookups.rs",
-        "crates/cli/tests"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/forwarders.rs and crates/cli/src/commands/lookups.rs exist.",
-        "`rg -n \"forwarders\" crates/cli/tests` and `rg -n \"lookups\" crates/cli/tests` return no matches."
-      ],
-      "plan": [
-        "Add CLI integration tests for forwarders/lookups using wiremock fixtures.",
-        "Cover pagination, output formats, and error responses.",
-        "Keep tests hermetic under DOTENV_DISABLED=1."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0270",
       "status": "todo",
       "title": "Add CLI tests for configs and inputs commands",
