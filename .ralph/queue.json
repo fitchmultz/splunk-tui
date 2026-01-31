@@ -2,38 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0271",
-      "status": "todo",
-      "title": "Add CLI tests for search_peers command",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tests",
-        "search-peers"
-      ],
-      "scope": [
-        "crates/cli/src/commands/search_peers.rs",
-        "crates/cli/tests"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/search_peers.rs exists.",
-        "`rg -n \"search_peers|search peers\" crates/cli/tests` returns no matches."
-      ],
-      "plan": [
-        "Add CLI integration tests for search peers output.",
-        "Cover pagination and error handling.",
-        "Verify table/JSON formatting cases."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0272",
       "status": "todo",
       "title": "Implement configs screen search mode",
