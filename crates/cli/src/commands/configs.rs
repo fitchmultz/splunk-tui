@@ -32,11 +32,11 @@ pub enum ConfigsCommand {
         config_file: Option<String>,
 
         /// Maximum number of items to return
-        #[arg(short, long, default_value = "30")]
+        #[arg(long, default_value = "30")]
         count: usize,
 
         /// Offset for pagination
-        #[arg(short, long, default_value = "0")]
+        #[arg(long, default_value = "0")]
         offset: usize,
     },
 
