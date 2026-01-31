@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0277",
-      "status": "todo",
-      "title": "Refactor TUI App module to bring LOC under 700",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "refactor",
-        "app"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/app",
-        "crates/architecture-tests/tests/file_size_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs is 989 lines (approx 729 LOC), above the 700 LOC warning threshold.",
-        "crates/architecture-tests/tests/file_size_tests.rs defines >700 LOC as a warning threshold."
-      ],
-      "plan": [
-        "Split App responsibilities into submodules (state/init/helpers/tests).",
-        "Update module exports and imports.",
-        "Ensure app tests compile and behavior remains unchanged."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0278",
       "status": "todo",
       "title": "Refactor TUI App actions module to reduce LOC",
