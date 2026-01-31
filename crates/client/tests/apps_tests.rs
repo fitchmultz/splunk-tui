@@ -4,14 +4,17 @@
 //! - Listing installed apps with pagination
 //! - Getting specific app details
 //! - Enabling/disabling apps
+//! - Installing apps from .spl packages
+//! - Removing (uninstalling) apps
 //!
 //! # Invariants
 //! - App list includes name, label, version, disabled status, and metadata
 //! - get_app returns detailed info for a single app
 //! - update_app (enable/disable) returns success on valid requests
+//! - install_app returns the installed app details
+//! - remove_app returns success on valid requests
 //!
 //! # What this does NOT handle
-//! - App installation/removal
 //! - App configuration beyond enable/disable
 
 mod common;
@@ -230,4 +233,128 @@ async fn test_list_apps_empty() {
     assert!(result.is_ok());
     let apps = result.unwrap();
     assert!(apps.is_empty());
+}
+
+#[tokio::test]
+async fn test_install_app() {
+    use std::io::Write;
+    use wiremock::matchers::{header, method, path, query_param};
+
+    let mock_server = MockServer::start().await;
+
+    let fixture = load_fixture("apps/install_app.json");
+
+    // Create a temporary .spl file for the test
+    let temp_dir = std::env::temp_dir();
+    let spl_file_path = temp_dir.join("test_app.spl");
+    {
+        let mut file = std::fs::File::create(&spl_file_path).unwrap();
+        file.write_all(b"mock spl package content").unwrap();
+    }
+
+    // Mock the install endpoint - match on method, path, and output_mode query param
+    // Note: We don't match exact multipart body because boundary is random
+    Mock::given(method("POST"))
+        .and(path("/services/apps/appinstall"))
+        .and(query_param("output_mode", "json"))
+        .and(header("authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::install_app(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &spl_file_path,
+        3,
+        None,
+    )
+    .await;
+
+    // Clean up temp file
+    let _ = std::fs::remove_file(&spl_file_path);
+
+    assert!(result.is_ok());
+    let app = result.unwrap();
+    assert_eq!(app.name, "installed_app");
+    assert_eq!(app.label, Some("Installed App".to_string()));
+    assert_eq!(app.version, Some("1.0.0".to_string()));
+    assert!(!app.disabled);
+}
+
+#[tokio::test]
+async fn test_install_app_file_not_found() {
+    let mock_server = MockServer::start().await;
+
+    let client = Client::new();
+    let nonexistent_path = std::path::PathBuf::from("/nonexistent/path/app.spl");
+
+    let result = endpoints::install_app(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &nonexistent_path,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    // Should be an invalid request error due to file not found
+    assert!(matches!(err, ClientError::InvalidRequest(_)));
+    assert!(err.to_string().contains("Failed to read app package file"));
+}
+
+#[tokio::test]
+async fn test_remove_app() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/apps/local/test_app"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::remove_app(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "test_app",
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_remove_app_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/apps/local/nonexistent"))
+        .respond_with(ResponseTemplate::new(404).set_body_string("Not found"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::remove_app(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "nonexistent",
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    // Should be an API error with 404 status
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
 }

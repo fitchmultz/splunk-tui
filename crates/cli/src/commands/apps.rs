@@ -33,6 +33,22 @@ pub enum AppsCommand {
         #[arg(value_name = "APP_NAME")]
         app_name: String,
     },
+    /// Install an app from a .spl file
+    Install {
+        /// Path to the .spl package file
+        #[arg(value_name = "FILE_PATH")]
+        file_path: std::path::PathBuf,
+    },
+    /// Remove (uninstall) an app by name
+    Remove {
+        /// App name to remove
+        #[arg(value_name = "APP_NAME")]
+        app_name: String,
+
+        /// Skip confirmation prompt
+        #[arg(short, long)]
+        force: bool,
+    },
 }
 
 pub async fn run(
@@ -58,6 +74,19 @@ pub async fn run(
         }
         AppsCommand::Enable { app_name } => run_enable(config, &app_name, cancel).await,
         AppsCommand::Disable { app_name } => run_disable(config, &app_name, cancel).await,
+        AppsCommand::Install { file_path } => {
+            run_install(
+                config,
+                &file_path,
+                output_format,
+                output_file.clone(),
+                cancel,
+            )
+            .await
+        }
+        AppsCommand::Remove { app_name, force } => {
+            run_remove(config, &app_name, force, cancel).await
+        }
     }
 }
 
@@ -166,6 +195,82 @@ async fn run_disable(
     .with_context(|| format!("Failed to disable app '{}'", app_name))?;
 
     println!("App '{}' disabled successfully.", app_name);
+
+    Ok(())
+}
+
+async fn run_install(
+    config: splunk_config::Config,
+    file_path: &std::path::Path,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    // Validate file exists before attempting upload
+    if !file_path.exists() {
+        return Err(anyhow::anyhow!(
+            "App package file not found: {}",
+            file_path.display()
+        ));
+    }
+
+    info!("Installing app from: {}", file_path.display());
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let app = tokio::select! {
+        res = client.install_app(file_path) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to install app from '{}'", file_path.display()))?;
+
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
+    let output = formatter.format_app_info(&app)?;
+
+    if let Some(ref path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
+
+    Ok(())
+}
+
+async fn run_remove(
+    config: splunk_config::Config,
+    app_name: &str,
+    force: bool,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    // Prompt for confirmation unless --force is used
+    if !force {
+        eprint!("Remove app '{}' ? [y/N] ", app_name);
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        if !input.trim().eq_ignore_ascii_case("y") {
+            println!("Cancelled.");
+            return Ok(());
+        }
+    }
+
+    info!("Removing app: {}", app_name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    tokio::select! {
+        res = client.remove_app(app_name) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to remove app '{}'", app_name))?;
+
+    println!("App '{}' removed successfully.", app_name);
 
     Ok(())
 }

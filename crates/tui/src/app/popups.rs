@@ -623,6 +623,58 @@ impl App {
                 self.popup = None;
                 None
             }
+            // Confirm remove app popup handling
+            (Some(PopupType::ConfirmRemoveApp(_)), KeyCode::Char('y') | KeyCode::Enter) => {
+                let name = if let Some(Popup {
+                    kind: PopupType::ConfirmRemoveApp(n),
+                    ..
+                }) = self.popup.take()
+                {
+                    n
+                } else {
+                    unreachable!()
+                };
+                Some(Action::RemoveApp { app_name: name })
+            }
+            (Some(PopupType::ConfirmRemoveApp(_)), KeyCode::Char('n') | KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            // Install app dialog handling
+            (Some(PopupType::InstallAppDialog { .. }), KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::InstallAppDialog { file_input }), KeyCode::Enter) => {
+                if file_input.is_empty() {
+                    return None;
+                }
+                let path = std::path::PathBuf::from(file_input);
+                self.popup = None;
+                Some(Action::InstallApp { file_path: path })
+            }
+            (Some(PopupType::InstallAppDialog { file_input }), KeyCode::Char(c)) => {
+                let mut new_input = file_input.clone();
+                new_input.push(c);
+                self.popup = Some(
+                    Popup::builder(PopupType::InstallAppDialog {
+                        file_input: new_input,
+                    })
+                    .build(),
+                );
+                None
+            }
+            (Some(PopupType::InstallAppDialog { file_input }), KeyCode::Backspace) => {
+                let mut new_input = file_input.clone();
+                new_input.pop();
+                self.popup = Some(
+                    Popup::builder(PopupType::InstallAppDialog {
+                        file_input: new_input,
+                    })
+                    .build(),
+                );
+                None
+            }
             _ => None,
         }
     }

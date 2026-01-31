@@ -247,6 +247,12 @@ pub async fn handle_side_effects(
         Action::DisableApp(name) => {
             apps::handle_disable_app(client, tx, name).await;
         }
+        Action::InstallApp { file_path } => {
+            apps::handle_install_app(client, tx, file_path).await;
+        }
+        Action::RemoveApp { app_name } => {
+            apps::handle_remove_app(client, tx, app_name).await;
+        }
         Action::LoadHealth => {
             health::handle_load_health(client, tx).await;
         }

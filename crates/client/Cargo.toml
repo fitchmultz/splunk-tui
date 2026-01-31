@@ -10,7 +10,7 @@ splunk-config = { path = "../config" }
 tokio = { workspace = true }
 
 # HTTP
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["multipart"] }
 
 # Serialization
 serde = { workspace = true }

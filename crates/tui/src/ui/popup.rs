@@ -109,6 +109,10 @@ pub enum PopupType {
     },
     /// User deletion confirmation
     DeleteUserConfirm { user_name: String },
+    /// Confirm remove app (holds app name)
+    ConfirmRemoveApp(String),
+    /// App installation file path input dialog
+    InstallAppDialog { file_input: String },
 }
 
 /// A modal popup dialog with title, content, and type.
@@ -275,6 +279,22 @@ impl PopupBuilder {
                 );
                 (title, content)
             }
+            PopupType::ConfirmRemoveApp(app_name) => {
+                let title = "Confirm Remove App".to_string();
+                let content = format!(
+                    "Remove app '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    app_name
+                );
+                (title, content)
+            }
+            PopupType::InstallAppDialog { file_input } => {
+                let title = "Install App".to_string();
+                let content = format!(
+                    "Enter path to .spl file:\n\n{}\n\nPress Enter to install, Esc to cancel",
+                    file_input
+                );
+                (title, content)
+            }
         };
 
         Popup {
@@ -309,7 +329,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateIndex { .. }
         | PopupType::ModifyIndex { .. }
         | PopupType::CreateUser { .. }
-        | PopupType::ModifyUser { .. } => theme.border,
+        | PopupType::ModifyUser { .. }
+        | PopupType::InstallAppDialog { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -317,7 +338,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ConfirmEnableApp(_)
         | PopupType::ConfirmDisableApp(_)
         | PopupType::DeleteIndexConfirm { .. }
-        | PopupType::DeleteUserConfirm { .. } => theme.error,
+        | PopupType::DeleteUserConfirm { .. }
+        | PopupType::ConfirmRemoveApp(_) => theme.error,
     };
 
     // Determine wrapping behavior based on popup type
@@ -332,13 +354,15 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::DeleteIndexConfirm { .. }
         | PopupType::CreateUser { .. }
         | PopupType::ModifyUser { .. }
-        | PopupType::DeleteUserConfirm { .. } => Wrap { trim: false },
+        | PopupType::DeleteUserConfirm { .. }
+        | PopupType::InstallAppDialog { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
         | PopupType::ConfirmDeleteBatch(_)
         | PopupType::ConfirmEnableApp(_)
-        | PopupType::ConfirmDisableApp(_) => Wrap { trim: true },
+        | PopupType::ConfirmDisableApp(_)
+        | PopupType::ConfirmRemoveApp(_) => Wrap { trim: true },
     };
 
     // Determine alignment based on popup type

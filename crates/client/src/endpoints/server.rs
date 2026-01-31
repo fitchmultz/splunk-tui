@@ -231,3 +231,118 @@ pub async fn disable_app(
 
     Ok(())
 }
+
+/// Install a Splunk app from a .spl package file.
+///
+/// Uses multipart/form-data upload to POST /services/apps/appinstall.
+/// Note: Streaming uploads cannot be retried - this function only retries
+/// on authentication errors (401) where the body hasn't been consumed yet.
+///
+/// # Arguments
+///
+/// * `client` - The HTTP client
+/// * `base_url` - The Splunk base URL
+/// * `auth_token` - The authentication token
+/// * `file_path` - Path to the .spl package file
+/// * `max_retries` - Maximum number of retries for authentication failures
+/// * `metrics` - Optional metrics collector
+pub async fn install_app(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    file_path: &std::path::Path,
+    max_retries: usize,
+    metrics: Option<&MetricsCollector>,
+) -> Result<App> {
+    let url = format!("{}/services/apps/appinstall", base_url);
+
+    // Read the file content
+    let file_content = tokio::fs::read(file_path).await.map_err(|e| {
+        ClientError::InvalidRequest(format!(
+            "Failed to read app package file '{}': {}",
+            file_path.display(),
+            e
+        ))
+    })?;
+
+    let file_name = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("app.spl");
+
+    // Build multipart form
+    let form = reqwest::multipart::Form::new().part(
+        "splunk_file",
+        reqwest::multipart::Part::bytes(file_content)
+            .file_name(file_name.to_string())
+            .mime_str("application/octet-stream")
+            .map_err(|e| ClientError::InvalidRequest(format!("Invalid mime type: {}", e)))?,
+    );
+
+    let builder = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json")])
+        .multipart(form);
+
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/apps/appinstall",
+        "POST",
+        metrics,
+    )
+    .await?;
+
+    let resp: serde_json::Value = response.json().await?;
+
+    // Extract entry name and content from first entry (same pattern as get_app)
+    let entry = resp.get("entry").and_then(|e| e.get(0)).ok_or_else(|| {
+        ClientError::InvalidResponse("Missing entry in install_app response".to_string())
+    })?;
+
+    let entry_name = entry
+        .get("name")
+        .and_then(|n| n.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    let content = entry.get("content").ok_or_else(|| {
+        ClientError::InvalidResponse("Missing entry content in install_app response".to_string())
+    })?;
+
+    // Deserialize content into App struct and attach the entry name
+    let app: App = serde_json::from_value(content.clone())
+        .map_err(|e| ClientError::InvalidResponse(format!("Failed to parse app info: {}", e)))?;
+
+    Ok(crate::name_merge::attach_entry_name(entry_name, app))
+}
+
+/// Remove (uninstall) a Splunk app by name.
+///
+/// DELETE /services/apps/local/{app_name}
+pub async fn remove_app(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    app_name: &str,
+    max_retries: usize,
+    metrics: Option<&MetricsCollector>,
+) -> Result<()> {
+    let url = format!("{}/services/apps/local/{}", base_url, app_name);
+
+    let builder = client
+        .delete(&url)
+        .header("Authorization", format!("Bearer {}", auth_token));
+
+    let _response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/apps/local/{app_name}",
+        "DELETE",
+        metrics,
+    )
+    .await?;
+
+    Ok(())
+}

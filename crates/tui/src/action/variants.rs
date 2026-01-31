@@ -391,6 +391,10 @@ pub enum Action {
     EnableApp(String),
     /// Disable an app by name
     DisableApp(String),
+    /// Install an app from a .spl file
+    InstallApp { file_path: PathBuf },
+    /// Remove (uninstall) an app by name
+    RemoveApp { app_name: String },
 
     // Input Operations
     /// Enable an input by type and name

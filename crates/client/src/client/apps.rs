@@ -4,9 +4,10 @@
 //! - Listing installed apps
 //! - Getting app details
 //! - Enabling/disabling apps
+//! - Installing apps from .spl packages
+//! - Removing (uninstalling) apps
 //!
 //! # What this module does NOT handle:
-//! - Installing or removing apps (not yet implemented)
 //! - Low-level app endpoint HTTP calls (in [`crate::endpoints`])
 
 use crate::client::SplunkClient;
@@ -73,6 +74,52 @@ impl SplunkClient {
             self,
             __token,
             endpoints::disable_app(
+                &self.http,
+                &self.base_url,
+                &__token,
+                app_name,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Install an app from a .spl file package.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_path` - Path to the .spl package file
+    ///
+    /// # Returns
+    ///
+    /// The installed `App` on success.
+    pub async fn install_app(&mut self, file_path: &std::path::Path) -> Result<App> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::install_app(
+                &self.http,
+                &self.base_url,
+                &__token,
+                file_path,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Remove (uninstall) an app by name.
+    ///
+    /// # Arguments
+    ///
+    /// * `app_name` - Name of the app to remove
+    pub async fn remove_app(&mut self, app_name: &str) -> Result<()> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::remove_app(
                 &self.http,
                 &self.base_url,
                 &__token,

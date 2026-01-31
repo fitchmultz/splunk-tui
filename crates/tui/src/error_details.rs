@@ -115,6 +115,9 @@ impl ErrorDetails {
                 details.summary = format!("Unauthorized: {}", msg);
                 details.status_code = Some(401);
             }
+            splunk_client::ClientError::InvalidRequest(msg) => {
+                details.summary = format!("Invalid request: {}", msg);
+            }
         }
 
         details

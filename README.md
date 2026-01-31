@@ -240,6 +240,8 @@ The Search screen has two input modes that affect how keys are handled:
 - `j/k or Up/Down`: Navigate list
 - `e`: Enable selected app
 - `d`: Disable selected app
+- `i`: Install app from .spl file
+- `x`: Remove selected app
 
 #### Users Screen
 - `r`: Refresh users

@@ -65,6 +65,10 @@ pub enum ClientError {
     /// Unauthorized access.
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
+
+    /// Invalid request parameters.
+    #[error("Invalid request: {0}")]
+    InvalidRequest(String),
 }
 
 impl ClientError {

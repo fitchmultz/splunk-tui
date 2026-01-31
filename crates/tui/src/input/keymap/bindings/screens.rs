@@ -607,6 +607,30 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None, // Handled directly in input handler
             handles_input: false,
         },
+        Keybinding {
+            section: Section::Apps,
+            keys: "i",
+            description: "Install app from .spl file",
+            scope: BindingScope::Screen(Apps),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('i'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled directly in input handler
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Apps,
+            keys: "x",
+            description: "Remove selected app",
+            scope: BindingScope::Screen(Apps),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('x'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled directly in input handler
+            handles_input: false,
+        },
         // Users
         Keybinding {
             section: Section::Users,

@@ -510,6 +510,15 @@ splunk-cli apps enable my_custom_app
 
 # Disable an app
 splunk-cli apps disable unused_app
+
+# Install an app from a .spl package
+splunk-cli apps install /path/to/my_app.spl
+
+# Remove an app (with confirmation prompt)
+splunk-cli apps remove my_app
+
+# Remove an app without confirmation
+splunk-cli apps remove my_app --force
 ```
 
 **Subcommands:**
@@ -523,6 +532,11 @@ splunk-cli apps disable unused_app
 - `enable <APP_NAME>`: Enable an app by name
 
 - `disable <APP_NAME>`: Disable an app by name
+
+- `install <FILE_PATH>`: Install an app from a .spl package file
+
+- `remove <APP_NAME>`: Remove (uninstall) an app by name
+  - `-f, --force`: Skip confirmation prompt
 
 **Output Formats:**
 - **Table**: Human-readable formatted output (list: table view, info: detailed key-value pairs)
@@ -893,6 +907,8 @@ The Search screen has two input modes that affect how keys are handled:
 - `j/k or Up/Down`: Navigate list
 - `e`: Enable selected app
 - `d`: Disable selected app
+- `i`: Install app from .spl file
+- `x`: Remove selected app
 
 #### Users Screen
 - `r`: Refresh users

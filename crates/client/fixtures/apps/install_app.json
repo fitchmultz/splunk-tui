@@ -1,0 +1,27 @@
+{
+  "entry": [
+    {
+      "name": "installed_app",
+      "id": "https://localhost:8089/services/apps/local/installed_app",
+      "updated": "2024-01-20T10:00:00-08:00",
+      "links": {},
+      "author": "splunk",
+      "content": {
+        "name": "installed_app",
+        "label": "Installed App",
+        "version": "1.0.0",
+        "is_configured": true,
+        "is_visible": true,
+        "disabled": false,
+        "description": "Newly installed app",
+        "author": "Test Author"
+      }
+    }
+  ],
+  "paging": {
+    "total": 1,
+    "perPage": 30,
+    "offset": 0
+  },
+  "messages": []
+}

@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0247",
-      "status": "todo",
-      "title": "Add app installation and removal capabilities",
-      "priority": "high",
-      "tags": [
-        "cli",
-        "tui",
-        "apps",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/apps.rs",
-        "crates/client/src/endpoints/server.rs",
-        "crates/cli/src/commands/apps.rs",
-        "crates/tui/src/ui/screens/apps.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client/apps.rs:9 explicitly states 'Installing or removing apps (not yet implemented)'.",
-        "Current apps support only enables/disables existing apps.",
-        "Splunk REST API supports app installation via /services/apps/appinstall."
-      ],
-      "plan": [
-        "Add install_app() method to client supporting .spl file upload or app name from Splunkbase.",
-        "Add remove_app() method for uninstalling apps.",
-        "Extend CLI apps command with install and remove subcommands.",
-        "Add app installation UI to TUI apps screen.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0248",
       "status": "todo",
       "title": "Add KVStore collection management",
