@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0267",
-      "status": "todo",
-      "title": "Add client integration tests for lookups and logs endpoints",
-      "priority": "medium",
-      "tags": [
-        "client",
-        "tests",
-        "lookups",
-        "logs"
-      ],
-      "scope": [
-        "crates/client/src/client/lookups.rs",
-        "crates/client/src/client/logs.rs",
-        "crates/client/tests",
-        "crates/client/fixtures"
-      ],
-      "evidence": [
-        "crates/client/src/client/lookups.rs and crates/client/src/client/logs.rs exist.",
-        "crates/client/tests/ list contains no lookups_tests.rs or logs_tests.rs."
-      ],
-      "plan": [
-        "Add fixtures for lookup tables and log entries.",
-        "Add integration tests for success + failure cases and pagination/filters.",
-        "Validate parsing of log entries and lookup metadata shapes."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0268",
       "status": "todo",
       "title": "Add client integration tests for search_peers and users endpoints",
