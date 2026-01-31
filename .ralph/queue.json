@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0278",
-      "status": "todo",
-      "title": "Refactor TUI App actions module to reduce LOC",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "refactor",
-        "actions"
-      ],
-      "scope": [
-        "crates/tui/src/app/actions.rs",
-        "crates/tui/src/app",
-        "crates/architecture-tests/tests/file_size_tests.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app/actions.rs is 851 lines (approx 768 LOC), above the 700 LOC warning threshold.",
-        "crates/architecture-tests/tests/file_size_tests.rs defines >700 LOC as a warning threshold."
-      ],
-      "plan": [
-        "Split action handlers into domain modules (search/jobs/configs/etc).",
-        "Re-export action routing in app/actions mod.",
-        "Update tests and ensure no behavior regressions."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0257",
       "status": "todo",
       "title": "Add role and capability management",
