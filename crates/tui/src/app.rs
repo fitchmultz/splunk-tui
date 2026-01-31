@@ -129,6 +129,12 @@ pub struct App {
     pub selected_stanza: Option<splunk_client::models::ConfigStanza>,
     pub config_view_mode: crate::ui::screens::configs::ConfigViewMode,
 
+    // Configs search state
+    pub config_search_mode: bool,
+    pub config_search_query: String,
+    pub config_search_before_edit: Option<String>,
+    pub filtered_stanza_indices: Vec<usize>,
+
     // UI State
     pub loading: bool,
     pub progress: f32,
@@ -436,6 +442,10 @@ impl App {
             config_stanzas_state,
             selected_stanza: None,
             config_view_mode: crate::ui::screens::configs::ConfigViewMode::FileList,
+            config_search_mode: false,
+            config_search_query: String::new(),
+            config_search_before_edit: None,
+            filtered_stanza_indices: Vec::new(),
             loading: false,
             progress: 0.0,
             toasts: Vec::new(),
@@ -781,6 +791,11 @@ impl App {
 
         if self.current_screen == CurrentScreen::Jobs && self.is_filtering {
             return self.handle_jobs_filter_input(key);
+        }
+
+        // Configs search mode takes precedence over other bindings
+        if self.current_screen == CurrentScreen::Configs && self.config_search_mode {
+            return self.handle_config_search_input(key);
         }
 
         // Global 'e' keybinding to show error details when an error is present.

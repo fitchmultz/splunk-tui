@@ -807,6 +807,18 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Configs,
+            keys: "/",
+            description: "Search stanzas",
+            scope: BindingScope::Screen(Configs),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('/'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::EnterSearchMode),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Configs,
             keys: "Enter",
             description: "View stanza details",
             scope: BindingScope::Screen(Configs),

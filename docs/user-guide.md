@@ -284,6 +284,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Configuration Files Screen
 - `r`: Refresh config files
+- `/`: Search stanzas
 - `Enter`: View stanza details
 - `h`: Go back
 - `j/k or Up/Down`: Navigate list

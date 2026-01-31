@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0272",
-      "status": "todo",
-      "title": "Implement configs screen search mode",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "configs",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app/input/configs.rs",
-        "crates/tui/src/ui/screens/configs.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/tests"
-      ],
-      "evidence": [
-        "crates/tui/src/app/input/configs.rs:64 has TODO: Implement search mode."
-      ],
-      "plan": [
-        "Add search state and filtering for config stanzas/files.",
-        "Wire keybindings and update render to show search input/results.",
-        "Add TUI tests covering search interactions and empty results."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0273",
       "status": "todo",
       "title": "Implement configs screen help popup",

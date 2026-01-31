@@ -5,7 +5,7 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
@@ -45,6 +45,12 @@ pub struct ConfigsRenderConfig<'a> {
     pub stanzas_state: &'a mut TableState,
     /// Theme for consistent styling
     pub theme: &'a Theme,
+    /// Whether search mode is active
+    pub is_searching: bool,
+    /// Current search query
+    pub search_query: &'a str,
+    /// Filtered indices when searching
+    pub filtered_indices: &'a [usize],
 }
 
 /// Render the configs screen.
@@ -164,6 +170,9 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         stanzas,
         stanzas_state,
         theme,
+        is_searching,
+        search_query,
+        filtered_indices,
         ..
     } = config;
 
@@ -188,11 +197,57 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         }
     };
 
-    if stanzas.is_empty() {
-        let placeholder = Paragraph::new("No stanzas found for this config file.")
+    // Split area for search bar if needed
+    let (search_area, list_area) = if is_searching || !search_query.is_empty() {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+            .split(area);
+        (Some(chunks[0]), chunks[1])
+    } else {
+        (None, area)
+    };
+
+    // Render search bar if active
+    if let Some(search_area) = search_area {
+        let search_text = if is_searching {
+            format!("Search: {}", search_query)
+        } else {
+            format!("Search: {} (Press / to edit, Esc to clear)", search_query)
+        };
+
+        let search_paragraph = Paragraph::new(search_text)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Search Stanzas")
+                    .border_style(Style::default().fg(theme.border))
+                    .title_style(Style::default().fg(theme.title)),
+            )
+            .alignment(Alignment::Left);
+        f.render_widget(search_paragraph, search_area);
+    }
+
+    // Use filtered stanzas if search is active
+    let stanzas_to_render: Vec<&ConfigStanza> = if search_query.is_empty() {
+        stanzas.iter().collect()
+    } else {
+        filtered_indices
+            .iter()
+            .filter_map(|&i| stanzas.get(i))
+            .collect()
+    };
+
+    if stanzas_to_render.is_empty() {
+        let placeholder_text = if search_query.is_empty() {
+            "No stanzas found for this config file."
+        } else {
+            "No stanzas match the search query."
+        };
+        let placeholder = Paragraph::new(placeholder_text)
             .block(Block::default().borders(Borders::ALL).title(title))
             .alignment(Alignment::Center);
-        f.render_widget(placeholder, area);
+        f.render_widget(placeholder, list_area);
         return;
     }
 
@@ -203,7 +258,7 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
     ]);
 
     // Rows
-    let rows: Vec<Row> = stanzas
+    let rows: Vec<Row> = stanzas_to_render
         .iter()
         .map(|stanza| {
             // Show a preview of the first few settings
@@ -251,7 +306,12 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
             .add_modifier(Modifier::BOLD),
     );
 
-    f.render_stateful_widget(table, area, stanzas_state);
+    f.render_stateful_widget(table, list_area, stanzas_state);
+
+    // Render search popup overlay if in search mode
+    if is_searching {
+        render_search_popup(f, search_query, theme);
+    }
 }
 
 /// Render the stanza detail view.

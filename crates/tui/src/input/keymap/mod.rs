@@ -256,6 +256,8 @@ fn shorten_description(desc: &'static str) -> &'static str {
         "Refresh lookup tables" => "Refresh",
         "Export lookup tables" => "Export",
         "Copy selected lookup name" => "Copy",
+        "Refresh config files" => "Refresh",
+        "Search stanzas" => "Search",
         _ => desc,
     }
 }
@@ -281,7 +283,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Overview => &["r", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::MultiInstance => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Inputs => &["r", "e", "d", "j/k or Up/Down"],
-        CurrentScreen::Configs => &["r", "Enter", "h", "j/k or Up/Down"],
+        CurrentScreen::Configs => &["r", "/", "Enter", "h", "j/k or Up/Down"],
         CurrentScreen::FiredAlerts => &["r", "j/k or Up/Down", "Ctrl+c"],
         CurrentScreen::Forwarders => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Lookups => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],

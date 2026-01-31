@@ -364,6 +364,9 @@ impl App {
                         files_state: &mut self.config_files_state,
                         stanzas_state: &mut self.config_stanzas_state,
                         theme: &self.theme,
+                        is_searching: self.config_search_mode,
+                        search_query: &self.config_search_query,
+                        filtered_indices: &self.filtered_stanza_indices,
                     },
                 );
             }
