@@ -66,10 +66,7 @@ impl App {
             }
 
             // Help
-            KeyCode::Char('?') => {
-                // TODO: Show help popup
-                None
-            }
+            KeyCode::Char('?') => Some(Action::OpenHelpPopup),
 
             _ => None,
         }
@@ -668,5 +665,20 @@ mod tests {
         app.handle_configs_input(key);
 
         assert!(app.config_search_mode);
+    }
+
+    #[test]
+    fn test_question_keybinding_opens_help_popup() {
+        let mut app = create_test_app();
+        app.current_screen = CurrentScreen::Configs;
+        app.config_view_mode = ConfigViewMode::FileList;
+
+        let key = KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE);
+        let action = app.handle_configs_input(key);
+
+        assert!(
+            matches!(action, Some(Action::OpenHelpPopup)),
+            "'?' should return OpenHelpPopup action"
+        );
     }
 }

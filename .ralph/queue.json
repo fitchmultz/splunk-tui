@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0273",
-      "status": "todo",
-      "title": "Implement configs screen help popup",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "configs",
-        "ux",
-        "help"
-      ],
-      "scope": [
-        "crates/tui/src/app/input/configs.rs",
-        "crates/tui/src/ui/screens/configs.rs",
-        "crates/tui/src/ui/popup",
-        "docs/usage.md"
-      ],
-      "evidence": [
-        "crates/tui/src/app/input/configs.rs:70 has TODO: Show help popup."
-      ],
-      "plan": [
-        "Add help popup content for configs screen keybindings.",
-        "Wire '?' keybinding to open the popup and close behavior.",
-        "Add UI tests and update docs/help text if needed."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-31T02:21:50Z",
-      "updated_at": "2026-01-31T02:21:50Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0274",
       "status": "todo",
       "title": "Split formatter tests into per-concept files",
