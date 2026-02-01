@@ -331,6 +331,25 @@ pub async fn handle_side_effects(
         Action::DeleteRole { name } => {
             roles::handle_delete_role(client, tx, name).await;
         }
+        // License operations
+        Action::InstallLicense { file_path } => {
+            license::handle_install_license(client, file_path, tx).await;
+        }
+        Action::CreateLicensePool { params } => {
+            license::handle_create_license_pool(client, params, tx).await;
+        }
+        Action::ModifyLicensePool { name, params } => {
+            license::handle_modify_license_pool(client, name, params, tx).await;
+        }
+        Action::DeleteLicensePool { name } => {
+            license::handle_delete_license_pool(client, name, tx).await;
+        }
+        Action::ActivateLicense { name } => {
+            license::handle_activate_license(client, name, tx).await;
+        }
+        Action::DeactivateLicense { name } => {
+            license::handle_deactivate_license(client, name, tx).await;
+        }
         // Profile management actions
         Action::OpenEditProfileDialog { name } => {
             profiles::handle_open_edit_profile(config_manager.clone(), tx.clone(), name).await;

@@ -8,7 +8,10 @@
 //! - Other output formats.
 //! - Schema validation.
 
-use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
+use crate::formatters::{
+    ClusterInfoOutput, Formatter, LicenseInfoOutput, LicenseInstallOutput,
+    LicensePoolOperationOutput,
+};
 use anyhow::Result;
 use splunk_client::models::{
     ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
@@ -244,6 +247,25 @@ impl Formatter for XmlFormatter {
         }
         output.push_str("</capabilities>\n");
         Ok(output)
+    }
+
+    fn format_installed_licenses(
+        &self,
+        licenses: &[splunk_client::InstalledLicense],
+    ) -> Result<String> {
+        license::format_installed_licenses(licenses)
+    }
+
+    fn format_license_install(&self, result: &LicenseInstallOutput) -> Result<String> {
+        license::format_license_install(result)
+    }
+
+    fn format_license_pools(&self, pools: &[splunk_client::LicensePool]) -> Result<String> {
+        license::format_license_pools(pools)
+    }
+
+    fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String> {
+        license::format_license_pool_operation(result)
     }
 }
 

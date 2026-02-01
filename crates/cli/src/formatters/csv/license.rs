@@ -6,8 +6,8 @@
 //! Does NOT handle:
 //! - Other resource types.
 
-use crate::formatters::LicenseInfoOutput;
 use crate::formatters::common::{build_csv_header, build_csv_row, escape_csv, format_opt_str};
+use crate::formatters::{LicenseInfoOutput, LicenseInstallOutput, LicensePoolOperationOutput};
 use anyhow::Result;
 
 /// Format license info as CSV.
@@ -83,6 +83,102 @@ pub fn format_license(license: &LicenseInfoOutput) -> Result<String> {
             escape_csv(""),
         ]));
     }
+
+    Ok(output)
+}
+
+/// Format installed licenses as CSV.
+pub fn format_installed_licenses(licenses: &[splunk_client::InstalledLicense]) -> Result<String> {
+    let mut output = String::new();
+
+    // Header
+    output.push_str(&build_csv_header(&[
+        "Name",
+        "Type",
+        "Status",
+        "QuotaMB",
+        "Expiration",
+    ]));
+
+    for license in licenses {
+        output.push_str(&build_csv_row(&[
+            escape_csv(&license.name),
+            escape_csv(&license.license_type),
+            escape_csv(&license.status),
+            escape_csv(&format!("{}", license.quota_bytes / 1024 / 1024)),
+            format_opt_str(license.expiration_time.as_deref(), "N/A"),
+        ]));
+    }
+
+    Ok(output)
+}
+
+/// Format license installation result as CSV.
+pub fn format_license_install(result: &LicenseInstallOutput) -> Result<String> {
+    let mut output = String::new();
+
+    // Header
+    output.push_str(&build_csv_header(&["Success", "Message", "LicenseName"]));
+
+    output.push_str(&build_csv_row(&[
+        escape_csv(&result.success.to_string()),
+        escape_csv(&result.message),
+        format_opt_str(result.license_name.as_deref(), ""),
+    ]));
+
+    Ok(output)
+}
+
+/// Format license pools as CSV.
+pub fn format_license_pools(pools: &[splunk_client::LicensePool]) -> Result<String> {
+    let mut output = String::new();
+
+    // Header
+    output.push_str(&build_csv_header(&[
+        "Name",
+        "StackID",
+        "UsedMB",
+        "QuotaMB",
+        "Description",
+    ]));
+
+    for p in pools {
+        let quota_mb = p
+            .quota
+            .parse::<u64>()
+            .ok()
+            .map(|q| (q / 1024 / 1024).to_string())
+            .unwrap_or_else(|| p.quota.clone());
+        output.push_str(&build_csv_row(&[
+            escape_csv(&p.name),
+            escape_csv(&p.stack_id),
+            escape_csv(&format!("{}", p.used_bytes / 1024 / 1024)),
+            escape_csv(&quota_mb),
+            format_opt_str(p.description.as_deref(), "N/A"),
+        ]));
+    }
+
+    Ok(output)
+}
+
+/// Format license pool operation result as CSV.
+pub fn format_license_pool_operation(result: &LicensePoolOperationOutput) -> Result<String> {
+    let mut output = String::new();
+
+    // Header
+    output.push_str(&build_csv_header(&[
+        "Operation",
+        "PoolName",
+        "Success",
+        "Message",
+    ]));
+
+    output.push_str(&build_csv_row(&[
+        escape_csv(&result.operation),
+        escape_csv(&result.pool_name),
+        escape_csv(&result.success.to_string()),
+        escape_csv(&result.message),
+    ]));
 
     Ok(output)
 }

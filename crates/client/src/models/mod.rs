@@ -46,7 +46,10 @@ pub use kvstore::{
     CollectionEntry, CollectionListResponse, CreateCollectionParams, KvStoreCollection,
     KvStoreMember, KvStoreRecord, KvStoreReplicationStatus, KvStoreStatus, ModifyCollectionParams,
 };
-pub use license::{LicensePool, LicenseStack, LicenseUsage, SlavesUsageBytes};
+pub use license::{
+    CreatePoolParams, InstalledLicense, LicenseActivationResult, LicenseInstallResult, LicensePool,
+    LicenseStack, LicenseUsage, ModifyPoolParams, SlavesUsageBytes,
+};
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
 pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};
 pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListResponse};

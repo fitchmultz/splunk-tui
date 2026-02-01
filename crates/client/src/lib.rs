@@ -21,11 +21,12 @@ pub use error::{ClientError, Result};
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
     App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo, ClusterPeer,
-    CreateIndexParams, CreateRoleParams, CreateUserParams, Forwarder, ForwarderListResponse,
-    HealthCheckOutput, Index, IndexListResponse, KvStoreMember, KvStoreReplicationStatus,
-    KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, LogParsingHealth,
-    LookupTable, LookupTableEntry, LookupTableListResponse, ModifyIndexParams, ModifyRoleParams,
-    ModifyUserParams, Role, RoleListResponse, SavedSearch, SearchJob, SearchJobListResponse,
-    SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth, SplunkResponse, User,
-    UserListResponse,
+    CreateIndexParams, CreatePoolParams, CreateRoleParams, CreateUserParams, Forwarder,
+    ForwarderListResponse, HealthCheckOutput, Index, IndexListResponse, InstalledLicense,
+    KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicenseActivationResult,
+    LicenseInstallResult, LicensePool, LicenseStack, LicenseUsage, LogEntry, LogParsingHealth,
+    LookupTable, LookupTableEntry, LookupTableListResponse, ModifyIndexParams, ModifyPoolParams,
+    ModifyRoleParams, ModifyUserParams, Role, RoleListResponse, SavedSearch, SearchJob,
+    SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
+    SplunkResponse, User, UserListResponse,
 };

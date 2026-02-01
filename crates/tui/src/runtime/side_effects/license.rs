@@ -3,15 +3,19 @@
 //! Responsibilities:
 //! - Handle async API calls for license operations.
 //! - Collect license information from multiple endpoints (usage, pools, stacks).
+//! - Handle license installation, pool management, and activation.
 //!
 //! Does NOT handle:
 //! - Direct state modification (sends actions for that).
 //! - UI rendering.
 
-use crate::action::{Action, LicenseData};
-use splunk_client::ClientError;
+use std::path::PathBuf;
 use std::sync::Arc;
+
 use tokio::sync::mpsc::Sender;
+
+use crate::action::{Action, LicenseData};
+use splunk_client::{ClientError, CreatePoolParams, ModifyPoolParams};
 
 use super::SharedClient;
 
@@ -69,5 +73,82 @@ pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
                 .send(Action::LicenseLoaded(Box::new(Ok(license_data))))
                 .await;
         }
+    });
+}
+
+/// Handle installing a license file.
+pub async fn handle_install_license(client: SharedClient, file_path: PathBuf, tx: Sender<Action>) {
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        let result = c.install_license(&file_path).await;
+        let _ = tx
+            .send(Action::LicenseInstalled(result.map_err(Arc::new)))
+            .await;
+    });
+}
+
+/// Handle creating a license pool.
+pub async fn handle_create_license_pool(
+    client: SharedClient,
+    params: CreatePoolParams,
+    tx: Sender<Action>,
+) {
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        let result = c.create_license_pool(&params).await;
+        let _ = tx
+            .send(Action::LicensePoolCreated(result.map_err(Arc::new)))
+            .await;
+    });
+}
+
+/// Handle modifying a license pool.
+pub async fn handle_modify_license_pool(
+    client: SharedClient,
+    name: String,
+    params: ModifyPoolParams,
+    tx: Sender<Action>,
+) {
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        let result = c.modify_license_pool(&name, &params).await;
+        let _ = tx
+            .send(Action::LicensePoolModified(result.map_err(Arc::new)))
+            .await;
+    });
+}
+
+/// Handle deleting a license pool.
+pub async fn handle_delete_license_pool(client: SharedClient, name: String, tx: Sender<Action>) {
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        let result = c.delete_license_pool(&name).await;
+        let _ = tx
+            .send(Action::LicensePoolDeleted(
+                result.map(|_| name).map_err(Arc::new),
+            ))
+            .await;
+    });
+}
+
+/// Handle activating a license.
+pub async fn handle_activate_license(client: SharedClient, name: String, tx: Sender<Action>) {
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        let result = c.activate_license(&name).await;
+        let _ = tx
+            .send(Action::LicenseActivated(result.map_err(Arc::new)))
+            .await;
+    });
+}
+
+/// Handle deactivating a license.
+pub async fn handle_deactivate_license(client: SharedClient, name: String, tx: Sender<Action>) {
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        let result = c.deactivate_license(&name).await;
+        let _ = tx
+            .send(Action::LicenseDeactivated(result.map_err(Arc::new)))
+            .await;
     });
 }

@@ -8,7 +8,10 @@
 //! - Pagination (JSON output doesn't paginate).
 
 use crate::commands::list_all::ListAllOutput;
-use crate::formatters::{ClusterInfoOutput, Formatter, LicenseInfoOutput};
+use crate::formatters::{
+    ClusterInfoOutput, Formatter, LicenseInfoOutput, LicenseInstallOutput,
+    LicensePoolOperationOutput,
+};
 use anyhow::Result;
 use serde::Serialize;
 use splunk_client::models::{
@@ -221,5 +224,24 @@ impl Formatter for JsonFormatter {
 
     fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String> {
         Ok(serde_json::to_string_pretty(capabilities)?)
+    }
+
+    fn format_installed_licenses(
+        &self,
+        licenses: &[splunk_client::InstalledLicense],
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(licenses)?)
+    }
+
+    fn format_license_install(&self, result: &LicenseInstallOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(result)?)
+    }
+
+    fn format_license_pools(&self, pools: &[splunk_client::LicensePool]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(pools)?)
+    }
+
+    fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(result)?)
     }
 }

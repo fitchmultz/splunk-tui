@@ -72,6 +72,32 @@ pub struct LicenseInfoOutput {
     pub stacks: Vec<LicenseStack>,
 }
 
+/// License installation result output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LicenseInstallOutput {
+    pub success: bool,
+    pub message: String,
+    pub license_name: Option<String>,
+}
+
+/// License pool operation output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LicensePoolOperationOutput {
+    pub operation: String,
+    pub pool_name: String,
+    pub success: bool,
+    pub message: String,
+}
+
+/// License activation/deactivation output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LicenseActivationOutput {
+    pub operation: String,
+    pub license_name: String,
+    pub success: bool,
+    pub message: String,
+}
+
 /// Formatter trait for different output types.
 pub trait Formatter {
     /// Format search results.
@@ -104,6 +130,21 @@ pub trait Formatter {
 
     /// Format license information.
     fn format_license(&self, license: &LicenseInfoOutput) -> Result<String>;
+
+    /// Format installed licenses list.
+    fn format_installed_licenses(
+        &self,
+        licenses: &[splunk_client::InstalledLicense],
+    ) -> Result<String>;
+
+    /// Format license installation result.
+    fn format_license_install(&self, result: &LicenseInstallOutput) -> Result<String>;
+
+    /// Format license pools list.
+    fn format_license_pools(&self, pools: &[LicensePool]) -> Result<String>;
+
+    /// Format license pool operation result.
+    fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String>;
 
     /// Format internal logs.
     fn format_logs(&self, logs: &[LogEntry]) -> Result<String>;

@@ -34,7 +34,11 @@ pub use kvstore::{
     create_collection, delete_collection, delete_collection_record, get_kvstore_status,
     insert_collection_record, list_collection_records, list_collections, modify_collection,
 };
-pub use license::{get_license_usage, list_license_pools, list_license_stacks};
+pub use license::{
+    activate_license, create_license_pool, deactivate_license, delete_license_pool,
+    get_license_usage, install_license, list_installed_licenses, list_license_pools,
+    list_license_stacks, modify_license_pool,
+};
 pub use logs::get_internal_logs;
 pub use lookups::list_lookup_tables;
 pub use parsing::check_log_parsing_health;

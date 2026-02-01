@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0249",
-      "status": "todo",
-      "title": "Add license installation and configuration",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "license",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/license.rs",
-        "crates/client/src/endpoints/license.rs",
-        "crates/cli/src/commands/license.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client/license.rs:9 explicitly states 'License installation or configuration (not yet implemented)'.",
-        "Current license support is read-only (view usage, pools, stacks).",
-        "Splunk REST API supports license management via /services/licenser/licenses."
-      ],
-      "plan": [
-        "Add install_license() method to client for license file upload.",
-        "Add license pool management methods (create_pool, modify_pool).",
-        "Extend CLI license command with install and pool subcommands.",
-        "Add license management UI to TUI license screen.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0250",
       "status": "todo",
       "title": "Add cluster configuration and management operations",

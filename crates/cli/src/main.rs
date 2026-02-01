@@ -254,8 +254,11 @@ enum Commands {
         command: commands::kvstore::KvstoreCommand,
     },
 
-    /// Show license information
-    License(commands::license::LicenseArgs),
+    /// Show and manage license information
+    License {
+        #[command(subcommand)]
+        command: Option<commands::license::LicenseCommand>,
+    },
 
     /// Show internal logs (index=_internal)
     Logs {
@@ -623,10 +626,18 @@ async fn run_command(
             )
             .await?;
         }
-        Commands::License(_args) => {
+        Commands::License { command } => {
             let config = config.into_real_config()?;
-            commands::license::run(config, &cli.output, cli.output_file.clone(), cancel_token)
-                .await?;
+            // Default to "show" if no subcommand is provided
+            let cmd = command.unwrap_or(commands::license::LicenseCommand::Show);
+            commands::license::run(
+                config,
+                cmd,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
         }
         Commands::Logs {
             count,

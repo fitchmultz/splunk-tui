@@ -512,6 +512,45 @@ pub enum Action {
     /// Result of loading capabilities
     CapabilitiesLoaded(Result<Vec<Capability>, Arc<ClientError>>),
 
+    // License Operations
+    /// Install a license file
+    InstallLicense { file_path: PathBuf },
+    /// Create a new license pool
+    CreateLicensePool {
+        params: splunk_client::CreatePoolParams,
+    },
+    /// Modify an existing license pool
+    ModifyLicensePool {
+        name: String,
+        params: splunk_client::ModifyPoolParams,
+    },
+    /// Delete a license pool
+    DeleteLicensePool { name: String },
+    /// Activate a license
+    ActivateLicense { name: String },
+    /// Deactivate a license
+    DeactivateLicense { name: String },
+    /// Open license installation dialog
+    OpenInstallLicenseDialog,
+    /// Open license pool creation dialog
+    OpenCreateLicensePoolDialog,
+    /// Open license pool modification dialog
+    OpenModifyLicensePoolDialog { name: String },
+    /// Open license pool deletion confirmation
+    OpenDeleteLicensePoolConfirm { name: String },
+    /// Result of installing a license
+    LicenseInstalled(Result<splunk_client::LicenseInstallResult, Arc<ClientError>>),
+    /// Result of creating a license pool
+    LicensePoolCreated(Result<splunk_client::LicensePool, Arc<ClientError>>),
+    /// Result of modifying a license pool
+    LicensePoolModified(Result<splunk_client::LicensePool, Arc<ClientError>>),
+    /// Result of deleting a license pool
+    LicensePoolDeleted(Result<String, Arc<ClientError>>),
+    /// Result of activating a license
+    LicenseActivated(Result<splunk_client::LicenseActivationResult, Arc<ClientError>>),
+    /// Result of deactivating a license
+    LicenseDeactivated(Result<splunk_client::LicenseActivationResult, Arc<ClientError>>),
+
     // KVStore Collection Operations
     /// Load KVStore collections list
     LoadCollections {
