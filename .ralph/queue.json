@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0282",
-      "status": "todo",
-      "title": "Make live tests opt-in and split client live tests under size limits",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tests",
-        "reliability"
-      ],
-      "scope": [
-        "crates/client/tests/live_tests.rs",
-        "crates/cli/tests/live_tests.rs",
-        "Makefile",
-        "make ci"
-      ],
-      "evidence": [
-        "make ci output shows live tests ran even with SKIP_LIVE_TESTS=1: 'Skipping live tests (SKIP_LIVE_TESTS=1)' followed by 'Running tests/live_tests.rs' for splunk-client and splunk-cli.",
-        "rg -n '#\\[ignore\\]' crates/client/tests/live_tests.rs crates/cli/tests/live_tests.rs returned no matches (no ignored tests).",
-        "wc -l crates/client/tests/live_tests.rs => 731 (file exceeds 700 LOC guideline)."
-      ],
-      "plan": [
-        "Mark all live tests in crates/client/tests/live_tests.rs and crates/cli/tests/live_tests.rs with #[ignore] or gate them behind a dedicated feature so they do not run in default cargo test.",
-        "Split crates/client/tests/live_tests.rs into per-concept test files (auth, search, kvstore, etc.) to keep each file under 700 LOC while preserving test names and behavior.",
-        "Update any references or documentation if required so make test-live remains the intended entrypoint for live tests.",
-        "Verify by running `cargo test --workspace --all-targets --all-features` (live tests should be skipped) and `SKIP_LIVE_TESTS=1 make ci` (no live test execution), then `make test-live` to confirm ignored live tests can still be run explicitly."
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-01T20:19:45Z",
-      "updated_at": "2026-02-01T20:19:45Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0283",
       "status": "todo",
       "title": "Split oversized TUI popup handler module",
