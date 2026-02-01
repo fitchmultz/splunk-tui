@@ -1,6 +1,6 @@
 [build]
 rustc-wrapper = "sccache"
-jobs = 5
+jobs = 0
 
 [target.aarch64-apple-darwin]
 linker = "clang"
