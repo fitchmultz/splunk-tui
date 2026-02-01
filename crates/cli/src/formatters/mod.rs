@@ -116,6 +116,16 @@ pub trait Formatter {
         detailed: bool,
     ) -> Result<String>;
 
+    /// Format cluster peers list.
+    fn format_cluster_peers(
+        &self,
+        peers: &[ClusterPeerOutput],
+        pagination: &Pagination,
+    ) -> Result<String>;
+
+    /// Format cluster management operation result.
+    fn format_cluster_management(&self, output: &ClusterManagementOutput) -> Result<String>;
+
     /// Format health check results.
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String>;
 
@@ -266,8 +276,18 @@ pub struct ClusterInfoOutput {
     pub replication_factor: Option<u32>,
     pub search_factor: Option<u32>,
     pub status: Option<String>,
+    pub maintenance_mode: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub peers: Option<Vec<ClusterPeerOutput>>,
+}
+
+/// Cluster management operation output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClusterManagementOutput {
+    pub operation: String,
+    pub target: String,
+    pub success: bool,
+    pub message: String,
 }
 
 /// Get a formatter for the specified output format.

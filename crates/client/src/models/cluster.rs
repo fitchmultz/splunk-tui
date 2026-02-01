@@ -14,6 +14,7 @@ pub struct ClusterInfo {
     pub replication_factor: Option<u32>,
     pub search_factor: Option<u32>,
     pub status: Option<String>,
+    pub maintenance_mode: Option<bool>,
 }
 
 /// Cluster peer information.
@@ -32,4 +33,34 @@ pub struct ClusterPeer {
     pub bundle_replication_count: Option<u32>,
     #[serde(rename = "is_captain")]
     pub is_captain: Option<bool>,
+}
+
+/// Parameters for setting maintenance mode.
+#[derive(Debug, Serialize)]
+pub struct MaintenanceModeParams {
+    /// Enable or disable maintenance mode.
+    pub mode: bool,
+}
+
+/// Parameters for removing peers from the cluster.
+#[derive(Debug, Serialize)]
+pub struct RemovePeersParams {
+    /// Comma-separated list of peer GUIDs to remove.
+    pub peers: String,
+}
+
+/// Parameters for decommissioning a peer.
+#[derive(Debug, Serialize)]
+pub struct DecommissionPeerParams {
+    /// Set to true to decommission the peer.
+    pub decommission: bool,
+}
+
+/// Response from a cluster management operation.
+#[derive(Debug, Deserialize)]
+pub struct ClusterManagementResponse {
+    /// Whether the operation was successful.
+    pub success: bool,
+    /// Optional message from the server.
+    pub message: Option<String>,
 }

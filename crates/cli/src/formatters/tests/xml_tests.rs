@@ -104,6 +104,7 @@ fn test_cluster_peers_xml_formatting() {
         replication_factor: Some(3),
         search_factor: Some(2),
         status: Some("Enabled".to_string()),
+        maintenance_mode: None,
         peers: Some(vec![ClusterPeerOutput {
             host: "peer1".to_string(),
             port: 8089,

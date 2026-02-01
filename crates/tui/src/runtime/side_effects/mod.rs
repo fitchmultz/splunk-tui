@@ -150,6 +150,19 @@ pub async fn handle_side_effects(
         Action::LoadClusterPeers => {
             cluster::handle_load_cluster_peers(client, tx).await;
         }
+        // Cluster management actions
+        Action::SetMaintenanceMode { enable } => {
+            cluster::handle_set_maintenance_mode(client, tx, enable).await;
+        }
+        Action::RebalanceCluster => {
+            cluster::handle_rebalance_cluster(client, tx).await;
+        }
+        Action::DecommissionPeer { peer_guid } => {
+            cluster::handle_decommission_peer(client, tx, peer_guid).await;
+        }
+        Action::RemovePeer { peer_guid } => {
+            cluster::handle_remove_peer(client, tx, peer_guid).await;
+        }
         Action::LoadSavedSearches => {
             searches::handle_load_saved_searches(client, tx).await;
         }

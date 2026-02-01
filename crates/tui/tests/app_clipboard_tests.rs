@@ -215,6 +215,7 @@ fn test_ctrl_c_copies_cluster_id() {
         replication_factor: None,
         search_factor: None,
         status: None,
+        maintenance_mode: None,
     });
 
     let action = app.handle_input(ctrl_key('c'));

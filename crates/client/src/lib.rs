@@ -20,13 +20,14 @@ pub use client::builder::SplunkClientBuilder;
 pub use error::{ClientError, Result};
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
-    App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo, ClusterPeer,
-    CreateIndexParams, CreatePoolParams, CreateRoleParams, CreateUserParams, Forwarder,
-    ForwarderListResponse, HealthCheckOutput, Index, IndexListResponse, InstalledLicense,
-    KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicenseActivationResult,
-    LicenseInstallResult, LicensePool, LicenseStack, LicenseUsage, LogEntry, LogParsingHealth,
-    LookupTable, LookupTableEntry, LookupTableListResponse, ModifyIndexParams, ModifyPoolParams,
-    ModifyRoleParams, ModifyUserParams, Role, RoleListResponse, SavedSearch, SearchJob,
-    SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
+    App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo,
+    ClusterManagementResponse, ClusterPeer, CreateIndexParams, CreatePoolParams, CreateRoleParams,
+    CreateUserParams, DecommissionPeerParams, Forwarder, ForwarderListResponse, HealthCheckOutput,
+    Index, IndexListResponse, InstalledLicense, KvStoreMember, KvStoreReplicationStatus,
+    KvStoreStatus, LicenseActivationResult, LicenseInstallResult, LicensePool, LicenseStack,
+    LicenseUsage, LogEntry, LogParsingHealth, LookupTable, LookupTableEntry,
+    LookupTableListResponse, MaintenanceModeParams, ModifyIndexParams, ModifyPoolParams,
+    ModifyRoleParams, ModifyUserParams, RemovePeersParams, Role, RoleListResponse, SavedSearch,
+    SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, ServerInfo, SplunkHealth,
     SplunkResponse, User, UserListResponse,
 };

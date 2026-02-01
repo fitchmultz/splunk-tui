@@ -344,6 +344,25 @@ pub enum Action {
     UsersLoaded(Result<Vec<User>, Arc<ClientError>>),
     /// Result of loading cluster peers
     ClusterPeersLoaded(Result<Vec<ClusterPeer>, Arc<ClientError>>),
+
+    // Cluster management actions
+    /// Set maintenance mode on the cluster
+    SetMaintenanceMode { enable: bool },
+    /// Result of setting maintenance mode
+    MaintenanceModeSet { result: Result<(), String> },
+    /// Rebalance cluster primaries
+    RebalanceCluster,
+    /// Result of rebalancing cluster
+    ClusterRebalanced { result: Result<(), String> },
+    /// Decommission a peer by GUID
+    DecommissionPeer { peer_guid: String },
+    /// Result of decommissioning a peer
+    PeerDecommissioned { result: Result<(), String> },
+    /// Remove a peer from the cluster
+    RemovePeer { peer_guid: String },
+    /// Result of removing a peer
+    PeerRemoved { result: Result<(), String> },
+
     /// Result of loading overview
     OverviewLoaded(OverviewData),
     /// Multi-instance overview data loaded

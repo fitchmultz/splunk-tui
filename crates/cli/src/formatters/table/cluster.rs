@@ -7,7 +7,9 @@
 //! - Other resource types.
 //! - Pagination (handled in mod.rs).
 
-use crate::formatters::ClusterInfoOutput;
+use crate::formatters::{
+    ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Pagination,
+};
 use anyhow::Result;
 
 /// Format cluster info as a formatted text block.
@@ -59,4 +61,52 @@ pub fn format_cluster_info(cluster_info: &ClusterInfoOutput, detailed: bool) -> 
     }
 
     Ok(output)
+}
+
+/// Format cluster peers as a table.
+pub fn format_cluster_peers(
+    peers: &[ClusterPeerOutput],
+    pagination: &Pagination,
+) -> Result<String> {
+    let mut output = String::from("Cluster Peers:\n\n");
+
+    if peers.is_empty() {
+        output.push_str("No peers found.\n");
+        return Ok(output);
+    }
+
+    // Header
+    output.push_str("Host\t\tStatus\tState\t\tSite\tCaptain\n");
+    output.push_str("----\t\t------\t-----\t\t----\t-------\n");
+
+    for peer in peers {
+        let captain_marker = if peer.is_captain { "Yes" } else { "" };
+        output.push_str(&format!(
+            "{}:{}\t{}\t{}\t{}\t{}\n",
+            peer.host,
+            peer.port,
+            peer.status,
+            peer.peer_state,
+            peer.site.as_deref().unwrap_or("-"),
+            captain_marker
+        ));
+    }
+
+    output.push_str(&format!(
+        "\nShowing {} of {} peers (offset: {})\n",
+        peers.len(),
+        pagination.total.unwrap_or(peers.len()),
+        pagination.offset
+    ));
+
+    Ok(output)
+}
+
+/// Format cluster management operation result.
+pub fn format_cluster_management(output: &ClusterManagementOutput) -> Result<String> {
+    let status = if output.success { "SUCCESS" } else { "FAILED" };
+    Ok(format!(
+        "Operation: {}\nTarget: {}\nStatus: {}\nMessage: {}\n",
+        output.operation, output.target, status, output.message
+    ))
 }

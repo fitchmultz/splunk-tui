@@ -9,8 +9,8 @@
 //! - Schema validation.
 
 use crate::formatters::{
-    ClusterInfoOutput, Formatter, LicenseInfoOutput, LicenseInstallOutput,
-    LicensePoolOperationOutput,
+    ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
 };
 use anyhow::Result;
 use splunk_client::models::{
@@ -63,6 +63,36 @@ impl Formatter for XmlFormatter {
         detailed: bool,
     ) -> Result<String> {
         cluster::format_cluster_info(cluster_info, detailed)
+    }
+
+    fn format_cluster_peers(
+        &self,
+        _peers: &[ClusterPeerOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        // XML doesn't support paginated peer lists; use JSON for programmatic access
+        anyhow::bail!("XML format not supported for cluster peers. Use JSON format.")
+    }
+
+    fn format_cluster_management(&self, output: &ClusterManagementOutput) -> Result<String> {
+        let mut result = String::new();
+        result.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        result.push_str("<cluster_management>\n");
+        result.push_str(&format!(
+            "  <operation>{}</operation>\n",
+            escape_xml(&output.operation)
+        ));
+        result.push_str(&format!(
+            "  <target>{}</target>\n",
+            escape_xml(&output.target)
+        ));
+        result.push_str(&format!("  <success>{}</success>\n", output.success));
+        result.push_str(&format!(
+            "  <message>{}</message>\n",
+            escape_xml(&output.message)
+        ));
+        result.push_str("</cluster_management>\n");
+        Ok(result)
     }
 
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {

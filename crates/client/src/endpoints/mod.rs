@@ -24,7 +24,10 @@ mod users;
 pub use alerts::{get_fired_alert, list_fired_alerts};
 pub use auth::login;
 pub use capabilities::list_capabilities;
-pub use cluster::{get_cluster_info, get_cluster_peers};
+pub use cluster::{
+    decommission_peer, get_cluster_info, get_cluster_peers, rebalance_cluster, remove_peers,
+    set_maintenance_mode,
+};
 pub use configs::{get_config_stanza, list_config_files, list_config_stanzas};
 pub use forwarders::list_forwarders;
 pub use indexes::{create_index, delete_index, list_indexes, modify_index};

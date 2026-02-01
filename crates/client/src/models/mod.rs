@@ -30,7 +30,10 @@ pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListRespons
 pub use apps::{App, AppEntry, AppListResponse};
 pub use auth::AuthResponse;
 pub use capabilities::{Capability, CapabilityEntry, CapabilityListResponse};
-pub use cluster::{ClusterInfo, ClusterPeer};
+pub use cluster::{
+    ClusterInfo, ClusterManagementResponse, ClusterPeer, DecommissionPeerParams,
+    MaintenanceModeParams, RemovePeersParams,
+};
 pub use common::{Acl, Entry, Perms, SplunkMessage, SplunkMessages, SplunkResponse};
 pub use configs::{
     ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,

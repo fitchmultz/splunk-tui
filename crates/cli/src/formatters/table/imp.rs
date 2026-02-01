@@ -9,8 +9,8 @@
 //! - File I/O.
 
 use crate::formatters::{
-    ClusterInfoOutput, Formatter, LicenseInfoOutput, LicenseInstallOutput,
-    LicensePoolOperationOutput,
+    ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
+    LicenseInstallOutput, LicensePoolOperationOutput,
 };
 use anyhow::Result;
 use splunk_client::models::{
@@ -76,6 +76,18 @@ impl Formatter for TableFormatter {
         detailed: bool,
     ) -> Result<String> {
         cluster::format_cluster_info(cluster_info, detailed)
+    }
+
+    fn format_cluster_peers(
+        &self,
+        peers: &[ClusterPeerOutput],
+        pagination: &Pagination,
+    ) -> Result<String> {
+        cluster::format_cluster_peers(peers, pagination)
+    }
+
+    fn format_cluster_management(&self, output: &ClusterManagementOutput) -> Result<String> {
+        cluster::format_cluster_management(output)
     }
 
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {

@@ -6,8 +6,8 @@
 //! Does NOT handle:
 //! - Other resource types.
 
-use crate::formatters::ClusterInfoOutput;
 use crate::formatters::common::{build_csv_header, build_csv_row, escape_csv, format_opt_str};
+use crate::formatters::{ClusterInfoOutput, ClusterManagementOutput};
 use anyhow::Result;
 
 /// Format cluster info as CSV.
@@ -76,4 +76,23 @@ pub fn format_cluster_info(cluster_info: &ClusterInfoOutput, detailed: bool) -> 
     }
 
     Ok(output)
+}
+
+/// Format cluster management operation result as CSV.
+pub fn format_cluster_management(output: &ClusterManagementOutput) -> Result<String> {
+    let mut result = String::new();
+    result.push_str(&build_csv_header(&[
+        "Operation",
+        "Target",
+        "Success",
+        "Message",
+    ]));
+    let fields = vec![
+        escape_csv(&output.operation),
+        escape_csv(&output.target),
+        escape_csv(&output.success.to_string()),
+        escape_csv(&output.message),
+    ];
+    result.push_str(&build_csv_row(&fields));
+    Ok(result)
 }

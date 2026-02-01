@@ -64,6 +64,7 @@ fn test_redact_cluster_info_loaded() {
         replication_factor: None,
         search_factor: None,
         status: None,
+        maintenance_mode: None,
     };
     let action = Action::ClusterInfoLoaded(Ok(info));
     let output = redacted_debug(&action);

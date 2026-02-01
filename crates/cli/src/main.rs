@@ -207,18 +207,21 @@ enum Commands {
         offset: usize,
     },
 
-    /// Show cluster status and configuration
+    /// Show cluster status and manage cluster configuration
     Cluster {
-        /// Show detailed cluster information
-        #[arg(short, long)]
+        #[command(subcommand)]
+        command: Option<commands::cluster::ClusterCommand>,
+
+        /// Show detailed cluster information (deprecated: use 'cluster show --detailed')
+        #[arg(short, long, hide = true)]
         detailed: bool,
 
-        /// Offset into the cluster peer list (zero-based). Only applies with --detailed.
-        #[arg(long, default_value = "0")]
+        /// Offset into the cluster peer list (zero-based) (deprecated: use 'cluster show')
+        #[arg(long, hide = true, default_value = "0")]
         offset: usize,
 
-        /// Number of peers per page. Only applies with --detailed.
-        #[arg(long = "page-size", default_value = "50")]
+        /// Number of peers per page (deprecated: use 'cluster show')
+        #[arg(long = "page-size", hide = true, default_value = "50")]
         page_size: usize,
     },
 
@@ -572,16 +575,24 @@ async fn run_command(
             .await?;
         }
         Commands::Cluster {
+            command,
             detailed,
             offset,
             page_size,
         } => {
             let config = config.into_real_config()?;
+            // Handle backward compatibility: if no subcommand but old flags are used, use Show
+            let cmd = match command {
+                Some(cmd) => cmd,
+                None => commands::cluster::ClusterCommand::Show {
+                    detailed,
+                    offset,
+                    page_size,
+                },
+            };
             commands::cluster::run(
                 config,
-                detailed,
-                offset,
-                page_size,
+                cmd,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,

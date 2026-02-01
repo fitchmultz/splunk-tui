@@ -3,7 +3,7 @@
   "tasks": [
     {
       "id": "RQ-0250",
-      "status": "todo",
+      "status": "doing",
       "title": "Add cluster configuration and management operations",
       "priority": "medium",
       "tags": [
@@ -15,24 +15,81 @@
       "scope": [
         "crates/client/src/client/cluster.rs",
         "crates/client/src/endpoints/cluster.rs",
-        "crates/cli/src/commands/cluster.rs"
+        "crates/client/src/models/cluster.rs",
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/main.rs",
+        "crates/tui/src/ui/screens/cluster.rs"
       ],
       "evidence": [
         "crates/client/src/client/cluster.rs:8 explicitly states 'Cluster configuration or management operations (not yet implemented)'.",
-        "Current cluster support is read-only (view info and peers).",
-        "Splunk REST API provides cluster management endpoints for peer control and configuration."
+        "Current cluster support is read-only: get_cluster_info() and get_cluster_peers() only.",
+        "crates/client/src/endpoints/cluster.rs has GET endpoints only - no POST/DELETE for management.",
+        "CLI cluster command only supports viewing status (--detailed, --offset, --page-size).",
+        "TUI cluster screen only renders summary and peers table - no management actions.",
+        "Splunk REST API provides cluster management endpoints: /services/cluster/master/peers/{peerName} for decommissioning, /services/cluster/master/control for maintenance mode and rebalancing."
       ],
       "plan": [
-        "Add cluster peer management methods (add_peer, remove_peer, decommission_peer).",
-        "Add cluster rebalance and maintenance mode controls.",
-        "Extend CLI cluster command with manage subcommand for operations.",
-        "Add cluster management UI to TUI cluster screen.",
-        "Add tests and update documentation."
+        "Add cluster peer management methods to client: decommission_peer(), remove_peer().",
+        "Add cluster control methods to client: set_maintenance_mode(), rebalance_cluster().",
+        "Add management POST endpoints to crates/client/src/endpoints/cluster.rs.",
+        "Extend CLI cluster command with subcommands: manage decommission, manage maintenance, manage rebalance.",
+        "Add cluster management actions to TUI cluster screen (keybindings for decommission, maintenance toggle).",
+        "Add tests for new cluster management operations.",
+        "Update documentation with new cluster management capabilities."
       ],
-      "notes": [],
+      "notes": [
+        "Existing cluster models (ClusterInfo, ClusterPeer) in crates/client/src/models/cluster.rs may need extension for management operations.",
+        "Follow pattern from other management commands like roles, users, or license for CLI structure."
+      ],
       "request": "scan finding",
       "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
+      "updated_at": "2026-02-01T02:44:12.405715000Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0279",
+      "status": "todo",
+      "title": "Investigate and fix slow test execution",
+      "priority": "high",
+      "tags": [
+        "bug",
+        "fix",
+        "performance",
+        "tests"
+      ],
+      "scope": [
+        "crates/*/tests/",
+        "Cargo.toml",
+        "Makefile",
+        "scripts/"
+      ],
+      "evidence": [
+        "User reports: 'TESTS take WAY TOO LONG to execute'",
+        "User states: 'SOMETHING IS BROKEN AND IT IS NOT BECAUSE OF THE NUMBER OF TESTS'",
+        "User emphasizes: 'SOMETHING IS DONE WRONG OR POORLY AND YOU MUST ROOT IT OUT'",
+        "This is a Rust workspace with client/cli/tui crates - slow tests may indicate: blocking I/O without timeouts, test isolation issues, unnecessary sleeps/delays, or improper async runtime usage"
+      ],
+      "plan": [
+        "Profile test execution with `cargo test -- --nocapture` and `time` to identify slow test files",
+        "Check for tests with hardcoded sleep() calls or excessive timeouts",
+        "Examine test setup/teardown for redundant operations or blocking calls",
+        "Review async test usage - look for blocking operations in async contexts",
+        "Check for live tests running without `#[ignore]` attribute during `make test`",
+        "Identify any tests making real network calls or waiting on external resources",
+        "Fix root cause (not band-aid) - remove unnecessary delays, add proper mocking, or fix async runtime issues",
+        "Verify fix by running `make ci` and confirming significant speedup"
+      ],
+      "notes": [
+        "Look for patterns: tests with #[tokio::test] that may be blocking, tests without proper mocking hitting real endpoints",
+        "Check if test-live tests are being run during regular `make test` due to missing #[ignore]",
+        "Review if any fixtures or test helpers have expensive setup that runs per-test instead of once"
+      ],
+      "request": "The TESTS take WAY TOO LONG to execute. SOMETHING IS BROKEN AND IT IS NOT BECAUSE OF THE NUMBER OF TESTS. SOMETHING IS DONE WRONG OR POORLY AND YOU MUST ROOT IT OUT.",
+      "created_at": "2026-01-31T00:00:00Z",
+      "updated_at": "2026-01-31T00:00:00Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],

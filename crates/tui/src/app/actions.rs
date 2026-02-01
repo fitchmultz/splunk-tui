@@ -145,7 +145,11 @@ impl App {
             | Action::ShowErrorDetailsFromCurrent
             | Action::ClearErrorDetails
             | Action::JobOperationComplete(_)
-            | Action::OpenCreateIndexDialog => {
+            | Action::OpenCreateIndexDialog
+            | Action::MaintenanceModeSet { .. }
+            | Action::ClusterRebalanced { .. }
+            | Action::PeerDecommissioned { .. }
+            | Action::PeerRemoved { .. } => {
                 self.handle_system_action(action);
             }
 

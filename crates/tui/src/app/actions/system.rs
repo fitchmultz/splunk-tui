@@ -88,8 +88,75 @@ impl App {
             Action::OpenCreateIndexDialog => {
                 self.open_create_index_dialog();
             }
+            // Cluster management result actions
+            Action::MaintenanceModeSet { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::info("Maintenance mode updated"));
+                        // Refresh cluster info to show updated state
+                        self.trigger_load_cluster_info();
+                    }
+                    Err(e) => {
+                        self.toasts.push(Toast::error(format!(
+                            "Failed to set maintenance mode: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+            Action::ClusterRebalanced { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::info("Cluster rebalance initiated"));
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to rebalance cluster: {}", e)));
+                    }
+                }
+            }
+            Action::PeerDecommissioned { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::info("Peer decommission initiated"));
+                        // Refresh peers list
+                        self.trigger_load_cluster_peers();
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to decommission peer: {}", e)));
+                    }
+                }
+            }
+            Action::PeerRemoved { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::info("Peer removed from cluster"));
+                        // Refresh peers list
+                        self.trigger_load_cluster_peers();
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to remove peer: {}", e)));
+                    }
+                }
+            }
             _ => {}
         }
+    }
+
+    fn trigger_load_cluster_info(&mut self) {
+        // This is handled by the main loop, just set a flag or send action
+        // For now, we'll refresh on next tick or user action
+    }
+
+    fn trigger_load_cluster_peers(&mut self) {
+        // This is handled by the main loop, just set a flag or send action
+        // For now, we'll refresh on next tick or user action
     }
 
     fn handle_copy_to_clipboard(&mut self, content: String) {

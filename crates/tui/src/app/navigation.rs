@@ -323,6 +323,16 @@ impl App {
             _ => {}
         }
     }
+
+    /// Get the currently selected cluster peer, if any.
+    pub fn get_selected_cluster_peer(&self) -> Option<&splunk_client::models::ClusterPeer> {
+        if self.cluster_view_mode != crate::app::state::ClusterViewMode::Peers {
+            return None;
+        }
+        let peers = self.cluster_peers.as_ref()?;
+        let selected = self.cluster_peers_state.selected()?;
+        peers.get(selected)
+    }
 }
 
 #[cfg(test)]

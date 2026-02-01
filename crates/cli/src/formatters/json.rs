@@ -9,8 +9,8 @@
 
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
-    ClusterInfoOutput, Formatter, LicenseInfoOutput, LicenseInstallOutput,
-    LicensePoolOperationOutput,
+    ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
 };
 use anyhow::Result;
 use serde::Serialize;
@@ -46,6 +46,18 @@ impl Formatter for JsonFormatter {
         _detailed: bool,
     ) -> Result<String> {
         Ok(serde_json::to_string_pretty(cluster_info)?)
+    }
+
+    fn format_cluster_peers(
+        &self,
+        peers: &[ClusterPeerOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(peers)?)
+    }
+
+    fn format_cluster_management(&self, output: &ClusterManagementOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(output)?)
     }
 
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {

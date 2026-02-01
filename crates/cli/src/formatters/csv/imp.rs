@@ -10,8 +10,8 @@
 
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
-    ClusterInfoOutput, Formatter, LicenseInfoOutput, LicenseInstallOutput,
-    LicensePoolOperationOutput,
+    ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
 };
 use anyhow::Result;
 use splunk_client::models::{
@@ -66,6 +66,19 @@ impl Formatter for CsvFormatter {
         detailed: bool,
     ) -> Result<String> {
         cluster::format_cluster_info(cluster_info, detailed)
+    }
+
+    fn format_cluster_peers(
+        &self,
+        _peers: &[ClusterPeerOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        // CSV doesn't support paginated peer lists; use JSON for programmatic access
+        anyhow::bail!("CSV format not supported for cluster peers. Use JSON format.")
+    }
+
+    fn format_cluster_management(&self, output: &ClusterManagementOutput) -> Result<String> {
+        cluster::format_cluster_management(output)
     }
 
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
