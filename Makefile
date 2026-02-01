@@ -22,7 +22,7 @@ update:
 
 # Run clippy and format check
 lint:
-	cargo clippy --workspace --all-targets --all-features -- -D warnings
+	cargo clippy --fix --allow-dirty --workspace --all-targets --all-features -- -D warnings
 	cargo fmt --all --check
 
 # Run secret-commit guard
@@ -53,7 +53,7 @@ clean:
 test: test-all
 
 # Run all tests (workspace, all targets). This is the default "everything" gate.
-test-all: build-test-bins
+test-all:
 	cargo test --workspace --all-targets --all-features --quiet
 
 # Run unit tests (lib and bins)
@@ -61,7 +61,7 @@ test-unit:
 	cargo test --workspace --lib --bins --all-features --quiet
 
 # Run integration tests
-test-integration: build-test-bins
+test-integration:
 	cargo test --workspace --tests --all-features --quiet
 
 # Build binaries required for integration tests
@@ -75,7 +75,8 @@ test-live:
 		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
 		exit 0; \
 	fi
-	cargo test --workspace --all-targets --all-features --quiet -- --ignored
+	cargo test -p splunk-client --test live_tests --all-features --quiet -- --ignored
+	cargo test -p splunk-cli --test live_tests --all-features --quiet -- --ignored
 
 # Manual live server test script
 test-live-manual:
