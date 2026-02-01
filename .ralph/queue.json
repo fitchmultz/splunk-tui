@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0250",
-      "status": "doing",
-      "title": "Add cluster configuration and management operations",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "cluster",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/cluster.rs",
-        "crates/client/src/endpoints/cluster.rs",
-        "crates/client/src/models/cluster.rs",
-        "crates/cli/src/commands/cluster.rs",
-        "crates/cli/src/main.rs",
-        "crates/tui/src/ui/screens/cluster.rs"
-      ],
-      "evidence": [
-        "crates/client/src/client/cluster.rs:8 explicitly states 'Cluster configuration or management operations (not yet implemented)'.",
-        "Current cluster support is read-only: get_cluster_info() and get_cluster_peers() only.",
-        "crates/client/src/endpoints/cluster.rs has GET endpoints only - no POST/DELETE for management.",
-        "CLI cluster command only supports viewing status (--detailed, --offset, --page-size).",
-        "TUI cluster screen only renders summary and peers table - no management actions.",
-        "Splunk REST API provides cluster management endpoints: /services/cluster/master/peers/{peerName} for decommissioning, /services/cluster/master/control for maintenance mode and rebalancing."
-      ],
-      "plan": [
-        "Add cluster peer management methods to client: decommission_peer(), remove_peer().",
-        "Add cluster control methods to client: set_maintenance_mode(), rebalance_cluster().",
-        "Add management POST endpoints to crates/client/src/endpoints/cluster.rs.",
-        "Extend CLI cluster command with subcommands: manage decommission, manage maintenance, manage rebalance.",
-        "Add cluster management actions to TUI cluster screen (keybindings for decommission, maintenance toggle).",
-        "Add tests for new cluster management operations.",
-        "Update documentation with new cluster management capabilities."
-      ],
-      "notes": [
-        "Existing cluster models (ClusterInfo, ClusterPeer) in crates/client/src/models/cluster.rs may need extension for management operations.",
-        "Follow pattern from other management commands like roles, users, or license for CLI structure."
-      ],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-02-01T02:44:12.405715000Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0279",
       "status": "todo",
       "title": "Investigate and fix slow test execution",
