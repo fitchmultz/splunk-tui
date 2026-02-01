@@ -2,40 +2,44 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0280",
-      "status": "todo",
-      "title": "Optimize Rust build for performance and speed",
+      "id": "RQ-0281",
+      "status": "draft",
+      "title": "Optimize make ci to remove release build requirement while keeping core checks",
       "priority": "high",
       "tags": [
-        "build",
+        "ci",
+        "makefile",
         "performance",
-        "rust",
-        "makefile"
+        "build"
       ],
       "scope": [
         "Makefile",
-        "Cargo.toml",
-        ".cargo/config.toml"
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/"
       ],
       "evidence": [
-        "User reports builds take a long time.",
-        "Current release profile has lto=true and codegen-units=1 which maximizes optimization but slows builds significantly.",
-        "make ci currently builds release binary and installs it - this behavior must be preserved.",
-        "Cargo.toml shows profile.release with aggressive optimizations enabled."
+        "User reports 'make ci' takes far too long due to multiple builds and extensive builds.",
+        "Current Makefile ci target runs: install -> format -> lint-secrets -> lint -> test -> test-live -> release (with install) -> lint-docs.",
+        "The release target builds with --profile ci and installs binaries to ~/.local/bin.",
+        "User wants to keep: code formatting, schema generation, linting and lint fixing, type-checking, and building (but NOT require a true release build every time).",
+        "User wants to drop: building a true release every time AND the binary install step.",
+        "AGENTS.md and CLAUDE.md both document the Makefile contract and ci target behavior that must be updated.",
+        "Makefile line 130-143: ci target currently depends on release which builds and installs binaries."
       ],
       "plan": [
-        "Analyze current build bottlenecks (check Cargo.toml profiles, dependencies, and build configuration).",
-        "Add Cargo build config (`.cargo/config.toml`) with sensible defaults for faster builds (e.g., parallel frontend, faster linker).",
-        "Consider adding a faster `profile.dev` or `profile.ci` for development/CI if not already optimal.",
-        "Review Makefile for redundant builds or unnecessary serial steps.",
-        "Ensure `make ci` still builds and installs the release binary as current behavior.",
-        "Verify improvements with timing comparisons before/after.",
-        "Run `make ci` to confirm everything still works."
+        "Modify Makefile ci target to remove release build and binary install steps.",
+        "Add type-check target to ci (user explicitly wants this kept).",
+        "Ensure ci still runs: install, format, lint-secrets, lint, type-check, test, test-live, generate, lint-docs.",
+        "Update AGENTS.md Makefile contract section to reflect new ci behavior.",
+        "Update CLAUDE.md Makefile contract section to reflect new ci behavior.",
+        "Update any docs/ files that reference the ci target behavior.",
+        "Verify make ci passes with the new configuration."
       ],
       "notes": [],
-      "request": "Optimize the build for performance and speed. Build take a long time. User wants the binary built and installed during make ci like it currently is.",
-      "created_at": "2026-02-01T00:00:00Z",
-      "updated_at": "2026-02-01T00:00:00Z",
+      "request": "The current CI gate 'make ci' takes far too long to execute due to the multiple builds and extensive builds. I want to keep code formatting, schema generation, linting and lint fixing, type-checking, and building (yes, keeping building if possible but no longer REQUIRE building a true release EVERY time CI is executed), and since we can drop building a true release everytime we can drop the binary install step. I want this change planned, implemented, and executed. I want all docs, including AGENTS.md, updated with my new requirements.",
+      "created_at": "2026-02-01T12:30:00Z",
+      "updated_at": "2026-02-01T12:30:00Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],

@@ -1,10 +1,21 @@
 .PHONY: install update lint format clean \
 	test test-all test-unit test-integration test-live test-live-manual \
-	build release generate lint-docs ci help lint-secrets install-hooks
+	build release generate lint-docs ci help lint-secrets install-hooks \
+	_generate-docs _lint-docs-check
 
 # Binaries and Installation
-BINS := splunk-cli splunk-tui
+BINS := splunk-cli splunk-tui generate-tui-docs
 INSTALL_DIR ?= $(HOME)/.local/bin
+
+# Build profile: 'release' (default) or 'ci' (faster, less optimized)
+PROFILE ?= release
+
+# Map profile to target directory name
+ifeq ($(PROFILE),release)
+  TARGET_DIR := release
+else
+  TARGET_DIR := $(PROFILE)
+endif
 
 # Default target
 .DEFAULT_GOAL := help
@@ -82,32 +93,39 @@ test-live-manual:
 	@bash scripts/test-live-server.sh
 
 # Release build and install binaries (required every time)
+# Usage: make release [PROFILE=ci] (PROFILE defaults to 'release')
 release:
-	@echo "→ Release build..."
-	@cargo build --release --workspace --bins --all-features --locked
+	@echo "→ Release build (profile: $(PROFILE))..."
+	@cargo build --profile $(PROFILE) --workspace --bins --all-features --locked
 	@mkdir -p $(INSTALL_DIR)
 	@for bin in $(BINS); do \
 		echo "Installing $$bin to $(INSTALL_DIR)..."; \
-		install -m 0755 target/release/$$bin $(INSTALL_DIR)/$$bin; \
+		install -m 0755 target/$(TARGET_DIR)/$$bin $(INSTALL_DIR)/$$bin; \
 	done
 	@echo "  ✓ Release build + install complete"
 
 # Build target (alias for release)
 build: release
 
+# Regenerate derived documentation artifacts (internal: no release dependency)
+_generate-docs:
+	@echo "→ Generating derived docs..."
+	@$(INSTALL_DIR)/generate-tui-docs
+	@echo "  ✓ Generated"
+
+# Verify documentation is up to date (internal: no release dependency)
+_lint-docs-check:
+	@echo "→ Checking docs drift..."
+	@$(INSTALL_DIR)/generate-tui-docs --check
+	@echo "  ✓ Docs clean"
+
 # Regenerate derived documentation artifacts
 # IMPORTANT: use the already-built release binary to avoid a second debug compile.
-generate: release
-	@echo "→ Generating derived docs (via release binary)..."
-	@$(INSTALL_DIR)/splunk-tui generate-tui-docs
-	@echo "  ✓ Generated"
+generate: release _generate-docs
 
 # Verify documentation is up to date
 # IMPORTANT: use the already-built release binary to avoid a second debug compile.
-lint-docs: release
-	@echo "→ Checking docs drift (via release binary)..."
-	@$(INSTALL_DIR)/splunk-tui generate-tui-docs --check
-	@echo "  ✓ Docs clean"
+lint-docs: release _lint-docs-check
 
 # CI pipeline (local speed-first):
 # deps -> format -> lint-secrets -> clippy fix + fmt check -> tests -> live tests -> release+install -> docs generate/check
@@ -115,18 +133,19 @@ lint-docs: release
 # Notes:
 # - No separate type-check: redundant with clippy/tests and costs time.
 # - release is required every time, and we reuse that binary for generate/lint-docs.
+# - Uses PROFILE=ci for faster builds (still produces working binaries).
 ci:
-	@echo "→ Local CI (mutates code, always builds+installs release)..."
+	@echo "→ Local CI (mutates code, builds+installs with ci profile)..."
 	@echo ""
 	@set -e; \
-	$(MAKE) install       || { echo ""; echo "✗ CI failed at: install"; exit 1; }; \
-	$(MAKE) format        || { echo ""; echo "✗ CI failed at: format"; exit 1; }; \
-	$(MAKE) lint-secrets  || { echo ""; echo "✗ CI failed at: lint-secrets"; exit 1; }; \
-	$(MAKE) lint          || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
-	$(MAKE) test          || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
-	$(MAKE) test-live     || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
-	$(MAKE) release       || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
-	$(MAKE) lint-docs     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }
+	$(MAKE) install              || { echo ""; echo "✗ CI failed at: install"; exit 1; }; \
+	$(MAKE) format               || { echo ""; echo "✗ CI failed at: format"; exit 1; }; \
+	$(MAKE) lint-secrets         || { echo ""; echo "✗ CI failed at: lint-secrets"; exit 1; }; \
+	$(MAKE) lint                 || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
+	$(MAKE) test                 || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
+	$(MAKE) test-live            || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
+	$(MAKE) release PROFILE=ci   || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
+	$(MAKE) _lint-docs-check     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }
 	@echo ""
 	@echo "✓ CI completed successfully"
 
@@ -151,5 +170,5 @@ help:
 	@echo "  make lint-docs        - Verify docs are up to date (via installed release binary)"
 	@echo "  make lint-secrets     - Run secret-commit guard"
 	@echo "  make install-hooks    - Install git pre-commit hook for secret guard"
-	@echo "  make ci               - Full local pipeline (speed-first, mutates code, always release+install)"
+	@echo "  make ci               - Full local pipeline (speed-first, mutates code, uses ci profile for faster builds)"
 	@echo "  make help             - Show this help message"
