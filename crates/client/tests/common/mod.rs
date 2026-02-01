@@ -13,6 +13,7 @@
 //! - Test-specific assertions or test logic
 
 use std::path::Path;
+use std::time::Duration;
 
 /// Load a JSON fixture file from the fixtures directory.
 ///
@@ -36,3 +37,17 @@ pub fn load_fixture(fixture_path: &str) -> serde_json::Value {
 pub use reqwest::Client;
 pub use splunk_client::endpoints;
 pub use wiremock::{Mock, MockServer, ResponseTemplate};
+
+/// Advance Tokio's paused clock and yield so sleepers can observe the change.
+#[allow(dead_code)]
+pub async fn advance_and_yield(duration: Duration) {
+    tokio::time::advance(duration).await;
+    tokio::task::yield_now().await;
+}
+
+/// Assert that a task has not completed after yielding to the scheduler.
+#[allow(dead_code)]
+pub async fn assert_pending<T>(handle: &tokio::task::JoinHandle<T>, context: &str) {
+    tokio::task::yield_now().await;
+    assert!(!handle.is_finished(), "Expected pending task: {}", context);
+}

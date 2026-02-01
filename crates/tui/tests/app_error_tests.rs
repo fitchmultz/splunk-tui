@@ -97,7 +97,7 @@ fn test_notify_adds_toast() {
 
 #[test]
 fn test_tick_prunes_expired_toasts() {
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = splunk_tui::CurrentScreen::Jobs;
@@ -108,7 +108,7 @@ fn test_tick_prunes_expired_toasts() {
 
     // Manually expire it
     app.toasts[0].ttl = Duration::from_millis(1);
-    std::thread::sleep(Duration::from_millis(10));
+    app.toasts[0].created_at = Instant::now() - Duration::from_secs(1);
 
     // Tick should prune expired toasts
     app.update(Action::Tick);

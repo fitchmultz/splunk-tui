@@ -273,7 +273,7 @@ mod tests {
         // Create an already-expired toast
         let mut expired_toast = Toast::info("Test".to_string());
         expired_toast.ttl = Duration::from_millis(1);
-        std::thread::sleep(Duration::from_millis(10));
+        expired_toast.created_at = Instant::now() - Duration::from_secs(1);
         assert!(expired_toast.is_expired(), "Old toast should be expired");
     }
 

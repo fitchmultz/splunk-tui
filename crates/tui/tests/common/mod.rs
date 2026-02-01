@@ -110,8 +110,8 @@ impl SideEffectsTestHarness {
             handle_side_effects(action, client, tx, config_manager).await;
         });
 
-        // Give the handler a moment to start
-        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+        // Give the handler a chance to start without real-time delay
+        tokio::task::yield_now().await;
 
         // Collect actions until timeout
         let mut actions = Vec::new();

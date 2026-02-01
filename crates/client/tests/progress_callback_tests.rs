@@ -22,7 +22,6 @@ use common::*;
 use std::panic::AssertUnwindSafe;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use wiremock::matchers::{method, path, query_param};
 
 /// Helper to create a job status response with specific progress values.
@@ -336,7 +335,7 @@ async fn test_callback_with_shared_state_thread_safety() {
 #[tokio::test]
 async fn test_blocking_callback() {
     // Verify that a blocking callback doesn't deadlock the polling loop.
-    // The callback blocks for 50ms while poll interval is 10ms.
+    // The callback blocks until the test releases it while poll interval is 10ms.
     let mock_server = MockServer::start().await;
 
     // Create 3 responses
@@ -358,16 +357,29 @@ async fn test_blocking_callback() {
 
     let callback_count = Arc::new(AtomicUsize::new(0));
     let count_clone = Arc::clone(&callback_count);
+    let (entered_tx, entered_rx) = std::sync::mpsc::channel();
+    let (release_tx, release_rx) = std::sync::mpsc::channel();
+
+    let release_thread = std::thread::spawn(move || {
+        for _ in 0..3 {
+            entered_rx
+                .recv()
+                .expect("callback entry signal should be received");
+            release_tx.send(()).expect("release signal should be sent");
+        }
+    });
 
     let mut callback = move |_progress: f64| {
-        // Simulate blocking work
-        std::thread::sleep(Duration::from_millis(50));
+        entered_tx
+            .send(())
+            .expect("callback entry signal should be sent");
+        release_rx
+            .recv()
+            .expect("release signal should be received");
         count_clone.fetch_add(1, Ordering::SeqCst);
     };
 
     let client = Client::new();
-    let start = std::time::Instant::now();
-
     let result = endpoints::wait_for_job_with_progress(
         &client,
         &mock_server.uri(),
@@ -381,8 +393,6 @@ async fn test_blocking_callback() {
     )
     .await;
 
-    let elapsed = start.elapsed();
-
     assert!(
         result.is_ok(),
         "Blocking callback should not prevent completion"
@@ -395,12 +405,9 @@ async fn test_blocking_callback() {
         "All callbacks should be invoked despite blocking"
     );
 
-    // Total time should be at least 150ms (3 callbacks * 50ms each)
-    // but less than timeout (30 seconds)
-    assert!(
-        elapsed >= Duration::from_millis(150),
-        "Total time should include callback blocking time"
-    );
+    release_thread
+        .join()
+        .expect("release thread should join cleanly");
 }
 
 #[tokio::test]

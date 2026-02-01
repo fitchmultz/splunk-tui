@@ -8,8 +8,10 @@
 #![cfg(unix)]
 
 use std::process::Stdio;
+use std::sync::Arc;
 use std::time::Duration;
 
+use tokio::sync::Notify;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -41,11 +43,15 @@ async fn test_search_wait_ctrl_c_exits_130_with_message() {
         .await;
 
     // Job status: delay long enough so we can SIGINT while it's "running"
+    let request_seen = Arc::new(Notify::new());
+    let request_seen_clone = Arc::clone(&request_seen);
+
     Mock::given(method("GET"))
         .and(path("/services/search/jobs/test-sid"))
         .and(header("Authorization", "Bearer test-token"))
         .and(query_param("output_mode", "json"))
-        .respond_with(
+        .respond_with(move |_req: &wiremock::Request| {
+            request_seen_clone.notify_one();
             ResponseTemplate::new(200)
                 .set_delay(Duration::from_secs(60))
                 .set_body_json(serde_json::json!({
@@ -65,8 +71,8 @@ async fn test_search_wait_ctrl_c_exits_130_with_message() {
                             "label": null
                         }
                     }]
-                })),
-        )
+                }))
+        })
         .mount(&server)
         .await;
 
@@ -80,7 +86,9 @@ async fn test_search_wait_ctrl_c_exits_130_with_message() {
         .expect("spawn splunk-cli");
 
     let pid = child.id().expect("child pid");
-    tokio::time::sleep(Duration::from_millis(200)).await;
+    tokio::time::timeout(Duration::from_secs(5), request_seen.notified())
+        .await
+        .expect("expected job status request before SIGINT");
     send_sigint(pid);
 
     let output = tokio::time::timeout(Duration::from_secs(5), child.wait_with_output())
@@ -108,11 +116,15 @@ async fn test_logs_tail_ctrl_c_exits_130_with_message() {
         .mount(&server)
         .await;
 
+    let request_seen = Arc::new(Notify::new());
+    let request_seen_clone = Arc::clone(&request_seen);
+
     Mock::given(method("GET"))
         .and(path("/services/search/jobs/test-sid/results"))
         .and(header("Authorization", "Bearer test-token"))
         .and(query_param("output_mode", "json"))
-        .respond_with(
+        .respond_with(move |_req: &wiremock::Request| {
+            request_seen_clone.notify_one();
             ResponseTemplate::new(200)
                 .set_delay(Duration::from_secs(60))
                 .set_body_json(serde_json::json!({
@@ -126,8 +138,8 @@ async fn test_logs_tail_ctrl_c_exits_130_with_message() {
                     }],
                     "preview": false,
                     "total": 1
-                })),
-        )
+                }))
+        })
         .mount(&server)
         .await;
 
@@ -150,7 +162,9 @@ async fn test_logs_tail_ctrl_c_exits_130_with_message() {
         .expect("spawn splunk-cli");
 
     let pid = child.id().expect("child pid");
-    tokio::time::sleep(Duration::from_millis(200)).await;
+    tokio::time::timeout(Duration::from_secs(5), request_seen.notified())
+        .await
+        .expect("expected tail request before SIGINT");
     send_sigint(pid);
 
     let output = tokio::time::timeout(Duration::from_secs(5), child.wait_with_output())

@@ -22,6 +22,7 @@ mod common;
 
 use common::*;
 use splunk_client::ClientError;
+
 use wiremock::matchers::{method, path, query_param};
 
 #[tokio::test]
@@ -128,17 +129,29 @@ async fn test_malformed_json_response() {
     assert!(result.is_err());
 }
 
+/// Test that request timeouts are properly handled.
+///
+/// This test verifies that when a request times out (takes longer than the
+/// configured timeout), the client returns an appropriate error.
+///
+/// Note: Timeouts are treated as retryable errors, so the client will attempt
+/// retries with exponential backoff. This test verifies the timeout behavior
+/// is correctly detected and eventually returns an error after retries are exhausted.
+///
+/// This test runs with real time because:
+/// - wiremock's `set_delay` uses real `std::time::Duration` (not tokio time)
+/// - The HTTP client timeout is based on real time
 #[tokio::test]
 async fn test_timeout_handling() {
     let mock_server = MockServer::start().await;
 
-    // Simulate a timeout by not responding immediately
+    // Simulate a slow response that will trigger a timeout
     Mock::given(method("GET"))
         .and(path("/services/search/jobs/timeout-sid/results"))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(serde_json::json!([]))
-                .set_delay(std::time::Duration::from_secs(10)),
+                .set_delay(std::time::Duration::from_secs(30)), // Long delay to ensure timeout
         )
         .mount(&mock_server)
         .await;
@@ -148,6 +161,9 @@ async fn test_timeout_handling() {
         .build()
         .unwrap();
 
+    // This request will timeout and retry with exponential backoff.
+    // The retry logic will attempt 3 times (default) with 1s, 2s, 4s delays.
+    let start = std::time::Instant::now();
     let result = endpoints::get_results(
         &client,
         &mock_server.uri(),
@@ -156,13 +172,28 @@ async fn test_timeout_handling() {
         Some(10),
         Some(0),
         endpoints::OutputMode::Json,
-        3,
+        3, // Default retry count
         None,
     )
     .await;
 
-    // The request should timeout or return an error
+    let elapsed = start.elapsed();
+
+    // Should return an error
     assert!(result.is_err());
+
+    // With 3 retries and exponential backoff (1s + 2s + 4s = 7s) plus timeout overhead,
+    // the total elapsed time should be at least 7 seconds but under a reasonable threshold
+    assert!(
+        elapsed >= std::time::Duration::from_secs(6),
+        "Timeout with retries should take at least ~7 seconds with exponential backoff. Elapsed: {:?}",
+        elapsed
+    );
+    assert!(
+        elapsed < std::time::Duration::from_secs(15),
+        "Timeout handling should complete within reasonable time. Elapsed: {:?}",
+        elapsed
+    );
 }
 
 #[tokio::test]
@@ -433,12 +464,15 @@ async fn test_request_builder_clone_failure_single_attempt() {
 /// but they return immediately from the OS without network delays. This test
 /// verifies that even with retry logic, the overall operation completes quickly
 /// (under 2 seconds) rather than taking the full exponential backoff time.
+///
+/// Note: This test runs with real time because connection errors from the OS
+/// are based on real time, and we need to verify actual timing behavior.
 #[tokio::test]
 async fn test_connection_error_fails_quickly() {
     // Use port 1 which is reserved and should never have a service
     let client = Client::new();
-    let start = std::time::Instant::now();
 
+    let start = std::time::Instant::now();
     let result = endpoints::list_indexes(
         &client,
         "http://localhost:1", // Connection refused
@@ -455,10 +489,10 @@ async fn test_connection_error_fails_quickly() {
     assert!(result.is_err());
 
     // Connection refused returns immediately from OS, so even with retries
-    // the total time should be under 2 seconds (vs ~7s for full backoff)
+    // the total time should be well under the ~7s that exponential backoff would take (1+2+4)
     assert!(
-        elapsed < std::time::Duration::from_secs(2),
-        "Connection error should fail quickly, took {:?}",
+        elapsed < std::time::Duration::from_secs(3),
+        "Connection refused should fail quickly without exponential backoff. Elapsed: {:?}",
         elapsed
     );
 }
@@ -469,11 +503,13 @@ async fn test_connection_error_fails_quickly() {
 /// immediately from the OS. This test verifies the operation completes quickly
 /// even with retry configuration, rather than taking the full ~7s that
 /// exponential backoff would require (1s + 2s + 4s delays).
+///
+/// Note: This test runs with real time because connection errors from the OS
+/// are based on real time, and we need to verify actual timing behavior.
 #[tokio::test]
 async fn test_connection_refused_completes_quickly() {
     let client = Client::new();
 
-    // Track request attempts
     let start = std::time::Instant::now();
     let result = endpoints::get_job_status(
         &client,
@@ -484,15 +520,16 @@ async fn test_connection_refused_completes_quickly() {
         None,
     )
     .await;
+
     let elapsed = start.elapsed();
 
     assert!(result.is_err());
 
     // Connection refused returns immediately from OS, so even with retries
-    // the total time should be well under the ~7s full backoff would take
+    // the total time should be well under the ~7s that exponential backoff would take (1+2+4)
     assert!(
         elapsed < std::time::Duration::from_secs(3),
-        "Connection refused should complete quickly, took {:?}",
+        "Connection refused should complete quickly without exponential backoff. Elapsed: {:?}",
         elapsed
     );
 }

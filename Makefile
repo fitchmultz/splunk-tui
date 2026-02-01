@@ -1,8 +1,10 @@
-.PHONY: install update lint type-check format clean test test-all test-unit test-integration test-live test-live-manual build release generate ci help lint-secrets install-hooks lint-docs
+.PHONY: install update lint format clean \
+	test test-all test-unit test-integration test-live test-live-manual \
+	build release generate lint-docs ci help lint-secrets install-hooks
 
 # Binaries and Installation
 BINS := splunk-cli splunk-tui
-INSTALL_DIR := ~/.local/bin
+INSTALL_DIR ?= $(HOME)/.local/bin
 
 # Default target
 .DEFAULT_GOAL := help
@@ -12,62 +14,59 @@ INSTALL_DIR := ~/.local/bin
 # (The Rust config loader respects `DOTENV_DISABLED` in `crates/config/src/loader.rs`.)
 test test-all test-unit test-integration ci: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
 
-# Fetch all dependencies (does not install binaries)
+# Fetch all dependencies (warm caches, no build)
 install:
-	cargo fetch
+	@echo "→ Fetching deps (locked)..."
+	@cargo fetch --locked
+	@echo "  ✓ Deps fetched"
 
 # Update all dependencies to latest stable versions
 update:
-	cargo update
-
-# Run clippy and format check
-lint:
-	cargo clippy --fix --allow-dirty --workspace --all-targets --all-features -- -D warnings
-	cargo fmt --all --check
-
-# Run secret-commit guard
-lint-secrets:
-	bash scripts/check-secrets.sh
-
-# Install local git pre-commit hook
-install-hooks:
-	ln -sf ../../scripts/check-secrets.sh .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
-	@echo "Git pre-commit hook installed (pointing to scripts/check-secrets.sh)"
-
-# Type check all crates
-type-check:
-	cargo check --workspace --all-targets --all-features
+	@cargo update
 
 # Format code with rustfmt (write mode)
 format:
-	cargo fmt --all
+	@echo "→ Formatting code..."
+	@cargo fmt --all
+	@echo "  ✓ Formatting complete"
 
-# Remove build artifacts and lock files
+# Run clippy (mutates code) and then verify formatting (cheap)
+lint:
+	@echo "→ Clippy autofix..."
+	@cargo clippy --fix --allow-dirty --workspace --all-targets --all-features --locked -- -D warnings
+	@echo "→ Format check..."
+	@cargo fmt --all --check
+	@echo "  ✓ Lint complete"
+
+# Run secret-commit guard
+lint-secrets:
+	@bash scripts/check-secrets.sh
+
+# Install local git pre-commit hook
+install-hooks:
+	@ln -sf ../../scripts/check-secrets.sh .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "Git pre-commit hook installed (pointing to scripts/check-secrets.sh)"
+
+# Remove build artifacts (do NOT delete Cargo.lock if you care about speed)
 clean:
-	cargo clean
-	rm -f Cargo.lock
-	rm -rf target/
+	@cargo clean
+	@rm -rf target/
 
 # Run all tests
 test: test-all
 
 # Run all tests (workspace, all targets). This is the default "everything" gate.
 test-all:
-	cargo test --workspace --all-targets --all-features --quiet
+	@cargo test --workspace --all-targets --all-features --locked
 
 # Run unit tests (lib and bins)
 test-unit:
-	cargo test --workspace --lib --bins --all-features --quiet
+	@cargo test --workspace --lib --bins --all-features --locked
 
 # Run integration tests
 test-integration:
-	cargo test --workspace --tests --all-features --quiet
-
-# Build binaries required for integration tests
-# This ensures CARGO_BIN_EXE_* env vars are populated for tests that need them
-build-test-bins:
-	cargo build --workspace --bins
+	@cargo test --workspace --tests --all-features --locked
 
 # Run live tests (requires a reachable Splunk server configured via env / .env.test)
 test-live:
@@ -75,57 +74,82 @@ test-live:
 		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
 		exit 0; \
 	fi
-	cargo test -p splunk-client --test live_tests --all-features --quiet -- --ignored
-	cargo test -p splunk-cli --test live_tests --all-features --quiet -- --ignored
+	@cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored
+	@cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored
 
 # Manual live server test script
 test-live-manual:
-	bash scripts/test-live-server.sh
+	@bash scripts/test-live-server.sh
 
-# Release build and install binaries
+# Release build and install binaries (required every time)
 release:
-	cargo build --release --all-features
-	mkdir -p $(INSTALL_DIR)
+	@echo "→ Release build..."
+	@cargo build --release --workspace --bins --all-features --locked
+	@mkdir -p $(INSTALL_DIR)
 	@for bin in $(BINS); do \
 		echo "Installing $$bin to $(INSTALL_DIR)..."; \
-		cp target/release/$$bin $(INSTALL_DIR)/; \
+		install -m 0755 target/release/$$bin $(INSTALL_DIR)/$$bin; \
 	done
+	@echo "  ✓ Release build + install complete"
 
 # Build target (alias for release)
 build: release
 
 # Regenerate derived documentation artifacts
-generate:
-	cargo run -p splunk-tui --bin generate-tui-docs
+# IMPORTANT: use the already-built release binary to avoid a second debug compile.
+generate: release
+	@echo "→ Generating derived docs (via release binary)..."
+	@$(INSTALL_DIR)/splunk-tui generate-tui-docs
+	@echo "  ✓ Generated"
 
 # Verify documentation is up to date
-lint-docs:
-	cargo run -p splunk-tui --bin generate-tui-docs -- --check
+# IMPORTANT: use the already-built release binary to avoid a second debug compile.
+lint-docs: release
+	@echo "→ Checking docs drift (via release binary)..."
+	@$(INSTALL_DIR)/splunk-tui generate-tui-docs --check
+	@echo "  ✓ Docs clean"
 
-# CI pipeline: install -> format -> lint-secrets -> lint-docs -> lint -> type-check -> test -> test-live -> release
-ci: install format lint-secrets lint-docs lint type-check test test-live release
+# CI pipeline (local speed-first):
+# deps -> format -> lint-secrets -> clippy fix + fmt check -> tests -> live tests -> release+install -> docs generate/check
+#
+# Notes:
+# - No separate type-check: redundant with clippy/tests and costs time.
+# - release is required every time, and we reuse that binary for generate/lint-docs.
+ci:
+	@echo "→ Local CI (mutates code, always builds+installs release)..."
+	@echo ""
+	@set -e; \
+	$(MAKE) install       || { echo ""; echo "✗ CI failed at: install"; exit 1; }; \
+	$(MAKE) format        || { echo ""; echo "✗ CI failed at: format"; exit 1; }; \
+	$(MAKE) lint-secrets  || { echo ""; echo "✗ CI failed at: lint-secrets"; exit 1; }; \
+	$(MAKE) lint          || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
+	$(MAKE) test          || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
+	$(MAKE) test-live     || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
+	$(MAKE) release       || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
+	$(MAKE) lint-docs     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }
+	@echo ""
+	@echo "✓ CI completed successfully"
 
 # Display help for each target
 help:
 	@echo "Splunk TUI - Available targets:"
 	@echo ""
-	@echo "  make install          - Fetch all dependencies"
+	@echo "  make install          - Fetch all dependencies (locked)"
 	@echo "  make update           - Update all dependencies to latest stable versions"
-	@echo "  make lint             - Run clippy (warnings as errors) and format check"
-	@echo "  make type-check       - Run cargo check"
 	@echo "  make format           - Format code with rustfmt (write mode)"
-	@echo "  make clean            - Remove build artifacts and lock files"
+	@echo "  make lint             - Clippy autofix + format check"
+	@echo "  make clean            - Remove build artifacts"
 	@echo "  make test             - Run all tests (workspace, all targets)"
 	@echo "  make test-all         - Alias for make test"
 	@echo "  make test-unit        - Run unit tests (lib and bins)"
 	@echo "  make test-integration - Run integration tests"
-	@echo "  make test-live        - Run live tests (requires Splunk server; set SKIP_LIVE_TESTS=1 to skip)"
+	@echo "  make test-live        - Run live tests (set SKIP_LIVE_TESTS=1 to skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
-	@echo "  make release          - Optimized release build and install to $(INSTALL_DIR)"
+	@echo "  make release          - Release build (bins) and install to $(INSTALL_DIR)"
 	@echo "  make build            - Alias for release"
-	@echo "  make generate         - Regenerate derived documentation (TUI keybindings)"
-	@echo "  make lint-docs        - Verify documentation is up to date (no drift)"
-	@echo "  make lint-secrets     - Run secret-commit guard (fail if sensitive files are tracked)"
+	@echo "  make generate         - Regenerate derived docs (via installed release binary)"
+	@echo "  make lint-docs        - Verify docs are up to date (via installed release binary)"
+	@echo "  make lint-secrets     - Run secret-commit guard"
 	@echo "  make install-hooks    - Install git pre-commit hook for secret guard"
-	@echo "  make ci               - Run full CI pipeline (install -> format -> lint-secrets -> lint-docs -> lint -> type-check -> test -> test-live -> release)"
+	@echo "  make ci               - Full local pipeline (speed-first, mutates code, always release+install)"
 	@echo "  make help             - Show this help message"

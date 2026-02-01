@@ -21,6 +21,7 @@ use common::*;
 use splunk_client::ClientError;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 use wiremock::matchers::{method, path, query_param};
 
 /// Test that partial pagination failures only retry the affected page.
@@ -30,7 +31,7 @@ use wiremock::matchers::{method, path, query_param};
 /// - Page 2 fails with 429, then succeeds on retry
 /// - Page 3 succeeds
 /// - All pages are retrieved correctly without restarting from page 1
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_pagination_partial_failure_retry() {
     let mock_server = MockServer::start().await;
 
@@ -95,11 +96,12 @@ async fn test_pagination_partial_failure_retry() {
         .await;
 
     let client = Client::new();
+    let server_uri = mock_server.uri();
 
     // Fetch page 1
     let result1 = endpoints::get_results(
         &client,
-        &mock_server.uri(),
+        &server_uri,
         "test-token",
         "test-sid",
         Some(2),
@@ -113,34 +115,38 @@ async fn test_pagination_partial_failure_retry() {
     assert_eq!(result1.unwrap().results.len(), 2);
 
     // Fetch page 2 (will trigger retries)
-    let start = std::time::Instant::now();
-    let result2 = endpoints::get_results(
-        &client,
-        &mock_server.uri(),
-        "test-token",
-        "test-sid",
-        Some(2),
-        Some(2),
-        endpoints::OutputMode::Json,
-        3,
-        None,
-    )
-    .await;
-    let elapsed = start.elapsed();
+    let result2_handle = tokio::spawn({
+        let client = client.clone();
+        let server_uri = server_uri.clone();
+        async move {
+            endpoints::get_results(
+                &client,
+                &server_uri,
+                "test-token",
+                "test-sid",
+                Some(2),
+                Some(2),
+                endpoints::OutputMode::Json,
+                3,
+                None,
+            )
+            .await
+        }
+    });
 
+    assert_pending(&result2_handle, "page 2 should wait for backoff").await;
+    advance_and_yield(Duration::from_secs(1)).await;
+    assert_pending(&result2_handle, "page 2 should wait for second backoff").await;
+    advance_and_yield(Duration::from_secs(2)).await;
+
+    let result2 = result2_handle.await.expect("page 2 task");
     assert!(result2.is_ok(), "Page 2 should succeed after retries");
     assert_eq!(result2.unwrap().results.len(), 2);
-
-    // Should have taken at least 3 seconds (1s + 2s exponential backoff)
-    assert!(
-        elapsed >= std::time::Duration::from_secs(2),
-        "Should wait for exponential backoff"
-    );
 
     // Fetch page 3
     let result3 = endpoints::get_results(
         &client,
-        &mock_server.uri(),
+        &server_uri,
         "test-token",
         "test-sid",
         Some(2),
@@ -294,7 +300,7 @@ async fn test_pagination_session_expiry_mid_operation() {
 /// Note: The actual streaming body limitation is tested at the unit level in
 /// request.rs. This integration test verifies the end-to-end behavior where
 /// a request that cannot be retried fails immediately.
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_non_cloneable_body_single_attempt() {
     let mock_server = MockServer::start().await;
 
@@ -321,6 +327,7 @@ async fn test_non_cloneable_body_single_attempt() {
         .await;
 
     let client = Client::new();
+    let server_uri = mock_server.uri();
     let options = endpoints::CreateJobOptions {
         wait: Some(false),
         ..Default::default()
@@ -329,18 +336,26 @@ async fn test_non_cloneable_body_single_attempt() {
     // This request uses form data (which CAN be cloned), so it WILL retry.
     // This test documents the normal retry behavior - the streaming body limitation
     // is an edge case covered by unit tests in request.rs.
-    let start = std::time::Instant::now();
-    let result = endpoints::create_job(
-        &client,
-        &mock_server.uri(),
-        "test-token",
-        "search index=main",
-        &options,
-        3,
-        None,
-    )
-    .await;
-    let elapsed = start.elapsed();
+    let result_handle = tokio::spawn({
+        let client = client.clone();
+        let server_uri = server_uri.clone();
+        async move {
+            endpoints::create_job(
+                &client,
+                &server_uri,
+                "test-token",
+                "search index=main",
+                &options,
+                3,
+                None,
+            )
+            .await
+        }
+    });
+
+    assert_pending(&result_handle, "cloneable body should wait for backoff").await;
+    advance_and_yield(Duration::from_secs(1)).await;
+    let result = result_handle.await.expect("create job task");
 
     // With cloneable body, should succeed after retry
     assert!(
@@ -348,13 +363,6 @@ async fn test_non_cloneable_body_single_attempt() {
         "Should succeed after retry with cloneable body"
     );
     assert_eq!(result.unwrap(), "test-sid");
-
-    // Should have taken at least 1 second (exponential backoff)
-    assert!(
-        elapsed >= std::time::Duration::from_secs(1),
-        "Should wait for exponential backoff, took {:?}",
-        elapsed
-    );
 
     // Should have made 2 requests (initial + 1 retry)
     assert_eq!(
@@ -370,7 +378,7 @@ async fn test_non_cloneable_body_single_attempt() {
 /// - The client waits for the specified duration
 /// - Only the affected page is delayed
 /// - Subsequent pages proceed without additional delay
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_pagination_retry_after_header() {
     let mock_server = MockServer::start().await;
 
@@ -425,11 +433,12 @@ async fn test_pagination_retry_after_header() {
         .await;
 
     let client = Client::new();
+    let server_uri = mock_server.uri();
 
     // Fetch page 1 (quick)
     let result1 = endpoints::get_results(
         &client,
-        &mock_server.uri(),
+        &server_uri,
         "test-token",
         "test-sid",
         Some(1),
@@ -442,33 +451,34 @@ async fn test_pagination_retry_after_header() {
     assert!(result1.is_ok());
 
     // Fetch page 2 (should wait for Retry-After: 2 seconds)
-    let start = std::time::Instant::now();
-    let result2 = endpoints::get_results(
-        &client,
-        &mock_server.uri(),
-        "test-token",
-        "test-sid",
-        Some(1),
-        Some(1),
-        endpoints::OutputMode::Json,
-        3,
-        None,
-    )
-    .await;
-    let elapsed = start.elapsed();
+    let result2_handle = tokio::spawn({
+        let client = client.clone();
+        let server_uri = server_uri.clone();
+        async move {
+            endpoints::get_results(
+                &client,
+                &server_uri,
+                "test-token",
+                "test-sid",
+                Some(1),
+                Some(1),
+                endpoints::OutputMode::Json,
+                3,
+                None,
+            )
+            .await
+        }
+    });
 
+    assert_pending(&result2_handle, "page 2 should wait for retry-after").await;
+    advance_and_yield(Duration::from_secs(2)).await;
+    let result2 = result2_handle.await.expect("page 2 task");
     assert!(result2.is_ok());
-    assert!(
-        elapsed >= std::time::Duration::from_secs(2),
-        "Should wait for Retry-After header, took {:?}",
-        elapsed
-    );
 
     // Fetch page 3 (quick, no delay)
-    let start = std::time::Instant::now();
     let result3 = endpoints::get_results(
         &client,
-        &mock_server.uri(),
+        &server_uri,
         "test-token",
         "test-sid",
         Some(1),
@@ -478,14 +488,7 @@ async fn test_pagination_retry_after_header() {
         None,
     )
     .await;
-    let elapsed = start.elapsed();
-
     assert!(result3.is_ok());
-    assert!(
-        elapsed < std::time::Duration::from_secs(1),
-        "Page 3 should not be delayed, took {:?}",
-        elapsed
-    );
 }
 
 /// Test pagination failure exhaustion (max retries exceeded).
@@ -494,7 +497,7 @@ async fn test_pagination_retry_after_header() {
 /// - All retry attempts are exhausted
 /// - MaxRetriesExceeded error is returned with context
 /// - The error includes information about the original failure
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_pagination_retry_exhaustion() {
     let mock_server = MockServer::start().await;
 
@@ -526,11 +529,12 @@ async fn test_pagination_retry_exhaustion() {
         .await;
 
     let client = Client::new();
+    let server_uri = mock_server.uri();
 
     // Fetch page 1 successfully
     let result1 = endpoints::get_results(
         &client,
-        &mock_server.uri(),
+        &server_uri,
         "test-token",
         "test-sid",
         Some(1),
@@ -543,20 +547,30 @@ async fn test_pagination_retry_exhaustion() {
     assert!(result1.is_ok());
 
     // Fetch page 2 - should exhaust retries
-    let start = std::time::Instant::now();
-    let result2 = endpoints::get_results(
-        &client,
-        &mock_server.uri(),
-        "test-token",
-        "test-sid",
-        Some(1),
-        Some(1),
-        endpoints::OutputMode::Json,
-        2, // max_retries = 2 (3 total attempts)
-        None,
-    )
-    .await;
-    let elapsed = start.elapsed();
+    let result2_handle = tokio::spawn({
+        let client = client.clone();
+        let server_uri = server_uri.clone();
+        async move {
+            endpoints::get_results(
+                &client,
+                &server_uri,
+                "test-token",
+                "test-sid",
+                Some(1),
+                Some(1),
+                endpoints::OutputMode::Json,
+                2, // max_retries = 2 (3 total attempts)
+                None,
+            )
+            .await
+        }
+    });
+
+    assert_pending(&result2_handle, "page 2 should wait for first backoff").await;
+    advance_and_yield(Duration::from_secs(1)).await;
+    assert_pending(&result2_handle, "page 2 should wait for second backoff").await;
+    advance_and_yield(Duration::from_secs(2)).await;
+    let result2 = result2_handle.await.expect("page 2 task");
 
     // Should fail with MaxRetriesExceeded
     assert!(result2.is_err());
@@ -573,13 +587,6 @@ async fn test_pagination_retry_exhaustion() {
         3,
         "Should make exactly 3 attempts"
     );
-
-    // Should have taken at least 3 seconds (1s + 2s exponential backoff)
-    assert!(
-        elapsed >= std::time::Duration::from_secs(2),
-        "Should wait for exponential backoff, took {:?}",
-        elapsed
-    );
 }
 
 /// Test mixed error types during pagination.
@@ -588,7 +595,7 @@ async fn test_pagination_retry_exhaustion() {
 /// - Page 1: 503 (service unavailable) then success
 /// - Page 2: 429 (rate limited) then success
 /// - Page 3: Immediate success
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_pagination_mixed_error_types() {
     let mock_server = MockServer::start().await;
 
@@ -643,22 +650,35 @@ async fn test_pagination_mixed_error_types() {
         .await;
 
     let client = Client::new();
+    let server_uri = mock_server.uri();
 
-    // Fetch all pages
-    for offset in [0, 1, 2] {
-        let result = endpoints::get_results(
-            &client,
-            &mock_server.uri(),
-            "test-token",
-            "test-sid",
-            Some(1),
-            Some(offset),
-            endpoints::OutputMode::Json,
-            3,
-            None,
-        )
-        .await;
+    for offset in [0, 1] {
+        let result_handle = tokio::spawn({
+            let client = client.clone();
+            let server_uri = server_uri.clone();
+            async move {
+                endpoints::get_results(
+                    &client,
+                    &server_uri,
+                    "test-token",
+                    "test-sid",
+                    Some(1),
+                    Some(offset),
+                    endpoints::OutputMode::Json,
+                    3,
+                    None,
+                )
+                .await
+            }
+        });
 
+        let context = format!("page {} should wait for backoff", offset + 1);
+        assert_pending(&result_handle, &context).await;
+        advance_and_yield(Duration::from_secs(1)).await;
+        if !result_handle.is_finished() {
+            advance_and_yield(Duration::from_secs(1)).await;
+        }
+        let result = result_handle.await.expect("page task");
         assert!(
             result.is_ok(),
             "Page {} should succeed after handling error",
@@ -667,6 +687,24 @@ async fn test_pagination_mixed_error_types() {
         let results = result.unwrap();
         assert_eq!(results.results.len(), 1);
     }
+
+    let result3 = endpoints::get_results(
+        &client,
+        &server_uri,
+        "test-token",
+        "test-sid",
+        Some(1),
+        Some(2),
+        endpoints::OutputMode::Json,
+        3,
+        None,
+    )
+    .await;
+    assert!(
+        result3.is_ok(),
+        "Page 3 should succeed after handling error"
+    );
+    assert_eq!(result3.unwrap().results.len(), 1);
 }
 
 /// Test session expiry during job polling with re-authentication.

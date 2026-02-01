@@ -2,46 +2,40 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0279",
+      "id": "RQ-0280",
       "status": "todo",
-      "title": "Investigate and fix slow test execution",
+      "title": "Optimize Rust build for performance and speed",
       "priority": "high",
       "tags": [
-        "bug",
-        "fix",
+        "build",
         "performance",
-        "tests"
+        "rust",
+        "makefile"
       ],
       "scope": [
-        "crates/*/tests/",
-        "Cargo.toml",
         "Makefile",
-        "scripts/"
+        "Cargo.toml",
+        ".cargo/config.toml"
       ],
       "evidence": [
-        "User reports: 'TESTS take WAY TOO LONG to execute'",
-        "User states: 'SOMETHING IS BROKEN AND IT IS NOT BECAUSE OF THE NUMBER OF TESTS'",
-        "User emphasizes: 'SOMETHING IS DONE WRONG OR POORLY AND YOU MUST ROOT IT OUT'",
-        "This is a Rust workspace with client/cli/tui crates - slow tests may indicate: blocking I/O without timeouts, test isolation issues, unnecessary sleeps/delays, or improper async runtime usage"
+        "User reports builds take a long time.",
+        "Current release profile has lto=true and codegen-units=1 which maximizes optimization but slows builds significantly.",
+        "make ci currently builds release binary and installs it - this behavior must be preserved.",
+        "Cargo.toml shows profile.release with aggressive optimizations enabled."
       ],
       "plan": [
-        "Profile test execution with `cargo test -- --nocapture` and `time` to identify slow test files",
-        "Check for tests with hardcoded sleep() calls or excessive timeouts",
-        "Examine test setup/teardown for redundant operations or blocking calls",
-        "Review async test usage - look for blocking operations in async contexts",
-        "Check for live tests running without `#[ignore]` attribute during `make test`",
-        "Identify any tests making real network calls or waiting on external resources",
-        "Fix root cause (not band-aid) - remove unnecessary delays, add proper mocking, or fix async runtime issues",
-        "Verify fix by running `make ci` and confirming significant speedup"
+        "Analyze current build bottlenecks (check Cargo.toml profiles, dependencies, and build configuration).",
+        "Add Cargo build config (`.cargo/config.toml`) with sensible defaults for faster builds (e.g., parallel frontend, faster linker).",
+        "Consider adding a faster `profile.dev` or `profile.ci` for development/CI if not already optimal.",
+        "Review Makefile for redundant builds or unnecessary serial steps.",
+        "Ensure `make ci` still builds and installs the release binary as current behavior.",
+        "Verify improvements with timing comparisons before/after.",
+        "Run `make ci` to confirm everything still works."
       ],
-      "notes": [
-        "Look for patterns: tests with #[tokio::test] that may be blocking, tests without proper mocking hitting real endpoints",
-        "Check if test-live tests are being run during regular `make test` due to missing #[ignore]",
-        "Review if any fixtures or test helpers have expensive setup that runs per-test instead of once"
-      ],
-      "request": "The TESTS take WAY TOO LONG to execute. SOMETHING IS BROKEN AND IT IS NOT BECAUSE OF THE NUMBER OF TESTS. SOMETHING IS DONE WRONG OR POORLY AND YOU MUST ROOT IT OUT.",
-      "created_at": "2026-01-31T00:00:00Z",
-      "updated_at": "2026-01-31T00:00:00Z",
+      "notes": [],
+      "request": "Optimize the build for performance and speed. Build take a long time. User wants the binary built and installed during make ci like it currently is.",
+      "created_at": "2026-02-01T00:00:00Z",
+      "updated_at": "2026-02-01T00:00:00Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],
