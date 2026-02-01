@@ -2,6 +2,374 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0282",
+      "status": "todo",
+      "title": "Make live tests opt-in and split client live tests under size limits",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "tests",
+        "reliability"
+      ],
+      "scope": [
+        "crates/client/tests/live_tests.rs",
+        "crates/cli/tests/live_tests.rs",
+        "Makefile",
+        "make ci"
+      ],
+      "evidence": [
+        "make ci output shows live tests ran even with SKIP_LIVE_TESTS=1: 'Skipping live tests (SKIP_LIVE_TESTS=1)' followed by 'Running tests/live_tests.rs' for splunk-client and splunk-cli.",
+        "rg -n '#\\[ignore\\]' crates/client/tests/live_tests.rs crates/cli/tests/live_tests.rs returned no matches (no ignored tests).",
+        "wc -l crates/client/tests/live_tests.rs => 731 (file exceeds 700 LOC guideline)."
+      ],
+      "plan": [
+        "Mark all live tests in crates/client/tests/live_tests.rs and crates/cli/tests/live_tests.rs with #[ignore] or gate them behind a dedicated feature so they do not run in default cargo test.",
+        "Split crates/client/tests/live_tests.rs into per-concept test files (auth, search, kvstore, etc.) to keep each file under 700 LOC while preserving test names and behavior.",
+        "Update any references or documentation if required so make test-live remains the intended entrypoint for live tests.",
+        "Verify by running `cargo test --workspace --all-targets --all-features` (live tests should be skipped) and `SKIP_LIVE_TESTS=1 make ci` (no live test execution), then `make test-live` to confirm ignored live tests can still be run explicitly."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0283",
+      "status": "todo",
+      "title": "Split oversized TUI popup handler module",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/app/popups.rs"
+      ],
+      "evidence": [
+        "wc -l crates/tui/src/app/popups.rs => 2191 (exceeds 1000 LOC hard limit in AGENTS.md)."
+      ],
+      "plan": [
+        "Inventory popup handlers and group by responsibility (profile edit, export, confirm dialogs, help, etc.).",
+        "Extract each cohesive group into its own module under crates/tui/src/app/popups/ and keep a thin popups/mod.rs for shared types and re-exports.",
+        "Update call sites and module wiring to use the new structure without changing behavior.",
+        "Verify by running `cargo test -p splunk-tui` and confirming each new module is below 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0284",
+      "status": "todo",
+      "title": "Split oversized keybinding screen bindings module",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/input/keymap/bindings/screens.rs"
+      ],
+      "evidence": [
+        "wc -l crates/tui/src/input/keymap/bindings/screens.rs => 1552 (exceeds 1000 LOC hard limit in AGENTS.md)."
+      ],
+      "plan": [
+        "Group bindings by screen (indexes, apps, users, settings, etc.) and extract each group into its own module under crates/tui/src/input/keymap/bindings/screens/.",
+        "Keep a small screens/mod.rs to aggregate and return the combined binding list in the same order as today.",
+        "Ensure docs generation and keybinding rendering keep the existing ordering and content.",
+        "Verify by running `cargo test -p splunk-tui --test doc_generation_tests` and `make lint-docs`, then confirm each new file is below 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0285",
+      "status": "todo",
+      "title": "Split oversized client retry tests",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tests",
+        "client"
+      ],
+      "scope": [
+        "crates/client/tests/retry_tests.rs"
+      ],
+      "evidence": [
+        "wc -l crates/client/tests/retry_tests.rs => 1183 (exceeds 1000 LOC hard limit in AGENTS.md)."
+      ],
+      "plan": [
+        "Identify distinct retry scenarios (auth retry, paging retry, backoff timing, etc.) and move each set into its own test file under crates/client/tests/.",
+        "Extract any shared helpers into a small local test module or helper file to avoid duplication.",
+        "Ensure test names and behavior remain unchanged to preserve coverage.",
+        "Verify by running `cargo test -p splunk-client --tests` and confirm each retry-related test file is below 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0286",
+      "status": "todo",
+      "title": "Split oversized TUI app search tests",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tests",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/tests/app_search_tests.rs"
+      ],
+      "evidence": [
+        "wc -l crates/tui/tests/app_search_tests.rs => 939 (exceeds 700 LOC guideline in AGENTS.md)."
+      ],
+      "plan": [
+        "Group tests by behavior (input editing, validation, result paging, etc.) and move into multiple files under crates/tui/tests/.",
+        "Extract shared test setup helpers into a local module to avoid duplication.",
+        "Ensure each new test file stays under 700 LOC.",
+        "Verify by running `cargo test -p splunk-tui --tests` and confirming each new file's line count with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0287",
+      "status": "todo",
+      "title": "Split oversized TUI app root module",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "architecture"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs"
+      ],
+      "evidence": [
+        "wc -l crates/tui/src/app.rs => 870 (exceeds 700 LOC guideline in AGENTS.md)."
+      ],
+      "plan": [
+        "Identify cohesive responsibilities in App (state management, tick/update logic, action routing) and extract into submodules under crates/tui/src/app/.",
+        "Keep App struct and public API in a small app/mod.rs or app.rs that re-exports internal modules.",
+        "Minimize public surface changes; keep visibility private or pub(crate) where possible.",
+        "Verify by running `cargo test -p splunk-tui` and confirming app module files are below 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0288",
+      "status": "todo",
+      "title": "Split oversized CLI entry module",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "cli",
+        "architecture"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs"
+      ],
+      "evidence": [
+        "wc -l crates/cli/src/main.rs => 834 (exceeds 700 LOC guideline in AGENTS.md)."
+      ],
+      "plan": [
+        "Extract CLI wiring (config loading, command dispatch, output formatting) into submodules under crates/cli/src/ while keeping main.rs as a small entrypoint.",
+        "Keep public API surface minimal and use pub(crate) for internal helpers.",
+        "Update module imports and ensure binary behavior remains unchanged.",
+        "Verify by running `cargo test -p splunk-cli` and confirming each new module file is below 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0289",
+      "status": "todo",
+      "title": "Split oversized TUI popup rendering module",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "ui"
+      ],
+      "scope": [
+        "crates/tui/src/ui/popup.rs"
+      ],
+      "evidence": [
+        "wc -l crates/tui/src/ui/popup.rs => 817 (exceeds 700 LOC guideline in AGENTS.md)."
+      ],
+      "plan": [
+        "Group popup rendering by type (confirm dialogs, help, details) and extract each to its own module under crates/tui/src/ui/popup/.",
+        "Keep a small popup/mod.rs that re-exports render helpers and shared components.",
+        "Ensure render output remains unchanged (snapshot tests should continue to pass).",
+        "Verify by running `cargo test -p splunk-tui --test snapshot_popups_tests` and confirming each module stays under 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0290",
+      "status": "todo",
+      "title": "Split oversized client error recovery tests",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tests",
+        "client"
+      ],
+      "scope": [
+        "crates/client/tests/error_recovery_tests.rs"
+      ],
+      "evidence": [
+        "wc -l crates/client/tests/error_recovery_tests.rs => 813 (exceeds 700 LOC guideline in AGENTS.md)."
+      ],
+      "plan": [
+        "Group error recovery tests by scenario (pagination retries, auth refresh, job polling) and split into multiple files under crates/client/tests/.",
+        "Extract shared test fixtures into a helper module to avoid duplication.",
+        "Keep test names/coverage intact and ensure each new file stays under 700 LOC.",
+        "Verify by running `cargo test -p splunk-client --tests` and confirming line counts with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0291",
+      "status": "todo",
+      "title": "Split oversized search endpoints module",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search.rs"
+      ],
+      "evidence": [
+        "wc -l crates/client/src/endpoints/search.rs => 722 (exceeds 700 LOC guideline in AGENTS.md)."
+      ],
+      "plan": [
+        "Identify cohesive endpoint groups (job creation, result retrieval, saved searches, validation) and split into submodules under crates/client/src/endpoints/search/.",
+        "Keep a small search/mod.rs that re-exports the public endpoint functions to avoid API changes.",
+        "Refactor internal helpers into shared modules to reduce duplication.",
+        "Verify by running `cargo test -p splunk-client --tests` and confirming each module stays under 700 LOC with `wc -l`."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0292",
+      "status": "todo",
+      "title": "Handle profile rename cleanup in TUI profile editor",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "correctness"
+      ],
+      "scope": [
+        "crates/tui/src/app/popups.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/app/popups.rs:1154 contains TODO: 'Handle rename by deleting old profile after saving new one'."
+      ],
+      "plan": [
+        "Trace the profile edit popup flow to see how SaveProfile actions are handled and where persistence happens.",
+        "Implement rename handling so saving a profile with a new name removes the previous profile entry (and keyring entry if used).",
+        "Add or extend tests to cover rename behavior, including keyring and non-keyring cases, and confirm no stale profile remains.",
+        "Verify by running `cargo test -p splunk-tui --tests` and ensure profile switch/popups tests pass."
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-01T20:19:45Z",
+      "updated_at": "2026-02-01T20:19:45Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
       "id": "RQ-0281",
       "status": "draft",
       "title": "Optimize make ci to remove release build requirement while keeping core checks",
