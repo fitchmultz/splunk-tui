@@ -236,6 +236,21 @@ pub trait Formatter {
 
     /// Format capabilities list.
     fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String>;
+
+    /// Format HEC response.
+    fn format_hec_response(&self, response: &splunk_client::HecResponse) -> Result<String>;
+
+    /// Format HEC batch response.
+    fn format_hec_batch_response(
+        &self,
+        response: &splunk_client::HecBatchResponse,
+    ) -> Result<String>;
+
+    /// Format HEC health status.
+    fn format_hec_health(&self, health: &splunk_client::HecHealth) -> Result<String>;
+
+    /// Format HEC acknowledgment status.
+    fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String>;
 }
 
 /// Cluster peer output structure.

@@ -286,6 +286,79 @@ splunk-cli lookups --output xml
 - Only CSV-based lookup files are listed (KV store lookups use a different endpoint)
 - File sizes are shown in human-readable format (B, KB, MB, GB) in table output
 
+#### `hec`
+
+Send events to Splunk via HTTP Event Collector (HEC).
+
+**Environment Variables:**
+- `SPLUNK_HEC_URL`: HEC endpoint URL (e.g., `https://localhost:8088`)
+- `SPLUNK_HEC_TOKEN`: HEC authentication token
+
+**Subcommands:**
+
+- `send <EVENT>`: Send a single event
+  - `<EVENT>`: The event data as JSON string or `@file.json` to read from file
+  - `-u, --hec-url <URL>`: HEC endpoint URL (or use `SPLUNK_HEC_URL` env var)
+  - `-t, --hec-token <TOKEN>`: HEC token (or use `SPLUNK_HEC_TOKEN` env var)
+  - `-i, --index <INDEX>`: Destination index (optional)
+  - `--source <SOURCE>`: Source field (optional)
+  - `--sourcetype <SOURCETYPE>`: Sourcetype field (optional)
+  - `--host <HOST>`: Host field (optional)
+  - `--time <TIME>`: Event timestamp as Unix epoch (optional)
+
+- `send-batch <FILE>`: Send batch of events from JSON file
+  - `<FILE>`: Path to JSON file containing array of events
+  - `-u, --hec-url <URL>`: HEC endpoint URL
+  - `-t, --hec-token <TOKEN>`: HEC token
+  - `--ndjson`: Use newline-delimited JSON format instead of JSON array
+
+- `health`: Check HEC health endpoint
+  - `-u, --hec-url <URL>`: HEC endpoint URL
+  - `-t, --hec-token <TOKEN>`: HEC token
+
+- `check-ack`: Check acknowledgment status for previously sent events
+  - `-u, --hec-url <URL>`: HEC endpoint URL
+  - `-t, --hec-token <TOKEN>`: HEC token
+  - `-a, --ack-ids <IDS>`: Comma-separated list of acknowledgment IDs
+
+**Examples:**
+
+```bash
+# Send a simple event
+splunk-cli hec send '{"message": "Hello Splunk"}' --hec-url https://localhost:8088 --hec-token abc123
+
+# Send with metadata
+splunk-cli hec send '{"severity": "error", "message": "Disk full"}' \
+  --hec-url https://localhost:8088 \
+  --hec-token abc123 \
+  --index main \
+  --source myapp \
+  --sourcetype json \
+  --host server01
+
+# Send event from file
+splunk-cli hec send @event.json --hec-url https://localhost:8088 --hec-token abc123
+
+# Send batch from file
+splunk-cli hec send-batch events.json --hec-url https://localhost:8088 --hec-token abc123
+
+# Send batch using NDJSON format
+splunk-cli hec send-batch events.json --hec-url https://localhost:8088 --hec-token abc123 --ndjson
+
+# Check health
+splunk-cli hec health --hec-url https://localhost:8088 --hec-token abc123
+
+# Check acknowledgment status
+splunk-cli hec check-ack --hec-url https://localhost:8088 --hec-token abc123 --ack-ids 1,2,3
+```
+
+**Notes:**
+- HEC uses a separate endpoint (typically port 8088) from the REST API (port 8089)
+- HEC uses a separate authentication token with "Splunk" prefix (not "Bearer")
+- The `send-batch` command expects a JSON file containing an array of event objects
+- Use `--ndjson` for newline-delimited JSON format (one event per line)
+- Acknowledgment IDs are returned when HEC acknowledgments are enabled on the server
+
 #### `alerts`
 View fired alerts and alert history.
 

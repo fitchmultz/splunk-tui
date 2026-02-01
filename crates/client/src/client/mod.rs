@@ -38,6 +38,7 @@ mod capabilities;
 mod cluster;
 mod configs;
 mod forwarders;
+mod hec;
 mod indexes;
 mod inputs;
 mod jobs;

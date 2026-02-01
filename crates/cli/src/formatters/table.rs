@@ -18,6 +18,7 @@ mod cluster;
 mod configs;
 mod forwarders;
 mod health;
+mod hec;
 mod imp;
 mod indexes;
 mod inputs;

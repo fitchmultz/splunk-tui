@@ -46,44 +46,6 @@
       "custom_fields": {}
     },
     {
-      "id": "RQ-0251",
-      "status": "todo",
-      "title": "Add HEC (HTTP Event Collector) event ingestion support",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "client",
-        "hec",
-        "feature",
-        "ingestion"
-      ],
-      "scope": [
-        "crates/client/src/client/hec.rs",
-        "crates/client/src/endpoints/hec.rs",
-        "crates/cli/src/commands/hec.rs"
-      ],
-      "evidence": [
-        "No HEC support exists in the current codebase.",
-        "HEC is the primary API for sending events to Splunk programmatically.",
-        "Splunk HEC endpoint at /services/collector/event accepts JSON events."
-      ],
-      "plan": [
-        "Add HEC client with configurable token and SSL settings.",
-        "Implement send_event() and send_events_batch() methods.",
-        "Add HEC health check and acknowledgment support.",
-        "Create CLI hec command for sending events from files or stdin.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0256",
       "status": "todo",
       "title": "Add saved search editing capabilities",

@@ -7,6 +7,7 @@ pub mod config;
 pub mod configs;
 pub mod forwarders;
 pub mod health;
+pub mod hec;
 pub mod indexes;
 pub mod inputs;
 pub mod jobs;

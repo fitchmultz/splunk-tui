@@ -29,6 +29,7 @@ use super::cluster;
 use super::configs;
 use super::forwarders;
 use super::health;
+use super::hec;
 use super::indexes;
 use super::inputs;
 use super::jobs;
@@ -206,5 +207,24 @@ impl Formatter for CsvFormatter {
 
     fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String> {
         license::format_license_pool_operation(result)
+    }
+
+    fn format_hec_response(&self, response: &splunk_client::HecResponse) -> Result<String> {
+        hec::format_hec_response(response)
+    }
+
+    fn format_hec_batch_response(
+        &self,
+        response: &splunk_client::HecBatchResponse,
+    ) -> Result<String> {
+        hec::format_hec_batch_response(response)
+    }
+
+    fn format_hec_health(&self, health: &splunk_client::HecHealth) -> Result<String> {
+        hec::format_hec_health(health)
+    }
+
+    fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
+        hec::format_hec_ack_status(status)
     }
 }

@@ -12,6 +12,7 @@ pub mod cluster;
 pub mod common;
 pub mod configs;
 pub mod forwarders;
+pub mod hec;
 pub mod indexes;
 pub mod inputs;
 pub mod jobs;
@@ -39,6 +40,10 @@ pub use configs::{
     ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,
 };
 pub use forwarders::{Forwarder, ForwarderEntry, ForwarderListResponse};
+pub use hec::{
+    HecAckRequest, HecAckStatus, HecBatchResponse, HecError, HecEvent, HecHealth, HecResponse,
+    SendBatchParams,
+};
 pub use indexes::{CreateIndexParams, Index, IndexEntry, IndexListResponse, ModifyIndexParams};
 pub use inputs::{Input, InputEntry, InputListResponse};
 pub use jobs::{

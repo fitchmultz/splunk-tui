@@ -346,6 +346,12 @@ enum Commands {
         #[arg(long, default_value = "0")]
         offset: usize,
     },
+
+    /// Send events to Splunk via HTTP Event Collector (HEC)
+    Hec {
+        #[command(subcommand)]
+        command: commands::hec::HecCommand,
+    },
 }
 
 /// Returns true if the path is empty or contains only whitespace.
@@ -385,7 +391,7 @@ async fn main() -> Result<()> {
         .init();
 
     // Determine if we need a real config or can use a placeholder
-    // Config commands and multi-profile list-all don't need connection details
+    // Config commands, multi-profile list-all, and HEC commands don't need standard connection details
     let is_multi_profile_list_all = matches!(
         cli.command,
         Commands::ListAll {
@@ -396,8 +402,8 @@ async fn main() -> Result<()> {
             ..
         }
     );
-    let needs_real_config =
-        !matches!(cli.command, Commands::Config { .. }) && !is_multi_profile_list_all;
+    let needs_real_config = !matches!(cli.command, Commands::Config { .. } | Commands::Hec { .. })
+        && !is_multi_profile_list_all;
 
     // Build configuration only if needed
     let config = if needs_real_config {
@@ -817,6 +823,10 @@ async fn run_command(
                 cancel_token,
             )
             .await?;
+        }
+        Commands::Hec { command } => {
+            // HEC commands don't use the standard config - they use HEC-specific URL/token
+            commands::hec::run(command, &cli.output, cli.output_file.clone(), cancel_token).await?;
         }
     }
 

@@ -220,6 +220,25 @@ impl Formatter for TableFormatter {
     fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
         super::kvstore::format_kvstore_records(records)
     }
+
+    fn format_hec_response(&self, response: &splunk_client::HecResponse) -> Result<String> {
+        super::hec::format_hec_response(response)
+    }
+
+    fn format_hec_batch_response(
+        &self,
+        response: &splunk_client::HecBatchResponse,
+    ) -> Result<String> {
+        super::hec::format_hec_batch_response(response)
+    }
+
+    fn format_hec_health(&self, health: &splunk_client::HecHealth) -> Result<String> {
+        super::hec::format_hec_health(health)
+    }
+
+    fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
+        super::hec::format_hec_ack_status(status)
+    }
 }
 
 impl TableFormatter {

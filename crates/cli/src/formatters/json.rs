@@ -256,4 +256,23 @@ impl Formatter for JsonFormatter {
     fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String> {
         Ok(serde_json::to_string_pretty(result)?)
     }
+
+    fn format_hec_response(&self, response: &splunk_client::HecResponse) -> Result<String> {
+        Ok(serde_json::to_string_pretty(response)?)
+    }
+
+    fn format_hec_batch_response(
+        &self,
+        response: &splunk_client::HecBatchResponse,
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(response)?)
+    }
+
+    fn format_hec_health(&self, health: &splunk_client::HecHealth) -> Result<String> {
+        Ok(serde_json::to_string_pretty(health)?)
+    }
+
+    fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
+        Ok(serde_json::to_string_pretty(status)?)
+    }
 }
