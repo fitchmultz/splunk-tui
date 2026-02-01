@@ -1,0 +1,92 @@
+//! Role management API methods for [`SplunkClient`].
+//!
+//! # What this module handles:
+//! - Listing roles
+//! - Creating new roles
+//! - Modifying existing roles
+//! - Deleting roles
+//!
+//! # What this module does NOT handle:
+//! - Authentication and session management (in [`crate::client::session`])
+//! - Low-level role endpoint HTTP calls (in [`crate::endpoints::roles`])
+
+use crate::client::SplunkClient;
+use crate::endpoints;
+use crate::error::Result;
+use crate::models::{CreateRoleParams, ModifyRoleParams, Role};
+
+impl SplunkClient {
+    /// List all roles.
+    pub async fn list_roles(
+        &mut self,
+        count: Option<u64>,
+        offset: Option<u64>,
+    ) -> Result<Vec<Role>> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::list_roles(
+                &self.http,
+                &self.base_url,
+                &__token,
+                count,
+                offset,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Create a new role with the specified parameters.
+    pub async fn create_role(&mut self, params: &CreateRoleParams) -> Result<Role> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::create_role(
+                &self.http,
+                &self.base_url,
+                &__token,
+                params,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Modify an existing role.
+    pub async fn modify_role(&mut self, name: &str, params: &ModifyRoleParams) -> Result<Role> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::modify_role(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                params,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
+    /// Delete a role by name.
+    pub async fn delete_role(&mut self, name: &str) -> Result<()> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::delete_role(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+}

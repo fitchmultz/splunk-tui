@@ -188,6 +188,63 @@ impl Formatter for XmlFormatter {
         output.push_str("</lookups>\n");
         Ok(output)
     }
+
+    fn format_roles(&self, roles: &[splunk_client::Role]) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<roles>\n");
+        for role in roles {
+            output.push_str("  <role>\n");
+            output.push_str(&format!("    <name>{}</name>\n", escape_xml(&role.name)));
+            output.push_str("    <capabilities>\n");
+            for cap in &role.capabilities {
+                output.push_str(&format!(
+                    "      <capability>{}</capability>\n",
+                    escape_xml(cap)
+                ));
+            }
+            output.push_str("    </capabilities>\n");
+            output.push_str("    <searchIndexes>\n");
+            for idx in &role.search_indexes {
+                output.push_str(&format!("      <index>{}</index>\n", escape_xml(idx)));
+            }
+            output.push_str("    </searchIndexes>\n");
+            if let Some(ref filter) = role.search_filter {
+                output.push_str(&format!(
+                    "    <searchFilter>{}</searchFilter>\n",
+                    escape_xml(filter)
+                ));
+            }
+            output.push_str("    <importedRoles>\n");
+            for imported in &role.imported_roles {
+                output.push_str(&format!("      <role>{}</role>\n", escape_xml(imported)));
+            }
+            output.push_str("    </importedRoles>\n");
+            if let Some(ref app) = role.default_app {
+                output.push_str(&format!(
+                    "    <defaultApp>{}</defaultApp>\n",
+                    escape_xml(app)
+                ));
+            }
+            output.push_str("  </role>\n");
+        }
+        output.push_str("</roles>\n");
+        Ok(output)
+    }
+
+    fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<capabilities>\n");
+        for cap in capabilities {
+            output.push_str(&format!(
+                "  <capability>{}</capability>\n",
+                escape_xml(&cap.name)
+            ));
+        }
+        output.push_str("</capabilities>\n");
+        Ok(output)
+    }
 }
 
 fn escape_xml(s: &str) -> String {

@@ -58,6 +58,20 @@ where
     }
 }
 
+pub fn opt_i32_from_string_or_number<'de, D>(deserializer: D) -> Result<Option<i32>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<StringOrNumber>::deserialize(deserializer)?;
+    match value {
+        None => Ok(None),
+        Some(StringOrNumber::String(s)) => s.parse::<i32>().map_err(D::Error::custom).map(Some),
+        Some(StringOrNumber::U64(v)) => i32::try_from(v).map_err(D::Error::custom).map(Some),
+        Some(StringOrNumber::I64(v)) => i32::try_from(v).map_err(D::Error::custom).map(Some),
+        Some(StringOrNumber::F64(v)) => Ok(Some(v as i32)),
+    }
+}
+
 pub fn opt_string_from_number_or_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
 where
     D: serde::Deserializer<'de>,

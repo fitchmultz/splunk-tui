@@ -2,6 +2,7 @@
 
 mod alerts;
 mod auth;
+mod capabilities;
 mod cluster;
 mod configs;
 mod forwarders;
@@ -14,6 +15,7 @@ mod logs;
 mod lookups;
 mod parsing;
 mod request;
+mod roles;
 pub mod search;
 mod search_peers;
 mod server;
@@ -21,6 +23,7 @@ mod users;
 
 pub use alerts::{get_fired_alert, list_fired_alerts};
 pub use auth::login;
+pub use capabilities::list_capabilities;
 pub use cluster::{get_cluster_info, get_cluster_peers};
 pub use configs::{get_config_stanza, list_config_files, list_config_stanzas};
 pub use forwarders::list_forwarders;
@@ -36,6 +39,7 @@ pub use logs::get_internal_logs;
 pub use lookups::list_lookup_tables;
 pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
+pub use roles::{create_role, delete_role, list_roles, modify_role};
 pub use search::{
     CreateJobOptions, OutputMode, create_job, create_saved_search, delete_saved_search,
     get_job_status, get_results, get_saved_search, list_saved_searches, wait_for_job,

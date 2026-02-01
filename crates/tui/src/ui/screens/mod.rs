@@ -18,6 +18,7 @@ pub mod license;
 pub mod lookups;
 pub mod multi_instance;
 pub mod overview;
+pub mod roles;
 pub mod saved_searches;
 pub mod search;
 pub mod search_peers;

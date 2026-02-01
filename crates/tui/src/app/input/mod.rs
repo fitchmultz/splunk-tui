@@ -25,6 +25,7 @@ pub mod license;
 pub mod lookups;
 pub mod multi_instance;
 pub mod overview;
+pub mod roles;
 pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
@@ -52,6 +53,7 @@ impl App {
             CurrentScreen::InternalLogs => self.handle_internal_logs_input(key),
             CurrentScreen::Apps => self.handle_apps_input(key),
             CurrentScreen::Users => self.handle_users_input(key),
+            CurrentScreen::Roles => self.handle_roles_input(key),
             CurrentScreen::SearchPeers => self.handle_search_peers_input(key),
             CurrentScreen::Inputs => self.handle_inputs_input(key),
             CurrentScreen::Configs => self.handle_configs_input(key),

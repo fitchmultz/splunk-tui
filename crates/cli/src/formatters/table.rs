@@ -28,6 +28,7 @@ mod list_all;
 mod logs;
 mod lookups;
 mod profiles;
+mod roles;
 mod saved_searches;
 mod search;
 mod search_peers;

@@ -109,6 +109,31 @@ pub enum PopupType {
     },
     /// User deletion confirmation
     DeleteUserConfirm { user_name: String },
+    /// Role creation dialog
+    CreateRole {
+        name_input: String,
+        capabilities_input: String,
+        search_indexes_input: String,
+        search_filter_input: String,
+        imported_roles_input: String,
+        default_app_input: String,
+    },
+    /// Role modification dialog
+    ModifyRole {
+        role_name: String,
+        current_capabilities: Vec<String>,
+        current_search_indexes: Vec<String>,
+        current_search_filter: Option<String>,
+        current_imported_roles: Vec<String>,
+        current_default_app: Option<String>,
+        capabilities_input: String,
+        search_indexes_input: String,
+        search_filter_input: String,
+        imported_roles_input: String,
+        default_app_input: String,
+    },
+    /// Role deletion confirmation
+    DeleteRoleConfirm { role_name: String },
     /// Confirm remove app (holds app name)
     ConfirmRemoveApp(String),
     /// App installation file path input dialog
@@ -360,6 +385,30 @@ impl PopupBuilder {
                 let content = format!(
                     "Delete user '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
                     user_name
+                );
+                (title, content)
+            }
+            PopupType::CreateRole { name_input, .. } => {
+                let title = "Create Role".to_string();
+                let content = format!(
+                    "Create new role:\n\nName: {}\n\nEnter name and press Enter to create, Esc to cancel",
+                    name_input
+                );
+                (title, content)
+            }
+            PopupType::ModifyRole { role_name, .. } => {
+                let title = "Modify Role".to_string();
+                let content = format!(
+                    "Modify role '{}':\n\nPress Enter to apply changes, Esc to cancel",
+                    role_name
+                );
+                (title, content)
+            }
+            PopupType::DeleteRoleConfirm { role_name } => {
+                let title = "Confirm Delete".to_string();
+                let content = format!(
+                    "Delete role '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    role_name
                 );
                 (title, content)
             }
@@ -639,6 +688,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ModifyIndex { .. }
         | PopupType::CreateUser { .. }
         | PopupType::ModifyUser { .. }
+        | PopupType::CreateRole { .. }
+        | PopupType::ModifyRole { .. }
         | PopupType::InstallAppDialog { .. }
         | PopupType::CreateProfile { .. }
         | PopupType::EditProfile { .. } => theme.border,
@@ -650,6 +701,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ConfirmDisableApp(_)
         | PopupType::DeleteIndexConfirm { .. }
         | PopupType::DeleteUserConfirm { .. }
+        | PopupType::DeleteRoleConfirm { .. }
         | PopupType::ConfirmRemoveApp(_)
         | PopupType::DeleteProfileConfirm { .. } => theme.error,
     };
@@ -667,6 +719,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateUser { .. }
         | PopupType::ModifyUser { .. }
         | PopupType::DeleteUserConfirm { .. }
+        | PopupType::CreateRole { .. }
+        | PopupType::ModifyRole { .. }
+        | PopupType::DeleteRoleConfirm { .. }
         | PopupType::InstallAppDialog { .. }
         | PopupType::CreateProfile { .. }
         | PopupType::EditProfile { .. }

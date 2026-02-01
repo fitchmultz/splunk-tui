@@ -278,6 +278,12 @@ enum Commands {
         command: commands::users::UsersCommand,
     },
 
+    /// List and manage roles
+    Roles {
+        #[command(subcommand)]
+        command: commands::roles::RolesCommand,
+    },
+
     /// List and manage installed Splunk apps
     Apps {
         #[command(subcommand)]
@@ -642,6 +648,17 @@ async fn run_command(
         Commands::Users { command } => {
             let config = config.into_real_config()?;
             commands::users::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
+        Commands::Roles { command } => {
+            let config = config.into_real_config()?;
+            commands::roles::run(
                 config,
                 command,
                 &cli.output,

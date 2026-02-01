@@ -15,7 +15,7 @@ use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
     apps, cluster, configs, forwarders, health, indexes, inputs, kvstore, license, lookups,
-    multi_instance, overview, saved_searches, search, search_peers, settings, users,
+    multi_instance, overview, roles, saved_searches, search, search_peers, settings, users,
 };
 use ratatui::{
     Frame,
@@ -93,6 +93,7 @@ impl App {
                         CurrentScreen::InternalLogs => "Internal Logs",
                         CurrentScreen::Apps => "Apps",
                         CurrentScreen::Users => "Users",
+                        CurrentScreen::Roles => "Roles",
                         CurrentScreen::SearchPeers => "Search Peers",
                         CurrentScreen::Inputs => "Data Inputs",
                         CurrentScreen::Configs => "Config Files",
@@ -279,6 +280,18 @@ impl App {
                         loading: self.loading,
                         users: self.users.as_deref(),
                         state: &mut self.users_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Roles => {
+                roles::render_roles(
+                    f,
+                    area,
+                    roles::RolesRenderConfig {
+                        loading: self.loading,
+                        roles: self.roles.as_deref(),
+                        state: &mut self.roles_state,
                         theme: &self.theme,
                     },
                 );

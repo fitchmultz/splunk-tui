@@ -49,6 +49,7 @@ impl App {
             | Action::LoadInternalLogs { .. }
             | Action::LoadApps { .. }
             | Action::LoadUsers { .. }
+            | Action::LoadRoles { .. }
             | Action::LoadSearchPeers { .. }
             | Action::LoadInputs { .. }
             | Action::LoadFiredAlerts

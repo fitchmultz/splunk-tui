@@ -15,6 +15,7 @@ pub mod license;
 pub mod list_all;
 pub mod logs;
 pub mod lookups;
+pub mod roles;
 pub mod saved_searches;
 pub mod search;
 pub mod search_peers;

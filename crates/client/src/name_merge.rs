@@ -13,8 +13,8 @@
 //! - This is crate-internal glue; it is not part of the public API contract.
 
 use crate::models::{
-    App, ConfigStanza, FiredAlert, Forwarder, Index, Input, KvStoreCollection, SavedSearch,
-    SearchPeer, User,
+    App, Capability, ConfigStanza, FiredAlert, Forwarder, Index, Input, KvStoreCollection, Role,
+    SavedSearch, SearchPeer, User,
 };
 
 pub(crate) trait HasName {
@@ -81,6 +81,18 @@ impl HasName for FiredAlert {
 }
 
 impl HasName for KvStoreCollection {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+}
+
+impl HasName for Role {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+}
+
+impl HasName for Capability {
     fn set_name(&mut self, name: String) {
         self.name = name;
     }

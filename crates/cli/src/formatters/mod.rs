@@ -179,6 +179,12 @@ pub trait Formatter {
 
     /// Format detailed fired alert information.
     fn format_fired_alert_info(&self, alert: &FiredAlert) -> Result<String>;
+
+    /// Format roles list.
+    fn format_roles(&self, roles: &[splunk_client::Role]) -> Result<String>;
+
+    /// Format capabilities list.
+    fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String>;
 }
 
 /// Cluster peer output structure.

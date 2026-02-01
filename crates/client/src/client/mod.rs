@@ -34,6 +34,7 @@ mod session;
 // API method submodules
 mod alerts;
 mod apps;
+mod capabilities;
 mod cluster;
 mod configs;
 mod forwarders;
@@ -44,6 +45,7 @@ mod kvstore;
 mod license;
 mod logs;
 mod lookups;
+mod roles;
 mod search;
 mod search_peers;
 mod server;

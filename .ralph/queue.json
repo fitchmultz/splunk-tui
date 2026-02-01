@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0257",
-      "status": "todo",
-      "title": "Add role and capability management",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "roles",
-        "security",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/roles.rs",
-        "crates/client/src/endpoints/roles.rs",
-        "crates/cli/src/commands/roles.rs",
-        "crates/tui/src/ui/screens/roles.rs"
-      ],
-      "evidence": [
-        "No role management exists in the current codebase.",
-        "Roles define Splunk permissions and capabilities.",
-        "Splunk REST API provides /services/authorization/roles for role management."
-      ],
-      "plan": [
-        "Add role models (Role, Capability) to client.",
-        "Implement role CRUD operations in client.",
-        "Add CLI roles command with list, create, update, delete subcommands.",
-        "Create TUI roles screen for viewing and managing roles.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0249",
       "status": "todo",
       "title": "Add license installation and configuration",

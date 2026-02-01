@@ -99,6 +99,7 @@ mod lookups;
 mod multi_instance;
 mod overview;
 mod profiles;
+mod roles;
 mod search_peers;
 mod searches;
 mod users;
@@ -313,6 +314,22 @@ pub async fn handle_side_effects(
         }
         Action::DeleteUser { name } => {
             users::handle_delete_user(client, tx, name).await;
+        }
+        // Role operations
+        Action::LoadRoles { count, offset } => {
+            roles::handle_load_roles(client, tx, count, offset).await;
+        }
+        Action::LoadCapabilities => {
+            roles::handle_load_capabilities(client, tx).await;
+        }
+        Action::CreateRole { params } => {
+            roles::handle_create_role(client, tx, params).await;
+        }
+        Action::ModifyRole { name, params } => {
+            roles::handle_modify_role(client, tx, name, params).await;
+        }
+        Action::DeleteRole { name } => {
+            roles::handle_delete_role(client, tx, name).await;
         }
         // Profile management actions
         Action::OpenEditProfileDialog { name } => {

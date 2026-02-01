@@ -126,6 +126,46 @@ impl App {
                 self.handle_data_load_error("more users", e);
             }
 
+            // Roles
+            Action::RolesLoaded(Ok(roles)) => {
+                self.roles = Some(roles);
+                self.loading = false;
+            }
+            Action::RolesLoaded(Err(e)) => {
+                self.handle_data_load_error("roles", e);
+            }
+            Action::RoleCreated(Ok(role)) => {
+                self.toasts
+                    .push(Toast::success(format!("Role '{}' created", role.name)));
+                self.loading = false;
+            }
+            Action::RoleCreated(Err(e)) => {
+                self.handle_data_load_error("create role", e);
+            }
+            Action::RoleModified(Ok(role)) => {
+                self.toasts
+                    .push(Toast::success(format!("Role '{}' modified", role.name)));
+                self.loading = false;
+            }
+            Action::RoleModified(Err(e)) => {
+                self.handle_data_load_error("modify role", e);
+            }
+            Action::RoleDeleted(Ok(name)) => {
+                self.toasts
+                    .push(Toast::success(format!("Role '{}' deleted", name)));
+                self.loading = false;
+            }
+            Action::RoleDeleted(Err(e)) => {
+                self.handle_data_load_error("delete role", e);
+            }
+            Action::CapabilitiesLoaded(Ok(capabilities)) => {
+                self.capabilities = Some(capabilities);
+                self.loading = false;
+            }
+            Action::CapabilitiesLoaded(Err(e)) => {
+                self.handle_data_load_error("capabilities", e);
+            }
+
             // Search Peers
             Action::SearchPeersLoaded(Ok(peers)) => {
                 self.handle_search_peers_loaded(peers);

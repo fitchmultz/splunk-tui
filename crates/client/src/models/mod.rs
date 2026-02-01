@@ -7,6 +7,7 @@
 pub mod alerts;
 pub mod apps;
 pub mod auth;
+pub mod capabilities;
 pub mod cluster;
 pub mod common;
 pub mod configs;
@@ -18,6 +19,7 @@ pub mod kvstore;
 pub mod license;
 pub mod logs;
 pub mod lookups;
+pub mod roles;
 pub mod saved_searches;
 pub mod search_peers;
 pub mod server;
@@ -27,6 +29,7 @@ pub mod users;
 pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
 pub use apps::{App, AppEntry, AppListResponse};
 pub use auth::AuthResponse;
+pub use capabilities::{Capability, CapabilityEntry, CapabilityListResponse};
 pub use cluster::{ClusterInfo, ClusterPeer};
 pub use common::{Acl, Entry, Perms, SplunkMessage, SplunkMessages, SplunkResponse};
 pub use configs::{
@@ -46,6 +49,7 @@ pub use kvstore::{
 pub use license::{LicensePool, LicenseStack, LicenseUsage, SlavesUsageBytes};
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
 pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};
+pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListResponse};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};

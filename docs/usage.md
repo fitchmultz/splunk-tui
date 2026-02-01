@@ -930,6 +930,15 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected username
 - `j/k or Up/Down`: Navigate list
 
+#### Roles Screen
+- `r`: Refresh roles
+- `c`: Create new role
+- `m`: Modify selected role
+- `d`: Delete selected role
+- `Ctrl+e`: Export roles
+- `Ctrl+c`: Copy selected role name
+- `j/k or Up/Down`: Navigate list
+
 #### Search Peers Screen
 - `r`: Refresh search peers
 - `Ctrl+e`: Export search peers

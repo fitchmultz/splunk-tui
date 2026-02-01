@@ -41,8 +41,8 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, HealthCheckOutput, Index, KvStoreStatus, LogEntry,
-    SavedSearch, SearchJobStatus, SearchPeer, User,
+    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, HealthCheckOutput, Index,
+    KvStoreStatus, LogEntry, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
 };
 use splunk_config::constants::{
     DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
@@ -93,6 +93,9 @@ pub struct App {
     pub apps_state: ratatui::widgets::ListState,
     pub users: Option<Vec<User>>,
     pub users_state: ratatui::widgets::ListState,
+    pub roles: Option<Vec<Role>>,
+    pub roles_state: ratatui::widgets::ListState,
+    pub capabilities: Option<Vec<Capability>>,
     pub search_peers: Option<Vec<SearchPeer>>,
     pub search_peers_state: ratatui::widgets::TableState,
     pub search_peers_pagination: crate::app::state::ListPaginationState,
@@ -417,6 +420,9 @@ impl App {
             apps_state,
             users: None,
             users_state,
+            roles: None,
+            roles_state: ratatui::widgets::ListState::default(),
+            capabilities: None,
             search_peers: None,
             search_peers_state,
             search_peers_pagination: crate::app::state::ListPaginationState::new(30, 1000),
@@ -611,6 +617,10 @@ impl App {
             }),
             CurrentScreen::Users => Some(Action::LoadUsers {
                 count: self.users_pagination.page_size,
+                offset: 0,
+            }),
+            CurrentScreen::Roles => Some(Action::LoadRoles {
+                count: 100,
                 offset: 0,
             }),
             CurrentScreen::SearchPeers => Some(Action::LoadSearchPeers {

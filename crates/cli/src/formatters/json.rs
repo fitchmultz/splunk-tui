@@ -214,4 +214,12 @@ impl Formatter for JsonFormatter {
     fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
         Ok(serde_json::to_string_pretty(lookups)?)
     }
+
+    fn format_roles(&self, roles: &[splunk_client::Role]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(roles)?)
+    }
+
+    fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(capabilities)?)
+    }
 }

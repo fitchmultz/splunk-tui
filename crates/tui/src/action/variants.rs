@@ -32,10 +32,10 @@ use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::models::{
-    App as SplunkApp, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert, Forwarder,
-    HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool,
-    LicenseStack, LicenseUsage, LogEntry, LookupTable, SavedSearch, SearchJobStatus, SearchPeer,
-    SplunkHealth, User,
+    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
+    Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus,
+    LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Role, SavedSearch,
+    SearchJobStatus, SearchPeer, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -478,6 +478,39 @@ pub enum Action {
     UserModified(Result<User, Arc<ClientError>>),
     /// Result of deleting a user
     UserDeleted(Result<String, Arc<ClientError>>),
+
+    // Role Operations
+    /// Load roles list
+    LoadRoles { count: u64, offset: u64 },
+    /// Create a new role
+    CreateRole {
+        params: splunk_client::CreateRoleParams,
+    },
+    /// Modify an existing role
+    ModifyRole {
+        name: String,
+        params: splunk_client::ModifyRoleParams,
+    },
+    /// Delete a role
+    DeleteRole { name: String },
+    /// Load capabilities list
+    LoadCapabilities,
+    /// Open role creation dialog
+    OpenCreateRoleDialog,
+    /// Open role modification dialog
+    OpenModifyRoleDialog { name: String },
+    /// Open role deletion confirmation
+    OpenDeleteRoleConfirm { name: String },
+    /// Result of loading roles
+    RolesLoaded(Result<Vec<Role>, Arc<ClientError>>),
+    /// Result of creating a role
+    RoleCreated(Result<Role, Arc<ClientError>>),
+    /// Result of modifying a role
+    RoleModified(Result<Role, Arc<ClientError>>),
+    /// Result of deleting a role
+    RoleDeleted(Result<String, Arc<ClientError>>),
+    /// Result of loading capabilities
+    CapabilitiesLoaded(Result<Vec<Capability>, Arc<ClientError>>),
 
     // KVStore Collection Operations
     /// Load KVStore collections list

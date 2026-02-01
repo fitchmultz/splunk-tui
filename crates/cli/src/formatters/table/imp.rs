@@ -33,6 +33,7 @@ use super::list_all;
 use super::logs;
 use super::lookups;
 use super::profiles;
+use super::roles;
 use super::saved_searches;
 use super::search;
 use super::search_peers;
@@ -168,6 +169,14 @@ impl Formatter for TableFormatter {
 
     fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
         alerts::format_fired_alert_info(alert)
+    }
+
+    fn format_roles(&self, roles: &[splunk_client::Role]) -> Result<String> {
+        roles::format_roles(roles)
+    }
+
+    fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String> {
+        roles::format_capabilities(capabilities)
     }
 
     fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
