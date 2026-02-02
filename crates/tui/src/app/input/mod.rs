@@ -15,6 +15,7 @@ pub mod configs;
 pub mod fired_alerts;
 pub mod forwarders;
 pub mod health;
+pub mod helpers;
 pub mod indexes;
 pub mod inputs;
 pub mod internal_logs;
