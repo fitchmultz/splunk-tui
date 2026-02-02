@@ -251,6 +251,12 @@ pub trait Formatter {
 
     /// Format HEC acknowledgment status.
     fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String>;
+
+    /// Format macros list.
+    fn format_macros(&self, macros: &[splunk_client::Macro]) -> Result<String>;
+
+    /// Format detailed macro information.
+    fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String>;
 }
 
 /// Cluster peer output structure.

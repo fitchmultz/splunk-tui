@@ -14,6 +14,7 @@ mod kvstore;
 mod license;
 mod logs;
 mod lookups;
+mod macros;
 mod parsing;
 mod request;
 mod roles;
@@ -45,6 +46,7 @@ pub use license::{
 };
 pub use logs::get_internal_logs;
 pub use lookups::list_lookup_tables;
+pub use macros::{create_macro, delete_macro, get_macro, list_macros, update_macro};
 pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
 pub use roles::{create_role, delete_role, list_roles, modify_role};

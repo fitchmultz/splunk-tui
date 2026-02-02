@@ -115,6 +115,7 @@ impl App {
             CurrentScreen::License => Some(Action::LoadLicense),
             CurrentScreen::Kvstore => Some(Action::LoadKvstore),
             CurrentScreen::SavedSearches => Some(Action::LoadSavedSearches),
+            CurrentScreen::Macros => Some(Action::LoadMacros),
             CurrentScreen::InternalLogs => Some(Action::LoadInternalLogs {
                 count: self.internal_logs_defaults.count,
                 earliest: self.internal_logs_defaults.earliest_time.clone(),

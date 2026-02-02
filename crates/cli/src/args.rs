@@ -256,6 +256,12 @@ pub enum Commands {
         command: commands::saved_searches::SavedSearchesCommand,
     },
 
+    /// List and manage search macros
+    Macros {
+        #[command(subcommand)]
+        command: commands::macros::MacrosCommand,
+    },
+
     /// List and manage data inputs (TCP, UDP, Monitor, Script)
     Inputs {
         #[command(subcommand)]

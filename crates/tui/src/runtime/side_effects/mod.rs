@@ -96,6 +96,7 @@ mod kvstore;
 mod license;
 mod logs;
 mod lookups;
+mod macros;
 mod multi_instance;
 mod overview;
 mod profiles;
@@ -165,6 +166,52 @@ pub async fn handle_side_effects(
         }
         Action::LoadSavedSearches => {
             searches::handle_load_saved_searches(client, tx).await;
+        }
+        Action::LoadMacros => {
+            macros::handle_load_macros(client, tx).await;
+        }
+        Action::CreateMacro {
+            name,
+            definition,
+            args,
+            description,
+            disabled,
+            iseval,
+        } => {
+            macros::handle_create_macro(
+                client,
+                tx,
+                name,
+                definition,
+                args,
+                description,
+                disabled,
+                iseval,
+            )
+            .await;
+        }
+        Action::UpdateMacro {
+            name,
+            definition,
+            args,
+            description,
+            disabled,
+            iseval,
+        } => {
+            macros::handle_update_macro(
+                client,
+                tx,
+                name,
+                definition,
+                args,
+                description,
+                disabled,
+                iseval,
+            )
+            .await;
+        }
+        Action::DeleteMacro { name } => {
+            macros::handle_delete_macro(client, tx, name).await;
         }
         Action::UpdateSavedSearch {
             name,

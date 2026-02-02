@@ -996,6 +996,9 @@ The Search screen has two input modes that affect how keys are handled:
 - `Enter`: Run selected search
 - `j/k or Up/Down`: Navigate list
 - `e`: Edit selected saved search
+- `r`: Refresh macros
+- `e`: Edit macro
+- `n`: New macro
 
 #### Internal Logs Screen
 - `r`: Refresh logs

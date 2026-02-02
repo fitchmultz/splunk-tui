@@ -317,6 +317,91 @@ impl Formatter for XmlFormatter {
     fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
         hec::format_hec_ack_status(status)
     }
+
+    fn format_macros(&self, macros: &[splunk_client::Macro]) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<macros>\n");
+        for macro_item in macros {
+            output.push_str("  <macro>\n");
+            output.push_str(&format!(
+                "    <name>{}</name>\n",
+                escape_xml(&macro_item.name)
+            ));
+            output.push_str(&format!(
+                "    <definition>{}</definition>\n",
+                escape_xml(&macro_item.definition)
+            ));
+            if let Some(ref args) = macro_item.args {
+                output.push_str(&format!("    <args>{}</args>\n", escape_xml(args)));
+            }
+            if let Some(ref desc) = macro_item.description {
+                output.push_str(&format!(
+                    "    <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            output.push_str(&format!(
+                "    <disabled>{}</disabled>\n",
+                macro_item.disabled
+            ));
+            output.push_str(&format!("    <iseval>{}</iseval>\n", macro_item.iseval));
+            if let Some(ref validation) = macro_item.validation {
+                output.push_str(&format!(
+                    "    <validation>{}</validation>\n",
+                    escape_xml(validation)
+                ));
+            }
+            if let Some(ref errormsg) = macro_item.errormsg {
+                output.push_str(&format!(
+                    "    <errormsg>{}</errormsg>\n",
+                    escape_xml(errormsg)
+                ));
+            }
+            output.push_str("  </macro>\n");
+        }
+        output.push_str("</macros>\n");
+        Ok(output)
+    }
+
+    fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<macro>\n");
+        output.push_str(&format!(
+            "  <name>{}</name>\n",
+            escape_xml(&macro_info.name)
+        ));
+        output.push_str(&format!(
+            "  <definition>{}</definition>\n",
+            escape_xml(&macro_info.definition)
+        ));
+        if let Some(ref args) = macro_info.args {
+            output.push_str(&format!("  <args>{}</args>\n", escape_xml(args)));
+        }
+        if let Some(ref desc) = macro_info.description {
+            output.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+        output.push_str(&format!("  <disabled>{}</disabled>\n", macro_info.disabled));
+        output.push_str(&format!("  <iseval>{}</iseval>\n", macro_info.iseval));
+        if let Some(ref validation) = macro_info.validation {
+            output.push_str(&format!(
+                "  <validation>{}</validation>\n",
+                escape_xml(validation)
+            ));
+        }
+        if let Some(ref errormsg) = macro_info.errormsg {
+            output.push_str(&format!(
+                "  <errormsg>{}</errormsg>\n",
+                escape_xml(errormsg)
+            ));
+        }
+        output.push_str("</macro>\n");
+        Ok(output)
+    }
 }
 
 fn escape_xml(s: &str) -> String {

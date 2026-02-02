@@ -16,6 +16,7 @@ pub mod jobs;
 pub mod kvstore;
 pub mod license;
 pub mod lookups;
+pub mod macros;
 pub mod multi_instance;
 pub mod overview;
 pub mod roles;

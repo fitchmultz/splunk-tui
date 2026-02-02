@@ -42,6 +42,9 @@ impl App {
         let mut saved_searches_state = ratatui::widgets::ListState::default();
         saved_searches_state.select(Some(0));
 
+        let mut macros_state = ratatui::widgets::ListState::default();
+        macros_state.select(Some(0));
+
         let mut internal_logs_state = ratatui::widgets::TableState::default();
         internal_logs_state.select(Some(0));
 
@@ -131,6 +134,8 @@ impl App {
             jobs_state,
             saved_searches: None,
             saved_searches_state,
+            macros: None,
+            macros_state,
             internal_logs: None,
             internal_logs_state,
             cluster_info: None,

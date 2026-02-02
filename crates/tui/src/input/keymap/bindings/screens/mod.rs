@@ -15,6 +15,7 @@ mod configs;
 mod indexes;
 mod inputs;
 mod internal_logs;
+mod macros;
 mod monitoring;
 mod saved_searches;
 mod search_peers;
@@ -30,6 +31,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
     bindings.extend(cluster::bindings());
     bindings.extend(status::bindings());
     bindings.extend(saved_searches::bindings());
+    bindings.extend(macros::bindings());
     bindings.extend(internal_logs::bindings());
     bindings.extend(apps::bindings());
     bindings.extend(users::bindings());

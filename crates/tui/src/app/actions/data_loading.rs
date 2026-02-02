@@ -52,6 +52,45 @@ impl App {
                 self.handle_data_load_error("saved searches", e);
             }
 
+            // Macros
+            Action::MacrosLoaded(Ok(macros)) => {
+                self.macros = Some(macros);
+                self.loading = false;
+            }
+            Action::MacrosLoaded(Err(e)) => {
+                self.handle_data_load_error("macros", e);
+            }
+            Action::MacroCreated(Ok(())) => {
+                self.toasts
+                    .push(Toast::success("Macro created successfully"));
+                self.loading = false;
+                // Refresh the list
+                self.loading = true;
+            }
+            Action::MacroCreated(Err(e)) => {
+                self.handle_data_load_error("create macro", e);
+            }
+            Action::MacroUpdated(Ok(())) => {
+                self.toasts
+                    .push(Toast::success("Macro updated successfully"));
+                self.loading = false;
+            }
+            Action::MacroUpdated(Err(e)) => {
+                self.handle_data_load_error("update macro", e);
+            }
+            Action::MacroDeleted(Ok(name)) => {
+                self.toasts
+                    .push(Toast::success(format!("Macro '{}' deleted", name)));
+                self.loading = false;
+                // Remove from list
+                if let Some(ref mut macros) = self.macros {
+                    macros.retain(|m| m.name != name);
+                }
+            }
+            Action::MacroDeleted(Err(e)) => {
+                self.handle_data_load_error("delete macro", e);
+            }
+
             // Internal Logs
             Action::InternalLogsLoaded(Ok(logs)) => {
                 self.handle_internal_logs_loaded(logs);

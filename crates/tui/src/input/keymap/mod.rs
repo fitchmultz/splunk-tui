@@ -176,6 +176,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::License => Section::License,
         CurrentScreen::Kvstore => Section::Kvstore,
         CurrentScreen::SavedSearches => Section::SavedSearches,
+        CurrentScreen::Macros => Section::SavedSearches,
         CurrentScreen::InternalLogs => Section::InternalLogs,
         CurrentScreen::Apps => Section::Apps,
         CurrentScreen::Users => Section::Users,
@@ -266,6 +267,12 @@ fn shorten_description(desc: &'static str) -> &'static str {
         "Copy selected lookup name" => "Copy",
         "Refresh config files" => "Refresh",
         "Search stanzas" => "Search",
+        "Refresh macros" => "Refresh",
+        "Export macros" => "Export",
+        "Edit macro" => "Edit",
+        "New macro" => "New",
+        "Delete macro" => "Delete",
+        "Copy definition" => "Copy",
         _ => desc,
     }
 }
@@ -283,6 +290,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::License => &["r"],
         CurrentScreen::Kvstore => &["r"],
         CurrentScreen::SavedSearches => &["r", "Enter", "j/k or Up/Down"],
+        CurrentScreen::Macros => &["r", "e", "n", "d", "Ctrl+c", "j/k or Up/Down"],
         CurrentScreen::InternalLogs => &["r", "a", "j/k or Up/Down"],
         CurrentScreen::Apps => &["r", "e", "d", "j/k or Up/Down"],
         CurrentScreen::Users => &["r", "j/k or Up/Down"],

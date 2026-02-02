@@ -35,6 +35,7 @@ use super::license;
 use super::list_all;
 use super::logs;
 use super::lookups;
+use super::macros;
 use super::profiles;
 use super::roles;
 use super::saved_searches;
@@ -238,6 +239,14 @@ impl Formatter for TableFormatter {
 
     fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
         super::hec::format_hec_ack_status(status)
+    }
+
+    fn format_macros(&self, macros: &[splunk_client::Macro]) -> Result<String> {
+        macros::format_macros(macros)
+    }
+
+    fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
+        macros::format_macro_info(macro_info)
     }
 }
 

@@ -46,44 +46,6 @@
       "custom_fields": {}
     },
     {
-      "id": "RQ-0252",
-      "status": "todo",
-      "title": "Add search macro management",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "macros",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/macros.rs",
-        "crates/client/src/endpoints/macros.rs",
-        "crates/cli/src/commands/macros.rs",
-        "crates/tui/src/ui/screens/macros.rs"
-      ],
-      "evidence": [
-        "No macro support exists in the current codebase.",
-        "Search macros are heavily used for reusable SPL snippets.",
-        "Splunk REST API provides /services/admin/macros for macro management."
-      ],
-      "plan": [
-        "Add macro models (Macro, MacroDefinition) to client.",
-        "Implement macro CRUD operations in client.",
-        "Add CLI macros command with list, create, update, delete subcommands.",
-        "Create TUI macros screen for viewing and managing macros.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0254",
       "status": "todo",
       "title": "Add real-time search support to TUI and CLI",

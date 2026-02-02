@@ -27,8 +27,9 @@ pub use models::{
     Index, IndexListResponse, InstalledLicense, KvStoreMember, KvStoreReplicationStatus,
     KvStoreStatus, LicenseActivationResult, LicenseInstallResult, LicensePool, LicenseStack,
     LicenseUsage, LogEntry, LogParsingHealth, LookupTable, LookupTableEntry,
-    LookupTableListResponse, MaintenanceModeParams, ModifyIndexParams, ModifyPoolParams,
-    ModifyRoleParams, ModifyUserParams, RemovePeersParams, Role, RoleListResponse, SavedSearch,
-    SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, SendBatchParams,
-    ServerInfo, SplunkHealth, SplunkResponse, User, UserListResponse,
+    LookupTableListResponse, Macro, MacroEntry, MacroListResponse, MaintenanceModeParams,
+    ModifyIndexParams, ModifyPoolParams, ModifyRoleParams, ModifyUserParams, RemovePeersParams,
+    Role, RoleListResponse, SavedSearch, SearchJob, SearchJobListResponse, SearchJobResults,
+    SearchJobStatus, SendBatchParams, ServerInfo, SplunkHealth, SplunkResponse, User,
+    UserListResponse,
 };

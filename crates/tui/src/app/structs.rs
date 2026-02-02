@@ -21,7 +21,7 @@ use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::models::{
     App as SplunkApp, Capability, ClusterInfo, ClusterPeer, HealthCheckOutput, Index,
-    KvStoreStatus, LogEntry, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
+    KvStoreStatus, LogEntry, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
 };
 use splunk_config::{ColorTheme, KeybindOverrides, ListDefaults, SearchDefaults, Theme};
 use std::collections::HashSet;
@@ -53,6 +53,8 @@ pub struct App {
     pub jobs_state: ratatui::widgets::TableState,
     pub saved_searches: Option<Vec<SavedSearch>>,
     pub saved_searches_state: ratatui::widgets::ListState,
+    pub macros: Option<Vec<Macro>>,
+    pub macros_state: ratatui::widgets::ListState,
     pub internal_logs: Option<Vec<LogEntry>>,
     pub internal_logs_state: ratatui::widgets::TableState,
     pub cluster_info: Option<ClusterInfo>,

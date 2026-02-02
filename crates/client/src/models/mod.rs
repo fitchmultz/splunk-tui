@@ -20,6 +20,7 @@ pub mod kvstore;
 pub mod license;
 pub mod logs;
 pub mod lookups;
+pub mod macros;
 pub mod roles;
 pub mod saved_searches;
 pub mod search_peers;
@@ -60,6 +61,7 @@ pub use license::{
 };
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
 pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};
+pub use macros::{Macro, MacroEntry, MacroListResponse};
 pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListResponse};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};

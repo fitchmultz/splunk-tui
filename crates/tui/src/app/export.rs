@@ -22,6 +22,7 @@ pub enum ExportTarget {
     Roles,
     Apps,
     SavedSearches,
+    Macros,
     ClusterInfo,
     Jobs,
     Health,
@@ -45,6 +46,7 @@ impl ExportTarget {
             ExportTarget::Roles => "Export Roles",
             ExportTarget::Apps => "Export Apps",
             ExportTarget::SavedSearches => "Export Saved Searches",
+            ExportTarget::Macros => "Export Macros",
             ExportTarget::ClusterInfo => "Export Cluster Info",
             ExportTarget::Jobs => "Export Jobs",
             ExportTarget::Health => "Export Health",
@@ -68,6 +70,7 @@ impl ExportTarget {
             ExportTarget::Roles => "roles",
             ExportTarget::Apps => "apps",
             ExportTarget::SavedSearches => "saved-searches",
+            ExportTarget::Macros => "macros",
             ExportTarget::ClusterInfo => "cluster-info",
             ExportTarget::Jobs => "jobs",
             ExportTarget::Health => "health",
@@ -126,6 +129,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::SavedSearches => self
                 .saved_searches
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Macros => self
+                .macros
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::ClusterInfo => self

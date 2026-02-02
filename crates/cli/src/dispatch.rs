@@ -312,6 +312,17 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
+        Commands::Macros { command } => {
+            let config = config.into_real_config()?;
+            commands::macros::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
         Commands::Inputs { command } => {
             let config = config.into_real_config()?;
             commands::inputs::run(

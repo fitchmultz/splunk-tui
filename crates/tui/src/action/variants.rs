@@ -34,7 +34,7 @@ use splunk_client::ClientError;
 use splunk_client::models::{
     App as SplunkApp, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
     Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus,
-    LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Role, SavedSearch,
+    LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Macro, Role, SavedSearch,
     SearchJobStatus, SearchPeer, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
@@ -202,6 +202,8 @@ pub enum Action {
     LoadKvstore,
     /// Load the list of saved searches
     LoadSavedSearches,
+    /// Load the list of macros
+    LoadMacros,
     /// Load internal logs from index=_internal
     LoadInternalLogs {
         /// Number of log entries to fetch
@@ -347,6 +349,41 @@ pub enum Action {
     },
     /// Result of updating saved search
     SavedSearchUpdated(Result<(), Arc<ClientError>>),
+
+    // Macro Operations
+    /// Result of loading macros
+    MacrosLoaded(Result<Vec<Macro>, Arc<ClientError>>),
+    /// Open edit dialog for selected macro
+    EditMacro,
+    /// Open create macro dialog
+    OpenCreateMacroDialog,
+    /// Create a new macro
+    CreateMacro {
+        name: String,
+        definition: String,
+        args: Option<String>,
+        description: Option<String>,
+        disabled: bool,
+        iseval: bool,
+    },
+    /// Update an existing macro
+    UpdateMacro {
+        name: String,
+        definition: Option<String>,
+        args: Option<String>,
+        description: Option<String>,
+        disabled: Option<bool>,
+        iseval: Option<bool>,
+    },
+    /// Delete a macro
+    DeleteMacro { name: String },
+    /// Result of creating a macro
+    MacroCreated(Result<(), Arc<ClientError>>),
+    /// Result of updating a macro
+    MacroUpdated(Result<(), Arc<ClientError>>),
+    /// Result of deleting a macro
+    MacroDeleted(Result<String, Arc<ClientError>>),
+
     /// Result of loading internal logs
     InternalLogsLoaded(Result<Vec<LogEntry>, Arc<ClientError>>),
     /// Result of loading apps

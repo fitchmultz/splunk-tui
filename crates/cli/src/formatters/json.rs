@@ -275,4 +275,12 @@ impl Formatter for JsonFormatter {
     fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
         Ok(serde_json::to_string_pretty(status)?)
     }
+
+    fn format_macros(&self, macros: &[splunk_client::Macro]) -> Result<String> {
+        Ok(serde_json::to_string_pretty(macros)?)
+    }
+
+    fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
+        Ok(serde_json::to_string_pretty(macro_info)?)
+    }
 }
