@@ -307,4 +307,22 @@ impl Formatter for JsonFormatter {
     fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
         Ok(serde_json::to_string_pretty(datamodel)?)
     }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        _detailed: bool,
+    ) -> Result<String> {
+        // JSON formatter always outputs full WorkloadPool struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(pools)?)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        _detailed: bool,
+    ) -> Result<String> {
+        // JSON formatter always outputs full WorkloadRule struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(rules)?)
+    }
 }

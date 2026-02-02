@@ -113,6 +113,15 @@ pub struct App {
     pub data_models_state: ratatui::widgets::ListState,
     pub data_models_pagination: ListPaginationState,
 
+    // Workload management state
+    pub workload_pools: Option<Vec<splunk_client::models::WorkloadPool>>,
+    pub workload_pools_state: ratatui::widgets::TableState,
+    pub workload_pools_pagination: ListPaginationState,
+    pub workload_rules: Option<Vec<splunk_client::models::WorkloadRule>>,
+    pub workload_rules_state: ratatui::widgets::TableState,
+    pub workload_rules_pagination: ListPaginationState,
+    pub workload_view_mode: crate::app::state::WorkloadViewMode,
+
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,
     pub config_files_state: ratatui::widgets::TableState,

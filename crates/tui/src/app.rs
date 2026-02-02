@@ -164,6 +164,10 @@ impl App {
                 count: self.data_models_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::WorkloadManagement => Some(Action::LoadWorkloadPools {
+                count: self.workload_pools_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
@@ -261,6 +265,31 @@ impl App {
                     })
                 } else {
                     None
+                }
+            }
+            CurrentScreen::WorkloadManagement => {
+                // Load more based on current view mode
+                match self.workload_view_mode {
+                    crate::app::state::WorkloadViewMode::Pools => {
+                        if self.workload_pools_pagination.can_load_more() {
+                            Some(Action::LoadWorkloadPools {
+                                count: self.workload_pools_pagination.page_size,
+                                offset: self.workload_pools_pagination.current_offset,
+                            })
+                        } else {
+                            None
+                        }
+                    }
+                    crate::app::state::WorkloadViewMode::Rules => {
+                        if self.workload_rules_pagination.can_load_more() {
+                            Some(Action::LoadWorkloadRules {
+                                count: self.workload_rules_pagination.page_size,
+                                offset: self.workload_rules_pagination.current_offset,
+                            })
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
             _ => None,

@@ -43,6 +43,7 @@ mod saved_searches;
 mod search;
 mod search_peers;
 mod users;
+mod workload;
 
 /// XML formatter.
 pub struct XmlFormatter;
@@ -596,6 +597,22 @@ impl Formatter for XmlFormatter {
         }
         output.push_str("</datamodel>\n");
         Ok(output)
+    }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_pools(pools, detailed)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_rules(rules, detailed)
     }
 }
 

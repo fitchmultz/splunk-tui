@@ -32,7 +32,7 @@ pub use models::{
     MacroEntry, MacroListResponse, MaintenanceModeParams, ModifyIndexParams, ModifyPoolParams,
     ModifyRoleParams, ModifyUserParams, RemovePeersParams, Role, RoleListResponse, SavedSearch,
     SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, SendBatchParams,
-    ServerInfo, SplunkHealth, SplunkResponse, User, UserListResponse,
+    ServerInfo, SplunkHealth, SplunkResponse, User, UserListResponse, WorkloadPool, WorkloadRule,
 };
 
 // Re-export search types for CLI/TUI use

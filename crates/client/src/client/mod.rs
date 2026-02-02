@@ -57,6 +57,7 @@ mod search;
 mod search_peers;
 mod server;
 mod users;
+mod workload;
 
 use crate::auth::SessionManager;
 use crate::metrics::MetricsCollector;

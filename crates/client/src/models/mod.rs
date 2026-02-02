@@ -29,6 +29,7 @@ pub mod saved_searches;
 pub mod search_peers;
 pub mod server;
 pub mod users;
+pub mod workload;
 
 // Re-exports for backward compatibility
 pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
@@ -73,3 +74,7 @@ pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse}
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};
 pub use users::{CreateUserParams, ModifyUserParams, User, UserEntry, UserListResponse};
+pub use workload::{
+    WorkloadPool, WorkloadPoolEntry, WorkloadPoolListResponse, WorkloadRule, WorkloadRuleEntry,
+    WorkloadRuleListResponse,
+};

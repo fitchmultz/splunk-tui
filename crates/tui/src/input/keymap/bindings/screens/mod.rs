@@ -24,6 +24,7 @@ mod search_peers;
 mod settings;
 mod status;
 mod users;
+mod workload;
 
 use super::Keybinding;
 
@@ -44,5 +45,6 @@ pub(super) fn bindings() -> Vec<Keybinding> {
     bindings.extend(inputs::bindings());
     bindings.extend(settings::bindings());
     bindings.extend(monitoring::bindings());
+    bindings.extend(workload::bindings());
     bindings
 }

@@ -16,7 +16,7 @@ use crate::ui::popup::PopupType;
 use crate::ui::screens::{
     apps, audit, cluster, configs, dashboards, datamodels, forwarders, health, indexes, inputs,
     kvstore, license, lookups, macros, multi_instance, overview, roles, saved_searches, search,
-    search_peers, settings, users,
+    search_peers, settings, users, workload,
 };
 use ratatui::{
     Frame,
@@ -105,6 +105,7 @@ impl App {
                         CurrentScreen::Audit => "Audit Events",
                         CurrentScreen::Dashboards => "Dashboards",
                         CurrentScreen::DataModels => "Data Models",
+                        CurrentScreen::WorkloadManagement => "Workload Management",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                         CurrentScreen::MultiInstance => "Multi-Instance",
@@ -467,6 +468,21 @@ impl App {
                         loading: self.loading,
                         data_models: self.data_models.as_deref(),
                         state: &mut self.data_models_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::WorkloadManagement => {
+                workload::render_workload(
+                    f,
+                    area,
+                    workload::WorkloadRenderConfig {
+                        loading: self.loading,
+                        workload_pools: self.workload_pools.as_deref(),
+                        workload_rules: self.workload_rules.as_deref(),
+                        view_mode: self.workload_view_mode,
+                        pools_state: &mut self.workload_pools_state,
+                        rules_state: &mut self.workload_rules_state,
                         theme: &self.theme,
                     },
                 );

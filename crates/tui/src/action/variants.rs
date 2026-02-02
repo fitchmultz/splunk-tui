@@ -37,7 +37,7 @@ use splunk_client::models::{
     Dashboard, DataModel, FiredAlert, Forwarder, HealthCheckOutput, Index, Input,
     KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
     LogEntry, LookupTable, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth,
-    User,
+    User, WorkloadPool, WorkloadRule,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -328,6 +328,26 @@ pub enum Action {
     },
     /// Load more data models (pagination)
     LoadMoreDataModels,
+    /// Load the list of workload pools with pagination
+    LoadWorkloadPools {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more workload pools (pagination)
+    LoadMoreWorkloadPools,
+    /// Load the list of workload rules with pagination
+    LoadWorkloadRules {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more workload rules (pagination)
+    LoadMoreWorkloadRules,
+    /// Toggle workload view mode (Pools <-> Rules)
+    ToggleWorkloadViewMode,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -497,6 +517,14 @@ pub enum Action {
     DataModelsLoaded(Result<Vec<DataModel>, Arc<ClientError>>),
     /// Result of loading more data models (pagination)
     MoreDataModelsLoaded(Result<Vec<DataModel>, Arc<ClientError>>),
+    /// Result of loading workload pools
+    WorkloadPoolsLoaded(Result<Vec<WorkloadPool>, Arc<ClientError>>),
+    /// Result of loading more workload pools (pagination)
+    MoreWorkloadPoolsLoaded(Result<Vec<WorkloadPool>, Arc<ClientError>>),
+    /// Result of loading workload rules
+    WorkloadRulesLoaded(Result<Vec<WorkloadRule>, Arc<ClientError>>),
+    /// Result of loading more workload rules (pagination)
+    MoreWorkloadRulesLoaded(Result<Vec<WorkloadRule>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

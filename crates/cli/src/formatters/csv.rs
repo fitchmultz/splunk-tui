@@ -36,3 +36,4 @@ mod saved_searches;
 mod search;
 mod search_peers;
 mod users;
+mod workload;

@@ -71,6 +71,7 @@ pub enum CurrentScreen {
     Audit,
     Dashboards,
     DataModels,
+    WorkloadManagement,
 }
 
 impl CurrentScreen {
@@ -100,7 +101,8 @@ impl CurrentScreen {
             CurrentScreen::Lookups => CurrentScreen::Audit,
             CurrentScreen::Audit => CurrentScreen::Dashboards,
             CurrentScreen::Dashboards => CurrentScreen::DataModels,
-            CurrentScreen::DataModels => CurrentScreen::Settings,
+            CurrentScreen::DataModels => CurrentScreen::WorkloadManagement,
+            CurrentScreen::WorkloadManagement => CurrentScreen::Settings,
             CurrentScreen::Settings => CurrentScreen::Overview,
             CurrentScreen::Overview => CurrentScreen::MultiInstance,
             CurrentScreen::MultiInstance => CurrentScreen::Search, // Wrap around
@@ -130,7 +132,8 @@ impl CurrentScreen {
             CurrentScreen::Configs => CurrentScreen::Inputs,
             CurrentScreen::FiredAlerts => CurrentScreen::Configs,
             CurrentScreen::Forwarders => CurrentScreen::FiredAlerts,
-            CurrentScreen::Settings => CurrentScreen::DataModels,
+            CurrentScreen::Settings => CurrentScreen::WorkloadManagement,
+            CurrentScreen::WorkloadManagement => CurrentScreen::DataModels,
             CurrentScreen::DataModels => CurrentScreen::Dashboards,
             CurrentScreen::Dashboards => CurrentScreen::Audit,
             CurrentScreen::Audit => CurrentScreen::Lookups,
@@ -223,6 +226,26 @@ impl ClusterViewMode {
         match self {
             Self::Summary => Self::Peers,
             Self::Peers => Self::Summary,
+        }
+    }
+}
+
+/// View mode for the workload management screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WorkloadViewMode {
+    /// Show workload pools.
+    #[default]
+    Pools,
+    /// Show workload rules.
+    Rules,
+}
+
+impl WorkloadViewMode {
+    /// Toggle between pools and rules view.
+    pub fn toggle(self) -> Self {
+        match self {
+            Self::Pools => Self::Rules,
+            Self::Rules => Self::Pools,
         }
     }
 }

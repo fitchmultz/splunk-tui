@@ -318,6 +318,32 @@ impl App {
                 self.handle_data_load_error("more data models", e);
             }
 
+            // Workload Management
+            Action::WorkloadPoolsLoaded(Ok(pools)) => {
+                self.handle_workload_pools_loaded(pools);
+            }
+            Action::WorkloadPoolsLoaded(Err(e)) => {
+                self.handle_data_load_error("workload pools", e);
+            }
+            Action::MoreWorkloadPoolsLoaded(Ok(pools)) => {
+                self.handle_more_workload_pools_loaded(pools);
+            }
+            Action::MoreWorkloadPoolsLoaded(Err(e)) => {
+                self.handle_data_load_error("more workload pools", e);
+            }
+            Action::WorkloadRulesLoaded(Ok(rules)) => {
+                self.handle_workload_rules_loaded(rules);
+            }
+            Action::WorkloadRulesLoaded(Err(e)) => {
+                self.handle_data_load_error("workload rules", e);
+            }
+            Action::MoreWorkloadRulesLoaded(Ok(rules)) => {
+                self.handle_more_workload_rules_loaded(rules);
+            }
+            Action::MoreWorkloadRulesLoaded(Err(e)) => {
+                self.handle_data_load_error("more workload rules", e);
+            }
+
             // Config Files
             Action::ConfigFilesLoaded(Ok(files)) => {
                 self.config_files = Some(files);
@@ -653,6 +679,49 @@ impl App {
             self.data_models = Some(datamodels);
         }
         self.data_models_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    // Workload management handlers
+    fn handle_workload_pools_loaded(&mut self, pools: Vec<splunk_client::models::WorkloadPool>) {
+        let count = pools.len();
+        self.workload_pools = Some(pools);
+        self.workload_pools_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_workload_pools_loaded(
+        &mut self,
+        pools: Vec<splunk_client::models::WorkloadPool>,
+    ) {
+        let count = pools.len();
+        if let Some(ref mut existing) = self.workload_pools {
+            existing.extend(pools);
+        } else {
+            self.workload_pools = Some(pools);
+        }
+        self.workload_pools_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_workload_rules_loaded(&mut self, rules: Vec<splunk_client::models::WorkloadRule>) {
+        let count = rules.len();
+        self.workload_rules = Some(rules);
+        self.workload_rules_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_workload_rules_loaded(
+        &mut self,
+        rules: Vec<splunk_client::models::WorkloadRule>,
+    ) {
+        let count = rules.len();
+        if let Some(ref mut existing) = self.workload_rules {
+            existing.extend(rules);
+        } else {
+            self.workload_rules = Some(rules);
+        }
+        self.workload_rules_pagination.update_loaded(count);
         self.loading = false;
     }
 

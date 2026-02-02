@@ -45,6 +45,7 @@ pub enum Section {
     Audit,
     Dashboards,
     DataModels,
+    Workload,
     Settings,
     Overview,
     MultiInstance,
@@ -193,6 +194,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::Audit => Section::Audit,
         CurrentScreen::Dashboards => Section::Dashboards,
         CurrentScreen::DataModels => Section::DataModels,
+        CurrentScreen::WorkloadManagement => Section::Workload,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
         CurrentScreen::MultiInstance => Section::MultiInstance,
@@ -279,6 +281,9 @@ fn shorten_description(desc: &'static str) -> &'static str {
         "New macro" => "New",
         "Delete macro" => "Delete",
         "Copy definition" => "Copy",
+        "Refresh workload" => "Refresh",
+        "Toggle pools/rules" => "Toggle",
+        "Export workload" => "Export",
         _ => desc,
     }
 }
@@ -313,6 +318,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Audit => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Dashboards => &["r", "j/k or Up/Down"],
         CurrentScreen::DataModels => &["r", "j/k or Up/Down"],
+        CurrentScreen::WorkloadManagement => &["r", "w", "j/k or Up/Down", "Ctrl+e"],
     };
 
     // Sort hints by priority order

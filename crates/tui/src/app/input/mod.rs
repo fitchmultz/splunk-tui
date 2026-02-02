@@ -36,6 +36,7 @@ pub mod search;
 pub mod search_peers;
 pub mod settings;
 pub mod users;
+pub mod workload;
 
 use crate::action::Action;
 use crate::app::App;
@@ -72,6 +73,7 @@ impl App {
             CurrentScreen::Audit => self.handle_audit_input(key),
             CurrentScreen::Dashboards => self.handle_dashboards_input(key),
             CurrentScreen::DataModels => self.handle_datamodels_input(key),
+            CurrentScreen::WorkloadManagement => self.handle_workload_input(key),
         }
     }
 }

@@ -107,6 +107,7 @@ mod roles;
 mod search_peers;
 mod searches;
 mod users;
+mod workload;
 
 use crate::action::Action;
 use splunk_client::SplunkClient;
@@ -475,6 +476,20 @@ pub async fn handle_side_effects(
         Action::LoadMoreDataModels => {
             // This action is handled by the main loop which has access to state
             // It reads data_models_pagination and sends LoadDataModels with updated offset
+        }
+        Action::LoadWorkloadPools { count, offset } => {
+            workload::handle_load_workload_pools(client, tx, count, offset).await;
+        }
+        Action::LoadMoreWorkloadPools => {
+            // This action is handled by the main loop which has access to state
+            // It reads workload_pools_pagination and sends LoadWorkloadPools with updated offset
+        }
+        Action::LoadWorkloadRules { count, offset } => {
+            workload::handle_load_workload_rules(client, tx, count, offset).await;
+        }
+        Action::LoadMoreWorkloadRules => {
+            // This action is handled by the main loop which has access to state
+            // It reads workload_rules_pagination and sends LoadWorkloadRules with updated offset
         }
         _ => {}
     }

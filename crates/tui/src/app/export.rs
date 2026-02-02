@@ -36,6 +36,7 @@ pub enum ExportTarget {
     Lookups,
     MultiInstance,
     AuditEvents,
+    Workload,
 }
 
 impl ExportTarget {
@@ -61,6 +62,7 @@ impl ExportTarget {
             ExportTarget::Lookups => "Export Lookups",
             ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
             ExportTarget::AuditEvents => "Export Audit Events",
+            ExportTarget::Workload => "Export Workload Management",
         }
     }
 
@@ -86,6 +88,7 @@ impl ExportTarget {
             ExportTarget::Lookups => "lookups",
             ExportTarget::MultiInstance => "multi-instance",
             ExportTarget::AuditEvents => "audit-events",
+            ExportTarget::Workload => "workload",
         };
 
         let ext = match format {
@@ -190,6 +193,16 @@ impl App {
                 .audit_events
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Workload => {
+                // Export both pools and rules as a combined object
+                let pools = self.workload_pools.clone().unwrap_or_default();
+                let rules = self.workload_rules.clone().unwrap_or_default();
+                let combined = serde_json::json!({
+                    "pools": pools,
+                    "rules": rules,
+                });
+                Some(combined)
+            }
         }
     }
 

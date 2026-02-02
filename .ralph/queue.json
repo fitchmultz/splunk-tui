@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0258",
-      "status": "todo",
-      "title": "Add workload management support",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "workload",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/workload.rs",
-        "crates/client/src/endpoints/workload.rs",
-        "crates/cli/src/commands/workload.rs",
-        "crates/tui/src/ui/screens/workload.rs"
-      ],
-      "evidence": [
-        "No workload management exists in the current codebase.",
-        "Workload management is important for resource allocation in multi-tenant Splunk.",
-        "Splunk REST API provides /services/workloads endpoints for pools and rules."
-      ],
-      "plan": [
-        "Add workload models (WorkloadPool, WorkloadRule) to client.",
-        "Implement workload listing and configuration methods.",
-        "Add CLI workload command for viewing and managing workloads.",
-        "Create TUI workload screen.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0259",
       "status": "todo",
       "title": "Add search head clustering (SHC) support",

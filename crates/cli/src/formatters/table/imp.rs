@@ -8,6 +8,7 @@
 //! - Other output formats.
 //! - File I/O.
 
+use crate::formatters::table::workload;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput,
@@ -290,6 +291,22 @@ impl Formatter for TableFormatter {
     fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
         datamodels::format_datamodel(datamodel)
     }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_pools(pools, detailed)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_rules(rules, detailed)
+    }
 }
 
 impl TableFormatter {
@@ -568,6 +585,38 @@ impl TableFormatter {
         let mut output = Formatter::format_audit_events(self, events, _detailed)?;
 
         if let Some(footer) = build_pagination_footer(pagination, events.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for workload pools with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for workload pools (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_workload_pools_paginated(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if pools.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No workload pools found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No workload pools found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_workload_pools(pools, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, pools.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

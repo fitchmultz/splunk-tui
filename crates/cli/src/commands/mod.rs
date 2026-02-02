@@ -25,6 +25,7 @@ pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
 pub mod users;
+pub mod workload;
 
 use anyhow::Result;
 use splunk_client::{AuthStrategy as ClientAuth, SplunkClient};

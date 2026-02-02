@@ -26,6 +26,8 @@ use splunk_client::{
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
+use crate::formatters::csv::workload;
+
 use super::alerts;
 use super::apps;
 use super::cluster;
@@ -288,5 +290,21 @@ impl Formatter for CsvFormatter {
 
     fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
         datamodels::format_datamodel(datamodel)
+    }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_pools(pools, detailed)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_rules(rules, detailed)
     }
 }

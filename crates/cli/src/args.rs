@@ -317,6 +317,21 @@ pub enum Commands {
         offset: usize,
     },
 
+    /// List workload pools and rules
+    Workload {
+        /// Show detailed information
+        #[arg(short, long)]
+        detailed: bool,
+
+        /// Maximum number of items to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+
+        /// Offset into the list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+
     /// Send events to Splunk via HTTP Event Collector (HEC)
     Hec {
         #[command(subcommand)]

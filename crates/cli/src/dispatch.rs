@@ -405,6 +405,23 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
+        Commands::Workload {
+            detailed,
+            count,
+            offset,
+        } => {
+            let config = config.into_real_config()?;
+            commands::workload::run(
+                config,
+                detailed,
+                count,
+                offset,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
         Commands::Hec { command } => {
             // HEC commands don't use the standard config - they use HEC-specific URL/token
             commands::hec::run(command, &cli.output, cli.output_file.clone(), cancel_token).await?;

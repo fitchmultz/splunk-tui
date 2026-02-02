@@ -17,7 +17,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::{
     AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, FiredAlert, Input,
-    KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
+    KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer, WorkloadPool, WorkloadRule,
 };
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
@@ -272,6 +272,12 @@ pub trait Formatter {
 
     /// Format detailed data model information.
     fn format_datamodel(&self, datamodel: &DataModel) -> Result<String>;
+
+    /// Format workload pools list.
+    fn format_workload_pools(&self, pools: &[WorkloadPool], detailed: bool) -> Result<String>;
+
+    /// Format workload rules list.
+    fn format_workload_rules(&self, rules: &[WorkloadRule], detailed: bool) -> Result<String>;
 }
 
 /// Cluster peer output structure.

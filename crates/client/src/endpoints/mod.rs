@@ -25,6 +25,7 @@ pub mod search;
 mod search_peers;
 mod server;
 mod users;
+mod workload;
 
 pub use alerts::{get_fired_alert, list_fired_alerts};
 pub use audit::{get_recent_audit_events, list_audit_events};
@@ -67,3 +68,4 @@ pub use search::{
 pub use search_peers::list_search_peers;
 pub use server::*;
 pub use users::{create_user, delete_user, list_users, modify_user};
+pub use workload::{list_workload_pools, list_workload_rules};

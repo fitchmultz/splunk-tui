@@ -14,7 +14,7 @@
 
 use crate::models::{
     App, Capability, ConfigStanza, Dashboard, DataModel, FiredAlert, Forwarder, Index, Input,
-    KvStoreCollection, Macro, Role, SavedSearch, SearchPeer, User,
+    KvStoreCollection, Macro, Role, SavedSearch, SearchPeer, User, WorkloadPool, WorkloadRule,
 };
 
 pub(crate) trait HasName {
@@ -111,6 +111,18 @@ impl HasName for Dashboard {
 }
 
 impl HasName for DataModel {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+}
+
+impl HasName for WorkloadPool {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+}
+
+impl HasName for WorkloadRule {
     fn set_name(&mut self, name: String) {
         self.name = name;
     }

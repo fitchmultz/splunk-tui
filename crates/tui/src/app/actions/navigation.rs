@@ -89,8 +89,21 @@ impl App {
             | Action::LoadMoreSearchPeers
             | Action::LoadMoreInputs
             | Action::LoadMoreFiredAlerts
-            | Action::LoadMoreLookups => {
+            | Action::LoadMoreLookups
+            | Action::LoadMoreWorkloadPools
+            | Action::LoadMoreWorkloadRules => {
                 // These are handled in the main loop which has access to pagination state
+            }
+            Action::LoadWorkloadPools { .. } => {
+                self.current_screen = CurrentScreen::WorkloadManagement;
+                self.workload_pools_pagination.reset();
+            }
+            Action::LoadWorkloadRules { .. } => {
+                self.current_screen = CurrentScreen::WorkloadManagement;
+                self.workload_rules_pagination.reset();
+            }
+            Action::ToggleWorkloadViewMode => {
+                self.toggle_workload_view_mode();
             }
             Action::NavigateDown => self.next_item(),
             Action::NavigateUp => self.previous_item(),
@@ -118,6 +131,15 @@ impl App {
         self.cluster_view_mode = self.cluster_view_mode.toggle();
         // When switching to peers view, trigger peers load if not already loaded
         if self.cluster_view_mode == ClusterViewMode::Peers && self.cluster_peers.is_none() {
+            // The side effect handler will trigger the actual load
+        }
+    }
+
+    fn toggle_workload_view_mode(&mut self) {
+        use crate::app::state::WorkloadViewMode;
+        self.workload_view_mode = self.workload_view_mode.toggle();
+        // When switching to rules view, trigger rules load if not already loaded
+        if self.workload_view_mode == WorkloadViewMode::Rules && self.workload_rules.is_none() {
             // The side effect handler will trigger the actual load
         }
     }
