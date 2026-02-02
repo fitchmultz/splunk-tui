@@ -16,8 +16,8 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, FiredAlert, Input, KvStoreCollection, KvStoreRecord, LogEntry,
-    SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, FiredAlert, Input, KvStoreCollection, KvStoreRecord,
+    LogEntry, SearchPeer,
 };
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
@@ -257,6 +257,9 @@ pub trait Formatter {
 
     /// Format detailed macro information.
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String>;
+
+    /// Format audit events list.
+    fn format_audit_events(&self, events: &[AuditEvent], detailed: bool) -> Result<String>;
 }
 
 /// Cluster peer output structure.

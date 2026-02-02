@@ -1,6 +1,7 @@
 //! REST API endpoint implementations.
 
 mod alerts;
+mod audit;
 mod auth;
 mod capabilities;
 mod cluster;
@@ -24,6 +25,7 @@ mod server;
 mod users;
 
 pub use alerts::{get_fired_alert, list_fired_alerts};
+pub use audit::{get_recent_audit_events, list_audit_events};
 pub use auth::login;
 pub use capabilities::list_capabilities;
 pub use cluster::{

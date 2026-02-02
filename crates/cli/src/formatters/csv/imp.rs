@@ -14,6 +14,7 @@ use crate::formatters::{
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
 };
 use anyhow::Result;
+use splunk_client::models::AuditEvent;
 use splunk_client::models::{
     ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
 };
@@ -235,5 +236,37 @@ impl Formatter for CsvFormatter {
 
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
         macros::format_macro_info(macro_info)
+    }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        use crate::formatters::common::{build_csv_header, build_csv_row, escape_csv};
+
+        let mut output = String::new();
+
+        // Header
+        output.push_str(&build_csv_header(&[
+            "Time",
+            "User",
+            "Action",
+            "Target",
+            "Result",
+            "Client IP",
+            "Details",
+        ]));
+
+        // Rows
+        for event in events {
+            output.push_str(&build_csv_row(&[
+                escape_csv(&event.time),
+                escape_csv(&event.user),
+                escape_csv(&event.action),
+                escape_csv(&event.target),
+                escape_csv(&event.result),
+                escape_csv(&event.client_ip),
+                escape_csv(&event.details),
+            ]));
+        }
+
+        Ok(output)
     }
 }

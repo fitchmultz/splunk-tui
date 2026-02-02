@@ -35,6 +35,7 @@ pub enum ExportTarget {
     Forwarders,
     Lookups,
     MultiInstance,
+    AuditEvents,
 }
 
 impl ExportTarget {
@@ -59,6 +60,7 @@ impl ExportTarget {
             ExportTarget::Forwarders => "Export Forwarders",
             ExportTarget::Lookups => "Export Lookups",
             ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
+            ExportTarget::AuditEvents => "Export Audit Events",
         }
     }
 
@@ -83,6 +85,7 @@ impl ExportTarget {
             ExportTarget::Forwarders => "forwarders",
             ExportTarget::Lookups => "lookups",
             ExportTarget::MultiInstance => "multi-instance",
+            ExportTarget::AuditEvents => "audit-events",
         };
 
         let ext = match format {
@@ -181,6 +184,10 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::MultiInstance => self
                 .multi_instance_data
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::AuditEvents => self
+                .audit_events
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
         }

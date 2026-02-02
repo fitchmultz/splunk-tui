@@ -360,6 +360,17 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
+        Commands::Audit { command } => {
+            let config = config.into_real_config()?;
+            commands::audit::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
         Commands::Lookups { count, offset } => {
             let config = config.into_real_config()?;
             commands::lookups::run(

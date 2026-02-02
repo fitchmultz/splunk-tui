@@ -288,6 +288,12 @@ pub enum Commands {
         command: commands::alerts::AlertsCommand,
     },
 
+    /// View audit events
+    Audit {
+        #[command(subcommand)]
+        command: commands::audit::AuditCommand,
+    },
+
     /// List lookup tables (CSV-based lookups)
     Lookups {
         /// Maximum number of lookup tables to list

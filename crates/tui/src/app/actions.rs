@@ -100,6 +100,7 @@ impl App {
             | Action::MoreInputsLoaded(_)
             | Action::FiredAlertsLoaded(_)
             | Action::MoreFiredAlertsLoaded(_)
+            | Action::AuditEventsLoaded(_)
             | Action::ConfigFilesLoaded(_)
             | Action::ConfigStanzasLoaded(_)
             | Action::SettingsLoaded(_)

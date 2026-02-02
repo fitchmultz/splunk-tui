@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0260",
-      "status": "todo",
-      "title": "Add audit logging and event viewing",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "audit",
-        "security",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/audit.rs",
-        "crates/client/src/endpoints/audit.rs",
-        "crates/cli/src/commands/audit.rs",
-        "crates/tui/src/ui/screens/audit.rs"
-      ],
-      "evidence": [
-        "No audit log viewing exists in the current codebase.",
-        "Audit logs track user actions and are important for compliance.",
-        "Splunk REST API provides /services/admin/audit for audit events."
-      ],
-      "plan": [
-        "Add audit event models to client.",
-        "Implement audit log querying with time range filters.",
-        "Add CLI audit command for viewing recent audit events.",
-        "Create TUI audit screen for browsing audit logs.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0261",
       "status": "todo",
       "title": "Add dashboard listing and viewing",

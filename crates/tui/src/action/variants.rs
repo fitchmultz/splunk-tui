@@ -33,10 +33,10 @@ use serde_json::Value;
 use splunk_client::ClientError;
 use splunk_client::SearchMode;
 use splunk_client::models::{
-    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
-    Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus,
-    LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Macro, Role, SavedSearch,
-    SearchJobStatus, SearchPeer, SplunkHealth, User,
+    App as SplunkApp, AuditEvent, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza,
+    FiredAlert, Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord,
+    KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Macro, Role,
+    SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth, User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -293,6 +293,22 @@ pub enum Action {
     LoadFiredAlerts,
     /// Load more fired alerts (pagination)
     LoadMoreFiredAlerts,
+    /// Load audit events with time range
+    LoadAuditEvents {
+        /// Number of events to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+        /// Earliest time for events
+        earliest: String,
+        /// Latest time for events
+        latest: String,
+    },
+    /// Load recent audit events (last 24 hours)
+    LoadRecentAuditEvents {
+        /// Number of events to load
+        count: u64,
+    },
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -452,6 +468,8 @@ pub enum Action {
     FiredAlertsLoaded(Result<Vec<FiredAlert>, Arc<ClientError>>),
     /// Result of loading more fired alerts (pagination)
     MoreFiredAlertsLoaded(Result<Vec<FiredAlert>, Arc<ClientError>>),
+    /// Result of loading audit events
+    AuditEventsLoaded(Result<Vec<AuditEvent>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

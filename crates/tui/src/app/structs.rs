@@ -99,6 +99,10 @@ pub struct App {
     pub lookups_state: ratatui::widgets::TableState,
     pub lookups_pagination: ListPaginationState,
 
+    // Audit events state
+    pub audit_events: Option<Vec<splunk_client::models::AuditEvent>>,
+    pub audit_state: ratatui::widgets::TableState,
+
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,
     pub config_files_state: ratatui::widgets::TableState,

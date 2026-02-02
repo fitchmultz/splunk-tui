@@ -273,6 +273,22 @@ impl App {
                 self.handle_data_load_error("more fired alerts", e);
             }
 
+            // Audit Events
+            Action::AuditEventsLoaded(Ok(events)) => {
+                let sel = self.audit_state.selected();
+                self.audit_events = Some(events);
+                self.loading = false;
+                if let Some(events) = &self.audit_events {
+                    self.audit_state.select(
+                        sel.map(|i| i.min(events.len().saturating_sub(1)))
+                            .or(Some(0)),
+                    );
+                }
+            }
+            Action::AuditEventsLoaded(Err(e)) => {
+                self.handle_data_load_error("audit events", e);
+            }
+
             // Config Files
             Action::ConfigFilesLoaded(Ok(files)) => {
                 self.config_files = Some(files);

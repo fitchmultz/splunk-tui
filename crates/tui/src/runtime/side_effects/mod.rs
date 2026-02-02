@@ -84,6 +84,7 @@
 
 mod alerts;
 mod apps;
+mod audit;
 mod cluster;
 mod configs;
 mod export;
@@ -447,6 +448,17 @@ pub async fn handle_side_effects(
         }
         Action::DeleteProfile { name } => {
             profiles::handle_delete_profile(config_manager.clone(), tx.clone(), name).await;
+        }
+        Action::LoadAuditEvents {
+            count,
+            offset,
+            earliest,
+            latest,
+        } => {
+            audit::handle_load_audit_events(client, tx, count, offset, earliest, latest).await;
+        }
+        Action::LoadRecentAuditEvents { count } => {
+            audit::handle_load_recent_audit_events(client, tx, count).await;
         }
         _ => {}
     }

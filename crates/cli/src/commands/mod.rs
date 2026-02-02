@@ -2,6 +2,7 @@
 
 pub mod alerts;
 pub mod apps;
+pub mod audit;
 pub mod cluster;
 pub mod config;
 pub mod configs;

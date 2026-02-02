@@ -34,6 +34,7 @@ mod session;
 // API method submodules
 mod alerts;
 mod apps;
+mod audit;
 mod capabilities;
 mod cluster;
 mod configs;

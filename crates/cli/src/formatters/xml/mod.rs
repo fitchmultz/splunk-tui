@@ -14,7 +14,7 @@ use crate::formatters::{
 };
 use anyhow::Result;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
@@ -400,6 +400,40 @@ impl Formatter for XmlFormatter {
             ));
         }
         output.push_str("</macro>\n");
+        Ok(output)
+    }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<audit_events>\n");
+        for event in events {
+            output.push_str("  <audit_event>\n");
+            output.push_str(&format!("    <time>{}</time>\n", escape_xml(&event.time)));
+            output.push_str(&format!("    <user>{}</user>\n", escape_xml(&event.user)));
+            output.push_str(&format!(
+                "    <action>{}</action>\n",
+                escape_xml(&event.action)
+            ));
+            output.push_str(&format!(
+                "    <target>{}</target>\n",
+                escape_xml(&event.target)
+            ));
+            output.push_str(&format!(
+                "    <result>{}</result>\n",
+                escape_xml(&event.result)
+            ));
+            output.push_str(&format!(
+                "    <client_ip>{}</client_ip>\n",
+                escape_xml(&event.client_ip)
+            ));
+            output.push_str(&format!(
+                "    <details>{}</details>\n",
+                escape_xml(&event.details)
+            ));
+            output.push_str("  </audit_event>\n");
+        }
+        output.push_str("</audit_events>\n");
         Ok(output)
     }
 }

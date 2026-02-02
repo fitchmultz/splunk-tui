@@ -13,6 +13,7 @@ use crate::formatters::{
     LicenseInstallOutput, LicensePoolOperationOutput,
 };
 use anyhow::Result;
+use splunk_client::models::AuditEvent;
 use splunk_client::models::{
     ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
@@ -248,6 +249,28 @@ impl Formatter for TableFormatter {
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
         macros::format_macro_info(macro_info)
     }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        if events.is_empty() {
+            return Ok("No audit events found.".to_string());
+        }
+
+        // Tab-separated table format
+        let mut lines = Vec::new();
+
+        // Header
+        lines.push("Time\tUser\tAction\tTarget\tResult".to_string());
+
+        // Rows
+        for event in events {
+            lines.push(format!(
+                "{}\t{}\t{}\t{}\t{}",
+                event.time, event.user, event.action, event.target, event.result
+            ));
+        }
+
+        Ok(lines.join("\n"))
+    }
 }
 
 impl TableFormatter {
@@ -430,6 +453,38 @@ impl TableFormatter {
         let mut output = self.format_kvstore_collections(collections)?;
 
         if let Some(footer) = build_pagination_footer(pagination, collections.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for audit events with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for audit events (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_audit_events_paginated(
+        &self,
+        events: &[AuditEvent],
+        _detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if events.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No audit events found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No audit events found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = Formatter::format_audit_events(self, events, _detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, events.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

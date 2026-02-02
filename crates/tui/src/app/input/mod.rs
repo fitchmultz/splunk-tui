@@ -10,6 +10,7 @@
 //! - Does NOT handle popup input (handled by popups module)
 
 pub mod apps;
+pub mod audit;
 pub mod cluster;
 pub mod configs;
 pub mod fired_alerts;
@@ -66,6 +67,7 @@ impl App {
             CurrentScreen::FiredAlerts => self.handle_fired_alerts_input(key),
             CurrentScreen::Forwarders => self.handle_forwarders_input(key),
             CurrentScreen::Lookups => self.handle_lookups_input(key),
+            CurrentScreen::Audit => self.handle_audit_input(key),
         }
     }
 }

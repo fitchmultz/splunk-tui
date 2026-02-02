@@ -79,6 +79,9 @@ impl App {
         let mut lookups_state = ratatui::widgets::TableState::default();
         lookups_state.select(Some(0));
 
+        let mut audit_state = ratatui::widgets::TableState::default();
+        audit_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -171,6 +174,8 @@ impl App {
             lookups: None,
             lookups_state,
             lookups_pagination: ListPaginationState::new(30, 1000),
+            audit_events: None,
+            audit_state,
             config_files: None,
             config_files_state,
             selected_config_file: None,

@@ -4,6 +4,7 @@
 
 pub mod alerts;
 pub mod apps;
+pub mod audit;
 pub mod cluster;
 pub mod configs;
 pub mod forwarders;

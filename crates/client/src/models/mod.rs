@@ -6,6 +6,7 @@
 
 pub mod alerts;
 pub mod apps;
+pub mod audit;
 pub mod auth;
 pub mod capabilities;
 pub mod cluster;
@@ -30,6 +31,7 @@ pub mod users;
 // Re-exports for backward compatibility
 pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
 pub use apps::{App, AppEntry, AppListResponse};
+pub use audit::{AuditEvent, AuditEventEntry, AuditEventListResponse, ListAuditEventsParams};
 pub use auth::AuthResponse;
 pub use capabilities::{Capability, CapabilityEntry, CapabilityListResponse};
 pub use cluster::{

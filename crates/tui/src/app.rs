@@ -150,6 +150,12 @@ impl App {
                 count: self.lookups_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::Audit => Some(Action::LoadAuditEvents {
+                count: 50,
+                offset: 0,
+                earliest: "-24h".to_string(),
+                latest: "now".to_string(),
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
