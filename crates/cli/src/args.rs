@@ -300,6 +300,12 @@ pub enum Commands {
         command: commands::dashboards::DashboardsCommand,
     },
 
+    /// List and manage data models
+    Datamodels {
+        #[command(subcommand)]
+        command: commands::datamodels::DatamodelsCommand,
+    },
+
     /// List lookup tables (CSV-based lookups)
     Lookups {
         /// Maximum number of lookup tables to list

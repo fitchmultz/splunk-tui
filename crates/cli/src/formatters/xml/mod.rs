@@ -13,6 +13,7 @@ use crate::formatters::{
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
 };
 use anyhow::Result;
+use splunk_client::models::DataModel;
 use splunk_client::models::{
     AuditEvent, ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
@@ -519,6 +520,81 @@ impl Formatter for XmlFormatter {
             output.push_str(&format!("  <xmlData>{}</xmlData>\n", escape_xml(xml_data)));
         }
         output.push_str("</dashboard>\n");
+        Ok(output)
+    }
+
+    fn format_datamodels(&self, datamodels: &[DataModel], _detailed: bool) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<datamodels>\n");
+        for datamodel in datamodels {
+            output.push_str("  <datamodel>\n");
+            output.push_str(&format!(
+                "    <name>{}</name>\n",
+                escape_xml(&datamodel.name)
+            ));
+            output.push_str(&format!(
+                "    <displayName>{}</displayName>\n",
+                escape_xml(&datamodel.displayName)
+            ));
+            output.push_str(&format!(
+                "    <owner>{}</owner>\n",
+                escape_xml(&datamodel.owner)
+            ));
+            output.push_str(&format!("    <app>{}</app>\n", escape_xml(&datamodel.app)));
+            output.push_str(&format!(
+                "    <accelerated>{}</accelerated>\n",
+                datamodel.is_accelerated
+            ));
+            if let Some(ref desc) = datamodel.description {
+                output.push_str(&format!(
+                    "    <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            if let Some(ref updated) = datamodel.updated {
+                output.push_str(&format!("    <updated>{}</updated>\n", escape_xml(updated)));
+            }
+            output.push_str("  </datamodel>\n");
+        }
+        output.push_str("</datamodels>\n");
+        Ok(output)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<datamodel>\n");
+        output.push_str(&format!("  <name>{}</name>\n", escape_xml(&datamodel.name)));
+        output.push_str(&format!(
+            "  <displayName>{}</displayName>\n",
+            escape_xml(&datamodel.displayName)
+        ));
+        output.push_str(&format!(
+            "  <owner>{}</owner>\n",
+            escape_xml(&datamodel.owner)
+        ));
+        output.push_str(&format!("  <app>{}</app>\n", escape_xml(&datamodel.app)));
+        output.push_str(&format!(
+            "  <accelerated>{}</accelerated>\n",
+            datamodel.is_accelerated
+        ));
+        if let Some(ref desc) = datamodel.description {
+            output.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+        if let Some(ref updated) = datamodel.updated {
+            output.push_str(&format!("  <updated>{}</updated>\n", escape_xml(updated)));
+        }
+        if let Some(ref json_data) = datamodel.json_data {
+            output.push_str(&format!(
+                "  <jsonData>{}</jsonData>\n",
+                escape_xml(json_data)
+            ));
+        }
+        output.push_str("</datamodel>\n");
         Ok(output)
     }
 }

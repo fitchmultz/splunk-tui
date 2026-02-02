@@ -10,6 +10,7 @@ use crate::action::{Action, LicenseData};
 use crate::app::App;
 use crate::app::state::HealthState;
 use crate::ui::Toast;
+use splunk_client::models::DataModel;
 
 impl App {
     /// Handle data loading result actions.
@@ -301,6 +302,20 @@ impl App {
             }
             Action::MoreDashboardsLoaded(Err(e)) => {
                 self.handle_data_load_error("more dashboards", e);
+            }
+
+            // Data Models
+            Action::DataModelsLoaded(Ok(datamodels)) => {
+                self.handle_datamodels_loaded(datamodels);
+            }
+            Action::DataModelsLoaded(Err(e)) => {
+                self.handle_data_load_error("data models", e);
+            }
+            Action::MoreDataModelsLoaded(Ok(datamodels)) => {
+                self.handle_more_datamodels_loaded(datamodels);
+            }
+            Action::MoreDataModelsLoaded(Err(e)) => {
+                self.handle_data_load_error("more data models", e);
             }
 
             // Config Files
@@ -619,6 +634,25 @@ impl App {
             self.dashboards = Some(dashboards);
         }
         self.dashboards_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    // Data models handlers
+    fn handle_datamodels_loaded(&mut self, datamodels: Vec<DataModel>) {
+        let count = datamodels.len();
+        self.data_models = Some(datamodels);
+        self.data_models_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_datamodels_loaded(&mut self, datamodels: Vec<DataModel>) {
+        let count = datamodels.len();
+        if let Some(ref mut existing) = self.data_models {
+            existing.extend(datamodels);
+        } else {
+            self.data_models = Some(datamodels);
+        }
+        self.data_models_pagination.update_loaded(count);
         self.loading = false;
     }
 

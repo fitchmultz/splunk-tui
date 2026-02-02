@@ -88,6 +88,7 @@ mod audit;
 mod cluster;
 mod configs;
 mod dashboards;
+mod datamodels;
 mod export;
 mod forwarders;
 mod health;
@@ -467,6 +468,13 @@ pub async fn handle_side_effects(
         Action::LoadMoreDashboards => {
             // This action is handled by the main loop which has access to state
             // It reads dashboards_pagination and sends LoadDashboards with updated offset
+        }
+        Action::LoadDataModels { count, offset } => {
+            datamodels::handle_load_datamodels(client, tx, count, offset).await;
+        }
+        Action::LoadMoreDataModels => {
+            // This action is handled by the main loop which has access to state
+            // It reads data_models_pagination and sends LoadDataModels with updated offset
         }
         _ => {}
     }

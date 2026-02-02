@@ -16,7 +16,8 @@ use crate::formatters::{
 use anyhow::Result;
 use splunk_client::models::AuditEvent;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
+    ConfigFile, ConfigStanza, DataModel, Input, KvStoreCollection, KvStoreRecord, LogEntry,
+    SearchPeer,
 };
 use splunk_client::{
     App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
@@ -30,6 +31,7 @@ use super::apps;
 use super::cluster;
 use super::configs;
 use super::dashboards;
+use super::datamodels;
 use super::forwarders;
 use super::health;
 use super::hec;
@@ -278,5 +280,13 @@ impl Formatter for CsvFormatter {
 
     fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
         dashboards::format_dashboard(dashboard)
+    }
+
+    fn format_datamodels(&self, datamodels_list: &[DataModel], detailed: bool) -> Result<String> {
+        datamodels::format_datamodels(datamodels_list, detailed)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        datamodels::format_datamodel(datamodel)
     }
 }

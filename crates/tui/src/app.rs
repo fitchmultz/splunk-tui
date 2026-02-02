@@ -160,6 +160,10 @@ impl App {
                 count: self.dashboards_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::DataModels => Some(Action::LoadDataModels {
+                count: self.data_models_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
@@ -244,6 +248,16 @@ impl App {
                     Some(Action::LoadDashboards {
                         count: self.dashboards_pagination.page_size,
                         offset: self.dashboards_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::DataModels => {
+                if self.data_models_pagination.can_load_more() {
+                    Some(Action::LoadDataModels {
+                        count: self.data_models_pagination.page_size,
+                        offset: self.data_models_pagination.current_offset,
                     })
                 } else {
                     None

@@ -16,8 +16,8 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::{
-    AuditEvent, ConfigFile, ConfigStanza, Dashboard, FiredAlert, Input, KvStoreCollection,
-    KvStoreRecord, LogEntry, SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, FiredAlert, Input,
+    KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
 };
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
@@ -266,6 +266,12 @@ pub trait Formatter {
 
     /// Format detailed dashboard information.
     fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String>;
+
+    /// Format data models list.
+    fn format_datamodels(&self, datamodels: &[DataModel], detailed: bool) -> Result<String>;
+
+    /// Format detailed data model information.
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String>;
 }
 
 /// Cluster peer output structure.

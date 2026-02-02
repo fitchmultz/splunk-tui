@@ -34,9 +34,10 @@ use splunk_client::ClientError;
 use splunk_client::SearchMode;
 use splunk_client::models::{
     App as SplunkApp, AuditEvent, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza,
-    Dashboard, FiredAlert, Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection,
-    KvStoreRecord, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable,
-    Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth, User,
+    Dashboard, DataModel, FiredAlert, Forwarder, HealthCheckOutput, Index, Input,
+    KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    LogEntry, LookupTable, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth,
+    User,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -318,6 +319,15 @@ pub enum Action {
     },
     /// Load more dashboards (pagination)
     LoadMoreDashboards,
+    /// Load the list of data models with pagination
+    LoadDataModels {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more data models (pagination)
+    LoadMoreDataModels,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -483,6 +493,10 @@ pub enum Action {
     DashboardsLoaded(Result<Vec<Dashboard>, Arc<ClientError>>),
     /// Result of loading more dashboards (pagination)
     MoreDashboardsLoaded(Result<Vec<Dashboard>, Arc<ClientError>>),
+    /// Result of loading data models
+    DataModelsLoaded(Result<Vec<DataModel>, Arc<ClientError>>),
+    /// Result of loading more data models (pagination)
+    MoreDataModelsLoaded(Result<Vec<DataModel>, Arc<ClientError>>),
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

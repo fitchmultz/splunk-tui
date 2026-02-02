@@ -85,6 +85,9 @@ impl App {
         let mut dashboards_state = ratatui::widgets::ListState::default();
         dashboards_state.select(Some(0));
 
+        let mut data_models_state = ratatui::widgets::ListState::default();
+        data_models_state.select(Some(0));
+
         let (
             auto_refresh,
             sort_column,
@@ -182,6 +185,9 @@ impl App {
             dashboards: None,
             dashboards_state,
             dashboards_pagination: ListPaginationState::new(30, 1000),
+            data_models: None,
+            data_models_state,
+            data_models_pagination: ListPaginationState::new(30, 1000),
             config_files: None,
             config_files_state,
             selected_config_file: None,

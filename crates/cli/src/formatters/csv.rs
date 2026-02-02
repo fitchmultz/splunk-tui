@@ -16,6 +16,7 @@ mod apps;
 mod cluster;
 mod configs;
 mod dashboards;
+mod datamodels;
 mod forwarders;
 mod health;
 mod hec;

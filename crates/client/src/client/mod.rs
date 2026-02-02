@@ -18,6 +18,7 @@
 //! - `kvstore`: KVStore methods
 //! - `logs`: Log parsing and internal logs methods
 //! - `dashboards`: Dashboard management methods
+//! - `datamodels`: Data model management methods
 //!
 //! # What this module does NOT handle:
 //! - Direct HTTP request implementation (delegated to [`crate::endpoints`])
@@ -40,6 +41,7 @@ mod capabilities;
 mod cluster;
 mod configs;
 mod dashboards;
+mod datamodels;
 mod forwarders;
 mod hec;
 mod indexes;

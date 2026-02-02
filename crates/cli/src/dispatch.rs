@@ -382,6 +382,17 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
+        Commands::Datamodels { command } => {
+            let config = config.into_real_config()?;
+            commands::datamodels::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
         Commands::Lookups { count, offset } => {
             let config = config.into_real_config()?;
             commands::lookups::run(

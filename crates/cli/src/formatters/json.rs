@@ -15,8 +15,8 @@ use crate::formatters::{
 use anyhow::Result;
 use serde::Serialize;
 use splunk_client::models::{
-    AuditEvent, ConfigFile, ConfigStanza, Dashboard, Input, KvStoreCollection, KvStoreRecord,
-    LogEntry, SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, Input, KvStoreCollection,
+    KvStoreRecord, LogEntry, SearchPeer,
 };
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
@@ -297,5 +297,14 @@ impl Formatter for JsonFormatter {
 
     fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
         Ok(serde_json::to_string_pretty(dashboard)?)
+    }
+
+    fn format_datamodels(&self, datamodels: &[DataModel], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full DataModel struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(datamodels)?)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        Ok(serde_json::to_string_pretty(datamodel)?)
     }
 }

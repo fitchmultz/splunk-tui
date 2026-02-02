@@ -1094,6 +1094,10 @@ The Search screen has two input modes that affect how keys are handled:
 - `r`: Refresh dashboards
 - `j/k or Up/Down`: Navigate list
 
+#### Data Models Screen
+- `r`: Refresh data models
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

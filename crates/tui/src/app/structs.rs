@@ -21,7 +21,7 @@ use ratatui::layout::Rect;
 use serde_json::Value;
 use splunk_client::SearchMode;
 use splunk_client::models::{
-    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, HealthCheckOutput, Index,
+    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, DataModel, HealthCheckOutput, Index,
     KvStoreStatus, LogEntry, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
 };
 use splunk_config::{ColorTheme, KeybindOverrides, ListDefaults, SearchDefaults, Theme};
@@ -107,6 +107,11 @@ pub struct App {
     pub dashboards: Option<Vec<splunk_client::models::Dashboard>>,
     pub dashboards_state: ratatui::widgets::ListState,
     pub dashboards_pagination: ListPaginationState,
+
+    // Data models state
+    pub data_models: Option<Vec<DataModel>>,
+    pub data_models_state: ratatui::widgets::ListState,
+    pub data_models_pagination: ListPaginationState,
 
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,

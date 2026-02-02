@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0253",
-      "status": "todo",
-      "title": "Add data model management",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "datamodels",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/datamodels.rs",
-        "crates/client/src/endpoints/datamodels.rs",
-        "crates/cli/src/commands/datamodels.rs",
-        "crates/tui/src/ui/screens/datamodels.rs"
-      ],
-      "evidence": [
-        "No data model support exists in the current codebase.",
-        "Data models are used for Pivot and acceleration in Splunk.",
-        "Splunk REST API provides /services/datamodel for data model access."
-      ],
-      "plan": [
-        "Add data model models to client.",
-        "Implement data model listing and detail methods.",
-        "Add CLI datamodels command for listing and viewing.",
-        "Create TUI datamodels screen.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0258",
       "status": "todo",
       "title": "Add workload management support",

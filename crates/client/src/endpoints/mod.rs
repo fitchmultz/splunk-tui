@@ -7,6 +7,7 @@ mod capabilities;
 mod cluster;
 mod configs;
 mod dashboards;
+mod datamodels;
 mod forwarders;
 pub mod hec;
 mod indexes;
@@ -35,6 +36,7 @@ pub use cluster::{
 };
 pub use configs::{get_config_stanza, list_config_files, list_config_stanzas};
 pub use dashboards::{get_dashboard, list_dashboards};
+pub use datamodels::{get_datamodel, list_datamodels};
 pub use forwarders::list_forwarders;
 pub use indexes::{create_index, delete_index, list_indexes, modify_index};
 pub use inputs::{disable_input, enable_input, list_inputs_by_type};

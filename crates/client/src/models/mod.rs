@@ -13,6 +13,7 @@ pub mod cluster;
 pub mod common;
 pub mod configs;
 pub mod dashboards;
+pub mod datamodels;
 pub mod forwarders;
 pub mod hec;
 pub mod indexes;
@@ -44,6 +45,7 @@ pub use configs::{
     ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,
 };
 pub use dashboards::{Dashboard, DashboardEntry, DashboardListResponse};
+pub use datamodels::{DataModel, DataModelEntry, DataModelListResponse};
 pub use forwarders::{Forwarder, ForwarderEntry, ForwarderListResponse};
 pub use hec::{
     HecAckRequest, HecAckStatus, HecBatchResponse, HecError, HecEvent, HecHealth, HecResponse,

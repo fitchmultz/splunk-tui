@@ -13,7 +13,7 @@
 //! - This is crate-internal glue; it is not part of the public API contract.
 
 use crate::models::{
-    App, Capability, ConfigStanza, Dashboard, FiredAlert, Forwarder, Index, Input,
+    App, Capability, ConfigStanza, Dashboard, DataModel, FiredAlert, Forwarder, Index, Input,
     KvStoreCollection, Macro, Role, SavedSearch, SearchPeer, User,
 };
 
@@ -105,6 +105,12 @@ impl HasName for Macro {
 }
 
 impl HasName for Dashboard {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+}
+
+impl HasName for DataModel {
     fn set_name(&mut self, name: String) {
         self.name = name;
     }

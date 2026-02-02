@@ -15,7 +15,7 @@ use crate::formatters::{
 use anyhow::Result;
 use splunk_client::models::AuditEvent;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
+    ConfigFile, ConfigStanza, DataModel, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
 use splunk_client::{
     App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
@@ -29,6 +29,7 @@ use super::apps;
 use super::cluster;
 use super::configs;
 use super::dashboards;
+use super::datamodels;
 use super::forwarders;
 use super::health;
 use super::indexes;
@@ -281,6 +282,14 @@ impl Formatter for TableFormatter {
     fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
         dashboards::format_dashboard(dashboard)
     }
+
+    fn format_datamodels(&self, datamodels_list: &[DataModel], detailed: bool) -> Result<String> {
+        datamodels::format_datamodels(datamodels_list, detailed)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        datamodels::format_datamodel(datamodel)
+    }
 }
 
 impl TableFormatter {
@@ -495,6 +504,38 @@ impl TableFormatter {
         let mut output = self.format_dashboards(dashboards, detailed)?;
 
         if let Some(footer) = build_pagination_footer(pagination, dashboards.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for data models with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for data models (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_datamodels_paginated(
+        &self,
+        datamodels: &[DataModel],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if datamodels.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No data models found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No data models found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_datamodels(datamodels, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, datamodels.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');
