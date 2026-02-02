@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0299",
-      "status": "todo",
-      "title": "Implement edit-macro dialog flow in TUI",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "macros",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app/input/macros.rs",
-        "crates/tui/src/app/actions/system.rs",
-        "crates/tui/src/app/popups",
-        "crates/tui/src/ui/popup"
-      ],
-      "evidence": [
-        "crates/tui/src/app/input/macros.rs:35 returns Action::EditMacro for 'e'",
-        "crates/tui/src/input/keymap/bindings/screens/macros.rs:30-38 maps 'e' to Action::EditMacro",
-        "rg -n EditMacro crates/tui/src/app -> only input/macros.rs, no handler or popup"
-      ],
-      "plan": [
-        "Add a popup type for edit-macro with fields prefilled from the selected macro.",
-        "Handle Action::EditMacro in app/actions/system.rs to open the popup.",
-        "Implement popup input handling and submit -> Action::UpdateMacro.",
-        "Add tests for edit popup open/submit/cancel and UpdateMacro dispatch.",
-        "Verify by running `make test` and confirming macro edit dialog tests pass."
-      ],
-      "notes": [
-        "Principles: G (least astonishment), D (localize change).",
-        "Why: Edit macro is advertised but currently has no handler, so it is a no-op.",
-        "Minimal fix: Implement edit macro popup wired to UpdateMacro.",
-        "Acceptance: Pressing 'e' opens the dialog and UpdateMacro is dispatched; tests pass."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0300",
       "status": "todo",
       "title": "Trigger macro list refresh after create/update",

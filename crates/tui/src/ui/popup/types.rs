@@ -181,4 +181,21 @@ pub enum PopupType {
         /// Currently selected field for navigation
         selected_field: MacroField,
     },
+    /// Edit macro dialog
+    EditMacro {
+        /// Name of the macro being edited (display only, not editable)
+        macro_name: String,
+        /// Definition input (the SPL expression) - changes only applied if non-empty
+        definition_input: String,
+        /// Arguments input (comma-separated list) - changes only applied if non-empty
+        args_input: String,
+        /// Description input - changes only applied if non-empty
+        description_input: String,
+        /// Disabled toggle
+        disabled: bool,
+        /// IsEval toggle (whether definition is an eval expression)
+        iseval: bool,
+        /// Currently selected field for navigation
+        selected_field: MacroField,
+    },
 }

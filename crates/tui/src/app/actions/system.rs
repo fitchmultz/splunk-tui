@@ -94,6 +94,9 @@ impl App {
             Action::EditSavedSearch => {
                 self.open_edit_saved_search_dialog();
             }
+            Action::EditMacro => {
+                self.open_edit_macro_dialog();
+            }
             Action::SavedSearchUpdated(result) => {
                 self.loading = false;
                 match result {
@@ -289,6 +292,29 @@ impl App {
             );
         } else {
             self.toasts.push(Toast::info("No saved search selected"));
+        }
+    }
+
+    fn open_edit_macro_dialog(&mut self) {
+        use crate::ui::popup::{MacroField, Popup, PopupType};
+        if let Some(macros) = &self.macros
+            && let Some(selected) = self.macros_state.selected()
+            && let Some(macro_item) = macros.get(selected)
+        {
+            self.popup = Some(
+                Popup::builder(PopupType::EditMacro {
+                    macro_name: macro_item.name.clone(),
+                    definition_input: String::new(),
+                    args_input: String::new(),
+                    description_input: String::new(),
+                    disabled: macro_item.disabled,
+                    iseval: macro_item.iseval,
+                    selected_field: MacroField::Definition,
+                })
+                .build(),
+            );
+        } else {
+            self.toasts.push(Toast::info("No macro selected"));
         }
     }
 }
@@ -487,5 +513,89 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    #[test]
+    fn test_edit_macro_action_opens_popup() {
+        use crate::ui::popup::{MacroField, PopupType};
+        use splunk_client::models::Macro;
+
+        let mut app = App::new(None, ConnectionContext::default());
+
+        // Set up test macro data
+        app.macros = Some(vec![Macro {
+            name: "test_macro".to_string(),
+            definition: "index=main".to_string(),
+            args: Some("arg1,arg2".to_string()),
+            description: Some("Test description".to_string()),
+            disabled: false,
+            iseval: true,
+            validation: None,
+            errormsg: None,
+        }]);
+        app.macros_state.select(Some(0));
+
+        // Trigger edit action
+        app.handle_system_action(Action::EditMacro);
+
+        assert!(app.popup.is_some());
+        assert!(matches!(
+            app.popup,
+            Some(crate::ui::popup::Popup {
+                kind: PopupType::EditMacro {
+                    macro_name,
+                    disabled: false,
+                    iseval: true,
+                    selected_field: MacroField::Definition,
+                    ..
+                },
+                ..
+            }) if macro_name == "test_macro"
+        ));
+    }
+
+    #[test]
+    fn test_edit_macro_action_no_selection() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        // No macros loaded
+        app.macros = None;
+
+        // Trigger edit action
+        app.handle_system_action(Action::EditMacro);
+
+        // Should show toast and not open popup
+        assert!(app.popup.is_none());
+        assert_eq!(app.toasts.len(), 1);
+        assert_eq!(app.toasts[0].message, "No macro selected");
+    }
+
+    #[test]
+    fn test_edit_macro_action_no_macro_selected() {
+        use splunk_client::models::Macro;
+
+        let mut app = App::new(None, ConnectionContext::default());
+
+        // Set up test macro data but no selection
+        app.macros = Some(vec![Macro {
+            name: "test_macro".to_string(),
+            definition: "index=main".to_string(),
+            args: Some("arg1,arg2".to_string()),
+            description: Some("Test description".to_string()),
+            disabled: false,
+            iseval: true,
+            validation: None,
+            errormsg: None,
+        }]);
+        // No selection made
+        app.macros_state.select(None);
+
+        // Trigger edit action
+        app.handle_system_action(Action::EditMacro);
+
+        // Should show toast and not open popup
+        assert!(app.popup.is_none());
+        assert_eq!(app.toasts.len(), 1);
+        assert_eq!(app.toasts[0].message, "No macro selected");
     }
 }

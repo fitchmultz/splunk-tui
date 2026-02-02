@@ -103,8 +103,10 @@ impl App {
             // Saved search edit popup
             Some(PopupType::EditSavedSearch { .. }) => self.handle_saved_search_popup(key),
 
-            // Macro creation popup
-            Some(PopupType::CreateMacro { .. }) => self.handle_macro_popup(key),
+            // Macro creation/editing popups
+            Some(PopupType::CreateMacro { .. } | PopupType::EditMacro { .. }) => {
+                self.handle_macro_popup(key)
+            }
 
             // No popup active
             None => None,

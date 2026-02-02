@@ -282,6 +282,23 @@ impl PopupBuilder {
                 *iseval,
                 *selected_field,
             ),
+            PopupType::EditMacro {
+                macro_name,
+                definition_input,
+                args_input,
+                description_input,
+                disabled,
+                iseval,
+                selected_field,
+            } => self.build_edit_macro_defaults(
+                macro_name,
+                definition_input,
+                args_input,
+                description_input,
+                *disabled,
+                *iseval,
+                *selected_field,
+            ),
         }
     }
 
@@ -654,6 +671,93 @@ impl PopupBuilder {
                 "(optional)".to_string()
             } else {
                 description_input[..description_input.len().min(40)].to_string()
+            }
+        ));
+        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
+        content.push_str(&format!("{}IsEval: {}\n", iseval_marker, iseval));
+
+        content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
+        (title, content)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn build_edit_macro_defaults(
+        &self,
+        macro_name: &str,
+        definition_input: &str,
+        args_input: &str,
+        description_input: &str,
+        disabled: bool,
+        iseval: bool,
+        selected_field: MacroField,
+    ) -> (String, String) {
+        let title = format!("Edit Macro '{}'", macro_name);
+        let mut content = String::from("Edit macro:\n\n");
+
+        let name_marker = if selected_field == MacroField::Name {
+            "> "
+        } else {
+            "  "
+        };
+        let definition_marker = if selected_field == MacroField::Definition {
+            "> "
+        } else {
+            "  "
+        };
+        let args_marker = if selected_field == MacroField::Args {
+            "> "
+        } else {
+            "  "
+        };
+        let description_marker = if selected_field == MacroField::Description {
+            "> "
+        } else {
+            "  "
+        };
+        let disabled_marker = if selected_field == MacroField::Disabled {
+            "> "
+        } else {
+            "  "
+        };
+        let iseval_marker = if selected_field == MacroField::IsEval {
+            "> "
+        } else {
+            "  "
+        };
+
+        // Name is readonly
+        content.push_str(&format!("{}Name: {} (readonly)\n", name_marker, macro_name));
+        content.push_str(&format!(
+            "{}Definition: {}\n",
+            definition_marker,
+            if definition_input.is_empty() {
+                "(unchanged)".to_string()
+            } else {
+                format!(
+                    "(will update: {})",
+                    &definition_input[..definition_input.len().min(40)]
+                )
+            }
+        ));
+        content.push_str(&format!(
+            "{}Args: {}\n",
+            args_marker,
+            if args_input.is_empty() {
+                "(unchanged)".to_string()
+            } else {
+                format!("(will update: {})", &args_input[..args_input.len().min(40)])
+            }
+        ));
+        content.push_str(&format!(
+            "{}Description: {}\n",
+            description_marker,
+            if description_input.is_empty() {
+                "(unchanged)".to_string()
+            } else {
+                format!(
+                    "(will update: {})",
+                    &description_input[..description_input.len().min(40)]
+                )
             }
         ));
         content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
