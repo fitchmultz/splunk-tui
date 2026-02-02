@@ -3,7 +3,7 @@
 //! This module contains the `PopupType` enum which defines all possible
 //! popup dialog types used throughout the TUI application.
 
-use crate::ui::popup::{ProfileField, SavedSearchField};
+use crate::ui::popup::{MacroField, ProfileField, SavedSearchField};
 
 /// The type/kind of popup dialog.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,5 +163,22 @@ pub enum PopupType {
         disabled: bool,
         /// Currently selected field for navigation
         selected_field: SavedSearchField,
+    },
+    /// Create macro dialog
+    CreateMacro {
+        /// Name input
+        name_input: String,
+        /// Definition input (the SPL expression)
+        definition_input: String,
+        /// Arguments input (comma-separated list)
+        args_input: String,
+        /// Description input
+        description_input: String,
+        /// Disabled toggle
+        disabled: bool,
+        /// IsEval toggle (whether definition is an eval expression)
+        iseval: bool,
+        /// Currently selected field for navigation
+        selected_field: MacroField,
     },
 }

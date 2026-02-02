@@ -5,6 +5,7 @@
 //! centered modal dialogs overlaid on the main UI.
 
 mod builder;
+mod macro_field;
 mod profile_field;
 mod render;
 mod saved_search_field;
@@ -16,6 +17,7 @@ pub const POPUP_HEIGHT_PERCENT: u16 = 50;
 
 // Re-export public types for backward compatibility
 pub use builder::{Popup, PopupBuilder};
+pub use macro_field::MacroField;
 pub use profile_field::ProfileField;
 pub use render::render_popup;
 pub use saved_search_field::SavedSearchField;

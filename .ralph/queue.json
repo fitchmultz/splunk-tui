@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0298",
-      "status": "todo",
-      "title": "Implement create-macro dialog flow in TUI",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "macros",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app/input/macros.rs",
-        "crates/tui/src/app/actions/system.rs",
-        "crates/tui/src/app/popups",
-        "crates/tui/src/ui/popup"
-      ],
-      "evidence": [
-        "crates/tui/src/app/input/macros.rs:37-41 contains TODO and returns None for 'n' (New macro)",
-        "crates/tui/src/input/keymap/bindings/screens/macros.rs:41-51 maps 'n' to Action::OpenCreateMacroDialog",
-        "crates/tui/src/action/variants.rs:359 defines OpenCreateMacroDialog but no handler exists"
-      ],
-      "plan": [
-        "Add a popup type for create-macro fields (name, definition, args, description, disabled, iseval).",
-        "Handle Action::OpenCreateMacroDialog in app/actions/system.rs to open the popup.",
-        "Implement popup input handling and submit -> Action::CreateMacro in app/popups and UI render.",
-        "Add tests for popup open, input, submit, and cancel behaviors.",
-        "Verify by running `make test` and confirming macro create dialog tests pass."
-      ],
-      "notes": [
-        "Principles: G (least astonishment), D (localize change).",
-        "Why: The UI advertises New Macro, but the keybinding is a no-op with a TODO.",
-        "Minimal fix: Implement a create-macro popup and dispatch CreateMacro on submit.",
-        "Acceptance: Pressing 'n' opens the dialog and CreateMacro is dispatched; tests pass."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0299",
       "status": "todo",
       "title": "Implement edit-macro dialog flow in TUI",

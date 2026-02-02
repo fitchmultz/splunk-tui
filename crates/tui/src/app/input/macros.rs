@@ -34,12 +34,8 @@ impl App {
             // Edit selected macro
             KeyCode::Char('e') if key.modifiers.is_empty() => Some(Action::EditMacro),
 
-            // Create new macro - for now just show a toast that this would open a dialog
-            KeyCode::Char('n') if key.modifiers.is_empty() => {
-                // TODO: Implement create macro dialog popup
-                // For now, just return None - the keybinding will show the hint
-                None
-            }
+            // Create new macro
+            KeyCode::Char('n') if key.modifiers.is_empty() => Some(Action::OpenCreateMacroDialog),
 
             // Delete selected macro
             KeyCode::Char('d') if key.modifiers.is_empty() => {
@@ -99,5 +95,42 @@ impl App {
 
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ConnectionContext;
+
+    fn key(c: KeyCode) -> KeyEvent {
+        KeyEvent::new(c, KeyModifiers::empty())
+    }
+
+    #[test]
+    fn test_n_key_opens_create_macro_dialog() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let action = app.handle_macros_input(key(KeyCode::Char('n')));
+
+        assert!(matches!(action, Some(Action::OpenCreateMacroDialog)));
+    }
+
+    #[test]
+    fn test_r_key_loads_macros() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let action = app.handle_macros_input(key(KeyCode::Char('r')));
+
+        assert!(matches!(action, Some(Action::LoadMacros)));
+    }
+
+    #[test]
+    fn test_e_key_edits_macro() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let action = app.handle_macros_input(key(KeyCode::Char('e')));
+
+        assert!(matches!(action, Some(Action::EditMacro)));
     }
 }

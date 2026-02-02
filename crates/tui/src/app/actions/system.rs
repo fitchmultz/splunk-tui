@@ -88,6 +88,9 @@ impl App {
             Action::OpenCreateIndexDialog => {
                 self.open_create_index_dialog();
             }
+            Action::OpenCreateMacroDialog => {
+                self.open_create_macro_dialog();
+            }
             Action::EditSavedSearch => {
                 self.open_edit_saved_search_dialog();
             }
@@ -247,6 +250,22 @@ impl App {
                 cold_db_path: None,
                 thawed_path: None,
                 cold_to_frozen_dir: None,
+            })
+            .build(),
+        );
+    }
+
+    fn open_create_macro_dialog(&mut self) {
+        use crate::ui::popup::{MacroField, Popup, PopupType};
+        self.popup = Some(
+            Popup::builder(PopupType::CreateMacro {
+                name_input: String::new(),
+                definition_input: String::new(),
+                args_input: String::new(),
+                description_input: String::new(),
+                disabled: false,
+                iseval: false,
+                selected_field: MacroField::Name,
             })
             .build(),
         );
@@ -452,5 +471,21 @@ mod tests {
 
         assert_eq!(app.last_area.width, 100);
         assert_eq!(app.last_area.height, 50);
+    }
+
+    #[test]
+    fn test_open_create_macro_dialog() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        app.handle_system_action(Action::OpenCreateMacroDialog);
+
+        assert!(app.popup.is_some());
+        assert!(matches!(
+            app.popup,
+            Some(crate::ui::popup::Popup {
+                kind: crate::ui::popup::PopupType::CreateMacro { .. },
+                ..
+            })
+        ));
     }
 }
