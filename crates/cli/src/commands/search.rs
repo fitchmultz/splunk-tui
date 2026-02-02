@@ -1,6 +1,7 @@
 //! Search command implementation.
 
 use anyhow::{Context, Result};
+use splunk_client::SearchMode;
 use splunk_config::SearchDefaultConfig;
 use tracing::info;
 
@@ -20,6 +21,8 @@ pub async fn run(
     quiet: bool,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    realtime: bool,
+    realtime_window: Option<u64>,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -27,6 +30,13 @@ pub async fn run(
     let earliest = earliest.unwrap_or(&search_defaults.earliest_time);
     let latest = latest.unwrap_or(&search_defaults.latest_time);
     let max_results = max_results.unwrap_or(search_defaults.max_results as usize);
+
+    // Determine search mode based on realtime flag
+    let search_mode = if realtime {
+        Some(SearchMode::Realtime)
+    } else {
+        Some(SearchMode::Normal)
+    };
 
     let mut client = crate::commands::build_client_from_config(&config)?;
 
@@ -47,6 +57,8 @@ pub async fn run(
                 Some(latest),
                 Some(max_results as u64),
                 if quiet { None } else { Some(&mut on_progress) },
+                search_mode,
+                realtime_window,
             ) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         };
@@ -62,6 +74,8 @@ pub async fn run(
                 Some(latest),
                 Some(max_results as u64),
                 None,
+                search_mode,
+                realtime_window,
             ) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         }

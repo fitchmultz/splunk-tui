@@ -51,6 +51,8 @@ pub(crate) async fn run_command(
             earliest,
             latest,
             count,
+            realtime,
+            realtime_window,
         } => {
             let (config, search_defaults) = config.into_real_config_with_search_defaults()?;
             commands::search::run(
@@ -65,6 +67,8 @@ pub(crate) async fn run_command(
                 cli.quiet,
                 cli.output_file.clone(),
                 cancel_token,
+                realtime,
+                realtime_window,
             )
             .await?;
         }

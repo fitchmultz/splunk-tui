@@ -19,6 +19,7 @@ use crate::ui::Toast;
 use crate::ui::popup::Popup;
 use ratatui::layout::Rect;
 use serde_json::Value;
+use splunk_client::SearchMode;
 use splunk_client::models::{
     App as SplunkApp, Capability, ClusterInfo, ClusterPeer, HealthCheckOutput, Index,
     KvStoreStatus, LogEntry, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
@@ -210,6 +211,12 @@ pub struct App {
     pub spl_validation_pending: bool,
     /// Timestamp of last input change for debouncing.
     pub last_input_change: Option<std::time::Instant>,
+
+    // Search mode (RQ-0254)
+    /// Current search mode (normal or realtime).
+    pub search_mode: SearchMode,
+    /// Real-time window in seconds (only used when search_mode is Realtime).
+    pub realtime_window: Option<u64>,
 }
 
 /// SPL validation state for real-time feedback in the search screen.

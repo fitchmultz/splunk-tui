@@ -189,6 +189,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `Home`: Go to top
 - `End`: Go to bottom
 - `j,k,...`: Type search query
+- `Ctrl+r`: Toggle real-time mode
 
 #### Jobs Screen
 - `r`: Refresh jobs

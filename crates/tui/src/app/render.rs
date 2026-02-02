@@ -184,6 +184,7 @@ impl App {
                         theme: &self.theme,
                         spl_validation_state: &self.spl_validation_state,
                         spl_validation_pending: self.spl_validation_pending,
+                        search_mode: self.search_mode,
                     },
                 );
             }

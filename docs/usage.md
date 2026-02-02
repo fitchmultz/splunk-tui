@@ -411,6 +411,25 @@ splunk-cli search "index=main | head 10" --wait --earliest "-24h"
 - `-e, --earliest <TIME>`: Earliest time (e.g., `-24h`, `2024-01-01T00:00:00`)
 - `-l, --latest <TIME>`: Latest time (e.g., `now`)
 - `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
+- `--realtime`: Run search in real-time mode
+- `--realtime-window <SECONDS>`: Real-time window in seconds (e.g., 60 for a 60-second window). Only valid with `--realtime`.
+
+**Real-time Searches:**
+
+Real-time searches continuously stream results as events arrive. Unlike normal searches that query historical data, real-time searches monitor incoming data within a sliding time window.
+
+```bash
+# Real-time search with default window
+splunk-cli search "index=main" --realtime --wait
+
+# Real-time search with 60-second window
+splunk-cli search "index=main" --realtime --realtime-window 60 --wait
+
+# Real-time search that returns immediately with SID (no waiting)
+splunk-cli search "index=main" --realtime
+```
+
+**Note:** Real-time searches run continuously until cancelled. Use `Ctrl+C` to cancel a running real-time search, or omit `--wait` to start the search without waiting for results.
 
 #### `indexes`
 List and manage Splunk indexes.
@@ -939,6 +958,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `Home`: Go to top
 - `End`: Go to bottom
 - `j,k,...`: Type search query
+- `Ctrl+r`: Toggle real-time mode
 
 #### Jobs Screen
 - `r`: Refresh jobs

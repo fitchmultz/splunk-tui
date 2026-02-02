@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0254",
-      "status": "todo",
-      "title": "Add real-time search support to TUI and CLI",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "search",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search.rs",
-        "crates/client/src/client/search.rs",
-        "crates/cli/src/commands/search.rs",
-        "crates/tui/src/ui/screens/search.rs"
-      ],
-      "evidence": [
-        "Splunk REST API supports search_mode=realtime for real-time searches.",
-        "Current search implementation only supports historical searches.",
-        "Real-time searches are essential for monitoring and alerting use cases."
-      ],
-      "plan": [
-        "Add search_mode parameter to search endpoint and client methods.",
-        "Add --realtime flag to CLI search command with optional window duration.",
-        "Add realtime mode toggle to TUI search screen.",
-        "Implement streaming results display for realtime searches.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0255",
       "status": "todo",
       "title": "Add search result pagination and cursor support",

@@ -12,6 +12,7 @@
 
 use crate::client::SplunkClient;
 use crate::endpoints;
+use crate::endpoints::search::SearchMode;
 use crate::error::Result;
 use crate::models::{SavedSearch, SearchJobResults, SearchJobStatus, ValidateSplResponse};
 use splunk_config::constants::{
@@ -27,6 +28,8 @@ impl SplunkClient {
     /// * `earliest_time` - Optional earliest time bound (e.g., "-24h")
     /// * `latest_time` - Optional latest time bound (e.g., "now")
     /// * `max_results` - Maximum number of results to return
+    /// * `search_mode` - Optional search mode (Normal or Realtime)
+    /// * `realtime_window` - Optional real-time window in seconds (only for Realtime mode)
     pub async fn search(
         &mut self,
         query: &str,
@@ -34,12 +37,16 @@ impl SplunkClient {
         earliest_time: Option<&str>,
         latest_time: Option<&str>,
         max_results: Option<u64>,
+        search_mode: Option<SearchMode>,
+        realtime_window: Option<u64>,
     ) -> Result<Vec<serde_json::Value>> {
         let options = endpoints::search::CreateJobOptions {
             wait: Some(wait),
             earliest_time: earliest_time.map(|s| s.to_string()),
             latest_time: latest_time.map(|s| s.to_string()),
             max_count: max_results,
+            search_mode,
+            realtime_window,
             ..Default::default()
         };
 
@@ -79,6 +86,16 @@ impl SplunkClient {
     /// - `results`: The search results as JSON values
     /// - `sid`: The search job ID for pagination or further operations
     /// - `total_count`: Optional total count of results (may be None if not available)
+    ///
+    /// # Arguments
+    /// * `query` - The SPL query to execute
+    /// * `wait` - Whether to wait for the job to complete before returning
+    /// * `earliest_time` - Optional earliest time bound (e.g., "-24h")
+    /// * `latest_time` - Optional latest time bound (e.g., "now")
+    /// * `max_results` - Maximum number of results to return
+    /// * `progress_cb` - Optional callback for progress updates (0.0–1.0)
+    /// * `search_mode` - Optional search mode (Normal or Realtime)
+    /// * `realtime_window` - Optional real-time window in seconds (only for Realtime mode)
     pub async fn search_with_progress(
         &mut self,
         query: &str,
@@ -87,6 +104,8 @@ impl SplunkClient {
         latest_time: Option<&str>,
         max_results: Option<u64>,
         progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
+        search_mode: Option<SearchMode>,
+        realtime_window: Option<u64>,
     ) -> Result<(Vec<serde_json::Value>, String, Option<u64>)> {
         let options = endpoints::search::CreateJobOptions {
             // Always create the job in non-blocking mode so callers can poll and show progress.
@@ -94,6 +113,8 @@ impl SplunkClient {
             earliest_time: earliest_time.map(|s| s.to_string()),
             latest_time: latest_time.map(|s| s.to_string()),
             max_count: max_results,
+            search_mode,
+            realtime_window,
             ..Default::default()
         };
 

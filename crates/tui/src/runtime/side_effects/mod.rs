@@ -302,8 +302,18 @@ pub async fn handle_side_effects(
         Action::RunSearch {
             query,
             search_defaults,
+            search_mode,
+            realtime_window,
         } => {
-            searches::handle_run_search(client, tx, query, search_defaults).await;
+            searches::handle_run_search(
+                client,
+                tx,
+                query,
+                search_defaults,
+                search_mode,
+                realtime_window,
+            )
+            .await;
         }
         Action::LoadMoreSearchResults { sid, offset, count } => {
             searches::handle_load_more_search_results(client, tx, sid, offset, count).await;

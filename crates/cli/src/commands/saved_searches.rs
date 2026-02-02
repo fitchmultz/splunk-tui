@@ -200,7 +200,7 @@ async fn run_run(
 
     info!("Executing search query: {}", search.search);
     let results = tokio::select! {
-        res = client.search(&search.search, wait, earliest, latest, Some(max_results as u64)) => res?,
+        res = client.search(&search.search, wait, earliest, latest, Some(max_results as u64), None, None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

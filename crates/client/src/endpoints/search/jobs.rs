@@ -77,6 +77,9 @@ pub async fn create_job(
     if let Some(mode) = options.search_mode {
         form_data.push(("search_mode", mode.to_string()));
     }
+    if let Some(window) = options.realtime_window {
+        form_data.push(("realtime_window", window.to_string()));
+    }
 
     // Debug: Log the complete form data being sent
     debug!("Search job form data: {:?}", form_data);

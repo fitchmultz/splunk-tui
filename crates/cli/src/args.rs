@@ -107,6 +107,14 @@ pub enum Commands {
         /// Maximum number of results to return
         #[arg(short, long)]
         count: Option<usize>,
+
+        /// Run search in real-time mode
+        #[arg(long)]
+        realtime: bool,
+
+        /// Real-time window in seconds (e.g., 60 for a 60-second window)
+        #[arg(long, requires = "realtime")]
+        realtime_window: Option<u64>,
     },
 
     /// List and manage indexes

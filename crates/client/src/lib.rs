@@ -34,3 +34,6 @@ pub use models::{
     SearchJobStatus, SendBatchParams, ServerInfo, SplunkHealth, SplunkResponse, User,
     UserListResponse,
 };
+
+// Re-export search types for CLI/TUI use
+pub use endpoints::search::{CreateJobOptions, OutputMode, SearchMode};

@@ -6,6 +6,7 @@
 mod common;
 
 use common::*;
+use splunk_client::SearchMode;
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -62,6 +63,8 @@ async fn test_run_search_success() {
             Action::RunSearch {
                 query: "index=main | head 10".to_string(),
                 search_defaults,
+                search_mode: SearchMode::Normal,
+                realtime_window: None,
             },
             4, // Expect 4 actions: Loading(true), Progress, SearchStarted, SearchComplete
         )
@@ -111,6 +114,8 @@ async fn test_run_search_error() {
             Action::RunSearch {
                 query: "invalid query".to_string(),
                 search_defaults,
+                search_mode: SearchMode::Normal,
+                realtime_window: None,
             },
             2,
         )

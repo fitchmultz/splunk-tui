@@ -13,6 +13,7 @@ use ratatui::{
 
 use crate::app::SplValidationState;
 use crate::ui::syntax::highlight_spl;
+use splunk_client::SearchMode;
 use splunk_config::Theme;
 
 /// Configuration for rendering the search screen.
@@ -43,6 +44,8 @@ pub struct SearchRenderConfig<'a> {
     pub spl_validation_state: &'a SplValidationState,
     /// Whether validation is pending (debounced).
     pub spl_validation_pending: bool,
+    /// Current search mode (normal or realtime).
+    pub search_mode: SearchMode,
 }
 
 /// Render the search screen.
@@ -67,6 +70,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         theme,
         spl_validation_state,
         spl_validation_pending,
+        search_mode,
     } = config;
 
     let chunks = Layout::default()
@@ -100,10 +104,15 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         }
     };
 
+    // Build input title with realtime indicator and validation status
+    let mode_indicator = match search_mode {
+        SearchMode::Realtime => "[RT] ",
+        SearchMode::Normal => "",
+    };
     let input_title = if search_input.len() < 3 {
-        "Search Query".to_string()
+        format!("{}Search Query", mode_indicator)
     } else {
-        format!("{}Search Query", status_icon)
+        format!("{}{}Search Query", mode_indicator, status_icon)
     };
 
     let input = Paragraph::new(highlight_spl(search_input, theme)).block(

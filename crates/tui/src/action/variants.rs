@@ -31,6 +31,7 @@
 use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
+use splunk_client::SearchMode;
 use splunk_client::models::{
     App as SplunkApp, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
     Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus,
@@ -303,7 +304,11 @@ pub enum Action {
     RunSearch {
         query: String,
         search_defaults: SearchDefaults,
+        search_mode: SearchMode,
+        realtime_window: Option<u64>,
     },
+    /// Toggle search mode between Normal and Realtime.
+    ToggleSearchMode,
     /// Validate SPL syntax (debounced).
     ///
     /// Triggered when the user pauses typing in the search query input.

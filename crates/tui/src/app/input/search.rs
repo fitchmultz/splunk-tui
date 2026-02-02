@@ -17,6 +17,7 @@ use crate::app::App;
 use crate::app::export::ExportTarget;
 use crate::app::state::SearchInputMode;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use splunk_client::SearchMode;
 use std::time::Instant;
 
 /// Debounce delay for SPL validation in milliseconds.
@@ -110,10 +111,26 @@ impl App {
                                 Some(Action::RunSearch {
                                     query,
                                     search_defaults: self.search_defaults.clone(),
+                                    search_mode: self.search_mode,
+                                    realtime_window: self.realtime_window,
                                 })
                             } else {
                                 None
                             }
+                        }
+                        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            // Toggle search mode between Normal and Realtime
+                            self.search_mode = match self.search_mode {
+                                SearchMode::Normal => SearchMode::Realtime,
+                                SearchMode::Realtime => SearchMode::Normal,
+                            };
+                            let mode_str = match self.search_mode {
+                                SearchMode::Normal => "Normal",
+                                SearchMode::Realtime => "Realtime",
+                            };
+                            self.toasts
+                                .push(crate::ui::Toast::info(format!("Search mode: {}", mode_str)));
+                            None
                         }
                         KeyCode::Backspace => {
                             self.history_index = None;

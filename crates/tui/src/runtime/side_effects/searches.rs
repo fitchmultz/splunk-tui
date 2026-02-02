@@ -12,6 +12,7 @@
 
 use crate::action::{Action, progress_callback_to_action_sender};
 use crate::error_details::{build_search_error_details, search_error_message};
+use splunk_client::SearchMode;
 use splunk_config::SearchDefaults;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -40,6 +41,8 @@ pub async fn handle_run_search(
     tx: Sender<Action>,
     query: String,
     search_defaults: SearchDefaults,
+    search_mode: SearchMode,
+    realtime_window: Option<u64>,
 ) {
     tracing::debug!("handle_run_search called with query: {}", query);
     tracing::debug!(
@@ -99,6 +102,8 @@ pub async fn handle_run_search(
                 Some(&latest_time),
                 Some(max_results),
                 Some(&mut progress_callback),
+                Some(search_mode),
+                realtime_window,
             )
             .await
         {
