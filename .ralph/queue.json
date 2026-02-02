@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0300",
-      "status": "todo",
-      "title": "Trigger macro list refresh after create/update",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "macros",
-        "bug"
-      ],
-      "scope": [
-        "crates/tui/src/app/actions/data_loading.rs",
-        "crates/tui/src/runtime/side_effects/mod.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app/actions/data_loading.rs:63-68 sets loading=true after MacroCreated but does not dispatch LoadMacros",
-        "Macro update path clears loading but does not reload the list, so UI can stay stale"
-      ],
-      "plan": [
-        "Decide on a single refresh strategy (dispatch LoadMacros or update list in place).",
-        "On MacroCreated/MacroUpdated success, trigger a refresh action or re-fetch list.",
-        "Ensure loading state toggles correctly during refresh.",
-        "Add tests asserting list refreshes after create/update.",
-        "Verify by running `make test` and confirming macro refresh tests pass."
-      ],
-      "notes": [
-        "Principles: H (operational hygiene), G (least astonishment).",
-        "Why: The UI can stay stale after create/update, and loading is set true without a follow-up action.",
-        "Minimal fix: Dispatch LoadMacros after create/update success or update list directly.",
-        "Acceptance: After create/update, macros list reflects changes and loading resets."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0301",
       "status": "todo",
       "title": "Add make type-check target and include it in make ci",

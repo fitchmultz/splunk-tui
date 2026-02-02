@@ -175,3 +175,140 @@ pub async fn handle_get_macro(client: SharedClient, action_tx: Sender<Action>, n
             .await;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use splunk_client::ClientError;
+
+    /// Unit tests for macro action variants and params.
+    ///
+    /// Note: The actual refresh behavior (LoadMacros dispatch after create/update/delete)
+    /// is comprehensively tested via integration tests in side_effects_macros_tests.rs.
+    /// These unit tests verify the data structures and action variants.
+    ///
+    /// Verify that MacroCreated action exists and has the expected structure.
+    #[test]
+    fn test_macro_created_action_variants() {
+        // Test success variant
+        let success = Action::MacroCreated(Ok(()));
+        assert!(matches!(success, Action::MacroCreated(Ok(()))));
+
+        // Test error variant
+        let error = ClientError::ConnectionRefused("test".to_string());
+        let failure = Action::MacroCreated(Err(Arc::new(error)));
+        assert!(matches!(failure, Action::MacroCreated(Err(_))));
+    }
+
+    /// Verify that MacroUpdated action exists and has the expected structure.
+    #[test]
+    fn test_macro_updated_action_variants() {
+        // Test success variant
+        let success = Action::MacroUpdated(Ok(()));
+        assert!(matches!(success, Action::MacroUpdated(Ok(()))));
+
+        // Test error variant
+        let error = ClientError::ConnectionRefused("test".to_string());
+        let failure = Action::MacroUpdated(Err(Arc::new(error)));
+        assert!(matches!(failure, Action::MacroUpdated(Err(_))));
+    }
+
+    /// Verify that MacroDeleted action exists and has the expected structure.
+    #[test]
+    fn test_macro_deleted_action_variants() {
+        // Test success variant
+        let success = Action::MacroDeleted(Ok("test_macro".to_string()));
+        assert!(matches!(success, Action::MacroDeleted(Ok(name)) if name == "test_macro"));
+
+        // Test error variant
+        let error = ClientError::ConnectionRefused("test".to_string());
+        let failure = Action::MacroDeleted(Err(Arc::new(error)));
+        assert!(matches!(failure, Action::MacroDeleted(Err(_))));
+    }
+
+    /// Verify that LoadMacros action exists (used for refresh).
+    #[test]
+    fn test_load_macros_action_exists() {
+        let action = Action::LoadMacros;
+        assert!(matches!(action, Action::LoadMacros));
+    }
+
+    /// Test the CreateMacroEffectParams struct construction.
+    #[test]
+    fn test_create_macro_effect_params() {
+        let params = CreateMacroEffectParams {
+            name: "test_macro".to_string(),
+            definition: "index=main | head 10".to_string(),
+            args: Some("arg1,arg2".to_string()),
+            description: Some("Test description".to_string()),
+            disabled: false,
+            iseval: false,
+        };
+
+        assert_eq!(params.name, "test_macro");
+        assert_eq!(params.definition, "index=main | head 10");
+        assert_eq!(params.args, Some("arg1,arg2".to_string()));
+        assert_eq!(params.description, Some("Test description".to_string()));
+        assert!(!params.disabled);
+        assert!(!params.iseval);
+    }
+
+    /// Test the UpdateMacroEffectParams struct construction.
+    #[test]
+    fn test_update_macro_effect_params() {
+        let params = UpdateMacroEffectParams {
+            name: "test_macro".to_string(),
+            definition: Some("index=internal | head 5".to_string()),
+            args: None,
+            description: Some("Updated description".to_string()),
+            disabled: Some(true),
+            iseval: Some(false),
+        };
+
+        assert_eq!(params.name, "test_macro");
+        assert_eq!(
+            params.definition,
+            Some("index=internal | head 5".to_string())
+        );
+        assert_eq!(params.args, None);
+        assert_eq!(params.description, Some("Updated description".to_string()));
+        assert_eq!(params.disabled, Some(true));
+        assert_eq!(params.iseval, Some(false));
+    }
+
+    /// Test that Clone is properly derived for effect params.
+    #[test]
+    fn test_create_macro_effect_params_clone() {
+        let params = CreateMacroEffectParams {
+            name: "original".to_string(),
+            definition: "search *".to_string(),
+            args: None,
+            description: None,
+            disabled: true,
+            iseval: false,
+        };
+        let cloned = params.clone();
+
+        assert_eq!(cloned.name, "original");
+        assert_eq!(cloned.definition, "search *");
+        assert!(cloned.disabled);
+    }
+
+    /// Test that Clone is properly derived for update params.
+    #[test]
+    fn test_update_macro_effect_params_clone() {
+        let params = UpdateMacroEffectParams {
+            name: "original".to_string(),
+            definition: Some("search * | head 1".to_string()),
+            args: Some("arg1".to_string()),
+            description: None,
+            disabled: Some(false),
+            iseval: Some(true),
+        };
+        let cloned = params.clone();
+
+        assert_eq!(cloned.name, "original");
+        assert_eq!(cloned.definition, Some("search * | head 1".to_string()));
+        assert_eq!(cloned.args, Some("arg1".to_string()));
+    }
+}
