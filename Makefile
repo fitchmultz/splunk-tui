@@ -28,7 +28,7 @@ test test-all test-unit test-integration ci: export DOTENV_DISABLED=1 CARGO_TERM
 # Fetch all dependencies (warm caches, no build)
 install:
 	@echo "→ Fetching deps (locked)..."
-	@cargo fetch --locked
+	@cargo fetch
 	@echo "  ✓ Deps fetched"
 
 # Update all dependencies to latest stable versions

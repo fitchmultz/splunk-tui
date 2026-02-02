@@ -6,6 +6,10 @@ jobs = 8
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
+[target.x86_64-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
 # Faster dev builds
 [profile.dev]
 opt-level = 0
