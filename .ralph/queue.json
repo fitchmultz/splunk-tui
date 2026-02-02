@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0285",
-      "status": "todo",
-      "title": "Split oversized client retry tests",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tests",
-        "client"
-      ],
-      "scope": [
-        "crates/client/tests/retry_tests.rs"
-      ],
-      "evidence": [
-        "wc -l crates/client/tests/retry_tests.rs => 1183 (exceeds 1000 LOC hard limit in AGENTS.md)."
-      ],
-      "plan": [
-        "Identify distinct retry scenarios (auth retry, paging retry, backoff timing, etc.) and move each set into its own test file under crates/client/tests/.",
-        "Extract any shared helpers into a small local test module or helper file to avoid duplication.",
-        "Ensure test names and behavior remain unchanged to preserve coverage.",
-        "Verify by running `cargo test -p splunk-client --tests` and confirm each retry-related test file is below 700 LOC with `wc -l`."
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-01T20:19:45Z",
-      "updated_at": "2026-02-01T20:19:45Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0286",
       "status": "todo",
       "title": "Split oversized TUI app search tests",

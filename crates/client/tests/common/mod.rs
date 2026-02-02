@@ -34,7 +34,10 @@ pub fn load_fixture(fixture_path: &str) -> serde_json::Value {
 }
 
 // Re-export commonly used types for test convenience
+// These are used via `use common::*;` in test files
+#[allow(unused_imports)]
 pub use reqwest::Client;
+#[allow(unused_imports)]
 pub use splunk_client::endpoints;
 pub use wiremock::{Mock, MockServer, ResponseTemplate};
 
