@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0302",
-      "status": "todo",
-      "title": "Align make clean behavior with documented Cargo.lock deletion",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "build",
-        "makefile"
-      ],
-      "scope": [
-        "Makefile",
-        "AGENTS.md"
-      ],
-      "evidence": [
-        "Makefile:62-65 clean target only runs cargo clean and removes target/",
-        "AGENTS.md:52 states make clean deletes Cargo.lock by design"
-      ],
-      "plan": [
-        "Decide whether to change Makefile or documentation (AGENTS.md is the shared contract).",
-        "If changing Makefile, remove Cargo.lock (and other lock files if applicable) in clean target.",
-        "Update Makefile help text to reflect the behavior.",
-        "Confirm no unintended deletions occur for non-Rust files.",
-        "Verify by running `make clean` and confirming Cargo.lock is removed."
-      ],
-      "notes": [
-        "Principles: G (least astonishment), H (operational hygiene).",
-        "Why: Current behavior contradicts the documented contract, confusing users.",
-        "Minimal fix: Make clean remove Cargo.lock or update AGENTS.md if behavior is intentional.",
-        "Acceptance: Makefile and AGENTS.md agree on clean behavior."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0254",
       "status": "todo",
       "title": "Add real-time search support to TUI and CLI",

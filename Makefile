@@ -164,7 +164,7 @@ help:
 	@echo "  make format           - Format code with rustfmt (write mode)"
 	@echo "  make lint             - Clippy autofix + format check"
 	@echo "  make type-check       - Type check the workspace (cargo check)"
-	@echo "  make clean            - Remove build artifacts"
+	@echo "  make clean            - Remove build artifacts (keeps Cargo.lock)"
 	@echo "  make test             - Run all tests (workspace, all targets)"
 	@echo "  make test-all         - Alias for make test"
 	@echo "  make test-unit        - Run unit tests (lib and bins)"
