@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0294",
-      "status": "todo",
-      "title": "Refactor macro endpoint create/update signatures to reduce argument count",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "lint",
-        "client",
-        "macros",
-        "endpoints"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/macros.rs",
-        "crates/client/src/client/macros.rs",
-        "make ci"
-      ],
-      "evidence": [
-        "make ci -> clippy warning: too many arguments (13/7) at crates/client/src/endpoints/macros.rs:134 and :216; -D warnings stops lint"
-      ],
-      "plan": [
-        "Define a macro request struct for endpoint functions in crates/client/src/endpoints/macros.rs.",
-        "Update create_macro/update_macro endpoint signatures to take the struct.",
-        "Update callers (client macros module) to construct the struct.",
-        "Update endpoint tests as needed.",
-        "Verify by running `make lint` and confirming the endpoint warnings are resolved."
-      ],
-      "notes": [
-        "Principles: KISS, E (make bugs hard to write).",
-        "Why: CI lint fails and endpoints are easy to misuse with long positional argument lists.",
-        "Minimal fix: Consolidate parameters into a request struct and update call sites.",
-        "Acceptance: make lint (and make ci) runs without too-many-arguments warnings."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0295",
       "status": "todo",
       "title": "Refactor saved search update endpoint to reduce argument count",

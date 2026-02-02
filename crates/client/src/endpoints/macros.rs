@@ -17,6 +17,81 @@ use crate::metrics::MetricsCollector;
 use crate::models::MacroListResponse;
 use crate::name_merge::attach_entry_name;
 
+/// Request parameters for creating a new macro.
+///
+/// This struct consolidates all parameters for the create_macro endpoint to reduce
+/// the argument count and satisfy clippy's too_many_arguments lint.
+#[derive(Debug, Clone)]
+pub struct CreateMacroRequest<'a> {
+    /// The name of the macro
+    pub name: &'a str,
+    /// The SPL snippet or eval expression
+    pub definition: &'a str,
+    /// Optional comma-separated argument names
+    pub args: Option<&'a str>,
+    /// Optional description
+    pub description: Option<&'a str>,
+    /// Whether the macro is disabled
+    pub disabled: bool,
+    /// Whether the macro is an eval expression
+    pub iseval: bool,
+    /// Optional validation expression
+    pub validation: Option<&'a str>,
+    /// Optional error message for validation failure
+    pub errormsg: Option<&'a str>,
+}
+
+impl<'a> CreateMacroRequest<'a> {
+    /// Create a new CreateMacroRequest with required fields.
+    pub fn new(name: &'a str, definition: &'a str) -> Self {
+        Self {
+            name,
+            definition,
+            args: None,
+            description: None,
+            disabled: false,
+            iseval: false,
+            validation: None,
+            errormsg: None,
+        }
+    }
+}
+
+/// Request parameters for updating an existing macro.
+///
+/// This struct consolidates all parameters for the update_macro endpoint to reduce
+/// the argument count and satisfy clippy's too_many_arguments lint.
+/// Only provided fields are updated; omitted fields (None) retain their current values.
+#[derive(Debug, Clone, Default)]
+pub struct UpdateMacroRequest<'a> {
+    /// The name of the macro to update
+    pub name: &'a str,
+    /// Optional new definition
+    pub definition: Option<&'a str>,
+    /// Optional new arguments
+    pub args: Option<&'a str>,
+    /// Optional new description
+    pub description: Option<&'a str>,
+    /// Optional enable/disable flag
+    pub disabled: Option<bool>,
+    /// Optional eval expression flag
+    pub iseval: Option<bool>,
+    /// Optional new validation expression
+    pub validation: Option<&'a str>,
+    /// Optional new error message
+    pub errormsg: Option<&'a str>,
+}
+
+impl<'a> UpdateMacroRequest<'a> {
+    /// Create a new UpdateMacroRequest for the specified macro.
+    pub fn new(name: &'a str) -> Self {
+        Self {
+            name,
+            ..Default::default()
+        }
+    }
+}
+
 /// List all search macros.
 pub async fn list_macros(
     client: &Client,
@@ -121,56 +196,42 @@ pub async fn get_macro(
 /// * `client` - The reqwest client
 /// * `base_url` - The Splunk base URL
 /// * `auth_token` - Authentication token
-/// * `name` - The name of the macro
-/// * `definition` - The SPL snippet or eval expression
-/// * `args` - Optional comma-separated argument names
-/// * `description` - Optional description
-/// * `disabled` - Whether the macro is disabled
-/// * `iseval` - Whether the macro is an eval expression
-/// * `validation` - Optional validation expression
-/// * `errormsg` - Optional error message for validation failure
+/// * `request` - Request parameters for creating the macro
 /// * `max_retries` - Maximum number of retries
 /// * `metrics` - Optional metrics collector
 pub async fn create_macro(
     client: &Client,
     base_url: &str,
     auth_token: &str,
-    name: &str,
-    definition: &str,
-    args: Option<&str>,
-    description: Option<&str>,
-    disabled: bool,
-    iseval: bool,
-    validation: Option<&str>,
-    errormsg: Option<&str>,
+    request: &CreateMacroRequest<'_>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
-    debug!("Creating macro: {}", name);
+    debug!("Creating macro: {}", request.name);
 
     let url = format!("{}/services/admin/macros", base_url);
 
     let mut form_params: Vec<(&str, String)> = vec![
-        ("name", name.to_string()),
-        ("definition", definition.to_string()),
+        ("name", request.name.to_string()),
+        ("definition", request.definition.to_string()),
     ];
 
-    if let Some(a) = args {
+    if let Some(a) = request.args {
         form_params.push(("args", a.to_string()));
     }
-    if let Some(d) = description {
+    if let Some(d) = request.description {
         form_params.push(("description", d.to_string()));
     }
-    if disabled {
-        form_params.push(("disabled", disabled.to_string()));
+    if request.disabled {
+        form_params.push(("disabled", request.disabled.to_string()));
     }
-    if iseval {
-        form_params.push(("iseval", iseval.to_string()));
+    if request.iseval {
+        form_params.push(("iseval", request.iseval.to_string()));
     }
-    if let Some(v) = validation {
+    if let Some(v) = request.validation {
         form_params.push(("validation", v.to_string()));
     }
-    if let Some(e) = errormsg {
+    if let Some(e) = request.errormsg {
         form_params.push(("errormsg", e.to_string()));
     }
 
@@ -200,14 +261,7 @@ pub async fn create_macro(
 /// * `client` - The reqwest client
 /// * `base_url` - The Splunk base URL
 /// * `auth_token` - Authentication token
-/// * `name` - The name of the macro to update
-/// * `definition` - Optional new definition
-/// * `args` - Optional new arguments
-/// * `description` - Optional new description
-/// * `disabled` - Optional enable/disable flag
-/// * `iseval` - Optional eval expression flag
-/// * `validation` - Optional new validation expression
-/// * `errormsg` - Optional new error message
+/// * `request` - Request parameters for updating the macro
 /// * `max_retries` - Maximum number of retries
 /// * `metrics` - Optional metrics collector
 ///
@@ -217,42 +271,35 @@ pub async fn update_macro(
     client: &Client,
     base_url: &str,
     auth_token: &str,
-    name: &str,
-    definition: Option<&str>,
-    args: Option<&str>,
-    description: Option<&str>,
-    disabled: Option<bool>,
-    iseval: Option<bool>,
-    validation: Option<&str>,
-    errormsg: Option<&str>,
+    request: &UpdateMacroRequest<'_>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
-    debug!("Updating macro: {}", name);
+    debug!("Updating macro: {}", request.name);
 
-    let url = format!("{}/services/admin/macros/{}", base_url, name);
+    let url = format!("{}/services/admin/macros/{}", base_url, request.name);
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
-    if let Some(d) = definition {
+    if let Some(d) = request.definition {
         form_params.push(("definition", d.to_string()));
     }
-    if let Some(a) = args {
+    if let Some(a) = request.args {
         form_params.push(("args", a.to_string()));
     }
-    if let Some(d) = description {
+    if let Some(d) = request.description {
         form_params.push(("description", d.to_string()));
     }
-    if let Some(disabled_flag) = disabled {
+    if let Some(disabled_flag) = request.disabled {
         form_params.push(("disabled", disabled_flag.to_string()));
     }
-    if let Some(iseval_flag) = iseval {
+    if let Some(iseval_flag) = request.iseval {
         form_params.push(("iseval", iseval_flag.to_string()));
     }
-    if let Some(v) = validation {
+    if let Some(v) = request.validation {
         form_params.push(("validation", v.to_string()));
     }
-    if let Some(e) = errormsg {
+    if let Some(e) = request.errormsg {
         form_params.push(("errormsg", e.to_string()));
     }
 
@@ -272,9 +319,10 @@ pub async fn update_macro(
     .await
     {
         Ok(_) => Ok(()),
-        Err(ClientError::ApiError { status: 404, .. }) => {
-            Err(ClientError::NotFound(format!("Macro '{}' not found", name)))
-        }
+        Err(ClientError::ApiError { status: 404, .. }) => Err(ClientError::NotFound(format!(
+            "Macro '{}' not found",
+            request.name
+        ))),
         Err(e) => Err(e),
     }
 }

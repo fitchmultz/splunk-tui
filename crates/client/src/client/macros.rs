@@ -6,6 +6,7 @@
 
 use crate::client::SplunkClient;
 use crate::endpoints;
+use crate::endpoints::{CreateMacroRequest, UpdateMacroRequest};
 use crate::error::Result;
 use crate::models::Macro;
 
@@ -96,6 +97,17 @@ impl SplunkClient {
     /// # Arguments
     /// * `params` - Parameters for creating the macro
     pub async fn create_macro(&mut self, params: MacroCreateParams<'_>) -> Result<()> {
+        let request = CreateMacroRequest {
+            name: params.name,
+            definition: params.definition,
+            args: params.args,
+            description: params.description,
+            disabled: params.disabled,
+            iseval: params.iseval,
+            validation: params.validation,
+            errormsg: params.errormsg,
+        };
+
         crate::retry_call!(
             self,
             __token,
@@ -103,14 +115,7 @@ impl SplunkClient {
                 &self.http,
                 &self.base_url,
                 &__token,
-                params.name,
-                params.definition,
-                params.args,
-                params.description,
-                params.disabled,
-                params.iseval,
-                params.validation,
-                params.errormsg,
+                &request,
                 self.max_retries,
                 self.metrics.as_ref(),
             )
@@ -128,6 +133,17 @@ impl SplunkClient {
     /// # Returns
     /// Ok(()) on success, or `ClientError::NotFound` if the macro doesn't exist.
     pub async fn update_macro(&mut self, params: MacroUpdateParams<'_>) -> Result<()> {
+        let request = UpdateMacroRequest {
+            name: params.name,
+            definition: params.definition,
+            args: params.args,
+            description: params.description,
+            disabled: params.disabled,
+            iseval: params.iseval,
+            validation: params.validation,
+            errormsg: params.errormsg,
+        };
+
         crate::retry_call!(
             self,
             __token,
@@ -135,14 +151,7 @@ impl SplunkClient {
                 &self.http,
                 &self.base_url,
                 &__token,
-                params.name,
-                params.definition,
-                params.args,
-                params.description,
-                params.disabled,
-                params.iseval,
-                params.validation,
-                params.errormsg,
+                &request,
                 self.max_retries,
                 self.metrics.as_ref(),
             )
