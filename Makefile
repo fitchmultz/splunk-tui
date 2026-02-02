@@ -1,4 +1,4 @@
-.PHONY: install update lint format clean \
+.PHONY: install update lint format clean type-check \
 	test test-all test-unit test-integration test-live test-live-manual \
 	build release generate lint-docs ci help lint-secrets install-hooks \
 	_generate-docs _lint-docs-check
@@ -48,6 +48,12 @@ lint:
 	@echo "→ Format check..."
 	@cargo fmt --all --check
 	@echo "  ✓ Lint complete"
+
+# Run cargo check (fast compilation check without producing binaries)
+type-check:
+	@echo "→ Type checking..."
+	@cargo check --workspace --all-targets --all-features --locked
+	@echo "  ✓ Type check complete"
 
 # Run secret-commit guard
 lint-secrets:
@@ -128,10 +134,9 @@ generate: release _generate-docs
 lint-docs: release _lint-docs-check
 
 # CI pipeline (local speed-first):
-# deps -> format -> lint-secrets -> clippy fix + fmt check -> tests -> live tests -> release+install -> docs generate/check
+# deps -> format -> lint-secrets -> clippy fix + fmt check -> type-check -> tests -> live tests -> release+install -> docs generate/check
 #
 # Notes:
-# - No separate type-check: redundant with clippy/tests and costs time.
 # - release is required every time, and we reuse that binary for generate/lint-docs.
 # - Uses PROFILE=ci for faster builds (still produces working binaries).
 ci:
@@ -142,6 +147,7 @@ ci:
 	$(MAKE) format               || { echo ""; echo "✗ CI failed at: format"; exit 1; }; \
 	$(MAKE) lint-secrets         || { echo ""; echo "✗ CI failed at: lint-secrets"; exit 1; }; \
 	$(MAKE) lint                 || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
+	$(MAKE) type-check           || { echo ""; echo "✗ CI failed at: type-check"; exit 1; }; \
 	$(MAKE) test                 || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
 	$(MAKE) test-live            || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
 	$(MAKE) release PROFILE=ci   || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
@@ -157,6 +163,7 @@ help:
 	@echo "  make update           - Update all dependencies to latest stable versions"
 	@echo "  make format           - Format code with rustfmt (write mode)"
 	@echo "  make lint             - Clippy autofix + format check"
+	@echo "  make type-check       - Type check the workspace (cargo check)"
 	@echo "  make clean            - Remove build artifacts"
 	@echo "  make test             - Run all tests (workspace, all targets)"
 	@echo "  make test-all         - Alias for make test"

@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0301",
-      "status": "todo",
-      "title": "Add make type-check target and include it in make ci",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "build",
-        "makefile"
-      ],
-      "scope": [
-        "Makefile",
-        "AGENTS.md",
-        "make type-check",
-        "make ci"
-      ],
-      "evidence": [
-        "make type-check -> make: *** No rule to make target `type-check'.",
-        "AGENTS.md:40-48 requires make type-check and make ci to run it",
-        "Makefile:130-148 notes 'No separate type-check' and omits the step"
-      ],
-      "plan": [
-        "Add a type-check target (cargo check --workspace --all-targets --all-features --locked).",
-        "Update make ci to invoke type-check per AGENTS.md contract.",
-        "Update Makefile help output to include type-check.",
-        "Run targeted tests/lint to ensure no regressions in CI flow.",
-        "Verify by running `make type-check` and `make ci` (once lint issues are fixed)."
-      ],
-      "notes": [
-        "Principles: H (operational hygiene), G (least astonishment).",
-        "Why: The documented contract says type-check is required, but the target is missing.",
-        "Minimal fix: Add the target and call it from ci/help.",
-        "Acceptance: make type-check exists and is executed by make ci."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0302",
       "status": "todo",
       "title": "Align make clean behavior with documented Cargo.lock deletion",
