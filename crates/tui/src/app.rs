@@ -156,6 +156,10 @@ impl App {
                 earliest: "-24h".to_string(),
                 latest: "now".to_string(),
             }),
+            CurrentScreen::Dashboards => Some(Action::LoadDashboards {
+                count: self.dashboards_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
@@ -230,6 +234,16 @@ impl App {
                     Some(Action::LoadLookups {
                         count: self.lookups_pagination.page_size,
                         offset: self.lookups_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Dashboards => {
+                if self.dashboards_pagination.can_load_more() {
+                    Some(Action::LoadDashboards {
+                        count: self.dashboards_pagination.page_size,
+                        offset: self.dashboards_pagination.current_offset,
                     })
                 } else {
                     None

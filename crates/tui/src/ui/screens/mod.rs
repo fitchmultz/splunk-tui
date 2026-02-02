@@ -7,6 +7,7 @@ pub mod apps;
 pub mod audit;
 pub mod cluster;
 pub mod configs;
+pub mod dashboards;
 pub mod forwarders;
 pub mod health;
 pub mod indexes;

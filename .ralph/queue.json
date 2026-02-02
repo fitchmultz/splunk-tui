@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0261",
-      "status": "todo",
-      "title": "Add dashboard listing and viewing",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "dashboards",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/dashboards.rs",
-        "crates/client/src/endpoints/dashboards.rs",
-        "crates/cli/src/commands/dashboards.rs",
-        "crates/tui/src/ui/screens/dashboards.rs"
-      ],
-      "evidence": [
-        "No dashboard support exists in the current codebase.",
-        "Dashboards are a primary Splunk UI feature for visualization.",
-        "Splunk REST API provides /services/data/ui/views for dashboard access."
-      ],
-      "plan": [
-        "Add dashboard models to client.",
-        "Implement dashboard listing and detail methods.",
-        "Add CLI dashboards command for listing dashboards.",
-        "Create TUI dashboards screen for browsing available dashboards.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0253",
       "status": "todo",
       "title": "Add data model management",

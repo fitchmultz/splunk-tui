@@ -17,6 +17,7 @@
 //! - `license`: License methods
 //! - `kvstore`: KVStore methods
 //! - `logs`: Log parsing and internal logs methods
+//! - `dashboards`: Dashboard management methods
 //!
 //! # What this module does NOT handle:
 //! - Direct HTTP request implementation (delegated to [`crate::endpoints`])
@@ -38,6 +39,7 @@ mod audit;
 mod capabilities;
 mod cluster;
 mod configs;
+mod dashboards;
 mod forwarders;
 mod hec;
 mod indexes;

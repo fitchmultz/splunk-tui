@@ -289,6 +289,20 @@ impl App {
                 self.handle_data_load_error("audit events", e);
             }
 
+            // Dashboards
+            Action::DashboardsLoaded(Ok(dashboards)) => {
+                self.handle_dashboards_loaded(dashboards);
+            }
+            Action::DashboardsLoaded(Err(e)) => {
+                self.handle_data_load_error("dashboards", e);
+            }
+            Action::MoreDashboardsLoaded(Ok(dashboards)) => {
+                self.handle_more_dashboards_loaded(dashboards);
+            }
+            Action::MoreDashboardsLoaded(Err(e)) => {
+                self.handle_data_load_error("more dashboards", e);
+            }
+
             // Config Files
             Action::ConfigFilesLoaded(Ok(files)) => {
                 self.config_files = Some(files);
@@ -586,6 +600,25 @@ impl App {
             self.fired_alerts = Some(alerts);
         }
         self.fired_alerts_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    // Dashboards handlers
+    fn handle_dashboards_loaded(&mut self, dashboards: Vec<splunk_client::models::Dashboard>) {
+        let count = dashboards.len();
+        self.dashboards = Some(dashboards);
+        self.dashboards_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_dashboards_loaded(&mut self, dashboards: Vec<splunk_client::models::Dashboard>) {
+        let count = dashboards.len();
+        if let Some(ref mut existing) = self.dashboards {
+            existing.extend(dashboards);
+        } else {
+            self.dashboards = Some(dashboards);
+        }
+        self.dashboards_pagination.update_loaded(count);
         self.loading = false;
     }
 

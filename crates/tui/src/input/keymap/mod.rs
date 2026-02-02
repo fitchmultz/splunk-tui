@@ -43,6 +43,7 @@ pub enum Section {
     Forwarders,
     Lookups,
     Audit,
+    Dashboards,
     Settings,
     Overview,
     MultiInstance,
@@ -189,6 +190,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::Forwarders => Section::Forwarders,
         CurrentScreen::Lookups => Section::Lookups,
         CurrentScreen::Audit => Section::Audit,
+        CurrentScreen::Dashboards => Section::Dashboards,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
         CurrentScreen::MultiInstance => Section::MultiInstance,
@@ -307,6 +309,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Forwarders => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Lookups => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Audit => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Dashboards => &["r", "j/k or Up/Down"],
     };
 
     // Sort hints by priority order

@@ -371,6 +371,17 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
+        Commands::Dashboards { command } => {
+            let config = config.into_real_config()?;
+            commands::dashboards::run(
+                config,
+                command,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
         Commands::Lookups { count, offset } => {
             let config = config.into_real_config()?;
             commands::lookups::run(

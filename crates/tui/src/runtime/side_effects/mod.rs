@@ -87,6 +87,7 @@ mod apps;
 mod audit;
 mod cluster;
 mod configs;
+mod dashboards;
 mod export;
 mod forwarders;
 mod health;
@@ -459,6 +460,13 @@ pub async fn handle_side_effects(
         }
         Action::LoadRecentAuditEvents { count } => {
             audit::handle_load_recent_audit_events(client, tx, count).await;
+        }
+        Action::LoadDashboards { count, offset } => {
+            dashboards::handle_load_dashboards(client, tx, count, offset).await;
+        }
+        Action::LoadMoreDashboards => {
+            // This action is handled by the main loop which has access to state
+            // It reads dashboards_pagination and sends LoadDashboards with updated offset
         }
         _ => {}
     }

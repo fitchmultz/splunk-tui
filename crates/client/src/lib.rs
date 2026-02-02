@@ -23,16 +23,16 @@ pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
     App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo,
     ClusterManagementResponse, ClusterPeer, CreateIndexParams, CreatePoolParams, CreateRoleParams,
-    CreateUserParams, DecommissionPeerParams, Forwarder, ForwarderListResponse, HealthCheckOutput,
-    HecAckRequest, HecAckStatus, HecBatchResponse, HecError, HecEvent, HecHealth, HecResponse,
-    Index, IndexListResponse, InstalledLicense, KvStoreMember, KvStoreReplicationStatus,
-    KvStoreStatus, LicenseActivationResult, LicenseInstallResult, LicensePool, LicenseStack,
-    LicenseUsage, LogEntry, LogParsingHealth, LookupTable, LookupTableEntry,
-    LookupTableListResponse, Macro, MacroEntry, MacroListResponse, MaintenanceModeParams,
-    ModifyIndexParams, ModifyPoolParams, ModifyRoleParams, ModifyUserParams, RemovePeersParams,
-    Role, RoleListResponse, SavedSearch, SearchJob, SearchJobListResponse, SearchJobResults,
-    SearchJobStatus, SendBatchParams, ServerInfo, SplunkHealth, SplunkResponse, User,
-    UserListResponse,
+    CreateUserParams, Dashboard, DashboardEntry, DashboardListResponse, DecommissionPeerParams,
+    Forwarder, ForwarderListResponse, HealthCheckOutput, HecAckRequest, HecAckStatus,
+    HecBatchResponse, HecError, HecEvent, HecHealth, HecResponse, Index, IndexListResponse,
+    InstalledLicense, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus,
+    LicenseActivationResult, LicenseInstallResult, LicensePool, LicenseStack, LicenseUsage,
+    LogEntry, LogParsingHealth, LookupTable, LookupTableEntry, LookupTableListResponse, Macro,
+    MacroEntry, MacroListResponse, MaintenanceModeParams, ModifyIndexParams, ModifyPoolParams,
+    ModifyRoleParams, ModifyUserParams, RemovePeersParams, Role, RoleListResponse, SavedSearch,
+    SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, SendBatchParams,
+    ServerInfo, SplunkHealth, SplunkResponse, User, UserListResponse,
 };
 
 // Re-export search types for CLI/TUI use

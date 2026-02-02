@@ -16,6 +16,7 @@ mod alerts;
 mod apps;
 mod cluster;
 mod configs;
+mod dashboards;
 mod forwarders;
 mod health;
 mod hec;

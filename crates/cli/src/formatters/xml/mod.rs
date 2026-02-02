@@ -17,7 +17,8 @@ use splunk_client::models::{
     AuditEvent, ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
 use splunk_client::{
-    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -434,6 +435,90 @@ impl Formatter for XmlFormatter {
             output.push_str("  </audit_event>\n");
         }
         output.push_str("</audit_events>\n");
+        Ok(output)
+    }
+
+    fn format_dashboards(&self, dashboards: &[Dashboard], _detailed: bool) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<dashboards>\n");
+        for dashboard in dashboards {
+            output.push_str("  <dashboard>\n");
+            output.push_str(&format!(
+                "    <name>{}</name>\n",
+                escape_xml(&dashboard.name)
+            ));
+            output.push_str(&format!(
+                "    <label>{}</label>\n",
+                escape_xml(&dashboard.label)
+            ));
+            output.push_str(&format!(
+                "    <author>{}</author>\n",
+                escape_xml(&dashboard.author)
+            ));
+            output.push_str(&format!(
+                "    <isDashboard>{}</isDashboard>\n",
+                dashboard.is_dashboard
+            ));
+            output.push_str(&format!(
+                "    <isVisible>{}</isVisible>\n",
+                dashboard.is_visible
+            ));
+            if let Some(ref desc) = dashboard.description {
+                output.push_str(&format!(
+                    "    <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            if let Some(ref version) = dashboard.version {
+                output.push_str(&format!("    <version>{}</version>\n", escape_xml(version)));
+            }
+            if let Some(ref updated) = dashboard.updated {
+                output.push_str(&format!("    <updated>{}</updated>\n", escape_xml(updated)));
+            }
+            output.push_str("  </dashboard>\n");
+        }
+        output.push_str("</dashboards>\n");
+        Ok(output)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<dashboard>\n");
+        output.push_str(&format!("  <name>{}</name>\n", escape_xml(&dashboard.name)));
+        output.push_str(&format!(
+            "  <label>{}</label>\n",
+            escape_xml(&dashboard.label)
+        ));
+        output.push_str(&format!(
+            "  <author>{}</author>\n",
+            escape_xml(&dashboard.author)
+        ));
+        output.push_str(&format!(
+            "  <isDashboard>{}</isDashboard>\n",
+            dashboard.is_dashboard
+        ));
+        output.push_str(&format!(
+            "  <isVisible>{}</isVisible>\n",
+            dashboard.is_visible
+        ));
+        if let Some(ref desc) = dashboard.description {
+            output.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+        if let Some(ref version) = dashboard.version {
+            output.push_str(&format!("  <version>{}</version>\n", escape_xml(version)));
+        }
+        if let Some(ref updated) = dashboard.updated {
+            output.push_str(&format!("  <updated>{}</updated>\n", escape_xml(updated)));
+        }
+        if let Some(ref xml_data) = dashboard.xml_data {
+            output.push_str(&format!("  <xmlData>{}</xmlData>\n", escape_xml(xml_data)));
+        }
+        output.push_str("</dashboard>\n");
         Ok(output)
     }
 }

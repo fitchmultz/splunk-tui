@@ -294,6 +294,12 @@ pub enum Commands {
         command: commands::audit::AuditCommand,
     },
 
+    /// List and manage dashboards
+    Dashboards {
+        #[command(subcommand)]
+        command: commands::dashboards::DashboardsCommand,
+    },
+
     /// List lookup tables (CSV-based lookups)
     Lookups {
         /// Maximum number of lookup tables to list

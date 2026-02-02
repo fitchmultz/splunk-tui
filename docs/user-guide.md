@@ -315,6 +315,16 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected forwarder name
 - `j/k or Up/Down`: Navigate list
 
+#### Lookups Screen
+- `r`: Refresh lookup tables
+- `Ctrl+e`: Export lookup tables
+- `Ctrl+c`: Copy selected lookup name
+- `j/k or Up/Down`: Navigate list
+
+#### Dashboards Screen
+- `r`: Refresh dashboards
+- `j/k or Up/Down`: Navigate list
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

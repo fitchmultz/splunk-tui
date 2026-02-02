@@ -29,10 +29,18 @@ pub(crate) fn help_text() -> String {
         Section::InternalLogs,
         Section::Apps,
         Section::Users,
+        Section::Roles,
         Section::SearchPeers,
         Section::Inputs,
         Section::Configs,
+        Section::FiredAlerts,
+        Section::Forwarders,
+        Section::Lookups,
+        Section::Audit,
+        Section::Dashboards,
         Section::Settings,
+        Section::Overview,
+        Section::MultiInstance,
     ];
 
     let mut out = String::new();
@@ -101,6 +109,7 @@ fn section_title(section: Section) -> &'static str {
         Section::Forwarders => "Forwarders Screen:",
         Section::Lookups => "Lookups Screen:",
         Section::Audit => "Audit Events Screen:",
+        Section::Dashboards => "Dashboards Screen:",
         Section::Settings => "Settings Screen:",
         Section::Overview => "Overview Screen:",
         Section::MultiInstance => "Multi-Instance Dashboard Screen:",

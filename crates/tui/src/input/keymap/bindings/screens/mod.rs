@@ -12,6 +12,7 @@
 mod apps;
 mod cluster;
 mod configs;
+mod dashboards;
 mod indexes;
 mod inputs;
 mod internal_logs;
@@ -37,6 +38,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
     bindings.extend(users::bindings());
     bindings.extend(search_peers::bindings());
     bindings.extend(configs::bindings());
+    bindings.extend(dashboards::bindings());
     bindings.extend(inputs::bindings());
     bindings.extend(settings::bindings());
     bindings.extend(monitoring::bindings());

@@ -19,7 +19,8 @@ use splunk_client::models::{
     ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
 };
 use splunk_client::{
-    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -28,6 +29,7 @@ use super::alerts;
 use super::apps;
 use super::cluster;
 use super::configs;
+use super::dashboards;
 use super::forwarders;
 use super::health;
 use super::hec;
@@ -268,5 +270,13 @@ impl Formatter for CsvFormatter {
         }
 
         Ok(output)
+    }
+
+    fn format_dashboards(&self, dashboards_list: &[Dashboard], detailed: bool) -> Result<String> {
+        dashboards::format_dashboards(dashboards_list, detailed)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        dashboards::format_dashboard(dashboard)
     }
 }

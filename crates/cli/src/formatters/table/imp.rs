@@ -18,7 +18,8 @@ use splunk_client::models::{
     ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
 use splunk_client::{
-    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -27,6 +28,7 @@ use super::alerts;
 use super::apps;
 use super::cluster;
 use super::configs;
+use super::dashboards;
 use super::forwarders;
 use super::health;
 use super::indexes;
@@ -271,6 +273,14 @@ impl Formatter for TableFormatter {
 
         Ok(lines.join("\n"))
     }
+
+    fn format_dashboards(&self, dashboards: &[Dashboard], detailed: bool) -> Result<String> {
+        dashboards::format_dashboards(dashboards, detailed)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        dashboards::format_dashboard(dashboard)
+    }
 }
 
 impl TableFormatter {
@@ -453,6 +463,38 @@ impl TableFormatter {
         let mut output = self.format_kvstore_collections(collections)?;
 
         if let Some(footer) = build_pagination_footer(pagination, collections.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for dashboards with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for dashboards (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_dashboards_paginated(
+        &self,
+        dashboards: &[Dashboard],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if dashboards.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No dashboards found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No dashboards found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_dashboards(dashboards, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, dashboards.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

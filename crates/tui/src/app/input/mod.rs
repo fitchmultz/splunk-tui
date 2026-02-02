@@ -13,6 +13,7 @@ pub mod apps;
 pub mod audit;
 pub mod cluster;
 pub mod configs;
+pub mod dashboards;
 pub mod fired_alerts;
 pub mod forwarders;
 pub mod health;
@@ -68,6 +69,7 @@ impl App {
             CurrentScreen::Forwarders => self.handle_forwarders_input(key),
             CurrentScreen::Lookups => self.handle_lookups_input(key),
             CurrentScreen::Audit => self.handle_audit_input(key),
+            CurrentScreen::Dashboards => self.handle_dashboards_input(key),
         }
     }
 }

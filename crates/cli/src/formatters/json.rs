@@ -15,8 +15,8 @@ use crate::formatters::{
 use anyhow::Result;
 use serde::Serialize;
 use splunk_client::models::{
-    AuditEvent, ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry,
-    SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Dashboard, Input, KvStoreCollection, KvStoreRecord,
+    LogEntry, SearchPeer,
 };
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
@@ -288,5 +288,14 @@ impl Formatter for JsonFormatter {
     fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
         // JSON formatter always outputs full AuditEvent struct regardless of detailed flag
         Ok(serde_json::to_string_pretty(events)?)
+    }
+
+    fn format_dashboards(&self, dashboards: &[Dashboard], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full Dashboard struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(dashboards)?)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        Ok(serde_json::to_string_pretty(dashboard)?)
     }
 }
