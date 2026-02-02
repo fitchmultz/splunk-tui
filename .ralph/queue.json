@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0255",
-      "status": "todo",
-      "title": "Add search result pagination and cursor support",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "search",
-        "ux"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search.rs",
-        "crates/client/src/client/search.rs",
-        "crates/tui/src/ui/screens/search.rs"
-      ],
-      "evidence": [
-        "Current search results are limited to max_results parameter.",
-        "Large result sets cannot be efficiently browsed without pagination.",
-        "Splunk REST API supports offset-based pagination for search results."
-      ],
-      "plan": [
-        "Add offset and pagination support to search results fetching.",
-        "Implement cursor-based navigation in TUI search results.",
-        "Add page navigation keys (PageUp/PageDown) to search screen.",
-        "Show result count and current page in TUI footer.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0260",
       "status": "todo",
       "title": "Add audit logging and event viewing",
