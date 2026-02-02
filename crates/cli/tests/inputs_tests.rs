@@ -8,7 +8,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -49,9 +49,7 @@ fn test_inputs_execution() {
     let result = cmd.args(["inputs", "list"]).assert();
 
     // Should fail with connection error (not a "command not found" error)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli inputs list --detailed` works.
@@ -62,9 +60,7 @@ fn test_inputs_with_detailed() {
 
     let result = cmd.args(["inputs", "list", "--detailed"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli inputs list --input-type <TYPE>` works.
@@ -77,9 +73,7 @@ fn test_inputs_with_input_type() {
         .args(["inputs", "list", "--input-type", "tcp/raw"])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli inputs list --count <N>` works.
@@ -90,9 +84,7 @@ fn test_inputs_with_count() {
 
     let result = cmd.args(["inputs", "list", "--count", "50"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli inputs list --offset <N>` works.
@@ -103,9 +95,7 @@ fn test_inputs_with_offset() {
 
     let result = cmd.args(["inputs", "list", "--offset", "10"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli inputs list --count and --offset` work together.
@@ -118,9 +108,7 @@ fn test_inputs_with_count_and_offset() {
         .args(["inputs", "list", "--count", "50", "--offset", "10"])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test full inputs list with mock server using fixture data (monitor type).

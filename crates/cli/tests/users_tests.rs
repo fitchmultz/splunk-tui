@@ -8,7 +8,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 /// Test that `splunk-cli users list` lists users.
@@ -20,9 +20,7 @@ fn test_users_list() {
     let result = cmd.args(["users", "list"]).assert();
 
     // Should fail with connection error (not a "no such command" error)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli users list --count <N>` respects count parameter.
@@ -34,9 +32,7 @@ fn test_users_list_count_flag() {
     let result = cmd.args(["users", "list", "--count", "10"]).assert();
 
     // Should attempt to connect (pass count parameter to endpoint)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli users --help` shows usage.

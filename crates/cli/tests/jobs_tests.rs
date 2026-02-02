@@ -7,7 +7,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -24,9 +24,7 @@ fn test_jobs_default_lists() {
     let result = cmd.arg("jobs").assert();
 
     // Should fail with connection error (not a "missing required argument" error)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli jobs --list` explicitly lists jobs.
@@ -39,9 +37,7 @@ fn test_jobs_explicit_list_flag() {
     let result = cmd.args(["jobs", "--list"]).assert();
 
     // Should also fail with connection error (same as default)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli jobs --cancel <sid>` cancels a job without listing.
@@ -54,9 +50,7 @@ fn test_jobs_cancel_flag() {
     let result = cmd.args(["jobs", "--cancel", "test-sid-123"]).assert();
 
     // Should fail with connection error (trying to cancel, not list)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli jobs --delete <sid>` deletes a job without listing.
@@ -69,9 +63,7 @@ fn test_jobs_delete_flag() {
     let result = cmd.args(["jobs", "--delete", "test-sid-456"]).assert();
 
     // Should fail with connection error (trying to delete, not list)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `--list` flag is shown in help text.
@@ -107,7 +99,7 @@ fn test_jobs_cancel_with_list_flag() {
     cmd.args(["jobs", "--cancel", "test-sid", "--list"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that --delete with --list still works.
@@ -120,7 +112,7 @@ fn test_jobs_delete_with_list_flag() {
     cmd.args(["jobs", "--delete", "test-sid", "--list"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli jobs --inspect <sid>` shows job details.
@@ -133,9 +125,7 @@ fn test_jobs_inspect_flag() {
     let result = cmd.args(["jobs", "--inspect", "test-sid-789"]).assert();
 
     // Should fail with connection error (trying to inspect, not list)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that --inspect with --list still works (inspect takes precedence).
@@ -148,7 +138,7 @@ fn test_jobs_inspect_with_list_flag() {
     cmd.args(["jobs", "--inspect", "test-sid", "--list"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that --inspect is shown in help text.

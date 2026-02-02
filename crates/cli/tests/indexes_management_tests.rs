@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 #[test]
@@ -84,7 +84,7 @@ fn test_indexes_create_attempts_connection() {
     ])
     .assert()
     .failure()
-    .stderr(predicate::str::contains("Connection refused"));
+    .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -95,7 +95,7 @@ fn test_indexes_modify_attempts_connection() {
     cmd.args(["indexes", "modify", "main", "--max-data-size-mb", "2000"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -106,5 +106,5 @@ fn test_indexes_delete_attempts_connection() {
     cmd.args(["indexes", "delete", "test_index", "--force"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }

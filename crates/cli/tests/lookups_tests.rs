@@ -10,7 +10,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -37,9 +37,7 @@ fn test_lookups_execution() {
     let result = cmd.arg("lookups").assert();
 
     // Should fail with connection error (not a "command not found" error)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli lookups --count <N>` works.
@@ -50,9 +48,7 @@ fn test_lookups_with_count() {
 
     let result = cmd.args(["lookups", "--count", "10"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli lookups --offset <N>` works.
@@ -63,9 +59,7 @@ fn test_lookups_with_offset() {
 
     let result = cmd.args(["lookups", "--offset", "5"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli lookups --count and --offset` work together.
@@ -78,9 +72,7 @@ fn test_lookups_with_count_and_offset() {
         .args(["lookups", "--count", "10", "--offset", "5"])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli lookups --output json` produces valid JSON with mock server.

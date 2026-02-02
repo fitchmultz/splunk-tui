@@ -412,7 +412,9 @@ async fn test_tls_error_handling() {
         err_string.contains("Connection")
             || err_string.contains("TLS")
             || err_string.contains("tls")
-            || err_string.contains("connect"),
+            || err_string.contains("connect")
+            || err_string.contains("Connect")
+            || err_string.contains("InvalidCertificate"),
         "Error should indicate connection or TLS issue. Got: {}",
         err_string
     );

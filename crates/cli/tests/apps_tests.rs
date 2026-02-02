@@ -13,7 +13,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 /// Test that `splunk-cli apps` shows help
@@ -55,9 +55,7 @@ fn test_apps_list_count_valid() {
     let result = cmd.args(["apps", "list", "--count", "10"]).assert();
 
     // Should attempt to connect (pass count parameter to endpoint)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli apps info --help` shows info usage
@@ -96,9 +94,7 @@ fn test_apps_info_valid_name() {
     let result = cmd.args(["apps", "info", "search"]).assert();
 
     // Should attempt to connect
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli apps enable --help` shows enable usage
@@ -134,9 +130,7 @@ fn test_apps_enable_valid_name() {
     let result = cmd.args(["apps", "enable", "my_app"]).assert();
 
     // Should attempt to connect
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli apps disable --help` shows disable usage
@@ -172,9 +166,7 @@ fn test_apps_disable_valid_name() {
     let result = cmd.args(["apps", "disable", "my_app"]).assert();
 
     // Should attempt to connect
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 // Note: Live integration tests (with mocked HTTP server) would require:
@@ -265,7 +257,5 @@ fn test_apps_remove_valid_name() {
     let result = cmd.args(["apps", "remove", "my_app", "--force"]).assert();
 
     // Should attempt to connect
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }

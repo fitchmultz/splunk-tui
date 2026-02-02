@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 /// Test that `splunk-cli logs` works with defaults.
@@ -14,9 +14,7 @@ fn test_logs_default() {
     let result = cmd.arg("logs").assert();
 
     // Should fail with connection error (not a "command not found" error)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli logs --count` works.
@@ -27,9 +25,7 @@ fn test_logs_with_count() {
 
     let result = cmd.args(["logs", "--count", "10"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli logs --earliest` works.
@@ -42,9 +38,7 @@ fn test_logs_with_earliest() {
         .args(["logs", "--earliest", "2024-01-01T00:00:00"])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `--count`, `--earliest`, and `--tail` are shown in help text.
@@ -67,7 +61,5 @@ fn test_logs_output_format() {
 
     let result = cmd.args(["logs", "-o", "json"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
