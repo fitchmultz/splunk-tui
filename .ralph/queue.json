@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0296",
-      "status": "todo",
-      "title": "Apply ConfigFilesLoaded/ConfigStanzasLoaded results to TUI state",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tui",
-        "configs",
-        "bug"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/configs.rs",
-        "crates/tui/src/app/actions.rs",
-        "crates/tui/src/app/actions/data_loading.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/runtime/side_effects/configs.rs:18-54 sends Action::ConfigFilesLoaded / Action::ConfigStanzasLoaded",
-        "rg -n ConfigFilesLoaded|ConfigStanzasLoaded crates/tui/src/app/actions/data_loading.rs -> no matches",
-        "crates/tui/src/app/actions.rs data-loading dispatch list omits Config*Loaded actions"
-      ],
-      "plan": [
-        "Add handling for ConfigFilesLoaded/ConfigStanzasLoaded in app/actions/data_loading.rs to populate config_files/config_stanzas and clear loading state.",
-        "Route those actions in app/actions.rs so they reach handle_data_loading_action.",
-        "Add/extend config screen tests to assert data appears after successful loads and errors show toasts.",
-        "Ensure loading state resets on success and error paths.",
-        "Verify by running `make test` and confirming config screen tests pass."
-      ],
-      "notes": [
-        "Principles: D (localize change), H (operational hygiene), E (make bugs hard to write).",
-        "Why: Config screen never populates because load results are dropped.",
-        "Minimal fix: Wire Config*Loaded actions into data_loading and App::update.",
-        "Acceptance: config files/stanzas render after load and tests cover success + error paths."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0297",
       "status": "todo",
       "title": "Route macro load/create/update/delete results through App::update",

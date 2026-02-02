@@ -275,6 +275,26 @@ impl App {
                 self.handle_data_load_error("more fired alerts", e);
             }
 
+            // Config Files
+            Action::ConfigFilesLoaded(Ok(files)) => {
+                self.config_files = Some(files);
+                self.loading = false;
+            }
+            Action::ConfigFilesLoaded(Err(e)) => {
+                self.handle_data_load_error("config files", e);
+            }
+
+            // Config Stanzas
+            Action::ConfigStanzasLoaded(Ok(stanzas)) => {
+                self.config_stanzas = Some(stanzas);
+                self.loading = false;
+                // Rebuild filtered indices since data changed
+                self.rebuild_filtered_stanza_indices();
+            }
+            Action::ConfigStanzasLoaded(Err(e)) => {
+                self.handle_data_load_error("config stanzas", e);
+            }
+
             // Settings and Overview
             Action::SettingsLoaded(state) => {
                 self.apply_loaded_settings(state);
@@ -718,5 +738,85 @@ mod tests {
         assert!(app.current_error.is_some());
         assert_eq!(app.toasts.len(), 1);
         assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_config_files_loaded_updates_state() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let files = vec![
+            splunk_client::models::ConfigFile {
+                name: "props".to_string(),
+                title: "props.conf".to_string(),
+                description: Some("Properties configuration".to_string()),
+            },
+            splunk_client::models::ConfigFile {
+                name: "transforms".to_string(),
+                title: "transforms.conf".to_string(),
+                description: Some("Transformations".to_string()),
+            },
+        ];
+
+        app.handle_data_loading_action(Action::ConfigFilesLoaded(Ok(files)));
+
+        assert!(app.config_files.is_some());
+        assert_eq!(app.config_files.as_ref().unwrap().len(), 2);
+        assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_config_files_loaded_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::ConfigFilesLoaded(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("config files"));
+    }
+
+    #[test]
+    fn test_config_stanzas_loaded_updates_state() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let stanzas = vec![
+            splunk_client::models::ConfigStanza {
+                name: "default".to_string(),
+                config_file: "props".to_string(),
+                settings: std::collections::HashMap::new(),
+            },
+            splunk_client::models::ConfigStanza {
+                name: "access_combined".to_string(),
+                config_file: "props".to_string(),
+                settings: std::collections::HashMap::new(),
+            },
+        ];
+
+        app.handle_data_loading_action(Action::ConfigStanzasLoaded(Ok(stanzas)));
+
+        assert!(app.config_stanzas.is_some());
+        assert_eq!(app.config_stanzas.as_ref().unwrap().len(), 2);
+        assert!(!app.loading);
+        // filtered_stanza_indices should be rebuilt
+        assert_eq!(app.filtered_stanza_indices.len(), 2);
+    }
+
+    #[test]
+    fn test_config_stanzas_loaded_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::ConfigStanzasLoaded(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("config stanzas"));
     }
 }

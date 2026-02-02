@@ -100,6 +100,8 @@ impl App {
             | Action::MoreInputsLoaded(_)
             | Action::FiredAlertsLoaded(_)
             | Action::MoreFiredAlertsLoaded(_)
+            | Action::ConfigFilesLoaded(_)
+            | Action::ConfigStanzasLoaded(_)
             | Action::SettingsLoaded(_)
             | Action::OverviewLoaded(_)
             | Action::MultiInstanceOverviewLoaded(_) => {
