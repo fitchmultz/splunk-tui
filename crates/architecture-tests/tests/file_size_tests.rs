@@ -36,8 +36,12 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "Keybinding definitions for all TUI screens - each screen requires multiple keybinding entries",
     ),
     (
-        "app/popups.rs",
-        "Popup input handling for all TUI popup types - each popup type requires dedicated input handlers",
+        "app/popups/mod.rs",
+        "Popup dispatch logic + comprehensive integration tests for all popup types",
+    ),
+    (
+        "app/popups/profile.rs",
+        "Profile management popup handlers - complex multi-field form handling for CreateProfile, EditProfile, ProfileSelector",
     ),
 ];
 
