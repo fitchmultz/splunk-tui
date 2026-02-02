@@ -274,3 +274,16 @@ pub fn mouse_click(col: u16, row: u16) -> crossterm::event::MouseEvent {
 pub fn error_details_from_string(error: &str) -> splunk_tui::error_details::ErrorDetails {
     splunk_tui::error_details::ErrorDetails::from_error_string(error)
 }
+
+/// Create mock search results for testing pagination and scrolling.
+pub fn create_mock_search_results(count: usize) -> Vec<serde_json::Value> {
+    (0..count)
+        .map(|i| {
+            serde_json::json!({
+                "_time": format!("2024-01-15T10:{:02}:00.000Z", i),
+                "level": "INFO",
+                "message": format!("Test message {}", i),
+            })
+        })
+        .collect()
+}
