@@ -178,17 +178,15 @@ pub async fn handle_side_effects(
             disabled,
             iseval,
         } => {
-            macros::handle_create_macro(
-                client,
-                tx,
+            let params = macros::CreateMacroEffectParams {
                 name,
                 definition,
                 args,
                 description,
                 disabled,
                 iseval,
-            )
-            .await;
+            };
+            macros::handle_create_macro(client, tx, params).await;
         }
         Action::UpdateMacro {
             name,
@@ -198,17 +196,15 @@ pub async fn handle_side_effects(
             disabled,
             iseval,
         } => {
-            macros::handle_update_macro(
-                client,
-                tx,
+            let params = macros::UpdateMacroEffectParams {
                 name,
                 definition,
                 args,
                 description,
                 disabled,
                 iseval,
-            )
-            .await;
+            };
+            macros::handle_update_macro(client, tx, params).await;
         }
         Action::DeleteMacro { name } => {
             macros::handle_delete_macro(client, tx, name).await;

@@ -10,8 +10,43 @@
 
 use crate::action::Action;
 use crate::runtime::side_effects::SharedClient;
+use splunk_client::{MacroCreateParams, MacroUpdateParams};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+
+/// Parameters for creating a macro via side effects.
+#[derive(Debug, Clone)]
+pub struct CreateMacroEffectParams {
+    /// Name of the macro
+    pub name: String,
+    /// Macro definition
+    pub definition: String,
+    /// Optional arguments
+    pub args: Option<String>,
+    /// Optional description
+    pub description: Option<String>,
+    /// Whether the macro is disabled
+    pub disabled: bool,
+    /// Whether the macro is an eval expression
+    pub iseval: bool,
+}
+
+/// Parameters for updating a macro via side effects.
+#[derive(Debug, Clone)]
+pub struct UpdateMacroEffectParams {
+    /// Name of the macro
+    pub name: String,
+    /// Optional new definition
+    pub definition: Option<String>,
+    /// Optional new arguments
+    pub args: Option<String>,
+    /// Optional new description
+    pub description: Option<String>,
+    /// Optional disabled state
+    pub disabled: Option<bool>,
+    /// Optional iseval flag
+    pub iseval: Option<bool>,
+}
 
 /// Load macros list from the Splunk API.
 pub async fn handle_load_macros(client: SharedClient, action_tx: Sender<Action>) {
@@ -28,32 +63,26 @@ pub async fn handle_load_macros(client: SharedClient, action_tx: Sender<Action>)
     let _ = action_tx.send(action).await;
 }
 
-#[allow(clippy::too_many_arguments)]
 /// Create a new macro.
 pub async fn handle_create_macro(
     client: SharedClient,
     action_tx: Sender<Action>,
-    name: String,
-    definition: String,
-    args: Option<String>,
-    description: Option<String>,
-    disabled: bool,
-    iseval: bool,
+    params: CreateMacroEffectParams,
 ) {
+    let macro_params = MacroCreateParams {
+        name: &params.name,
+        definition: &params.definition,
+        args: params.args.as_deref(),
+        description: params.description.as_deref(),
+        disabled: params.disabled,
+        iseval: params.iseval,
+        validation: None,
+        errormsg: None,
+    };
+
     let result = {
         let mut guard = client.lock().await;
-        guard
-            .create_macro(
-                &name,
-                &definition,
-                args.as_deref(),
-                description.as_deref(),
-                disabled,
-                iseval,
-                None, // validation
-                None, // errormsg
-            )
-            .await
+        guard.create_macro(macro_params).await
     };
 
     let action = match result {
@@ -64,32 +93,26 @@ pub async fn handle_create_macro(
     let _ = action_tx.send(action).await;
 }
 
-#[allow(clippy::too_many_arguments)]
 /// Update an existing macro.
 pub async fn handle_update_macro(
     client: SharedClient,
     action_tx: Sender<Action>,
-    name: String,
-    definition: Option<String>,
-    args: Option<String>,
-    description: Option<String>,
-    disabled: Option<bool>,
-    iseval: Option<bool>,
+    params: UpdateMacroEffectParams,
 ) {
+    let macro_params = MacroUpdateParams {
+        name: &params.name,
+        definition: params.definition.as_deref(),
+        args: params.args.as_deref(),
+        description: params.description.as_deref(),
+        disabled: params.disabled,
+        iseval: params.iseval,
+        validation: None,
+        errormsg: None,
+    };
+
     let result = {
         let mut guard = client.lock().await;
-        guard
-            .update_macro(
-                &name,
-                definition.as_deref(),
-                args.as_deref(),
-                description.as_deref(),
-                disabled,
-                iseval,
-                None, // validation
-                None, // errormsg
-            )
-            .await
+        guard.update_macro(macro_params).await
     };
 
     let action = match result {

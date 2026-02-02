@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0293",
-      "status": "todo",
-      "title": "Reduce macro client create/update parameter count to satisfy clippy",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "lint",
-        "client",
-        "macros"
-      ],
-      "scope": [
-        "crates/client/src/client/macros.rs",
-        "crates/cli/src/commands/macros.rs",
-        "make ci"
-      ],
-      "evidence": [
-        "make ci -> clippy warning: too many arguments (9/7) at crates/client/src/client/macros.rs:63 and :112; -D warnings stops lint"
-      ],
-      "plan": [
-        "Introduce MacroCreateParams and MacroUpdateParams structs in crates/client/src/client/macros.rs.",
-        "Update create_macro/update_macro signatures to accept the new structs and pass through to endpoints.",
-        "Update CLI macro commands to build the structs instead of positional args.",
-        "Adjust any unit tests or fixtures that call these methods.",
-        "Verify by running `make lint` and confirming the clippy too-many-arguments warnings are gone."
-      ],
-      "notes": [
-        "Principles: KISS, E (make bugs hard to write).",
-        "Why: Lint is blocked and long positional arg lists are error-prone for callers.",
-        "Minimal fix: Replace positional params with a single struct and update call sites.",
-        "Acceptance: make lint (and make ci) runs without too-many-arguments warnings."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0294",
       "status": "todo",
       "title": "Refactor macro endpoint create/update signatures to reduce argument count",
