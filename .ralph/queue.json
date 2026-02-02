@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0291",
-      "status": "todo",
-      "title": "Split oversized search endpoints module",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "client",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search.rs"
-      ],
-      "evidence": [
-        "wc -l crates/client/src/endpoints/search.rs => 722 (exceeds 700 LOC guideline in AGENTS.md)."
-      ],
-      "plan": [
-        "Identify cohesive endpoint groups (job creation, result retrieval, saved searches, validation) and split into submodules under crates/client/src/endpoints/search/.",
-        "Keep a small search/mod.rs that re-exports the public endpoint functions to avoid API changes.",
-        "Refactor internal helpers into shared modules to reduce duplication.",
-        "Verify by running `cargo test -p splunk-client --tests` and confirming each module stays under 700 LOC with `wc -l`."
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-01T20:19:45Z",
-      "updated_at": "2026-02-01T20:19:45Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0292",
       "status": "todo",
       "title": "Handle profile rename cleanup in TUI profile editor",
