@@ -146,6 +146,7 @@ impl App {
                         name: name_input,
                         profile,
                         use_keyring,
+                        original_name: None,
                     })
                 } else {
                     None
@@ -751,7 +752,7 @@ impl App {
         if let Some(Popup {
             kind:
                 PopupType::EditProfile {
-                    original_name: _,
+                    original_name,
                     name_input,
                     base_url_input,
                     username_input,
@@ -805,13 +806,13 @@ impl App {
                 ..Default::default()
             };
 
-            // If name changed, delete old profile and create new one
-            // This is handled by saving with new name - the old one remains
-            // TODO: Handle rename by deleting old profile after saving new one
+            // Detect rename: if name changed, pass original_name for cleanup
+            let is_rename = name_input != original_name;
             Some(Action::SaveProfile {
                 name: name_input,
                 profile,
                 use_keyring,
+                original_name: if is_rename { Some(original_name) } else { None },
             })
         } else {
             None

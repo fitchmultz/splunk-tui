@@ -678,6 +678,8 @@ pub enum Action {
         name: String,
         profile: splunk_config::types::ProfileConfig,
         use_keyring: bool,
+        /// Original name when renaming a profile (None for new profiles)
+        original_name: Option<String>,
     },
     /// Delete a profile
     DeleteProfile { name: String },

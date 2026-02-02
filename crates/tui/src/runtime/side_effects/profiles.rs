@@ -250,10 +250,12 @@ pub async fn handle_save_profile(
     name: String,
     profile: ProfileConfig,
     use_keyring: bool,
+    original_name: Option<String>,
 ) {
     let config_manager_clone = config_manager.clone();
     let tx_clone = tx.clone();
     let name_clone = name.clone();
+    let original_name_clone = original_name.clone();
 
     tokio::spawn(async move {
         let mut cm = config_manager_clone.lock().await;
@@ -305,6 +307,31 @@ pub async fn handle_save_profile(
         // Save the profile
         match cm.save_profile(&name_clone, profile_to_save) {
             Ok(()) => {
+                // Handle rename: delete old profile after saving new one
+                if let Some(old_name) = original_name_clone
+                    && old_name != name_clone
+                {
+                    if let Err(e) = cm.delete_profile(&old_name) {
+                        // Log error but don't fail the save operation
+                        let _ = tx_clone
+                            .send(Action::Notify(
+                                ToastLevel::Warning,
+                                format!(
+                                    "Profile saved but failed to remove old profile '{}': {}",
+                                    old_name, e
+                                ),
+                            ))
+                            .await;
+                    } else {
+                        let _ = tx_clone
+                            .send(Action::Notify(
+                                ToastLevel::Info,
+                                format!("Old profile '{}' removed after rename", old_name),
+                            ))
+                            .await;
+                    }
+                }
+
                 let _ = tx_clone
                     .send(Action::ProfileSaved(Ok(name_clone.clone())))
                     .await;

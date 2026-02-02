@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0292",
-      "status": "todo",
-      "title": "Handle profile rename cleanup in TUI profile editor",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "correctness"
-      ],
-      "scope": [
-        "crates/tui/src/app/popups.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app/popups.rs:1154 contains TODO: 'Handle rename by deleting old profile after saving new one'."
-      ],
-      "plan": [
-        "Trace the profile edit popup flow to see how SaveProfile actions are handled and where persistence happens.",
-        "Implement rename handling so saving a profile with a new name removes the previous profile entry (and keyring entry if used).",
-        "Add or extend tests to cover rename behavior, including keyring and non-keyring cases, and confirm no stale profile remains.",
-        "Verify by running `cargo test -p splunk-tui --tests` and ensure profile switch/popups tests pass."
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-01T20:19:45Z",
-      "updated_at": "2026-02-01T20:19:45Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0281",
       "status": "draft",
       "title": "Optimize make ci to remove release build requirement while keeping core checks",

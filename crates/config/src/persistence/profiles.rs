@@ -202,11 +202,27 @@ impl ConfigManager {
     /// Deletes a profile configuration.
     ///
     /// Returns an error if the profile doesn't exist.
+    /// Also cleans up any keyring entries associated with the profile.
     pub fn delete_profile(&mut self, name: &str) -> Result<()> {
-        self.config_file
+        // Get profile before removing to check for keyring entries
+        let profile = self
+            .config_file
             .profiles
-            .remove(name)
+            .get(name)
             .ok_or_else(|| anyhow::anyhow!("Profile '{}' not found", name))?;
+
+        // Clean up keyring entries if present (best effort - don't fail if keyring cleanup fails)
+        if let Some(SecureValue::Keyring { keyring_account }) = &profile.password {
+            let _ = keyring::Entry::new(KEYRING_SERVICE, keyring_account)
+                .and_then(|e| e.delete_credential());
+        }
+        if let Some(SecureValue::Keyring { keyring_account }) = &profile.api_token {
+            let _ = keyring::Entry::new(KEYRING_SERVICE, keyring_account)
+                .and_then(|e| e.delete_credential());
+        }
+
+        // Remove from config
+        self.config_file.profiles.remove(name);
         self.atomic_save()?;
         Ok(())
     }
