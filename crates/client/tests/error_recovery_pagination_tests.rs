@@ -1,19 +1,21 @@
-//! Error recovery path tests for pagination and streaming scenarios.
+//! Error recovery tests for pagination scenarios.
 //!
-//! This module tests error recovery in multi-step operations:
+//! This module tests error recovery during multi-page result fetching:
 //! - Partial pagination failures during multi-page search results
-//! - Network interruption mid-stream during result fetching
-//! - Session expiry during long-running operations
-//! - Streaming body retry limitations
+//! - Session expiry mid-pagination with re-authentication
+//! - Retry-After header handling per-page
+//! - Retry exhaustion on specific pages
+//! - Mixed error types across different pages
 //!
 //! # Invariants
 //! - Each page failure should only retry the affected page, not restart from page 1
 //! - Session expiry during pagination should re-authenticate and continue
-//! - Streaming bodies cannot be retried (single attempt only)
+//! - Retry-After headers are respected per-page
 //!
 //! # What this does NOT handle
 //! - Basic retry logic (see retry_tests.rs)
-//! - Connection-level errors (see error_tests.rs)
+//! - Session expiry during job polling (see error_recovery_session_tests.rs)
+//! - Streaming body limitations (see error_recovery_streaming_tests.rs)
 
 mod common;
 
@@ -289,87 +291,6 @@ async fn test_pagination_session_expiry_mid_operation() {
     // Fetch page 3
     let result3 = client.get_search_results("test-sid", 1, 2).await;
     assert!(result3.is_ok(), "Page 3 should succeed");
-}
-
-/// Test that non-cloneable request bodies fail without retry.
-///
-/// This test verifies the behavior documented in request.rs:23-31 - when a request
-/// body cannot be cloned (try_clone returns None), the request proceeds with a
-/// single attempt only, even if the server returns a retryable error.
-///
-/// Note: The actual streaming body limitation is tested at the unit level in
-/// request.rs. This integration test verifies the end-to-end behavior where
-/// a request that cannot be retried fails immediately.
-#[tokio::test(start_paused = true)]
-async fn test_non_cloneable_body_single_attempt() {
-    let mock_server = MockServer::start().await;
-
-    // Track request count
-    let request_count = Arc::new(AtomicUsize::new(0));
-    let count_clone = request_count.clone();
-
-    // Server returns 503 on first request (would normally trigger retry)
-    Mock::given(method("POST"))
-        .and(path("/services/search/jobs"))
-        .respond_with(move |_req: &wiremock::Request| {
-            let count = count_clone.fetch_add(1, Ordering::SeqCst);
-            if count == 0 {
-                ResponseTemplate::new(503).set_body_json(serde_json::json!({
-                    "messages": [{"type": "ERROR", "text": "Service Unavailable"}]
-                }))
-            } else {
-                ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "entry": [{"content": {"sid": "test-sid"}}]
-                }))
-            }
-        })
-        .mount(&mock_server)
-        .await;
-
-    let client = Client::new();
-    let server_uri = mock_server.uri();
-    let options = endpoints::CreateJobOptions {
-        wait: Some(false),
-        ..Default::default()
-    };
-
-    // This request uses form data (which CAN be cloned), so it WILL retry.
-    // This test documents the normal retry behavior - the streaming body limitation
-    // is an edge case covered by unit tests in request.rs.
-    let result_handle = tokio::spawn({
-        let client = client.clone();
-        let server_uri = server_uri.clone();
-        async move {
-            endpoints::create_job(
-                &client,
-                &server_uri,
-                "test-token",
-                "search index=main",
-                &options,
-                3,
-                None,
-            )
-            .await
-        }
-    });
-
-    assert_pending(&result_handle, "cloneable body should wait for backoff").await;
-    advance_and_yield(Duration::from_secs(1)).await;
-    let result = result_handle.await.expect("create job task");
-
-    // With cloneable body, should succeed after retry
-    assert!(
-        result.is_ok(),
-        "Should succeed after retry with cloneable body"
-    );
-    assert_eq!(result.unwrap(), "test-sid");
-
-    // Should have made 2 requests (initial + 1 retry)
-    assert_eq!(
-        request_count.load(Ordering::SeqCst),
-        2,
-        "Should retry with cloneable body"
-    );
 }
 
 /// Test Retry-After header handling during pagination.
@@ -705,109 +626,4 @@ async fn test_pagination_mixed_error_types() {
         "Page 3 should succeed after handling error"
     );
     assert_eq!(result3.unwrap().results.len(), 1);
-}
-
-/// Test session expiry during job polling with re-authentication.
-///
-/// This test simulates a long-running search where:
-/// - Job is created successfully
-/// - First status poll returns 401 (session expired)
-/// - Client re-authenticates and continues polling
-/// - Job completes and results are fetched
-#[tokio::test]
-async fn test_session_expiry_during_job_polling() {
-    let mock_server = MockServer::start().await;
-
-    let login_fixture = load_fixture("auth/login_success.json");
-
-    // Track login requests
-    let login_count = Arc::new(AtomicUsize::new(0));
-    let login_count_clone = login_count.clone();
-
-    // Mock login endpoint
-    Mock::given(method("POST"))
-        .and(path("/services/auth/login"))
-        .and(query_param("output_mode", "json"))
-        .respond_with(move |_req: &wiremock::Request| {
-            login_count_clone.fetch_add(1, Ordering::SeqCst);
-            ResponseTemplate::new(200).set_body_json(&login_fixture)
-        })
-        .mount(&mock_server)
-        .await;
-
-    // Create job endpoint
-    Mock::given(method("POST"))
-        .and(path("/services/search/jobs"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "entry": [{"content": {"sid": "test-polling-sid"}}]
-        })))
-        .mount(&mock_server)
-        .await;
-
-    // Track status poll attempts
-    let status_polls = Arc::new(AtomicUsize::new(0));
-    let status_polls_clone = status_polls.clone();
-
-    // Job status: 401 once, then running, then done
-    Mock::given(method("GET"))
-        .and(path("/services/search/jobs/test-polling-sid"))
-        .respond_with(move |_req: &wiremock::Request| {
-            let count = status_polls_clone.fetch_add(1, Ordering::SeqCst);
-            match count {
-                0 => ResponseTemplate::new(401).set_body_json(serde_json::json!({
-                    "messages": [{"type": "ERROR", "text": "Session expired"}]
-                })),
-                1 => ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "entry": [{"content": {"sid": "test-polling-sid", "dispatchState": "RUNNING"}}]
-                })),
-                _ => ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "entry": [{"content": {"sid": "test-polling-sid", "dispatchState": "DONE"}}]
-                })),
-            }
-        })
-        .mount(&mock_server)
-        .await;
-
-    use secrecy::SecretString;
-    use splunk_client::{AuthStrategy, SplunkClient};
-
-    let strategy = AuthStrategy::SessionToken {
-        username: "admin".to_string(),
-        password: SecretString::new("testpassword".to_string().into()),
-    };
-
-    let mut client = SplunkClient::builder()
-        .base_url(mock_server.uri())
-        .auth_strategy(strategy)
-        .skip_verify(true)
-        .build()
-        .unwrap();
-
-    // Initial login
-    client.login().await.unwrap();
-    assert_eq!(login_count.load(Ordering::SeqCst), 1);
-
-    // Create job
-    let sid = client
-        .create_search_job("search index=main", &Default::default())
-        .await;
-    assert!(sid.is_ok());
-    assert_eq!(sid.unwrap(), "test-polling-sid");
-
-    // Poll status - first call triggers 401, then re-auth, then success
-    let status = client.get_job_status("test-polling-sid").await;
-    assert!(status.is_ok());
-
-    // Should have re-authenticated
-    assert_eq!(
-        login_count.load(Ordering::SeqCst),
-        2,
-        "Should re-authenticate once"
-    );
-
-    // Verify we made multiple status polls (initial + after re-auth)
-    assert!(
-        status_polls.load(Ordering::SeqCst) >= 2,
-        "Should poll status at least twice"
-    );
 }

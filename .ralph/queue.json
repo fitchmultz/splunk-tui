@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0290",
-      "status": "todo",
-      "title": "Split oversized client error recovery tests",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tests",
-        "client"
-      ],
-      "scope": [
-        "crates/client/tests/error_recovery_tests.rs"
-      ],
-      "evidence": [
-        "wc -l crates/client/tests/error_recovery_tests.rs => 813 (exceeds 700 LOC guideline in AGENTS.md)."
-      ],
-      "plan": [
-        "Group error recovery tests by scenario (pagination retries, auth refresh, job polling) and split into multiple files under crates/client/tests/.",
-        "Extract shared test fixtures into a helper module to avoid duplication.",
-        "Keep test names/coverage intact and ensure each new file stays under 700 LOC.",
-        "Verify by running `cargo test -p splunk-client --tests` and confirming line counts with `wc -l`."
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-01T20:19:45Z",
-      "updated_at": "2026-02-01T20:19:45Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0291",
       "status": "todo",
       "title": "Split oversized search endpoints module",
