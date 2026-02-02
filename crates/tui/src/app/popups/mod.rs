@@ -19,6 +19,7 @@ mod export;
 mod index;
 mod misc;
 mod profile;
+mod saved_search;
 mod user;
 
 impl App {
@@ -97,6 +98,9 @@ impl App {
                 }
                 _ => None,
             },
+
+            // Saved search edit popup
+            Some(PopupType::EditSavedSearch { .. }) => self.handle_saved_search_popup(key),
 
             // No popup active
             None => None,

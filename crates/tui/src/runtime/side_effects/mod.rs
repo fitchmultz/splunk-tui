@@ -166,6 +166,15 @@ pub async fn handle_side_effects(
         Action::LoadSavedSearches => {
             searches::handle_load_saved_searches(client, tx).await;
         }
+        Action::UpdateSavedSearch {
+            name,
+            search,
+            description,
+            disabled,
+        } => {
+            searches::handle_update_saved_search(client, tx, name, search, description, disabled)
+                .await;
+        }
         Action::LoadInternalLogs { count, earliest } => {
             logs::handle_load_internal_logs(client, tx, count, earliest).await;
         }

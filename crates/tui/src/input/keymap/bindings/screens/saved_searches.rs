@@ -106,5 +106,17 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::NavigateUp),
             handles_input: true,
         },
+        Keybinding {
+            section: Section::SavedSearches,
+            keys: "e",
+            description: "Edit selected saved search",
+            scope: BindingScope::Screen(SavedSearches),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('e'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::EditSavedSearch),
+            handles_input: true,
+        },
     ]
 }

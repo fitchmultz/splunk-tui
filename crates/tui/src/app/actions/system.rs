@@ -88,6 +88,25 @@ impl App {
             Action::OpenCreateIndexDialog => {
                 self.open_create_index_dialog();
             }
+            Action::EditSavedSearch => {
+                self.open_edit_saved_search_dialog();
+            }
+            Action::SavedSearchUpdated(result) => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::info("Saved search updated"));
+                        // Refresh the saved searches list
+                        self.saved_searches = None;
+                    }
+                    Err(e) => {
+                        self.toasts.push(Toast::error(format!(
+                            "Failed to update saved search: {}",
+                            e
+                        )));
+                    }
+                }
+            }
             // Cluster management result actions
             Action::MaintenanceModeSet { result } => {
                 self.loading = false;
@@ -231,6 +250,27 @@ impl App {
             })
             .build(),
         );
+    }
+
+    fn open_edit_saved_search_dialog(&mut self) {
+        use crate::ui::popup::{Popup, PopupType, SavedSearchField};
+        if let Some(searches) = &self.saved_searches
+            && let Some(selected) = self.saved_searches_state.selected()
+            && let Some(search) = searches.get(selected)
+        {
+            self.popup = Some(
+                Popup::builder(PopupType::EditSavedSearch {
+                    search_name: search.name.clone(),
+                    search_input: String::new(),
+                    description_input: String::new(),
+                    disabled: search.disabled,
+                    selected_field: SavedSearchField::Search,
+                })
+                .build(),
+            );
+        } else {
+            self.toasts.push(Toast::info("No saved search selected"));
+        }
     }
 }
 

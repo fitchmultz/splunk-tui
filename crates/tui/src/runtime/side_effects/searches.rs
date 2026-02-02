@@ -200,3 +200,32 @@ pub async fn handle_validate_spl(client: SharedClient, tx: Sender<Action>, searc
         }
     });
 }
+
+/// Handle updating a saved search.
+///
+/// Updates an existing saved search with the provided fields.
+/// Only provided fields are updated; omitted fields retain their current values.
+pub async fn handle_update_saved_search(
+    client: SharedClient,
+    tx: Sender<Action>,
+    name: String,
+    search: Option<String>,
+    description: Option<String>,
+    disabled: Option<bool>,
+) {
+    let _ = tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
+        let mut c = client.lock().await;
+        match c
+            .update_saved_search(&name, search.as_deref(), description.as_deref(), disabled)
+            .await
+        {
+            Ok(()) => {
+                let _ = tx.send(Action::SavedSearchUpdated(Ok(()))).await;
+            }
+            Err(e) => {
+                let _ = tx.send(Action::SavedSearchUpdated(Err(Arc::new(e)))).await;
+            }
+        }
+    });
+}

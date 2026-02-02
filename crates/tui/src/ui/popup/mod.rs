@@ -7,6 +7,7 @@
 mod builder;
 mod profile_field;
 mod render;
+mod saved_search_field;
 mod types;
 
 /// Default popup dimensions as percentages of screen size.
@@ -17,4 +18,5 @@ pub const POPUP_HEIGHT_PERCENT: u16 = 50;
 pub use builder::{Popup, PopupBuilder};
 pub use profile_field::ProfileField;
 pub use render::render_popup;
+pub use saved_search_field::SavedSearchField;
 pub use types::PopupType;

@@ -1,7 +1,7 @@
 //! Integration tests for `splunk-cli saved-searches` command.
 //!
 //! Tests cover:
-//! - Help text verification for all subcommands (list, run, info)
+//! - Help text verification for all subcommands (list, run, info, edit)
 //! - Output format parsing validation (json, table, csv, xml)
 //!
 //! Does NOT:
@@ -24,7 +24,8 @@ fn test_saved_searches_help() {
         .success()
         .stdout(predicate::str::contains("List saved searches"))
         .stdout(predicate::str::contains("Show detailed information"))
-        .stdout(predicate::str::contains("Run a saved search"));
+        .stdout(predicate::str::contains("Run a saved search"))
+        .stdout(predicate::str::contains("Edit a saved search"));
 }
 
 #[test]
@@ -58,6 +59,19 @@ fn test_saved_searches_info_help() {
         .assert()
         .success()
         .stdout(predicate::str::contains("<NAME>"));
+}
+
+#[test]
+fn test_saved_searches_edit_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["saved-searches", "edit", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("<NAME>"))
+        .stdout(predicate::str::contains("--search"))
+        .stdout(predicate::str::contains("--description"))
+        .stdout(predicate::str::contains("--disabled"));
 }
 
 #[test]

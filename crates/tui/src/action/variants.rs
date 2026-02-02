@@ -336,6 +336,17 @@ pub enum Action {
     KvstoreLoaded(Result<KvStoreStatus, Arc<ClientError>>),
     /// Result of loading saved searches
     SavedSearchesLoaded(Result<Vec<SavedSearch>, Arc<ClientError>>),
+    /// Open edit dialog for selected saved search
+    EditSavedSearch,
+    /// Update saved search
+    UpdateSavedSearch {
+        name: String,
+        search: Option<String>,
+        description: Option<String>,
+        disabled: Option<bool>,
+    },
+    /// Result of updating saved search
+    SavedSearchUpdated(Result<(), Arc<ClientError>>),
     /// Result of loading internal logs
     InternalLogsLoaded(Result<Vec<LogEntry>, Arc<ClientError>>),
     /// Result of loading apps

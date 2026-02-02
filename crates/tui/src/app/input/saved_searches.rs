@@ -4,6 +4,7 @@
 //! - Handle Enter key to run a saved search
 //! - Handle Ctrl+C copy of selected saved search name
 //! - Handle Ctrl+E export of saved searches list
+//! - Handle 'e' key to edit selected saved search
 //!
 //! Non-responsibilities:
 //! - Does NOT handle global navigation (handled by keymap)

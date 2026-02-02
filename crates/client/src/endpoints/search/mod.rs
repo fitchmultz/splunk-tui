@@ -18,7 +18,10 @@ pub mod validate;
 
 // Re-export all public items for backward compatibility
 pub use jobs::{create_job, get_job_status, get_results, wait_for_job, wait_for_job_with_progress};
-pub use saved::{create_saved_search, delete_saved_search, get_saved_search, list_saved_searches};
+pub use saved::{
+    create_saved_search, delete_saved_search, get_saved_search, list_saved_searches,
+    update_saved_search,
+};
 pub use types::{CreateJobOptions, OutputMode, SearchMode};
 pub use validate::validate_spl;
 

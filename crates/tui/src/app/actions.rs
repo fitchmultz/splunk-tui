@@ -146,6 +146,8 @@ impl App {
             | Action::ClearErrorDetails
             | Action::JobOperationComplete(_)
             | Action::OpenCreateIndexDialog
+            | Action::EditSavedSearch
+            | Action::SavedSearchUpdated(_)
             | Action::MaintenanceModeSet { .. }
             | Action::ClusterRebalanced { .. }
             | Action::PeerDecommissioned { .. }

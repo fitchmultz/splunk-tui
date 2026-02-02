@@ -694,6 +694,15 @@ splunk-cli saved-searches run "Errors Last 24 Hours" --earliest "-7d" --latest "
 
 # Run and get results in JSON
 splunk-cli saved-searches run "Errors Last 24 Hours" --wait --output json
+
+# Edit a saved search query
+splunk-cli saved-searches edit "Errors Last 24 Hours" --search "index=main | stats count"
+
+# Disable a saved search
+splunk-cli saved-searches edit "Errors Last 24 Hours" --disabled true
+
+# Update description
+splunk-cli saved-searches edit "Errors Last 24 Hours" --description "Updated description"
 ```
 
 **Subcommands:**
@@ -711,6 +720,11 @@ splunk-cli saved-searches run "Errors Last 24 Hours" --wait --output json
   - `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
   - `-o, --output <FORMAT>`: Output format for search results (table, json, csv, xml) [default: table]
 
+- `edit <NAME>`: Edit an existing saved search
+  - `-s, --search <QUERY>`: New search query (SPL)
+  - `-d, --description <DESC>`: New description
+  - `--disabled <BOOL>`: Enable/disable the saved search (true/false)
+
 **Output Formats:**
 - **Table**: Human-readable formatted output (list: table view, info: detailed view)
 - **JSON**: Full saved search object(s) with all fields
@@ -720,6 +734,8 @@ splunk-cli saved-searches run "Errors Last 24 Hours" --wait --output json
 **Notes:**
 - All saved searches (including disabled ones) are shown in list output
 - The `run` subcommand extracts the search query from the saved search and executes it
+- The `edit` subcommand only updates provided fields; omitted fields retain their current values
+- At least one field (`--search`, `--description`, or `--disabled`) must be provided when editing
 - Use `saved-searches list` first to find the exact saved search name
 - Time modifiers (`--earliest`, `--latest`) work the same as in the `search` command
 
@@ -979,6 +995,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected saved search name
 - `Enter`: Run selected search
 - `j/k or Up/Down`: Navigate list
+- `e`: Edit selected saved search
 
 #### Internal Logs Screen
 - `r`: Refresh logs

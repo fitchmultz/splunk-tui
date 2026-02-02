@@ -5,6 +5,7 @@
 //! # What this module handles:
 //! - Listing saved searches
 //! - Creating saved searches
+//! - Updating saved searches
 //! - Deleting saved searches
 //! - Getting a single saved search by name
 //!
@@ -196,4 +197,74 @@ pub async fn get_saved_search(
         .ok_or_else(|| ClientError::NotFound(format!("Saved search '{}' not found", name)))?;
 
     Ok(attach_entry_name(entry.name, entry.content))
+}
+
+/// Update an existing saved search.
+///
+/// This endpoint uses POST to `/services/saved/searches/{name}` to update
+/// an existing saved search. Only provided fields are updated; omitted
+/// fields retain their current values.
+///
+/// # Arguments
+/// * `client` - The reqwest client
+/// * `base_url` - The Splunk base URL
+/// * `auth_token` - Authentication token
+/// * `name` - The name of the saved search to update
+/// * `search` - Optional new search query (SPL)
+/// * `description` - Optional new description
+/// * `disabled` - Optional enable/disable flag
+/// * `max_retries` - Maximum number of retries for transient failures
+/// * `metrics` - Optional metrics collector
+///
+/// # Returns
+/// Ok(()) on success, or `ClientError::NotFound` if the saved search doesn't exist.
+pub async fn update_saved_search(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    name: &str,
+    search: Option<&str>,
+    description: Option<&str>,
+    disabled: Option<bool>,
+    max_retries: usize,
+    metrics: Option<&MetricsCollector>,
+) -> Result<()> {
+    debug!("Updating saved search: {}", name);
+
+    let url = format!("{}/services/saved/searches/{}", base_url, name);
+
+    let mut form_params: Vec<(&str, String)> = Vec::new();
+
+    if let Some(s) = search {
+        form_params.push(("search", s.to_string()));
+    }
+    if let Some(d) = description {
+        form_params.push(("description", d.to_string()));
+    }
+    if let Some(disabled_flag) = disabled {
+        form_params.push(("disabled", disabled_flag.to_string()));
+    }
+
+    let builder = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json")])
+        .form(&form_params);
+
+    match send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/saved/searches/{name}",
+        "POST",
+        metrics,
+    )
+    .await
+    {
+        Ok(_) => Ok(()),
+        Err(ClientError::ApiError { status: 404, .. }) => Err(ClientError::NotFound(format!(
+            "Saved search '{}' not found",
+            name
+        ))),
+        Err(e) => Err(e),
+    }
 }

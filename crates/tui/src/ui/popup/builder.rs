@@ -4,7 +4,7 @@
 //! popup dialogs with customizable titles and content.
 
 use crate::input::help;
-use crate::ui::popup::{PopupType, ProfileField};
+use crate::ui::popup::{PopupType, ProfileField, SavedSearchField};
 
 /// A modal popup dialog with title, content, and type.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -252,6 +252,19 @@ impl PopupBuilder {
                     profile_name
                 ),
             ),
+            PopupType::EditSavedSearch {
+                search_name,
+                search_input,
+                description_input,
+                disabled,
+                selected_field,
+            } => self.build_edit_saved_search_defaults(
+                search_name,
+                search_input,
+                description_input,
+                *disabled,
+                *selected_field,
+            ),
         }
     }
 
@@ -491,6 +504,63 @@ impl PopupBuilder {
             "{}Use Keyring: {}\n",
             use_keyring_marker, use_keyring
         ));
+
+        content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
+        (title, content)
+    }
+
+    fn build_edit_saved_search_defaults(
+        &self,
+        search_name: &str,
+        search_input: &str,
+        description_input: &str,
+        disabled: bool,
+        selected_field: SavedSearchField,
+    ) -> (String, String) {
+        let title = format!("Edit Saved Search '{}'", search_name);
+        let mut content = String::from("Edit saved search:\n\n");
+
+        let search_marker = if selected_field == SavedSearchField::Search {
+            "> "
+        } else {
+            "  "
+        };
+        let description_marker = if selected_field == SavedSearchField::Description {
+            "> "
+        } else {
+            "  "
+        };
+        let disabled_marker = if selected_field == SavedSearchField::Disabled {
+            "> "
+        } else {
+            "  "
+        };
+
+        content.push_str(&format!(
+            "{}Search Query: {}\n",
+            search_marker,
+            if search_input.is_empty() {
+                "(unchanged)".to_string()
+            } else {
+                format!(
+                    "(will update: {})",
+                    &search_input[..search_input.len().min(40)]
+                )
+            }
+        ));
+        content.push_str(&format!(
+            "{}Description: {}\n",
+            description_marker,
+            if description_input.is_empty() {
+                "(unchanged)".to_string()
+            } else {
+                format!(
+                    "(will update: {})",
+                    &description_input[..description_input.len().min(40)]
+                )
+            }
+        ));
+        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
         (title, content)

@@ -266,6 +266,43 @@ impl SplunkClient {
         )
     }
 
+    /// Update an existing saved search.
+    ///
+    /// Only provided fields are updated; omitted fields retain their current values.
+    ///
+    /// # Arguments
+    /// * `name` - The name of the saved search to update
+    /// * `search` - Optional new search query (SPL)
+    /// * `description` - Optional new description
+    /// * `disabled` - Optional enable/disable flag
+    ///
+    /// # Returns
+    /// Ok(()) on success, or `ClientError::NotFound` if the saved search doesn't exist.
+    pub async fn update_saved_search(
+        &mut self,
+        name: &str,
+        search: Option<&str>,
+        description: Option<&str>,
+        disabled: Option<bool>,
+    ) -> Result<()> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::update_saved_search(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                search,
+                description,
+                disabled,
+                self.max_retries,
+                self.metrics.as_ref(),
+            )
+            .await
+        )
+    }
+
     /// Validate SPL syntax without executing the search.
     ///
     /// Sends the query to Splunk's search parser endpoint to check for

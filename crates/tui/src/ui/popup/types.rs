@@ -3,7 +3,7 @@
 //! This module contains the `PopupType` enum which defines all possible
 //! popup dialog types used throughout the TUI application.
 
-use crate::ui::popup::ProfileField;
+use crate::ui::popup::{ProfileField, SavedSearchField};
 
 /// The type/kind of popup dialog.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -151,4 +151,17 @@ pub enum PopupType {
     },
     /// Profile deletion confirmation
     DeleteProfileConfirm { profile_name: String },
+    /// Edit saved search dialog
+    EditSavedSearch {
+        /// Name of the saved search being edited
+        search_name: String,
+        /// Current search query input
+        search_input: String,
+        /// Current description input
+        description_input: String,
+        /// Disabled toggle state
+        disabled: bool,
+        /// Currently selected field for navigation
+        selected_field: SavedSearchField,
+    },
 }

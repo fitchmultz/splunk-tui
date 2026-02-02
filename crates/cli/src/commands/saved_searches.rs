@@ -39,6 +39,21 @@ pub enum SavedSearchesCommand {
         #[arg(short, long, default_value = "100")]
         count: usize,
     },
+    /// Edit a saved search
+    Edit {
+        /// Name of the saved search to edit
+        #[arg(value_name = "NAME")]
+        name: String,
+        /// New search query (SPL)
+        #[arg(short, long)]
+        search: Option<String>,
+        /// New description
+        #[arg(short, long)]
+        description: Option<String>,
+        /// Enable/disable the saved search
+        #[arg(long)]
+        disabled: Option<bool>,
+    },
 }
 
 pub async fn run(
@@ -71,6 +86,22 @@ pub async fn run(
                 count,
                 output_format,
                 output_file.clone(),
+                cancel,
+            )
+            .await
+        }
+        SavedSearchesCommand::Edit {
+            name,
+            search,
+            description,
+            disabled,
+        } => {
+            run_edit(
+                config,
+                &name,
+                search.as_deref(),
+                description.as_deref(),
+                disabled,
                 cancel,
             )
             .await
@@ -186,6 +217,36 @@ async fn run_run(
         );
     } else {
         print!("{}", output);
+    }
+
+    Ok(())
+}
+
+async fn run_edit(
+    config: splunk_config::Config,
+    name: &str,
+    search: Option<&str>,
+    description: Option<&str>,
+    disabled: Option<bool>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Editing saved search: {}", name);
+
+    // Validate at least one field is provided
+    if search.is_none() && description.is_none() && disabled.is_none() {
+        return Err(anyhow::anyhow!(
+            "At least one field must be provided to update (--search, --description, or --disabled)"
+        ));
+    }
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    tokio::select! {
+        res = client.update_saved_search(name, search, description, disabled) => {
+            res?;
+            eprintln!("Saved search '{}' updated successfully", name);
+        }
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
     }
 
     Ok(())

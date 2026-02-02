@@ -3,16 +3,17 @@
 //! This module tests the Splunk saved searches API:
 //! - Listing all saved searches
 //! - Creating new saved searches
+//! - Updating saved searches
 //! - Deleting saved searches
 //! - SplunkClient interface for saved searches
 //!
 //! # Invariants
 //! - Saved searches are returned with their names, queries, and metadata
 //! - Creating a saved search requires a unique name and valid SPL query
+//! - Updating a saved search only modifies provided fields
 //! - Deleting a saved search returns success for existing searches
 //!
 //! # What this does NOT handle
-//! - Updating existing saved searches
 //! - Scheduling configuration for saved searches
 
 mod common;
@@ -300,4 +301,106 @@ async fn test_splunk_client_get_saved_search() {
         search.search,
         "index=_internal sourcetype=splunkd log_level=ERROR | head 100"
     );
+}
+
+#[tokio::test]
+async fn test_update_saved_search_success() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/saved/searches/my-search"))
+        .and(query_param("output_mode", "json"))
+        .and(body_string_contains("search=index%3Dmain"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("{}"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::update_saved_search(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "my-search",
+        Some("index=main"),
+        None,
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_update_saved_search_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/saved/searches/NonExistentSearch"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(404).set_body_string("Not Found"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::update_saved_search(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "NonExistentSearch",
+        Some("index=main"),
+        None,
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(
+        err.to_string().contains("not found"),
+        "Error should indicate resource not found: {}",
+        err
+    );
+}
+
+#[tokio::test]
+async fn test_splunk_client_update_saved_search() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/saved/searches/my-search"))
+        .and(query_param("output_mode", "json"))
+        .and(body_string_contains("search=index%3Dmain"))
+        .and(body_string_contains("description=Updated+description"))
+        .and(body_string_contains("disabled=true"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("{}"))
+        .mount(&mock_server)
+        .await;
+
+    use secrecy::SecretString;
+    use splunk_client::{AuthStrategy, SplunkClient};
+
+    let strategy = AuthStrategy::ApiToken {
+        token: SecretString::new("test-token".to_string().into()),
+    };
+
+    let mut client = SplunkClient::builder()
+        .base_url(mock_server.uri())
+        .auth_strategy(strategy)
+        .build()
+        .unwrap();
+
+    let result = client
+        .update_saved_search(
+            "my-search",
+            Some("index=main"),
+            Some("Updated description"),
+            Some(true),
+        )
+        .await;
+
+    assert!(result.is_ok());
 }

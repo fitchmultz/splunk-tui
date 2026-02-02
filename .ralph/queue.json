@@ -46,44 +46,6 @@
       "custom_fields": {}
     },
     {
-      "id": "RQ-0256",
-      "status": "todo",
-      "title": "Add saved search editing capabilities",
-      "priority": "medium",
-      "tags": [
-        "cli",
-        "tui",
-        "saved-searches",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/search.rs",
-        "crates/client/src/endpoints/search.rs",
-        "crates/cli/src/commands/saved_searches.rs",
-        "crates/tui/src/ui/screens/saved_searches.rs"
-      ],
-      "evidence": [
-        "Current saved search support includes list, info, and run - but no edit.",
-        "Splunk REST API supports POST /services/saved/searches/{name} for updates.",
-        "Users need to modify saved search queries, schedules, and alert actions."
-      ],
-      "plan": [
-        "Add update_saved_search() method to client.",
-        "Add modify subcommand to CLI saved-searches command.",
-        "Add edit dialog to TUI saved searches screen.",
-        "Support editing query, schedule, description, and dispatch parameters.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0252",
       "status": "todo",
       "title": "Add search macro management",

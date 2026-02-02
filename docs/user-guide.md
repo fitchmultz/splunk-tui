@@ -245,6 +245,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected saved search name
 - `Enter`: Run selected search
 - `j/k or Up/Down`: Navigate list
+- `e`: Edit selected saved search
 
 #### Internal Logs Screen
 - `r`: Refresh logs
