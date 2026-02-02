@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0297",
-      "status": "todo",
-      "title": "Route macro load/create/update/delete results through App::update",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tui",
-        "macros",
-        "bug"
-      ],
-      "scope": [
-        "crates/tui/src/app/actions.rs",
-        "crates/tui/src/app/actions/data_loading.rs",
-        "crates/tui/src/action/variants.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/app/actions/data_loading.rs:55-91 handles MacrosLoaded/MacroCreated/MacroUpdated/MacroDeleted",
-        "crates/tui/src/app/actions.rs:76-106 dispatches data-loading actions but omits Macro* actions"
-      ],
-      "plan": [
-        "Add MacrosLoaded/MacroCreated/MacroUpdated/MacroDeleted to the data-loading match in app/actions.rs.",
-        "Ensure LoadMacros also sets loading state (either in navigation/system handler or a new helper).",
-        "Add tests for macro screen data updates and success/error toasts.",
-        "Confirm macro actions update App state and selection appropriately.",
-        "Verify by running `make test` and confirming macro-related tests pass."
-      ],
-      "notes": [
-        "Principles: D (localize change), H (operational hygiene), E (make bugs hard to write).",
-        "Why: Macro results are produced but never applied, leaving the TUI stale and confusing.",
-        "Minimal fix: Route Macro* actions into handle_data_loading_action and set loading state.",
-        "Acceptance: Macros list/toasts update on load/create/update/delete and tests cover these flows."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0298",
       "status": "todo",
       "title": "Implement create-macro dialog flow in TUI",

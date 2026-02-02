@@ -85,12 +85,18 @@ pub async fn handle_create_macro(
         guard.create_macro(macro_params).await
     };
 
+    let is_ok = result.is_ok();
     let action = match result {
         Ok(()) => Action::MacroCreated(Ok(())),
         Err(e) => Action::MacroCreated(Err(Arc::new(e))),
     };
 
     let _ = action_tx.send(action).await;
+
+    // Refresh macros list on success
+    if is_ok {
+        let _ = action_tx.send(Action::LoadMacros).await;
+    }
 }
 
 /// Update an existing macro.
@@ -115,12 +121,18 @@ pub async fn handle_update_macro(
         guard.update_macro(macro_params).await
     };
 
+    let is_ok = result.is_ok();
     let action = match result {
         Ok(()) => Action::MacroUpdated(Ok(())),
         Err(e) => Action::MacroUpdated(Err(Arc::new(e))),
     };
 
     let _ = action_tx.send(action).await;
+
+    // Refresh macros list on success
+    if is_ok {
+        let _ = action_tx.send(Action::LoadMacros).await;
+    }
 }
 
 /// Delete a macro.
@@ -130,12 +142,18 @@ pub async fn handle_delete_macro(client: SharedClient, action_tx: Sender<Action>
         guard.delete_macro(&name).await
     };
 
+    let is_ok = result.is_ok();
     let action = match result {
         Ok(()) => Action::MacroDeleted(Ok(name)),
         Err(e) => Action::MacroDeleted(Err(Arc::new(e))),
     };
 
     let _ = action_tx.send(action).await;
+
+    // Refresh macros list on success
+    if is_ok {
+        let _ = action_tx.send(Action::LoadMacros).await;
+    }
 }
 
 #[allow(dead_code)]

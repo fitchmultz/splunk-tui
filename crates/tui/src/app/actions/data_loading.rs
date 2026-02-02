@@ -64,8 +64,6 @@ impl App {
                 self.toasts
                     .push(Toast::success("Macro created successfully"));
                 self.loading = false;
-                // Refresh the list
-                self.loading = true;
             }
             Action::MacroCreated(Err(e)) => {
                 self.handle_data_load_error("create macro", e);
@@ -818,5 +816,158 @@ mod tests {
         assert_eq!(app.toasts.len(), 1);
         assert!(!app.loading);
         assert!(app.toasts[0].message.contains("config stanzas"));
+    }
+
+    // Macro action handler tests
+    #[test]
+    fn test_macros_loaded_updates_state() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let macros = vec![
+            splunk_client::models::Macro {
+                name: "test_macro".to_string(),
+                definition: "index=main | head 10".to_string(),
+                args: None,
+                description: Some("Test macro".to_string()),
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+            splunk_client::models::Macro {
+                name: "param_macro(2)".to_string(),
+                definition: "index=$arg1$ | head $arg2$".to_string(),
+                args: Some("arg1,arg2".to_string()),
+                description: None,
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+        ];
+
+        app.handle_data_loading_action(Action::MacrosLoaded(Ok(macros)));
+
+        assert!(app.macros.is_some());
+        assert_eq!(app.macros.as_ref().unwrap().len(), 2);
+        assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_macros_loaded_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacrosLoaded(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("macros"));
+    }
+
+    #[test]
+    fn test_macro_created_success_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        app.handle_data_loading_action(Action::MacroCreated(Ok(())));
+
+        assert!(!app.loading);
+        assert_eq!(app.toasts.len(), 1);
+        assert!(app.toasts[0].message.contains("created"));
+    }
+
+    #[test]
+    fn test_macro_created_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacroCreated(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("create macro"));
+    }
+
+    #[test]
+    fn test_macro_updated_success_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        app.handle_data_loading_action(Action::MacroUpdated(Ok(())));
+
+        assert!(!app.loading);
+        assert_eq!(app.toasts.len(), 1);
+        assert!(app.toasts[0].message.contains("updated"));
+    }
+
+    #[test]
+    fn test_macro_updated_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacroUpdated(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("update macro"));
+    }
+
+    #[test]
+    fn test_macro_deleted_success_removes_from_list() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+        app.macros = Some(vec![
+            splunk_client::models::Macro {
+                name: "macro_to_delete".to_string(),
+                definition: "index=main".to_string(),
+                args: None,
+                description: None,
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+            splunk_client::models::Macro {
+                name: "keep_this_macro".to_string(),
+                definition: "index=internal".to_string(),
+                args: None,
+                description: None,
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+        ]);
+
+        app.handle_data_loading_action(Action::MacroDeleted(Ok("macro_to_delete".to_string())));
+
+        assert!(!app.loading);
+        assert_eq!(app.toasts.len(), 1);
+        assert!(app.toasts[0].message.contains("deleted"));
+        // Verify the macro was removed from the list
+        assert_eq!(app.macros.as_ref().unwrap().len(), 1);
+        assert_eq!(app.macros.as_ref().unwrap()[0].name, "keep_this_macro");
+    }
+
+    #[test]
+    fn test_macro_deleted_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacroDeleted(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("delete macro"));
     }
 }
