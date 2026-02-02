@@ -285,6 +285,11 @@ impl SplunkClient {
         description: Option<&str>,
         disabled: Option<bool>,
     ) -> Result<()> {
+        let params = endpoints::SavedSearchUpdateParams {
+            search,
+            description,
+            disabled,
+        };
         crate::retry_call!(
             self,
             __token,
@@ -293,9 +298,7 @@ impl SplunkClient {
                 &self.base_url,
                 &__token,
                 name,
-                search,
-                description,
-                disabled,
+                &params,
                 self.max_retries,
                 self.metrics.as_ref(),
             )

@@ -315,15 +315,19 @@ async fn test_update_saved_search_success() {
         .mount(&mock_server)
         .await;
 
+    let params = endpoints::SavedSearchUpdateParams {
+        search: Some("index=main"),
+        description: None,
+        disabled: None,
+    };
+
     let client = Client::new();
     let result = endpoints::update_saved_search(
         &client,
         &mock_server.uri(),
         "test-token",
         "my-search",
-        Some("index=main"),
-        None,
-        None,
+        &params,
         3,
         None,
     )
@@ -343,15 +347,19 @@ async fn test_update_saved_search_not_found() {
         .mount(&mock_server)
         .await;
 
+    let params = endpoints::SavedSearchUpdateParams {
+        search: Some("index=main"),
+        description: None,
+        disabled: None,
+    };
+
     let client = Client::new();
     let result = endpoints::update_saved_search(
         &client,
         &mock_server.uri(),
         "test-token",
         "NonExistentSearch",
-        Some("index=main"),
-        None,
-        None,
+        &params,
         3,
         None,
     )

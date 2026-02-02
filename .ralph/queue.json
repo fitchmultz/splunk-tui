@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0295",
-      "status": "todo",
-      "title": "Refactor saved search update endpoint to reduce argument count",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "lint",
-        "client",
-        "saved-searches"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search/saved.rs",
-        "crates/client/src/client/search.rs",
-        "make ci"
-      ],
-      "evidence": [
-        "make ci -> clippy warning: too many arguments (9/7) at crates/client/src/endpoints/search/saved.rs:221; -D warnings stops lint"
-      ],
-      "plan": [
-        "Introduce a SavedSearchUpdateParams struct in crates/client/src/endpoints/search/saved.rs.",
-        "Update update_saved_search signature to accept the struct and propagate through client API.",
-        "Update any callers and tests to use the new struct.",
-        "Add/update tests for update_saved_search parameter handling.",
-        "Verify by running `make lint` and confirming the warning is gone."
-      ],
-      "notes": [
-        "Principles: KISS, E (make bugs hard to write).",
-        "Why: Lint currently fails and long positional parameters are a common source of argument-order bugs.",
-        "Minimal fix: Replace positional arguments with a struct and update call sites.",
-        "Acceptance: make lint (and make ci) runs without too-many-arguments warnings."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-02T14:36:46Z",
-      "updated_at": "2026-02-02T14:36:46Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0296",
       "status": "todo",
       "title": "Apply ConfigFilesLoaded/ConfigStanzasLoaded results to TUI state",

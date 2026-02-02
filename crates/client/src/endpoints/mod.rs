@@ -54,9 +54,9 @@ pub use parsing::check_log_parsing_health;
 pub use request::send_request_with_retry;
 pub use roles::{create_role, delete_role, list_roles, modify_role};
 pub use search::{
-    CreateJobOptions, OutputMode, create_job, create_saved_search, delete_saved_search,
-    get_job_status, get_results, get_saved_search, list_saved_searches, update_saved_search,
-    wait_for_job, wait_for_job_with_progress,
+    CreateJobOptions, OutputMode, SavedSearchUpdateParams, create_job, create_saved_search,
+    delete_saved_search, get_job_status, get_results, get_saved_search, list_saved_searches,
+    update_saved_search, wait_for_job, wait_for_job_with_progress,
 };
 pub use search_peers::list_search_peers;
 pub use server::*;
