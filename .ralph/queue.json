@@ -2,39 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0284",
-      "status": "todo",
-      "title": "Split oversized keybinding screen bindings module",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "keybindings"
-      ],
-      "scope": [
-        "crates/tui/src/input/keymap/bindings/screens.rs"
-      ],
-      "evidence": [
-        "wc -l crates/tui/src/input/keymap/bindings/screens.rs => 1552 (exceeds 1000 LOC hard limit in AGENTS.md)."
-      ],
-      "plan": [
-        "Group bindings by screen (indexes, apps, users, settings, etc.) and extract each group into its own module under crates/tui/src/input/keymap/bindings/screens/.",
-        "Keep a small screens/mod.rs to aggregate and return the combined binding list in the same order as today.",
-        "Ensure docs generation and keybinding rendering keep the existing ordering and content.",
-        "Verify by running `cargo test -p splunk-tui --test doc_generation_tests` and `make lint-docs`, then confirm each new file is below 700 LOC with `wc -l`."
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-01T20:19:45Z",
-      "updated_at": "2026-02-01T20:19:45Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0285",
       "status": "todo",
       "title": "Split oversized client retry tests",
