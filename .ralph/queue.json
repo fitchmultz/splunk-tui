@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0305",
-      "status": "todo",
-      "title": "Fix `SKIP_LIVE_TESTS=1` to actually skip live tests",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "ci"
-      ],
-      "scope": [
-        "Makefile",
-        "make test-live"
-      ],
-      "evidence": [
-        "Makefile:88-96 attempts to skip with `exit 0` inside an `if`, but subsequent recipe lines still run because each Makefile line uses a separate shell.",
-        "cmd: SKIP_LIVE_TESTS=1 make test-live -> prints \"Skipping live tests\" then still runs `tests/live_tests.rs` for both splunk-client and splunk-cli. See /tmp/splunk-tui-make-test-live-skip.log"
-      ],
-      "plan": [
-        "Refactor the `test-live` recipe to a single-shell `if/else` (or use `.ONESHELL:`) so skip actually stops execution",
-        "Add a cheap guard assertion: when SKIP_LIVE_TESTS=1, no `cargo test -p * --test live_tests` is executed",
-        "Verify by running `SKIP_LIVE_TESTS=1 make test-live` and confirming no tests execute",
-        "Verify by running `SKIP_LIVE_TESTS=0 make test-live` and confirming ignored tests run"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0306",
       "status": "todo",
       "title": "Make `make lint` fail when clippy -D warnings would fail (don’t rely on `cargo clippy --fix` exit code)",

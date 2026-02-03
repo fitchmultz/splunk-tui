@@ -89,10 +89,10 @@ test-integration:
 test-live:
 	@if [ "$$SKIP_LIVE_TESTS" = "1" ]; then \
 		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
-		exit 0; \
+	else \
+		cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored; \
+		cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored; \
 	fi
-	@cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored
-	@cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored
 
 # Manual live server test script
 test-live-manual:
