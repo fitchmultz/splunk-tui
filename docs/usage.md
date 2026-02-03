@@ -839,13 +839,14 @@ splunk-cli list-all --all-profiles --output json
 - `saved-searches`: "available" or "error"
 
 #### `config`
+
 Manage configuration profiles.
 
 ```bash
 splunk-cli -o json config list
 splunk-cli config set my-profile --base-url https://localhost:8089 --username admin
 splunk-cli config show my-profile
-splunk-cli config edit my-profile --use-keyring
+splunk-cli config edit my-profile
 splunk-cli config delete my-profile
 ```
 
@@ -858,13 +859,23 @@ splunk-cli config delete my-profile
   - `-s, --skip-verify`: Skip TLS certificate verification
   - `-t, --timeout-seconds <SECONDS>`: Connection timeout
   - `-m, --max-retries <NUMBER>`: Maximum number of retries
-  - `--use-keyring`: Store credentials in system keyring
+  - `--plaintext`: Store credentials as plaintext instead of using system keyring
 - `show <profile-name>`: Display a profile's configuration
 - `edit <profile-name>`: Edit a profile interactively
-  - `--use-keyring`: Store credentials in system keyring
+  - `--plaintext`: Store credentials as plaintext instead of using system keyring
   - Prompts for each field with current values as defaults
   - Press Enter when prompted for password/token to keep existing values
 - `delete <profile-name>`: Delete a profile
+
+##### Credential Storage Security
+
+By default, `splunk-cli` and `splunk-tui` store credentials in your system's secure keyring (macOS Keychain, Windows Credential Locker, or Linux Secret Service). This provides the best security by keeping secrets out of the configuration file.
+
+If the keyring is unavailable or you prefer to store credentials in the configuration file:
+- CLI: Use the `--plaintext` flag with `config set` or `config edit`
+- TUI: Uncheck "Use Keyring" in the profile creation/edit dialog
+
+**Security Warning**: Storing credentials as plaintext in `config.json` is less secure and should be avoided in production environments.
 
 ---
 

@@ -184,6 +184,51 @@ impl ConfigManager {
         Ok(SecureValue::Keyring { keyring_account })
     }
 
+    /// Attempts to store a password in the system keyring, returning plaintext on failure.
+    ///
+    /// This is the default behavior for credential storage - it tries the keyring first
+    /// for security, but falls back to plaintext storage if the keyring is unavailable.
+    /// A warning is logged when fallback occurs.
+    pub fn try_store_password_in_keyring(
+        &self,
+        profile_name: &str,
+        username: &str,
+        password: &SecretString,
+    ) -> SecureValue {
+        match self.store_password_in_keyring(profile_name, username, password) {
+            Ok(keyring_value) => keyring_value,
+            Err(e) => {
+                tracing::warn!(
+                    "Failed to store password in keyring: {}. Storing as plaintext.",
+                    e
+                );
+                SecureValue::Plain(password.clone())
+            }
+        }
+    }
+
+    /// Attempts to store an API token in the system keyring, returning plaintext on failure.
+    ///
+    /// This is the default behavior for credential storage - it tries the keyring first
+    /// for security, but falls back to plaintext storage if the keyring is unavailable.
+    /// A warning is logged when fallback occurs.
+    pub fn try_store_token_in_keyring(
+        &self,
+        profile_name: &str,
+        token: &SecretString,
+    ) -> SecureValue {
+        match self.store_token_in_keyring(profile_name, token) {
+            Ok(keyring_value) => keyring_value,
+            Err(e) => {
+                tracing::warn!(
+                    "Failed to store API token in keyring: {}. Storing as plaintext.",
+                    e
+                );
+                SecureValue::Plain(token.clone())
+            }
+        }
+    }
+
     /// Returns a reference to all configured profiles.
     pub fn list_profiles(&self) -> &BTreeMap<String, ProfileConfig> {
         &self.config_file.profiles
@@ -527,5 +572,68 @@ mod tests {
                 .to_string()
                 .contains("Profile 'nonexistent' not found")
         );
+    }
+
+    #[test]
+    #[serial]
+    fn test_try_store_password_in_keyring_fallback() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-try-password-fallback";
+        let username = "admin";
+        let password_str = "test-password";
+        let password = SecretString::new(password_str.to_string().into());
+
+        // This should try keyring and fall back to plaintext if keyring fails
+        let result = manager.try_store_password_in_keyring(profile_name, username, &password);
+
+        // Result should be either Keyring (if keyring succeeded) or Plain (if it failed/fell back)
+        // Both are valid - the important thing is that the password value is preserved
+        match result {
+            SecureValue::Keyring { keyring_account } => {
+                // Keyring succeeded - verify the account name is correct
+                assert_eq!(keyring_account, format!("{}-{}", profile_name, username));
+                // Clean up the keyring entry
+                let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account).unwrap();
+                let _ = entry.delete_credential();
+            }
+            SecureValue::Plain(stored) => {
+                // Keyring failed - verify the password value is preserved
+                use secrecy::ExposeSecret;
+                assert_eq!(stored.expose_secret(), password_str);
+            }
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_try_store_token_in_keyring_fallback() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-try-token-fallback";
+        let token_str = "test-token-abc123";
+        let token = SecretString::new(token_str.to_string().into());
+
+        // This should try keyring and fall back to plaintext if keyring fails
+        let result = manager.try_store_token_in_keyring(profile_name, &token);
+
+        // Result should be either Keyring (if keyring succeeded) or Plain (if it failed/fell back)
+        // Both are valid - the important thing is that the token value is preserved
+        match result {
+            SecureValue::Keyring { keyring_account } => {
+                // Keyring succeeded - verify the account name is correct
+                assert_eq!(keyring_account, format!("{}-token", profile_name));
+                // Clean up the keyring entry
+                let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account).unwrap();
+                let _ = entry.delete_credential();
+            }
+            SecureValue::Plain(stored) => {
+                // Keyring failed - verify the token value is preserved
+                use secrecy::ExposeSecret;
+                assert_eq!(stored.expose_secret(), token_str);
+            }
+        }
     }
 }

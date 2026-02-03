@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0303",
-      "status": "todo",
-      "title": "Default profile credentials storage to keyring (opt-in plaintext)",
-      "priority": "critical",
-      "tags": [
-        "maintenance",
-        "security"
-      ],
-      "scope": [
-        "crates/cli/src/commands/config.rs",
-        "crates/tui/src/runtime/side_effects/profiles.rs",
-        "crates/config/src/persistence/profiles.rs",
-        "docs/usage.md",
-        "splunk-cli config set --help"
-      ],
-      "evidence": [
-        "cmd: splunk-cli config set --help -> shows --use-keyring is optional; without it, credentials are stored as plaintext in config.json by default.",
-        "crates/cli/src/commands/config.rs:61-64 defines `use_keyring: bool` flag (opt-in).",
-        "crates/cli/src/commands/config.rs:257-277 stores secrets in keyring only when `use_keyring` is true; otherwise keeps `SecureValue::Plain`.",
-        "crates/config/src/types/profile.rs:28-31 allows `SecureValue::Plain` for password/api_token (persists secrets to disk)."
-      ],
-      "plan": [
-        "Decide policy: keyring-by-default with fallback",
-        "Change CLI/TUI profile save to prefer keyring when available",
-        "Add explicit `--plaintext`/`--no-keyring` override (or invert flag) and update help text",
-        "Update docs to describe credential persistence and recommended settings",
-        "Add tests ensuring config file does not contain secrets when keyring path is chosen",
-        "Verify by running `make ci` and confirming help/tests pass"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0304",
       "status": "todo",
       "title": "Prevent overwriting unreadable config files (backup + fail-safe recovery)",

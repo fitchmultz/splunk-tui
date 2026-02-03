@@ -260,47 +260,42 @@ pub async fn handle_save_profile(
     tokio::spawn(async move {
         let mut cm = config_manager_clone.lock().await;
 
-        // If use_keyring is enabled, store credentials in keyring before saving
+        // Store credentials: try keyring first (default), fallback to plaintext with warning
+        // use_keyring=false means user explicitly requested plaintext storage
         let mut profile_to_save = profile.clone();
 
         if use_keyring {
-            // Store password in keyring if it's a plain value
+            // Try keyring first for password
             if let (Some(username), Some(splunk_config::types::SecureValue::Plain(pw))) =
                 (&profile.username, &profile.password)
             {
-                match cm.store_password_in_keyring(&name_clone, username, pw) {
-                    Ok(keyring_value) => {
-                        profile_to_save.password = Some(keyring_value);
-                    }
-                    Err(e) => {
-                        let _ = tx_clone
-                            .send(Action::Notify(
-                                ToastLevel::Warning,
-                                format!(
-                                    "Failed to store password in keyring: {}. Saving as plaintext.",
-                                    e
-                                ),
-                            ))
-                            .await;
-                    }
+                let keyring_value = cm.try_store_password_in_keyring(&name_clone, username, pw);
+                // Check if we fell back to plaintext
+                if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
+                    let _ = tx_clone
+                        .send(Action::Notify(
+                            ToastLevel::Warning,
+                            "Failed to store password in keyring. Saving as plaintext.".to_string(),
+                        ))
+                        .await;
                 }
+                profile_to_save.password = Some(keyring_value);
             }
 
-            // Store API token in keyring if it's a plain value
+            // Try keyring first for API token
             if let Some(splunk_config::types::SecureValue::Plain(token)) = &profile.api_token {
-                match cm.store_token_in_keyring(&name_clone, token) {
-                    Ok(keyring_value) => {
-                        profile_to_save.api_token = Some(keyring_value);
-                    }
-                    Err(e) => {
-                        let _ = tx_clone
-                            .send(Action::Notify(
-                                ToastLevel::Warning,
-                                format!("Failed to store API token in keyring: {}. Saving as plaintext.", e),
-                            ))
-                            .await;
-                    }
+                let keyring_value = cm.try_store_token_in_keyring(&name_clone, token);
+                // Check if we fell back to plaintext
+                if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
+                    let _ = tx_clone
+                        .send(Action::Notify(
+                            ToastLevel::Warning,
+                            "Failed to store API token in keyring. Saving as plaintext."
+                                .to_string(),
+                        ))
+                        .await;
                 }
+                profile_to_save.api_token = Some(keyring_value);
             }
         }
 
