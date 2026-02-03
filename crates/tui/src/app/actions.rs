@@ -52,8 +52,11 @@ impl App {
             | Action::LoadRoles { .. }
             | Action::LoadSearchPeers { .. }
             | Action::LoadInputs { .. }
-            | Action::LoadFiredAlerts
+            | Action::LoadForwarders { .. }
+            | Action::LoadFiredAlerts { .. }
             | Action::LoadLookups { .. }
+            | Action::LoadDashboards { .. }
+            | Action::LoadDataModels { .. }
             | Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps

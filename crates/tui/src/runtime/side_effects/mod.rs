@@ -281,8 +281,8 @@ pub async fn handle_side_effects(
         Action::LoadConfigFiles => {
             configs::handle_load_config_files(client, tx).await;
         }
-        Action::LoadFiredAlerts => {
-            alerts::handle_load_fired_alerts(client, tx).await;
+        Action::LoadFiredAlerts { count, offset } => {
+            alerts::handle_load_fired_alerts(client, tx, count, offset).await;
         }
         Action::LoadMoreFiredAlerts => {
             // This action is handled by the main loop which has access to state

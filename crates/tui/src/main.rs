@@ -276,17 +276,7 @@ async fn main() -> Result<()> {
                 }
 
                 // Handle LoadMore* actions by converting to Load* with pagination params
-                let action: Action = match action {
-                    Action::LoadMoreIndexes => app.load_more_action_for_current_screen().unwrap_or(action),
-                    Action::LoadMoreJobs => app.load_more_action_for_current_screen().unwrap_or(action),
-                    Action::LoadMoreApps => app.load_more_action_for_current_screen().unwrap_or(action),
-                    Action::LoadMoreUsers => app.load_more_action_for_current_screen().unwrap_or(action),
-                    Action::LoadMoreInternalLogs => Action::LoadInternalLogs {
-                        count: app.internal_logs_defaults.count,
-                        earliest: app.internal_logs_defaults.earliest_time.clone(),
-                    },
-                    _ => action,
-                };
+                let action = app.translate_load_more_action(action);
 
                 // Handle input -> Action
                 if let Action::Input(key) = action {
@@ -299,15 +289,20 @@ async fn main() -> Result<()> {
                             break;
                         }
 
-                        // Handle LoadMoreWorkload* actions by deriving follow-up Load* actions
-                        // These are produced by workload input handler but need to be translated
-                        // to concrete LoadWorkloadPools/LoadWorkloadRules with pagination params
+                        // Translate LoadMore* actions produced by input handlers
+                        let a = app.translate_load_more_action(a);
+
+                        // Handle any additional follow-up actions for pagination
                         let followup_action = match a {
-                            Action::LoadMoreWorkloadPools => {
-                                app.load_more_action_for_current_screen()
+                            Action::LoadWorkloadPools { .. } => {
+                                // If this was translated from LoadMoreWorkloadPools,
+                                // we don't need an additional follow-up
+                                None
                             }
-                            Action::LoadMoreWorkloadRules => {
-                                app.load_more_action_for_current_screen()
+                            Action::LoadWorkloadRules { .. } => {
+                                // If this was translated from LoadMoreWorkloadRules,
+                                // we don't need an additional follow-up
+                                None
                             }
                             _ => None,
                         };
@@ -341,6 +336,8 @@ async fn main() -> Result<()> {
                             }
                             break;
                         }
+                        // Translate LoadMore* actions produced by mouse handlers
+                        let a = app.translate_load_more_action(a);
                         let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;

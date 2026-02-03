@@ -290,8 +290,13 @@ pub enum Action {
         /// Offset for pagination
         offset: u64,
     },
-    /// Load the list of fired alerts
-    LoadFiredAlerts,
+    /// Load the list of fired alerts with pagination
+    LoadFiredAlerts {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
     /// Load more fired alerts (pagination)
     LoadMoreFiredAlerts,
     /// Load audit events with time range

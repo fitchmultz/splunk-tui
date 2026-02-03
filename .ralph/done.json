@@ -1291,6 +1291,80 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0307",
+      "status": "done",
+      "title": "Fix TUI list pagination: LoadMore actions no-op/replace data instead of appending",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "ux",
+        "correctness"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/action/variants.rs",
+        "crates/tui/src/app/actions/navigation.rs",
+        "crates/tui/src/app/actions/data_loading.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/app/input/lookups.rs",
+        "crates/tui/src/app/input/forwarders.rs",
+        "crates/tui/src/app/input/search_peers.rs",
+        "crates/tui/src/input/keymap/bindings",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/runtime/side_effects/indexes.rs",
+        "crates/tui/src/runtime/side_effects/jobs.rs",
+        "crates/tui/src/runtime/side_effects/apps.rs",
+        "crates/tui/src/runtime/side_effects/users.rs",
+        "crates/tui/src/runtime/side_effects/inputs.rs",
+        "crates/tui/src/runtime/side_effects/search_peers.rs",
+        "crates/tui/src/runtime/side_effects/forwarders.rs",
+        "crates/tui/src/runtime/side_effects/lookups.rs",
+        "crates/tui/src/runtime/side_effects/alerts.rs",
+        "crates/tui/src/runtime/side_effects/dashboards.rs",
+        "crates/tui/src/runtime/side_effects/datamodels.rs",
+        "cargo test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:278-289 only translates LoadMoreIndexes/Jobs/Apps/Users/InternalLogs; other LoadMore* actions (SearchPeers/Forwarders/Lookups/Inputs/FiredAlerts/Dashboards/DataModels) pass through unchanged.",
+        "crates/tui/src/runtime/side_effects/mod.rs:235-290 and crates/tui/src/runtime/side_effects/mod.rs:470-494 match many LoadMore* actions with comments about the main loop but perform no side effects (no API calls, no follow-up actions).",
+        "crates/tui/src/app/actions/navigation.rs:85-96 explicitly treats LoadMore* actions as handled elsewhere and makes no state changes, so missing translation turns LoadMore into a full no-op.",
+        "crates/tui/src/app.rs:179-297 defines `load_more_action_for_current_screen()` returning concrete Load*{count,offset} actions for SearchPeers/Forwarders/Lookups/Dashboards/DataModels/WorkloadManagement, but main loop currently only calls it for a subset of LoadMore actions.",
+        "Key inputs currently dispatch LoadMore actions that don't reach any loader: keymap binds LoadMoreInputs/Dashboards/DataModels (crates/tui/src/input/keymap/bindings/screens/inputs.rs:31, dashboards.rs:31, datamodels.rs:31) and screen input handlers emit LoadMoreLookups/Forwarders/SearchPeers on 'n' (crates/tui/src/app/input/lookups.rs:73-76, forwarders.rs:62-65, search_peers.rs:66-69).",
+        "Most list loaders always emit `*Loaded` regardless of offset, which overwrites state on pagination: e.g. crates/tui/src/runtime/side_effects/indexes.rs:21-38 sends IndexesLoaded for offset>0 while crates/tui/src/app/actions/data_loading.rs:385-401 only appends on MoreIndexesLoaded.",
+        "Several side-effect modules already implement `handle_load_more_*` returning More*Loaded, but these functions are `#[allow(dead_code)]` and are not wired from the Action match (e.g. crates/tui/src/runtime/side_effects/lookups.rs:43-63, search_peers.rs:41-59, dashboards.rs:39-60).",
+        "Fired alerts pagination is structurally inconsistent: Action::LoadFiredAlerts has no count/offset (crates/tui/src/action/variants.rs:293-296) while the runtime expects pagination-driven follow-ups (crates/tui/src/runtime/side_effects/mod.rs:284-290)."
+      ],
+      "plan": [
+        "Expand main-loop LoadMore translation to cover all LoadMore* variants (SearchPeers/Forwarders/Lookups/Inputs/FiredAlerts/Dashboards/DataModels/Workload*), using `App::load_more_action_for_current_screen()` and current pagination state.",
+        "Standardize list side effects to emit `*Loaded` when offset == 0 and `More*Loaded` when offset > 0 (align with existing App append handlers).",
+        "Delete/merge `#[allow(dead_code)] handle_load_more_*` helpers by folding the offset-based dispatch into the primary `handle_load_*` functions (or dispatching to the existing helpers).",
+        "Make fired-alerts pagination representable: change `LoadFiredAlerts` to include `{count, offset}` (or introduce a new paged action) and update runtime + app navigation to use it.",
+        "Add focused tests per list type validating: initial load replaces, paged load appends, and each LoadMore trigger results in a concrete Load* action being executed.",
+        "Verify with `cargo test -p splunk-tui` and a manual smoke check on at least Inputs, Dashboards, and Lookups pagination."
+      ],
+      "notes": [
+        "This is currently a wiring/consistency issue: pagination state, More*Loaded variants, and App append handlers already exist for most lists.",
+        "Multiple side-effect modules include `#[allow(dead_code)]` pagination helpers; plan should prefer deleting these once a single offset-based dispatch path exists.",
+        "Fired alerts is the main API-shape outlier (LoadFiredAlerts lacks count/offset), so it needs an explicit action model change before pagination can work.",
+        "Fixed TUI list pagination: LoadMore actions now properly translate to concrete Load* actions with pagination params",
+        "Standardized all list side effects to emit *Loaded when offset==0 and More*Loaded when offset>0",
+        "Removed dead code: #[allow(dead_code)] handle_load_more_* functions consolidated into main handlers",
+        "Added pagination support to FiredAlerts (changed from unit variant to struct variant with count/offset)",
+        "All tests pass (345+ unit tests, integration tests, snapshot tests) and make ci succeeds"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T16:52:39.272119221Z",
+      "completed_at": "2026-02-03T16:52:39.272119221Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

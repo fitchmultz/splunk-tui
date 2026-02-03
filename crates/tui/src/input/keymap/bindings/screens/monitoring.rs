@@ -108,7 +108,10 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::LoadFiredAlerts),
+            action: Some(Action::LoadFiredAlerts {
+                count: 30,
+                offset: 0,
+            }),
             handles_input: true,
         },
         Keybinding {

@@ -16,17 +16,28 @@ use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
 
-/// Handle loading apps.
+/// Handle loading apps with pagination support.
+///
+/// Emits `AppsLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreAppsLoaded` when offset > 0 (pagination).
 pub async fn handle_load_apps(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         let mut c = client.lock().await;
         match c.list_apps(Some(count), Some(offset)).await {
             Ok(apps) => {
-                let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
+                } else {
+                    let _ = tx.send(Action::MoreAppsLoaded(Ok(apps))).await;
+                }
             }
             Err(e) => {
-                let _ = tx.send(Action::AppsLoaded(Err(Arc::new(e)))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::AppsLoaded(Err(Arc::new(e)))).await;
+                } else {
+                    let _ = tx.send(Action::MoreAppsLoaded(Err(Arc::new(e)))).await;
+                }
             }
         }
     });

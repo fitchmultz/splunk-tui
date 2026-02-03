@@ -14,7 +14,10 @@ use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
 
-/// Handle loading data models.
+/// Handle loading data models with pagination support.
+///
+/// Emits `DataModelsLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreDataModelsLoaded` when offset > 0 (pagination).
 pub async fn handle_load_datamodels(
     client: SharedClient,
     tx: Sender<Action>,
@@ -26,34 +29,20 @@ pub async fn handle_load_datamodels(
         let mut c = client.lock().await;
         match c.list_datamodels(Some(count), Some(offset)).await {
             Ok(datamodels) => {
-                let _ = tx.send(Action::DataModelsLoaded(Ok(datamodels))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::DataModelsLoaded(Ok(datamodels))).await;
+                } else {
+                    let _ = tx.send(Action::MoreDataModelsLoaded(Ok(datamodels))).await;
+                }
             }
             Err(e) => {
-                let _ = tx.send(Action::DataModelsLoaded(Err(Arc::new(e)))).await;
-            }
-        }
-    });
-}
-
-/// Handle loading more data models (pagination).
-#[allow(dead_code)]
-pub async fn handle_load_more_datamodels(
-    client: SharedClient,
-    tx: Sender<Action>,
-    count: u64,
-    offset: u64,
-) {
-    let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_datamodels(Some(count), Some(offset)).await {
-            Ok(datamodels) => {
-                let _ = tx.send(Action::MoreDataModelsLoaded(Ok(datamodels))).await;
-            }
-            Err(e) => {
-                let _ = tx
-                    .send(Action::MoreDataModelsLoaded(Err(Arc::new(e))))
-                    .await;
+                if offset == 0 {
+                    let _ = tx.send(Action::DataModelsLoaded(Err(Arc::new(e)))).await;
+                } else {
+                    let _ = tx
+                        .send(Action::MoreDataModelsLoaded(Err(Arc::new(e))))
+                        .await;
+                }
             }
         }
     });

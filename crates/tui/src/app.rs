@@ -141,7 +141,10 @@ impl App {
                 offset: 0,
             }),
             CurrentScreen::Configs => Some(Action::LoadConfigFiles),
-            CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts),
+            CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts {
+                count: self.fired_alerts_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Forwarders => Some(Action::LoadForwarders {
                 count: self.forwarders_pagination.page_size,
                 offset: 0,
@@ -248,6 +251,26 @@ impl App {
                     None
                 }
             }
+            CurrentScreen::Inputs => {
+                if self.inputs_pagination.can_load_more() {
+                    Some(Action::LoadInputs {
+                        count: self.inputs_pagination.page_size,
+                        offset: self.inputs_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::FiredAlerts => {
+                if self.fired_alerts_pagination.can_load_more() {
+                    Some(Action::LoadFiredAlerts {
+                        count: self.fired_alerts_pagination.page_size,
+                        offset: self.fired_alerts_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
             CurrentScreen::Dashboards => {
                 if self.dashboards_pagination.can_load_more() {
                     Some(Action::LoadDashboards {
@@ -294,6 +317,41 @@ impl App {
                 }
             }
             _ => None,
+        }
+    }
+
+    /// Translate a LoadMore* action into a concrete Load* action with pagination params.
+    ///
+    /// This helper centralizes the translation logic for all pagination triggers,
+    /// making it testable and reusable from both the main loop and input handlers.
+    ///
+    /// # Arguments
+    /// * `action` - The action to translate
+    ///
+    /// # Returns
+    /// The translated action, or the original action if no translation is needed
+    pub fn translate_load_more_action(&self, action: Action) -> Action {
+        match action {
+            Action::LoadMoreIndexes
+            | Action::LoadMoreJobs
+            | Action::LoadMoreApps
+            | Action::LoadMoreUsers
+            | Action::LoadMoreSearchPeers
+            | Action::LoadMoreForwarders
+            | Action::LoadMoreLookups
+            | Action::LoadMoreInputs
+            | Action::LoadMoreFiredAlerts
+            | Action::LoadMoreDashboards
+            | Action::LoadMoreDataModels
+            | Action::LoadMoreWorkloadPools
+            | Action::LoadMoreWorkloadRules => {
+                self.load_more_action_for_current_screen().unwrap_or(action)
+            }
+            Action::LoadMoreInternalLogs => Action::LoadInternalLogs {
+                count: self.internal_logs_defaults.count,
+                earliest: self.internal_logs_defaults.earliest_time.clone(),
+            },
+            _ => action,
         }
     }
 

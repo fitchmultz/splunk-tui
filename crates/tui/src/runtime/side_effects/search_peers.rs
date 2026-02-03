@@ -12,10 +12,12 @@ use tokio::sync::mpsc::Sender;
 
 use crate::action::Action;
 use crate::runtime::side_effects::SharedClient;
+use std::sync::Arc;
 
-/// Handle loading search peers.
+/// Handle loading search peers with pagination support.
 ///
-/// Fetches the list of distributed search peers from the Splunk server.
+/// Emits `SearchPeersLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreSearchPeersLoaded` when offset > 0 (pagination).
 pub async fn handle_load_search_peers(
     client: SharedClient,
     tx: Sender<Action>,
@@ -28,31 +30,21 @@ pub async fn handle_load_search_peers(
     };
 
     let action = match result {
-        Ok(peers) => Action::SearchPeersLoaded(Ok(peers)),
-        Err(e) => Action::SearchPeersLoaded(Err(std::sync::Arc::new(e))),
-    };
-
-    let _ = tx.send(action).await;
-}
-
-/// Handle loading more search peers (pagination).
-///
-/// Fetches the next page of search peers from the Splunk server.
-#[allow(dead_code)]
-pub async fn handle_load_more_search_peers(
-    client: SharedClient,
-    tx: Sender<Action>,
-    count: u64,
-    offset: u64,
-) {
-    let result = {
-        let mut guard = client.lock().await;
-        guard.list_search_peers(Some(count), Some(offset)).await
-    };
-
-    let action = match result {
-        Ok(peers) => Action::MoreSearchPeersLoaded(Ok(peers)),
-        Err(e) => Action::MoreSearchPeersLoaded(Err(std::sync::Arc::new(e))),
+        Ok(peers) => {
+            if offset == 0 {
+                Action::SearchPeersLoaded(Ok(peers))
+            } else {
+                Action::MoreSearchPeersLoaded(Ok(peers))
+            }
+        }
+        Err(e) => {
+            let arc_err = Arc::new(e);
+            if offset == 0 {
+                Action::SearchPeersLoaded(Err(arc_err))
+            } else {
+                Action::MoreSearchPeersLoaded(Err(arc_err))
+            }
+        }
     };
 
     let _ = tx.send(action).await;

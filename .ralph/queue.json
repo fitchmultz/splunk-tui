@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0307",
-      "status": "todo",
-      "title": "Fix TUI list pagination: LoadMore actions no-op/replace data instead of appending",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "ux",
-        "correctness"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/runtime/side_effects/mod.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/src/app/actions/data_loading.rs",
-        "crates/tui/src/input/keymap",
-        "cargo test -p splunk-tui"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs:278-289 only translates LoadMore for Indexes/Jobs/Apps/Users (and internal logs), leaving other LoadMore bindings unhandled.",
-        "crates/tui/src/runtime/side_effects/mod.rs:235-290 treats many LoadMore actions as no-ops with comments (SearchPeers/Forwarders/Lookups/Inputs/FiredAlerts/etc.).",
-        "crates/tui/src/input/keymap/bindings/screens/dashboards.rs:31, crates/tui/src/input/keymap/bindings/screens/datamodels.rs:31, crates/tui/src/input/keymap/bindings/screens/inputs.rs:31 bind LoadMore actions that currently do nothing.",
-        "crates/tui/src/app.rs:179-298 `load_more_action_for_current_screen` returns `Load* {count, offset}` for several screens (Dashboards/DataModels/SearchPeers/Forwarders/Lookups/WorkloadManagement), but these are not always reachable from LoadMore actions.",
-        "crates/tui/src/runtime/side_effects/indexes.rs:20-38 always emits `Action::IndexesLoaded`, and crates/tui/src/app/actions/data_loading.rs:385-390 overwrites `self.indexes` on IndexesLoaded, so a LoadMore->LoadIndexes path replaces data instead of appending."
-      ],
-      "plan": [
-        "Define one consistent pagination flow for all paged screens (LoadMore -> derive count/offset -> fetch -> append)",
-        "Wire all LoadMore actions through main-loop translation using pagination state (or add count/offset to LoadMore variants)",
-        "Ensure side effects emit `More*Loaded` (or App handlers append) when offset > 0",
-        "Fix FiredAlerts pagination API shape (currently LoadFiredAlerts has no count/offset but has pagination state)",
-        "Remove dead `handle_load_more_*` functions / `#[allow(dead_code)]` once the flow is consistent",
-        "Add/extend tests to cover: initial load sets list, load-more appends, and LoadMore bindings are functional",
-        "Verify by running `cargo test -p splunk-tui` and manually checking one screen's Load More behavior"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0308",
       "status": "todo",
       "title": "Avoid blocking the TUI event loop in side effects (spawn network calls consistently)",
