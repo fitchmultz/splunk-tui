@@ -30,8 +30,8 @@ docs/splunk-test-environment.md
 # Build artifacts
 /dist/
 .ralph/lock
-.ralph/cache
-logs
-.ralph/config.json
-.ralph/README.md
-.ralph/done.json
+.ralph/cache/plans
+.ralph/cache/phase2_final
+.ralph/cache/queue.json.backup*
+.ralph/cache/parallel/state.json
+.ralph/cache/session.json
