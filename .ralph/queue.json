@@ -2,41 +2,31 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0314",
+      "id": "RQ-0317",
       "status": "todo",
-      "title": "Remove duplicate timeout flags in `splunk-cli config set` help output",
-      "priority": "low",
+      "title": "List contents of current directory",
+      "priority": "medium",
       "tags": [
-        "maintenance",
-        "ux"
+        "list"
       ],
       "scope": [
-        "crates/cli/src/args.rs",
-        "crates/cli/src/commands/config.rs",
-        "crates/cli/tests",
-        "cargo test -p splunk-cli"
+        "."
       ],
       "evidence": [
-        "cmd: splunk-cli config set --help -> shows both `--timeout` (global, env SPLUNK_TIMEOUT) and `--timeout-seconds` (config set) with the same meaning, which is confusing.",
-        "crates/cli/src/args.rs:42-44 defines global `--timeout` (env SPLUNK_TIMEOUT).",
-        "crates/cli/src/commands/config.rs:53-56 defines `--timeout-seconds` on `config set`."
+        "User request: 'list'"
       ],
       "plan": [
-        "Pick a single timeout flag naming scheme for config set (e.g., reuse global `--timeout`, or rename global to `--connect-timeout` and hide it where appropriate)",
-        "Update clap definitions so `splunk-cli config set --help` shows only one timeout option",
-        "Add/adjust a help-output test for the config subcommand",
-        "Verify by running `cargo test -p splunk-cli` and checking `splunk-cli config set --help` output"
+        "Run 'ls -la' in the current working directory",
+        "Display the directory contents to the user"
       ],
       "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
+      "request": "list",
+      "created_at": "2026-02-03T00:00:00Z",
+      "updated_at": "2026-02-03T00:00:00Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
+      "custom_fields": {}
     }
   ]
 }

@@ -51,8 +51,8 @@ pub enum ConfigCommand {
         skip_verify: Option<bool>,
 
         /// Connection timeout in seconds
-        #[arg(short, long)]
-        timeout_seconds: Option<u64>,
+        #[arg(short, long = "timeout")]
+        timeout: Option<u64>,
 
         /// Maximum number of retries for failed requests
         #[arg(short, long)]
@@ -115,7 +115,7 @@ pub fn run(
             password,
             api_token,
             skip_verify,
-            timeout_seconds,
+            timeout,
             max_retries,
             plaintext,
         } => {
@@ -127,7 +127,7 @@ pub fn run(
                 password,
                 api_token,
                 skip_verify,
-                timeout_seconds,
+                timeout,
                 max_retries,
                 plaintext,
             )?;
@@ -206,7 +206,7 @@ fn run_set(
     password: Option<String>,
     api_token: Option<String>,
     skip_verify: Option<bool>,
-    timeout_seconds: Option<u64>,
+    timeout: Option<u64>,
     max_retries: Option<usize>,
     plaintext: bool,
 ) -> Result<()> {
@@ -255,7 +255,7 @@ fn run_set(
         base_url,
         username: username.clone(),
         skip_verify: skip_verify.or(profile.skip_verify),
-        timeout_seconds: timeout_seconds.or(profile.timeout_seconds),
+        timeout_seconds: timeout.or(profile.timeout_seconds),
         max_retries: max_retries.or(profile.max_retries),
         ..Default::default()
     };

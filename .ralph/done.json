@@ -1683,6 +1683,63 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0314",
+      "status": "done",
+      "title": "Remove duplicate timeout flags in `splunk-cli config set` help output",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "cli",
+        "docs",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/commands/config.rs",
+        "crates/cli/src/main.rs",
+        "crates/cli/tests/config/help_tests.rs",
+        "docs/usage.md",
+        "cargo run -p splunk-cli -- config set --help",
+        "cargo test -p splunk-cli",
+        "make lint-docs",
+        "make ci"
+      ],
+      "evidence": [
+        "2026-02-03: `cargo run -p splunk-cli -- config set --help` shows both `--timeout <TIMEOUT>` (with `[env: SPLUNK_TIMEOUT=]`) and `-t, --timeout-seconds <TIMEOUT_SECONDS>`, both described as \"Connection timeout in seconds\".",
+        "crates/cli/src/args.rs:42-44 defines global `--timeout` (env `SPLUNK_TIMEOUT`) as a CLI override for connection timeout.",
+        "crates/cli/src/main.rs:64-67 excludes `Commands::Config` from `needs_real_config`, so the global `--timeout` value is not applied for `config` commands but still appears in help because it is `global = true`.",
+        "crates/cli/src/commands/config.rs:53-55 defines `timeout_seconds` on `config set`, which clap exposes as `--timeout-seconds`.",
+        "crates/cli/tests/config/help_tests.rs only asserts that help output contains the subcommand description; it does not validate the options list, so the duplicate timeout flags are currently untested.",
+        "docs/usage.md documents global `--timeout` and `config set` `--timeout-seconds`, but does not reflect the current duplicated timeout options shown by `splunk-cli config set --help`."
+      ],
+      "plan": [
+        "Reproduce: run `cargo run -p splunk-cli -- config set --help` and confirm both timeout flags are present",
+        "Make clap arg IDs consistent: change `ConfigCommand::Set` to reuse `--timeout` (e.g., rename `timeout_seconds` to `timeout` with `#[arg(short = 't', long = \"timeout\")]`) while still writing to `ProfileConfig.timeout_seconds`",
+        "Update `crates/cli/tests/config/help_tests.rs` to assert `config set --help` contains only one timeout option and does not contain `--timeout-seconds`",
+        "Update `docs/usage.md` `config set` docs to match the new flag and clarify it sets the profile's stored timeout",
+        "Verify with `cargo test -p splunk-cli` and `make lint-docs` (or `make ci`)"
+      ],
+      "notes": [
+        "Other `config set` options (e.g. `--base-url`) already override global args by reusing the same clap arg name; `timeout_seconds` is an outlier, which is why both `--timeout` and `--timeout-seconds` show up today.",
+        "Fixed duplicate timeout flags in splunk-cli config set --help",
+        "Changed ConfigCommand::Set to use --timeout instead of --timeout-seconds",
+        "Internal ProfileConfig.timeout_seconds field preserved for storage",
+        "Updated tests to verify only one timeout flag appears in help",
+        "Updated docs/usage.md to reflect the unified --timeout flag",
+        "All 381+ tests pass, make ci passes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T20:16:18.540970857Z",
+      "completed_at": "2026-02-03T20:16:18.540970857Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

@@ -61,7 +61,7 @@ fn test_config_show_table_format() {
             "testpass",
             "--skip-verify",
             "true",
-            "--timeout-seconds",
+            "--timeout",
             "60",
             "--max-retries",
             "5",

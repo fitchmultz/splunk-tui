@@ -859,7 +859,7 @@ splunk-cli config delete my-profile
   - `-p, --password <PASS>`: Password for session authentication (will prompt if not provided)
   - `-a, --api-token <TOKEN>`: API token for bearer authentication (will prompt if not provided)
   - `-s, --skip-verify`: Skip TLS certificate verification
-  - `-t, --timeout-seconds <SECONDS>`: Connection timeout
+  - `-t, --timeout <SECONDS>`: Connection timeout (updates the profile's stored timeout, not a one-off runtime override)
   - `-m, --max-retries <NUMBER>`: Maximum number of retries
   - `--plaintext`: Store credentials as plaintext instead of using system keyring
 - `show <profile-name>`: Display a profile's configuration
