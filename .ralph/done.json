@@ -1161,6 +1161,85 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0316",
+      "status": "done",
+      "title": "Fix clippy too-many-arguments warnings in search.rs",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "correctness",
+        "ci"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/cli/src/",
+        "crates/tui/src/",
+        "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+        "make ci"
+      ],
+      "evidence": [
+        "Clippy warning: function `search` has too many arguments (8/7) at crates/client/src/client/search.rs:33:5",
+        "Clippy warning: function `search_with_progress` has too many arguments (9/7) at crates/client/src/client/search.rs:99:5",
+        "Note: `-D clippy::too-many-arguments` implied by `-D warnings`",
+        "These warnings cause `make ci` to fail when clippy check runs without --fix."
+      ],
+      "plan": [
+        "Introduce a SearchOptions or SearchRequest struct to bundle search parameters",
+        "Update SplunkClient::search to accept &SearchOptions instead of individual args",
+        "Update SplunkClient::search_with_progress similarly",
+        "Update all call sites in CLI and TUI to use the new options struct",
+        "Verify by running `cargo clippy --workspace --all-targets --all-features -- -D warnings` and `make ci`"
+      ],
+      "notes": [],
+      "request": "FIX:\nwarning: this function has too many arguments (8/7)\n  --> crates/client/src/client/search.rs:33:5\nwarning: this function has too many arguments (9/7)\n   --> crates/client/src/client/search.rs:99:5",
+      "created_at": "2026-02-03T00:00:00Z",
+      "updated_at": "2026-02-03T15:33:56.387141156Z",
+      "completed_at": "2026-02-03T15:33:56.387141156Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0315",
+      "status": "done",
+      "title": "Fix unused dead code warnings in workload.rs side effects",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "correctness",
+        "ci"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/workload.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/main.rs",
+        "cargo build --profile ci",
+        "make ci"
+      ],
+      "evidence": [
+        "Release build (profile: ci) warning: function `handle_load_more_workload_pools` is never used at crates/tui/src/runtime/side_effects/workload.rs:42:14",
+        "Release build (profile: ci) warning: function `handle_load_more_workload_rules` is never used at crates/tui/src/runtime/side_effects/workload.rs:86:14",
+        "These functions are dead code because LoadMore actions for WorkloadManagement are not wired through the main loop translation (crates/tui/src/main.rs:278-289 only handles Indexes/Jobs/Apps/Users/internal logs)."
+      ],
+      "plan": [
+        "Determine if WorkloadManagement LoadMore actions should be wired (fix pagination) or if these handlers should be removed",
+        "If wiring: add WorkloadManagement LoadMore translation in main.rs and ensure handlers append data instead of replacing",
+        "If removing: delete handle_load_more_workload_pools and handle_load_more_workload_rules functions and any related dead code",
+        "Verify by running `cargo build --profile ci` and `make ci` - should have no dead_code warnings"
+      ],
+      "notes": [],
+      "request": "FIX:\n→ Release build (profile: ci)...\nwarning: function `handle_load_more_workload_pools` is never used\n  --> crates/tui/src/runtime/side_effects/workload.rs:42:14\nwarning: function `handle_load_more_workload_rules` is never used\n  --> crates/tui/src/runtime/side_effects/workload.rs:86:14",
+      "created_at": "2026-02-03T00:00:00Z",
+      "updated_at": "2026-02-03T15:33:59.305420064Z",
+      "completed_at": "2026-02-03T15:33:59.305420064Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }
