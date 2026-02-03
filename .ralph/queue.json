@@ -1,4 +1,449 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0303",
+      "status": "todo",
+      "title": "Default profile credentials storage to keyring (opt-in plaintext)",
+      "priority": "critical",
+      "tags": [
+        "maintenance",
+        "security"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs",
+        "crates/tui/src/runtime/side_effects/profiles.rs",
+        "crates/config/src/persistence/profiles.rs",
+        "docs/usage.md",
+        "splunk-cli config set --help"
+      ],
+      "evidence": [
+        "cmd: splunk-cli config set --help -> shows --use-keyring is optional; without it, credentials are stored as plaintext in config.json by default.",
+        "crates/cli/src/commands/config.rs:61-64 defines `use_keyring: bool` flag (opt-in).",
+        "crates/cli/src/commands/config.rs:257-277 stores secrets in keyring only when `use_keyring` is true; otherwise keeps `SecureValue::Plain`.",
+        "crates/config/src/types/profile.rs:28-31 allows `SecureValue::Plain` for password/api_token (persists secrets to disk)."
+      ],
+      "plan": [
+        "Decide policy: keyring-by-default with fallback",
+        "Change CLI/TUI profile save to prefer keyring when available",
+        "Add explicit `--plaintext`/`--no-keyring` override (or invert flag) and update help text",
+        "Update docs to describe credential persistence and recommended settings",
+        "Add tests ensuring config file does not contain secrets when keyring path is chosen",
+        "Verify by running `make ci` and confirming help/tests pass"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0304",
+      "status": "todo",
+      "title": "Prevent overwriting unreadable config files (backup + fail-safe recovery)",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "reliability"
+      ],
+      "scope": [
+        "crates/config/src/persistence/profiles.rs",
+        "crates/config/src/persistence/state.rs",
+        "cargo test -p splunk-config"
+      ],
+      "evidence": [
+        "crates/config/src/persistence/profiles.rs:61-69 swallows `read_config_file` errors and initializes defaults, even when an on-disk config exists.",
+        "crates/config/src/persistence/state.rs:222-249 returns parse/read errors for invalid JSON; these errors are not preserved by caller.",
+        "crates/config/src/persistence/profiles.rs:234-248 `atomic_save` renames temp file to the real path, overwriting any previously unreadable config; this risks silent data loss (profiles/state)."
+      ],
+      "plan": [
+        "Reproduce with an invalid JSON config file and confirm current behavior overwrites it on save",
+        "Implement safe recovery: rename unreadable config to a timestamped `.corrupt` backup before proceeding",
+        "Ensure user-visible warning includes the backup path (no secrets)",
+        "Add tests that invalid config is preserved and backup created on first write",
+        "Verify by running `cargo test -p splunk-config` and confirming behavior"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0305",
+      "status": "todo",
+      "title": "Fix `SKIP_LIVE_TESTS=1` to actually skip live tests",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "ci"
+      ],
+      "scope": [
+        "Makefile",
+        "make test-live"
+      ],
+      "evidence": [
+        "Makefile:88-96 attempts to skip with `exit 0` inside an `if`, but subsequent recipe lines still run because each Makefile line uses a separate shell.",
+        "cmd: SKIP_LIVE_TESTS=1 make test-live -> prints \"Skipping live tests\" then still runs `tests/live_tests.rs` for both splunk-client and splunk-cli. See /tmp/splunk-tui-make-test-live-skip.log"
+      ],
+      "plan": [
+        "Refactor the `test-live` recipe to a single-shell `if/else` (or use `.ONESHELL:`) so skip actually stops execution",
+        "Add a cheap guard assertion: when SKIP_LIVE_TESTS=1, no `cargo test -p * --test live_tests` is executed",
+        "Verify by running `SKIP_LIVE_TESTS=1 make test-live` and confirming no tests execute",
+        "Verify by running `SKIP_LIVE_TESTS=0 make test-live` and confirming ignored tests run"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0306",
+      "status": "todo",
+      "title": "Make `make lint` fail when clippy -D warnings would fail (don’t rely on `cargo clippy --fix` exit code)",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "ci"
+      ],
+      "scope": [
+        "Makefile",
+        "make lint",
+        "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+      ],
+      "evidence": [
+        "Makefile:45-50 runs `cargo clippy --fix ... -- -D warnings` and treats it as authoritative.",
+        "cmd: cargo clippy --fix --allow-dirty --workspace --all-targets --all-features --locked -- -D warnings -> exits 0 while still emitting `-D warnings` lints (too many args, dead code).",
+        "cmd: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings -> exits 101 with errors (e.g., `crates/client/src/client/search.rs` too_many_arguments)."
+      ],
+      "plan": [
+        "Split lint into two phases: clippy autofix then clippy check",
+        "Keep autofix permissive, but run a second `cargo clippy ... -D warnings` without `--fix`",
+        "Ensure `make ci` fails if clippy check fails",
+        "Verify by running `make lint` and confirming it matches `cargo clippy ... -D warnings` behavior"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0307",
+      "status": "todo",
+      "title": "Fix TUI list pagination: LoadMore actions no-op/replace data instead of appending",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "ux",
+        "correctness"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/actions/data_loading.rs",
+        "crates/tui/src/input/keymap",
+        "cargo test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:278-289 only translates LoadMore for Indexes/Jobs/Apps/Users (and internal logs), leaving other LoadMore bindings unhandled.",
+        "crates/tui/src/runtime/side_effects/mod.rs:235-290 treats many LoadMore actions as no-ops with comments (SearchPeers/Forwarders/Lookups/Inputs/FiredAlerts/etc.).",
+        "crates/tui/src/input/keymap/bindings/screens/dashboards.rs:31, crates/tui/src/input/keymap/bindings/screens/datamodels.rs:31, crates/tui/src/input/keymap/bindings/screens/inputs.rs:31 bind LoadMore actions that currently do nothing.",
+        "crates/tui/src/app.rs:179-298 `load_more_action_for_current_screen` returns `Load* {count, offset}` for several screens (Dashboards/DataModels/SearchPeers/Forwarders/Lookups/WorkloadManagement), but these are not always reachable from LoadMore actions.",
+        "crates/tui/src/runtime/side_effects/indexes.rs:20-38 always emits `Action::IndexesLoaded`, and crates/tui/src/app/actions/data_loading.rs:385-390 overwrites `self.indexes` on IndexesLoaded, so a LoadMore->LoadIndexes path replaces data instead of appending."
+      ],
+      "plan": [
+        "Define one consistent pagination flow for all paged screens (LoadMore -> derive count/offset -> fetch -> append)",
+        "Wire all LoadMore actions through main-loop translation using pagination state (or add count/offset to LoadMore variants)",
+        "Ensure side effects emit `More*Loaded` (or App handlers append) when offset > 0",
+        "Fix FiredAlerts pagination API shape (currently LoadFiredAlerts has no count/offset but has pagination state)",
+        "Remove dead `handle_load_more_*` functions / `#[allow(dead_code)]` once the flow is consistent",
+        "Add/extend tests to cover: initial load sets list, load-more appends, and LoadMore bindings are functional",
+        "Verify by running `cargo test -p splunk-tui` and manually checking one screen’s Load More behavior"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0308",
+      "status": "todo",
+      "title": "Avoid blocking the TUI event loop in side effects (spawn network calls consistently)",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "ux",
+        "performance"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/*.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/main.rs",
+        "cargo test -p splunk-tui"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:302-309 awaits `handle_side_effects(...)` directly in the main loop.",
+        "crates/tui/src/runtime/side_effects/forwarders.rs:19-36 performs an awaited API call inline (no tokio::spawn), so UI can stall during network latency.",
+        "crates/tui/src/runtime/side_effects/lookups.rs:19-38, crates/tui/src/runtime/side_effects/search_peers.rs:19-36, crates/tui/src/runtime/side_effects/workload.rs:20-37, crates/tui/src/runtime/side_effects/macros.rs:51-64 have the same inline-await pattern."
+      ],
+      "plan": [
+        "Standardize side effect handlers: send Loading(true), then `tokio::spawn` for any network call",
+        "Ensure spawned tasks always send Loading(false) or rely on Loaded handlers to clear loading",
+        "Audit for any other inline network awaits in side effects and convert them",
+        "Add a regression test that `handle_side_effects` returns quickly for networked actions (e.g., using a short timeout around the call)",
+        "Verify by running `cargo test -p splunk-tui` and checking TUI remains responsive under simulated slow network"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0309",
+      "status": "todo",
+      "title": "Refactor SplunkClient search APIs to avoid too-many-arguments and clarify options",
+      "priority": "high",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs",
+        "crates/client/src/endpoints/search",
+        "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+      ],
+      "evidence": [
+        "crates/client/src/client/search.rs:33-75 `SplunkClient::search` takes 8 args and triggers clippy `too_many_arguments`.",
+        "crates/client/src/client/search.rs:99-144 `SplunkClient::search_with_progress` takes 9 args and triggers the same clippy error.",
+        "cmd: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings -> fails on these functions."
+      ],
+      "plan": [
+        "Introduce a `SearchOptions`/`SearchRequest` struct (or reuse CreateJobOptions) to bundle parameters",
+        "Update CLI/TUI call sites to pass the options struct",
+        "Keep a compatibility layer only if required; otherwise make an explicit breaking change",
+        "Add tests verifying search option mapping and default behavior",
+        "Verify by running `cargo clippy --workspace --all-targets --all-features -- -D warnings` and `cargo test -p splunk-client`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0310",
+      "status": "todo",
+      "title": "Remove dummy Config construction in `splunk-cli list-all` dispatch (make illegal states unrepresentable)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "reliability"
+      ],
+      "scope": [
+        "crates/cli/src/dispatch.rs",
+        "crates/cli/src/commands/list_all",
+        "cargo test -p splunk-cli"
+      ],
+      "evidence": [
+        "crates/cli/src/dispatch.rs:268-295 constructs a placeholder `splunk_config::Config` with empty base_url and empty secrets in multi-profile mode, relying on a comment that it is unused.",
+        "This creates an illegal-but-representable state: a `Config` value that would crash/fail if accidentally used in future code paths."
+      ],
+      "plan": [
+        "Refactor `commands::list_all::run` to accept `Option<Config>` or split into single-profile vs multi-profile entrypoints",
+        "Eliminate placeholder config creation and enforce invariants at the type boundary",
+        "Add tests for list-all multi-profile path to ensure no dummy config is needed",
+        "Verify by running `cargo test -p splunk-cli` and `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0311",
+      "status": "todo",
+      "title": "Validate `base_url` during config build (fail fast with clear error)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "correctness"
+      ],
+      "scope": [
+        "crates/config/src/loader/builder.rs",
+        "crates/config/src/loader/error.rs",
+        "crates/config/src/loader/tests",
+        "cargo test -p splunk-config"
+      ],
+      "evidence": [
+        "crates/config/src/loader/builder.rs:194-219 accepts `base_url` as an opaque string and does not validate scheme/host/format.",
+        "crates/config/src/loader/error.rs:22-61 lacks an InvalidBaseUrl-style error variant; invalid URLs likely fail later in HTTP code with less actionable errors."
+      ],
+      "plan": [
+        "Add URL parsing/validation in ConfigLoader::build (e.g., require http/https and a host)",
+        "Add a dedicated ConfigError variant for invalid base URLs with actionable messaging",
+        "Extend tests to cover invalid/whitespace base_url inputs and ensure errors are returned at build time",
+        "Verify by running `cargo test -p splunk-config` and a smoke `splunk-cli health` with a bad URL"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0312",
+      "status": "todo",
+      "title": "Trim env var values in `env_var_or_none` to match documented invariants",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "correctness"
+      ],
+      "scope": [
+        "crates/config/src/loader/env.rs",
+        "crates/config/src/loader/tests/env_tests.rs",
+        "cargo test -p splunk-config"
+      ],
+      "evidence": [
+        "crates/config/src/loader/env.rs:25-27 claims whitespace-only values are treated as unset, but returns the original string without trimming.",
+        "crates/config/src/loader/env.rs:33-44 applies untrimmed base_url/username/password/token values; e.g., `SPLUNK_BASE_URL=' https://... '` would be accepted and likely fail later."
+      ],
+      "plan": [
+        "Change env_var_or_none to return a trimmed string (or add a separate helper for raw vs trimmed)",
+        "Add tests covering leading/trailing whitespace for SPLUNK_BASE_URL and SPLUNK_USERNAME",
+        "Verify by running `cargo test -p splunk-config`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0313",
+      "status": "todo",
+      "title": "Surface dotenv load failures (don’t silently ignore invalid `.env` files)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "operability"
+      ],
+      "scope": [
+        "crates/config/src/loader/builder.rs",
+        "crates/config/src/loader/tests",
+        "cargo test -p splunk-config"
+      ],
+      "evidence": [
+        "crates/config/src/loader/builder.rs:88-94 calls `dotenvy::dotenv().ok();`, swallowing parse errors and making misconfigurations harder to debug."
+      ],
+      "plan": [
+        "Differentiate missing `.env` (OK) vs invalid `.env` (error or at least warn with context)",
+        "Ensure DOTENV_DISABLED behavior remains hermetic for tests",
+        "Add tests that invalid `.env` content produces a clear failure mode when dotenv loading is enabled",
+        "Verify by running `cargo test -p splunk-config` and `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0314",
+      "status": "todo",
+      "title": "Remove duplicate timeout flags in `splunk-cli config set` help output",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "ux"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/commands/config.rs",
+        "crates/cli/tests",
+        "cargo test -p splunk-cli"
+      ],
+      "evidence": [
+        "cmd: splunk-cli config set --help -> shows both `--timeout` (global, env SPLUNK_TIMEOUT) and `--timeout-seconds` (config set) with the same meaning, which is confusing.",
+        "crates/cli/src/args.rs:42-44 defines global `--timeout` (env SPLUNK_TIMEOUT).",
+        "crates/cli/src/commands/config.rs:53-56 defines `--timeout-seconds` on `config set`."
+      ],
+      "plan": [
+        "Pick a single timeout flag naming scheme for config set (e.g., reuse global `--timeout`, or rename global to `--connect-timeout` and hide it where appropriate)",
+        "Update clap definitions so `splunk-cli config set --help` shows only one timeout option",
+        "Add/adjust a help-output test for the config subcommand",
+        "Verify by running `cargo test -p splunk-cli` and checking `splunk-cli config set --help` output"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T00:36:01Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    }
+  ]
 }
