@@ -1,7 +1,7 @@
 //! Search command implementation.
 
 use anyhow::{Context, Result};
-use splunk_client::SearchMode;
+use splunk_client::{SearchMode, SearchRequest};
 use splunk_config::SearchDefaultConfig;
 use tracing::info;
 
@@ -42,6 +42,15 @@ pub async fn run(
 
     info!("Connecting to {}", client.base_url());
 
+    // Build the search request with common parameters
+    let mut request = SearchRequest::new(&query, wait)
+        .time_bounds(earliest, latest)
+        .max_results(max_results as u64)
+        .search_mode(search_mode.unwrap_or(SearchMode::Normal));
+    if let Some(window) = realtime_window {
+        request = request.realtime_window(window);
+    }
+
     let (results, _sid, _total) = if wait {
         let progress = crate::progress::SearchProgress::new(!quiet, "Waiting for search");
 
@@ -51,14 +60,8 @@ pub async fn run(
 
         let search_result = tokio::select! {
             res = client.search_with_progress(
-                &query,
-                true,
-                Some(earliest),
-                Some(latest),
-                Some(max_results as u64),
+                request,
                 if quiet { None } else { Some(&mut on_progress) },
-                search_mode,
-                realtime_window,
             ) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         };
@@ -68,14 +71,8 @@ pub async fn run(
     } else {
         tokio::select! {
             res = client.search_with_progress(
-                &query,
-                false,
-                Some(earliest),
-                Some(latest),
-                Some(max_results as u64),
+                request,
                 None,
-                search_mode,
-                realtime_window,
             ) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         }

@@ -53,7 +53,7 @@ mod logs;
 mod lookups;
 pub mod macros;
 mod roles;
-mod search;
+pub mod search;
 mod search_peers;
 mod server;
 mod shc;

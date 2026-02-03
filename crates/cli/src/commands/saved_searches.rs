@@ -2,6 +2,7 @@
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
+use splunk_client::SearchRequest;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
@@ -199,8 +200,11 @@ async fn run_run(
     };
 
     info!("Executing search query: {}", search.search);
+    let request = SearchRequest::new(&search.search, wait)
+        .time_bounds(earliest.unwrap_or("-24h"), latest.unwrap_or("now"))
+        .max_results(max_results as u64);
     let results = tokio::select! {
-        res = client.search(&search.search, wait, earliest, latest, Some(max_results as u64), None, None) => res?,
+        res = client.search(request) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

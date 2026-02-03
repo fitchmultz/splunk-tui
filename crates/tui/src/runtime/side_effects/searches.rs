@@ -12,7 +12,7 @@
 
 use crate::action::{Action, progress_callback_to_action_sender};
 use crate::error_details::{build_search_error_details, search_error_message};
-use splunk_client::SearchMode;
+use splunk_client::{SearchMode, SearchRequest};
 use splunk_config::SearchDefaults;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -93,18 +93,20 @@ pub async fn handle_run_search(
         let progress_tx = tx_clone.clone();
         let mut progress_callback = progress_callback_to_action_sender(progress_tx);
 
+        // Build the search request
+        let request = SearchRequest::new(&query_clone, true)
+            .time_bounds(&earliest_time, &latest_time)
+            .max_results(max_results)
+            .search_mode(search_mode);
+        let request = if let Some(window) = realtime_window {
+            request.realtime_window(window)
+        } else {
+            request
+        };
+
         // Use search_with_progress for unified timeout and progress handling
         match c
-            .search_with_progress(
-                &query_clone,
-                true, // wait for completion
-                Some(&earliest_time),
-                Some(&latest_time),
-                Some(max_results),
-                Some(&mut progress_callback),
-                Some(search_mode),
-                realtime_window,
-            )
+            .search_with_progress(request, Some(&mut progress_callback))
             .await
         {
             Ok((results, sid, total)) => {

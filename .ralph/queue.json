@@ -42,6 +42,43 @@
       "custom_fields": {}
     },
     {
+      "id": "RQ-0315",
+      "status": "todo",
+      "title": "Fix unused dead code warnings in workload.rs side effects",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "correctness",
+        "ci"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/workload.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/main.rs",
+        "cargo build --profile ci",
+        "make ci"
+      ],
+      "evidence": [
+        "Release build (profile: ci) warning: function `handle_load_more_workload_pools` is never used at crates/tui/src/runtime/side_effects/workload.rs:42:14",
+        "Release build (profile: ci) warning: function `handle_load_more_workload_rules` is never used at crates/tui/src/runtime/side_effects/workload.rs:86:14",
+        "These functions are dead code because LoadMore actions for WorkloadManagement are not wired through the main loop translation (crates/tui/src/main.rs:278-289 only handles Indexes/Jobs/Apps/Users/internal logs)."
+      ],
+      "plan": [
+        "Determine if WorkloadManagement LoadMore actions should be wired (fix pagination) or if these handlers should be removed",
+        "If wiring: add WorkloadManagement LoadMore translation in main.rs and ensure handlers append data instead of replacing",
+        "If removing: delete handle_load_more_workload_pools and handle_load_more_workload_rules functions and any related dead code",
+        "Verify by running `cargo build --profile ci` and `make ci` - should have no dead_code warnings"
+      ],
+      "notes": [],
+      "request": "FIX:\n→ Release build (profile: ci)...\nwarning: function `handle_load_more_workload_pools` is never used\n  --> crates/tui/src/runtime/side_effects/workload.rs:42:14\nwarning: function `handle_load_more_workload_rules` is never used\n  --> crates/tui/src/runtime/side_effects/workload.rs:86:14",
+      "created_at": "2026-02-03T00:00:00Z",
+      "updated_at": "2026-02-03T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
       "id": "RQ-0306",
       "status": "todo",
       "title": "Make `make lint` fail when clippy -D warnings would fail (don't rely on `cargo clippy --fix` exit code)",
@@ -114,7 +151,7 @@
         "Fix FiredAlerts pagination API shape (currently LoadFiredAlerts has no count/offset but has pagination state)",
         "Remove dead `handle_load_more_*` functions / `#[allow(dead_code)]` once the flow is consistent",
         "Add/extend tests to cover: initial load sets list, load-more appends, and LoadMore bindings are functional",
-        "Verify by running `cargo test -p splunk-tui` and manually checking one screen’s Load More behavior"
+        "Verify by running `cargo test -p splunk-tui` and manually checking one screen's Load More behavior"
       ],
       "notes": [],
       "request": "maintenance scan finding",
@@ -310,7 +347,7 @@
     {
       "id": "RQ-0313",
       "status": "todo",
-      "title": "Surface dotenv load failures (don’t silently ignore invalid `.env` files)",
+      "title": "Surface dotenv load failures (don't silently ignore invalid `.env` files)",
       "priority": "medium",
       "tags": [
         "maintenance",

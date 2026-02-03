@@ -38,4 +38,5 @@ pub use models::{
 };
 
 // Re-export search types for CLI/TUI use
+pub use client::search::SearchRequest;
 pub use endpoints::search::{CreateJobOptions, OutputMode, SearchMode};
