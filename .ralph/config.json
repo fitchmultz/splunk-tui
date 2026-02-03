@@ -32,7 +32,7 @@
       "phase1": {
         "runner": "codex",
         "model": "gpt-5.2",
-        "reasoning_effort": "high"
+        "reasoning_effort": "medium"
       },
       "phase2": {
         "runner": "kimi",

@@ -13,6 +13,7 @@
 //! Invariants / Assumptions:
 //! - Environment variables take precedence over profile settings.
 //! - Empty or whitespace-only environment variables are treated as unset.
+//! - Returned values are trimmed (leading/trailing whitespace removed).
 //! - Invalid numeric values return ConfigError::InvalidValue.
 
 use secrecy::SecretString;
@@ -22,8 +23,20 @@ use super::builder::ConfigLoader;
 use super::error::ConfigError;
 
 /// Read an environment variable, returning None if unset, empty, or whitespace-only.
+/// Returns the trimmed value (leading/trailing whitespace removed) if present.
 pub fn env_var_or_none(key: &str) -> Option<String> {
-    std::env::var(key).ok().filter(|s| !s.trim().is_empty())
+    std::env::var(key).ok().and_then(|s| {
+        let trimmed = s.trim();
+        if trimmed.is_empty() {
+            None
+        } else if trimmed.len() == s.len() {
+            // No trimming needed, return original to avoid allocation
+            Some(s)
+        } else {
+            // Trimming was needed, allocate new String
+            Some(trimmed.to_string())
+        }
+    })
 }
 
 /// Apply environment variable configuration to the loader.
@@ -43,7 +56,7 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         loader.set_api_token(Some(SecretString::new(token.into())));
     }
     if let Some(skip) = env_var_or_none("SPLUNK_SKIP_VERIFY") {
-        loader.set_skip_verify(Some(skip.trim().parse().map_err(|_| {
+        loader.set_skip_verify(Some(skip.parse().map_err(|_| {
             ConfigError::InvalidValue {
                 var: "SPLUNK_SKIP_VERIFY".to_string(),
                 message: "must be true or false".to_string(),
@@ -51,17 +64,14 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         })?));
     }
     if let Some(timeout) = env_var_or_none("SPLUNK_TIMEOUT") {
-        let secs: u64 = timeout
-            .trim()
-            .parse()
-            .map_err(|_| ConfigError::InvalidValue {
-                var: "SPLUNK_TIMEOUT".to_string(),
-                message: "must be a number".to_string(),
-            })?;
+        let secs: u64 = timeout.parse().map_err(|_| ConfigError::InvalidValue {
+            var: "SPLUNK_TIMEOUT".to_string(),
+            message: "must be a number".to_string(),
+        })?;
         loader.set_timeout(Some(Duration::from_secs(secs)));
     }
     if let Some(retries) = env_var_or_none("SPLUNK_MAX_RETRIES") {
-        loader.set_max_retries(Some(retries.trim().parse().map_err(|_| {
+        loader.set_max_retries(Some(retries.parse().map_err(|_| {
             ConfigError::InvalidValue {
                 var: "SPLUNK_MAX_RETRIES".to_string(),
                 message: "must be a number".to_string(),
@@ -69,7 +79,7 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         })?));
     }
     if let Some(buffer) = env_var_or_none("SPLUNK_SESSION_EXPIRY_BUFFER") {
-        loader.set_session_expiry_buffer_seconds(Some(buffer.trim().parse().map_err(|_| {
+        loader.set_session_expiry_buffer_seconds(Some(buffer.parse().map_err(|_| {
             ConfigError::InvalidValue {
                 var: "SPLUNK_SESSION_EXPIRY_BUFFER".to_string(),
                 message: "must be a number".to_string(),
@@ -77,7 +87,7 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         })?));
     }
     if let Some(ttl) = env_var_or_none("SPLUNK_SESSION_TTL") {
-        loader.set_session_ttl_seconds(Some(ttl.trim().parse().map_err(|_| {
+        loader.set_session_ttl_seconds(Some(ttl.parse().map_err(|_| {
             ConfigError::InvalidValue {
                 var: "SPLUNK_SESSION_TTL".to_string(),
                 message: "must be a number".to_string(),
@@ -85,7 +95,7 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         })?));
     }
     if let Some(interval) = env_var_or_none("SPLUNK_HEALTH_CHECK_INTERVAL") {
-        loader.set_health_check_interval_seconds(Some(interval.trim().parse().map_err(|_| {
+        loader.set_health_check_interval_seconds(Some(interval.parse().map_err(|_| {
             ConfigError::InvalidValue {
                 var: "SPLUNK_HEALTH_CHECK_INTERVAL".to_string(),
                 message: "must be a number".to_string(),
@@ -100,7 +110,7 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         loader.set_latest_time(Some(latest));
     }
     if let Some(max_results) = env_var_or_none("SPLUNK_MAX_RESULTS") {
-        loader.set_max_results(Some(max_results.trim().parse().map_err(|_| {
+        loader.set_max_results(Some(max_results.parse().map_err(|_| {
             ConfigError::InvalidValue {
                 var: "SPLUNK_MAX_RESULTS".to_string(),
                 message: "must be a positive number".to_string(),
@@ -138,14 +148,14 @@ mod tests {
             );
         });
 
-        // Test 4: Non-empty string env var returns Some(value without trimming)
+        // Test 4: Non-empty string env var returns Some(trimmed value)
         let key2 = "_SPLUNK_TEST_SET_VAR";
         temp_env::with_vars([(key2, Some(" test-value "))], || {
             let result4 = env_var_or_none(key2);
             assert_eq!(
                 result4,
-                Some(" test-value ".to_string()), // Implementation doesn't trim the value, just checks if trimmed is empty
-                "Non-empty env var should return Some(value)"
+                Some("test-value".to_string()), // Value is now trimmed
+                "Non-empty env var should return Some(trimmed value)"
             );
         });
     }

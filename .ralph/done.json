@@ -1577,6 +1577,55 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0312",
+      "status": "done",
+      "title": "Trim env var values in `env_var_or_none` to match documented invariants",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "correctness"
+      ],
+      "scope": [
+        "crates/config/src/loader/env.rs",
+        "crates/config/src/loader/builder.rs",
+        "crates/config/src/loader/tests/env_tests.rs",
+        "docs/usage.md",
+        "cargo test -p splunk-config"
+      ],
+      "evidence": [
+        "crates/config/src/loader/env.rs: env_var_or_none filters out unset/empty/whitespace-only values, but returns the original string without trimming (see the unit test that asserts \" test-value \" is returned verbatim).",
+        "crates/config/src/loader/env.rs: apply_env passes through untrimmed SPLUNK_USERNAME / SPLUNK_PASSWORD / SPLUNK_API_TOKEN values, so leading/trailing whitespace in those env vars will be preserved and can cause authentication failures.",
+        "crates/config/src/loader/builder.rs: base_url is already validated and normalized during build (trim surrounding whitespace + strip trailing slash), so SPLUNK_BASE_URL whitespace is handled later.",
+        "docs/usage.md: documents that empty/whitespace-only env var values are treated as unset, but does not document trimming of non-empty values (changing this would be an explicit behavior change and should be documented)."
+      ],
+      "plan": [
+        "Decide whether trimming should happen in env_var_or_none (global behavior) or only in apply_env for specific string vars (auth fields vs search defaults)",
+        "Implement the chosen trimming behavior without changing the existing empty/whitespace-only filtering semantics",
+        "Update/add tests: adjust the env_var_or_none unit test expectation and add an end-to-end env override test for trimming SPLUNK_USERNAME and/or SPLUNK_API_TOKEN",
+        "Verify with `cargo test -p splunk-config` (and run `make ci` if the change affects other crates)"
+      ],
+      "notes": [
+        "Current behavior is intentionally asserted by a unit test in crates/config/src/loader/env.rs; changing trimming semantics will require updating that test and is a user-visible behavior change.",
+        "SPLUNK_BASE_URL whitespace is already normalized during ConfigLoader::build, so the highest-value trimming targets are auth-related env vars (username/password/token).",
+        "Implemented trimming in env_var_or_none to return trimmed values (leading/trailing whitespace removed)",
+        "Updated unit test expectation from ' test-value ' to 'test-value'",
+        "Added two end-to-end tests: test_env_vars_trimmed_for_session_auth and test_env_vars_trimmed_for_api_token_auth",
+        "Removed redundant .trim() calls from apply_env for numeric/boolean parsing fields",
+        "Updated module doc invariants and docs/usage.md to document trimming behavior",
+        "All 160 tests pass, full CI passes with SKIP_LIVE_TESTS=1"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T19:18:28.126279365Z",
+      "completed_at": "2026-02-03T19:18:28.126279365Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

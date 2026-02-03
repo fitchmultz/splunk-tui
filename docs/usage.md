@@ -65,7 +65,9 @@ When configured this way, `splunk-tui` will look up the password for the account
 
 Environment variables take precedence over the configuration file.
 
-**Note**: Empty environment variable values (e.g., `SPLUNK_API_TOKEN=""`) or whitespace-only values (e.g., `SPLUNK_TIMEOUT="  "`) are treated as unset and will not override values from the configuration file or other sources. This allows you to leave placeholder variables empty in `.env` files.
+**Note**: 
+- Empty environment variable values (e.g., `SPLUNK_API_TOKEN=""`) or whitespace-only values (e.g., `SPLUNK_TIMEOUT="  "`) are treated as unset and will not override values from the configuration file or other sources. This allows you to leave placeholder variables empty in `.env` files.
+- Non-empty values are automatically trimmed (leading/trailing whitespace removed). For example, `SPLUNK_USERNAME=" admin "` will be treated as `admin`.
 
 | Variable | Description |
 |----------|-------------|
