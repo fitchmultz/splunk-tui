@@ -1475,6 +1475,55 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0310",
+      "status": "done",
+      "title": "Remove dummy Config construction in `splunk-cli list-all` dispatch (make illegal states unrepresentable)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "correctness",
+        "reliability"
+      ],
+      "scope": [
+        "crates/cli/src/dispatch.rs",
+        "crates/cli/src/commands/list_all/mod.rs",
+        "crates/cli/src/config_context.rs",
+        "crates/cli/src/main.rs",
+        "crates/cli/tests/list_all/multi_profile_tests.rs",
+        "cargo test -p splunk-cli",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/cli/src/dispatch.rs:268-304 builds a placeholder `splunk_config::Config` (empty base_url, empty username/password) for list-all when `--profiles`/`--all-profiles` is used, despite comments stating multi-profile mode does not use the config parameter.",
+        "crates/cli/src/commands/list_all/mod.rs:38-47 requires `config: splunk_config::Config` even though the multi-profile branch is driven by `ConfigManager`, forcing callers to construct dummy configs for type-checking.",
+        "crates/cli/src/config_context.rs:13-26 defines `ConfigCommandContext::Placeholder` to avoid illegal configs at compile time, but list-all currently reintroduces an illegal (empty) `splunk_config::Config` value in dispatch."
+      ],
+      "plan": [
+        "Refactor list-all so multi-profile mode does not accept/require `splunk_config::Config` (e.g., split into `run_single_profile(config, ...)` and `run_multi_profile(config_manager, ...)`, or accept `ConfigCommandContext`)",
+        "Update `crates/cli/src/dispatch.rs` to remove `config_for_list_all` placeholder construction and route to the correct list-all entrypoint based on mode",
+        "Add/adjust tests to prove multi-profile list-all ignores connection env vars (e.g., set `SPLUNK_BASE_URL` to an invalid value while running `list-all --all-profiles` against a temp config file, and assert it still succeeds/produces multi-profile output)",
+        "Verify with `cargo test -p splunk-cli` and `make ci`"
+      ],
+      "notes": [
+        "There is already a multi-profile type boundary (`ConfigCommandContext::Placeholder`), but `commands::list_all::run(config: Config, ...)` forces dispatch to fabricate a Config anyway; tightening the list-all API would align the call graph with the existing invariant.",
+        "Refactored list-all command to eliminate dummy Config construction",
+        "Split run() into run_single_profile(config, ...) and run_multi_profile(config_manager, ...)",
+        "Updated dispatch.rs to route directly to mode-appropriate entrypoint without placeholder config",
+        "Added test verifying multi-profile mode ignores SPLUNK_BASE_URL env var",
+        "All 389+ tests pass, make ci passes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T18:33:47.583988744Z",
+      "completed_at": "2026-02-03T18:33:47.583988744Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

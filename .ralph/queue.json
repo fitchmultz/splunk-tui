@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0310",
-      "status": "todo",
-      "title": "Remove dummy Config construction in `splunk-cli list-all` dispatch (make illegal states unrepresentable)",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "reliability"
-      ],
-      "scope": [
-        "crates/cli/src/dispatch.rs",
-        "crates/cli/src/commands/list_all",
-        "cargo test -p splunk-cli"
-      ],
-      "evidence": [
-        "crates/cli/src/dispatch.rs:268-295 constructs a placeholder `splunk_config::Config` with empty base_url and empty secrets in multi-profile mode, relying on a comment that it is unused.",
-        "This creates an illegal-but-representable state: a `Config` value that would crash/fail if accidentally used in future code paths."
-      ],
-      "plan": [
-        "Refactor `commands::list_all::run` to accept `Option<Config>` or split into single-profile vs multi-profile entrypoints",
-        "Eliminate placeholder config creation and enforce invariants at the type boundary",
-        "Add tests for list-all multi-profile path to ensure no dummy config is needed",
-        "Verify by running `cargo test -p splunk-cli` and `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0311",
       "status": "todo",
       "title": "Validate `base_url` during config build (fail fast with clear error)",

@@ -248,62 +248,41 @@ pub(crate) async fn run_command(
             profiles,
             all_profiles,
         } => {
-            // Load ConfigManager if multi-profile mode
-            let config_manager = if all_profiles || profiles.is_some() {
-                // Use custom config path if provided via CLI arg or env var (already resolved)
-                if let Some(config_path) = &cli.config_path {
-                    Some(splunk_config::ConfigManager::new_with_path(
-                        config_path.clone(),
-                    )?)
-                } else {
-                    Some(splunk_config::ConfigManager::new()?)
-                }
-            } else {
-                None
-            };
-
-            // Determine which profiles to query
+            // Determine mode: multi-profile uses ConfigManager, single-profile uses Config
             let is_multi_profile = all_profiles || profiles.is_some();
 
-            // Only extract real config for single-profile mode
-            let config = if is_multi_profile {
-                // Multi-profile mode doesn't use the config parameter
-                // (it loads configs from ConfigManager)
-                None
+            if is_multi_profile {
+                // Multi-profile mode: build ConfigManager and route to run_multi_profile
+                // No Config is needed since each profile loads its own config
+                let config_manager = if let Some(config_path) = &cli.config_path {
+                    splunk_config::ConfigManager::new_with_path(config_path.clone())?
+                } else {
+                    splunk_config::ConfigManager::new()?
+                };
+
+                commands::list_all::run_multi_profile(
+                    config_manager,
+                    resources,
+                    profiles,
+                    all_profiles,
+                    &cli.output,
+                    cli.output_file.clone(),
+                    cancel_token,
+                )
+                .await?;
             } else {
-                Some(config.into_real_config()?)
-            };
+                // Single-profile mode: extract real config and route to run_single_profile
+                let config = config.into_real_config()?;
 
-            // Unwrap config for single-profile mode, use placeholder for multi-profile
-            let config_for_list_all = config.unwrap_or(splunk_config::Config {
-                connection: splunk_config::ConnectionConfig {
-                    base_url: String::new(),
-                    skip_verify: false,
-                    timeout: std::time::Duration::from_secs(30),
-                    max_retries: 3,
-                    session_expiry_buffer_seconds: 60,
-                    session_ttl_seconds: 3600,
-                    health_check_interval_seconds: 60,
-                },
-                auth: splunk_config::AuthConfig {
-                    strategy: splunk_config::types::AuthStrategy::SessionToken {
-                        username: String::new(),
-                        password: secrecy::SecretString::new(String::new().into()),
-                    },
-                },
-            });
-
-            commands::list_all::run(
-                config_for_list_all,
-                resources,
-                profiles,
-                all_profiles,
-                config_manager,
-                &cli.output,
-                cli.output_file.clone(),
-                cancel_token,
-            )
-            .await?;
+                commands::list_all::run_single_profile(
+                    config,
+                    resources,
+                    &cli.output,
+                    cli.output_file.clone(),
+                    cancel_token,
+                )
+                .await?;
+            }
         }
         Commands::SavedSearches { command } => {
             let config = config.into_real_config()?;

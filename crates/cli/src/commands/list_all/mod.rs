@@ -29,25 +29,14 @@ use crate::formatters::{OutputFormat, write_to_file};
 
 pub use types::{ListAllMultiOutput, ListAllOutput, ProfileResult, VALID_RESOURCES};
 
-/// Main entry point for the list-all command.
+/// Normalize and validate resource types for fetching.
 ///
-/// Supports single-profile and multi-profile modes:
-/// - Single-profile: Uses the provided config directly (backward compatible)
-/// - Multi-profile: Uses ConfigManager to enumerate and query multiple profiles
-#[allow(clippy::too_many_arguments)]
-pub async fn run(
-    config: splunk_config::Config,
-    resources_filter: Option<Vec<String>>,
-    profile_names: Option<Vec<String>>,
-    all_profiles: bool,
-    config_manager: Option<splunk_config::ConfigManager>,
-    output_format: &str,
-    output_file: Option<std::path::PathBuf>,
-    cancel: &CancellationToken,
-) -> Result<()> {
-    info!("Listing all Splunk resources");
-
-    // Normalize and validate resource types (trim, lowercase, dedupe, preserve order)
+/// This helper:
+/// - Trims, lowercases, and deduplicates resource names (preserving order)
+/// - Defaults to all valid resources if none specified
+/// - Validates that all resources are valid types
+fn normalize_and_validate_resources(resources_filter: Option<Vec<String>>) -> Result<Vec<String>> {
+    // Normalize resource types (trim, lowercase, dedupe, preserve order)
     let resources_to_fetch: Vec<String> = resources_filter
         .map(|resources| {
             let mut seen = std::collections::HashSet::new();
@@ -60,6 +49,7 @@ pub async fn run(
         })
         .unwrap_or_else(|| VALID_RESOURCES.iter().map(|s| s.to_string()).collect());
 
+    // Validate all resources are valid types
     for resource in &resources_to_fetch {
         if !VALID_RESOURCES.contains(&resource.as_str()) {
             anyhow::bail!(
@@ -70,79 +60,17 @@ pub async fn run(
         }
     }
 
-    // Determine which profiles to query
-    let is_multi_profile = all_profiles || profile_names.is_some();
+    Ok(resources_to_fetch)
+}
 
-    let results = if is_multi_profile {
-        // Multi-profile mode
-        let cm = config_manager.context("ConfigManager required for multi-profile mode")?;
-
-        let target_profiles: Vec<String> = if all_profiles {
-            // Query all profiles from config file
-            cm.list_profiles().keys().cloned().collect()
-        } else {
-            // Query specified profiles - trim and dedupe (preserve case, preserve order)
-            profile_names
-                .map(|profiles| {
-                    let mut seen = std::collections::HashSet::new();
-                    profiles
-                        .into_iter()
-                        .map(|p| p.trim().to_string())
-                        .filter(|p| !p.is_empty())
-                        .filter(|p| seen.insert(p.clone()))
-                        .collect()
-                })
-                .unwrap_or_default()
-        };
-
-        if target_profiles.is_empty() {
-            anyhow::bail!(
-                "No profiles configured. Use 'splunk-cli config set <profile>' to add one."
-            );
-        }
-
-        // Validate that specified profiles exist
-        let available_profiles = cm.list_profiles();
-        for profile_name in &target_profiles {
-            if !available_profiles.contains_key(profile_name) {
-                anyhow::bail!(
-                    "Profile '{}' not found. Available profiles: {}",
-                    profile_name,
-                    available_profiles
-                        .keys()
-                        .cloned()
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                );
-            }
-        }
-
-        output::fetch_multi_profile_resources(cm, target_profiles, resources_to_fetch, cancel)
-            .await?
-    } else {
-        // Single-profile mode (backward compatible)
-        let mut client = build_client_from_config(&config)?;
-
-        let resources =
-            fetchers::fetch_all_resources(&mut client, resources_to_fetch, cancel).await?;
-
-        ListAllMultiOutput {
-            timestamp: output::format_timestamp(),
-            profiles: vec![ProfileResult {
-                profile_name: "default".to_string(),
-                base_url: config.connection.base_url,
-                resources,
-                error: None,
-            }],
-        }
-    };
-
-    // Format and output results
-    let format = OutputFormat::from_str(output_format)?;
-    let formatted = output::format_multi_profile_output(&results, format)?;
-
+/// Write formatted output to stdout or file.
+async fn write_output(
+    formatted: &str,
+    output_file: Option<std::path::PathBuf>,
+    format: OutputFormat,
+) -> Result<()> {
     if let Some(ref path) = output_file {
-        write_to_file(&formatted, path)
+        write_to_file(formatted, path)
             .with_context(|| format!("Failed to write output to {}", path.display()))?;
         eprintln!(
             "Results written to {} ({:?} format)",
@@ -152,6 +80,123 @@ pub async fn run(
     } else {
         print!("{}", formatted);
     }
+    Ok(())
+}
+
+/// Run list-all in single-profile mode.
+///
+/// This entrypoint requires a real config and is used for backward-compatible
+/// single-profile operations. The config is used to build a Splunk client
+/// and fetch resources directly.
+pub async fn run_single_profile(
+    config: splunk_config::Config,
+    resources_filter: Option<Vec<String>>,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &CancellationToken,
+) -> Result<()> {
+    info!("Listing all Splunk resources (single-profile mode)");
+
+    // Normalize and validate resource types
+    let resources_to_fetch = normalize_and_validate_resources(resources_filter)?;
+
+    // Build client and fetch resources
+    let mut client = build_client_from_config(&config)?;
+    let resources = fetchers::fetch_all_resources(&mut client, resources_to_fetch, cancel).await?;
+
+    // Build output structure
+    let results = ListAllMultiOutput {
+        timestamp: output::format_timestamp(),
+        profiles: vec![ProfileResult {
+            profile_name: "default".to_string(),
+            base_url: config.connection.base_url,
+            resources,
+            error: None,
+        }],
+    };
+
+    // Format and output results
+    let format = OutputFormat::from_str(output_format)?;
+    let formatted = output::format_multi_profile_output(&results, format)?;
+    write_output(&formatted, output_file, format).await?;
+
+    Ok(())
+}
+
+/// Run list-all in multi-profile mode.
+///
+/// This entrypoint requires a ConfigManager and is used for querying multiple
+/// profiles. No single Config is needed since each profile's config is loaded
+/// from the ConfigManager.
+///
+/// Either `profile_names` or `all_profiles` must be specified to determine
+/// which profiles to query.
+pub async fn run_multi_profile(
+    config_manager: splunk_config::ConfigManager,
+    resources_filter: Option<Vec<String>>,
+    profile_names: Option<Vec<String>>,
+    all_profiles: bool,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &CancellationToken,
+) -> Result<()> {
+    info!("Listing all Splunk resources (multi-profile mode)");
+
+    // Normalize and validate resource types
+    let resources_to_fetch = normalize_and_validate_resources(resources_filter)?;
+
+    // Determine which profiles to query
+    let target_profiles: Vec<String> = if all_profiles {
+        // Query all profiles from config file
+        config_manager.list_profiles().keys().cloned().collect()
+    } else {
+        // Query specified profiles - trim and dedupe (preserve case, preserve order)
+        profile_names
+            .map(|profiles| {
+                let mut seen = std::collections::HashSet::new();
+                profiles
+                    .into_iter()
+                    .map(|p| p.trim().to_string())
+                    .filter(|p| !p.is_empty())
+                    .filter(|p| seen.insert(p.clone()))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+
+    if target_profiles.is_empty() {
+        anyhow::bail!("No profiles configured. Use 'splunk-cli config set <profile>' to add one.");
+    }
+
+    // Validate that specified profiles exist
+    let available_profiles = config_manager.list_profiles();
+    for profile_name in &target_profiles {
+        if !available_profiles.contains_key(profile_name) {
+            anyhow::bail!(
+                "Profile '{}' not found. Available profiles: {}",
+                profile_name,
+                available_profiles
+                    .keys()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+    }
+
+    // Fetch resources from all target profiles
+    let results = output::fetch_multi_profile_resources(
+        config_manager,
+        target_profiles,
+        resources_to_fetch,
+        cancel,
+    )
+    .await?;
+
+    // Format and output results
+    let format = OutputFormat::from_str(output_format)?;
+    let formatted = output::format_multi_profile_output(&results, format)?;
+    write_output(&formatted, output_file, format).await?;
 
     Ok(())
 }
