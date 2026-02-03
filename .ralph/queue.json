@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0309",
-      "status": "todo",
-      "title": "Refactor SplunkClient search APIs to avoid too-many-arguments and clarify options",
-      "priority": "high",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/client/src/client/search.rs",
-        "crates/client/src/endpoints/search",
-        "cargo clippy --workspace --all-targets --all-features -- -D warnings"
-      ],
-      "evidence": [
-        "crates/client/src/client/search.rs:33-75 `SplunkClient::search` takes 8 args and triggers clippy `too_many_arguments`.",
-        "crates/client/src/client/search.rs:99-144 `SplunkClient::search_with_progress` takes 9 args and triggers the same clippy error.",
-        "cmd: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings -> fails on these functions."
-      ],
-      "plan": [
-        "Introduce a `SearchOptions`/`SearchRequest` struct (or reuse CreateJobOptions) to bundle parameters",
-        "Update CLI/TUI call sites to pass the options struct",
-        "Keep a compatibility layer only if required; otherwise make an explicit breaking change",
-        "Add tests verifying search option mapping and default behavior",
-        "Verify by running `cargo clippy --workspace --all-targets --all-features -- -D warnings` and `cargo test -p splunk-client`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0310",
       "status": "todo",
       "title": "Remove dummy Config construction in `splunk-cli list-all` dispatch (make illegal states unrepresentable)",

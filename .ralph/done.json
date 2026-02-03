@@ -1426,6 +1426,55 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0309",
+      "status": "done",
+      "title": "Refactor SplunkClient search APIs to avoid too-many-arguments and clarify options",
+      "priority": "high",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs",
+        "crates/client/src/endpoints/search",
+        "crates/client/src/lib.rs",
+        "crates/cli/src/commands/search.rs",
+        "crates/tui/src/runtime/side_effects/searches.rs",
+        "cargo clippy -p splunk-client --all-targets --all-features -- -D warnings",
+        "cargo test -p splunk-client"
+      ],
+      "evidence": [
+        "crates/client/src/client/search.rs:22-221 introduces `SearchRequest` and updates `SplunkClient::search`/`search_with_progress` to take it (no multi-arg client API).",
+        "crates/cli/src/commands/search.rs:45-79 builds a `SearchRequest` and calls `client.search_with_progress(request, ...)`.",
+        "crates/tui/src/runtime/side_effects/searches.rs:96-110 builds a `SearchRequest` and calls `search_with_progress` with a progress callback.",
+        "cmd: cargo clippy -p splunk-client --all-targets --all-features -- -D warnings -> passes (2026-02-03).",
+        "cmd: cargo test -p splunk-client -> passes; includes unit tests for `SearchRequest` defaults and option mapping (2026-02-03)."
+      ],
+      "plan": [
+        "Run `cargo clippy -p splunk-client --all-targets --all-features -- -D warnings` to confirm no `too_many_arguments` remains in the client search APIs",
+        "Run `cargo test -p splunk-client` to confirm `SearchRequest` behavior and mapping tests still pass",
+        "Search for any remaining legacy call sites or wrappers and remove them if found",
+        "If all checks are green and no legacy code remains, mark RQ-0309 as done and archive it"
+      ],
+      "notes": [
+        "The original refactor appears to already be implemented: `SearchRequest` exists in the client and both CLI/TUI call sites are using it. This task may be ready to close after a quick repo-wide verification.",
+        "Verified SearchRequest refactor is complete and correct",
+        "SplunkClient::search and search_with_progress use single SearchRequest argument",
+        "All 121 tests pass; clippy clean for splunk-client package",
+        "CLI and TUI call sites properly use SearchRequest builder pattern",
+        "Remaining too_many_arguments allowances are internal endpoint functions (out of scope)"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T18:08:49.605670282Z",
+      "completed_at": "2026-02-03T18:08:49.605670282Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }
