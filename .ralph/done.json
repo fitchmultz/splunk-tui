@@ -1740,6 +1740,47 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0317",
+      "status": "done",
+      "title": "List contents of current directory",
+      "priority": "medium",
+      "tags": [
+        "filesystem",
+        "repo",
+        "shell"
+      ],
+      "scope": [
+        ".",
+        "pwd",
+        "ls -la"
+      ],
+      "evidence": [
+        "Current working directory is /home/mitchfultz/projects/splunk-tui (repo root).",
+        "Top-level entries include Cargo.toml, Cargo.lock, Makefile, crates/, docs/, scripts/, and .ralph/ (seen via 'ls -la').",
+        "Local env-related files exist in the repo root (.env, .env.example, .env.test.example) along with rust-toolchain.toml."
+      ],
+      "plan": [
+        "Run `pwd` to confirm the current directory",
+        "Run `ls -la` to list the directory contents (including dotfiles)",
+        "Share the output; if more detail is needed, run `ls -la <subdir>` for specific paths"
+      ],
+      "notes": [
+        "A directory listing was already captured while refreshing this task; consider marking this task done if no further output is needed.",
+        "Directory listing captured: 19 entries in /home/mitchfultz/projects/splunk-tui",
+        "Confirmed repo root structure: Cargo.toml, Makefile, crates/, docs/, scripts/, .ralph/",
+        "No code changes made; task is informational only",
+        "Working tree clean (only .ralph/queue.json modified by Ralph bookkeeping)"
+      ],
+      "request": "list",
+      "created_at": "2026-02-03T00:00:00Z",
+      "updated_at": "2026-02-03T20:23:20.828687237Z",
+      "completed_at": "2026-02-03T20:23:20.828687237Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }
