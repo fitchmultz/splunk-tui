@@ -2,7 +2,6 @@
 /target/
 **/*.rs.bk
 *.bak
-Cargo.lock
 /rust_out
 
 # IDE
