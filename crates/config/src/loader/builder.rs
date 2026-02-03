@@ -191,7 +191,12 @@ impl ConfigLoader {
             }
         }
 
-        let base_url = self.base_url.ok_or(ConfigError::MissingBaseUrl)?;
+        let base_url = self
+            .base_url
+            .as_deref()
+            .map(validate_and_normalize_base_url)
+            .transpose()?
+            .ok_or(ConfigError::MissingBaseUrl)?;
 
         // Determine auth strategy - API token takes precedence
         let strategy = if let Some(token) = self.api_token {
@@ -387,4 +392,52 @@ impl ConfigLoader {
     pub(crate) fn set_max_results(&mut self, max_results: Option<u64>) {
         self.max_results = max_results;
     }
+}
+
+/// Validates and normalizes a base URL string.
+///
+/// Validation rules:
+/// - Trim surrounding whitespace
+/// - Treat blank/whitespace-only as missing (returns Err(ConfigError::MissingBaseUrl))
+/// - Parse as an absolute URL
+/// - Require scheme is http or https
+/// - Require host is present
+/// - Normalize by stripping trailing slash
+fn validate_and_normalize_base_url(raw: &str) -> Result<String, ConfigError> {
+    let trimmed = raw.trim();
+
+    if trimmed.is_empty() {
+        return Err(ConfigError::MissingBaseUrl);
+    }
+
+    let parsed = url::Url::parse(trimmed).map_err(|e| ConfigError::InvalidValue {
+        var: "base_url".into(),
+        message: format!(
+            "must be an absolute http(s) URL with a host (e.g. https://localhost:8089): {e}"
+        ),
+    })?;
+
+    // Validate scheme is http or https
+    let scheme = parsed.scheme();
+    if scheme != "http" && scheme != "https" {
+        return Err(ConfigError::InvalidValue {
+            var: "base_url".into(),
+            message: format!(
+                "scheme must be http or https (e.g. https://localhost:8089), got: {scheme}"
+            ),
+        });
+    }
+
+    // Validate host is present
+    if parsed.host_str().is_none() {
+        return Err(ConfigError::InvalidValue {
+            var: "base_url".into(),
+            message: "host is required (e.g. https://localhost:8089)".into(),
+        });
+    }
+
+    // Normalize: strip trailing slash
+    let normalized = parsed.as_str().trim_end_matches('/').to_string();
+
+    Ok(normalized)
 }

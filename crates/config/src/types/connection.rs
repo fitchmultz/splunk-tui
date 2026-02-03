@@ -49,7 +49,16 @@ mod duration_seconds {
 /// Connection configuration for Splunk server.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionConfig {
-    /// Base URL of the Splunk server (e.g., https://localhost:8089)
+    /// Base URL of the Splunk server (e.g., https://localhost:8089).
+    ///
+    /// # Invariants
+    ///
+    /// This field is guaranteed to be:
+    /// - An absolute URL with a valid `http` or `https` scheme
+    /// - Contain a valid host component
+    /// - Normalized (no trailing `/`)
+    ///
+    /// These invariants are enforced by [`ConfigLoader::build()`](crate::loader::ConfigLoader::build).
     pub base_url: String,
     /// Whether to skip TLS verification (for self-signed certificates)
     pub skip_verify: bool,

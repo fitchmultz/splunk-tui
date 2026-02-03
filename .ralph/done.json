@@ -1524,6 +1524,59 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0311",
+      "status": "done",
+      "title": "Validate `base_url` during config build (fail fast with clear error)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "correctness",
+        "operability"
+      ],
+      "scope": [
+        "crates/config/src/loader/builder.rs",
+        "crates/config/src/loader/error.rs",
+        "crates/config/src/types/connection.rs",
+        "crates/config/Cargo.toml",
+        "crates/config/src/loader/tests/basic_tests.rs",
+        "crates/config/src/loader/tests/validation_tests.rs",
+        "cargo test -p splunk-config",
+        "SKIP_LIVE_TESTS=1 make ci"
+      ],
+      "evidence": [
+        "crates/config/src/loader/builder.rs:185-223 only checks `base_url` for presence (MissingBaseUrl) and then stores it directly in ConnectionConfig; no scheme/host/format validation occurs.",
+        "crates/config/src/types/connection.rs:49-74 defines `ConnectionConfig.base_url` as a plain `String`, so invalid URLs can enter the system until a later network call.",
+        "crates/config/src/loader/error.rs:22-61 has `MissingBaseUrl` and a generic `InvalidValue`, but no explicit invalid-base-URL error, making failures less actionable.",
+        "crates/client/src/endpoints/kvstore.rs:245-265 parses `base_url` at request time (Url::parse) while other endpoints build URLs via string formatting (e.g. crates/client/src/endpoints/license.rs:28-41), so invalid base URLs fail later and inconsistently."
+      ],
+      "plan": [
+        "Add base URL validation in `ConfigLoader::build()` (trim, parse as URL, require http/https + host; optionally normalize by stripping trailing slash)",
+        "Return a clear config error for invalid base URLs (prefer `ConfigError::InvalidValue { var: \"base_url\", ... }` unless a dedicated variant is justified)",
+        "Add tests in `crates/config/src/loader/tests/validation_tests.rs` covering invalid and whitespace base URLs and asserting build-time failure",
+        "Run `cargo test -p splunk-config` and `SKIP_LIVE_TESTS=1 make ci`"
+      ],
+      "notes": [
+        "Config currently performs no URL parsing/validation; base_url errors are deferred into the client layer.",
+        "The config crate does not currently depend on a URL parser; robust validation likely requires adding `url` (preferred) or using `reqwest::Url` as a new dependency.",
+        "Overlaps with RQ-0312 (env var trimming); build-time trimming/validation can still make base_url safe even before env trimming is implemented.",
+        "Added base_url validation in ConfigLoader::build() with trim, URL parse, scheme/host validation, and trailing slash normalization",
+        "Added 8 comprehensive tests covering whitespace, trailing slash, paths, missing scheme, unsupported scheme, missing host, blank input, and empty string",
+        "Updated MissingBaseUrl error message to be more actionable with configuration guidance",
+        "Updated ConnectionConfig docs to document base_url invariants enforced by ConfigLoader::build()",
+        "All 158 splunk-config tests pass; SKIP_LIVE_TESTS=1 make ci passes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T18:56:59.583079029Z",
+      "completed_at": "2026-02-03T18:56:59.583079029Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

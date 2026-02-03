@@ -304,6 +304,141 @@ fn test_health_check_interval_at_max_boundary_valid() {
 }
 
 // ============================================================================
+// Base URL Validation Tests
+// ============================================================================
+
+#[test]
+fn test_base_url_accepts_and_normalizes_whitespace() {
+    let loader = ConfigLoader::new()
+        .with_base_url("  https://localhost:8089  ".to_string())
+        .with_api_token("test-token".to_string());
+
+    let config = loader.build().unwrap();
+    assert_eq!(config.connection.base_url, "https://localhost:8089");
+}
+
+#[test]
+fn test_base_url_accepts_and_strips_trailing_slash() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://localhost:8089/".to_string())
+        .with_api_token("test-token".to_string());
+
+    let config = loader.build().unwrap();
+    assert_eq!(config.connection.base_url, "https://localhost:8089");
+}
+
+#[test]
+fn test_base_url_accepts_with_path_and_strips_trailing_slash() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://splunk.example.com:8089/custom/path/".to_string())
+        .with_api_token("test-token".to_string());
+
+    let config = loader.build().unwrap();
+    assert_eq!(
+        config.connection.base_url,
+        "https://splunk.example.com:8089/custom/path"
+    );
+}
+
+#[test]
+fn test_base_url_rejects_missing_scheme() {
+    let loader = ConfigLoader::new()
+        .with_base_url("localhost:8089".to_string())
+        .with_api_token("test-token".to_string());
+
+    let result = loader.build();
+    match result {
+        Err(ConfigError::InvalidValue { var, message }) => {
+            assert_eq!(var, "base_url");
+            assert!(
+                message.contains("http") && message.contains("https"),
+                "Expected message mentioning http/https scheme, got: {}",
+                message
+            );
+        }
+        Ok(_) => panic!("Expected InvalidValue error for missing scheme, got Ok"),
+        Err(ref e) => panic!(
+            "Expected InvalidValue error for missing scheme, got {:?}",
+            e
+        ),
+    }
+}
+
+#[test]
+fn test_base_url_rejects_unsupported_scheme() {
+    let loader = ConfigLoader::new()
+        .with_base_url("ftp://localhost:8089".to_string())
+        .with_api_token("test-token".to_string());
+
+    let result = loader.build();
+    match result {
+        Err(ConfigError::InvalidValue { var, message }) => {
+            assert_eq!(var, "base_url");
+            assert!(
+                message.contains("scheme must be http or https"),
+                "Expected message about http/https scheme requirement, got: {}",
+                message
+            );
+        }
+        Ok(_) => panic!("Expected InvalidValue error for unsupported scheme, got Ok"),
+        Err(ref e) => panic!(
+            "Expected InvalidValue error for unsupported scheme, got {:?}",
+            e
+        ),
+    }
+}
+
+#[test]
+fn test_base_url_rejects_missing_host() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https:///".to_string())
+        .with_api_token("test-token".to_string());
+
+    let result = loader.build();
+    match result {
+        Err(ConfigError::InvalidValue { var, message }) => {
+            assert_eq!(var, "base_url");
+            // URL parser catches empty host before our custom check
+            assert!(
+                message.contains("host") || message.contains("empty host"),
+                "Expected message about host requirement, got: {}",
+                message
+            );
+        }
+        Ok(_) => panic!("Expected InvalidValue error for missing host, got Ok"),
+        Err(ref e) => panic!("Expected InvalidValue error for missing host, got {:?}", e),
+    }
+}
+
+#[test]
+fn test_base_url_rejects_blank_whitespace_only() {
+    let loader = ConfigLoader::new()
+        .with_base_url("   ".to_string())
+        .with_api_token("test-token".to_string());
+
+    let result = loader.build();
+    assert!(
+        matches!(result, Err(ConfigError::MissingBaseUrl)),
+        "Expected MissingBaseUrl for whitespace-only base_url, got {:?}",
+        result
+    );
+}
+
+#[test]
+fn test_base_url_rejects_empty_string() {
+    let loader = ConfigLoader::new()
+        .with_base_url("".to_string())
+        .with_api_token("test-token".to_string());
+
+    let result = loader.build();
+    assert!(
+        matches!(result, Err(ConfigError::MissingBaseUrl)),
+        "Expected MissingBaseUrl for empty base_url, got {:?}",
+        result
+    );
+}
+
+// ============================================================================
 // Environment Variable Validation Tests
 // ============================================================================
 

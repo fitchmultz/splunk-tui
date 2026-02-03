@@ -26,7 +26,7 @@ pub enum ConfigError {
     #[error("Invalid value for {var}: {message}")]
     InvalidValue { var: String, message: String },
 
-    #[error("Base URL is required")]
+    #[error("Base URL is required. Set SPLUNK_BASE_URL or configure a profile.")]
     MissingBaseUrl,
 
     #[error("Authentication configuration is required (either username/password or API token)")]
