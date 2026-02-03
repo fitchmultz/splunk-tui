@@ -81,17 +81,52 @@ impl ConfigLoader {
         }
     }
 
+    /// Check if dotenv loading is disabled via environment variable.
+    fn dotenv_disabled() -> bool {
+        matches!(
+            std::env::var("DOTENV_DISABLED").ok().as_deref(),
+            Some("true") | Some("1")
+        )
+    }
+
     /// Load environment variables from .env file if present.
     ///
     /// If `DOTENV_DISABLED` environment variable is set to "true" or "1",
     /// the .env file will not be loaded (useful for testing).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The `.env` file exists but has invalid syntax (`ConfigError::DotenvParse`)
+    /// - The `.env` file exists but cannot be read due to I/O errors (`ConfigError::DotenvIo`)
+    ///
+    /// Missing `.env` files are silently ignored (returns `Ok(self)`).
+    ///
+    /// SAFETY: Error messages never include raw .env line contents to prevent secret leakage.
     pub fn load_dotenv(self) -> Result<Self, ConfigError> {
-        if std::env::var("DOTENV_DISABLED").ok().as_deref() != Some("true")
-            && std::env::var("DOTENV_DISABLED").ok().as_deref() != Some("1")
-        {
-            dotenvy::dotenv().ok();
+        if Self::dotenv_disabled() {
+            return Ok(self);
         }
-        Ok(self)
+
+        match dotenvy::dotenv() {
+            Ok(_) => Ok(self),
+            Err(e) if Self::is_not_found(&e) => Ok(self),
+            Err(dotenvy::Error::LineParse(_, idx)) => {
+                Err(ConfigError::DotenvParse { error_index: idx })
+            }
+            Err(dotenvy::Error::Io(io_err)) => Err(ConfigError::DotenvIo {
+                kind: io_err.kind(),
+            }),
+            Err(_) => Err(ConfigError::DotenvUnknown),
+        }
+    }
+
+    /// Check if a dotenv error indicates the file was not found.
+    fn is_not_found(err: &dotenvy::Error) -> bool {
+        matches!(
+            err,
+            dotenvy::Error::Io(io_err) if io_err.kind() == std::io::ErrorKind::NotFound
+        )
     }
 
     /// Set the active profile name to load from the config file.

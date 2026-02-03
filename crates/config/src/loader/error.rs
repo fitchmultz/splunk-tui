@@ -11,7 +11,9 @@
 //! Invariants / Assumptions:
 //! - All error variants include context for debugging (variable names, paths, etc.).
 //! - ConfigFileError is converted to ConfigError for unified error handling.
+//! - Dotenv errors NEVER include raw .env line contents to prevent secret leakage.
 
+use std::io::ErrorKind;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -58,6 +60,25 @@ pub enum ConfigError {
 
     #[error("invalid health check interval: {message}")]
     InvalidHealthCheckInterval { message: String },
+
+    /// Failed to parse the `.env` file due to invalid syntax.
+    ///
+    /// SAFETY: This error only includes the byte index of the parse failure,
+    /// NOT the offending line content, to prevent leaking secrets.
+    #[error(
+        "Failed to parse .env file at position {error_index}. Hint: set DOTENV_DISABLED=1 to skip .env loading"
+    )]
+    DotenvParse { error_index: usize },
+
+    /// Failed to read the `.env` file due to an I/O error.
+    #[error("Failed to read .env file: {kind}")]
+    DotenvIo { kind: ErrorKind },
+
+    /// Unknown dotenv error (future variants from dotenvy crate).
+    ///
+    /// SAFETY: This error does not include any raw dotenv content.
+    #[error("Failed to load .env file. Hint: set DOTENV_DISABLED=1 to skip .env loading")]
+    DotenvUnknown,
 }
 
 impl From<ConfigFileError> for ConfigError {

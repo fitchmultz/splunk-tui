@@ -2,40 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0313",
-      "status": "todo",
-      "title": "Surface dotenv load failures (don't silently ignore invalid `.env` files)",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "operability"
-      ],
-      "scope": [
-        "crates/config/src/loader/builder.rs",
-        "crates/config/src/loader/tests",
-        "cargo test -p splunk-config"
-      ],
-      "evidence": [
-        "crates/config/src/loader/builder.rs:88-94 calls `dotenvy::dotenv().ok();`, swallowing parse errors and making misconfigurations harder to debug."
-      ],
-      "plan": [
-        "Differentiate missing `.env` (OK) vs invalid `.env` (error or at least warn with context)",
-        "Ensure DOTENV_DISABLED behavior remains hermetic for tests",
-        "Add tests that invalid `.env` content produces a clear failure mode when dotenv loading is enabled",
-        "Verify by running `cargo test -p splunk-config` and `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0314",
       "status": "todo",
       "title": "Remove duplicate timeout flags in `splunk-cli config set` help output",

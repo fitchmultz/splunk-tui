@@ -1626,6 +1626,63 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0313",
+      "status": "done",
+      "title": "Surface dotenv load failures (don't silently ignore invalid `.env` files)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "operability",
+        "config"
+      ],
+      "scope": [
+        "crates/config/src/loader/builder.rs",
+        "crates/config/src/loader/error.rs",
+        "crates/config/src/loader/mod.rs",
+        "crates/config/src/loader/tests",
+        "crates/cli/src/main.rs",
+        "crates/tui/src/runtime/config.rs",
+        "crates/cli/tests/config_loading_tests.rs",
+        "crates/tui/tests/config_loading_tests.rs",
+        "cargo test -p splunk-config",
+        "cargo test -p splunk-cli",
+        "cargo test -p splunk-tui",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/config/src/loader/builder.rs:88-94 calls `dotenvy::dotenv().ok();`, swallowing parse errors and making misconfigurations harder to debug.",
+        "`ConfigLoader::load_dotenv()` returns `Result<Self, ConfigError>` but currently cannot return an error because all dotenv failures are discarded.",
+        "Both UIs load dotenv at startup (`crates/cli/src/main.rs:38`, `crates/tui/src/runtime/config.rs:47`), so a malformed `.env` can currently degrade into confusing downstream \"missing config\" errors.",
+        "There are no dotenv-specific tests under `crates/config/src/loader/tests/` (no `dotenv`/`.env` matches), so invalid `.env` behavior is currently untested.",
+        "Hermetic tests rely on the `DOTENV_DISABLED` gate (e.g., `crates/cli/tests/dotenv_isolation_tests.rs`), so behavior must remain stable when `DOTENV_DISABLED=1`/`true`."
+      ],
+      "plan": [
+        "Introduce a dedicated `ConfigError` variant for dotenv load failures with safe, non-secret error context",
+        "Update `ConfigLoader::load_dotenv()` to ignore missing `.env` but return an error for parse/IO failures (while preserving the `DOTENV_DISABLED` gate)",
+        "Add focused tests in `crates/config/src/loader/tests` covering: missing `.env` is OK, invalid `.env` errors, and `DOTENV_DISABLED=1`/`true` skips dotenv loading",
+        "Ensure CLI/TUI startup paths bubble the new error cleanly and adjust any affected tests (`crates/cli/tests/*`, `crates/tui/tests/*`) as needed",
+        "Verify by running `cargo test -p splunk-config`, `cargo test -p splunk-cli`, `cargo test -p splunk-tui`, and `make ci`"
+      ],
+      "notes": [
+        "This change affects both `splunk-cli` and `splunk-tui` because both call `ConfigLoader::new().load_dotenv()?` during startup; tests that create malformed `.env` fixtures must isolate global state (cwd/env) to avoid cross-test contamination.",
+        "Added DotenvParse, DotenvIo, DotenvUnknown error variants to ConfigError",
+        "Updated load_dotenv() to return errors for invalid .env files while preserving DOTENV_DISABLED gate",
+        "Added 8 unit tests and 8 integration tests covering all error cases and secret leak prevention",
+        "Fixed live test harnesses to use safe error handling instead of .ok()",
+        "All tests pass: cargo test -p splunk-config (168), splunk-cli, splunk-tui, make ci"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T19:53:21.836253458Z",
+      "completed_at": "2026-02-03T19:53:21.836253458Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }
