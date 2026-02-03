@@ -298,9 +298,29 @@ async fn main() -> Result<()> {
                             }
                             break;
                         }
+
+                        // Handle LoadMoreWorkload* actions by deriving follow-up Load* actions
+                        // These are produced by workload input handler but need to be translated
+                        // to concrete LoadWorkloadPools/LoadWorkloadRules with pagination params
+                        let followup_action = match a {
+                            Action::LoadMoreWorkloadPools => {
+                                app.load_more_action_for_current_screen()
+                            }
+                            Action::LoadMoreWorkloadRules => {
+                                app.load_more_action_for_current_screen()
+                            }
+                            _ => None,
+                        };
+
                         let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
                         handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
+
+                        // Execute follow-up action for workload pagination if derived
+                        if let Some(followup) = followup_action {
+                            handle_side_effects(followup, client.clone(), tx.clone(), config_manager.clone()).await;
+                        }
+
                         // If navigation action, trigger load for new screen
                         if is_navigation
                             && let Some(load_action) = app.load_action_for_screen()
