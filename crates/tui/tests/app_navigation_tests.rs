@@ -294,7 +294,12 @@ fn test_shift_tab_cycles_backwards() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Settings);
 
-    // Shift+Tab from Settings should go to WorkloadManagement
+    // Shift+Tab from Settings should go to Shc
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Shc);
+
+    // Shift+Tab from Shc should go to WorkloadManagement
     let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::WorkloadManagement);

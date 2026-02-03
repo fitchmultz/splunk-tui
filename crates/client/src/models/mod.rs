@@ -28,6 +28,7 @@ pub mod roles;
 pub mod saved_searches;
 pub mod search_peers;
 pub mod server;
+pub mod shc;
 pub mod users;
 pub mod workload;
 
@@ -73,6 +74,10 @@ pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListRes
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};
+pub use shc::{
+    AddShcMemberParams, RemoveShcMemberParams, RollingRestartParams, SetCaptainParams, ShcCaptain,
+    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus,
+};
 pub use users::{CreateUserParams, ModifyUserParams, User, UserEntry, UserListResponse};
 pub use workload::{
     WorkloadPool, WorkloadPoolEntry, WorkloadPoolListResponse, WorkloadRule, WorkloadRuleEntry,

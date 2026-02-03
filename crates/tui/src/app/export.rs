@@ -37,6 +37,7 @@ pub enum ExportTarget {
     MultiInstance,
     AuditEvents,
     Workload,
+    ShcStatus,
 }
 
 impl ExportTarget {
@@ -63,6 +64,7 @@ impl ExportTarget {
             ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
             ExportTarget::AuditEvents => "Export Audit Events",
             ExportTarget::Workload => "Export Workload Management",
+            ExportTarget::ShcStatus => "Export SHC Status",
         }
     }
 
@@ -89,6 +91,7 @@ impl ExportTarget {
             ExportTarget::MultiInstance => "multi-instance",
             ExportTarget::AuditEvents => "audit-events",
             ExportTarget::Workload => "workload",
+            ExportTarget::ShcStatus => "shc-status",
         };
 
         let ext = match format {
@@ -203,6 +206,10 @@ impl App {
                 });
                 Some(combined)
             }
+            ExportTarget::ShcStatus => self
+                .shc_status
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
         }
     }
 

@@ -11,7 +11,8 @@
 use crate::formatters::table::workload;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput,
+    LicenseInstallOutput, LicensePoolOperationOutput, ShcCaptainOutput, ShcConfigOutput,
+    ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
 use splunk_client::models::AuditEvent;
@@ -46,6 +47,7 @@ use super::roles;
 use super::saved_searches;
 use super::search;
 use super::search_peers;
+use super::shc;
 use super::users;
 
 /// Pagination metadata for table output.
@@ -307,9 +309,117 @@ impl Formatter for TableFormatter {
     ) -> Result<String> {
         workload::format_workload_rules(rules, detailed)
     }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        shc::format_shc_status(status)
+    }
+
+    fn format_shc_members(
+        &self,
+        members: &[ShcMemberOutput],
+        pagination: &Pagination,
+    ) -> Result<String> {
+        shc::format_shc_members(members, pagination)
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        shc::format_shc_captain(captain)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        shc::format_shc_config(config)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        shc::format_shc_management(output)
+    }
 }
 
 impl TableFormatter {
+    /// Table-only formatter for SHC status with pagination footer (members only).
+    #[allow(clippy::collapsible_if)]
+    pub fn format_shc_status_paginated(
+        &self,
+        shc_status: &ShcStatusOutput,
+        detailed: bool,
+        members_output: Option<Vec<ShcMemberOutput>>,
+        members_pagination: Option<Pagination>,
+    ) -> Result<String> {
+        let mut output = format!(
+            "SHC Status:\n\
+             Is Captain: {}\n\
+             Is Searchable: {}\n\
+             Captain URI: {}\n\
+             Member Count: {}\n\
+             Minimum Member Count: {}\n\
+             Rolling Restart: {}\n\
+             Service Ready: {}\n",
+            shc_status.is_captain,
+            shc_status.is_searchable,
+            shc_status.captain_uri.as_deref().unwrap_or("N/A"),
+            shc_status.member_count,
+            shc_status
+                .minimum_member_count
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+            shc_status
+                .rolling_restart_flag
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+            shc_status
+                .service_ready_flag
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+        );
+
+        if detailed {
+            if let Some(members) = members_output {
+                output.push_str("\nSHC Members:\n");
+
+                if members.is_empty() {
+                    // Offset out of range is especially important to explain in table output.
+                    if let Some(p) = members_pagination
+                        && let Some(total) = p.total
+                        && total > 0
+                        && p.offset >= total
+                    {
+                        output.push_str(&format!(
+                            "  No members found for offset {} (total {}).\n",
+                            p.offset, total
+                        ));
+                    } else {
+                        output.push_str("  No members found.\n");
+                    }
+                } else {
+                    output.push_str("  Host\t\tStatus\tCaptain\tGUID\t\tSite\n");
+                    output.push_str("  ----\t\t------\t-------\t----\t\t----\n");
+                    for member in &members {
+                        let captain_marker = if member.is_captain { "Yes" } else { "" };
+                        output.push_str(&format!(
+                            "  {}:{}\t{}\t{}\t{}\t{}\n",
+                            member.host,
+                            member.port,
+                            member.status,
+                            captain_marker,
+                            &member.guid[..member.guid.len().min(8)],
+                            member.site.as_deref().unwrap_or("-"),
+                        ));
+                    }
+                }
+
+                if let Some(p) = members_pagination
+                    && let Some(footer) = build_pagination_footer(p, members.len())
+                {
+                    output.push('\n');
+                    output.push_str(&footer);
+                    output.push('\n');
+                }
+            }
+        }
+
+        Ok(output)
+    }
+
     /// Table-only formatter for indexes with pagination footer.
     ///
     /// NOTE: This does not attempt to discover a server-side total for indexes (not exposed by the

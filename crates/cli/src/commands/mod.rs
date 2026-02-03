@@ -24,6 +24,7 @@ pub mod roles;
 pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
+pub mod shc;
 pub mod users;
 pub mod workload;
 

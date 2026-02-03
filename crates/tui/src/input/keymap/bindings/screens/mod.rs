@@ -22,6 +22,7 @@ mod monitoring;
 mod saved_searches;
 mod search_peers;
 mod settings;
+mod shc;
 mod status;
 mod users;
 mod workload;
@@ -46,5 +47,6 @@ pub(super) fn bindings() -> Vec<Keybinding> {
     bindings.extend(settings::bindings());
     bindings.extend(monitoring::bindings());
     bindings.extend(workload::bindings());
+    bindings.extend(shc::bindings());
     bindings
 }

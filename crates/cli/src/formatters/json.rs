@@ -10,7 +10,8 @@
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
 use serde::Serialize;
@@ -324,5 +325,29 @@ impl Formatter for JsonFormatter {
     ) -> Result<String> {
         // JSON formatter always outputs full WorkloadRule struct regardless of detailed flag
         Ok(serde_json::to_string_pretty(rules)?)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(status)?)
+    }
+
+    fn format_shc_members(
+        &self,
+        members: &[ShcMemberOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(members)?)
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(captain)?)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(config)?)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(output)?)
     }
 }

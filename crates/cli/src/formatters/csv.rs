@@ -35,5 +35,6 @@ mod roles;
 mod saved_searches;
 mod search;
 mod search_peers;
+mod shc;
 mod users;
 mod workload;

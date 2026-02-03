@@ -1,44 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0259",
-      "status": "todo",
-      "title": "Add search head clustering (SHC) support",
-      "priority": "low",
-      "tags": [
-        "cli",
-        "tui",
-        "shc",
-        "cluster",
-        "feature"
-      ],
-      "scope": [
-        "crates/client/src/client/shc.rs",
-        "crates/client/src/endpoints/shc.rs",
-        "crates/cli/src/commands/shc.rs",
-        "crates/tui/src/ui/screens/shc.rs"
-      ],
-      "evidence": [
-        "No search head clustering support exists in the current codebase.",
-        "Current cluster support is limited to indexer clustering.",
-        "Splunk REST API provides /services/shcluster endpoints for SHC management."
-      ],
-      "plan": [
-        "Add SHC models (ShcMember, ShcStatus) to client.",
-        "Implement SHC status and member listing methods.",
-        "Add CLI shc command for viewing cluster status.",
-        "Create TUI SHC screen showing member status and captain info.",
-        "Add tests and update documentation."
-      ],
-      "notes": [],
-      "request": "scan finding",
-      "created_at": "2026-01-30T00:00:00Z",
-      "updated_at": "2026-01-30T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    }
-  ]
+  "tasks": []
 }

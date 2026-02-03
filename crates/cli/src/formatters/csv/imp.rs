@@ -11,7 +11,8 @@
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
 use splunk_client::models::AuditEvent;
@@ -51,6 +52,7 @@ use super::roles;
 use super::saved_searches;
 use super::search;
 use super::search_peers;
+use super::shc;
 use super::users;
 
 /// CSV formatter.
@@ -306,5 +308,29 @@ impl Formatter for CsvFormatter {
         detailed: bool,
     ) -> Result<String> {
         workload::format_workload_rules(rules, detailed)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        shc::format_shc_status(status)
+    }
+
+    fn format_shc_members(
+        &self,
+        _members: &[ShcMemberOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        anyhow::bail!("CSV format not supported for SHC members. Use JSON format.")
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        shc::format_shc_captain(captain)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        shc::format_shc_config(config)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        shc::format_shc_management(output)
     }
 }

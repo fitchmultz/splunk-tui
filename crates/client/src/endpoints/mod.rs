@@ -24,6 +24,7 @@ mod roles;
 pub mod search;
 mod search_peers;
 mod server;
+mod shc;
 mod users;
 mod workload;
 
@@ -67,5 +68,9 @@ pub use search::{
 };
 pub use search_peers::list_search_peers;
 pub use server::*;
+pub use shc::{
+    add_shc_member, get_shc_captain, get_shc_config, get_shc_members, get_shc_status,
+    remove_shc_member, rolling_restart_shc, set_shc_captain,
+};
 pub use users::{create_user, delete_user, list_users, modify_user};
 pub use workload::{list_workload_pools, list_workload_rules};

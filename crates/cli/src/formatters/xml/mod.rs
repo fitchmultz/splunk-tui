@@ -10,7 +10,8 @@
 
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
 use splunk_client::models::DataModel;
@@ -613,6 +614,112 @@ impl Formatter for XmlFormatter {
         detailed: bool,
     ) -> Result<String> {
         workload::format_workload_rules(rules, detailed)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<shc_status>\n");
+        output.push_str(&format!(
+            "  <is_captain>{}</is_captain>\n",
+            status.is_captain
+        ));
+        output.push_str(&format!(
+            "  <is_searchable>{}</is_searchable>\n",
+            status.is_searchable
+        ));
+        output.push_str(&format!(
+            "  <captain_uri>{}</captain_uri>\n",
+            escape_xml(status.captain_uri.as_deref().unwrap_or(""))
+        ));
+        output.push_str(&format!(
+            "  <member_count>{}</member_count>\n",
+            status.member_count
+        ));
+        output.push_str(&format!(
+            "  <minimum_member_count>{}</minimum_member_count>\n",
+            status.minimum_member_count.unwrap_or(0)
+        ));
+        output.push_str(&format!(
+            "  <rolling_restart_flag>{}</rolling_restart_flag>\n",
+            status.rolling_restart_flag.unwrap_or(false)
+        ));
+        output.push_str(&format!(
+            "  <service_ready_flag>{}</service_ready_flag>\n",
+            status.service_ready_flag.unwrap_or(false)
+        ));
+        output.push_str("</shc_status>\n");
+        Ok(output)
+    }
+
+    fn format_shc_members(
+        &self,
+        _members: &[ShcMemberOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        anyhow::bail!("XML format not supported for SHC members. Use JSON format.")
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<shc_captain>\n");
+        output.push_str(&format!("  <id>{}</id>\n", escape_xml(&captain.id)));
+        output.push_str(&format!("  <host>{}</host>\n", escape_xml(&captain.host)));
+        output.push_str(&format!("  <port>{}</port>\n", captain.port));
+        output.push_str(&format!("  <guid>{}</guid>\n", escape_xml(&captain.guid)));
+        output.push_str(&format!(
+            "  <is_dynamic_captain>{}</is_dynamic_captain>\n",
+            captain.is_dynamic_captain
+        ));
+        output.push_str(&format!(
+            "  <site>{}</site>\n",
+            escape_xml(captain.site.as_deref().unwrap_or(""))
+        ));
+        output.push_str("</shc_captain>\n");
+        Ok(output)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<shc_config>\n");
+        output.push_str(&format!("  <id>{}</id>\n", escape_xml(&config.id)));
+        output.push_str(&format!(
+            "  <replication_factor>{}</replication_factor>\n",
+            config.replication_factor.unwrap_or(0)
+        ));
+        output.push_str(&format!(
+            "  <captain_uri>{}</captain_uri>\n",
+            escape_xml(config.captain_uri.as_deref().unwrap_or(""))
+        ));
+        output.push_str(&format!(
+            "  <shcluster_label>{}</shcluster_label>\n",
+            escape_xml(config.shcluster_label.as_deref().unwrap_or(""))
+        ));
+        output.push_str("</shc_config>\n");
+        Ok(output)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        let mut result = String::new();
+        result.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        result.push_str("<shc_management>\n");
+        result.push_str(&format!(
+            "  <operation>{}</operation>\n",
+            escape_xml(&output.operation)
+        ));
+        result.push_str(&format!(
+            "  <target>{}</target>\n",
+            escape_xml(&output.target)
+        ));
+        result.push_str(&format!("  <success>{}</success>\n", output.success));
+        result.push_str(&format!(
+            "  <message>{}</message>\n",
+            escape_xml(&output.message)
+        ));
+        result.push_str("</shc_management>\n");
+        Ok(result)
     }
 }
 

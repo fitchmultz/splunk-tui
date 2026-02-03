@@ -27,5 +27,6 @@ pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
 pub mod settings;
+pub mod shc;
 pub mod users;
 pub mod workload;

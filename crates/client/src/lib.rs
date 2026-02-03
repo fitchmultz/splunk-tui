@@ -21,7 +21,7 @@ pub use client::macros::{MacroCreateParams, MacroUpdateParams};
 pub use error::{ClientError, Result};
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use models::{
-    App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo,
+    AddShcMemberParams, App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo,
     ClusterManagementResponse, ClusterPeer, CreateIndexParams, CreatePoolParams, CreateRoleParams,
     CreateUserParams, Dashboard, DashboardEntry, DashboardListResponse, DecommissionPeerParams,
     Forwarder, ForwarderListResponse, HealthCheckOutput, HecAckRequest, HecAckStatus,
@@ -30,9 +30,11 @@ pub use models::{
     LicenseActivationResult, LicenseInstallResult, LicensePool, LicenseStack, LicenseUsage,
     LogEntry, LogParsingHealth, LookupTable, LookupTableEntry, LookupTableListResponse, Macro,
     MacroEntry, MacroListResponse, MaintenanceModeParams, ModifyIndexParams, ModifyPoolParams,
-    ModifyRoleParams, ModifyUserParams, RemovePeersParams, Role, RoleListResponse, SavedSearch,
-    SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus, SendBatchParams,
-    ServerInfo, SplunkHealth, SplunkResponse, User, UserListResponse, WorkloadPool, WorkloadRule,
+    ModifyRoleParams, ModifyUserParams, RemovePeersParams, RemoveShcMemberParams, Role,
+    RoleListResponse, RollingRestartParams, SavedSearch, SearchJob, SearchJobListResponse,
+    SearchJobResults, SearchJobStatus, SendBatchParams, ServerInfo, SetCaptainParams, ShcCaptain,
+    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus, SplunkHealth, SplunkResponse, User,
+    UserListResponse, WorkloadPool, WorkloadRule,
 };
 
 // Re-export search types for CLI/TUI use

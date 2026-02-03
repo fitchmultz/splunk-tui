@@ -315,6 +315,13 @@ The Search screen has two input modes that affect how keys are handled:
 - `j/k or Up/Down`: Navigate list
 - `Ctrl+e`: Export workload
 
+#### SHC Screen
+- `r`: Refresh SHC info
+- `m`: Toggle members view
+- `j/k or Up/Down`: Navigate members list
+- `Ctrl+e`: Export SHC info
+- `Ctrl+c`: Copy captain URI
+
 #### Settings Screen
 - `t`: Cycle theme
 - `a`: Toggle auto-refresh

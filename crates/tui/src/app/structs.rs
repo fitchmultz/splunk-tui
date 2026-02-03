@@ -12,7 +12,8 @@
 use crate::action::ExportFormat;
 use crate::app::export::ExportTarget;
 use crate::app::state::{
-    ClusterViewMode, CurrentScreen, HealthState, ListPaginationState, SearchInputMode, SortState,
+    ClusterViewMode, CurrentScreen, HealthState, ListPaginationState, SearchInputMode, ShcViewMode,
+    SortState,
 };
 use crate::error_details::ErrorDetails;
 use crate::ui::Toast;
@@ -121,6 +122,14 @@ pub struct App {
     pub workload_rules_state: ratatui::widgets::TableState,
     pub workload_rules_pagination: ListPaginationState,
     pub workload_view_mode: crate::app::state::WorkloadViewMode,
+
+    // SHC state
+    pub shc_status: Option<splunk_client::models::ShcStatus>,
+    pub shc_members: Option<Vec<splunk_client::models::ShcMember>>,
+    pub shc_captain: Option<splunk_client::models::ShcCaptain>,
+    pub shc_config: Option<splunk_client::models::ShcConfig>,
+    pub shc_members_state: ratatui::widgets::TableState,
+    pub shc_view_mode: ShcViewMode,
 
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,

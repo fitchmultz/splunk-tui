@@ -36,8 +36,8 @@ use splunk_client::models::{
     App as SplunkApp, AuditEvent, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza,
     Dashboard, DataModel, FiredAlert, Forwarder, HealthCheckOutput, Index, Input,
     KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
-    LogEntry, LookupTable, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, SplunkHealth,
-    User, WorkloadPool, WorkloadRule,
+    LogEntry, LookupTable, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, ShcCaptain,
+    ShcConfig, ShcMember, ShcStatus, SplunkHealth, User, WorkloadPool, WorkloadRule,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -525,6 +525,45 @@ pub enum Action {
     WorkloadRulesLoaded(Result<Vec<WorkloadRule>, Arc<ClientError>>),
     /// Result of loading more workload rules (pagination)
     MoreWorkloadRulesLoaded(Result<Vec<WorkloadRule>, Arc<ClientError>>),
+
+    // SHC Actions
+    /// Load SHC status
+    LoadShcStatus,
+    /// Load SHC members
+    LoadShcMembers,
+    /// Load SHC captain
+    LoadShcCaptain,
+    /// Load SHC config
+    LoadShcConfig,
+    /// Toggle SHC view mode (Summary <-> Members)
+    ToggleShcViewMode,
+    /// Result of loading SHC status
+    ShcStatusLoaded(Result<ShcStatus, Arc<ClientError>>),
+    /// Result of loading SHC members
+    ShcMembersLoaded(Result<Vec<ShcMember>, Arc<ClientError>>),
+    /// Result of loading SHC captain
+    ShcCaptainLoaded(Result<ShcCaptain, Arc<ClientError>>),
+    /// Result of loading SHC config
+    ShcConfigLoaded(Result<ShcConfig, Arc<ClientError>>),
+
+    // SHC Management Actions
+    /// Add a member to the SHC
+    AddShcMember { target_uri: String },
+    /// Result of adding SHC member
+    ShcMemberAdded { result: Result<(), String> },
+    /// Remove a member from the SHC
+    RemoveShcMember { member_guid: String },
+    /// Result of removing SHC member
+    ShcMemberRemoved { result: Result<(), String> },
+    /// Trigger SHC rolling restart
+    RollingRestartShc { force: bool },
+    /// Result of rolling restart
+    ShcRollingRestarted { result: Result<(), String> },
+    /// Set a specific member as captain
+    SetShcCaptain { member_guid: String },
+    /// Result of setting captain
+    ShcCaptainSet { result: Result<(), String> },
+
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

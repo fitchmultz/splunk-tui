@@ -426,6 +426,31 @@ pub(crate) async fn run_command(
             // HEC commands don't use the standard config - they use HEC-specific URL/token
             commands::hec::run(command, &cli.output, cli.output_file.clone(), cancel_token).await?;
         }
+        Commands::Shc {
+            command,
+            detailed,
+            offset,
+            page_size,
+        } => {
+            let config = config.into_real_config()?;
+            // Handle backward compatibility: if no subcommand but old flags are used, use Show
+            let cmd = match command {
+                Some(cmd) => cmd,
+                None => commands::shc::ShcCommand::Show {
+                    detailed,
+                    offset,
+                    page_size,
+                },
+            };
+            commands::shc::run(
+                config,
+                cmd,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
     }
 
     Ok(())

@@ -337,6 +337,24 @@ pub enum Commands {
         #[command(subcommand)]
         command: commands::hec::HecCommand,
     },
+
+    /// Show search head cluster status and manage SHC configuration
+    Shc {
+        #[command(subcommand)]
+        command: Option<commands::shc::ShcCommand>,
+
+        /// Show detailed SHC information (deprecated: use 'shc show --detailed')
+        #[arg(short, long, hide = true)]
+        detailed: bool,
+
+        /// Offset into the member list (zero-based) (deprecated: use 'shc show')
+        #[arg(long, hide = true, default_value = "0")]
+        offset: usize,
+
+        /// Number of members per page (deprecated: use 'shc show')
+        #[arg(long = "page-size", hide = true, default_value = "50")]
+        page_size: usize,
+    },
 }
 
 /// Returns true if the path is empty or contains only whitespace.

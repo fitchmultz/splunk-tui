@@ -168,6 +168,7 @@ impl App {
                 count: self.workload_pools_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::Shc => Some(Action::LoadShcStatus),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),

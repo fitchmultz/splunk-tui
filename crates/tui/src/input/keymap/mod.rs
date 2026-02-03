@@ -46,6 +46,7 @@ pub enum Section {
     Dashboards,
     DataModels,
     Workload,
+    Shc,
     Settings,
     Overview,
     MultiInstance,
@@ -195,6 +196,7 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::Dashboards => Section::Dashboards,
         CurrentScreen::DataModels => Section::DataModels,
         CurrentScreen::WorkloadManagement => Section::Workload,
+        CurrentScreen::Shc => Section::Shc,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
         CurrentScreen::MultiInstance => Section::MultiInstance,
@@ -319,6 +321,7 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::Dashboards => &["r", "j/k or Up/Down"],
         CurrentScreen::DataModels => &["r", "j/k or Up/Down"],
         CurrentScreen::WorkloadManagement => &["r", "w", "j/k or Up/Down", "Ctrl+e"],
+        CurrentScreen::Shc => &["r", "m", "j/k or Up/Down", "Ctrl+e"],
     };
 
     // Sort hints by priority order

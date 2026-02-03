@@ -115,5 +115,6 @@ fn section_title(section: Section) -> &'static str {
         Section::Settings => "Settings Screen:",
         Section::Overview => "Overview Screen:",
         Section::MultiInstance => "Multi-Instance Dashboard Screen:",
+        Section::Shc => "SHC Screen:",
     }
 }

@@ -56,6 +56,7 @@ mod roles;
 mod search;
 mod search_peers;
 mod server;
+mod shc;
 mod users;
 mod workload;
 

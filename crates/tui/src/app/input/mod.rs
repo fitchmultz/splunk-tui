@@ -35,6 +35,7 @@ pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
 pub mod settings;
+pub mod shc;
 pub mod users;
 pub mod workload;
 
@@ -74,6 +75,7 @@ impl App {
             CurrentScreen::Dashboards => self.handle_dashboards_input(key),
             CurrentScreen::DataModels => self.handle_datamodels_input(key),
             CurrentScreen::WorkloadManagement => self.handle_workload_input(key),
+            CurrentScreen::Shc => self.handle_shc_input(key),
         }
     }
 }

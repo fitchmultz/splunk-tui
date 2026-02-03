@@ -106,6 +106,7 @@ mod profiles;
 mod roles;
 mod search_peers;
 mod searches;
+mod shc;
 mod users;
 mod workload;
 
@@ -490,6 +491,31 @@ pub async fn handle_side_effects(
         Action::LoadMoreWorkloadRules => {
             // This action is handled by the main loop which has access to state
             // It reads workload_rules_pagination and sends LoadWorkloadRules with updated offset
+        }
+        // SHC actions
+        Action::LoadShcStatus => {
+            shc::handle_load_shc_status(client, tx).await;
+        }
+        Action::LoadShcMembers => {
+            shc::handle_load_shc_members(client, tx).await;
+        }
+        Action::LoadShcCaptain => {
+            shc::handle_load_shc_captain(client, tx).await;
+        }
+        Action::LoadShcConfig => {
+            shc::handle_load_shc_config(client, tx).await;
+        }
+        Action::AddShcMember { target_uri } => {
+            shc::handle_add_shc_member(client, tx, target_uri).await;
+        }
+        Action::RemoveShcMember { member_guid } => {
+            shc::handle_remove_shc_member(client, tx, member_guid).await;
+        }
+        Action::RollingRestartShc { force } => {
+            shc::handle_rolling_restart_shc(client, tx, force).await;
+        }
+        Action::SetShcCaptain { member_guid } => {
+            shc::handle_set_shc_captain(client, tx, member_guid).await;
         }
         _ => {}
     }
