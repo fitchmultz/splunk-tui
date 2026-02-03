@@ -91,8 +91,8 @@ impl SideEffectsTestHarness {
 
     /// Handle an action and collect all resulting actions.
     ///
-    /// This spawns the side effect handler and waits for it to complete,
-    /// collecting all actions sent during execution.
+    /// This calls `handle_side_effects` directly under a short timeout (to detect
+    /// blocking behavior), then collects all actions sent by spawned tasks.
     ///
     /// # Arguments
     /// * `action` - The action to handle
@@ -101,16 +101,24 @@ impl SideEffectsTestHarness {
     /// # Returns
     /// A vector of all actions sent by the handler (in order received)
     pub async fn handle_and_collect(&mut self, action: Action, timeout_secs: u64) -> Vec<Action> {
-        // Spawn the side effect handler
+        // Call handle_side_effects directly under a short timeout.
+        // This ensures the function returns promptly and does not block on network I/O.
+        // Any blocking await will cause this to timeout and fail the test.
         let client = self.client.clone();
         let tx = self.action_tx.clone();
         let config_manager = self.config_manager.clone();
 
-        tokio::spawn(async move {
-            handle_side_effects(action, client, tx, config_manager).await;
-        });
+        let handle_future = handle_side_effects(action, client, tx, config_manager);
+        match tokio::time::timeout(tokio::time::Duration::from_millis(100), handle_future).await {
+            Ok(()) => {}
+            Err(_) => {
+                panic!(
+                    "handle_side_effects timed out - it may be blocking on network I/O instead of spawning tasks"
+                );
+            }
+        }
 
-        // Give the handler a chance to start without real-time delay
+        // Give spawned tasks a chance to start without real-time delay
         tokio::task::yield_now().await;
 
         // Collect actions until timeout

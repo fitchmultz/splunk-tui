@@ -24,28 +24,25 @@ pub async fn handle_load_search_peers(
     count: u64,
     offset: u64,
 ) {
-    let result = {
+    let _ = tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.list_search_peers(Some(count), Some(offset)).await
-    };
-
-    let action = match result {
-        Ok(peers) => {
-            if offset == 0 {
-                Action::SearchPeersLoaded(Ok(peers))
-            } else {
-                Action::MoreSearchPeersLoaded(Ok(peers))
+        match guard.list_search_peers(Some(count), Some(offset)).await {
+            Ok(peers) => {
+                if offset == 0 {
+                    let _ = tx.send(Action::SearchPeersLoaded(Ok(peers))).await;
+                } else {
+                    let _ = tx.send(Action::MoreSearchPeersLoaded(Ok(peers))).await;
+                }
+            }
+            Err(e) => {
+                let arc_err = Arc::new(e);
+                if offset == 0 {
+                    let _ = tx.send(Action::SearchPeersLoaded(Err(arc_err))).await;
+                } else {
+                    let _ = tx.send(Action::MoreSearchPeersLoaded(Err(arc_err))).await;
+                }
             }
         }
-        Err(e) => {
-            let arc_err = Arc::new(e);
-            if offset == 0 {
-                Action::SearchPeersLoaded(Err(arc_err))
-            } else {
-                Action::MoreSearchPeersLoaded(Err(arc_err))
-            }
-        }
-    };
-
-    let _ = tx.send(action).await;
+    });
 }

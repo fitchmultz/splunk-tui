@@ -24,30 +24,28 @@ pub async fn handle_load_lookups(
     count: u64,
     offset: u64,
 ) {
-    let result = {
+    let _ = tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard
+        match guard
             .list_lookup_tables(Some(count as u32), Some(offset as u32))
             .await
-    };
-
-    let action = match result {
-        Ok(lookups) => {
-            if offset == 0 {
-                Action::LookupsLoaded(Ok(lookups))
-            } else {
-                Action::MoreLookupsLoaded(Ok(lookups))
+        {
+            Ok(lookups) => {
+                if offset == 0 {
+                    let _ = tx.send(Action::LookupsLoaded(Ok(lookups))).await;
+                } else {
+                    let _ = tx.send(Action::MoreLookupsLoaded(Ok(lookups))).await;
+                }
+            }
+            Err(e) => {
+                let arc_err = Arc::new(e);
+                if offset == 0 {
+                    let _ = tx.send(Action::LookupsLoaded(Err(arc_err))).await;
+                } else {
+                    let _ = tx.send(Action::MoreLookupsLoaded(Err(arc_err))).await;
+                }
             }
         }
-        Err(e) => {
-            let arc_err = Arc::new(e);
-            if offset == 0 {
-                Action::LookupsLoaded(Err(arc_err))
-            } else {
-                Action::MoreLookupsLoaded(Err(arc_err))
-            }
-        }
-    };
-
-    let _ = tx.send(action).await;
+    });
 }

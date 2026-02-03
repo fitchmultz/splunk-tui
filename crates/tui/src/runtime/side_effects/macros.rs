@@ -50,17 +50,18 @@ pub struct UpdateMacroEffectParams {
 
 /// Load macros list from the Splunk API.
 pub async fn handle_load_macros(client: SharedClient, action_tx: Sender<Action>) {
-    let result = {
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.list_macros().await
-    };
-
-    let action = match result {
-        Ok(macros) => Action::MacrosLoaded(Ok(macros)),
-        Err(e) => Action::MacrosLoaded(Err(Arc::new(e))),
-    };
-
-    let _ = action_tx.send(action).await;
+        match guard.list_macros().await {
+            Ok(macros) => {
+                let _ = action_tx.send(Action::MacrosLoaded(Ok(macros))).await;
+            }
+            Err(e) => {
+                let _ = action_tx.send(Action::MacrosLoaded(Err(Arc::new(e)))).await;
+            }
+        }
+    });
 }
 
 /// Create a new macro.
@@ -69,34 +70,31 @@ pub async fn handle_create_macro(
     action_tx: Sender<Action>,
     params: CreateMacroEffectParams,
 ) {
-    let macro_params = MacroCreateParams {
-        name: &params.name,
-        definition: &params.definition,
-        args: params.args.as_deref(),
-        description: params.description.as_deref(),
-        disabled: params.disabled,
-        iseval: params.iseval,
-        validation: None,
-        errormsg: None,
-    };
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
+        let macro_params = MacroCreateParams {
+            name: &params.name,
+            definition: &params.definition,
+            args: params.args.as_deref(),
+            description: params.description.as_deref(),
+            disabled: params.disabled,
+            iseval: params.iseval,
+            validation: None,
+            errormsg: None,
+        };
 
-    let result = {
         let mut guard = client.lock().await;
-        guard.create_macro(macro_params).await
-    };
-
-    let is_ok = result.is_ok();
-    let action = match result {
-        Ok(()) => Action::MacroCreated(Ok(())),
-        Err(e) => Action::MacroCreated(Err(Arc::new(e))),
-    };
-
-    let _ = action_tx.send(action).await;
-
-    // Refresh macros list on success
-    if is_ok {
-        let _ = action_tx.send(Action::LoadMacros).await;
-    }
+        match guard.create_macro(macro_params).await {
+            Ok(()) => {
+                let _ = action_tx.send(Action::MacroCreated(Ok(()))).await;
+                // Refresh macros list on success
+                let _ = action_tx.send(Action::LoadMacros).await;
+            }
+            Err(e) => {
+                let _ = action_tx.send(Action::MacroCreated(Err(Arc::new(e)))).await;
+            }
+        }
+    });
 }
 
 /// Update an existing macro.
@@ -105,75 +103,68 @@ pub async fn handle_update_macro(
     action_tx: Sender<Action>,
     params: UpdateMacroEffectParams,
 ) {
-    let macro_params = MacroUpdateParams {
-        name: &params.name,
-        definition: params.definition.as_deref(),
-        args: params.args.as_deref(),
-        description: params.description.as_deref(),
-        disabled: params.disabled,
-        iseval: params.iseval,
-        validation: None,
-        errormsg: None,
-    };
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
+        let macro_params = MacroUpdateParams {
+            name: &params.name,
+            definition: params.definition.as_deref(),
+            args: params.args.as_deref(),
+            description: params.description.as_deref(),
+            disabled: params.disabled,
+            iseval: params.iseval,
+            validation: None,
+            errormsg: None,
+        };
 
-    let result = {
         let mut guard = client.lock().await;
-        guard.update_macro(macro_params).await
-    };
-
-    let is_ok = result.is_ok();
-    let action = match result {
-        Ok(()) => Action::MacroUpdated(Ok(())),
-        Err(e) => Action::MacroUpdated(Err(Arc::new(e))),
-    };
-
-    let _ = action_tx.send(action).await;
-
-    // Refresh macros list on success
-    if is_ok {
-        let _ = action_tx.send(Action::LoadMacros).await;
-    }
+        match guard.update_macro(macro_params).await {
+            Ok(()) => {
+                let _ = action_tx.send(Action::MacroUpdated(Ok(()))).await;
+                // Refresh macros list on success
+                let _ = action_tx.send(Action::LoadMacros).await;
+            }
+            Err(e) => {
+                let _ = action_tx.send(Action::MacroUpdated(Err(Arc::new(e)))).await;
+            }
+        }
+    });
 }
 
 /// Delete a macro.
 pub async fn handle_delete_macro(client: SharedClient, action_tx: Sender<Action>, name: String) {
-    let result = {
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.delete_macro(&name).await
-    };
-
-    let is_ok = result.is_ok();
-    let action = match result {
-        Ok(()) => Action::MacroDeleted(Ok(name)),
-        Err(e) => Action::MacroDeleted(Err(Arc::new(e))),
-    };
-
-    let _ = action_tx.send(action).await;
-
-    // Refresh macros list on success
-    if is_ok {
-        let _ = action_tx.send(Action::LoadMacros).await;
-    }
+        match guard.delete_macro(&name).await {
+            Ok(()) => {
+                let _ = action_tx.send(Action::MacroDeleted(Ok(name))).await;
+                // Refresh macros list on success
+                let _ = action_tx.send(Action::LoadMacros).await;
+            }
+            Err(e) => {
+                let _ = action_tx.send(Action::MacroDeleted(Err(Arc::new(e)))).await;
+            }
+        }
+    });
 }
 
 #[allow(dead_code)]
 /// Get a single macro by name.
 pub async fn handle_get_macro(client: SharedClient, action_tx: Sender<Action>, name: String) {
-    let result = {
+    // Note: This function does not send Loading(true) because it's typically used
+    // for pre-populating edit dialogs and doesn't have a corresponding "clear loading"
+    // action in the success case. Errors are reported via Notify.
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.get_macro(&name).await
-    };
-
-    // This is typically used for pre-populating edit dialogs
-    // For now, we just log errors - the macro list will be refreshed
-    if let Err(e) = result {
-        let _ = action_tx
-            .send(Action::Notify(
-                crate::ui::ToastLevel::Error,
-                format!("Failed to load macro: {}", e),
-            ))
-            .await;
-    }
+        if let Err(e) = guard.get_macro(&name).await {
+            let _ = action_tx
+                .send(Action::Notify(
+                    crate::ui::ToastLevel::Error,
+                    format!("Failed to load macro: {}", e),
+                ))
+                .await;
+        }
+    });
 }
 
 #[cfg(test)]

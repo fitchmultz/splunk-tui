@@ -69,13 +69,13 @@ pub async fn handle_load_workload_pools(
     count: u64,
     offset: u64,
 ) {
-    let result = {
+    let _ = tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.list_workload_pools(Some(count), Some(offset)).await
-    };
-
-    let action = build_workload_pools_action(result, offset);
-    let _ = tx.send(action).await;
+        let result = guard.list_workload_pools(Some(count), Some(offset)).await;
+        let action = build_workload_pools_action(result, offset);
+        let _ = tx.send(action).await;
+    });
 }
 
 /// Handle loading workload rules.
@@ -88,13 +88,13 @@ pub async fn handle_load_workload_rules(
     count: u64,
     offset: u64,
 ) {
-    let result = {
+    let _ = tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.list_workload_rules(Some(count), Some(offset)).await
-    };
-
-    let action = build_workload_rules_action(result, offset);
-    let _ = tx.send(action).await;
+        let result = guard.list_workload_rules(Some(count), Some(offset)).await;
+        let action = build_workload_rules_action(result, offset);
+        let _ = tx.send(action).await;
+    });
 }
 
 #[cfg(test)]

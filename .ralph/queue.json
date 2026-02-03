@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0308",
-      "status": "todo",
-      "title": "Avoid blocking the TUI event loop in side effects (spawn network calls consistently)",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "ux",
-        "performance"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/*.rs",
-        "crates/tui/src/runtime/side_effects/mod.rs",
-        "crates/tui/src/main.rs",
-        "cargo test -p splunk-tui"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs:302-309 awaits `handle_side_effects(...)` directly in the main loop.",
-        "crates/tui/src/runtime/side_effects/forwarders.rs:19-36 performs an awaited API call inline (no tokio::spawn), so UI can stall during network latency.",
-        "crates/tui/src/runtime/side_effects/lookups.rs:19-38, crates/tui/src/runtime/side_effects/search_peers.rs:19-36, crates/tui/src/runtime/side_effects/workload.rs:20-37, crates/tui/src/runtime/side_effects/macros.rs:51-64 have the same inline-await pattern."
-      ],
-      "plan": [
-        "Standardize side effect handlers: send Loading(true), then `tokio::spawn` for any network call",
-        "Ensure spawned tasks always send Loading(false) or rely on Loaded handlers to clear loading",
-        "Audit for any other inline network awaits in side effects and convert them",
-        "Add a regression test that `handle_side_effects` returns quickly for networked actions (e.g., using a short timeout around the call)",
-        "Verify by running `cargo test -p splunk-tui` and checking TUI remains responsive under simulated slow network"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0309",
       "status": "todo",
       "title": "Refactor SplunkClient search APIs to avoid too-many-arguments and clarify options",

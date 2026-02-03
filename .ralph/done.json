@@ -1365,6 +1365,67 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0308",
+      "status": "done",
+      "title": "Avoid blocking the TUI event loop in side effects (spawn network calls consistently)",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "ux",
+        "performance",
+        "reliability"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/runtime/side_effects/forwarders.rs",
+        "crates/tui/src/runtime/side_effects/lookups.rs",
+        "crates/tui/src/runtime/side_effects/search_peers.rs",
+        "crates/tui/src/runtime/side_effects/workload.rs",
+        "crates/tui/src/runtime/side_effects/macros.rs",
+        "crates/tui/tests/common/mod.rs",
+        "crates/tui/tests",
+        "rg -n \"let mut guard = client\\.lock\\(\\)\\.await\" crates/tui/src/runtime/side_effects",
+        "cargo test -p splunk-tui",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:312,343,359,380 await `handle_side_effects(...)` inside the main event loop action branch; any side effect handler that awaits network I/O blocks UI responsiveness.",
+        "crates/tui/src/runtime/side_effects/mod.rs:13-16 documents invariants (all API calls are spawned; loading is set/cleared) that are currently violated by several handlers.",
+        "crates/tui/src/runtime/side_effects/forwarders.rs:27-30, lookups.rs:27-32, search_peers.rs:27-30, workload.rs:72-75 and 91-94, macros.rs:52-56 await SplunkClient network calls inline (no `tokio::spawn`), so `handle_side_effects` can block on network latency.",
+        "crates/tui/tests/common/mod.rs:103-112 spawns `handle_side_effects(...)` in tests, which can mask regressions where `handle_side_effects` blocks when called directly (as in `crates/tui/src/main.rs`)."
+      ],
+      "plan": [
+        "Inventory side effect handlers that still await network calls inline (forwarders/lookups/search_peers/workload/macros) and confirm no others via ripgrep",
+        "Convert remaining inline-await handlers to the established `Loading(true)` + `tokio::spawn(async move { ... })` pattern (or refactor via a shared helper) so `handle_side_effects` returns promptly",
+        "Align side_effects module docs/invariants with actual behavior (prefer enforcing invariants rather than weakening docs), including consistent loading semantics",
+        "Add tests that call `handle_side_effects(...)` directly under a short `tokio::time::timeout` while wiremock delays the HTTP response, proving the call returns quickly for networked actions",
+        "Run `cargo test -p splunk-tui` and `make ci`"
+      ],
+      "notes": [
+        "Most side-effect handlers already use `tokio::spawn`; remaining blocking handlers appear to be forwarders/lookups/search_peers/workload/macros.",
+        "side_effects/mod.rs includes detailed spawning/Loading invariants, but some handlers still do inline awaits and do not toggle Loading.",
+        "Existing side-effects tests spawn `handle_side_effects` internally; add direct-call timeout tests to prevent event-loop blocking regressions.",
+        "Converted all blocking side effect handlers to spawn pattern",
+        "Modified: forwarders.rs, lookups.rs, search_peers.rs, workload.rs, macros.rs",
+        "All handlers now send Loading(true) then spawn network calls in tokio::spawn",
+        "Updated test harness to verify non-blocking behavior with 100ms timeout",
+        "Added regression tests: side_effects_forwarders_tests.rs, lookups_tests.rs, search_peers_tests.rs, workload_tests.rs",
+        "Extended macros tests with test_load_macros_non_blocking_with_delay",
+        "All tests pass (cargo test -p splunk-tui: 680+ tests) and make ci passes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-03T00:36:01Z",
+      "updated_at": "2026-02-03T17:54:03.945014407Z",
+      "completed_at": "2026-02-03T17:54:03.945014407Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

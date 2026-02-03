@@ -24,28 +24,25 @@ pub async fn handle_load_forwarders(
     count: u64,
     offset: u64,
 ) {
-    let result = {
+    let _ = tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
         let mut guard = client.lock().await;
-        guard.list_forwarders(Some(count), Some(offset)).await
-    };
-
-    let action = match result {
-        Ok(forwarders) => {
-            if offset == 0 {
-                Action::ForwardersLoaded(Ok(forwarders))
-            } else {
-                Action::MoreForwardersLoaded(Ok(forwarders))
+        match guard.list_forwarders(Some(count), Some(offset)).await {
+            Ok(forwarders) => {
+                if offset == 0 {
+                    let _ = tx.send(Action::ForwardersLoaded(Ok(forwarders))).await;
+                } else {
+                    let _ = tx.send(Action::MoreForwardersLoaded(Ok(forwarders))).await;
+                }
+            }
+            Err(e) => {
+                let arc_err = Arc::new(e);
+                if offset == 0 {
+                    let _ = tx.send(Action::ForwardersLoaded(Err(arc_err))).await;
+                } else {
+                    let _ = tx.send(Action::MoreForwardersLoaded(Err(arc_err))).await;
+                }
             }
         }
-        Err(e) => {
-            let arc_err = Arc::new(e);
-            if offset == 0 {
-                Action::ForwardersLoaded(Err(arc_err))
-            } else {
-                Action::MoreForwardersLoaded(Err(arc_err))
-            }
-        }
-    };
-
-    let _ = tx.send(action).await;
+    });
 }

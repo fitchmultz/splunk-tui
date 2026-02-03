@@ -386,3 +386,58 @@ async fn test_load_macros_action_integration() {
     assert!(!macros.is_empty(), "Should have at least one macro");
     assert_eq!(macros[0].name, "test_macro");
 }
+
+/// Test that LoadMacros returns promptly and emits Loading(true) even with network delay.
+///
+/// This test verifies the non-blocking behavior of the LoadMacros handler by using
+/// a delayed response. The handle_side_effects function should return immediately
+/// (within the 100ms timeout enforced by the test harness) and the actual API
+/// call should happen in a spawned task.
+#[tokio::test]
+async fn test_load_macros_non_blocking_with_delay() {
+    let mut harness = SideEffectsTestHarness::new().await;
+
+    // Mock the list macros endpoint with a delay
+    let fixture = load_fixture("macros/list_macros.json");
+    Mock::given(method("GET"))
+        .and(path("/services/admin/macros"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(&fixture)
+                .set_delay(std::time::Duration::from_millis(500)),
+        )
+        .mount(&harness.mock_server)
+        .await;
+
+    // Handle the LoadMacros action - should return promptly despite the delay
+    let actions = harness.handle_and_collect(Action::LoadMacros, 5).await;
+
+    // Verify Loading(true) is sent immediately (before the API call completes)
+    assert!(
+        actions.iter().any(|a| matches!(a, Action::Loading(true))),
+        "Should send Loading(true) before network call completes"
+    );
+
+    // Verify MacrosLoaded(Ok) is eventually sent after the delay
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::MacrosLoaded(Ok(_)))),
+        "Should send MacrosLoaded(Ok) after network call completes"
+    );
+
+    // Verify the loaded data
+    let macros_loaded = actions
+        .iter()
+        .find_map(|a| match a {
+            Action::MacrosLoaded(Ok(macros)) => Some(macros),
+            _ => None,
+        })
+        .expect("Should have MacrosLoaded action");
+
+    assert!(
+        !macros_loaded.is_empty(),
+        "Should have loaded at least one macro"
+    );
+    assert_eq!(macros_loaded[0].name, "test_macro");
+}
