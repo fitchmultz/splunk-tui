@@ -24,9 +24,10 @@ use secrecy::SecretString;
 
 use crate::types::{KEYRING_SERVICE, ProfileConfig, SecureValue};
 
+use super::create_corrupt_backup;
 use super::migration::migrate_config_file_if_needed;
 use super::path::{default_config_path, legacy_config_path};
-use super::state::{ConfigFile, PersistedState, read_config_file};
+use super::state::{ConfigFile, ConfigFileError, PersistedState, read_config_file};
 
 /// Manages loading and saving user configuration to disk.
 pub struct ConfigManager {
@@ -57,16 +58,54 @@ impl ConfigManager {
     }
 
     /// Creates a new `ConfigManager` with a specific config file path.
+    ///
+    /// If the config file exists but cannot be read or parsed (e.g., due to
+    /// corruption or invalid JSON), the file is backed up with a `.corrupt.{timestamp}`
+    /// extension and a default configuration is used instead. This prevents
+    /// data loss while allowing the application to start.
     pub fn new_with_path(config_path: PathBuf) -> Result<Self> {
         let config_file = if config_path.exists() {
-            read_config_file(&config_path).unwrap_or_else(|e| {
-                tracing::warn!(
-                    path = %config_path.display(),
-                    error = %e,
-                    "Failed to load config file, using defaults"
-                );
-                ConfigFile::default()
-            })
+            match read_config_file(&config_path) {
+                Ok(file) => file,
+                Err(e) => {
+                    // Check if this is a "file not found" error - if so, no backup needed
+                    let is_not_found = matches!(
+                        &e,
+                        ConfigFileError::Read { source, .. } if source.kind() == std::io::ErrorKind::NotFound
+                    );
+
+                    if !is_not_found {
+                        // File exists but is corrupt/unreadable - create backup
+                        match create_corrupt_backup(&config_path) {
+                            Ok(backup_path) => {
+                                tracing::warn!(
+                                    path = %config_path.display(),
+                                    backup_path = %backup_path.display(),
+                                    error = %e,
+                                    "Config file is corrupt, backed up and using defaults"
+                                );
+                            }
+                            Err(backup_err) => {
+                                // Backup failed - log error but continue with defaults
+                                tracing::error!(
+                                    path = %config_path.display(),
+                                    error = %e,
+                                    backup_error = %backup_err,
+                                    "Config file is corrupt and backup failed, using defaults"
+                                );
+                            }
+                        }
+                    } else {
+                        // File not found - no backup needed
+                        tracing::warn!(
+                            path = %config_path.display(),
+                            error = %e,
+                            "Config file not found, using defaults"
+                        );
+                    }
+                    ConfigFile::default()
+                }
+            }
         } else {
             ConfigFile::default()
         };
@@ -604,6 +643,290 @@ mod tests {
                 assert_eq!(stored.expose_secret(), password_str);
             }
         }
+    }
+
+    #[test]
+    fn test_corrupt_config_backup_created() {
+        use std::io::Write;
+
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create a corrupt config file with invalid JSON
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        file.write_all(b"{ invalid json }").unwrap();
+        drop(file);
+
+        // Initialize ConfigManager - should create backup and use defaults
+        let manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        // Verify ConfigManager uses defaults (no profiles)
+        assert!(manager.list_profiles().is_empty());
+        // Verify default state is loaded (auto_refresh defaults to false)
+        assert!(!manager.load().auto_refresh);
+
+        // Verify backup was created
+        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name();
+                let name_str = name.to_string_lossy();
+                name_str.starts_with("config.corrupt.")
+            })
+            .collect();
+
+        assert_eq!(backup_files.len(), 1, "Expected exactly one backup file");
+
+        // Verify backup contains original corrupt content
+        let backup_content = std::fs::read_to_string(backup_files[0].path()).unwrap();
+        assert_eq!(backup_content, "{ invalid json }");
+
+        // Verify original config path no longer exists (was renamed to backup)
+        assert!(!config_path.exists());
+    }
+
+    #[test]
+    fn test_corrupt_config_backup_path_format() {
+        use std::io::Write;
+
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create a corrupt config file
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        file.write_all(b"{ bad json }").unwrap();
+        drop(file);
+
+        let before_timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        // Initialize ConfigManager
+        let _manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        let after_timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        // Find backup file
+        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name();
+                let name_str = name.to_string_lossy();
+                name_str.starts_with("config.corrupt.")
+            })
+            .collect();
+
+        assert_eq!(backup_files.len(), 1);
+
+        let backup_name = backup_files[0].file_name().to_string_lossy().to_string();
+
+        // Verify format: config.corrupt.{timestamp}
+        let parts: Vec<_> = backup_name.split('.').collect();
+        assert_eq!(
+            parts.len(),
+            3,
+            "Backup name should have 3 parts: config.corrupt.TIMESTAMP"
+        );
+        assert_eq!(parts[0], "config");
+        assert_eq!(parts[1], "corrupt");
+
+        // Verify timestamp is within expected range
+        let timestamp: u64 = parts[2]
+            .parse()
+            .expect("Timestamp should be a valid number");
+        assert!(
+            timestamp >= before_timestamp && timestamp <= after_timestamp,
+            "Timestamp should be within test execution time"
+        );
+    }
+
+    #[test]
+    fn test_no_data_loss_on_corrupt_config_recovery() {
+        use std::io::Write;
+
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create a valid config with profiles
+        let valid_config = r#"{
+            "profiles": {
+                "production": {
+                    "base_url": "https://prod.splunk.com:8089",
+                    "username": "admin"
+                }
+            },
+            "state": {
+                "auto_refresh": true,
+                "sort_column": "status",
+                "sort_direction": "desc"
+            }
+        }"#;
+
+        std::fs::write(&config_path, valid_config).unwrap();
+
+        // Corrupt the file by overwriting with invalid JSON
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        file.write_all(b"{ corrupted }").unwrap();
+        drop(file);
+
+        // Initialize ConfigManager - should backup corrupt file
+        let mut manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        // Verify backup exists with original content
+        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name();
+                let name_str = name.to_string_lossy();
+                name_str.starts_with("config.corrupt.")
+            })
+            .collect();
+
+        assert_eq!(backup_files.len(), 1);
+
+        // Verify backup contains the corrupted content (not the original valid config)
+        let backup_content = std::fs::read_to_string(backup_files[0].path()).unwrap();
+        assert_eq!(backup_content, "{ corrupted }");
+
+        // Verify manager uses defaults (empty)
+        assert!(manager.list_profiles().is_empty());
+
+        // Add a new profile and save
+        let new_profile = ProfileConfig {
+            base_url: Some("https://new.splunk.com:8089".to_string()),
+            username: Some("new_user".to_string()),
+            ..Default::default()
+        };
+        manager.save_profile("new-profile", new_profile).unwrap();
+
+        // Reload and verify new config is valid
+        let reloaded = ConfigManager::new_with_path(config_path.clone()).unwrap();
+        assert_eq!(reloaded.list_profiles().len(), 1);
+        assert!(reloaded.list_profiles().contains_key("new-profile"));
+    }
+
+    #[test]
+    fn test_multiple_corrupt_backups_different_timestamps() {
+        use std::thread;
+        use std::time::Duration;
+
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // First corruption
+        std::fs::write(&config_path, "{ corrupt 1 }").unwrap();
+        let _manager1 = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        // Small delay to ensure different timestamp
+        thread::sleep(Duration::from_millis(1100));
+
+        // Second corruption (create new file and corrupt it)
+        std::fs::write(&config_path, "{ corrupt 2 }").unwrap();
+        let _manager2 = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        // Verify two backups exist
+        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name();
+                let name_str = name.to_string_lossy();
+                name_str.starts_with("config.corrupt.")
+            })
+            .collect();
+
+        assert_eq!(
+            backup_files.len(),
+            2,
+            "Expected two backup files with different timestamps"
+        );
+
+        // Verify contents are different
+        let contents: Vec<_> = backup_files
+            .iter()
+            .map(|f| std::fs::read_to_string(f.path()).unwrap())
+            .collect();
+
+        assert!(contents.contains(&"{ corrupt 1 }".to_string()));
+        assert!(contents.contains(&"{ corrupt 2 }".to_string()));
+    }
+
+    #[test]
+    fn test_valid_config_no_backup() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create a valid config
+        let valid_config = r#"{
+            "profiles": {
+                "test": {
+                    "base_url": "https://test.splunk.com:8089"
+                }
+            }
+        }"#;
+
+        std::fs::write(&config_path, valid_config).unwrap();
+
+        // Initialize ConfigManager
+        let manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        // Verify no backup was created
+        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name();
+                let name_str = name.to_string_lossy();
+                name_str.starts_with("config.corrupt.")
+            })
+            .collect();
+
+        assert!(
+            backup_files.is_empty(),
+            "No backup should be created for valid config"
+        );
+
+        // Verify config loaded correctly
+        assert_eq!(manager.list_profiles().len(), 1);
+        assert!(manager.list_profiles().contains_key("test"));
+    }
+
+    #[test]
+    fn test_missing_config_no_backup() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Don't create the file - it doesn't exist
+        assert!(!config_path.exists());
+
+        // Initialize ConfigManager
+        let manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+
+        // Verify no backup was created
+        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name();
+                let name_str = name.to_string_lossy();
+                name_str.starts_with("config.corrupt.")
+            })
+            .collect();
+
+        assert!(
+            backup_files.is_empty(),
+            "No backup should be created for missing config"
+        );
+
+        // Verify manager uses defaults
+        assert!(manager.list_profiles().is_empty());
     }
 
     #[test]

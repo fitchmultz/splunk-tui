@@ -214,6 +214,26 @@ pub enum ConfigFileError {
     },
 }
 
+impl ConfigFileError {
+    /// Returns true if this error is a file read error (e.g., permissions, not found).
+    pub fn is_read_error(&self) -> bool {
+        matches!(self, ConfigFileError::Read { .. })
+    }
+
+    /// Returns true if this error is a parse error (invalid JSON).
+    pub fn is_parse_error(&self) -> bool {
+        matches!(self, ConfigFileError::Parse { .. })
+    }
+
+    /// Returns the path to the config file that caused the error.
+    pub fn path(&self) -> &Path {
+        match self {
+            ConfigFileError::Read { path, .. } => path,
+            ConfigFileError::Parse { path, .. } => path,
+        }
+    }
+}
+
 /// Reads and parses the config file from disk.
 ///
 /// This function supports legacy config files that only contain `PersistedState`

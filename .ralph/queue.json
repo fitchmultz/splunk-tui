@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0304",
-      "status": "todo",
-      "title": "Prevent overwriting unreadable config files (backup + fail-safe recovery)",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "reliability"
-      ],
-      "scope": [
-        "crates/config/src/persistence/profiles.rs",
-        "crates/config/src/persistence/state.rs",
-        "cargo test -p splunk-config"
-      ],
-      "evidence": [
-        "crates/config/src/persistence/profiles.rs:61-69 swallows `read_config_file` errors and initializes defaults, even when an on-disk config exists.",
-        "crates/config/src/persistence/state.rs:222-249 returns parse/read errors for invalid JSON; these errors are not preserved by caller.",
-        "crates/config/src/persistence/profiles.rs:234-248 `atomic_save` renames temp file to the real path, overwriting any previously unreadable config; this risks silent data loss (profiles/state)."
-      ],
-      "plan": [
-        "Reproduce with an invalid JSON config file and confirm current behavior overwrites it on save",
-        "Implement safe recovery: rename unreadable config to a timestamped `.corrupt` backup before proceeding",
-        "Ensure user-visible warning includes the backup path (no secrets)",
-        "Add tests that invalid config is preserved and backup created on first write",
-        "Verify by running `cargo test -p splunk-config` and confirming behavior"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-03T00:36:01Z",
-      "updated_at": "2026-02-03T00:36:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0305",
       "status": "todo",
       "title": "Fix `SKIP_LIVE_TESTS=1` to actually skip live tests",
