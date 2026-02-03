@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-03T02:22:48.960107018Z",
+  "last_updated_at": "2026-02-03T16:07:25.171460337Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -86,7 +86,7 @@
     },
     "2026-02-03": {
       "date": "2026-02-03",
-      "completed_count": 4,
+      "completed_count": 5,
       "tasks": [
         {
           "id": "RQ-0259",
@@ -107,6 +107,11 @@
           "id": "RQ-0305",
           "title": "Fix `SKIP_LIVE_TESTS=1` to actually skip live tests",
           "completed_at": "2026-02-03T02:22:48.960106570Z"
+        },
+        {
+          "id": "RQ-0306",
+          "title": "Make `make lint` fail when clippy -D warnings would fail (don't rely on `cargo clippy --fix` exit code)",
+          "completed_at": "2026-02-03T16:07:25.171458459Z"
         }
       ]
     }
@@ -116,7 +121,7 @@
     "longest_streak": 2,
     "last_completed_date": "2026-02-03"
   },
-  "total_completed": 19,
+  "total_completed": 20,
   "milestones": [
     {
       "threshold": 10,

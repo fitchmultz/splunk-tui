@@ -41,10 +41,12 @@ format:
 	@cargo fmt --all
 	@echo "  ✓ Formatting complete"
 
-# Run clippy (mutates code) and then verify formatting (cheap)
+# Run clippy (two-phase: autofix then strict check) and then verify formatting (cheap)
 lint:
-	@echo "→ Clippy autofix..."
-	@cargo clippy --fix --allow-dirty --workspace --all-targets --all-features --locked -- -D warnings
+	@echo "→ Clippy autofix (phase 1/2)..."
+	@cargo clippy --fix --allow-dirty --workspace --all-targets --all-features --locked
+	@echo "→ Clippy strict check (phase 2/2)..."
+	@cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 	@echo "→ Format check..."
 	@cargo fmt --all --check
 	@echo "  ✓ Lint complete"
