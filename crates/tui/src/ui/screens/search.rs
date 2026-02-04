@@ -12,16 +12,14 @@ use ratatui::{
 };
 
 use crate::app::SplValidationState;
-use crate::ui::syntax::highlight_spl;
+use crate::app::input::components::SingleLineInput;
 use splunk_client::SearchMode;
 use splunk_config::Theme;
 
 /// Configuration for rendering the search screen.
 pub struct SearchRenderConfig<'a> {
-    /// The current search input text
-    pub search_input: &'a str,
-    /// Cursor position within search_input (character index)
-    pub search_cursor_position: usize,
+    /// The current search input component
+    pub search_input: &'a SingleLineInput,
     /// Whether the query input is focused (cursor visible when true)
     pub is_query_focused: bool,
     /// The current search status message
@@ -58,7 +56,6 @@ pub struct SearchRenderConfig<'a> {
 pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
     let SearchRenderConfig {
         search_input,
-        search_cursor_position,
         is_query_focused,
         search_status,
         loading,
@@ -109,13 +106,15 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         SearchMode::Realtime => "[RT] ",
         SearchMode::Normal => "",
     };
-    let input_title = if search_input.len() < 3 {
+    let input_value = search_input.value();
+    let input_title = if input_value.len() < 3 {
         format!("{}Search Query", mode_indicator)
     } else {
         format!("{}{}Search Query", mode_indicator, status_icon)
     };
 
-    let input = Paragraph::new(highlight_spl(search_input, theme)).block(
+    // Render input as a paragraph (we handle cursor separately)
+    let input = Paragraph::new(input_value).block(
         Block::default()
             .borders(Borders::ALL)
             .title(input_title)
@@ -133,13 +132,8 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         let content_y = input_area.y + 1;
 
         // Calculate display width of text before cursor
-        // search_cursor_position is character-based, so find the byte position first
-        let byte_pos = search_input
-            .char_indices()
-            .nth(search_cursor_position)
-            .map(|(i, _)| i)
-            .unwrap_or(search_input.len());
-        let text_before_cursor = &search_input[..byte_pos];
+        let cursor_position = search_input.cursor_position();
+        let text_before_cursor: String = input_value.chars().take(cursor_position).collect();
         let cursor_offset = text_before_cursor.chars().count() as u16;
 
         // Set cursor position
@@ -156,7 +150,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
     let status_text: Line = if loading {
         // During loading, just show the search status (gauge is rendered separately below)
         Line::from(search_status)
-    } else if search_input.len() >= 3 && !spl_validation_pending {
+    } else if input_value.len() >= 3 && !spl_validation_pending {
         // Show validation status
         match spl_validation_state.valid {
             Some(true) => {
@@ -272,5 +266,65 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
                 .title_style(Style::default().fg(theme.title)),
         );
         f.render_widget(results, chunks[2]);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::backend::TestBackend;
+
+    #[test]
+    fn test_search_render_config() {
+        let input = SingleLineInput::with_value("index=_internal");
+        let config = SearchRenderConfig {
+            search_input: &input,
+            is_query_focused: true,
+            search_status: "Ready",
+            loading: false,
+            progress: 0.0,
+            search_results: &[],
+            search_scroll_offset: 0,
+            search_results_total_count: None,
+            search_has_more_results: false,
+            theme: &Theme::default(),
+            spl_validation_state: &SplValidationState::default(),
+            spl_validation_pending: false,
+            search_mode: SearchMode::Normal,
+        };
+
+        assert_eq!(config.search_input.value(), "index=_internal");
+        assert!(config.is_query_focused);
+    }
+
+    #[test]
+    fn test_render_search_empty_results() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        let input = SingleLineInput::with_value("");
+
+        terminal
+            .draw(|f| {
+                render_search(
+                    f,
+                    f.area(),
+                    SearchRenderConfig {
+                        search_input: &input,
+                        is_query_focused: true,
+                        search_status: "Ready",
+                        loading: false,
+                        progress: 0.0,
+                        search_results: &[],
+                        search_scroll_offset: 0,
+                        search_results_total_count: None,
+                        search_has_more_results: false,
+                        theme: &Theme::default(),
+                        spl_validation_state: &SplValidationState::default(),
+                        spl_validation_pending: false,
+                        search_mode: SearchMode::Normal,
+                    },
+                );
+            })
+            .unwrap();
     }
 }

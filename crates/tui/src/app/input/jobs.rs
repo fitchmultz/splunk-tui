@@ -111,7 +111,7 @@ impl App {
                 self.is_filtering = false;
                 self.filter_before_edit = None; // Commit the edit, clear saved state
                 if !self.filter_input.is_empty() {
-                    self.search_filter = Some(self.filter_input.clone());
+                    self.search_filter = Some(self.filter_input.value().to_string());
                     self.filter_input.clear();
                     self.rebuild_filtered_indices();
                     None

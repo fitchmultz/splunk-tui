@@ -24,7 +24,8 @@ fn test_digits_typed_in_search_query() {
     app.handle_input(key('9'));
 
     assert_eq!(
-        app.search_input, "12309",
+        app.search_input.value(),
+        "12309",
         "Digits should be typed into search query"
     );
 }

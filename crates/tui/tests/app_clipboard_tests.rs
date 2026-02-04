@@ -30,7 +30,7 @@ use std::collections::HashMap;
 fn test_ctrl_c_copies_search_query_when_no_results() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
-    app.search_input = "index=_internal | head 5".to_string();
+    app.search_input.set_value("index=_internal | head 5");
     app.search_results.clear();
 
     let action = app.handle_input(ctrl_key('c'));
@@ -294,11 +294,15 @@ fn test_typing_e_in_search_query_does_not_trigger_export() {
     app.set_search_results(vec![serde_json::json!({"foo": "bar"})]);
 
     // Plain 'e' should type into the query, not open the export popup.
-    app.search_input = "s".to_string();
-    app.search_cursor_position = 1; // Cursor at end
+    app.search_input.set_value("s");
+    app.search_input.set_cursor_position(1); // Cursor at end
     app.handle_input(key('e'));
 
-    assert_eq!(app.search_input, "se", "Should append 'e' to query input");
+    assert_eq!(
+        app.search_input.value(),
+        "se",
+        "Should append 'e' to query input"
+    );
     assert!(
         app.popup.is_none(),
         "Should not open export popup on plain 'e'"

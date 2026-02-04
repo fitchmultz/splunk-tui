@@ -231,23 +231,23 @@ fn test_export_search_popup_flow() {
         app.popup.as_ref().map(|p| &p.kind),
         Some(PopupType::ExportSearch)
     ));
-    assert_eq!(app.export_input, "results.json");
+    assert_eq!(app.export_input.value(), "results.json");
     assert_eq!(app.export_format, ExportFormat::Json);
 
     // Press Tab to toggle format
     app.handle_input(tab_key());
     assert_eq!(app.export_format, ExportFormat::Csv);
-    assert_eq!(app.export_input, "results.csv");
+    assert_eq!(app.export_input.value(), "results.csv");
 
     // Toggle back to Json
     app.handle_input(tab_key());
     assert_eq!(app.export_format, ExportFormat::Json);
-    assert_eq!(app.export_input, "results.json");
+    assert_eq!(app.export_input.value(), "results.json");
 
     // Toggle back to Csv for further testing
     app.handle_input(tab_key());
     assert_eq!(app.export_format, ExportFormat::Csv);
-    assert_eq!(app.export_input, "results.csv");
+    assert_eq!(app.export_input.value(), "results.csv");
 
     // Backspace and type new filename
     for _ in 0..12 {
@@ -261,7 +261,7 @@ fn test_export_search_popup_flow() {
     app.handle_input(key('c'));
     app.handle_input(key('s'));
     app.handle_input(key('v'));
-    assert_eq!(app.export_input, "data.csv");
+    assert_eq!(app.export_input.value(), "data.csv");
 
     // Press Enter to confirm export
     let action = app.handle_input(enter_key());

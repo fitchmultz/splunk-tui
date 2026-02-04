@@ -1942,6 +1942,72 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0321",
+      "status": "done",
+      "title": "Implement rich input components: tui-input and tui-textarea for enhanced text editing",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "input",
+        "textarea",
+        "ratatui",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/",
+        "crates/tui/src/app/input/",
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/ui/popup/",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes Rich Input Components as Priority 1",
+        "Recommended crates: tui-input = '0.11' for single-line input, tui-textarea = '0.7' for multi-line",
+        "Current TUI uses manual String-based input with cursor tracking in crates/tui/src/app/input/search.rs",
+        "Search screen renders cursor manually with char-based position calculations",
+        "crates/tui/src/components/ directory does NOT exist - needs to be created or use app/input/ pattern",
+        "Profile popup uses ProfileField enum for form field navigation in crates/tui/src/ui/popup/profile_field.rs",
+        "Input fields needed for: SPL query editor, search inputs, profile configuration, form fields"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on input components",
+        "Add tui-input = '0.11' dependency to crates/tui/Cargo.toml for single-line text input",
+        "Add tui-textarea = '0.7' dependency for multi-line text editing (SPL queries)",
+        "Create input wrappers in crates/tui/src/app/input/ following existing pattern (search.rs, profiles.rs, etc.)",
+        "Refactor search input in crates/tui/src/app/input/search.rs to use tui-input Input/InputRequest pattern",
+        "Update search screen render in crates/tui/src/ui/screens/search.rs to use InputWidget",
+        "Create multi-line input wrapper for SPL query editing using tui-textarea with placeholder support",
+        "Integrate into profile popup forms for better text entry experience",
+        "Add tests for input handling and edge cases (empty input, long text, unicode)",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md section '3. Rich Input Components'",
+        "tui-input provides InputRequest pattern for clean key event handling - replaces manual char indexing",
+        "tui-textarea supports placeholder text - useful for 'Enter SPL query...' hints",
+        "Current manual cursor handling in search.rs uses complex byte/char position math that tui-input simplifies",
+        "Existing input handlers are in crates/tui/src/app/input/ - follow this pattern rather than components/",
+        "Consider tui-input's built-in history support for search query history navigation",
+        "Implemented tui-input (0.11) and tui-textarea (0.7) for rich text editing",
+        "Created SingleLineInput wrapper with InputRequest pattern for cursor management",
+        "Created MultiLineInput wrapper with placeholder support for future SPL query editing",
+        "Refactored search.rs to use new components - removed 100+ lines of manual byte/char math",
+        "Updated all input fields: search_input, config_search_query, filter_input, export_input, saved_search_input",
+        "All 384+ tests pass, CI clean, no TODOs or FIXMEs remaining"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T21:20:29.899464853Z",
+      "completed_at": "2026-02-04T21:20:29.899464853Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }

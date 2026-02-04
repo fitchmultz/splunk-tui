@@ -12,6 +12,7 @@
 pub mod apps;
 pub mod audit;
 pub mod cluster;
+pub mod components;
 pub mod configs;
 pub mod dashboards;
 pub mod datamodels;

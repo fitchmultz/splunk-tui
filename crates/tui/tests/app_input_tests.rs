@@ -101,7 +101,8 @@ fn test_search_query_focused_inserts_q_char() {
         "'q' in QueryFocused mode should not return an action"
     );
     assert_eq!(
-        app.search_input, "q",
+        app.search_input.value(),
+        "q",
         "'q' should be inserted into search input"
     );
 }
@@ -119,7 +120,8 @@ fn test_search_query_focused_inserts_question_mark() {
         "'?' in QueryFocused mode should not return an action"
     );
     assert_eq!(
-        app.search_input, "?",
+        app.search_input.value(),
+        "?",
         "'?' should be inserted into search input"
     );
 }
@@ -135,7 +137,8 @@ fn test_search_query_focused_inserts_digits() {
     app.handle_input(key('2'));
     app.handle_input(key('3'));
     assert_eq!(
-        app.search_input, "123",
+        app.search_input.value(),
+        "123",
         "Digits should be inserted into search input"
     );
 }
@@ -153,7 +156,8 @@ fn test_search_query_focused_inserts_e_char() {
         "'e' in QueryFocused mode should not return an action"
     );
     assert_eq!(
-        app.search_input, "e",
+        app.search_input.value(),
+        "e",
         "'e' should be inserted into search input"
     );
 }
@@ -191,7 +195,7 @@ fn test_search_query_focused_allows_ctrl_shortcuts() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
-    app.search_input = "index=main".to_string();
+    app.search_input.set_value("index=main");
 
     // Ctrl+ shortcuts should still work in QueryFocused mode
     let action = app.handle_input(ctrl_key('c'));
@@ -208,7 +212,7 @@ fn test_search_query_focused_allows_special_keys() {
     app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
 
     // Enter should still run search
-    app.search_input = "index=main".to_string();
+    app.search_input.set_value("index=main");
     let action = app.handle_input(enter_key());
     assert!(
         matches!(action, Some(Action::RunSearch { .. })),
@@ -227,13 +231,14 @@ fn test_search_query_focused_allows_backspace() {
     app.handle_input(key('e'));
     app.handle_input(key('s'));
     app.handle_input(key('t'));
-    assert_eq!(app.search_input, "test");
+    assert_eq!(app.search_input.value(), "test");
 
     // Backspace should remove last character
     let action = app.handle_input(backspace_key());
     assert!(action.is_none(), "Backspace should not return an action");
     assert_eq!(
-        app.search_input, "tes",
+        app.search_input.value(),
+        "tes",
         "Backspace should remove last character"
     );
 }
@@ -243,7 +248,7 @@ fn test_search_run_switches_to_results_focused() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
-    app.search_input = "index=main".to_string();
+    app.search_input.set_value("index=main");
 
     // Running search should switch to ResultsFocused mode
     let action = app.handle_input(enter_key());

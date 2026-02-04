@@ -275,7 +275,7 @@ mod tests {
         let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ExportSearch).build());
         app.export_target = Some(ExportTarget::SearchResults);
-        app.export_input = String::new();
+        app.export_input.set_value("");
 
         // Type some characters
         app.handle_popup_input(key(KeyCode::Char('t')));
@@ -283,11 +283,11 @@ mod tests {
         app.handle_popup_input(key(KeyCode::Char('s')));
         app.handle_popup_input(key(KeyCode::Char('t')));
 
-        assert_eq!(app.export_input, "test");
+        assert_eq!(app.export_input.value(), "test");
 
         // Backspace
         app.handle_popup_input(key(KeyCode::Backspace));
-        assert_eq!(app.export_input, "tes");
+        assert_eq!(app.export_input.value(), "tes");
     }
 
     #[test]
@@ -297,18 +297,18 @@ mod tests {
         let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(Popup::builder(PopupType::ExportSearch).build());
         app.export_target = Some(ExportTarget::SearchResults);
-        app.export_input = "test.json".to_string();
+        app.export_input.set_value("test.json");
         app.export_format = ExportFormat::Json;
 
         // Toggle format with Tab
         app.handle_popup_input(key(KeyCode::Tab));
         assert_eq!(app.export_format, ExportFormat::Csv);
-        assert_eq!(app.export_input, "test.csv");
+        assert_eq!(app.export_input.value(), "test.csv");
 
         // Toggle back
         app.handle_popup_input(key(KeyCode::Tab));
         assert_eq!(app.export_format, ExportFormat::Json);
-        assert_eq!(app.export_input, "test.json");
+        assert_eq!(app.export_input.value(), "test.json");
     }
 
     #[test]

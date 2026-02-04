@@ -27,7 +27,7 @@ impl App {
                 }
 
                 if let Some(data) = self.collect_export_data() {
-                    let path = std::path::PathBuf::from(&self.export_input);
+                    let path = std::path::PathBuf::from(self.export_input.value());
                     let format = self.export_format;
                     self.popup = None;
                     self.export_target = None;
@@ -42,20 +42,24 @@ impl App {
                     ExportFormat::Csv => ExportFormat::Json,
                 };
                 // Automatically update extension if it matches the previous format
-                match self.export_format {
+                let current_value = self.export_input.value().to_string();
+                let new_value = match self.export_format {
                     ExportFormat::Json => {
-                        if self.export_input.ends_with(".csv") {
-                            self.export_input.truncate(self.export_input.len() - 4);
-                            self.export_input.push_str(".json");
+                        if current_value.ends_with(".csv") {
+                            current_value[..current_value.len() - 4].to_string() + ".json"
+                        } else {
+                            current_value
                         }
                     }
                     ExportFormat::Csv => {
-                        if self.export_input.ends_with(".json") {
-                            self.export_input.truncate(self.export_input.len() - 5);
-                            self.export_input.push_str(".csv");
+                        if current_value.ends_with(".json") {
+                            current_value[..current_value.len() - 5].to_string() + ".csv"
+                        } else {
+                            current_value
                         }
                     }
-                }
+                };
+                self.export_input.set_value(new_value);
                 self.update_export_popup();
                 None
             }

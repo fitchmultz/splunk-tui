@@ -2,56 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0321",
-      "status": "todo",
-      "title": "Implement rich input components: tui-input and tui-textarea for enhanced text editing",
-      "priority": "high",
-      "tags": [
-        "tui",
-        "input",
-        "textarea",
-        "ratatui",
-        "opentui-port"
-      ],
-      "scope": [
-        "crates/tui/src/",
-        "crates/tui/Cargo.toml",
-        "Cargo.lock",
-        "make ci"
-      ],
-      "evidence": [
-        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
-        "Feature file: /tmp/opentui-rust-features.md describes Rich Input Components as Priority 1",
-        "Recommended crates: tui-input = '0.11' for single-line input, tui-textarea = '0.7' for multi-line",
-        "Current TUI uses basic String inputs; these components provide cursor handling, navigation, and better UX",
-        "Input fields needed for: SPL query editor, search inputs, profile configuration, form fields"
-      ],
-      "plan": [
-        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on input components",
-        "Add tui-input = '0.11' dependency to crates/tui/Cargo.toml for single-line text input",
-        "Add tui-textarea = '0.7' dependency for multi-line text editing (SPL queries)",
-        "Create wrapper component in crates/tui/src/components/ for SearchInput using tui-input",
-        "Create wrapper component for SplQueryEditor using tui-textarea with placeholder text support",
-        "Implement key event handling for both components (InsertChar, Backspace, navigation keys)",
-        "Integrate into existing screens: search.rs (input), job_details.rs (query display), saved_searches.rs",
-        "Add tests for input handling and edge cases (empty input, long text, unicode)",
-        "Run make ci to verify all checks pass"
-      ],
-      "notes": [
-        "Reference file for implementation: /tmp/opentui-rust-features.md section '3. Rich Input Components'",
-        "tui-input provides InputRequest pattern for clean key event handling",
-        "tui-textarea supports placeholder text - useful for 'Enter SPL query...' hints",
-        "These components replace the current String-based input fields for better UX"
-      ],
-      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
-      "created_at": "2026-02-04T19:33:53Z",
-      "updated_at": "2026-02-04T19:33:53Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0322",
       "status": "todo",
       "title": "Implement syntax highlighting with tree-sitter and flexbox layout with taffy",

@@ -11,6 +11,7 @@
 
 use crate::action::ExportFormat;
 use crate::app::App;
+use crate::app::input::components::SingleLineInput;
 use crate::ui::popup::{Popup, PopupType};
 
 /// Identifies which screen's data should be exported when the export popup is confirmed.
@@ -107,7 +108,8 @@ impl App {
     /// Begin an export flow for a specific screen's dataset.
     pub fn begin_export(&mut self, target: ExportTarget) {
         self.export_target = Some(target);
-        self.export_input = target.default_filename(self.export_format);
+        self.export_input =
+            SingleLineInput::with_value(target.default_filename(self.export_format));
         self.popup = Some(Popup::builder(PopupType::ExportSearch).build());
         self.update_export_popup();
     }

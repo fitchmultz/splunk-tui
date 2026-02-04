@@ -289,7 +289,7 @@ impl App {
             return;
         }
         self.config_search_mode = true;
-        self.config_search_before_edit = Some(self.config_search_query.clone());
+        self.config_search_before_edit = Some(self.config_search_query.value().to_string());
     }
 
     /// Handle keyboard input when in config search mode.
@@ -299,7 +299,7 @@ impl App {
                 self.config_search_mode = false;
                 // Restore previous search query if canceling edit
                 if let Some(saved) = self.config_search_before_edit.take() {
-                    self.config_search_query = saved;
+                    self.config_search_query.set_value(saved);
                     self.rebuild_filtered_stanza_indices();
                 }
                 None
@@ -314,21 +314,17 @@ impl App {
                 }
                 None
             }
-            KeyCode::Backspace => {
-                self.config_search_query.pop();
+            _ => {
+                // Use tui-input for all other keys (char input, backspace, cursor movement)
+                self.config_search_query.handle_key(key);
                 None
             }
-            KeyCode::Char(c) => {
-                self.config_search_query.push(c);
-                None
-            }
-            _ => None,
         }
     }
 
     /// Clear the config search filter.
     fn clear_config_search(&mut self) {
-        self.config_search_query.clear();
+        self.config_search_query.set_value("");
         self.filtered_stanza_indices.clear();
     }
 
@@ -343,7 +339,7 @@ impl App {
         if self.config_search_query.is_empty() {
             self.filtered_stanza_indices = (0..stanzas.len()).collect();
         } else {
-            let lower_query = self.config_search_query.to_lowercase();
+            let lower_query = self.config_search_query.value().to_lowercase();
             self.filtered_stanza_indices = stanzas
                 .iter()
                 .enumerate()
@@ -449,7 +445,7 @@ mod tests {
         app.config_view_mode = ConfigViewMode::StanzaList;
         app.enter_config_search_mode();
         assert!(app.config_search_mode);
-        assert_eq!(app.config_search_before_edit, Some(String::new()));
+        assert_eq!(app.config_search_before_edit, Some("".to_string()));
 
         // Should not enter search mode in StanzaDetail view
         app.config_search_mode = false;
@@ -467,17 +463,17 @@ mod tests {
         // Type 't'
         let key = KeyEvent::new(KeyCode::Char('t'), KeyModifiers::NONE);
         app.handle_config_search_input(key);
-        assert_eq!(app.config_search_query, "t");
+        assert_eq!(app.config_search_query.value(), "t");
 
         // Type 'e'
         let key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
         app.handle_config_search_input(key);
-        assert_eq!(app.config_search_query, "te");
+        assert_eq!(app.config_search_query.value(), "te");
 
         // Backspace
         let key = KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE);
         app.handle_config_search_input(key);
-        assert_eq!(app.config_search_query, "t");
+        assert_eq!(app.config_search_query.value(), "t");
     }
 
     #[test]
@@ -498,7 +494,7 @@ mod tests {
         app.handle_config_search_input(key);
 
         assert!(!app.config_search_mode);
-        assert_eq!(app.config_search_query, "test");
+        assert_eq!(app.config_search_query.value(), "test");
         assert_eq!(app.filtered_stanza_indices.len(), 1);
         assert_eq!(app.filtered_stanza_indices[0], 1); // test_stanza
     }
@@ -508,25 +504,25 @@ mod tests {
         let mut app = create_test_app();
         app.config_view_mode = ConfigViewMode::StanzaList;
         app.config_stanzas = Some(create_test_stanzas());
-        app.config_search_query = "existing".to_string();
+        app.config_search_query.set_value("existing");
         app.rebuild_filtered_stanza_indices();
 
         app.enter_config_search_mode();
 
         // Clear and type 'newquery' (simulating user clearing and typing new)
-        app.config_search_query.clear();
+        app.config_search_query.set_value("");
         for c in "newquery".chars() {
             let key = KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE);
             app.handle_config_search_input(key);
         }
-        assert_eq!(app.config_search_query, "newquery");
+        assert_eq!(app.config_search_query.value(), "newquery");
 
         // Press Esc to cancel
         let key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
         app.handle_config_search_input(key);
 
         assert!(!app.config_search_mode);
-        assert_eq!(app.config_search_query, "existing"); // Restored to previous
+        assert_eq!(app.config_search_query.value(), "existing"); // Restored to previous
     }
 
     #[test]
@@ -534,7 +530,7 @@ mod tests {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
 
-        app.config_search_query = "stanza1".to_string();
+        app.config_search_query.set_value("stanza1");
         app.rebuild_filtered_stanza_indices();
 
         assert_eq!(app.filtered_stanza_indices.len(), 1);
@@ -546,7 +542,7 @@ mod tests {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
 
-        app.config_search_query = "TEST".to_string();
+        app.config_search_query.set_value("TEST");
         app.rebuild_filtered_stanza_indices();
 
         assert_eq!(app.filtered_stanza_indices.len(), 1);
@@ -558,7 +554,7 @@ mod tests {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
 
-        app.config_search_query = "searchable".to_string();
+        app.config_search_query.set_value("searchable");
         app.rebuild_filtered_stanza_indices();
 
         assert_eq!(app.filtered_stanza_indices.len(), 1);
@@ -570,7 +566,7 @@ mod tests {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
 
-        app.config_search_query = "MATCHING".to_string();
+        app.config_search_query.set_value("MATCHING");
         app.rebuild_filtered_stanza_indices();
 
         assert_eq!(app.filtered_stanza_indices.len(), 1);
@@ -582,7 +578,7 @@ mod tests {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
 
-        app.config_search_query = "".to_string();
+        app.config_search_query.set_value("");
         app.rebuild_filtered_stanza_indices();
 
         assert_eq!(app.filtered_stanza_indices.len(), 3);
@@ -594,7 +590,7 @@ mod tests {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
 
-        app.config_search_query = "nonexistent".to_string();
+        app.config_search_query.set_value("nonexistent");
         app.rebuild_filtered_stanza_indices();
 
         assert!(app.filtered_stanza_indices.is_empty());
@@ -614,7 +610,7 @@ mod tests {
         assert_eq!(stanza.unwrap().name, "stanza1");
 
         // With filter matching test_stanza
-        app.config_search_query = "test".to_string();
+        app.config_search_query.set_value("test");
         app.rebuild_filtered_stanza_indices();
         app.config_stanzas_state.select(Some(0));
 
@@ -629,7 +625,7 @@ mod tests {
         app.config_stanzas_state.select(Some(0));
 
         // Filter to only show stanza at index 1 (test_stanza)
-        app.config_search_query = "test_stanza".to_string();
+        app.config_search_query.set_value("test_stanza");
         app.rebuild_filtered_stanza_indices();
 
         // Navigation should work with filtered count
@@ -646,7 +642,7 @@ mod tests {
     fn test_clear_config_search() {
         let mut app = create_test_app();
         app.config_stanzas = Some(create_test_stanzas());
-        app.config_search_query = "test".to_string();
+        app.config_search_query.set_value("test");
         app.rebuild_filtered_stanza_indices();
 
         app.clear_config_search();

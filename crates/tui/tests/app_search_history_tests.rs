@@ -19,32 +19,32 @@ fn test_search_history_navigation() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_history = vec!["query1".to_string(), "query2".to_string()];
-    app.search_input = "current".to_string();
+    app.search_input.set_value("current");
 
     // Press Up once - should show query1 (index 0)
     app.handle_input(up_key());
-    assert_eq!(app.search_input, "query1");
+    assert_eq!(app.search_input.value(), "query1");
     assert_eq!(app.history_index, Some(0));
-    assert_eq!(app.saved_search_input, "current");
+    assert_eq!(app.saved_search_input.value(), "current");
 
     // Press Up again - should show query2 (index 1)
     app.handle_input(up_key());
-    assert_eq!(app.search_input, "query2");
+    assert_eq!(app.search_input.value(), "query2");
     assert_eq!(app.history_index, Some(1));
 
     // Press Up again - should stay at query2 (last item)
     app.handle_input(up_key());
-    assert_eq!(app.search_input, "query2");
+    assert_eq!(app.search_input.value(), "query2");
     assert_eq!(app.history_index, Some(1));
 
     // Press Down - should go back to query1
     app.handle_input(down_key());
-    assert_eq!(app.search_input, "query1");
+    assert_eq!(app.search_input.value(), "query1");
     assert_eq!(app.history_index, Some(0));
 
     // Press Down again - should return to "current" (saved input)
     app.handle_input(down_key());
-    assert_eq!(app.search_input, "current");
+    assert_eq!(app.search_input.value(), "current");
     assert_eq!(app.history_index, None);
 }
 
@@ -52,7 +52,7 @@ fn test_search_history_navigation() {
 fn test_search_history_add_on_enter() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
-    app.search_input = "new query".to_string();
+    app.search_input.set_value("new query");
 
     // Press Enter to execute search
     app.handle_input(enter_key());
@@ -67,7 +67,7 @@ fn test_search_history_deduplication() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
     app.search_history = vec!["old".to_string(), "other".to_string()];
-    app.search_input = "other".to_string();
+    app.search_input.set_value("other");
 
     // Press Enter with a query already in history
     app.handle_input(enter_key());

@@ -8,7 +8,7 @@ use helpers::{TuiHarness, create_mock_index, create_mock_jobs};
 fn snapshot_footer_hints_search_screen() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
+    harness.app.search_input.set_value("index=main");
 
     insta::assert_snapshot!(harness.render());
 }

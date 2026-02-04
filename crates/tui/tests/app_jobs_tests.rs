@@ -231,7 +231,11 @@ fn test_jobs_filter_persistence() {
     app.handle_input(key('f'));
     app.handle_input(key('o'));
     app.handle_input(key('o'));
-    assert_eq!(app.filter_input, "foo", "Filter input should be 'foo'");
+    assert_eq!(
+        app.filter_input.value(),
+        "foo",
+        "Filter input should be 'foo'"
+    );
 
     // Press Enter to apply filter
     let action = app.handle_input(enter_key());
@@ -270,7 +274,7 @@ fn test_jobs_filter_clear_with_empty_input() {
     }
     assert!(app.is_filtering);
     // filter_input is pre-populated with existing filter
-    assert_eq!(app.filter_input, "existing");
+    assert_eq!(app.filter_input.value(), "existing");
 
     // Clear the pre-populated input to simulate empty input
     app.filter_input.clear();
@@ -301,14 +305,14 @@ fn test_jobs_filter_cancel_with_escape_restores_previous_filter() {
     }
     assert!(app.is_filtering);
     assert_eq!(app.filter_before_edit, Some("existing".to_string()));
-    assert_eq!(app.filter_input, "existing"); // Pre-populated with existing filter
+    assert_eq!(app.filter_input.value(), "existing"); // Pre-populated with existing filter
 
     // Type some new text (replacing the pre-populated text)
     app.filter_input.clear();
     app.handle_input(key('f'));
     app.handle_input(key('o'));
     app.handle_input(key('o'));
-    assert_eq!(app.filter_input, "foo");
+    assert_eq!(app.filter_input.value(), "foo");
 
     // Press Esc to cancel without applying
     let action = app.handle_input(esc_key());
@@ -353,7 +357,7 @@ fn test_jobs_filter_esc_clears_when_no_previous_filter() {
     app.handle_input(key('e'));
     app.handle_input(key('s'));
     app.handle_input(key('t'));
-    assert_eq!(app.filter_input, "test");
+    assert_eq!(app.filter_input.value(), "test");
 
     // Press Esc to cancel
     let action = app.handle_input(esc_key());
@@ -391,7 +395,7 @@ fn test_jobs_filter_enter_commits_edit() {
     app.handle_input(key('n'));
     app.handle_input(key('e'));
     app.handle_input(key('w'));
-    assert_eq!(app.filter_input, "new");
+    assert_eq!(app.filter_input.value(), "new");
 
     // Press Enter to commit
     let action = app.handle_input(enter_key());

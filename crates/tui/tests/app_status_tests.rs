@@ -22,13 +22,13 @@ fn test_search_complete_uses_running_query_not_current_input() {
     let mut app = App::new(None, ConnectionContext::default());
 
     // User types and submits a query
-    app.search_input = "index=main | stats count".to_string();
+    app.search_input.set_value("index=main | stats count");
     app.update(Action::SearchStarted(
         "index=main | stats count".to_string(),
     ));
 
     // While search is running, user modifies the input
-    app.search_input = "different query".to_string();
+    app.search_input.set_value("different query");
 
     // Search completes
     app.update(Action::SearchComplete(Ok((
@@ -80,7 +80,7 @@ fn test_search_complete_fallback_to_search_input() {
     let mut app = App::new(None, ConnectionContext::default());
 
     // No SearchStarted action was sent (e.g., old code path or edge case)
-    app.search_input = "fallback query".to_string();
+    app.search_input.set_value("fallback query");
 
     app.update(Action::SearchComplete(Ok((
         vec![],
@@ -89,5 +89,5 @@ fn test_search_complete_fallback_to_search_input() {
     ))));
 
     // Should fall back to search_input
-    assert!(app.search_status.contains("fallback query"));
+    assert!(app.search_status.contains(app.search_input.value()));
 }

@@ -733,7 +733,7 @@ impl App {
         self.sort_state.direction = parse_sort_direction(&state.sort_direction);
         self.search_history = state.search_history;
         if let Some(query) = state.last_search_query {
-            self.search_input = query;
+            self.search_input.set_value(query);
         }
         self.toasts.push(Toast::info("Settings loaded from file"));
         self.loading = false;

@@ -58,7 +58,7 @@ impl App {
         let query_for_status = self
             .running_query
             .take()
-            .unwrap_or_else(|| self.search_input.clone());
+            .unwrap_or_else(|| self.search_input.value().to_string());
         self.search_status = format!("Search complete: {}", query_for_status);
         self.loading = false;
 
@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn test_search_complete_updates_state() {
         let mut app = App::new(None, ConnectionContext::default());
-        app.search_input = "test query".to_string();
+        app.search_input.set_value("test query");
 
         let results = vec![serde_json::json!({"_raw": "test event"})];
         let sid = "search_123".to_string();
@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn test_search_complete_with_total_none() {
         let mut app = App::new(None, ConnectionContext::default());
-        app.search_input = "test query".to_string();
+        app.search_input.set_value("test query");
         app.search_results_page_size = 10;
 
         // Results matching page size should indicate more results available
@@ -138,7 +138,7 @@ mod tests {
     fn test_search_complete_clears_running_query() {
         let mut app = App::new(None, ConnectionContext::default());
         app.running_query = Some("previous query".to_string());
-        app.search_input = "test query".to_string();
+        app.search_input.set_value("test query");
 
         let results: Vec<Value> = vec![];
         app.handle_search_action(Action::SearchComplete(Ok((

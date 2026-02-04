@@ -4,6 +4,7 @@
 //! Supports filtering jobs by SID or status substring match with highlighting,
 //! and sorting by any column.
 
+use crate::app::input::components::SingleLineInput;
 use crate::app::{SortColumn, SortDirection};
 use ratatui::style::Style;
 use ratatui::text::{Line, Span};
@@ -27,7 +28,7 @@ pub struct JobsRenderConfig<'a> {
     /// Optional filter string for filtering jobs
     pub filter: &'a Option<String>,
     /// Current filter input (for display when filtering)
-    pub filter_input: &'a str,
+    pub filter_input: &'a SingleLineInput,
     /// Whether the user is currently in filter mode
     pub is_filtering: bool,
     /// Current sort column
@@ -75,7 +76,10 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
     // Render filter input area if active
     if let Some(filter_area) = filter_area {
         let filter_text = if is_filtering {
-            format!("Filter: {} (Esc to cancel, Enter to apply)", filter_input)
+            format!(
+                "Filter: {} (Esc to cancel, Enter to apply)",
+                filter_input.value()
+            )
         } else if let Some(f) = filter {
             format!("Filter: {} (Press / to edit, Esc to clear)", f)
         } else {

@@ -11,6 +11,7 @@
 
 use crate::action::ExportFormat;
 use crate::app::export::ExportTarget;
+use crate::app::input::components::SingleLineInput;
 use crate::app::state::{
     ClusterViewMode, CurrentScreen, HealthState, ListPaginationState, SearchInputMode, ShcViewMode,
     SortState,
@@ -31,10 +32,8 @@ use std::collections::HashSet;
 /// Main application state.
 pub struct App {
     pub current_screen: CurrentScreen,
-    pub search_input: String,
-    /// Cursor position within search_input (character index, not byte index).
-    /// Must be kept in sync with search_input modifications.
-    pub search_cursor_position: usize,
+    /// Single-line input component for search queries with enhanced editing.
+    pub search_input: SingleLineInput,
     /// The query that was submitted for the currently running search.
     /// Used to display accurate status messages even if search_input is edited.
     pub running_query: Option<String>,
@@ -142,7 +141,8 @@ pub struct App {
 
     // Configs search state
     pub config_search_mode: bool,
-    pub config_search_query: String,
+    /// Single-line input for config search.
+    pub config_search_query: SingleLineInput,
     pub config_search_before_edit: Option<String>,
     pub filtered_stanza_indices: Vec<usize>,
 
@@ -162,7 +162,8 @@ pub struct App {
     // Jobs filter state
     pub search_filter: Option<String>,
     pub is_filtering: bool,
-    pub filter_input: String,
+    /// Single-line input for job filtering.
+    pub filter_input: SingleLineInput,
     /// Stores the filter value before entering edit mode, used for cancel semantics.
     /// When Some, pressing Esc reverts to this value instead of clearing.
     pub filter_before_edit: Option<String>,
@@ -181,7 +182,8 @@ pub struct App {
     // Search history
     pub search_history: Vec<String>,
     pub history_index: Option<usize>,
-    pub saved_search_input: String,
+    /// Saved search input for history navigation restoration.
+    pub saved_search_input: SingleLineInput,
 
     // Search defaults (persisted)
     pub search_defaults: SearchDefaults,
@@ -202,7 +204,8 @@ pub struct App {
     pub users_pagination: ListPaginationState,
 
     // Export state
-    pub export_input: String,
+    /// Single-line input for export filename.
+    pub export_input: SingleLineInput,
     pub export_format: ExportFormat,
     pub(crate) export_target: Option<ExportTarget>,
 

@@ -55,6 +55,10 @@ arboard = "3.4"
 # Secrets handling
 secrecy = { workspace = true }
 
+# Rich input components
+tui-input = "0.11"
+tui-textarea = "0.7"
+
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }
 tempfile = "3.10"

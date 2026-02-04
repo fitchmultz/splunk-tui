@@ -10,6 +10,7 @@
 //! - Does NOT handle input (see input/)
 //! - Does NOT render (see render.rs)
 
+use crate::app::input::components::SingleLineInput;
 use crate::app::state::{
     ClusterViewMode, CurrentScreen, ListPaginationState, SearchInputMode, SortState,
 };
@@ -128,8 +129,7 @@ impl App {
 
         Self {
             current_screen: CurrentScreen::Search,
-            search_input: last_search_query.clone().unwrap_or_default(),
-            search_cursor_position: last_search_query.unwrap_or_default().chars().count(),
+            search_input: SingleLineInput::with_value(last_search_query.unwrap_or_default()),
             running_query: None,
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
@@ -209,7 +209,7 @@ impl App {
             selected_stanza: None,
             config_view_mode: crate::ui::screens::configs::ConfigViewMode::FileList,
             config_search_mode: false,
-            config_search_query: String::new(),
+            config_search_query: SingleLineInput::new(),
             config_search_before_edit: None,
             filtered_stanza_indices: Vec::new(),
             loading: false,
@@ -222,7 +222,7 @@ impl App {
             theme: Theme::from(color_theme),
             search_filter: None,
             is_filtering: false,
-            filter_input: String::new(),
+            filter_input: SingleLineInput::new(),
             filter_before_edit: None,
             filtered_job_indices: Vec::new(),
             sort_state: SortState {
@@ -233,7 +233,7 @@ impl App {
             health_state: crate::app::state::HealthState::Unknown,
             search_history,
             history_index: None,
-            saved_search_input: String::new(),
+            saved_search_input: SingleLineInput::new(),
             search_defaults,
             keybind_overrides,
             list_defaults: list_defaults.clone(),
@@ -254,7 +254,7 @@ impl App {
                 list_defaults.page_size_for(ListType::Users),
                 list_defaults.max_items,
             ),
-            export_input: String::new(),
+            export_input: SingleLineInput::new(),
             export_format: crate::action::ExportFormat::Json,
             export_target: None,
             current_error: None,
@@ -286,7 +286,7 @@ impl App {
             last_search_query: if self.search_filter.is_some() {
                 self.search_filter.clone()
             } else if !self.search_input.is_empty() {
-                Some(self.search_input.clone())
+                Some(self.search_input.value().to_string())
             } else {
                 None
             },

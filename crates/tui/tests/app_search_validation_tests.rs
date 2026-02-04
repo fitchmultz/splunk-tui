@@ -143,8 +143,7 @@ fn test_validation_reset_on_new_input() {
 fn test_backspace_triggers_validation() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
-    app.search_input = "search".to_string();
-    app.search_cursor_position = 6;
+    app.search_input.set_value("search");
 
     // Press backspace
     app.handle_input(backspace_key());
@@ -160,8 +159,8 @@ fn test_backspace_triggers_validation() {
 fn test_delete_triggers_validation() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
-    app.search_input = "search".to_string();
-    app.search_cursor_position = 3;
+    app.search_input.set_value("search");
+    app.search_input.set_cursor_position(3);
 
     // Press delete
     app.handle_input(delete_key());

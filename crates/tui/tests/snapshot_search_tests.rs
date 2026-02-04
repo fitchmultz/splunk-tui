@@ -8,7 +8,7 @@ use helpers::TuiHarness;
 fn snapshot_search_screen_initial() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
+    harness.app.search_input.set_value("index=main");
 
     insta::assert_snapshot!(harness.render());
 }
@@ -17,7 +17,10 @@ fn snapshot_search_screen_initial() {
 fn snapshot_search_screen_loading() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main | stats count".to_string();
+    harness
+        .app
+        .search_input
+        .set_value("index=main | stats count");
     harness.app.search_status = "Running search...".to_string();
     harness.app.loading = true;
     harness.app.progress = 0.45;
@@ -29,7 +32,7 @@ fn snapshot_search_screen_loading() {
 fn snapshot_search_screen_with_results() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main ERROR".to_string();
+    harness.app.search_input.set_value("index=main ERROR");
     harness.app.search_status = "Search complete: index=main ERROR".to_string();
     harness.app.set_search_results(vec![
         serde_json::json!({"_time": "2024-01-15T10:30:00.000Z", "level": "ERROR", "message": "Connection failed"}),
@@ -44,7 +47,7 @@ fn snapshot_search_screen_with_results() {
 fn snapshot_search_screen_empty() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input.clear();
+    harness.app.search_input.set_value("");
     harness.app.set_search_results(Vec::new());
 
     insta::assert_snapshot!(harness.render());
@@ -56,8 +59,7 @@ fn snapshot_search_screen_empty() {
 fn snapshot_search_screen_cursor_at_end() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
-    harness.app.search_cursor_position = 10; // At end
+    harness.app.search_input.set_value("index=main");
     harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
 
     insta::assert_snapshot!(harness.render());
@@ -67,8 +69,8 @@ fn snapshot_search_screen_cursor_at_end() {
 fn snapshot_search_screen_cursor_in_middle() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
-    harness.app.search_cursor_position = 5; // After "index"
+    harness.app.search_input.set_value("index=main");
+    harness.app.search_input.set_cursor_position(5); // After "index"
     harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
 
     insta::assert_snapshot!(harness.render());
@@ -78,8 +80,7 @@ fn snapshot_search_screen_cursor_in_middle() {
 fn snapshot_search_screen_cursor_at_start() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
-    harness.app.search_cursor_position = 0; // At start
+    harness.app.search_input.set_value("index=main");
     harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
 
     insta::assert_snapshot!(harness.render());
@@ -89,8 +90,8 @@ fn snapshot_search_screen_cursor_at_start() {
 fn snapshot_search_screen_cursor_hidden_in_results_mode() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input = "index=main".to_string();
-    harness.app.search_cursor_position = 5;
+    harness.app.search_input.set_value("index=main");
+    harness.app.search_input.set_cursor_position(5);
     harness.app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
 
     insta::assert_snapshot!(harness.render());
@@ -100,8 +101,7 @@ fn snapshot_search_screen_cursor_hidden_in_results_mode() {
 fn snapshot_search_screen_cursor_with_empty_input() {
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-    harness.app.search_input.clear();
-    harness.app.search_cursor_position = 0;
+    harness.app.search_input.set_value("");
     harness.app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
 
     insta::assert_snapshot!(harness.render());
@@ -112,7 +112,7 @@ fn snapshot_virtual_window_scrolling() {
     {
         let mut harness = TuiHarness::new(80, 24);
         harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-        harness.app.search_input = "test query".to_string();
+        harness.app.search_input.set_value("test query");
 
         let results: Vec<serde_json::Value> = (0..100)
             .map(|i| serde_json::json!({"id": i, "message": format!("Message {}", i)}))
@@ -127,7 +127,7 @@ fn snapshot_virtual_window_scrolling() {
     {
         let mut harness = TuiHarness::new(80, 24);
         harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-        harness.app.search_input = "test query".to_string();
+        harness.app.search_input.set_value("test query");
 
         let results: Vec<serde_json::Value> = (0..100)
             .map(|i| serde_json::json!({"id": i, "message": format!("Message {}", i)}))
@@ -142,7 +142,7 @@ fn snapshot_virtual_window_scrolling() {
     {
         let mut harness = TuiHarness::new(80, 24);
         harness.app.current_screen = splunk_tui::CurrentScreen::Search;
-        harness.app.search_input = "test query".to_string();
+        harness.app.search_input.set_value("test query");
 
         let results: Vec<serde_json::Value> = (0..100)
             .map(|i| serde_json::json!({"id": i, "message": format!("Message {}", i)}))

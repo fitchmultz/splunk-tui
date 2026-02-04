@@ -3,6 +3,7 @@
 //! Renders the configuration file browser and viewer for Splunk config files
 //! (props.conf, transforms.conf, inputs.conf, etc.).
 
+use crate::app::input::components::SingleLineInput;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -50,8 +51,8 @@ pub struct ConfigsRenderConfig<'a> {
     pub theme: &'a Theme,
     /// Whether search mode is active
     pub is_searching: bool,
-    /// Current search query
-    pub search_query: &'a str,
+    /// Current search query (single-line input component)
+    pub search_query: &'a SingleLineInput,
     /// Filtered indices when searching
     pub filtered_indices: &'a [usize],
     /// Current spinner frame for loading animation
@@ -219,10 +220,11 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
 
     // Render search bar if active
     if let Some(search_area) = search_area {
+        let query_value = search_query.value();
         let search_text = if is_searching {
-            format!("Search: {}", search_query)
+            format!("Search: {}", query_value)
         } else {
-            format!("Search: {} (Press / to edit, Esc to clear)", search_query)
+            format!("Search: {} (Press / to edit, Esc to clear)", query_value)
         };
 
         let search_paragraph = Paragraph::new(search_text)
@@ -319,7 +321,7 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
 
     // Render search popup overlay if in search mode
     if is_searching {
-        render_search_popup(f, search_query, theme);
+        render_search_popup(f, search_query.value(), theme);
     }
 }
 

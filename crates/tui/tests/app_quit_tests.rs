@@ -74,7 +74,8 @@ fn test_quit_keyboard_triggers_action() {
         "Pressing 'q' on Search screen in QueryFocused mode should insert into query"
     );
     assert_eq!(
-        app.search_input, "q",
+        app.search_input.value(),
+        "q",
         "'q' should be inserted into search input"
     );
 

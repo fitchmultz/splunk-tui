@@ -13,6 +13,7 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::clipboard;
+use crate::app::input::components::SingleLineInput;
 use crate::ui::Toast;
 
 impl App {
@@ -52,7 +53,10 @@ impl App {
                 self.enter_search_mode();
             }
             Action::SearchInput(c) => {
-                self.filter_input.push(c);
+                use crate::app::input::components::SingleLineInput;
+                let mut input = SingleLineInput::from(self.filter_input.value().to_string());
+                input.push(c);
+                self.filter_input = input;
             }
             Action::ClearSearch => {
                 self.search_filter = None;
@@ -208,7 +212,8 @@ impl App {
         // Save current filter for potential cancel
         self.filter_before_edit = self.search_filter.clone();
         // Pre-populate filter_input with existing filter for editing
-        self.filter_input = self.search_filter.clone().unwrap_or_default();
+        self.filter_input =
+            SingleLineInput::with_value(self.search_filter.clone().unwrap_or_default());
     }
 
     fn cycle_theme(&mut self) {
@@ -618,7 +623,7 @@ mod tests {
 
         assert!(app.is_filtering);
         assert_eq!(app.filter_before_edit, Some("existing filter".to_string()));
-        assert_eq!(app.filter_input, "existing filter");
+        assert_eq!(app.filter_input.value(), "existing filter");
     }
 
     #[test]
@@ -636,12 +641,12 @@ mod tests {
     #[test]
     fn test_search_input_appends_character() {
         let mut app = App::new(None, ConnectionContext::default());
-        app.filter_input = "hel".to_string();
+        app.filter_input.set_value("hel");
 
         app.handle_system_action(Action::SearchInput('l'));
         app.handle_system_action(Action::SearchInput('o'));
 
-        assert_eq!(app.filter_input, "hello");
+        assert_eq!(app.filter_input.value(), "hello");
     }
 
     #[test]

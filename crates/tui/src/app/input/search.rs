@@ -61,7 +61,7 @@ impl App {
         {
             self.spl_validation_pending = false;
             return Some(Action::ValidateSpl {
-                search: self.search_input.clone(),
+                search: self.search_input.value().to_string(),
             });
         }
 
@@ -87,7 +87,7 @@ impl App {
                     .and_then(|v| serde_json::to_string_pretty(v).ok())
                     .unwrap_or_else(|| "<invalid>".to_string())
             } else {
-                self.search_input.clone()
+                self.search_input.value().to_string()
             };
 
             if content.trim().is_empty() {
@@ -118,7 +118,7 @@ impl App {
                     match key.code {
                         KeyCode::Enter => {
                             if !self.search_input.is_empty() {
-                                let query = self.search_input.clone();
+                                let query = self.search_input.value().to_string();
                                 self.add_to_history(query.clone());
                                 self.search_status = format!("Running: {}", query);
                                 // Switch to ResultsFocused after running search
@@ -147,83 +147,24 @@ impl App {
                                 .push(crate::ui::Toast::info(format!("Search mode: {}", mode_str)));
                             None
                         }
-                        KeyCode::Backspace => {
-                            self.history_index = None;
-                            if self.search_cursor_position > 0 {
-                                // Remove character before cursor using safe char-based indexing
-                                let char_count = self.search_input.chars().count();
-                                if self.search_cursor_position <= char_count {
-                                    let byte_pos = self
-                                        .search_input
-                                        .char_indices()
-                                        .nth(self.search_cursor_position)
-                                        .map(|(i, _)| i)
-                                        .unwrap_or(self.search_input.len());
-                                    let prev_char_start = self.search_input[..byte_pos]
-                                        .char_indices()
-                                        .next_back()
-                                        .map(|(i, _)| i)
-                                        .unwrap_or(0);
-                                    self.search_input.remove(prev_char_start);
-                                    self.search_cursor_position -= 1;
-                                }
-                            }
-                            self.trigger_validation();
-                            None
-                        }
-                        KeyCode::Delete => {
-                            self.history_index = None;
-                            let char_count = self.search_input.chars().count();
-                            if self.search_cursor_position < char_count {
-                                // Remove character at cursor using safe char-based indexing
-                                if let Some((byte_pos, _)) = self
-                                    .search_input
-                                    .char_indices()
-                                    .nth(self.search_cursor_position)
-                                {
-                                    self.search_input.remove(byte_pos);
-                                }
-                            }
-                            self.trigger_validation();
-                            None
-                        }
-                        KeyCode::Left => {
-                            if self.search_cursor_position > 0 {
-                                self.search_cursor_position -= 1;
-                            }
-                            None
-                        }
-                        KeyCode::Right => {
-                            let char_count = self.search_input.chars().count();
-                            if self.search_cursor_position < char_count {
-                                self.search_cursor_position += 1;
-                            }
-                            None
-                        }
-                        KeyCode::Home => {
-                            self.search_cursor_position = 0;
-                            None
-                        }
-                        KeyCode::End => {
-                            self.search_cursor_position = self.search_input.chars().count();
-                            None
-                        }
                         KeyCode::Down => {
+                            // Navigate forward in history (towards newer queries)
                             if let Some(curr) = self.history_index {
                                 if curr > 0 {
                                     self.history_index = Some(curr - 1);
-                                    self.search_input = self.search_history[curr - 1].clone();
+                                    self.search_input
+                                        .set_value(self.search_history[curr - 1].clone());
                                 } else {
                                     self.history_index = None;
-                                    self.search_input = self.saved_search_input.clone();
+                                    // Restore saved input
+                                    self.search_input.set_value(self.saved_search_input.value());
                                 }
                             }
-                            // Move cursor to end of new text (using char count for consistency)
-                            self.search_cursor_position = self.search_input.chars().count();
                             self.trigger_validation();
                             None
                         }
                         KeyCode::Up => {
+                            // Navigate backward in history (towards older queries)
                             if self.search_history.is_empty() {
                                 return None;
                             }
@@ -233,15 +174,15 @@ impl App {
                                     self.history_index = Some(curr + 1);
                                 }
                             } else {
-                                self.saved_search_input = self.search_input.clone();
+                                // Save current input before navigating
+                                self.saved_search_input.set_value(self.search_input.value());
                                 self.history_index = Some(0);
                             }
 
                             if let Some(idx) = self.history_index {
-                                self.search_input = self.search_history[idx].clone();
+                                self.search_input
+                                    .set_value(self.search_history[idx].clone());
                             }
-                            // Move cursor to end of new text (using char count for consistency)
-                            self.search_cursor_position = self.search_input.chars().count();
                             self.trigger_validation();
                             None
                         }
@@ -251,28 +192,14 @@ impl App {
                             }
                             None
                         }
-                        KeyCode::Char(c) => {
+                        _ => {
+                            // For all other keys, use tui-input's InputRequest handling
+                            // This handles: character input, backspace, delete, cursor movement
                             self.history_index = None;
-                            // Insert character at cursor position using safe char-based indexing
-                            let char_count = self.search_input.chars().count();
-                            if self.search_cursor_position >= char_count {
-                                // Append at end
-                                self.search_input.push(c);
-                            } else if let Some((byte_pos, _)) = self
-                                .search_input
-                                .char_indices()
-                                .nth(self.search_cursor_position)
-                            {
-                                self.search_input.insert(byte_pos, c);
-                            } else {
-                                // Fallback to append
-                                self.search_input.push(c);
-                            }
-                            self.search_cursor_position += 1;
+                            self.search_input.handle_key(key);
                             self.trigger_validation();
                             None
                         }
-                        _ => None,
                     }
                 }
                 SearchInputMode::ResultsFocused => {
@@ -282,5 +209,233 @@ impl App {
                 }
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::ConnectionContext;
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    fn key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE)
+    }
+
+    fn ctrl_key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
+    }
+
+    fn backspace_key() -> KeyEvent {
+        KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE)
+    }
+
+    fn delete_key() -> KeyEvent {
+        KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE)
+    }
+
+    fn left_key() -> KeyEvent {
+        KeyEvent::new(KeyCode::Left, KeyModifiers::NONE)
+    }
+
+    fn right_key() -> KeyEvent {
+        KeyEvent::new(KeyCode::Right, KeyModifiers::NONE)
+    }
+
+    fn home_key() -> KeyEvent {
+        KeyEvent::new(KeyCode::Home, KeyModifiers::NONE)
+    }
+
+    fn end_key() -> KeyEvent {
+        KeyEvent::new(KeyCode::End, KeyModifiers::NONE)
+    }
+
+    #[test]
+    fn test_search_input_character_typing() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        app.handle_search_input(key('i'));
+        app.handle_search_input(key('n'));
+        app.handle_search_input(key('d'));
+        app.handle_search_input(key('e'));
+        app.handle_search_input(key('x'));
+
+        assert_eq!(app.search_input.value(), "index");
+        assert_eq!(app.search_input.cursor_position(), 5);
+    }
+
+    #[test]
+    fn test_search_input_cursor_movement() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("hello");
+
+        // Move cursor left
+        app.handle_search_input(left_key());
+        app.handle_search_input(left_key());
+        assert_eq!(app.search_input.cursor_position(), 3);
+
+        // Move cursor right
+        app.handle_search_input(right_key());
+        assert_eq!(app.search_input.cursor_position(), 4);
+
+        // Home key
+        app.handle_search_input(home_key());
+        assert_eq!(app.search_input.cursor_position(), 0);
+
+        // End key
+        app.handle_search_input(end_key());
+        assert_eq!(app.search_input.cursor_position(), 5);
+    }
+
+    #[test]
+    fn test_search_input_backspace() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("hello");
+
+        // Move cursor to middle and backspace
+        app.handle_search_input(left_key());
+        app.handle_search_input(left_key());
+        app.handle_search_input(backspace_key());
+
+        assert_eq!(app.search_input.value(), "helo");
+        assert_eq!(app.search_input.cursor_position(), 2);
+    }
+
+    #[test]
+    fn test_search_input_delete() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("hello");
+
+        // Move cursor to start and delete
+        app.handle_search_input(home_key());
+        app.handle_search_input(delete_key());
+
+        assert_eq!(app.search_input.value(), "ello");
+        assert_eq!(app.search_input.cursor_position(), 0);
+    }
+
+    #[test]
+    fn test_search_input_unicode_handling() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        // Type unicode characters
+        app.handle_search_input(key('中'));
+        app.handle_search_input(key('文'));
+
+        assert_eq!(app.search_input.value(), "中文");
+        assert_eq!(app.search_input.cursor_position(), 2);
+    }
+
+    #[test]
+    fn test_empty_input_enter_does_nothing() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let action = app.handle_search_input(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn test_enter_with_input_triggers_search() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("index=_internal");
+
+        let action = app.handle_search_input(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+
+        assert!(matches!(action, Some(Action::RunSearch { .. })));
+    }
+
+    #[test]
+    fn test_search_history_navigation() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("current");
+
+        // Add some history
+        app.search_history = vec!["old1".to_string(), "old2".to_string()];
+
+        // Press Up to go back in history
+        app.handle_search_input(KeyEvent::new(KeyCode::Up, KeyModifiers::NONE));
+        assert_eq!(app.search_input.value(), "old1");
+
+        // Press Up again for older history
+        app.handle_search_input(KeyEvent::new(KeyCode::Up, KeyModifiers::NONE));
+        assert_eq!(app.search_input.value(), "old2");
+
+        // Press Down to go forward
+        app.handle_search_input(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+        assert_eq!(app.search_input.value(), "old1");
+
+        // Press Down to restore original input
+        app.handle_search_input(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+        assert_eq!(app.search_input.value(), "current");
+    }
+
+    #[test]
+    fn test_ctrl_r_toggles_search_mode() {
+        let mut app = App::new(None, ConnectionContext::default());
+        assert!(matches!(app.search_mode, SearchMode::Normal));
+
+        app.handle_search_input(ctrl_key('r'));
+        assert!(matches!(app.search_mode, SearchMode::Realtime));
+
+        app.handle_search_input(ctrl_key('r'));
+        assert!(matches!(app.search_mode, SearchMode::Normal));
+    }
+
+    #[test]
+    fn test_tab_toggles_input_mode() {
+        let mut app = App::new(None, ConnectionContext::default());
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::QueryFocused
+        ));
+
+        app.handle_search_input(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::ResultsFocused
+        ));
+
+        app.handle_search_input(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::QueryFocused
+        ));
+    }
+
+    #[test]
+    fn test_esc_from_results_focused_switches_to_query_focused() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input_mode = SearchInputMode::ResultsFocused;
+
+        app.handle_search_input(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::QueryFocused
+        ));
+    }
+
+    #[test]
+    fn test_ctrl_c_copies_search_query_when_no_results() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("test query");
+        app.search_results.clear();
+
+        let action = app.handle_search_input(ctrl_key('c'));
+
+        assert!(matches!(action, Some(Action::CopyToClipboard(s)) if s == "test query"));
+    }
+
+    #[test]
+    fn test_validation_triggers_on_input_change() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        assert!(!app.spl_validation_pending);
+
+        app.handle_search_input(key('a'));
+
+        assert!(app.spl_validation_pending);
+        assert!(app.last_input_change.is_some());
     }
 }
