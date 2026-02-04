@@ -34,3 +34,4 @@ docs/splunk-test-environment.md
 .ralph/cache/queue.json.backup*
 .ralph/cache/parallel/state.json
 .ralph/cache/session.json
+.ralph/cache/stop_requested
