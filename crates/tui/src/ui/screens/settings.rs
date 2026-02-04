@@ -1,11 +1,13 @@
 //! Settings screen rendering module.
 //!
 //! This module provides the UI for viewing and modifying runtime configuration.
+//!
+//! Uses the centralized theme system via [`ThemeExt`] for consistent styling.
 
+use crate::ui::theme::ThemeExt;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::Style,
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
@@ -53,178 +55,134 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
 
     let theme = config.theme;
 
-    // Header
-    let header = Line::from(vec![Span::styled(
-        "Settings",
-        Style::default().fg(theme.accent),
-    )]);
+    // Header - using ThemeExt for consistent title styling
+    let header = Line::from(vec![Span::styled("Settings", theme.title())]);
 
     f.render_widget(
         Paragraph::new(header)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(theme.border)),
+                    .border_style(theme.border()),
             )
             .alignment(Alignment::Center),
         chunks[0],
     );
 
-    // Content
-    let auto_refresh_color = if config.auto_refresh {
-        theme.success
+    // Content - using ThemeExt for semantic color styling
+    let auto_refresh_style = if config.auto_refresh {
+        theme.success()
     } else {
-        theme.warning
+        theme.warning()
     };
 
     let auto_refresh_text = format!("[{}]", if config.auto_refresh { "On" } else { "Off" });
 
     let profile_display = config.profile_info.unwrap_or("N/A");
 
+    // Content lines - using ThemeExt for consistent styling
     let content = vec![
         Line::from(vec![
-            Span::styled("Theme:          ", Style::default().fg(theme.title)),
-            Span::styled(
-                config.selected_theme.to_string(),
-                Style::default().fg(theme.text),
-            ),
+            Span::styled("Theme:          ", theme.title()),
+            Span::styled(config.selected_theme.to_string(), theme.text()),
         ]),
         Line::from(vec![
-            Span::styled("Auto-refresh:   ", Style::default().fg(theme.title)),
-            Span::styled(&auto_refresh_text, Style::default().fg(auto_refresh_color)),
+            Span::styled("Auto-refresh:   ", theme.title()),
+            Span::styled(&auto_refresh_text, auto_refresh_style),
         ]),
         Line::from(vec![
-            Span::styled("Sort column:    ", Style::default().fg(theme.title)),
-            Span::styled(config.sort_column, Style::default().fg(theme.text)),
+            Span::styled("Sort column:    ", theme.title()),
+            Span::styled(config.sort_column, theme.text()),
         ]),
         Line::from(vec![
-            Span::styled("Sort direction: ", Style::default().fg(theme.title)),
-            Span::styled(config.sort_direction, Style::default().fg(theme.text)),
+            Span::styled("Sort direction: ", theme.title()),
+            Span::styled(config.sort_direction, theme.text()),
         ]),
         Line::from(vec![
-            Span::styled("Search history: ", Style::default().fg(theme.title)),
+            Span::styled("Search history: ", theme.title()),
             Span::styled(
                 format!("{} items", config.search_history_count),
-                Style::default().fg(theme.text),
+                theme.text(),
             ),
         ]),
         Line::from(vec![
-            Span::styled("Profile:        ", Style::default().fg(theme.title)),
-            Span::styled(profile_display, Style::default().fg(theme.text)),
+            Span::styled("Profile:        ", theme.title()),
+            Span::styled(profile_display, theme.text()),
         ]),
         Line::from(""),
-        Line::from(vec![Span::styled(
-            "Search Defaults",
-            Style::default().fg(theme.title),
-        )]),
+        Line::from(vec![Span::styled("Search Defaults", theme.title())]),
         Line::from(vec![
-            Span::styled("  Earliest time: ", Style::default().fg(theme.title)),
-            Span::styled(config.earliest_time, Style::default().fg(theme.text)),
+            Span::styled("  Earliest time: ", theme.title()),
+            Span::styled(config.earliest_time, theme.text()),
         ]),
         Line::from(vec![
-            Span::styled("  Latest time:   ", Style::default().fg(theme.title)),
-            Span::styled(config.latest_time, Style::default().fg(theme.text)),
+            Span::styled("  Latest time:   ", theme.title()),
+            Span::styled(config.latest_time, theme.text()),
         ]),
         Line::from(vec![
-            Span::styled("  Max results:   ", Style::default().fg(theme.title)),
-            Span::styled(
-                format!("{}", config.max_results),
-                Style::default().fg(theme.text),
-            ),
+            Span::styled("  Max results:   ", theme.title()),
+            Span::styled(format!("{}", config.max_results), theme.text()),
         ]),
         Line::from(""),
-        Line::from(vec![Span::styled(
-            "Internal Logs Defaults",
-            Style::default().fg(theme.title),
-        )]),
+        Line::from(vec![Span::styled("Internal Logs Defaults", theme.title())]),
         Line::from(vec![
-            Span::styled("  Count:         ", Style::default().fg(theme.title)),
-            Span::styled(
-                format!("{}", config.internal_logs_count),
-                Style::default().fg(theme.text),
-            ),
+            Span::styled("  Count:         ", theme.title()),
+            Span::styled(format!("{}", config.internal_logs_count), theme.text()),
         ]),
         Line::from(vec![
-            Span::styled("  Earliest time: ", Style::default().fg(theme.title)),
-            Span::styled(
-                config.internal_logs_earliest,
-                Style::default().fg(theme.text),
-            ),
+            Span::styled("  Earliest time: ", theme.title()),
+            Span::styled(config.internal_logs_earliest, theme.text()),
         ]),
         Line::from(""),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("t", Style::default().fg(theme.accent)),
-            Span::styled("' to cycle theme", Style::default().fg(theme.text_dim)),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("t", theme.title()),
+            Span::styled("' to cycle theme", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("a", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to toggle auto-refresh",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("a", theme.title()),
+            Span::styled("' to toggle auto-refresh", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("s", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to cycle sort column",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("s", theme.title()),
+            Span::styled("' to cycle sort column", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("d", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to toggle sort direction",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("d", theme.title()),
+            Span::styled("' to toggle sort direction", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("c", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to clear search history",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("c", theme.title()),
+            Span::styled("' to clear search history", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("r", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to reload settings file",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("r", theme.title()),
+            Span::styled("' to reload settings file", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("p", Style::default().fg(theme.accent)),
-            Span::styled("' to switch profile", Style::default().fg(theme.text_dim)),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("p", theme.title()),
+            Span::styled("' to switch profile", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("n", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to create new profile",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("n", theme.title()),
+            Span::styled("' to create new profile", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("e", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to edit selected profile",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("e", theme.title()),
+            Span::styled("' to edit selected profile", theme.text_dim()),
         ]),
         Line::from(vec![
-            Span::styled("Press '", Style::default().fg(theme.text_dim)),
-            Span::styled("x", Style::default().fg(theme.accent)),
-            Span::styled(
-                "' to delete selected profile",
-                Style::default().fg(theme.text_dim),
-            ),
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("x", theme.title()),
+            Span::styled("' to delete selected profile", theme.text_dim()),
         ]),
     ];
 
@@ -233,7 +191,7 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(theme.border)),
+                    .border_style(theme.border()),
             )
             .wrap(Wrap { trim: false })
             .alignment(Alignment::Left),

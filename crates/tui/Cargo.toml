@@ -58,6 +58,7 @@ secrecy = { workspace = true }
 # Rich input components
 tui-input = "0.11"
 tui-textarea = "0.7"
+tui-scrollview = "0.5"
 
 # Syntax highlighting with tree-sitter
 tree-sitter = "0.22"

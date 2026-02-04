@@ -3,10 +3,12 @@
 //! Renders the search jobs list as a table with status, duration, and result counts.
 //! Supports filtering jobs by SID or status substring match with highlighting,
 //! and sorting by any column.
+//!
+//! Uses the centralized theme system via [`ThemeExt`] for consistent styling.
 
 use crate::app::input::components::SingleLineInput;
 use crate::app::{SortColumn, SortDirection};
-use ratatui::style::Style;
+use crate::ui::theme::ThemeExt;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
 use ratatui::{
@@ -91,8 +93,8 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
                 Block::default()
                     .borders(Borders::ALL)
                     .title("Filter")
-                    .border_style(Style::default().fg(theme.border))
-                    .title_style(Style::default().fg(theme.title)),
+                    .border_style(theme.border())
+                    .title_style(theme.title()),
             )
             .alignment(Alignment::Left);
         f.render_widget(filter_paragraph, filter_area);
@@ -144,9 +146,9 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
             };
 
             let status_style = if job.is_done {
-                Style::default().fg(theme.success)
+                theme.success()
             } else {
-                Style::default().fg(theme.warning)
+                theme.warning()
             };
 
             // Highlight matching text if filter is active
@@ -185,13 +187,7 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
             Constraint::Length(10),
         ],
     )
-    .header(
-        Row::new(header_cells).style(
-            Style::default()
-                .fg(theme.table_header_fg)
-                .bg(theme.table_header_bg),
-        ),
-    )
+    .header(Row::new(header_cells).style(theme.table_header()))
     .block(
         Block::default()
             .title(if auto_refresh {
@@ -200,14 +196,10 @@ pub fn render_jobs(f: &mut Frame, area: Rect, config: JobsRenderConfig) {
                 "Search Jobs"
             })
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     )
-    .row_highlight_style(
-        Style::default()
-            .bg(theme.highlight_bg)
-            .fg(theme.highlight_fg),
-    )
+    .row_highlight_style(theme.highlight())
     .column_spacing(1);
 
     f.render_stateful_widget(table, table_area, state);
@@ -234,7 +226,7 @@ fn highlight_match(text: String, pattern: &str, theme: &Theme) -> Cell<'static> 
 
         let spans = vec![
             Span::raw(before),
-            Span::styled(matched, Style::default().fg(theme.info)),
+            Span::styled(matched, theme.info()),
             Span::raw(after),
         ];
         Cell::from(Line::from(spans))

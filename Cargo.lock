@@ -2497,6 +2497,7 @@ dependencies = [
  "tracing-subscriber",
  "tree-sitter",
  "tui-input",
+ "tui-scrollview",
  "tui-textarea",
  "uuid",
  "wiremock",
@@ -3020,6 +3021,16 @@ checksum = "e5d1733c47f1a217b7deff18730ff7ca4ecafc5771368f715ab072d679a36114"
 dependencies = [
  "ratatui",
  "unicode-width 0.2.0",
+]
+
+[[package]]
+name = "tui-scrollview"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cea93a4789dc04a89aa6aeda29dd581b18f88cbbcf19702baf8325814b4af394"
+dependencies = [
+ "indoc",
+ "ratatui",
 ]
 
 [[package]]

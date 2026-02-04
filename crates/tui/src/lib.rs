@@ -20,6 +20,7 @@ pub mod app;
 pub mod cli;
 pub mod error_details;
 pub mod export;
+pub mod focus;
 pub mod ui;
 
 pub mod input;
@@ -31,7 +32,9 @@ pub use app::{
     App, ConnectionContext, CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, SearchInputMode,
 };
 pub use error_details::ErrorDetails;
+pub use focus::{ComponentFocusData, FocusManager, Focusable};
 pub use ui::popup::{Popup, PopupType};
+pub use ui::theme::ThemeExt;
 pub use ui::toast::{Toast, ToastLevel};
 
 /// Render the TUI keybinding documentation block for docs/usage.md.

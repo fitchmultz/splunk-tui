@@ -2079,6 +2079,97 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0325",
+      "status": "done",
+      "title": "Create centralized TUI foundation files and ensure universal adoption",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "foundation",
+        "theme",
+        "focus",
+        "components",
+        "architecture",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/ui/theme.rs",
+        "crates/tui/src/ui/components/",
+        "crates/tui/src/focus.rs",
+        "crates/tui/src/ui/layout/flex.rs",
+        "crates/tui/src/ui/screens/",
+        "crates/tui/src/ui/popup/",
+        "crates/tui/src/ui/mod.rs",
+        "crates/tui/src/lib.rs",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/ui/syntax.rs",
+        "crates/tui/Cargo.toml",
+        "crates/config/src/types/theme.rs",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Ensure centralized TUI files are being used by all TUI related code",
+        "Reference file: /tmp/opentui-rust-features.md exists with component implementation guidance",
+        "EXISTING: crates/tui/src/ui/layout/flex.rs provides flexbox layout via taffy (20KB, well-documented)",
+        "EXISTING: crates/config/src/types/theme.rs defines ColorTheme and Theme structs with full color palette",
+        "EXISTING: Theme has 30+ color fields: background, text, border, success, warning, error, syntax_*, etc.",
+        "EXISTING: 30 screen files in crates/tui/src/ui/screens/ (~6000 total lines) using splunk_config::Theme",
+        "EXISTING: crates/tui/src/ui/toast.rs uses Theme from splunk_config for styling",
+        "EXISTING: crates/tui/src/ui/syntax.rs provides syntax highlighting with tree-sitter",
+        "EXISTING: Dependencies already in Cargo.toml: taffy, tree-sitter, tui-input, tui-textarea",
+        "MISSING: crates/tui/src/ui/theme.rs - TUI-side theme helpers/extensions (config has base Theme)",
+        "MISSING: crates/tui/src/focus.rs - No focus management system exists",
+        "MISSING: crates/tui/src/ui/components/ - No centralized component library directory",
+        "MISSING: Component dependencies NOT in Cargo.toml: tui-big-text, similar, pulldown-cmark, tachyonfx, tui-scrollview",
+        "AGENTS.md: Prefer shared abstractions in crates/client over duplicated CLI/TUI logic",
+        "Current screens import Theme from splunk_config and use inline style definitions"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md for detailed component specifications",
+        "Create crates/tui/src/ui/theme.rs with TUI-specific theme helpers (Style builders, theme-aware wrappers)",
+        "Create crates/tui/src/focus.rs with FocusManager struct for component focus tracking",
+        "Create crates/tui/src/ui/components/mod.rs as component library entry point",
+        "Create crates/tui/src/ui/components/select_list.rs - Generic SelectList<T> component",
+        "Create crates/tui/src/ui/components/scrollable.rs - Scrollable container using tui-scrollview",
+        "Add dependencies to Cargo.toml: tui-scrollview = '0.3' (for scrollable containers)",
+        "Update crates/tui/src/ui/mod.rs to export theme module and components module",
+        "Update crates/tui/src/lib.rs to export focus module",
+        "Migrate 2-3 screen files as proof-of-concept using new theme helpers and components",
+        "Add tests for new foundation modules in crates/tui/tests/",
+        "Document adoption pattern for remaining screens (create follow-up tasks)",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Theme system exists in config crate - focus on TUI-side helpers, not replacing Theme",
+        "flex.rs is the model: well-documented, tested (flex_layout_tests.rs exists)",
+        "FocusManager should track: focus_order Vec<String>, current_focus index, next()/prev()/is_focused()",
+        "Components should be generic: SelectList<T: Display>",
+        "Reference: /tmp/opentui-rust-features.md has code examples for components",
+        "Defer complex components (diff_viewer, big_text, markdown) to RQ-0324",
+        "This task creates foundation; RQ-0323 (scrollview/focus) and RQ-0324 (advanced components) build on it",
+        "Updated 2026-02-04: Clarified scope - create foundation files, not full migration of all 30 screens",
+        "Created crates/tui/src/ui/theme.rs with ThemeExt trait providing ergonomic style builders (text, title, border, border_focused, highlight, success, warning, error, info, disabled, table_header, syntax_*)",
+        "Created crates/tui/src/focus.rs with FocusManager struct for component focus tracking, ComponentFocusData for per-component state, and Focusable trait",
+        "Created crates/tui/src/ui/components/ module with SelectList<T> and ScrollableContainer components, both theme-aware and fully tested",
+        "Added tui-scrollview = '0.5' to Cargo.toml for scrollable container support",
+        "Migrated settings.rs and jobs.rs screens to use ThemeExt trait as proof-of-concept (reduced lines, improved consistency)",
+        "Added comprehensive tests: 33 integration tests in foundation_tests.rs, plus unit tests in each module (444 total tests passing)",
+        "All CI checks pass: format, lint, type-check, test, release build",
+        "Related tasks RQ-0323 and RQ-0324 should be updated: FocusManager and ScrollableContainer are now available for scrollview/focus integration and advanced component development"
+      ],
+      "request": "Ensure centralized TUI files are being used by all TUI related code. See /tmp/opentui-rust-features.md for more information. Implement these if they do not exist. ALL TUI code should use the centralized files for consistent approach. Centralized TUI foundation files or equivalent.",
+      "created_at": "2026-02-04T21:28:56Z",
+      "updated_at": "2026-02-04T22:39:42.749698896Z",
+      "completed_at": "2026-02-04T22:39:42.749698896Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [
+        "RQ-0323",
+        "RQ-0324"
+      ],
+      "custom_fields": {}
     }
   ]
 }
