@@ -199,6 +199,19 @@ pub async fn get_saved_search(
     Ok(attach_entry_name(entry.name, entry.content))
 }
 
+/// Parameters for updating a saved search.
+///
+/// Only provided fields are updated; omitted fields retain their current values.
+#[derive(Debug, Clone, Default)]
+pub struct SavedSearchUpdateParams<'a> {
+    /// New search query (SPL)
+    pub search: Option<&'a str>,
+    /// New description
+    pub description: Option<&'a str>,
+    /// Enable/disable flag
+    pub disabled: Option<bool>,
+}
+
 /// Update an existing saved search.
 ///
 /// This endpoint uses POST to `/services/saved/searches/{name}` to update
@@ -210,9 +223,7 @@ pub async fn get_saved_search(
 /// * `base_url` - The Splunk base URL
 /// * `auth_token` - Authentication token
 /// * `name` - The name of the saved search to update
-/// * `search` - Optional new search query (SPL)
-/// * `description` - Optional new description
-/// * `disabled` - Optional enable/disable flag
+/// * `params` - Update parameters (search, description, disabled)
 /// * `max_retries` - Maximum number of retries for transient failures
 /// * `metrics` - Optional metrics collector
 ///
@@ -223,9 +234,7 @@ pub async fn update_saved_search(
     base_url: &str,
     auth_token: &str,
     name: &str,
-    search: Option<&str>,
-    description: Option<&str>,
-    disabled: Option<bool>,
+    params: &SavedSearchUpdateParams<'_>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<()> {
@@ -235,13 +244,13 @@ pub async fn update_saved_search(
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
-    if let Some(s) = search {
+    if let Some(s) = params.search {
         form_params.push(("search", s.to_string()));
     }
-    if let Some(d) = description {
+    if let Some(d) = params.description {
         form_params.push(("description", d.to_string()));
     }
-    if let Some(disabled_flag) = disabled {
+    if let Some(disabled_flag) = params.disabled {
         form_params.push(("disabled", disabled_flag.to_string()));
     }
 

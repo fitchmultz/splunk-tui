@@ -2,8 +2,7 @@
 
 mod common;
 
-use common::splunk_cmd;
-use predicates::prelude::*;
+use common::{connection_error_predicate, splunk_cmd};
 
 #[test]
 fn test_kvstore_help() {
@@ -27,5 +26,5 @@ fn test_kvstore_status_execution() {
         .arg("status")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }

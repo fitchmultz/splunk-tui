@@ -1,6 +1,7 @@
 //! Search command implementation.
 
 use anyhow::{Context, Result};
+use splunk_client::{SearchMode, SearchRequest};
 use splunk_config::SearchDefaultConfig;
 use tracing::info;
 
@@ -20,6 +21,8 @@ pub async fn run(
     quiet: bool,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    realtime: bool,
+    realtime_window: Option<u64>,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -28,9 +31,25 @@ pub async fn run(
     let latest = latest.unwrap_or(&search_defaults.latest_time);
     let max_results = max_results.unwrap_or(search_defaults.max_results as usize);
 
+    // Determine search mode based on realtime flag
+    let search_mode = if realtime {
+        Some(SearchMode::Realtime)
+    } else {
+        Some(SearchMode::Normal)
+    };
+
     let mut client = crate::commands::build_client_from_config(&config)?;
 
     info!("Connecting to {}", client.base_url());
+
+    // Build the search request with common parameters
+    let mut request = SearchRequest::new(&query, wait)
+        .time_bounds(earliest, latest)
+        .max_results(max_results as u64)
+        .search_mode(search_mode.unwrap_or(SearchMode::Normal));
+    if let Some(window) = realtime_window {
+        request = request.realtime_window(window);
+    }
 
     let (results, _sid, _total) = if wait {
         let progress = crate::progress::SearchProgress::new(!quiet, "Waiting for search");
@@ -41,11 +60,7 @@ pub async fn run(
 
         let search_result = tokio::select! {
             res = client.search_with_progress(
-                &query,
-                true,
-                Some(earliest),
-                Some(latest),
-                Some(max_results as u64),
+                request,
                 if quiet { None } else { Some(&mut on_progress) },
             ) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
@@ -56,11 +71,7 @@ pub async fn run(
     } else {
         tokio::select! {
             res = client.search_with_progress(
-                &query,
-                false,
-                Some(earliest),
-                Some(latest),
-                Some(max_results as u64),
+                request,
                 None,
             ) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),

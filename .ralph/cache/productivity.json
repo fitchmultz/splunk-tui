@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
+  "last_updated_at": "2026-02-03T20:25:23.888780662Z",
+  "daily": {
+    "2026-02-02": {
+      "date": "2026-02-02",
+      "completed_count": 15,
+      "tasks": [
+        {
+          "id": "RQ-0294",
+          "title": "Refactor macro endpoint create/update signatures to reduce argument count",
+          "completed_at": "2026-02-02T17:12:52.375533947Z"
+        },
+        {
+          "id": "RQ-0295",
+          "title": "Refactor saved search update endpoint to reduce argument count",
+          "completed_at": "2026-02-02T17:26:07.422044417Z"
+        },
+        {
+          "id": "RQ-0296",
+          "title": "Apply ConfigFilesLoaded/ConfigStanzasLoaded results to TUI state",
+          "completed_at": "2026-02-02T17:40:35.168207210Z"
+        },
+        {
+          "id": "RQ-0297",
+          "title": "Route macro load/create/update/delete results through App::update",
+          "completed_at": "2026-02-02T17:56:10.641727300Z"
+        },
+        {
+          "id": "RQ-0298",
+          "title": "Implement create-macro dialog flow in TUI",
+          "completed_at": "2026-02-02T18:19:04.908090812Z"
+        },
+        {
+          "id": "RQ-0299",
+          "title": "Implement edit-macro dialog flow in TUI",
+          "completed_at": "2026-02-02T18:36:55.723469106Z"
+        },
+        {
+          "id": "RQ-0300",
+          "title": "Trigger macro list refresh after create/update",
+          "completed_at": "2026-02-02T18:58:34.948568767Z"
+        },
+        {
+          "id": "RQ-0301",
+          "title": "Add make type-check target and include it in make ci",
+          "completed_at": "2026-02-02T19:05:02.708874566Z"
+        },
+        {
+          "id": "RQ-0302",
+          "title": "Align make clean behavior with documented Cargo.lock deletion",
+          "completed_at": "2026-02-02T19:19:52.749525192Z"
+        },
+        {
+          "id": "RQ-0254",
+          "title": "Add real-time search support to TUI and CLI",
+          "completed_at": "2026-02-02T19:46:12.807747926Z"
+        },
+        {
+          "id": "RQ-0255",
+          "title": "Add search result pagination and cursor support",
+          "completed_at": "2026-02-02T19:56:00.937945336Z"
+        },
+        {
+          "id": "RQ-0260",
+          "title": "Add audit logging and event viewing",
+          "completed_at": "2026-02-02T20:28:48.636582234Z"
+        },
+        {
+          "id": "RQ-0261",
+          "title": "Add dashboard listing and viewing",
+          "completed_at": "2026-02-02T21:05:13.832573077Z"
+        },
+        {
+          "id": "RQ-0253",
+          "title": "Add data model management",
+          "completed_at": "2026-02-02T21:38:37.538218337Z"
+        },
+        {
+          "id": "RQ-0258",
+          "title": "Add workload management support",
+          "completed_at": "2026-02-02T23:31:54.726437052Z"
+        }
+      ]
+    },
+    "2026-02-03": {
+      "date": "2026-02-03",
+      "completed_count": 14,
+      "tasks": [
+        {
+          "id": "RQ-0259",
+          "title": "Add search head clustering (SHC) support",
+          "completed_at": "2026-02-03T00:17:06.264312487Z"
+        },
+        {
+          "id": "RQ-0303",
+          "title": "Default profile credentials storage to keyring (opt-in plaintext)",
+          "completed_at": "2026-02-03T02:03:36.934069353Z"
+        },
+        {
+          "id": "RQ-0304",
+          "title": "Prevent overwriting unreadable config files (backup + fail-safe recovery)",
+          "completed_at": "2026-02-03T02:16:23.435844026Z"
+        },
+        {
+          "id": "RQ-0305",
+          "title": "Fix `SKIP_LIVE_TESTS=1` to actually skip live tests",
+          "completed_at": "2026-02-03T02:22:48.960106570Z"
+        },
+        {
+          "id": "RQ-0306",
+          "title": "Make `make lint` fail when clippy -D warnings would fail (don't rely on `cargo clippy --fix` exit code)",
+          "completed_at": "2026-02-03T16:07:25.171458459Z"
+        },
+        {
+          "id": "RQ-0307",
+          "title": "Fix TUI list pagination: LoadMore actions no-op/replace data instead of appending",
+          "completed_at": "2026-02-03T16:54:14.361359856Z"
+        },
+        {
+          "id": "RQ-0308",
+          "title": "Avoid blocking the TUI event loop in side effects (spawn network calls consistently)",
+          "completed_at": "2026-02-03T17:56:20.026308881Z"
+        },
+        {
+          "id": "RQ-0309",
+          "title": "Refactor SplunkClient search APIs to avoid too-many-arguments and clarify options",
+          "completed_at": "2026-02-03T18:10:46.645033193Z"
+        },
+        {
+          "id": "RQ-0310",
+          "title": "Remove dummy Config construction in `splunk-cli list-all` dispatch (make illegal states unrepresentable)",
+          "completed_at": "2026-02-03T18:35:46.917364876Z"
+        },
+        {
+          "id": "RQ-0311",
+          "title": "Validate `base_url` during config build (fail fast with clear error)",
+          "completed_at": "2026-02-03T18:58:56.047281778Z"
+        },
+        {
+          "id": "RQ-0312",
+          "title": "Trim env var values in `env_var_or_none` to match documented invariants",
+          "completed_at": "2026-02-03T19:20:33.350494778Z"
+        },
+        {
+          "id": "RQ-0313",
+          "title": "Surface dotenv load failures (don't silently ignore invalid `.env` files)",
+          "completed_at": "2026-02-03T19:55:27.290819002Z"
+        },
+        {
+          "id": "RQ-0314",
+          "title": "Remove duplicate timeout flags in `splunk-cli config set` help output",
+          "completed_at": "2026-02-03T20:18:17.871147713Z"
+        },
+        {
+          "id": "RQ-0317",
+          "title": "List contents of current directory",
+          "completed_at": "2026-02-03T20:25:23.888780298Z"
+        }
+      ]
+    }
+  },
+  "streak": {
+    "current_streak": 2,
+    "longest_streak": 2,
+    "last_completed_date": "2026-02-03"
+  },
+  "total_completed": 29,
+  "milestones": [
+    {
+      "threshold": 10,
+      "achieved_at": "2026-02-02T19:46:12.807755820Z",
+      "celebrated": true
+    }
+  ]
+}

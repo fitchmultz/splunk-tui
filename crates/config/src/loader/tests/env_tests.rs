@@ -8,6 +8,7 @@
 use crate::loader::builder::ConfigLoader;
 use crate::loader::env::env_var_or_none;
 use crate::types::AuthStrategy;
+use secrecy::ExposeSecret;
 use serial_test::serial;
 use std::path::PathBuf;
 
@@ -175,4 +176,68 @@ fn test_empty_splunk_config_path_ignored() {
             "Whitespace env var should be filtered by env_var_or_none"
         );
     });
+}
+
+#[test]
+#[serial]
+fn test_env_vars_trimmed_for_session_auth() {
+    let _lock = env_lock().lock().unwrap();
+
+    // Session auth path with whitespace-padded values
+    // SPLUNK_API_TOKEN is explicitly unset (None) to ensure we use session auth
+    temp_env::with_vars(
+        [
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_USERNAME", Some(" admin ")),
+            ("SPLUNK_PASSWORD", Some(" password ")),
+            ("SPLUNK_API_TOKEN", None::<&str>),
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+            let config = loader.build().unwrap();
+
+            // Auth fields should be trimmed
+            match config.auth.strategy {
+                AuthStrategy::SessionToken { username, password } => {
+                    assert_eq!(username, "admin", "Username should be trimmed");
+                    assert_eq!(
+                        password.expose_secret(),
+                        "password",
+                        "Password should be trimmed"
+                    );
+                }
+                _ => panic!("Expected SessionToken auth strategy"),
+            }
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_env_vars_trimmed_for_api_token_auth() {
+    let _lock = env_lock().lock().unwrap();
+
+    // API token path with whitespace-padded value
+    temp_env::with_vars(
+        [
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_API_TOKEN", Some(" token ")),
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+            let config = loader.build().unwrap();
+
+            // API token should be trimmed
+            match config.auth.strategy {
+                AuthStrategy::ApiToken { token } => {
+                    assert_eq!(
+                        token.expose_secret(),
+                        "token",
+                        "API token should be trimmed"
+                    );
+                }
+                _ => panic!("Expected ApiToken auth strategy"),
+            }
+        },
+    );
 }

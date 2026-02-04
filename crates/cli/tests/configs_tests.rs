@@ -9,7 +9,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, path_regex, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -65,9 +65,7 @@ fn test_configs_list_with_config_file() {
         .args(["configs", "list", "--config-file", "props"])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli configs list --count <N>` works with static list.
@@ -118,9 +116,7 @@ fn test_configs_view_execution() {
         .args(["configs", "view", "props", "source::..."])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test full configs list stanzas with mock server using fixture data.

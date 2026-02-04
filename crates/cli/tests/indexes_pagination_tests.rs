@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 #[test]
@@ -25,7 +25,7 @@ fn test_indexes_offset_flag_attempts_connection() {
     cmd.args(["indexes", "list", "--count", "10", "--offset", "10"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]

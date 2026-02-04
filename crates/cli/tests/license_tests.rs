@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 /// Test that `splunk-cli license --help` shows the command.
@@ -23,7 +23,7 @@ fn test_license_execution() {
     cmd.arg("license")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli license` accepts global output flags.
@@ -35,6 +35,6 @@ fn test_license_formats() {
         cmd.args(["-o", format, "license"])
             .assert()
             .failure()
-            .stderr(predicate::str::contains("Connection refused"));
+            .stderr(connection_error_predicate());
     }
 }

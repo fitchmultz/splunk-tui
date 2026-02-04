@@ -169,6 +169,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `Home`: Go to top
 - `End`: Go to bottom
 - `j,k,...`: Type search query
+- `Ctrl+r`: Toggle real-time mode
 
 #### Jobs Screen
 - `r`: Refresh jobs
@@ -293,6 +294,33 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export forwarders
 - `Ctrl+c`: Copy selected forwarder name
 - `j/k or Up/Down`: Navigate list
+
+#### Lookups Screen
+- `r`: Refresh lookup tables
+- `Ctrl+e`: Export lookup tables
+- `Ctrl+c`: Copy selected lookup name
+- `j/k or Up/Down`: Navigate list
+
+#### Dashboards Screen
+- `r`: Refresh dashboards
+- `j/k or Up/Down`: Navigate list
+
+#### Data Models Screen
+- `r`: Refresh data models
+- `j/k or Up/Down`: Navigate list
+
+#### Workload Management Screen
+- `r`: Refresh workload
+- `w`: Toggle pools/rules
+- `j/k or Up/Down`: Navigate list
+- `Ctrl+e`: Export workload
+
+#### SHC Screen
+- `r`: Refresh SHC info
+- `m`: Toggle members view
+- `j/k or Up/Down`: Navigate members list
+- `Ctrl+e`: Export SHC info
+- `Ctrl+c`: Copy captain URI
 
 #### Settings Screen
 - `t`: Cycle theme

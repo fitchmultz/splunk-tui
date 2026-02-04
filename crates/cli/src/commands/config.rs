@@ -51,16 +51,19 @@ pub enum ConfigCommand {
         skip_verify: Option<bool>,
 
         /// Connection timeout in seconds
-        #[arg(short, long)]
-        timeout_seconds: Option<u64>,
+        #[arg(short, long = "timeout")]
+        timeout: Option<u64>,
 
         /// Maximum number of retries for failed requests
         #[arg(short, long)]
         max_retries: Option<usize>,
 
-        /// Store password/token in system keyring
-        #[arg(long)]
-        use_keyring: bool,
+        /// Store credentials as plaintext instead of using system keyring
+        #[arg(
+            long,
+            help = "Store credentials as plaintext instead of using system keyring"
+        )]
+        plaintext: bool,
     },
 
     /// Show a profile's configuration
@@ -80,9 +83,12 @@ pub enum ConfigCommand {
         /// Profile name to edit
         profile_name: String,
 
-        /// Store credentials in system keyring
-        #[arg(long)]
-        use_keyring: bool,
+        /// Store credentials as plaintext instead of using system keyring
+        #[arg(
+            long,
+            help = "Store credentials as plaintext instead of using system keyring"
+        )]
+        plaintext: bool,
     },
 }
 
@@ -109,9 +115,9 @@ pub fn run(
             password,
             api_token,
             skip_verify,
-            timeout_seconds,
+            timeout,
             max_retries,
-            use_keyring,
+            plaintext,
         } => {
             run_set(
                 &mut manager,
@@ -121,9 +127,9 @@ pub fn run(
                 password,
                 api_token,
                 skip_verify,
-                timeout_seconds,
+                timeout,
                 max_retries,
-                use_keyring,
+                plaintext,
             )?;
         }
         ConfigCommand::Show { profile_name } => {
@@ -131,9 +137,9 @@ pub fn run(
         }
         ConfigCommand::Edit {
             profile_name,
-            use_keyring,
+            plaintext,
         } => {
-            run_edit(&mut manager, &profile_name, use_keyring)?;
+            run_edit(&mut manager, &profile_name, plaintext)?;
         }
         ConfigCommand::Delete { profile_name } => {
             run_delete(&mut manager, &profile_name)?;
@@ -200,9 +206,9 @@ fn run_set(
     password: Option<String>,
     api_token: Option<String>,
     skip_verify: Option<bool>,
-    timeout_seconds: Option<u64>,
+    timeout: Option<u64>,
     max_retries: Option<usize>,
-    use_keyring: bool,
+    plaintext: bool,
 ) -> Result<()> {
     // Load existing profile if it exists
     let existing_profile = manager.list_profiles().get(profile_name).cloned();
@@ -249,31 +255,45 @@ fn run_set(
         base_url,
         username: username.clone(),
         skip_verify: skip_verify.or(profile.skip_verify),
-        timeout_seconds: timeout_seconds.or(profile.timeout_seconds),
+        timeout_seconds: timeout.or(profile.timeout_seconds),
         max_retries: max_retries.or(profile.max_retries),
         ..Default::default()
     };
 
-    // If use_keyring flag is set, store credentials in keyring BEFORE first save
-    // This ensures plaintext secrets are never written to disk
-    let password = if use_keyring {
+    // Store credentials: try keyring first (default), fallback to plaintext with warning
+    // Only use plaintext if --plaintext flag is explicitly set
+    let password = if plaintext {
+        // User explicitly requested plaintext storage
+        password
+    } else {
+        // Try keyring first, fallback to plaintext with warning
         if let (Some(username), Some(SecureValue::Plain(pw))) = (&username, &password) {
-            Some(manager.store_password_in_keyring(profile_name, username, pw)?)
+            let keyring_value = manager.try_store_password_in_keyring(profile_name, username, pw);
+            // Log warning if we fell back to plaintext
+            if matches!(keyring_value, SecureValue::Plain(_)) {
+                eprintln!("Warning: Failed to store password in keyring. Storing as plaintext.");
+            }
+            Some(keyring_value)
         } else {
             password
         }
-    } else {
-        password
     };
 
-    let api_token = if use_keyring {
+    let api_token = if plaintext {
+        // User explicitly requested plaintext storage
+        api_token
+    } else {
+        // Try keyring first, fallback to plaintext with warning
         if let Some(SecureValue::Plain(token)) = &api_token {
-            Some(manager.store_token_in_keyring(profile_name, token)?)
+            let keyring_value = manager.try_store_token_in_keyring(profile_name, token);
+            // Log warning if we fell back to plaintext
+            if matches!(keyring_value, SecureValue::Plain(_)) {
+                eprintln!("Warning: Failed to store API token in keyring. Storing as plaintext.");
+            }
+            Some(keyring_value)
         } else {
             api_token
         }
-    } else {
-        api_token
     };
 
     profile_config.password = password.or(profile.password);
@@ -316,7 +336,7 @@ fn run_show(
     Ok(())
 }
 
-fn run_edit(manager: &mut ConfigManager, profile_name: &str, use_keyring: bool) -> Result<()> {
+fn run_edit(manager: &mut ConfigManager, profile_name: &str, plaintext: bool) -> Result<()> {
     let profiles = manager.list_profiles();
 
     // Check if profile exists
@@ -456,25 +476,40 @@ fn run_edit(manager: &mut ConfigManager, profile_name: &str, use_keyring: bool) 
         ..Default::default()
     };
 
-    // If use_keyring flag is set, store credentials in keyring BEFORE first save
-    let password = if use_keyring {
+    // Store credentials: try keyring first (default), fallback to plaintext with warning
+    // Only use plaintext if --plaintext flag is explicitly set
+    let password = if plaintext {
+        // User explicitly requested plaintext storage
+        password
+    } else {
+        // Try keyring first, fallback to plaintext with warning
         if let (Some(username), Some(SecureValue::Plain(pw))) = (&username, &password) {
-            Some(manager.store_password_in_keyring(profile_name, username, pw)?)
+            let keyring_value = manager.try_store_password_in_keyring(profile_name, username, pw);
+            // Log warning if we fell back to plaintext
+            if matches!(keyring_value, SecureValue::Plain(_)) {
+                eprintln!("Warning: Failed to store password in keyring. Storing as plaintext.");
+            }
+            Some(keyring_value)
         } else {
             password
         }
-    } else {
-        password
     };
 
-    let api_token = if use_keyring {
+    let api_token = if plaintext {
+        // User explicitly requested plaintext storage
+        api_token
+    } else {
+        // Try keyring first, fallback to plaintext with warning
         if let Some(SecureValue::Plain(token)) = &api_token {
-            Some(manager.store_token_in_keyring(profile_name, token)?)
+            let keyring_value = manager.try_store_token_in_keyring(profile_name, token);
+            // Log warning if we fell back to plaintext
+            if matches!(keyring_value, SecureValue::Plain(_)) {
+                eprintln!("Warning: Failed to store API token in keyring. Storing as plaintext.");
+            }
+            Some(keyring_value)
         } else {
             api_token
         }
-    } else {
-        api_token
     };
 
     profile_config.password = password.or(profile.password);

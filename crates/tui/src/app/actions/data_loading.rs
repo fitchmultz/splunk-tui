@@ -10,6 +10,7 @@ use crate::action::{Action, LicenseData};
 use crate::app::App;
 use crate::app::state::HealthState;
 use crate::ui::Toast;
+use splunk_client::models::DataModel;
 
 impl App {
     /// Handle data loading result actions.
@@ -64,8 +65,6 @@ impl App {
                 self.toasts
                     .push(Toast::success("Macro created successfully"));
                 self.loading = false;
-                // Refresh the list
-                self.loading = true;
             }
             Action::MacroCreated(Err(e)) => {
                 self.handle_data_load_error("create macro", e);
@@ -273,6 +272,96 @@ impl App {
             }
             Action::MoreFiredAlertsLoaded(Err(e)) => {
                 self.handle_data_load_error("more fired alerts", e);
+            }
+
+            // Audit Events
+            Action::AuditEventsLoaded(Ok(events)) => {
+                let sel = self.audit_state.selected();
+                self.audit_events = Some(events);
+                self.loading = false;
+                if let Some(events) = &self.audit_events {
+                    self.audit_state.select(
+                        sel.map(|i| i.min(events.len().saturating_sub(1)))
+                            .or(Some(0)),
+                    );
+                }
+            }
+            Action::AuditEventsLoaded(Err(e)) => {
+                self.handle_data_load_error("audit events", e);
+            }
+
+            // Dashboards
+            Action::DashboardsLoaded(Ok(dashboards)) => {
+                self.handle_dashboards_loaded(dashboards);
+            }
+            Action::DashboardsLoaded(Err(e)) => {
+                self.handle_data_load_error("dashboards", e);
+            }
+            Action::MoreDashboardsLoaded(Ok(dashboards)) => {
+                self.handle_more_dashboards_loaded(dashboards);
+            }
+            Action::MoreDashboardsLoaded(Err(e)) => {
+                self.handle_data_load_error("more dashboards", e);
+            }
+
+            // Data Models
+            Action::DataModelsLoaded(Ok(datamodels)) => {
+                self.handle_datamodels_loaded(datamodels);
+            }
+            Action::DataModelsLoaded(Err(e)) => {
+                self.handle_data_load_error("data models", e);
+            }
+            Action::MoreDataModelsLoaded(Ok(datamodels)) => {
+                self.handle_more_datamodels_loaded(datamodels);
+            }
+            Action::MoreDataModelsLoaded(Err(e)) => {
+                self.handle_data_load_error("more data models", e);
+            }
+
+            // Workload Management
+            Action::WorkloadPoolsLoaded(Ok(pools)) => {
+                self.handle_workload_pools_loaded(pools);
+            }
+            Action::WorkloadPoolsLoaded(Err(e)) => {
+                self.handle_data_load_error("workload pools", e);
+            }
+            Action::MoreWorkloadPoolsLoaded(Ok(pools)) => {
+                self.handle_more_workload_pools_loaded(pools);
+            }
+            Action::MoreWorkloadPoolsLoaded(Err(e)) => {
+                self.handle_data_load_error("more workload pools", e);
+            }
+            Action::WorkloadRulesLoaded(Ok(rules)) => {
+                self.handle_workload_rules_loaded(rules);
+            }
+            Action::WorkloadRulesLoaded(Err(e)) => {
+                self.handle_data_load_error("workload rules", e);
+            }
+            Action::MoreWorkloadRulesLoaded(Ok(rules)) => {
+                self.handle_more_workload_rules_loaded(rules);
+            }
+            Action::MoreWorkloadRulesLoaded(Err(e)) => {
+                self.handle_data_load_error("more workload rules", e);
+            }
+
+            // Config Files
+            Action::ConfigFilesLoaded(Ok(files)) => {
+                self.config_files = Some(files);
+                self.loading = false;
+            }
+            Action::ConfigFilesLoaded(Err(e)) => {
+                self.handle_data_load_error("config files", e);
+            }
+
+            // Config Stanzas
+            Action::ConfigStanzasLoaded(Ok(stanzas)) => {
+                self.config_stanzas = Some(stanzas);
+                self.loading = false;
+                // Rebuild filtered indices since data changed
+                self.rebuild_filtered_stanza_indices();
+            }
+            Action::ConfigStanzasLoaded(Err(e)) => {
+                self.handle_data_load_error("config stanzas", e);
             }
 
             // Settings and Overview
@@ -555,6 +644,87 @@ impl App {
         self.loading = false;
     }
 
+    // Dashboards handlers
+    fn handle_dashboards_loaded(&mut self, dashboards: Vec<splunk_client::models::Dashboard>) {
+        let count = dashboards.len();
+        self.dashboards = Some(dashboards);
+        self.dashboards_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_dashboards_loaded(&mut self, dashboards: Vec<splunk_client::models::Dashboard>) {
+        let count = dashboards.len();
+        if let Some(ref mut existing) = self.dashboards {
+            existing.extend(dashboards);
+        } else {
+            self.dashboards = Some(dashboards);
+        }
+        self.dashboards_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    // Data models handlers
+    fn handle_datamodels_loaded(&mut self, datamodels: Vec<DataModel>) {
+        let count = datamodels.len();
+        self.data_models = Some(datamodels);
+        self.data_models_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_datamodels_loaded(&mut self, datamodels: Vec<DataModel>) {
+        let count = datamodels.len();
+        if let Some(ref mut existing) = self.data_models {
+            existing.extend(datamodels);
+        } else {
+            self.data_models = Some(datamodels);
+        }
+        self.data_models_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    // Workload management handlers
+    fn handle_workload_pools_loaded(&mut self, pools: Vec<splunk_client::models::WorkloadPool>) {
+        let count = pools.len();
+        self.workload_pools = Some(pools);
+        self.workload_pools_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_workload_pools_loaded(
+        &mut self,
+        pools: Vec<splunk_client::models::WorkloadPool>,
+    ) {
+        let count = pools.len();
+        if let Some(ref mut existing) = self.workload_pools {
+            existing.extend(pools);
+        } else {
+            self.workload_pools = Some(pools);
+        }
+        self.workload_pools_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_workload_rules_loaded(&mut self, rules: Vec<splunk_client::models::WorkloadRule>) {
+        let count = rules.len();
+        self.workload_rules = Some(rules);
+        self.workload_rules_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_workload_rules_loaded(
+        &mut self,
+        rules: Vec<splunk_client::models::WorkloadRule>,
+    ) {
+        let count = rules.len();
+        if let Some(ref mut existing) = self.workload_rules {
+            existing.extend(rules);
+        } else {
+            self.workload_rules = Some(rules);
+        }
+        self.workload_rules_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
     // Settings handler
     fn apply_loaded_settings(&mut self, state: splunk_config::PersistedState) {
         use crate::app::state::{parse_sort_column, parse_sort_direction};
@@ -718,5 +888,238 @@ mod tests {
         assert!(app.current_error.is_some());
         assert_eq!(app.toasts.len(), 1);
         assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_config_files_loaded_updates_state() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let files = vec![
+            splunk_client::models::ConfigFile {
+                name: "props".to_string(),
+                title: "props.conf".to_string(),
+                description: Some("Properties configuration".to_string()),
+            },
+            splunk_client::models::ConfigFile {
+                name: "transforms".to_string(),
+                title: "transforms.conf".to_string(),
+                description: Some("Transformations".to_string()),
+            },
+        ];
+
+        app.handle_data_loading_action(Action::ConfigFilesLoaded(Ok(files)));
+
+        assert!(app.config_files.is_some());
+        assert_eq!(app.config_files.as_ref().unwrap().len(), 2);
+        assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_config_files_loaded_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::ConfigFilesLoaded(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("config files"));
+    }
+
+    #[test]
+    fn test_config_stanzas_loaded_updates_state() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let stanzas = vec![
+            splunk_client::models::ConfigStanza {
+                name: "default".to_string(),
+                config_file: "props".to_string(),
+                settings: std::collections::HashMap::new(),
+            },
+            splunk_client::models::ConfigStanza {
+                name: "access_combined".to_string(),
+                config_file: "props".to_string(),
+                settings: std::collections::HashMap::new(),
+            },
+        ];
+
+        app.handle_data_loading_action(Action::ConfigStanzasLoaded(Ok(stanzas)));
+
+        assert!(app.config_stanzas.is_some());
+        assert_eq!(app.config_stanzas.as_ref().unwrap().len(), 2);
+        assert!(!app.loading);
+        // filtered_stanza_indices should be rebuilt
+        assert_eq!(app.filtered_stanza_indices.len(), 2);
+    }
+
+    #[test]
+    fn test_config_stanzas_loaded_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::ConfigStanzasLoaded(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("config stanzas"));
+    }
+
+    // Macro action handler tests
+    #[test]
+    fn test_macros_loaded_updates_state() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let macros = vec![
+            splunk_client::models::Macro {
+                name: "test_macro".to_string(),
+                definition: "index=main | head 10".to_string(),
+                args: None,
+                description: Some("Test macro".to_string()),
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+            splunk_client::models::Macro {
+                name: "param_macro(2)".to_string(),
+                definition: "index=$arg1$ | head $arg2$".to_string(),
+                args: Some("arg1,arg2".to_string()),
+                description: None,
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+        ];
+
+        app.handle_data_loading_action(Action::MacrosLoaded(Ok(macros)));
+
+        assert!(app.macros.is_some());
+        assert_eq!(app.macros.as_ref().unwrap().len(), 2);
+        assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_macros_loaded_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacrosLoaded(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("macros"));
+    }
+
+    #[test]
+    fn test_macro_created_success_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        app.handle_data_loading_action(Action::MacroCreated(Ok(())));
+
+        assert!(!app.loading);
+        assert_eq!(app.toasts.len(), 1);
+        assert!(app.toasts[0].message.contains("created"));
+    }
+
+    #[test]
+    fn test_macro_created_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacroCreated(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("create macro"));
+    }
+
+    #[test]
+    fn test_macro_updated_success_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        app.handle_data_loading_action(Action::MacroUpdated(Ok(())));
+
+        assert!(!app.loading);
+        assert_eq!(app.toasts.len(), 1);
+        assert!(app.toasts[0].message.contains("updated"));
+    }
+
+    #[test]
+    fn test_macro_updated_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacroUpdated(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("update macro"));
+    }
+
+    #[test]
+    fn test_macro_deleted_success_removes_from_list() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+        app.macros = Some(vec![
+            splunk_client::models::Macro {
+                name: "macro_to_delete".to_string(),
+                definition: "index=main".to_string(),
+                args: None,
+                description: None,
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+            splunk_client::models::Macro {
+                name: "keep_this_macro".to_string(),
+                definition: "index=internal".to_string(),
+                args: None,
+                description: None,
+                disabled: false,
+                iseval: false,
+                validation: None,
+                errormsg: None,
+            },
+        ]);
+
+        app.handle_data_loading_action(Action::MacroDeleted(Ok("macro_to_delete".to_string())));
+
+        assert!(!app.loading);
+        assert_eq!(app.toasts.len(), 1);
+        assert!(app.toasts[0].message.contains("deleted"));
+        // Verify the macro was removed from the list
+        assert_eq!(app.macros.as_ref().unwrap().len(), 1);
+        assert_eq!(app.macros.as_ref().unwrap()[0].name, "keep_this_macro");
+    }
+
+    #[test]
+    fn test_macro_deleted_error_shows_toast() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        let error = splunk_client::ClientError::ConnectionRefused("test error".to_string());
+        app.handle_data_loading_action(Action::MacroDeleted(Err(Arc::new(error))));
+
+        assert!(app.current_error.is_some());
+        assert_eq!(app.toasts.len(), 1);
+        assert!(!app.loading);
+        assert!(app.toasts[0].message.contains("delete macro"));
     }
 }

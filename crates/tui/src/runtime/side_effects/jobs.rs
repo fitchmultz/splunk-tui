@@ -15,17 +15,28 @@ use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
 
-/// Handle loading jobs.
+/// Handle loading jobs with pagination support.
+///
+/// Emits `JobsLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreJobsLoaded` when offset > 0 (pagination).
 pub async fn handle_load_jobs(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         let mut c = client.lock().await;
         match c.list_jobs(Some(count), Some(offset)).await {
             Ok(jobs) => {
-                let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
+                } else {
+                    let _ = tx.send(Action::MoreJobsLoaded(Ok(jobs))).await;
+                }
             }
             Err(e) => {
-                let _ = tx.send(Action::JobsLoaded(Err(Arc::new(e)))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::JobsLoaded(Err(Arc::new(e)))).await;
+                } else {
+                    let _ = tx.send(Action::MoreJobsLoaded(Err(Arc::new(e)))).await;
+                }
             }
         }
     });

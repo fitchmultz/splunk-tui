@@ -17,6 +17,7 @@ use crate::app::export::ExportTarget;
 use crate::app::state::CurrentScreen;
 use crate::ui::Toast;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use splunk_client::SearchMode;
 
 impl App {
     /// Handle input for the saved searches screen.
@@ -66,6 +67,8 @@ impl App {
                     return Some(Action::RunSearch {
                         query,
                         search_defaults: self.search_defaults.clone(),
+                        search_mode: SearchMode::Normal,
+                        realtime_window: None,
                     });
                 }
                 None

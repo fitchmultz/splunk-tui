@@ -10,8 +10,11 @@
 //! - Does NOT handle popup input (handled by popups module)
 
 pub mod apps;
+pub mod audit;
 pub mod cluster;
 pub mod configs;
+pub mod dashboards;
+pub mod datamodels;
 pub mod fired_alerts;
 pub mod forwarders;
 pub mod health;
@@ -32,7 +35,9 @@ pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
 pub mod settings;
+pub mod shc;
 pub mod users;
+pub mod workload;
 
 use crate::action::Action;
 use crate::app::App;
@@ -66,6 +71,11 @@ impl App {
             CurrentScreen::FiredAlerts => self.handle_fired_alerts_input(key),
             CurrentScreen::Forwarders => self.handle_forwarders_input(key),
             CurrentScreen::Lookups => self.handle_lookups_input(key),
+            CurrentScreen::Audit => self.handle_audit_input(key),
+            CurrentScreen::Dashboards => self.handle_dashboards_input(key),
+            CurrentScreen::DataModels => self.handle_datamodels_input(key),
+            CurrentScreen::WorkloadManagement => self.handle_workload_input(key),
+            CurrentScreen::Shc => self.handle_shc_input(key),
         }
     }
 }

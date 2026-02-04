@@ -17,6 +17,8 @@
 //! - `license`: License methods
 //! - `kvstore`: KVStore methods
 //! - `logs`: Log parsing and internal logs methods
+//! - `dashboards`: Dashboard management methods
+//! - `datamodels`: Data model management methods
 //!
 //! # What this module does NOT handle:
 //! - Direct HTTP request implementation (delegated to [`crate::endpoints`])
@@ -34,9 +36,12 @@ mod session;
 // API method submodules
 mod alerts;
 mod apps;
+mod audit;
 mod capabilities;
 mod cluster;
 mod configs;
+mod dashboards;
+mod datamodels;
 mod forwarders;
 mod hec;
 mod indexes;
@@ -46,12 +51,14 @@ mod kvstore;
 mod license;
 mod logs;
 mod lookups;
-mod macros;
+pub mod macros;
 mod roles;
-mod search;
+pub mod search;
 mod search_peers;
 mod server;
+mod shc;
 mod users;
+mod workload;
 
 use crate::auth::SessionManager;
 use crate::metrics::MetricsCollector;

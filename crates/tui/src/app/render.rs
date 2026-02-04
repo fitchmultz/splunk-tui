@@ -14,8 +14,9 @@ use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState
 use crate::input::keymap::footer_hints;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
-    apps, cluster, configs, forwarders, health, indexes, inputs, kvstore, license, lookups, macros,
-    multi_instance, overview, roles, saved_searches, search, search_peers, settings, users,
+    apps, audit, cluster, configs, dashboards, datamodels, forwarders, health, indexes, inputs,
+    kvstore, license, lookups, macros, multi_instance, overview, roles, saved_searches, search,
+    search_peers, settings, shc, users, workload,
 };
 use ratatui::{
     Frame,
@@ -101,6 +102,11 @@ impl App {
                         CurrentScreen::FiredAlerts => "Fired Alerts",
                         CurrentScreen::Forwarders => "Forwarders",
                         CurrentScreen::Lookups => "Lookups",
+                        CurrentScreen::Audit => "Audit Events",
+                        CurrentScreen::Dashboards => "Dashboards",
+                        CurrentScreen::DataModels => "Data Models",
+                        CurrentScreen::WorkloadManagement => "Workload Management",
+                        CurrentScreen::Shc => "SHC",
                         CurrentScreen::Settings => "Settings",
                         CurrentScreen::Overview => "Overview",
                         CurrentScreen::MultiInstance => "Multi-Instance",
@@ -184,6 +190,7 @@ impl App {
                         theme: &self.theme,
                         spl_validation_state: &self.spl_validation_state,
                         spl_validation_pending: self.spl_validation_pending,
+                        search_mode: self.search_mode,
                     },
                 );
             }
@@ -426,6 +433,71 @@ impl App {
                         loading: self.loading,
                         lookups: self.lookups.as_deref(),
                         lookups_state: &mut self.lookups_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Audit => {
+                audit::render_audit(
+                    f,
+                    area,
+                    audit::AuditRenderConfig {
+                        loading: self.loading,
+                        events: self.audit_events.as_deref(),
+                        state: &mut self.audit_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Dashboards => {
+                dashboards::render_dashboards(
+                    f,
+                    area,
+                    dashboards::DashboardsRenderConfig {
+                        loading: self.loading,
+                        dashboards: self.dashboards.as_deref(),
+                        state: &mut self.dashboards_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::DataModels => {
+                datamodels::render_datamodels(
+                    f,
+                    area,
+                    datamodels::DataModelsRenderConfig {
+                        loading: self.loading,
+                        data_models: self.data_models.as_deref(),
+                        state: &mut self.data_models_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::WorkloadManagement => {
+                workload::render_workload(
+                    f,
+                    area,
+                    workload::WorkloadRenderConfig {
+                        loading: self.loading,
+                        workload_pools: self.workload_pools.as_deref(),
+                        workload_rules: self.workload_rules.as_deref(),
+                        view_mode: self.workload_view_mode,
+                        pools_state: &mut self.workload_pools_state,
+                        rules_state: &mut self.workload_rules_state,
+                        theme: &self.theme,
+                    },
+                );
+            }
+            CurrentScreen::Shc => {
+                shc::render_shc(
+                    f,
+                    area,
+                    shc::ShcRenderConfig {
+                        loading: self.loading,
+                        shc_status: self.shc_status.as_ref(),
+                        shc_members: self.shc_members.as_deref(),
+                        view_mode: self.shc_view_mode,
+                        members_state: &mut self.shc_members_state,
                         theme: &self.theme,
                     },
                 );

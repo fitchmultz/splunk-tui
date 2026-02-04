@@ -12,15 +12,17 @@
 use crate::action::ExportFormat;
 use crate::app::export::ExportTarget;
 use crate::app::state::{
-    ClusterViewMode, CurrentScreen, HealthState, ListPaginationState, SearchInputMode, SortState,
+    ClusterViewMode, CurrentScreen, HealthState, ListPaginationState, SearchInputMode, ShcViewMode,
+    SortState,
 };
 use crate::error_details::ErrorDetails;
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
 use ratatui::layout::Rect;
 use serde_json::Value;
+use splunk_client::SearchMode;
 use splunk_client::models::{
-    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, HealthCheckOutput, Index,
+    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, DataModel, HealthCheckOutput, Index,
     KvStoreStatus, LogEntry, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
 };
 use splunk_config::{ColorTheme, KeybindOverrides, ListDefaults, SearchDefaults, Theme};
@@ -97,6 +99,37 @@ pub struct App {
     pub lookups: Option<Vec<splunk_client::models::LookupTable>>,
     pub lookups_state: ratatui::widgets::TableState,
     pub lookups_pagination: ListPaginationState,
+
+    // Audit events state
+    pub audit_events: Option<Vec<splunk_client::models::AuditEvent>>,
+    pub audit_state: ratatui::widgets::TableState,
+
+    // Dashboards state
+    pub dashboards: Option<Vec<splunk_client::models::Dashboard>>,
+    pub dashboards_state: ratatui::widgets::ListState,
+    pub dashboards_pagination: ListPaginationState,
+
+    // Data models state
+    pub data_models: Option<Vec<DataModel>>,
+    pub data_models_state: ratatui::widgets::ListState,
+    pub data_models_pagination: ListPaginationState,
+
+    // Workload management state
+    pub workload_pools: Option<Vec<splunk_client::models::WorkloadPool>>,
+    pub workload_pools_state: ratatui::widgets::TableState,
+    pub workload_pools_pagination: ListPaginationState,
+    pub workload_rules: Option<Vec<splunk_client::models::WorkloadRule>>,
+    pub workload_rules_state: ratatui::widgets::TableState,
+    pub workload_rules_pagination: ListPaginationState,
+    pub workload_view_mode: crate::app::state::WorkloadViewMode,
+
+    // SHC state
+    pub shc_status: Option<splunk_client::models::ShcStatus>,
+    pub shc_members: Option<Vec<splunk_client::models::ShcMember>>,
+    pub shc_captain: Option<splunk_client::models::ShcCaptain>,
+    pub shc_config: Option<splunk_client::models::ShcConfig>,
+    pub shc_members_state: ratatui::widgets::TableState,
+    pub shc_view_mode: ShcViewMode,
 
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,
@@ -210,6 +243,12 @@ pub struct App {
     pub spl_validation_pending: bool,
     /// Timestamp of last input change for debouncing.
     pub last_input_change: Option<std::time::Instant>,
+
+    // Search mode (RQ-0254)
+    /// Current search mode (normal or realtime).
+    pub search_mode: SearchMode,
+    /// Real-time window in seconds (only used when search_mode is Realtime).
+    pub realtime_window: Option<u64>,
 }
 
 /// SPL validation state for real-time feedback in the search screen.

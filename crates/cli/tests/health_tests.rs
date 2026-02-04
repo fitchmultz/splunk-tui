@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 /// Test that `splunk-cli health --help` shows the command.
@@ -25,5 +25,5 @@ fn test_health_execution() {
     cmd.arg("health")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }

@@ -29,9 +29,11 @@ impl App {
             Action::PreviousScreen => {
                 self.current_screen = self.current_screen.previous();
             }
-            Action::LoadIndexes { .. } => {
+            Action::LoadIndexes { offset, .. } => {
                 self.current_screen = CurrentScreen::Indexes;
-                self.indexes_pagination.reset();
+                if offset == 0 {
+                    self.indexes_pagination.reset();
+                }
             }
             Action::LoadClusterInfo => {
                 self.current_screen = CurrentScreen::Cluster;
@@ -39,9 +41,11 @@ impl App {
             Action::ToggleClusterViewMode => {
                 self.toggle_cluster_view_mode();
             }
-            Action::LoadJobs { .. } => {
+            Action::LoadJobs { offset, .. } => {
                 self.current_screen = CurrentScreen::Jobs;
-                self.jobs_pagination.reset();
+                if offset == 0 {
+                    self.jobs_pagination.reset();
+                }
             }
             Action::LoadHealth => {
                 self.current_screen = CurrentScreen::Health;
@@ -58,29 +62,53 @@ impl App {
             Action::LoadInternalLogs { .. } => {
                 self.current_screen = CurrentScreen::InternalLogs;
             }
-            Action::LoadApps { .. } => {
+            Action::LoadApps { offset, .. } => {
                 self.current_screen = CurrentScreen::Apps;
-                self.apps_pagination.reset();
+                if offset == 0 {
+                    self.apps_pagination.reset();
+                }
             }
-            Action::LoadUsers { .. } => {
+            Action::LoadUsers { offset, .. } => {
                 self.current_screen = CurrentScreen::Users;
-                self.users_pagination.reset();
+                if offset == 0 {
+                    self.users_pagination.reset();
+                }
             }
-            Action::LoadSearchPeers { .. } => {
+            Action::LoadSearchPeers { offset, .. } => {
                 self.current_screen = CurrentScreen::SearchPeers;
-                self.search_peers_pagination.reset();
+                if offset == 0 {
+                    self.search_peers_pagination.reset();
+                }
             }
-            Action::LoadInputs { .. } => {
+            Action::LoadInputs { offset, .. } => {
                 self.current_screen = CurrentScreen::Inputs;
-                self.inputs_pagination.reset();
+                if offset == 0 {
+                    self.inputs_pagination.reset();
+                }
             }
-            Action::LoadFiredAlerts => {
+            Action::LoadFiredAlerts { offset, .. } => {
                 self.current_screen = CurrentScreen::FiredAlerts;
-                self.fired_alerts_pagination.reset();
+                if offset == 0 {
+                    self.fired_alerts_pagination.reset();
+                }
             }
-            Action::LoadLookups { .. } => {
+            Action::LoadLookups { offset, .. } => {
                 self.current_screen = CurrentScreen::Lookups;
-                self.lookups_pagination.reset();
+                if offset == 0 {
+                    self.lookups_pagination.reset();
+                }
+            }
+            Action::LoadDashboards { offset, .. } => {
+                self.current_screen = CurrentScreen::Dashboards;
+                if offset == 0 {
+                    self.dashboards_pagination.reset();
+                }
+            }
+            Action::LoadDataModels { offset, .. } => {
+                self.current_screen = CurrentScreen::DataModels;
+                if offset == 0 {
+                    self.data_models_pagination.reset();
+                }
             }
             Action::LoadMoreIndexes
             | Action::LoadMoreJobs
@@ -89,8 +117,33 @@ impl App {
             | Action::LoadMoreSearchPeers
             | Action::LoadMoreInputs
             | Action::LoadMoreFiredAlerts
-            | Action::LoadMoreLookups => {
+            | Action::LoadMoreLookups
+            | Action::LoadMoreWorkloadPools
+            | Action::LoadMoreWorkloadRules
+            | Action::LoadMoreDashboards
+            | Action::LoadMoreDataModels => {
                 // These are handled in the main loop which has access to pagination state
+            }
+            Action::LoadWorkloadPools { offset, .. } => {
+                self.current_screen = CurrentScreen::WorkloadManagement;
+                if offset == 0 {
+                    self.workload_pools_pagination.reset();
+                }
+            }
+            Action::LoadWorkloadRules { offset, .. } => {
+                self.current_screen = CurrentScreen::WorkloadManagement;
+                if offset == 0 {
+                    self.workload_rules_pagination.reset();
+                }
+            }
+            Action::LoadForwarders { offset, .. } => {
+                self.current_screen = CurrentScreen::Forwarders;
+                if offset == 0 {
+                    self.forwarders_pagination.reset();
+                }
+            }
+            Action::ToggleWorkloadViewMode => {
+                self.toggle_workload_view_mode();
             }
             Action::NavigateDown => self.next_item(),
             Action::NavigateUp => self.previous_item(),
@@ -118,6 +171,15 @@ impl App {
         self.cluster_view_mode = self.cluster_view_mode.toggle();
         // When switching to peers view, trigger peers load if not already loaded
         if self.cluster_view_mode == ClusterViewMode::Peers && self.cluster_peers.is_none() {
+            // The side effect handler will trigger the actual load
+        }
+    }
+
+    fn toggle_workload_view_mode(&mut self) {
+        use crate::app::state::WorkloadViewMode;
+        self.workload_view_mode = self.workload_view_mode.toggle();
+        // When switching to rules view, trigger rules load if not already loaded
+        if self.workload_view_mode == WorkloadViewMode::Rules && self.workload_rules.is_none() {
             // The side effect handler will trigger the actual load
         }
     }

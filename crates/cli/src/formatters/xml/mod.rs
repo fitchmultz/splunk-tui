@@ -10,14 +10,17 @@
 
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
+use splunk_client::models::DataModel;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
 use splunk_client::{
-    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -41,6 +44,7 @@ mod saved_searches;
 mod search;
 mod search_peers;
 mod users;
+mod workload;
 
 /// XML formatter.
 pub struct XmlFormatter;
@@ -401,6 +405,321 @@ impl Formatter for XmlFormatter {
         }
         output.push_str("</macro>\n");
         Ok(output)
+    }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<audit_events>\n");
+        for event in events {
+            output.push_str("  <audit_event>\n");
+            output.push_str(&format!("    <time>{}</time>\n", escape_xml(&event.time)));
+            output.push_str(&format!("    <user>{}</user>\n", escape_xml(&event.user)));
+            output.push_str(&format!(
+                "    <action>{}</action>\n",
+                escape_xml(&event.action)
+            ));
+            output.push_str(&format!(
+                "    <target>{}</target>\n",
+                escape_xml(&event.target)
+            ));
+            output.push_str(&format!(
+                "    <result>{}</result>\n",
+                escape_xml(&event.result)
+            ));
+            output.push_str(&format!(
+                "    <client_ip>{}</client_ip>\n",
+                escape_xml(&event.client_ip)
+            ));
+            output.push_str(&format!(
+                "    <details>{}</details>\n",
+                escape_xml(&event.details)
+            ));
+            output.push_str("  </audit_event>\n");
+        }
+        output.push_str("</audit_events>\n");
+        Ok(output)
+    }
+
+    fn format_dashboards(&self, dashboards: &[Dashboard], _detailed: bool) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<dashboards>\n");
+        for dashboard in dashboards {
+            output.push_str("  <dashboard>\n");
+            output.push_str(&format!(
+                "    <name>{}</name>\n",
+                escape_xml(&dashboard.name)
+            ));
+            output.push_str(&format!(
+                "    <label>{}</label>\n",
+                escape_xml(&dashboard.label)
+            ));
+            output.push_str(&format!(
+                "    <author>{}</author>\n",
+                escape_xml(&dashboard.author)
+            ));
+            output.push_str(&format!(
+                "    <isDashboard>{}</isDashboard>\n",
+                dashboard.is_dashboard
+            ));
+            output.push_str(&format!(
+                "    <isVisible>{}</isVisible>\n",
+                dashboard.is_visible
+            ));
+            if let Some(ref desc) = dashboard.description {
+                output.push_str(&format!(
+                    "    <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            if let Some(ref version) = dashboard.version {
+                output.push_str(&format!("    <version>{}</version>\n", escape_xml(version)));
+            }
+            if let Some(ref updated) = dashboard.updated {
+                output.push_str(&format!("    <updated>{}</updated>\n", escape_xml(updated)));
+            }
+            output.push_str("  </dashboard>\n");
+        }
+        output.push_str("</dashboards>\n");
+        Ok(output)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<dashboard>\n");
+        output.push_str(&format!("  <name>{}</name>\n", escape_xml(&dashboard.name)));
+        output.push_str(&format!(
+            "  <label>{}</label>\n",
+            escape_xml(&dashboard.label)
+        ));
+        output.push_str(&format!(
+            "  <author>{}</author>\n",
+            escape_xml(&dashboard.author)
+        ));
+        output.push_str(&format!(
+            "  <isDashboard>{}</isDashboard>\n",
+            dashboard.is_dashboard
+        ));
+        output.push_str(&format!(
+            "  <isVisible>{}</isVisible>\n",
+            dashboard.is_visible
+        ));
+        if let Some(ref desc) = dashboard.description {
+            output.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+        if let Some(ref version) = dashboard.version {
+            output.push_str(&format!("  <version>{}</version>\n", escape_xml(version)));
+        }
+        if let Some(ref updated) = dashboard.updated {
+            output.push_str(&format!("  <updated>{}</updated>\n", escape_xml(updated)));
+        }
+        if let Some(ref xml_data) = dashboard.xml_data {
+            output.push_str(&format!("  <xmlData>{}</xmlData>\n", escape_xml(xml_data)));
+        }
+        output.push_str("</dashboard>\n");
+        Ok(output)
+    }
+
+    fn format_datamodels(&self, datamodels: &[DataModel], _detailed: bool) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<datamodels>\n");
+        for datamodel in datamodels {
+            output.push_str("  <datamodel>\n");
+            output.push_str(&format!(
+                "    <name>{}</name>\n",
+                escape_xml(&datamodel.name)
+            ));
+            output.push_str(&format!(
+                "    <displayName>{}</displayName>\n",
+                escape_xml(&datamodel.displayName)
+            ));
+            output.push_str(&format!(
+                "    <owner>{}</owner>\n",
+                escape_xml(&datamodel.owner)
+            ));
+            output.push_str(&format!("    <app>{}</app>\n", escape_xml(&datamodel.app)));
+            output.push_str(&format!(
+                "    <accelerated>{}</accelerated>\n",
+                datamodel.is_accelerated
+            ));
+            if let Some(ref desc) = datamodel.description {
+                output.push_str(&format!(
+                    "    <description>{}</description>\n",
+                    escape_xml(desc)
+                ));
+            }
+            if let Some(ref updated) = datamodel.updated {
+                output.push_str(&format!("    <updated>{}</updated>\n", escape_xml(updated)));
+            }
+            output.push_str("  </datamodel>\n");
+        }
+        output.push_str("</datamodels>\n");
+        Ok(output)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<datamodel>\n");
+        output.push_str(&format!("  <name>{}</name>\n", escape_xml(&datamodel.name)));
+        output.push_str(&format!(
+            "  <displayName>{}</displayName>\n",
+            escape_xml(&datamodel.displayName)
+        ));
+        output.push_str(&format!(
+            "  <owner>{}</owner>\n",
+            escape_xml(&datamodel.owner)
+        ));
+        output.push_str(&format!("  <app>{}</app>\n", escape_xml(&datamodel.app)));
+        output.push_str(&format!(
+            "  <accelerated>{}</accelerated>\n",
+            datamodel.is_accelerated
+        ));
+        if let Some(ref desc) = datamodel.description {
+            output.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
+        }
+        if let Some(ref updated) = datamodel.updated {
+            output.push_str(&format!("  <updated>{}</updated>\n", escape_xml(updated)));
+        }
+        if let Some(ref json_data) = datamodel.json_data {
+            output.push_str(&format!(
+                "  <jsonData>{}</jsonData>\n",
+                escape_xml(json_data)
+            ));
+        }
+        output.push_str("</datamodel>\n");
+        Ok(output)
+    }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_pools(pools, detailed)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_rules(rules, detailed)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<shc_status>\n");
+        output.push_str(&format!(
+            "  <is_captain>{}</is_captain>\n",
+            status.is_captain
+        ));
+        output.push_str(&format!(
+            "  <is_searchable>{}</is_searchable>\n",
+            status.is_searchable
+        ));
+        output.push_str(&format!(
+            "  <captain_uri>{}</captain_uri>\n",
+            escape_xml(status.captain_uri.as_deref().unwrap_or(""))
+        ));
+        output.push_str(&format!(
+            "  <member_count>{}</member_count>\n",
+            status.member_count
+        ));
+        output.push_str(&format!(
+            "  <minimum_member_count>{}</minimum_member_count>\n",
+            status.minimum_member_count.unwrap_or(0)
+        ));
+        output.push_str(&format!(
+            "  <rolling_restart_flag>{}</rolling_restart_flag>\n",
+            status.rolling_restart_flag.unwrap_or(false)
+        ));
+        output.push_str(&format!(
+            "  <service_ready_flag>{}</service_ready_flag>\n",
+            status.service_ready_flag.unwrap_or(false)
+        ));
+        output.push_str("</shc_status>\n");
+        Ok(output)
+    }
+
+    fn format_shc_members(
+        &self,
+        _members: &[ShcMemberOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        anyhow::bail!("XML format not supported for SHC members. Use JSON format.")
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<shc_captain>\n");
+        output.push_str(&format!("  <id>{}</id>\n", escape_xml(&captain.id)));
+        output.push_str(&format!("  <host>{}</host>\n", escape_xml(&captain.host)));
+        output.push_str(&format!("  <port>{}</port>\n", captain.port));
+        output.push_str(&format!("  <guid>{}</guid>\n", escape_xml(&captain.guid)));
+        output.push_str(&format!(
+            "  <is_dynamic_captain>{}</is_dynamic_captain>\n",
+            captain.is_dynamic_captain
+        ));
+        output.push_str(&format!(
+            "  <site>{}</site>\n",
+            escape_xml(captain.site.as_deref().unwrap_or(""))
+        ));
+        output.push_str("</shc_captain>\n");
+        Ok(output)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        output.push_str("<shc_config>\n");
+        output.push_str(&format!("  <id>{}</id>\n", escape_xml(&config.id)));
+        output.push_str(&format!(
+            "  <replication_factor>{}</replication_factor>\n",
+            config.replication_factor.unwrap_or(0)
+        ));
+        output.push_str(&format!(
+            "  <captain_uri>{}</captain_uri>\n",
+            escape_xml(config.captain_uri.as_deref().unwrap_or(""))
+        ));
+        output.push_str(&format!(
+            "  <shcluster_label>{}</shcluster_label>\n",
+            escape_xml(config.shcluster_label.as_deref().unwrap_or(""))
+        ));
+        output.push_str("</shc_config>\n");
+        Ok(output)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        let mut result = String::new();
+        result.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        result.push_str("<shc_management>\n");
+        result.push_str(&format!(
+            "  <operation>{}</operation>\n",
+            escape_xml(&output.operation)
+        ));
+        result.push_str(&format!(
+            "  <target>{}</target>\n",
+            escape_xml(&output.target)
+        ));
+        result.push_str(&format!("  <success>{}</success>\n", output.success));
+        result.push_str(&format!(
+            "  <message>{}</message>\n",
+            escape_xml(&output.message)
+        ));
+        result.push_str("</shc_management>\n");
+        Ok(result)
     }
 }
 

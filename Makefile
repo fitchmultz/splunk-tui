@@ -1,4 +1,4 @@
-.PHONY: install update lint format clean \
+.PHONY: install update lint format clean type-check \
 	test test-all test-unit test-integration test-live test-live-manual \
 	build release generate lint-docs ci help lint-secrets install-hooks \
 	_generate-docs _lint-docs-check
@@ -41,13 +41,21 @@ format:
 	@cargo fmt --all
 	@echo "  ✓ Formatting complete"
 
-# Run clippy (mutates code) and then verify formatting (cheap)
+# Run clippy (two-phase: autofix then strict check) and then verify formatting (cheap)
 lint:
-	@echo "→ Clippy autofix..."
-	@cargo clippy --fix --allow-dirty --workspace --all-targets --all-features --locked -- -D warnings
+	@echo "→ Clippy autofix (phase 1/2)..."
+	@cargo clippy --fix --allow-dirty --workspace --all-targets --all-features --locked
+	@echo "→ Clippy strict check (phase 2/2)..."
+	@cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 	@echo "→ Format check..."
 	@cargo fmt --all --check
 	@echo "  ✓ Lint complete"
+
+# Run cargo check (fast compilation check without producing binaries)
+type-check:
+	@echo "→ Type checking..."
+	@cargo check --workspace --all-targets --all-features --locked
+	@echo "  ✓ Type check complete"
 
 # Run secret-commit guard
 lint-secrets:
@@ -83,10 +91,10 @@ test-integration:
 test-live:
 	@if [ "$$SKIP_LIVE_TESTS" = "1" ]; then \
 		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
-		exit 0; \
+	else \
+		cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored; \
+		cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored; \
 	fi
-	@cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored
-	@cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored
 
 # Manual live server test script
 test-live-manual:
@@ -128,10 +136,9 @@ generate: release _generate-docs
 lint-docs: release _lint-docs-check
 
 # CI pipeline (local speed-first):
-# deps -> format -> lint-secrets -> clippy fix + fmt check -> tests -> live tests -> release+install -> docs generate/check
+# deps -> format -> lint-secrets -> clippy fix + fmt check -> type-check -> tests -> live tests -> release+install -> docs generate/check
 #
 # Notes:
-# - No separate type-check: redundant with clippy/tests and costs time.
 # - release is required every time, and we reuse that binary for generate/lint-docs.
 # - Uses PROFILE=ci for faster builds (still produces working binaries).
 ci:
@@ -142,6 +149,7 @@ ci:
 	$(MAKE) format               || { echo ""; echo "✗ CI failed at: format"; exit 1; }; \
 	$(MAKE) lint-secrets         || { echo ""; echo "✗ CI failed at: lint-secrets"; exit 1; }; \
 	$(MAKE) lint                 || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
+	$(MAKE) type-check           || { echo ""; echo "✗ CI failed at: type-check"; exit 1; }; \
 	$(MAKE) test                 || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
 	$(MAKE) test-live            || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
 	$(MAKE) release PROFILE=ci   || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
@@ -157,7 +165,8 @@ help:
 	@echo "  make update           - Update all dependencies to latest stable versions"
 	@echo "  make format           - Format code with rustfmt (write mode)"
 	@echo "  make lint             - Clippy autofix + format check"
-	@echo "  make clean            - Remove build artifacts"
+	@echo "  make type-check       - Type check the workspace (cargo check)"
+	@echo "  make clean            - Remove build artifacts (keeps Cargo.lock)"
 	@echo "  make test             - Run all tests (workspace, all targets)"
 	@echo "  make test-all         - Alias for make test"
 	@echo "  make test-unit        - Run unit tests (lib and bins)"

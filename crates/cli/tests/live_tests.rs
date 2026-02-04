@@ -101,7 +101,21 @@ impl LiveEnvGuard {
 
         if env_test_path.exists() {
             clear_splunk_env();
-            dotenvy::from_path_override(env_test_path).ok();
+            if let Err(e) = dotenvy::from_path_override(&env_test_path) {
+                // Only log the error, don't fail - live tests are best-effort
+                eprintln!(
+                    "Warning: failed to load .env.test from {}: {}",
+                    env_test_path.display(),
+                    // Use a safe error message that doesn't leak file contents
+                    match e {
+                        dotenvy::Error::Io(_) => "I/O error".to_string(),
+                        dotenvy::Error::LineParse(_, idx) => {
+                            format!("parse error at position {}", idx)
+                        }
+                        _ => "unknown error".to_string(),
+                    }
+                );
+            }
         }
 
         let base_url = match env_var_or_none("SPLUNK_BASE_URL") {

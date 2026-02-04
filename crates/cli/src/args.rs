@@ -107,6 +107,14 @@ pub enum Commands {
         /// Maximum number of results to return
         #[arg(short, long)]
         count: Option<usize>,
+
+        /// Run search in real-time mode
+        #[arg(long)]
+        realtime: bool,
+
+        /// Real-time window in seconds (e.g., 60 for a 60-second window)
+        #[arg(long, requires = "realtime")]
+        realtime_window: Option<u64>,
     },
 
     /// List and manage indexes
@@ -280,6 +288,24 @@ pub enum Commands {
         command: commands::alerts::AlertsCommand,
     },
 
+    /// View audit events
+    Audit {
+        #[command(subcommand)]
+        command: commands::audit::AuditCommand,
+    },
+
+    /// List and manage dashboards
+    Dashboards {
+        #[command(subcommand)]
+        command: commands::dashboards::DashboardsCommand,
+    },
+
+    /// List and manage data models
+    Datamodels {
+        #[command(subcommand)]
+        command: commands::datamodels::DatamodelsCommand,
+    },
+
     /// List lookup tables (CSV-based lookups)
     Lookups {
         /// Maximum number of lookup tables to list
@@ -291,10 +317,43 @@ pub enum Commands {
         offset: usize,
     },
 
+    /// List workload pools and rules
+    Workload {
+        /// Show detailed information
+        #[arg(short, long)]
+        detailed: bool,
+
+        /// Maximum number of items to list
+        #[arg(short, long, default_value = "30")]
+        count: usize,
+
+        /// Offset into the list (zero-based)
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+
     /// Send events to Splunk via HTTP Event Collector (HEC)
     Hec {
         #[command(subcommand)]
         command: commands::hec::HecCommand,
+    },
+
+    /// Show search head cluster status and manage SHC configuration
+    Shc {
+        #[command(subcommand)]
+        command: Option<commands::shc::ShcCommand>,
+
+        /// Show detailed SHC information (deprecated: use 'shc show --detailed')
+        #[arg(short, long, hide = true)]
+        detailed: bool,
+
+        /// Offset into the member list (zero-based) (deprecated: use 'shc show')
+        #[arg(long, hide = true, default_value = "0")]
+        offset: usize,
+
+        /// Number of members per page (deprecated: use 'shc show')
+        #[arg(long = "page-size", hide = true, default_value = "50")]
+        page_size: usize,
     },
 }
 

@@ -49,7 +49,7 @@ make ci           # install -> format -> lint-secrets -> lint-docs -> lint -> ty
 ```
 
 Notes:
-- `make clean` deletes `Cargo.lock` by design (don’t be surprised).
+- `make clean` does NOT delete `Cargo.lock` (kept for reproducible builds and speed).
 - `make test-live` runs all `#[ignore]` tests across the workspace. Set `SKIP_LIVE_TESTS=1` to skip when the dev server is unavailable.
 - Live tests should be configured via `.env.test` (untracked; copy from `.env.test.example`) or environment variables; avoid hardcoding server addresses in code or docs.
 - Integration tests are discovered automatically; adding a new `crates/*/tests/*.rs` file requires no Makefile updates.

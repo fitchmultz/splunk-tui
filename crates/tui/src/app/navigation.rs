@@ -333,6 +333,16 @@ impl App {
         let selected = self.cluster_peers_state.selected()?;
         peers.get(selected)
     }
+
+    /// Get the currently selected SHC member, if any.
+    pub fn get_selected_shc_member(&self) -> Option<&splunk_client::models::ShcMember> {
+        if self.shc_view_mode != crate::app::state::ShcViewMode::Members {
+            return None;
+        }
+        let members = self.shc_members.as_ref()?;
+        let selected = self.shc_members_state.selected()?;
+        members.get(selected)
+    }
 }
 
 #[cfg(test)]

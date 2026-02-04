@@ -17,17 +17,28 @@ use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
 
-/// Handle loading users.
+/// Handle loading users with pagination support.
+///
+/// Emits `UsersLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreUsersLoaded` when offset > 0 (pagination).
 pub async fn handle_load_users(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         let mut c = client.lock().await;
         match c.list_users(Some(count), Some(offset)).await {
             Ok(users) => {
-                let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
+                } else {
+                    let _ = tx.send(Action::MoreUsersLoaded(Ok(users))).await;
+                }
             }
             Err(e) => {
-                let _ = tx.send(Action::UsersLoaded(Err(Arc::new(e)))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::UsersLoaded(Err(Arc::new(e)))).await;
+                } else {
+                    let _ = tx.send(Action::MoreUsersLoaded(Err(Arc::new(e)))).await;
+                }
             }
         }
     });

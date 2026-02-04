@@ -13,7 +13,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -58,7 +58,7 @@ fn test_search_with_query_attempts_connection() {
     cmd.args(["search", TEST_QUERY])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn test_search_with_wait_flag_attempts_connection() {
     cmd.args(["search", TEST_QUERY, "--wait"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -83,7 +83,7 @@ fn test_search_with_earliest_and_latest_flags_attempts_connection() {
     ])
     .assert()
     .failure()
-    .stderr(predicate::str::contains("Connection refused"));
+    .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn test_search_with_count_flag_attempts_connection() {
     cmd.args(["search", TEST_QUERY, "--count", "10"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -101,7 +101,7 @@ fn test_search_with_output_json_attempts_connection() {
     cmd.args(["--output", "json", "search", TEST_QUERY])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -110,7 +110,7 @@ fn test_search_with_output_csv_attempts_connection() {
     cmd.args(["--output", "csv", "search", TEST_QUERY])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn test_search_with_output_table_attempts_connection() {
     cmd.args(["--output", "table", "search", TEST_QUERY])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn test_search_with_output_xml_attempts_connection() {
     cmd.args(["--output", "xml", "search", TEST_QUERY])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 #[tokio::test]

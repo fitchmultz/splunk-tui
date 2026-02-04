@@ -2,9 +2,12 @@
 
 pub mod alerts;
 pub mod apps;
+pub mod audit;
 pub mod cluster;
 pub mod config;
 pub mod configs;
+pub mod dashboards;
+pub mod datamodels;
 pub mod forwarders;
 pub mod health;
 pub mod hec;
@@ -21,7 +24,9 @@ pub mod roles;
 pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
+pub mod shc;
 pub mod users;
+pub mod workload;
 
 use anyhow::Result;
 use splunk_client::{AuthStrategy as ClientAuth, SplunkClient};

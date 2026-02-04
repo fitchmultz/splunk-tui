@@ -155,7 +155,7 @@ impl App {
                 skip_verify: false,
                 timeout_seconds: 30,
                 max_retries: 3,
-                use_keyring: false,
+                use_keyring: true,
                 selected_field: ProfileField::Name,
             })
             .build(),
@@ -185,7 +185,7 @@ impl App {
                 skip_verify,
                 timeout_seconds,
                 max_retries: max_retries as u64,
-                use_keyring: false,
+                use_keyring: true,
                 selected_field: ProfileField::Name,
             })
             .build(),

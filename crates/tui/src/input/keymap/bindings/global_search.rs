@@ -208,5 +208,14 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None,
             handles_input: false,
         },
+        Keybinding {
+            section: Section::Search,
+            keys: "Ctrl+r",
+            description: "Toggle real-time mode",
+            scope: BindingScope::Screen(Search),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
     ]
 }

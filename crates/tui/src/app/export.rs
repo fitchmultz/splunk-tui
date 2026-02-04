@@ -35,6 +35,9 @@ pub enum ExportTarget {
     Forwarders,
     Lookups,
     MultiInstance,
+    AuditEvents,
+    Workload,
+    ShcStatus,
 }
 
 impl ExportTarget {
@@ -59,6 +62,9 @@ impl ExportTarget {
             ExportTarget::Forwarders => "Export Forwarders",
             ExportTarget::Lookups => "Export Lookups",
             ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
+            ExportTarget::AuditEvents => "Export Audit Events",
+            ExportTarget::Workload => "Export Workload Management",
+            ExportTarget::ShcStatus => "Export SHC Status",
         }
     }
 
@@ -83,6 +89,9 @@ impl ExportTarget {
             ExportTarget::Forwarders => "forwarders",
             ExportTarget::Lookups => "lookups",
             ExportTarget::MultiInstance => "multi-instance",
+            ExportTarget::AuditEvents => "audit-events",
+            ExportTarget::Workload => "workload",
+            ExportTarget::ShcStatus => "shc-status",
         };
 
         let ext = match format {
@@ -181,6 +190,24 @@ impl App {
                 .and_then(|v| serde_json::to_value(v).ok()),
             ExportTarget::MultiInstance => self
                 .multi_instance_data
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::AuditEvents => self
+                .audit_events
+                .as_ref()
+                .and_then(|v| serde_json::to_value(v).ok()),
+            ExportTarget::Workload => {
+                // Export both pools and rules as a combined object
+                let pools = self.workload_pools.clone().unwrap_or_default();
+                let rules = self.workload_rules.clone().unwrap_or_default();
+                let combined = serde_json::json!({
+                    "pools": pools,
+                    "rules": rules,
+                });
+                Some(combined)
+            }
+            ExportTarget::ShcStatus => self
+                .shc_status
                 .as_ref()
                 .and_then(|v| serde_json::to_value(v).ok()),
         }

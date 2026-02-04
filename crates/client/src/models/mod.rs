@@ -6,11 +6,14 @@
 
 pub mod alerts;
 pub mod apps;
+pub mod audit;
 pub mod auth;
 pub mod capabilities;
 pub mod cluster;
 pub mod common;
 pub mod configs;
+pub mod dashboards;
+pub mod datamodels;
 pub mod forwarders;
 pub mod hec;
 pub mod indexes;
@@ -25,11 +28,14 @@ pub mod roles;
 pub mod saved_searches;
 pub mod search_peers;
 pub mod server;
+pub mod shc;
 pub mod users;
+pub mod workload;
 
 // Re-exports for backward compatibility
 pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
 pub use apps::{App, AppEntry, AppListResponse};
+pub use audit::{AuditEvent, AuditEventEntry, AuditEventListResponse, ListAuditEventsParams};
 pub use auth::AuthResponse;
 pub use capabilities::{Capability, CapabilityEntry, CapabilityListResponse};
 pub use cluster::{
@@ -40,6 +46,8 @@ pub use common::{Acl, Entry, Perms, SplunkMessage, SplunkMessages, SplunkRespons
 pub use configs::{
     ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,
 };
+pub use dashboards::{Dashboard, DashboardEntry, DashboardListResponse};
+pub use datamodels::{DataModel, DataModelEntry, DataModelListResponse};
 pub use forwarders::{Forwarder, ForwarderEntry, ForwarderListResponse};
 pub use hec::{
     HecAckRequest, HecAckStatus, HecBatchResponse, HecError, HecEvent, HecHealth, HecResponse,
@@ -66,4 +74,12 @@ pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListRes
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
 pub use server::{HealthFeature, ServerInfo, SplunkHealth};
+pub use shc::{
+    AddShcMemberParams, RemoveShcMemberParams, RollingRestartParams, SetCaptainParams, ShcCaptain,
+    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus,
+};
 pub use users::{CreateUserParams, ModifyUserParams, User, UserEntry, UserListResponse};
+pub use workload::{
+    WorkloadPool, WorkloadPoolEntry, WorkloadPoolListResponse, WorkloadRule, WorkloadRuleEntry,
+    WorkloadRuleListResponse,
+};

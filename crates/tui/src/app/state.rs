@@ -68,6 +68,11 @@ pub enum CurrentScreen {
     FiredAlerts,
     Forwarders,
     Lookups,
+    Audit,
+    Dashboards,
+    DataModels,
+    WorkloadManagement,
+    Shc,
 }
 
 impl CurrentScreen {
@@ -94,7 +99,12 @@ impl CurrentScreen {
             CurrentScreen::Configs => CurrentScreen::FiredAlerts,
             CurrentScreen::FiredAlerts => CurrentScreen::Forwarders,
             CurrentScreen::Forwarders => CurrentScreen::Lookups,
-            CurrentScreen::Lookups => CurrentScreen::Settings,
+            CurrentScreen::Lookups => CurrentScreen::Audit,
+            CurrentScreen::Audit => CurrentScreen::Dashboards,
+            CurrentScreen::Dashboards => CurrentScreen::DataModels,
+            CurrentScreen::DataModels => CurrentScreen::WorkloadManagement,
+            CurrentScreen::WorkloadManagement => CurrentScreen::Shc,
+            CurrentScreen::Shc => CurrentScreen::Settings,
             CurrentScreen::Settings => CurrentScreen::Overview,
             CurrentScreen::Overview => CurrentScreen::MultiInstance,
             CurrentScreen::MultiInstance => CurrentScreen::Search, // Wrap around
@@ -124,7 +134,12 @@ impl CurrentScreen {
             CurrentScreen::Configs => CurrentScreen::Inputs,
             CurrentScreen::FiredAlerts => CurrentScreen::Configs,
             CurrentScreen::Forwarders => CurrentScreen::FiredAlerts,
-            CurrentScreen::Settings => CurrentScreen::Lookups,
+            CurrentScreen::Settings => CurrentScreen::Shc,
+            CurrentScreen::Shc => CurrentScreen::WorkloadManagement,
+            CurrentScreen::WorkloadManagement => CurrentScreen::DataModels,
+            CurrentScreen::DataModels => CurrentScreen::Dashboards,
+            CurrentScreen::Dashboards => CurrentScreen::Audit,
+            CurrentScreen::Audit => CurrentScreen::Lookups,
             CurrentScreen::Lookups => CurrentScreen::Forwarders,
             CurrentScreen::Overview => CurrentScreen::Settings,
             CurrentScreen::MultiInstance => CurrentScreen::Overview,
@@ -214,6 +229,46 @@ impl ClusterViewMode {
         match self {
             Self::Summary => Self::Peers,
             Self::Peers => Self::Summary,
+        }
+    }
+}
+
+/// View mode for the workload management screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WorkloadViewMode {
+    /// Show workload pools.
+    #[default]
+    Pools,
+    /// Show workload rules.
+    Rules,
+}
+
+impl WorkloadViewMode {
+    /// Toggle between pools and rules view.
+    pub fn toggle(self) -> Self {
+        match self {
+            Self::Pools => Self::Rules,
+            Self::Rules => Self::Pools,
+        }
+    }
+}
+
+/// View mode for the SHC screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShcViewMode {
+    /// Show SHC summary information.
+    #[default]
+    Summary,
+    /// Show SHC members list.
+    Members,
+}
+
+impl ShcViewMode {
+    /// Toggle between summary and members view.
+    pub fn toggle(self) -> Self {
+        match self {
+            Self::Summary => Self::Members,
+            Self::Members => Self::Summary,
         }
     }
 }

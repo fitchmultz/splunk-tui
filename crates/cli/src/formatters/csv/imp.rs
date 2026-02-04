@@ -11,22 +11,30 @@
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
+use splunk_client::models::AuditEvent;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
+    ConfigFile, ConfigStanza, DataModel, Input, KvStoreCollection, KvStoreRecord, LogEntry,
+    SearchPeer,
 };
 use splunk_client::{
-    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
+
+use crate::formatters::csv::workload;
 
 use super::alerts;
 use super::apps;
 use super::cluster;
 use super::configs;
+use super::dashboards;
+use super::datamodels;
 use super::forwarders;
 use super::health;
 use super::hec;
@@ -44,6 +52,7 @@ use super::roles;
 use super::saved_searches;
 use super::search;
 use super::search_peers;
+use super::shc;
 use super::users;
 
 /// CSV formatter.
@@ -235,5 +244,93 @@ impl Formatter for CsvFormatter {
 
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
         macros::format_macro_info(macro_info)
+    }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        use crate::formatters::common::{build_csv_header, build_csv_row, escape_csv};
+
+        let mut output = String::new();
+
+        // Header
+        output.push_str(&build_csv_header(&[
+            "Time",
+            "User",
+            "Action",
+            "Target",
+            "Result",
+            "Client IP",
+            "Details",
+        ]));
+
+        // Rows
+        for event in events {
+            output.push_str(&build_csv_row(&[
+                escape_csv(&event.time),
+                escape_csv(&event.user),
+                escape_csv(&event.action),
+                escape_csv(&event.target),
+                escape_csv(&event.result),
+                escape_csv(&event.client_ip),
+                escape_csv(&event.details),
+            ]));
+        }
+
+        Ok(output)
+    }
+
+    fn format_dashboards(&self, dashboards_list: &[Dashboard], detailed: bool) -> Result<String> {
+        dashboards::format_dashboards(dashboards_list, detailed)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        dashboards::format_dashboard(dashboard)
+    }
+
+    fn format_datamodels(&self, datamodels_list: &[DataModel], detailed: bool) -> Result<String> {
+        datamodels::format_datamodels(datamodels_list, detailed)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        datamodels::format_datamodel(datamodel)
+    }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_pools(pools, detailed)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_rules(rules, detailed)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        shc::format_shc_status(status)
+    }
+
+    fn format_shc_members(
+        &self,
+        _members: &[ShcMemberOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        anyhow::bail!("CSV format not supported for SHC members. Use JSON format.")
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        shc::format_shc_captain(captain)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        shc::format_shc_config(config)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        shc::format_shc_management(output)
     }
 }

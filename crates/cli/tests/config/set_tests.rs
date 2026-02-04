@@ -153,3 +153,41 @@ fn test_config_list_table_format() {
         .stdout(predicate::str::contains("https://splunk.example.com:8089"))
         .stdout(predicate::str::contains("admin"));
 }
+
+/// Test that config set --timeout stores timeout_seconds correctly.
+#[test]
+fn test_config_set_timeout_stores_correctly() {
+    let (_temp_dir, config_path) = setup_temp_config();
+
+    splunk_cmd()
+        .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env_remove("SPLUNK_PASSWORD")
+        .env_remove("SPLUNK_API_TOKEN")
+        .args([
+            "config",
+            "set",
+            "test-profile",
+            "--base-url",
+            "https://splunk.example.com:8089",
+            "--api-token",
+            "test-token",
+            "--timeout",
+            "60",
+            "--max-retries",
+            "5",
+        ])
+        .assert()
+        .success();
+
+    // Verify that timeout_seconds is stored in the config file
+    let content = fs::read_to_string(&config_path).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&content).unwrap();
+    assert_eq!(
+        json["profiles"]["test-profile"]["timeout_seconds"], 60,
+        "timeout_seconds field should be set to 60"
+    );
+    assert_eq!(
+        json["profiles"]["test-profile"]["max_retries"], 5,
+        "max_retries field should be set to 5"
+    );
+}

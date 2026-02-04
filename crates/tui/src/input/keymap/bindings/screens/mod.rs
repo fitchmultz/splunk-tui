@@ -12,6 +12,8 @@
 mod apps;
 mod cluster;
 mod configs;
+mod dashboards;
+mod datamodels;
 mod indexes;
 mod inputs;
 mod internal_logs;
@@ -20,8 +22,10 @@ mod monitoring;
 mod saved_searches;
 mod search_peers;
 mod settings;
+mod shc;
 mod status;
 mod users;
+mod workload;
 
 use super::Keybinding;
 
@@ -37,8 +41,12 @@ pub(super) fn bindings() -> Vec<Keybinding> {
     bindings.extend(users::bindings());
     bindings.extend(search_peers::bindings());
     bindings.extend(configs::bindings());
+    bindings.extend(dashboards::bindings());
+    bindings.extend(datamodels::bindings());
     bindings.extend(inputs::bindings());
     bindings.extend(settings::bindings());
     bindings.extend(monitoring::bindings());
+    bindings.extend(workload::bindings());
+    bindings.extend(shc::bindings());
     bindings
 }

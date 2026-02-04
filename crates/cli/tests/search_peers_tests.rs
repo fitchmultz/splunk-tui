@@ -10,7 +10,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -41,9 +41,7 @@ fn test_search_peers_execution() {
     let result = cmd.arg("search-peers").assert();
 
     // Should fail with connection error (not a "command not found" error)
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli search-peers --detailed` works.
@@ -54,9 +52,7 @@ fn test_search_peers_with_detailed() {
 
     let result = cmd.args(["search-peers", "--detailed"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli search-peers --count <N>` works.
@@ -67,9 +63,7 @@ fn test_search_peers_with_count() {
 
     let result = cmd.args(["search-peers", "--count", "10"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli search-peers --offset <N>` works.
@@ -80,9 +74,7 @@ fn test_search_peers_with_offset() {
 
     let result = cmd.args(["search-peers", "--offset", "5"]).assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli search-peers --count and --offset` work together.
@@ -95,9 +87,7 @@ fn test_search_peers_with_count_and_offset() {
         .args(["search-peers", "--count", "10", "--offset", "5"])
         .assert();
 
-    result
-        .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+    result.failure().stderr(connection_error_predicate());
 }
 
 /// Test that `splunk-cli search-peers --output json` produces valid JSON with mock server.

@@ -294,7 +294,32 @@ fn test_shift_tab_cycles_backwards() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Settings);
 
-    // Shift+Tab from Settings should go to Lookups
+    // Shift+Tab from Settings should go to Shc
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Shc);
+
+    // Shift+Tab from Shc should go to WorkloadManagement
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::WorkloadManagement);
+
+    // Shift+Tab from WorkloadManagement should go to DataModels
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::DataModels);
+
+    // Shift+Tab from DataModels should go to Dashboards
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Dashboards);
+
+    // Shift+Tab from Dashboards should go to Audit
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Audit);
+
+    // Shift+Tab from Audit should go to Lookups
     let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Lookups);

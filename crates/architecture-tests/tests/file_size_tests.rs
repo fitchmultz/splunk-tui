@@ -43,6 +43,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "app/popups/profile.rs",
         "Profile management popup handlers - complex multi-field form handling for CreateProfile, EditProfile, ProfileSelector",
     ),
+    (
+        "app/popups/macros.rs",
+        "Macro popup handlers - CreateMacro and EditMacro form handling with comprehensive test coverage",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

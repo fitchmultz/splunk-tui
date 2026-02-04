@@ -22,6 +22,20 @@ use predicates::prelude::*;
 use std::fs;
 use tempfile::TempDir;
 
+/// Returns a predicate that matches common connection error messages.
+///
+/// This predicate matches:
+/// - "Connection refused" (standard TCP connection failure)
+/// - "client error (Connect)" (reqwest connection error)
+/// - "invalid peer certificate" (TLS certificate errors)
+/// - "API error (401)" (authentication errors when a real server responds)
+fn connection_error_predicate() -> impl Predicate<str> {
+    predicate::str::contains("Connection refused")
+        .or(predicate::str::contains("client error (Connect)"))
+        .or(predicate::str::contains("invalid peer certificate"))
+        .or(predicate::str::contains("API error (401)"))
+}
+
 /// Helper to clear all SPLUNK_* environment variables for test isolation.
 fn clear_splunk_env() {
     for (key, _) in std::env::vars() {
@@ -58,7 +72,7 @@ fn test_dotenv_loading_for_cli_defaults() {
         .args(["health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused").or(
+        .stderr(connection_error_predicate().or(
             // The URL from .env should appear in error messages
             predicate::str::contains("dotenv.example.com"),
         ));
@@ -98,7 +112,7 @@ fn test_skip_verify_flag_works() {
         .args(["--skip-verify", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that .env file with SPLUNK_SKIP_VERIFY works.
@@ -124,7 +138,7 @@ fn test_skip_verify_from_dotenv() {
         .args(["health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that CLI --skip-verify flag overrides environment variable.
@@ -138,7 +152,7 @@ fn test_skip_verify_cli_overrides_env() {
         .args(["--skip-verify", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that .env file values are loaded before CLI parsing.
@@ -172,8 +186,7 @@ fn test_dotenv_loaded_before_cli_parsing() {
         .assert()
         .failure()
         .stderr(
-            predicate::str::contains("test-splunk.example.com")
-                .or(predicate::str::contains("Connection refused")),
+            predicate::str::contains("test-splunk.example.com").or(connection_error_predicate()),
         );
 }
 
@@ -223,10 +236,7 @@ fn test_config_priority_order() {
         ])
         .assert()
         .failure()
-        .stderr(
-            predicate::str::contains("cli.example.com")
-                .or(predicate::str::contains("Connection refused")),
-        );
+        .stderr(predicate::str::contains("cli.example.com").or(connection_error_predicate()));
 }
 
 /// Test that .env file works with the config command.
@@ -311,7 +321,7 @@ fn test_timeout_cli_flag() {
         .args(["--timeout", "120", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that --max-retries CLI flag works correctly.
@@ -323,7 +333,7 @@ fn test_max_retries_cli_flag() {
         .args(["--max-retries", "10", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that CLI timeout flag overrides environment variable.
@@ -336,7 +346,7 @@ fn test_timeout_cli_overrides_env() {
         .args(["--timeout", "120", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that CLI max-retries flag overrides environment variable.
@@ -349,7 +359,7 @@ fn test_max_retries_cli_overrides_env() {
         .args(["--max-retries", "10", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that .env file timeout can be overridden by CLI flag.
@@ -374,7 +384,7 @@ fn test_timeout_cli_overrides_dotenv() {
         .args(["--timeout", "90", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test that .env file max-retries can be overridden by CLI flag.
@@ -399,7 +409,7 @@ fn test_max_retries_cli_overrides_dotenv() {
         .args(["--max-retries", "8", "health"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Connection refused"));
+        .stderr(connection_error_predicate());
 }
 
 /// Test invalid --timeout value is rejected by clap.

@@ -16,8 +16,8 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, FiredAlert, Input, KvStoreCollection, KvStoreRecord, LogEntry,
-    SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, FiredAlert, Input,
+    KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer, WorkloadPool, WorkloadRule,
 };
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
@@ -257,6 +257,46 @@ pub trait Formatter {
 
     /// Format detailed macro information.
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String>;
+
+    /// Format audit events list.
+    fn format_audit_events(&self, events: &[AuditEvent], detailed: bool) -> Result<String>;
+
+    /// Format dashboards list.
+    fn format_dashboards(&self, dashboards: &[Dashboard], detailed: bool) -> Result<String>;
+
+    /// Format detailed dashboard information.
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String>;
+
+    /// Format data models list.
+    fn format_datamodels(&self, datamodels: &[DataModel], detailed: bool) -> Result<String>;
+
+    /// Format detailed data model information.
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String>;
+
+    /// Format workload pools list.
+    fn format_workload_pools(&self, pools: &[WorkloadPool], detailed: bool) -> Result<String>;
+
+    /// Format workload rules list.
+    fn format_workload_rules(&self, rules: &[WorkloadRule], detailed: bool) -> Result<String>;
+
+    /// Format SHC status.
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String>;
+
+    /// Format SHC members list.
+    fn format_shc_members(
+        &self,
+        members: &[ShcMemberOutput],
+        pagination: &Pagination,
+    ) -> Result<String>;
+
+    /// Format SHC captain.
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String>;
+
+    /// Format SHC config.
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String>;
+
+    /// Format SHC management operation result.
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String>;
 }
 
 /// Cluster peer output structure.
@@ -305,6 +345,111 @@ pub struct ClusterInfoOutput {
 /// Cluster management operation output structure.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClusterManagementOutput {
+    pub operation: String,
+    pub target: String,
+    pub success: bool,
+    pub message: String,
+}
+
+/// SHC member output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShcMemberOutput {
+    pub id: String,
+    pub host: String,
+    pub port: u32,
+    pub status: String,
+    pub is_captain: bool,
+    pub guid: String,
+    pub site: Option<String>,
+}
+
+impl From<splunk_client::ShcMember> for ShcMemberOutput {
+    fn from(member: splunk_client::ShcMember) -> Self {
+        Self {
+            id: member.id,
+            host: member.host,
+            port: member.port,
+            status: member.status,
+            is_captain: member.is_captain,
+            guid: member.guid,
+            site: member.site,
+        }
+    }
+}
+
+/// SHC captain output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShcCaptainOutput {
+    pub id: String,
+    pub host: String,
+    pub port: u32,
+    pub guid: String,
+    pub is_dynamic_captain: bool,
+    pub site: Option<String>,
+}
+
+impl From<splunk_client::ShcCaptain> for ShcCaptainOutput {
+    fn from(captain: splunk_client::ShcCaptain) -> Self {
+        Self {
+            id: captain.id,
+            host: captain.host,
+            port: captain.port,
+            guid: captain.guid,
+            is_dynamic_captain: captain.is_dynamic_captain,
+            site: captain.site,
+        }
+    }
+}
+
+/// SHC status output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShcStatusOutput {
+    pub is_captain: bool,
+    pub is_searchable: bool,
+    pub captain_uri: Option<String>,
+    pub member_count: u32,
+    pub minimum_member_count: Option<u32>,
+    pub rolling_restart_flag: Option<bool>,
+    pub service_ready_flag: Option<bool>,
+}
+
+impl From<splunk_client::ShcStatus> for ShcStatusOutput {
+    fn from(status: splunk_client::ShcStatus) -> Self {
+        Self {
+            is_captain: status.is_captain,
+            is_searchable: status.is_searchable,
+            captain_uri: status.captain_uri,
+            member_count: status.member_count,
+            minimum_member_count: status.minimum_member_count,
+            rolling_restart_flag: status.rolling_restart_flag,
+            service_ready_flag: status.service_ready_flag,
+        }
+    }
+}
+
+/// SHC config output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShcConfigOutput {
+    pub id: String,
+    pub replication_factor: Option<u32>,
+    pub captain_uri: Option<String>,
+    pub shcluster_label: Option<String>,
+}
+
+impl From<splunk_client::ShcConfig> for ShcConfigOutput {
+    fn from(config: splunk_client::ShcConfig) -> Self {
+        Self {
+            id: config.id,
+            replication_factor: config.replication_factor,
+            captain_uri: config.captain_uri,
+            shcluster_label: config.shcluster_label,
+        }
+    }
+}
+
+/// SHC management operation output structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShcManagementOutput {
     pub operation: String,
     pub target: String,
     pub success: bool,

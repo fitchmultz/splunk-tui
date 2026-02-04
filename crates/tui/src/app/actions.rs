@@ -52,8 +52,11 @@ impl App {
             | Action::LoadRoles { .. }
             | Action::LoadSearchPeers { .. }
             | Action::LoadInputs { .. }
-            | Action::LoadFiredAlerts
+            | Action::LoadForwarders { .. }
+            | Action::LoadFiredAlerts { .. }
             | Action::LoadLookups { .. }
+            | Action::LoadDashboards { .. }
+            | Action::LoadDataModels { .. }
             | Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
@@ -100,9 +103,17 @@ impl App {
             | Action::MoreInputsLoaded(_)
             | Action::FiredAlertsLoaded(_)
             | Action::MoreFiredAlertsLoaded(_)
+            | Action::AuditEventsLoaded(_)
+            | Action::ConfigFilesLoaded(_)
+            | Action::ConfigStanzasLoaded(_)
             | Action::SettingsLoaded(_)
             | Action::OverviewLoaded(_)
-            | Action::MultiInstanceOverviewLoaded(_) => {
+            | Action::MultiInstanceOverviewLoaded(_)
+            // Macros
+            | Action::MacrosLoaded(_)
+            | Action::MacroCreated(_)
+            | Action::MacroUpdated(_)
+            | Action::MacroDeleted(_) => {
                 self.handle_data_loading_action(action);
             }
 

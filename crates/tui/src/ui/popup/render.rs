@@ -46,7 +46,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::InstallAppDialog { .. }
         | PopupType::CreateProfile { .. }
         | PopupType::EditProfile { .. }
-        | PopupType::EditSavedSearch { .. } => theme.border,
+        | PopupType::EditSavedSearch { .. }
+        | PopupType::CreateMacro { .. }
+        | PopupType::EditMacro { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -80,7 +82,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateProfile { .. }
         | PopupType::EditProfile { .. }
         | PopupType::DeleteProfileConfirm { .. }
-        | PopupType::EditSavedSearch { .. } => Wrap { trim: false },
+        | PopupType::EditSavedSearch { .. }
+        | PopupType::CreateMacro { .. }
+        | PopupType::EditMacro { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

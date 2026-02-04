@@ -31,11 +31,13 @@
 use crossterm::event::KeyEvent;
 use serde_json::Value;
 use splunk_client::ClientError;
+use splunk_client::SearchMode;
 use splunk_client::models::{
-    App as SplunkApp, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza, FiredAlert,
-    Forwarder, HealthCheckOutput, Index, Input, KvStoreCollection, KvStoreRecord, KvStoreStatus,
-    LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Macro, Role, SavedSearch,
-    SearchJobStatus, SearchPeer, SplunkHealth, User,
+    App as SplunkApp, AuditEvent, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza,
+    Dashboard, DataModel, FiredAlert, Forwarder, HealthCheckOutput, Index, Input,
+    KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
+    LogEntry, LookupTable, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, ShcCaptain,
+    ShcConfig, ShcMember, ShcStatus, SplunkHealth, User, WorkloadPool, WorkloadRule,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -288,10 +290,69 @@ pub enum Action {
         /// Offset for pagination
         offset: u64,
     },
-    /// Load the list of fired alerts
-    LoadFiredAlerts,
+    /// Load the list of fired alerts with pagination
+    LoadFiredAlerts {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
     /// Load more fired alerts (pagination)
     LoadMoreFiredAlerts,
+    /// Load audit events with time range
+    LoadAuditEvents {
+        /// Number of events to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+        /// Earliest time for events
+        earliest: String,
+        /// Latest time for events
+        latest: String,
+    },
+    /// Load recent audit events (last 24 hours)
+    LoadRecentAuditEvents {
+        /// Number of events to load
+        count: u64,
+    },
+    /// Load the list of dashboards with pagination
+    LoadDashboards {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more dashboards (pagination)
+    LoadMoreDashboards,
+    /// Load the list of data models with pagination
+    LoadDataModels {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more data models (pagination)
+    LoadMoreDataModels,
+    /// Load the list of workload pools with pagination
+    LoadWorkloadPools {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more workload pools (pagination)
+    LoadMoreWorkloadPools,
+    /// Load the list of workload rules with pagination
+    LoadWorkloadRules {
+        /// Number of items to load
+        count: u64,
+        /// Offset for pagination
+        offset: u64,
+    },
+    /// Load more workload rules (pagination)
+    LoadMoreWorkloadRules,
+    /// Toggle workload view mode (Pools <-> Rules)
+    ToggleWorkloadViewMode,
     /// Switch to settings screen
     SwitchToSettings,
     /// Toggle cluster view mode (Summary <-> Peers)
@@ -303,7 +364,11 @@ pub enum Action {
     RunSearch {
         query: String,
         search_defaults: SearchDefaults,
+        search_mode: SearchMode,
+        realtime_window: Option<u64>,
     },
+    /// Toggle search mode between Normal and Realtime.
+    ToggleSearchMode,
     /// Validate SPL syntax (debounced).
     ///
     /// Triggered when the user pauses typing in the search query input.
@@ -447,6 +512,63 @@ pub enum Action {
     FiredAlertsLoaded(Result<Vec<FiredAlert>, Arc<ClientError>>),
     /// Result of loading more fired alerts (pagination)
     MoreFiredAlertsLoaded(Result<Vec<FiredAlert>, Arc<ClientError>>),
+    /// Result of loading audit events
+    AuditEventsLoaded(Result<Vec<AuditEvent>, Arc<ClientError>>),
+    /// Result of loading dashboards
+    DashboardsLoaded(Result<Vec<Dashboard>, Arc<ClientError>>),
+    /// Result of loading more dashboards (pagination)
+    MoreDashboardsLoaded(Result<Vec<Dashboard>, Arc<ClientError>>),
+    /// Result of loading data models
+    DataModelsLoaded(Result<Vec<DataModel>, Arc<ClientError>>),
+    /// Result of loading more data models (pagination)
+    MoreDataModelsLoaded(Result<Vec<DataModel>, Arc<ClientError>>),
+    /// Result of loading workload pools
+    WorkloadPoolsLoaded(Result<Vec<WorkloadPool>, Arc<ClientError>>),
+    /// Result of loading more workload pools (pagination)
+    MoreWorkloadPoolsLoaded(Result<Vec<WorkloadPool>, Arc<ClientError>>),
+    /// Result of loading workload rules
+    WorkloadRulesLoaded(Result<Vec<WorkloadRule>, Arc<ClientError>>),
+    /// Result of loading more workload rules (pagination)
+    MoreWorkloadRulesLoaded(Result<Vec<WorkloadRule>, Arc<ClientError>>),
+
+    // SHC Actions
+    /// Load SHC status
+    LoadShcStatus,
+    /// Load SHC members
+    LoadShcMembers,
+    /// Load SHC captain
+    LoadShcCaptain,
+    /// Load SHC config
+    LoadShcConfig,
+    /// Toggle SHC view mode (Summary <-> Members)
+    ToggleShcViewMode,
+    /// Result of loading SHC status
+    ShcStatusLoaded(Result<ShcStatus, Arc<ClientError>>),
+    /// Result of loading SHC members
+    ShcMembersLoaded(Result<Vec<ShcMember>, Arc<ClientError>>),
+    /// Result of loading SHC captain
+    ShcCaptainLoaded(Result<ShcCaptain, Arc<ClientError>>),
+    /// Result of loading SHC config
+    ShcConfigLoaded(Result<ShcConfig, Arc<ClientError>>),
+
+    // SHC Management Actions
+    /// Add a member to the SHC
+    AddShcMember { target_uri: String },
+    /// Result of adding SHC member
+    ShcMemberAdded { result: Result<(), String> },
+    /// Remove a member from the SHC
+    RemoveShcMember { member_guid: String },
+    /// Result of removing SHC member
+    ShcMemberRemoved { result: Result<(), String> },
+    /// Trigger SHC rolling restart
+    RollingRestartShc { force: bool },
+    /// Result of rolling restart
+    ShcRollingRestarted { result: Result<(), String> },
+    /// Set a specific member as captain
+    SetShcCaptain { member_guid: String },
+    /// Result of setting captain
+    ShcCaptainSet { result: Result<(), String> },
+
     /// Result of loading persisted settings
     SettingsLoaded(PersistedState),
     /// Result of background health status check

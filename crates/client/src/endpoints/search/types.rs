@@ -37,6 +37,9 @@ pub struct CreateJobOptions {
     /// Search mode (normal or realtime).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub search_mode: Option<SearchMode>,
+    /// Real-time window in seconds (only used when search_mode is Realtime).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub realtime_window: Option<u64>,
 }
 
 /// Search mode for search jobs.

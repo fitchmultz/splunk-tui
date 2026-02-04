@@ -17,7 +17,10 @@ use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
 
-/// Handle loading indexes.
+/// Handle loading indexes with pagination support.
+///
+/// Emits `IndexesLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreIndexesLoaded` when offset > 0 (pagination).
 pub async fn handle_load_indexes(
     client: SharedClient,
     tx: Sender<Action>,
@@ -29,10 +32,18 @@ pub async fn handle_load_indexes(
         let mut c = client.lock().await;
         match c.list_indexes(Some(count), Some(offset)).await {
             Ok(indexes) => {
-                let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
+                } else {
+                    let _ = tx.send(Action::MoreIndexesLoaded(Ok(indexes))).await;
+                }
             }
             Err(e) => {
-                let _ = tx.send(Action::IndexesLoaded(Err(Arc::new(e)))).await;
+                if offset == 0 {
+                    let _ = tx.send(Action::IndexesLoaded(Err(Arc::new(e)))).await;
+                } else {
+                    let _ = tx.send(Action::MoreIndexesLoaded(Err(Arc::new(e)))).await;
+                }
             }
         }
     });

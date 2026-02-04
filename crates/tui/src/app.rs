@@ -141,7 +141,10 @@ impl App {
                 offset: 0,
             }),
             CurrentScreen::Configs => Some(Action::LoadConfigFiles),
-            CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts),
+            CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts {
+                count: self.fired_alerts_pagination.page_size,
+                offset: 0,
+            }),
             CurrentScreen::Forwarders => Some(Action::LoadForwarders {
                 count: self.forwarders_pagination.page_size,
                 offset: 0,
@@ -150,6 +153,25 @@ impl App {
                 count: self.lookups_pagination.page_size,
                 offset: 0,
             }),
+            CurrentScreen::Audit => Some(Action::LoadAuditEvents {
+                count: 50,
+                offset: 0,
+                earliest: "-24h".to_string(),
+                latest: "now".to_string(),
+            }),
+            CurrentScreen::Dashboards => Some(Action::LoadDashboards {
+                count: self.dashboards_pagination.page_size,
+                offset: 0,
+            }),
+            CurrentScreen::DataModels => Some(Action::LoadDataModels {
+                count: self.data_models_pagination.page_size,
+                offset: 0,
+            }),
+            CurrentScreen::WorkloadManagement => Some(Action::LoadWorkloadPools {
+                count: self.workload_pools_pagination.page_size,
+                offset: 0,
+            }),
+            CurrentScreen::Shc => Some(Action::LoadShcStatus),
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
@@ -229,7 +251,107 @@ impl App {
                     None
                 }
             }
+            CurrentScreen::Inputs => {
+                if self.inputs_pagination.can_load_more() {
+                    Some(Action::LoadInputs {
+                        count: self.inputs_pagination.page_size,
+                        offset: self.inputs_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::FiredAlerts => {
+                if self.fired_alerts_pagination.can_load_more() {
+                    Some(Action::LoadFiredAlerts {
+                        count: self.fired_alerts_pagination.page_size,
+                        offset: self.fired_alerts_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Dashboards => {
+                if self.dashboards_pagination.can_load_more() {
+                    Some(Action::LoadDashboards {
+                        count: self.dashboards_pagination.page_size,
+                        offset: self.dashboards_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::DataModels => {
+                if self.data_models_pagination.can_load_more() {
+                    Some(Action::LoadDataModels {
+                        count: self.data_models_pagination.page_size,
+                        offset: self.data_models_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::WorkloadManagement => {
+                // Load more based on current view mode
+                match self.workload_view_mode {
+                    crate::app::state::WorkloadViewMode::Pools => {
+                        if self.workload_pools_pagination.can_load_more() {
+                            Some(Action::LoadWorkloadPools {
+                                count: self.workload_pools_pagination.page_size,
+                                offset: self.workload_pools_pagination.current_offset,
+                            })
+                        } else {
+                            None
+                        }
+                    }
+                    crate::app::state::WorkloadViewMode::Rules => {
+                        if self.workload_rules_pagination.can_load_more() {
+                            Some(Action::LoadWorkloadRules {
+                                count: self.workload_rules_pagination.page_size,
+                                offset: self.workload_rules_pagination.current_offset,
+                            })
+                        } else {
+                            None
+                        }
+                    }
+                }
+            }
             _ => None,
+        }
+    }
+
+    /// Translate a LoadMore* action into a concrete Load* action with pagination params.
+    ///
+    /// This helper centralizes the translation logic for all pagination triggers,
+    /// making it testable and reusable from both the main loop and input handlers.
+    ///
+    /// # Arguments
+    /// * `action` - The action to translate
+    ///
+    /// # Returns
+    /// The translated action, or the original action if no translation is needed
+    pub fn translate_load_more_action(&self, action: Action) -> Action {
+        match action {
+            Action::LoadMoreIndexes
+            | Action::LoadMoreJobs
+            | Action::LoadMoreApps
+            | Action::LoadMoreUsers
+            | Action::LoadMoreSearchPeers
+            | Action::LoadMoreForwarders
+            | Action::LoadMoreLookups
+            | Action::LoadMoreInputs
+            | Action::LoadMoreFiredAlerts
+            | Action::LoadMoreDashboards
+            | Action::LoadMoreDataModels
+            | Action::LoadMoreWorkloadPools
+            | Action::LoadMoreWorkloadRules => {
+                self.load_more_action_for_current_screen().unwrap_or(action)
+            }
+            Action::LoadMoreInternalLogs => Action::LoadInternalLogs {
+                count: self.internal_logs_defaults.count,
+                earliest: self.internal_logs_defaults.earliest_time.clone(),
+            },
+            _ => action,
         }
     }
 

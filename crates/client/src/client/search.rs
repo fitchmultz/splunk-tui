@@ -12,40 +12,142 @@
 
 use crate::client::SplunkClient;
 use crate::endpoints;
+use crate::endpoints::search::SearchMode;
 use crate::error::Result;
 use crate::models::{SavedSearch, SearchJobResults, SearchJobStatus, ValidateSplResponse};
 use splunk_config::constants::{
     DEFAULT_MAX_RESULTS, DEFAULT_MAX_WAIT_SECS, DEFAULT_POLL_INTERVAL_MS,
 };
 
+/// A request to execute a search job.
+///
+/// This struct bundles all search parameters to avoid the `too_many_arguments`
+/// lint and provide a clean, builder-friendly API.
+///
+/// # What this struct handles:
+/// - Query string and wait behavior
+/// - Time bounds (earliest/latest)
+/// - Result limits and search mode
+/// - Real-time window configuration
+///
+/// # What this struct does NOT handle:
+/// - Authentication or session management
+/// - HTTP transport details
+/// - Result parsing
+///
+/// # Invariants
+/// - `realtime_window` is only meaningful when `search_mode` is `Some(SearchMode::Realtime)`
+/// - `wait` controls client-side polling; the server may still process asynchronously
+#[derive(Debug, Clone, Copy)]
+pub struct SearchRequest<'a> {
+    /// The SPL query to execute.
+    pub query: &'a str,
+    /// Whether to wait for the job to complete before returning.
+    pub wait: bool,
+    /// Optional earliest time bound (e.g., "-24h").
+    pub earliest_time: Option<&'a str>,
+    /// Optional latest time bound (e.g., "now").
+    pub latest_time: Option<&'a str>,
+    /// Maximum number of results to return.
+    pub max_results: Option<u64>,
+    /// Optional search mode (Normal or Realtime).
+    pub search_mode: Option<SearchMode>,
+    /// Optional real-time window in seconds (only for Realtime mode).
+    pub realtime_window: Option<u64>,
+}
+
+impl<'a> SearchRequest<'a> {
+    /// Create a new search request with the given query and wait flag.
+    ///
+    /// All optional fields default to `None`.
+    pub fn new(query: &'a str, wait: bool) -> Self {
+        Self {
+            query,
+            wait,
+            earliest_time: None,
+            latest_time: None,
+            max_results: None,
+            search_mode: None,
+            realtime_window: None,
+        }
+    }
+
+    /// Set the time bounds for the search.
+    pub fn time_bounds(mut self, earliest: &'a str, latest: &'a str) -> Self {
+        self.earliest_time = Some(earliest);
+        self.latest_time = Some(latest);
+        self
+    }
+
+    /// Set the maximum number of results to return.
+    pub fn max_results(mut self, max: u64) -> Self {
+        self.max_results = Some(max);
+        self
+    }
+
+    /// Set the search mode.
+    pub fn search_mode(mut self, mode: SearchMode) -> Self {
+        self.search_mode = Some(mode);
+        self
+    }
+
+    /// Set the real-time window in seconds.
+    pub fn realtime_window(mut self, window: u64) -> Self {
+        self.realtime_window = Some(window);
+        self
+    }
+
+    /// Get the effective max results count, using the default if not set.
+    fn effective_max_results(&self) -> u64 {
+        self.max_results.unwrap_or(DEFAULT_MAX_RESULTS)
+    }
+}
+
+/// Build `CreateJobOptions` for the `search` method.
+///
+/// Maps `request.wait` directly to `CreateJobOptions.wait`.
+fn build_create_job_options_for_search(
+    request: &SearchRequest<'_>,
+) -> endpoints::search::CreateJobOptions {
+    endpoints::search::CreateJobOptions {
+        wait: Some(request.wait),
+        earliest_time: request.earliest_time.map(|s| s.to_string()),
+        latest_time: request.latest_time.map(|s| s.to_string()),
+        max_count: request.max_results,
+        search_mode: request.search_mode,
+        realtime_window: request.realtime_window,
+        ..Default::default()
+    }
+}
+
+/// Build `CreateJobOptions` for the `search_with_progress` method.
+///
+/// Always forces `wait: Some(false)` so that polling/progress remains a client concern,
+/// regardless of `request.wait`.
+fn build_create_job_options_for_search_with_progress(
+    request: &SearchRequest<'_>,
+) -> endpoints::search::CreateJobOptions {
+    endpoints::search::CreateJobOptions {
+        wait: Some(false),
+        earliest_time: request.earliest_time.map(|s| s.to_string()),
+        latest_time: request.latest_time.map(|s| s.to_string()),
+        max_count: request.max_results,
+        search_mode: request.search_mode,
+        realtime_window: request.realtime_window,
+        ..Default::default()
+    }
+}
+
 impl SplunkClient {
     /// Create and execute a search job, waiting for completion.
     ///
     /// # Arguments
-    /// * `query` - The SPL query to execute
-    /// * `wait` - Whether to wait for the job to complete before returning
-    /// * `earliest_time` - Optional earliest time bound (e.g., "-24h")
-    /// * `latest_time` - Optional latest time bound (e.g., "now")
-    /// * `max_results` - Maximum number of results to return
-    pub async fn search(
-        &mut self,
-        query: &str,
-        wait: bool,
-        earliest_time: Option<&str>,
-        latest_time: Option<&str>,
-        max_results: Option<u64>,
-    ) -> Result<Vec<serde_json::Value>> {
-        let options = endpoints::search::CreateJobOptions {
-            wait: Some(wait),
-            earliest_time: earliest_time.map(|s| s.to_string()),
-            latest_time: latest_time.map(|s| s.to_string()),
-            max_count: max_results,
-            ..Default::default()
-        };
+    /// * `request` - The search request containing query, time bounds, and options
+    pub async fn search(&mut self, request: SearchRequest<'_>) -> Result<Vec<serde_json::Value>> {
+        let options = build_create_job_options_for_search(&request);
+        let sid = self.create_search_job(request.query, &options).await?;
 
-        let sid = self.create_search_job(query, &options).await?;
-
-        if wait {
+        if request.wait {
             let auth_token = self.get_auth_token().await?;
             endpoints::wait_for_job(
                 &self.http,
@@ -61,7 +163,7 @@ impl SplunkClient {
         }
 
         let results = self
-            .get_search_results(&sid, max_results.unwrap_or(DEFAULT_MAX_RESULTS), 0)
+            .get_search_results(&sid, request.effective_max_results(), 0)
             .await?;
 
         Ok(results.results)
@@ -69,7 +171,7 @@ impl SplunkClient {
 
     /// Create and execute a search job with optional progress reporting.
     ///
-    /// When `wait` is true, this polls job status and can report `done_progress` (0.0–1.0).
+    /// When `request.wait` is true, this polls job status and can report `done_progress` (0.0–1.0).
     /// Progress reporting is a UI-layer concern; the callback is optional and may be `None`.
     ///
     /// This method is designed to allow the CLI to display progress bars without
@@ -79,27 +181,24 @@ impl SplunkClient {
     /// - `results`: The search results as JSON values
     /// - `sid`: The search job ID for pagination or further operations
     /// - `total_count`: Optional total count of results (may be None if not available)
+    ///
+    /// # Arguments
+    /// * `request` - The search request containing query, time bounds, and options
+    /// * `progress_cb` - Optional callback for progress updates (0.0–1.0)
+    ///
+    /// # Invariants
+    /// Job creation is always non-blocking (`CreateJobOptions.wait = Some(false)`),
+    /// regardless of `request.wait`, so that polling/progress remains a client concern.
+    /// `request.wait` only controls whether the client polls before fetching results.
     pub async fn search_with_progress(
         &mut self,
-        query: &str,
-        wait: bool,
-        earliest_time: Option<&str>,
-        latest_time: Option<&str>,
-        max_results: Option<u64>,
+        request: SearchRequest<'_>,
         progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
     ) -> Result<(Vec<serde_json::Value>, String, Option<u64>)> {
-        let options = endpoints::search::CreateJobOptions {
-            // Always create the job in non-blocking mode so callers can poll and show progress.
-            wait: Some(false),
-            earliest_time: earliest_time.map(|s| s.to_string()),
-            latest_time: latest_time.map(|s| s.to_string()),
-            max_count: max_results,
-            ..Default::default()
-        };
+        let options = build_create_job_options_for_search_with_progress(&request);
+        let sid = self.create_search_job(request.query, &options).await?;
 
-        let sid = self.create_search_job(query, &options).await?;
-
-        if wait {
+        if request.wait {
             let auth_token = self.get_auth_token().await?;
             endpoints::search::wait_for_job_with_progress(
                 &self.http,
@@ -116,7 +215,7 @@ impl SplunkClient {
         }
 
         let results = self
-            .get_search_results(&sid, max_results.unwrap_or(DEFAULT_MAX_RESULTS), 0)
+            .get_search_results(&sid, request.effective_max_results(), 0)
             .await?;
 
         Ok((results.results, sid, results.total))
@@ -285,6 +384,11 @@ impl SplunkClient {
         description: Option<&str>,
         disabled: Option<bool>,
     ) -> Result<()> {
+        let params = endpoints::SavedSearchUpdateParams {
+            search,
+            description,
+            disabled,
+        };
         crate::retry_call!(
             self,
             __token,
@@ -293,9 +397,7 @@ impl SplunkClient {
                 &self.base_url,
                 &__token,
                 name,
-                search,
-                description,
-                disabled,
+                &params,
                 self.max_retries,
                 self.metrics.as_ref(),
             )
@@ -344,5 +446,125 @@ impl SplunkClient {
             )
             .await
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_search_request_new_defaults() {
+        let req = SearchRequest::new("search index=main", true);
+        assert_eq!(req.query, "search index=main");
+        assert!(req.wait);
+        assert_eq!(req.earliest_time, None);
+        assert_eq!(req.latest_time, None);
+        assert_eq!(req.max_results, None);
+        assert_eq!(req.search_mode, None);
+        assert_eq!(req.realtime_window, None);
+    }
+
+    #[test]
+    fn test_search_request_builder_methods() {
+        let req = SearchRequest::new("search index=main", false)
+            .time_bounds("-24h", "now")
+            .max_results(100)
+            .search_mode(SearchMode::Realtime)
+            .realtime_window(60);
+
+        assert_eq!(req.earliest_time, Some("-24h"));
+        assert_eq!(req.latest_time, Some("now"));
+        assert_eq!(req.max_results, Some(100));
+        assert_eq!(req.search_mode, Some(SearchMode::Realtime));
+        assert_eq!(req.realtime_window, Some(60));
+    }
+
+    #[test]
+    fn test_effective_max_results_default() {
+        let req = SearchRequest::new("search index=main", true);
+        assert_eq!(req.effective_max_results(), DEFAULT_MAX_RESULTS);
+    }
+
+    #[test]
+    fn test_effective_max_results_explicit() {
+        let req = SearchRequest::new("search index=main", true).max_results(500);
+        assert_eq!(req.effective_max_results(), 500);
+    }
+
+    #[test]
+    fn test_effective_max_results_zero() {
+        let req = SearchRequest::new("search index=main", true).max_results(0);
+        assert_eq!(req.effective_max_results(), 0);
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_maps_wait() {
+        let req = SearchRequest::new("search index=main", true);
+        let opts = build_create_job_options_for_search(&req);
+        assert_eq!(opts.wait, Some(true));
+
+        let req = SearchRequest::new("search index=main", false);
+        let opts = build_create_job_options_for_search(&req);
+        assert_eq!(opts.wait, Some(false));
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_maps_time_bounds() {
+        let req = SearchRequest::new("search index=main", true).time_bounds("-24h", "now");
+        let opts = build_create_job_options_for_search(&req);
+        assert_eq!(opts.earliest_time, Some("-24h".to_string()));
+        assert_eq!(opts.latest_time, Some("now".to_string()));
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_maps_max_results() {
+        let req = SearchRequest::new("search index=main", true).max_results(100);
+        let opts = build_create_job_options_for_search(&req);
+        assert_eq!(opts.max_count, Some(100));
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_maps_search_mode() {
+        let req = SearchRequest::new("search index=main", true).search_mode(SearchMode::Realtime);
+        let opts = build_create_job_options_for_search(&req);
+        assert_eq!(opts.search_mode, Some(SearchMode::Realtime));
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_maps_realtime_window() {
+        let req = SearchRequest::new("search index=main", true).realtime_window(60);
+        let opts = build_create_job_options_for_search(&req);
+        assert_eq!(opts.realtime_window, Some(60));
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_with_progress_forces_wait_false() {
+        // Even when request.wait is true, the job creation should be non-blocking
+        let req = SearchRequest::new("search index=main", true);
+        let opts = build_create_job_options_for_search_with_progress(&req);
+        assert_eq!(opts.wait, Some(false));
+
+        // Also verify when request.wait is false
+        let req = SearchRequest::new("search index=main", false);
+        let opts = build_create_job_options_for_search_with_progress(&req);
+        assert_eq!(opts.wait, Some(false));
+    }
+
+    #[test]
+    fn test_build_create_job_options_for_search_with_progress_preserves_other_fields() {
+        let req = SearchRequest::new("search index=main", true)
+            .time_bounds("-1h", "now")
+            .max_results(50)
+            .search_mode(SearchMode::Normal)
+            .realtime_window(30);
+
+        let opts = build_create_job_options_for_search_with_progress(&req);
+        assert_eq!(opts.wait, Some(false));
+        assert_eq!(opts.earliest_time, Some("-1h".to_string()));
+        assert_eq!(opts.latest_time, Some("now".to_string()));
+        assert_eq!(opts.max_count, Some(50));
+        assert_eq!(opts.search_mode, Some(SearchMode::Normal));
+        assert_eq!(opts.realtime_window, Some(30));
     }
 }

@@ -14,6 +14,7 @@ use crate::app::state::{
     ClusterViewMode, CurrentScreen, ListPaginationState, SearchInputMode, SortState,
 };
 use crate::app::structs::{App, ConnectionContext, SplValidationState};
+use splunk_client::SearchMode;
 use splunk_config::constants::DEFAULT_SEARCH_PAGE_SIZE;
 use splunk_config::{
     ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
@@ -77,6 +78,15 @@ impl App {
 
         let mut lookups_state = ratatui::widgets::TableState::default();
         lookups_state.select(Some(0));
+
+        let mut audit_state = ratatui::widgets::TableState::default();
+        audit_state.select(Some(0));
+
+        let mut dashboards_state = ratatui::widgets::ListState::default();
+        dashboards_state.select(Some(0));
+
+        let mut data_models_state = ratatui::widgets::ListState::default();
+        data_models_state.select(Some(0));
 
         let (
             auto_refresh,
@@ -170,6 +180,27 @@ impl App {
             lookups: None,
             lookups_state,
             lookups_pagination: ListPaginationState::new(30, 1000),
+            audit_events: None,
+            audit_state,
+            dashboards: None,
+            dashboards_state,
+            dashboards_pagination: ListPaginationState::new(30, 1000),
+            data_models: None,
+            data_models_state,
+            data_models_pagination: ListPaginationState::new(30, 1000),
+            workload_pools: None,
+            workload_pools_state: ratatui::widgets::TableState::default(),
+            workload_pools_pagination: ListPaginationState::new(30, 1000),
+            workload_rules: None,
+            workload_rules_state: ratatui::widgets::TableState::default(),
+            workload_rules_pagination: ListPaginationState::new(30, 1000),
+            workload_view_mode: crate::app::state::WorkloadViewMode::Pools,
+            shc_status: None,
+            shc_members: None,
+            shc_captain: None,
+            shc_config: None,
+            shc_members_state: ratatui::widgets::TableState::default(),
+            shc_view_mode: crate::app::state::ShcViewMode::Summary,
             config_files: None,
             config_files_state,
             selected_config_file: None,
@@ -239,6 +270,8 @@ impl App {
             spl_validation_state: SplValidationState::default(),
             spl_validation_pending: false,
             last_input_change: None,
+            search_mode: SearchMode::Normal,
+            realtime_window: None,
         }
     }
 

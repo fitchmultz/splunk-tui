@@ -12,6 +12,24 @@
 //! - `SPLUNK_API_TOKEN` is set to "test-token" unless overridden.
 
 use assert_cmd::Command;
+use predicates::{Predicate, prelude::*};
+
+/// Returns a predicate that matches common connection error messages.
+///
+/// This predicate matches:
+/// - "Connection refused" (standard TCP connection failure)
+/// - "client error (Connect)" (reqwest connection error)
+/// - "invalid peer certificate" (TLS certificate errors)
+/// - "API error (401)" (authentication errors when a real server responds)
+///
+/// Use this in tests that expect connection failures when no Splunk server is running.
+#[allow(dead_code)]
+pub fn connection_error_predicate() -> impl Predicate<str> {
+    predicate::str::contains("Connection refused")
+        .or(predicate::str::contains("client error (Connect)"))
+        .or(predicate::str::contains("invalid peer certificate"))
+        .or(predicate::str::contains("API error (401)"))
+}
 
 /// Returns a hermetic `splunk-cli` command for integration testing.
 ///

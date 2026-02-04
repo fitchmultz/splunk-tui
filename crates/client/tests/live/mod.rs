@@ -106,8 +106,22 @@ pub fn load_test_env_or_skip() -> Option<LiveEnv> {
 
     // Override any pre-existing SPLUNK_* variables so `.env.test` is the source of truth,
     // but only if the file exists (CI or other environments may not have it).
-    if env_path.exists() {
-        dotenvy::from_path_override(env_path).ok();
+    if env_path.exists()
+        && let Err(e) = dotenvy::from_path_override(&env_path)
+    {
+        // Only log the error, don't fail - tests should be best-effort
+        eprintln!(
+            "Warning: failed to load .env.test from {}: {}",
+            env_path.display(),
+            // Use a safe error message that doesn't leak file contents
+            match e {
+                dotenvy::Error::Io(_) => "I/O error".to_string(),
+                dotenvy::Error::LineParse(_, idx) => {
+                    format!("parse error at position {}", idx)
+                }
+                _ => "unknown error".to_string(),
+            }
+        );
     }
 
     use splunk_config::env_var_or_none;

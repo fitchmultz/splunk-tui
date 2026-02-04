@@ -8,16 +8,20 @@
 //! - Other output formats.
 //! - File I/O.
 
+use crate::formatters::table::workload;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput,
+    LicenseInstallOutput, LicensePoolOperationOutput, ShcCaptainOutput, ShcConfigOutput,
+    ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
+use splunk_client::models::AuditEvent;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
+    ConfigFile, ConfigStanza, DataModel, Input, KvStoreCollection, KvStoreRecord, SearchPeer,
 };
 use splunk_client::{
-    App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
+    App, Dashboard, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch,
+    SearchJobStatus, User,
 };
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -26,6 +30,8 @@ use super::alerts;
 use super::apps;
 use super::cluster;
 use super::configs;
+use super::dashboards;
+use super::datamodels;
 use super::forwarders;
 use super::health;
 use super::indexes;
@@ -41,6 +47,7 @@ use super::roles;
 use super::saved_searches;
 use super::search;
 use super::search_peers;
+use super::shc;
 use super::users;
 
 /// Pagination metadata for table output.
@@ -248,9 +255,171 @@ impl Formatter for TableFormatter {
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
         macros::format_macro_info(macro_info)
     }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        if events.is_empty() {
+            return Ok("No audit events found.".to_string());
+        }
+
+        // Tab-separated table format
+        let mut lines = Vec::new();
+
+        // Header
+        lines.push("Time\tUser\tAction\tTarget\tResult".to_string());
+
+        // Rows
+        for event in events {
+            lines.push(format!(
+                "{}\t{}\t{}\t{}\t{}",
+                event.time, event.user, event.action, event.target, event.result
+            ));
+        }
+
+        Ok(lines.join("\n"))
+    }
+
+    fn format_dashboards(&self, dashboards: &[Dashboard], detailed: bool) -> Result<String> {
+        dashboards::format_dashboards(dashboards, detailed)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        dashboards::format_dashboard(dashboard)
+    }
+
+    fn format_datamodels(&self, datamodels_list: &[DataModel], detailed: bool) -> Result<String> {
+        datamodels::format_datamodels(datamodels_list, detailed)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        datamodels::format_datamodel(datamodel)
+    }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_pools(pools, detailed)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        detailed: bool,
+    ) -> Result<String> {
+        workload::format_workload_rules(rules, detailed)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        shc::format_shc_status(status)
+    }
+
+    fn format_shc_members(
+        &self,
+        members: &[ShcMemberOutput],
+        pagination: &Pagination,
+    ) -> Result<String> {
+        shc::format_shc_members(members, pagination)
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        shc::format_shc_captain(captain)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        shc::format_shc_config(config)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        shc::format_shc_management(output)
+    }
 }
 
 impl TableFormatter {
+    /// Table-only formatter for SHC status with pagination footer (members only).
+    #[allow(clippy::collapsible_if)]
+    pub fn format_shc_status_paginated(
+        &self,
+        shc_status: &ShcStatusOutput,
+        detailed: bool,
+        members_output: Option<Vec<ShcMemberOutput>>,
+        members_pagination: Option<Pagination>,
+    ) -> Result<String> {
+        let mut output = format!(
+            "SHC Status:\n\
+             Is Captain: {}\n\
+             Is Searchable: {}\n\
+             Captain URI: {}\n\
+             Member Count: {}\n\
+             Minimum Member Count: {}\n\
+             Rolling Restart: {}\n\
+             Service Ready: {}\n",
+            shc_status.is_captain,
+            shc_status.is_searchable,
+            shc_status.captain_uri.as_deref().unwrap_or("N/A"),
+            shc_status.member_count,
+            shc_status
+                .minimum_member_count
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+            shc_status
+                .rolling_restart_flag
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+            shc_status
+                .service_ready_flag
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "N/A".to_string()),
+        );
+
+        if detailed {
+            if let Some(members) = members_output {
+                output.push_str("\nSHC Members:\n");
+
+                if members.is_empty() {
+                    // Offset out of range is especially important to explain in table output.
+                    if let Some(p) = members_pagination
+                        && let Some(total) = p.total
+                        && total > 0
+                        && p.offset >= total
+                    {
+                        output.push_str(&format!(
+                            "  No members found for offset {} (total {}).\n",
+                            p.offset, total
+                        ));
+                    } else {
+                        output.push_str("  No members found.\n");
+                    }
+                } else {
+                    output.push_str("  Host\t\tStatus\tCaptain\tGUID\t\tSite\n");
+                    output.push_str("  ----\t\t------\t-------\t----\t\t----\n");
+                    for member in &members {
+                        let captain_marker = if member.is_captain { "Yes" } else { "" };
+                        output.push_str(&format!(
+                            "  {}:{}\t{}\t{}\t{}\t{}\n",
+                            member.host,
+                            member.port,
+                            member.status,
+                            captain_marker,
+                            &member.guid[..member.guid.len().min(8)],
+                            member.site.as_deref().unwrap_or("-"),
+                        ));
+                    }
+                }
+
+                if let Some(p) = members_pagination
+                    && let Some(footer) = build_pagination_footer(p, members.len())
+                {
+                    output.push('\n');
+                    output.push_str(&footer);
+                    output.push('\n');
+                }
+            }
+        }
+
+        Ok(output)
+    }
+
     /// Table-only formatter for indexes with pagination footer.
     ///
     /// NOTE: This does not attempt to discover a server-side total for indexes (not exposed by the
@@ -430,6 +599,134 @@ impl TableFormatter {
         let mut output = self.format_kvstore_collections(collections)?;
 
         if let Some(footer) = build_pagination_footer(pagination, collections.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for dashboards with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for dashboards (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_dashboards_paginated(
+        &self,
+        dashboards: &[Dashboard],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if dashboards.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No dashboards found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No dashboards found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_dashboards(dashboards, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, dashboards.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for data models with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for data models (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_datamodels_paginated(
+        &self,
+        datamodels: &[DataModel],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if datamodels.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No data models found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No data models found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_datamodels(datamodels, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, datamodels.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for audit events with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for audit events (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_audit_events_paginated(
+        &self,
+        events: &[AuditEvent],
+        _detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if events.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No audit events found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No audit events found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = Formatter::format_audit_events(self, events, _detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, events.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Table-only formatter for workload pools with pagination footer.
+    ///
+    /// NOTE: This does not attempt to discover a server-side total for workload pools (not exposed by the
+    /// current client API return type). Footer omits total/page-count when `total` is None.
+    pub fn format_workload_pools_paginated(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if pools.is_empty() {
+            if pagination.offset > 0 {
+                return Ok(format!(
+                    "No workload pools found for offset {}.",
+                    pagination.offset
+                ));
+            }
+            return Ok("No workload pools found.".to_string());
+        }
+
+        // Reuse existing table rendering, then append footer.
+        let mut output = self.format_workload_pools(pools, detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, pools.len()) {
             output.push('\n');
             output.push_str(&footer);
             output.push('\n');

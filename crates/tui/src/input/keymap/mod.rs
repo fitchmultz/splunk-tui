@@ -42,6 +42,11 @@ pub enum Section {
     FiredAlerts,
     Forwarders,
     Lookups,
+    Audit,
+    Dashboards,
+    DataModels,
+    Workload,
+    Shc,
     Settings,
     Overview,
     MultiInstance,
@@ -187,6 +192,11 @@ fn screen_to_section(screen: CurrentScreen) -> Section {
         CurrentScreen::FiredAlerts => Section::FiredAlerts,
         CurrentScreen::Forwarders => Section::Forwarders,
         CurrentScreen::Lookups => Section::Lookups,
+        CurrentScreen::Audit => Section::Audit,
+        CurrentScreen::Dashboards => Section::Dashboards,
+        CurrentScreen::DataModels => Section::DataModels,
+        CurrentScreen::WorkloadManagement => Section::Workload,
+        CurrentScreen::Shc => Section::Shc,
         CurrentScreen::Settings => Section::Settings,
         CurrentScreen::Overview => Section::Overview,
         CurrentScreen::MultiInstance => Section::MultiInstance,
@@ -273,6 +283,9 @@ fn shorten_description(desc: &'static str) -> &'static str {
         "New macro" => "New",
         "Delete macro" => "Delete",
         "Copy definition" => "Copy",
+        "Refresh workload" => "Refresh",
+        "Toggle pools/rules" => "Toggle",
+        "Export workload" => "Export",
         _ => desc,
     }
 }
@@ -304,6 +317,11 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::FiredAlerts => &["r", "j/k or Up/Down", "Ctrl+c"],
         CurrentScreen::Forwarders => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
         CurrentScreen::Lookups => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Audit => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Dashboards => &["r", "j/k or Up/Down"],
+        CurrentScreen::DataModels => &["r", "j/k or Up/Down"],
+        CurrentScreen::WorkloadManagement => &["r", "w", "j/k or Up/Down", "Ctrl+e"],
+        CurrentScreen::Shc => &["r", "m", "j/k or Up/Down", "Ctrl+e"],
     };
 
     // Sort hints by priority order

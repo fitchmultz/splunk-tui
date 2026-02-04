@@ -84,8 +84,11 @@
 
 mod alerts;
 mod apps;
+mod audit;
 mod cluster;
 mod configs;
+mod dashboards;
+mod datamodels;
 mod export;
 mod forwarders;
 mod health;
@@ -103,7 +106,9 @@ mod profiles;
 mod roles;
 mod search_peers;
 mod searches;
+mod shc;
 mod users;
+mod workload;
 
 use crate::action::Action;
 use splunk_client::SplunkClient;
@@ -178,17 +183,15 @@ pub async fn handle_side_effects(
             disabled,
             iseval,
         } => {
-            macros::handle_create_macro(
-                client,
-                tx,
+            let params = macros::CreateMacroEffectParams {
                 name,
                 definition,
                 args,
                 description,
                 disabled,
                 iseval,
-            )
-            .await;
+            };
+            macros::handle_create_macro(client, tx, params).await;
         }
         Action::UpdateMacro {
             name,
@@ -198,17 +201,15 @@ pub async fn handle_side_effects(
             disabled,
             iseval,
         } => {
-            macros::handle_update_macro(
-                client,
-                tx,
+            let params = macros::UpdateMacroEffectParams {
                 name,
                 definition,
                 args,
                 description,
                 disabled,
                 iseval,
-            )
-            .await;
+            };
+            macros::handle_update_macro(client, tx, params).await;
         }
         Action::DeleteMacro { name } => {
             macros::handle_delete_macro(client, tx, name).await;
@@ -280,8 +281,8 @@ pub async fn handle_side_effects(
         Action::LoadConfigFiles => {
             configs::handle_load_config_files(client, tx).await;
         }
-        Action::LoadFiredAlerts => {
-            alerts::handle_load_fired_alerts(client, tx).await;
+        Action::LoadFiredAlerts { count, offset } => {
+            alerts::handle_load_fired_alerts(client, tx, count, offset).await;
         }
         Action::LoadMoreFiredAlerts => {
             // This action is handled by the main loop which has access to state
@@ -306,8 +307,18 @@ pub async fn handle_side_effects(
         Action::RunSearch {
             query,
             search_defaults,
+            search_mode,
+            realtime_window,
         } => {
-            searches::handle_run_search(client, tx, query, search_defaults).await;
+            searches::handle_run_search(
+                client,
+                tx,
+                query,
+                search_defaults,
+                search_mode,
+                realtime_window,
+            )
+            .await;
         }
         Action::LoadMoreSearchResults { sid, offset, count } => {
             searches::handle_load_more_search_results(client, tx, sid, offset, count).await;
@@ -441,6 +452,70 @@ pub async fn handle_side_effects(
         }
         Action::DeleteProfile { name } => {
             profiles::handle_delete_profile(config_manager.clone(), tx.clone(), name).await;
+        }
+        Action::LoadAuditEvents {
+            count,
+            offset,
+            earliest,
+            latest,
+        } => {
+            audit::handle_load_audit_events(client, tx, count, offset, earliest, latest).await;
+        }
+        Action::LoadRecentAuditEvents { count } => {
+            audit::handle_load_recent_audit_events(client, tx, count).await;
+        }
+        Action::LoadDashboards { count, offset } => {
+            dashboards::handle_load_dashboards(client, tx, count, offset).await;
+        }
+        Action::LoadMoreDashboards => {
+            // This action is handled by the main loop which has access to state
+            // It reads dashboards_pagination and sends LoadDashboards with updated offset
+        }
+        Action::LoadDataModels { count, offset } => {
+            datamodels::handle_load_datamodels(client, tx, count, offset).await;
+        }
+        Action::LoadMoreDataModels => {
+            // This action is handled by the main loop which has access to state
+            // It reads data_models_pagination and sends LoadDataModels with updated offset
+        }
+        Action::LoadWorkloadPools { count, offset } => {
+            workload::handle_load_workload_pools(client, tx, count, offset).await;
+        }
+        Action::LoadMoreWorkloadPools => {
+            // This action is handled by the main loop which has access to state
+            // It reads workload_pools_pagination and sends LoadWorkloadPools with updated offset
+        }
+        Action::LoadWorkloadRules { count, offset } => {
+            workload::handle_load_workload_rules(client, tx, count, offset).await;
+        }
+        Action::LoadMoreWorkloadRules => {
+            // This action is handled by the main loop which has access to state
+            // It reads workload_rules_pagination and sends LoadWorkloadRules with updated offset
+        }
+        // SHC actions
+        Action::LoadShcStatus => {
+            shc::handle_load_shc_status(client, tx).await;
+        }
+        Action::LoadShcMembers => {
+            shc::handle_load_shc_members(client, tx).await;
+        }
+        Action::LoadShcCaptain => {
+            shc::handle_load_shc_captain(client, tx).await;
+        }
+        Action::LoadShcConfig => {
+            shc::handle_load_shc_config(client, tx).await;
+        }
+        Action::AddShcMember { target_uri } => {
+            shc::handle_add_shc_member(client, tx, target_uri).await;
+        }
+        Action::RemoveShcMember { member_guid } => {
+            shc::handle_remove_shc_member(client, tx, member_guid).await;
+        }
+        Action::RollingRestartShc { force } => {
+            shc::handle_rolling_restart_shc(client, tx, force).await;
+        }
+        Action::SetShcCaptain { member_guid } => {
+            shc::handle_set_shc_captain(client, tx, member_guid).await;
         }
         _ => {}
     }

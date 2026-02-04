@@ -17,6 +17,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 mod confirm;
 mod export;
 mod index;
+mod macros;
 mod misc;
 mod profile;
 mod saved_search;
@@ -101,6 +102,11 @@ impl App {
 
             // Saved search edit popup
             Some(PopupType::EditSavedSearch { .. }) => self.handle_saved_search_popup(key),
+
+            // Macro creation/editing popups
+            Some(PopupType::CreateMacro { .. } | PopupType::EditMacro { .. }) => {
+                self.handle_macro_popup(key)
+            }
 
             // No popup active
             None => None,

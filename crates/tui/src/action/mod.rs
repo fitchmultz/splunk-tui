@@ -57,11 +57,16 @@ mod tests;
 /// # Example
 ///
 /// ```ignore
+/// use splunk_client::SearchRequest;
+///
 /// let progress_tx = tx.clone();
 /// let mut progress_callback = progress_callback_to_action_sender(progress_tx);
 ///
+/// let request = SearchRequest::new(query, true)
+///     .time_bounds(earliest, latest)
+///     .max_results(max_results);
 /// let (results, sid, total) = client
-///     .search_with_progress(query, true, earliest, latest, max_results, Some(&mut progress_callback))
+///     .search_with_progress(request, Some(&mut progress_callback))
 ///     .await?;
 /// ```
 pub fn progress_callback_to_action_sender(tx: Sender<Action>) -> impl FnMut(f64) + Send {

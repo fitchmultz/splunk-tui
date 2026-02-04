@@ -65,7 +65,9 @@ When configured this way, `splunk-tui` will look up the password for the account
 
 Environment variables take precedence over the configuration file.
 
-**Note**: Empty environment variable values (e.g., `SPLUNK_API_TOKEN=""`) or whitespace-only values (e.g., `SPLUNK_TIMEOUT="  "`) are treated as unset and will not override values from the configuration file or other sources. This allows you to leave placeholder variables empty in `.env` files.
+**Note**: 
+- Empty environment variable values (e.g., `SPLUNK_API_TOKEN=""`) or whitespace-only values (e.g., `SPLUNK_TIMEOUT="  "`) are treated as unset and will not override values from the configuration file or other sources. This allows you to leave placeholder variables empty in `.env` files.
+- Non-empty values are automatically trimmed (leading/trailing whitespace removed). For example, `SPLUNK_USERNAME=" admin "` will be treated as `admin`.
 
 | Variable | Description |
 |----------|-------------|
@@ -411,6 +413,25 @@ splunk-cli search "index=main | head 10" --wait --earliest "-24h"
 - `-e, --earliest <TIME>`: Earliest time (e.g., `-24h`, `2024-01-01T00:00:00`)
 - `-l, --latest <TIME>`: Latest time (e.g., `now`)
 - `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
+- `--realtime`: Run search in real-time mode
+- `--realtime-window <SECONDS>`: Real-time window in seconds (e.g., 60 for a 60-second window). Only valid with `--realtime`.
+
+**Real-time Searches:**
+
+Real-time searches continuously stream results as events arrive. Unlike normal searches that query historical data, real-time searches monitor incoming data within a sliding time window.
+
+```bash
+# Real-time search with default window
+splunk-cli search "index=main" --realtime --wait
+
+# Real-time search with 60-second window
+splunk-cli search "index=main" --realtime --realtime-window 60 --wait
+
+# Real-time search that returns immediately with SID (no waiting)
+splunk-cli search "index=main" --realtime
+```
+
+**Note:** Real-time searches run continuously until cancelled. Use `Ctrl+C` to cancel a running real-time search, or omit `--wait` to start the search without waiting for results.
 
 #### `indexes`
 List and manage Splunk indexes.
@@ -820,13 +841,14 @@ splunk-cli list-all --all-profiles --output json
 - `saved-searches`: "available" or "error"
 
 #### `config`
+
 Manage configuration profiles.
 
 ```bash
 splunk-cli -o json config list
 splunk-cli config set my-profile --base-url https://localhost:8089 --username admin
 splunk-cli config show my-profile
-splunk-cli config edit my-profile --use-keyring
+splunk-cli config edit my-profile
 splunk-cli config delete my-profile
 ```
 
@@ -837,15 +859,25 @@ splunk-cli config delete my-profile
   - `-p, --password <PASS>`: Password for session authentication (will prompt if not provided)
   - `-a, --api-token <TOKEN>`: API token for bearer authentication (will prompt if not provided)
   - `-s, --skip-verify`: Skip TLS certificate verification
-  - `-t, --timeout-seconds <SECONDS>`: Connection timeout
+  - `-t, --timeout <SECONDS>`: Connection timeout (updates the profile's stored timeout, not a one-off runtime override)
   - `-m, --max-retries <NUMBER>`: Maximum number of retries
-  - `--use-keyring`: Store credentials in system keyring
+  - `--plaintext`: Store credentials as plaintext instead of using system keyring
 - `show <profile-name>`: Display a profile's configuration
 - `edit <profile-name>`: Edit a profile interactively
-  - `--use-keyring`: Store credentials in system keyring
+  - `--plaintext`: Store credentials as plaintext instead of using system keyring
   - Prompts for each field with current values as defaults
   - Press Enter when prompted for password/token to keep existing values
 - `delete <profile-name>`: Delete a profile
+
+##### Credential Storage Security
+
+By default, `splunk-cli` and `splunk-tui` store credentials in your system's secure keyring (macOS Keychain, Windows Credential Locker, or Linux Secret Service). This provides the best security by keeping secrets out of the configuration file.
+
+If the keyring is unavailable or you prefer to store credentials in the configuration file:
+- CLI: Use the `--plaintext` flag with `config set` or `config edit`
+- TUI: Uncheck "Use Keyring" in the profile creation/edit dialog
+
+**Security Warning**: Storing credentials as plaintext in `config.json` is less secure and should be avoided in production environments.
 
 ---
 
@@ -939,6 +971,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `Home`: Go to top
 - `End`: Go to bottom
 - `j,k,...`: Type search query
+- `Ctrl+r`: Toggle real-time mode
 
 #### Jobs Screen
 - `r`: Refresh jobs
@@ -1063,6 +1096,33 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export forwarders
 - `Ctrl+c`: Copy selected forwarder name
 - `j/k or Up/Down`: Navigate list
+
+#### Lookups Screen
+- `r`: Refresh lookup tables
+- `Ctrl+e`: Export lookup tables
+- `Ctrl+c`: Copy selected lookup name
+- `j/k or Up/Down`: Navigate list
+
+#### Dashboards Screen
+- `r`: Refresh dashboards
+- `j/k or Up/Down`: Navigate list
+
+#### Data Models Screen
+- `r`: Refresh data models
+- `j/k or Up/Down`: Navigate list
+
+#### Workload Management Screen
+- `r`: Refresh workload
+- `w`: Toggle pools/rules
+- `j/k or Up/Down`: Navigate list
+- `Ctrl+e`: Export workload
+
+#### SHC Screen
+- `r`: Refresh SHC info
+- `m`: Toggle members view
+- `j/k or Up/Down`: Navigate members list
+- `Ctrl+e`: Export SHC info
+- `Ctrl+c`: Copy captain URI
 
 #### Settings Screen
 - `t`: Cycle theme

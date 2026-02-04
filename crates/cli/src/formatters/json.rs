@@ -10,12 +10,14 @@
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
-    LicenseInstallOutput, LicensePoolOperationOutput, Pagination,
+    LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
 };
 use anyhow::Result;
 use serde::Serialize;
 use splunk_client::models::{
-    ConfigFile, ConfigStanza, Input, KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer,
+    AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, Input, KvStoreCollection,
+    KvStoreRecord, LogEntry, SearchPeer,
 };
 use splunk_client::{
     App, Forwarder, HealthCheckOutput, Index, KvStoreStatus, SavedSearch, SearchJobStatus, User,
@@ -282,5 +284,70 @@ impl Formatter for JsonFormatter {
 
     fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
         Ok(serde_json::to_string_pretty(macro_info)?)
+    }
+
+    fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full AuditEvent struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(events)?)
+    }
+
+    fn format_dashboards(&self, dashboards: &[Dashboard], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full Dashboard struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(dashboards)?)
+    }
+
+    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
+        Ok(serde_json::to_string_pretty(dashboard)?)
+    }
+
+    fn format_datamodels(&self, datamodels: &[DataModel], _detailed: bool) -> Result<String> {
+        // JSON formatter always outputs full DataModel struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(datamodels)?)
+    }
+
+    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
+        Ok(serde_json::to_string_pretty(datamodel)?)
+    }
+
+    fn format_workload_pools(
+        &self,
+        pools: &[splunk_client::WorkloadPool],
+        _detailed: bool,
+    ) -> Result<String> {
+        // JSON formatter always outputs full WorkloadPool struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(pools)?)
+    }
+
+    fn format_workload_rules(
+        &self,
+        rules: &[splunk_client::WorkloadRule],
+        _detailed: bool,
+    ) -> Result<String> {
+        // JSON formatter always outputs full WorkloadRule struct regardless of detailed flag
+        Ok(serde_json::to_string_pretty(rules)?)
+    }
+
+    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(status)?)
+    }
+
+    fn format_shc_members(
+        &self,
+        members: &[ShcMemberOutput],
+        _pagination: &Pagination,
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(members)?)
+    }
+
+    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(captain)?)
+    }
+
+    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(config)?)
+    }
+
+    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
+        Ok(serde_json::to_string_pretty(output)?)
     }
 }

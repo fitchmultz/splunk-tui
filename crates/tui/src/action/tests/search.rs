@@ -1,5 +1,6 @@
 //! Tests for search-related action redaction.
 
+use splunk_client::SearchMode;
 use splunk_config::SearchDefaults;
 
 use crate::action::tests::redacted_debug;
@@ -10,6 +11,8 @@ fn test_redact_run_search() {
     let action = Action::RunSearch {
         query: "SELECT * FROM users WHERE password='secret'".to_string(),
         search_defaults: SearchDefaults::default(),
+        search_mode: SearchMode::Normal,
+        realtime_window: None,
     };
     let output = redacted_debug(&action);
 

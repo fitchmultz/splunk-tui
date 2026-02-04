@@ -411,3 +411,59 @@ fn test_list_all_config_path_cli_precedence() {
         .stdout(predicate::str::contains("https://cli.splunk.local:8089"))
         .stdout(predicate::str::contains("env-profile").not());
 }
+
+/// Test that multi-profile mode ignores connection environment variables.
+///
+/// This test verifies that when running in multi-profile mode (--all-profiles or --profiles),
+/// the command does NOT require or use SPLUNK_BASE_URL or other connection env vars.
+/// If the refactor accidentally routes multi-profile through single-profile path,
+/// this test would fail because the invalid SPLUNK_BASE_URL would cause config validation to fail.
+#[test]
+fn test_list_all_multi_profile_ignores_connection_env_vars() {
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let config_path = temp_dir.path().join("config.json");
+
+    // Create a config file with a valid-looking profile
+    let config = serde_json::json!({
+        "profiles": {
+            "test-profile": {
+                "base_url": "https://test.splunk.local:8089",
+                "username": "admin"
+            }
+        }
+    });
+    std::fs::write(&config_path, config.to_string()).unwrap();
+
+    let mut cmd = crate::common::splunk_cmd();
+
+    // Set the valid config path
+    cmd.env("SPLUNK_CONFIG_PATH", config_path.to_str().unwrap());
+
+    // Set SPLUNK_BASE_URL to an intentionally invalid value
+    // In multi-profile mode, this should be ignored and the command should succeed
+    cmd.env("SPLUNK_BASE_URL", "not-a-valid-url");
+
+    // Also clear the default API token to ensure we're not accidentally
+    // falling back to single-profile mode
+    cmd.env_remove("SPLUNK_API_TOKEN");
+
+    cmd.args([
+        "list-all",
+        "--all-profiles",
+        "--output",
+        "json",
+        "--resources",
+        "health",
+    ]);
+
+    // Command should succeed despite invalid SPLUNK_BASE_URL
+    // because multi-profile mode doesn't use/validate it
+    cmd.assert()
+        .success()
+        // Verify we got multi-profile output structure
+        .stdout(predicate::str::contains("\"profiles\""))
+        .stdout(predicate::str::contains("\"timestamp\""))
+        // Verify the profile from config file was used
+        .stdout(predicate::str::contains("test-profile"))
+        .stdout(predicate::str::contains("https://test.splunk.local:8089"));
+}
