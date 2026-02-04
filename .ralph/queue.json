@@ -1,4 +1,161 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0318",
+      "status": "todo",
+      "title": "Audit and fix TUI glitches, visual bugs, and input handling edge cases",
+      "priority": "critical",
+      "tags": [
+        "tui",
+        "ux",
+        "robustness",
+        "bug-fix",
+        "polish"
+      ],
+      "scope": [
+        "crates/tui/src/app/",
+        "crates/tui/src/input/",
+        "crates/tui/src/ui/",
+        "crates/tui/src/runtime/",
+        "crates/tui/tests/",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: 'WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED'",
+        "User requirement: 'USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS'",
+        "User requirement: 'IT CANNOT BE CLUNKY OR HARD TO GRASP'",
+        "TUI has 25+ screens with complex state management in crates/tui/src/app/",
+        "Input handling spans multiple modules: input/, app/input/, app/popups/",
+        "Error handling exists but may have gaps in async error propagation"
+      ],
+      "plan": [
+        "Review all input handlers (crates/tui/src/app/input/*.rs) for key event handling edge cases (rapid keypresses, focus changes mid-input, etc.)",
+        "Audit popup handling in crates/tui/src/app/popups/ for dismiss-on-escape, focus restoration, and z-index issues",
+        "Check screen transition logic for race conditions between data loading and navigation",
+        "Review error display flow: ensure errors don't get stuck, can be dismissed, and don't block navigation",
+        "Test pagination across all list screens (Jobs, Indexes, Apps, etc.) for consistent behavior",
+        "Validate search input handling: cursor positioning, history navigation, SPL validation debounce",
+        "Check toast notification system for overflow, overlapping, and auto-dismiss timing issues",
+        "Review progress indicator behavior during long-running operations (search, export)",
+        "Test terminal resize handling across all screens",
+        "Add or fix unit/integration tests for any identified issues",
+        "Run full test suite: make test && make test-integration",
+        "Run make ci to ensure all quality gates pass"
+      ],
+      "notes": [],
+      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
+      "created_at": "2026-02-04T18:46:17Z",
+      "updated_at": "2026-02-04T18:46:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0319",
+      "status": "todo",
+      "title": "Implement TUI UX polish: consistent feedback, loading states, and flow optimization",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "ux",
+        "polish",
+        "feedback",
+        "loading-states"
+      ],
+      "scope": [
+        "crates/tui/src/ui/",
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/app/popups/",
+        "crates/tui/src/ui/toast.rs",
+        "docs/usage.md"
+      ],
+      "evidence": [
+        "User request: 'IT CANNOT BE CLUNKY OR HARD TO GRASP'",
+        "User requirement: 'NO UNNECESSARY FLOWS'",
+        "Current TUI has 25+ screens with varying UX patterns",
+        "Loading states exist but may not be consistent across all async operations",
+        "AGENTS.md requires CLI/TUI feature parity and shared abstractions"
+      ],
+      "plan": [
+        "Audit all loading states: ensure every async operation shows clear, consistent loading feedback",
+        "Review empty states: ensure all screens show helpful messages when no data exists",
+        "Standardize error presentation: consistent error banners/toasts across all screens",
+        "Optimize common workflows: reduce keystrokes for frequent operations (search, job inspection, navigation)",
+        "Review and improve help text: ensure in-app '?' help is accurate and complete",
+        "Check keyboard shortcut discoverability: ensure users can learn shortcuts naturally",
+        "Validate color/theme consistency across all screens and states",
+        "Review footer/help bar consistency: same format, same information density",
+        "Ensure clipboard/copy operations provide clear success feedback",
+        "Test profile switching flow for smoothness and clarity",
+        "Update docs/usage.md if any UX changes affect user-facing behavior",
+        "Run make generate to regenerate keybindings docs if needed",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [],
+      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
+      "created_at": "2026-02-04T18:46:17Z",
+      "updated_at": "2026-02-04T18:46:17Z",
+      "depends_on": [
+        "RQ-0318"
+      ],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0320",
+      "status": "todo",
+      "title": "End-to-end TUI robustness validation and stress testing",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "testing",
+        "robustness",
+        "e2e",
+        "validation"
+      ],
+      "scope": [
+        "crates/tui/tests/",
+        "scripts/",
+        "Makefile",
+        "make test-live",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: 'MAKE SURE EVERYTHING ACTUALLY WORKS'",
+        "TUI has 50+ test files but coverage may have gaps in integration scenarios",
+        "AGENTS.md: 'make ci' is the local gate before merging",
+        "Project has live tests (test-live) for real Splunk server validation",
+        "Tests include snapshot tests for UI regression prevention"
+      ],
+      "plan": [
+        "Review existing test coverage: identify gaps in screen transitions, error paths, and async flows",
+        "Add stress tests for rapid input sequences (key spam, quick navigation)",
+        "Add tests for connection failure recovery and reconnection flows",
+        "Validate session expiration handling: ensure graceful degradation and clear re-auth prompts",
+        "Test with live Splunk instance: make test-live (requires configured .env.test)",
+        "Verify snapshot tests are current and add any missing UI regression tests",
+        "Test clipboard integration across different terminal emulators if possible",
+        "Validate export functionality end-to-end with various formats and data sizes",
+        "Run performance check: ensure TUI remains responsive with large result sets",
+        "Document any manual testing steps needed for full validation",
+        "Run full CI pipeline: make ci",
+        "Verify all tests pass and TUI binary works correctly when installed"
+      ],
+      "notes": [],
+      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
+      "created_at": "2026-02-04T18:46:17Z",
+      "updated_at": "2026-02-04T18:46:17Z",
+      "depends_on": [
+        "RQ-0318",
+        "RQ-0319"
+      ],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    }
+  ]
 }
