@@ -1,6 +1,9 @@
 //! SPL (Splunk Processing Language) syntax highlighting.
 //!
 //! Provides functions to tokenize and style SPL queries for TUI display.
+//!
+//! This module includes both a regex-based highlighter (current default) and
+//! infrastructure for tree-sitter based highlighting when a grammar is available.
 
 use ratatui::{
     style::{Modifier, Style},
@@ -8,6 +11,191 @@ use ratatui::{
 };
 use splunk_config::Theme;
 use std::sync::LazyLock;
+use tree_sitter::{Parser, Query, QueryCursor};
+
+/// Syntax highlighter using tree-sitter for accurate parsing.
+///
+/// Note: This requires a tree-sitter grammar for SPL. Since `tree-sitter-spl`
+/// is not currently available as a published crate, this serves as infrastructure
+/// for future enhancement. The regex-based `highlight_spl()` function remains
+/// the primary implementation.
+pub struct SyntaxHighlighter {
+    parser: Parser,
+    query: Option<Query>,
+}
+
+/// Token types for syntax highlighting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TokenType {
+    /// SPL commands like `search`, `stats`, `eval`
+    Command,
+    /// Boolean operators like `AND`, `OR`, `NOT`
+    Operator,
+    /// Statistical functions like `count`, `avg`, `sum`
+    Function,
+    /// String literals
+    String,
+    /// Numeric literals
+    Number,
+    /// Comments (backtick-style in SPL)
+    Comment,
+    /// Pipe character `|`
+    Pipe,
+    /// Comparison operators like `=`, `!=`, `>`, `<`
+    Comparison,
+    /// Punctuation like `(`, `)`, `[`, `]`, `,`
+    Punctuation,
+    /// Macro references like `my_macro`
+    Macro,
+    /// Default/unrecognized tokens
+    Default,
+}
+
+impl SyntaxHighlighter {
+    /// Create a new syntax highlighter.
+    ///
+    /// Attempts to initialize tree-sitter parser. If no SPL grammar is available,
+    /// the parser will be initialized but queries will fail gracefully.
+    pub fn new() -> anyhow::Result<Self> {
+        let parser = Parser::new();
+
+        // Note: When tree-sitter-spl becomes available, initialize it here:
+        // parser.set_language(&tree_sitter_spl::LANGUAGE.into())?;
+        // let query = Query::new(
+        //     &tree_sitter_spl::LANGUAGE.into(),
+        //     include_str!("spl_highlight_query.scm")
+        // )?;
+
+        // For now, return without query since no SPL grammar is available
+        Ok(Self {
+            parser,
+            query: None,
+        })
+    }
+
+    /// Check if tree-sitter highlighting is available.
+    pub fn is_available(&self) -> bool {
+        self.query.is_some()
+    }
+
+    /// Highlight code using tree-sitter.
+    ///
+    /// Returns a vector of (style, text) tuples for ratatui rendering.
+    /// Falls back to regex-based highlighting if tree-sitter is not available.
+    pub fn highlight(&mut self, code: &str, theme: &Theme) -> Vec<(Style, String)> {
+        // If tree-sitter is not available, fall back to regex-based highlighting
+        if self.query.is_none() {
+            return self.highlight_fallback(code, theme);
+        }
+
+        let query = self.query.as_ref().unwrap();
+
+        // Attempt to parse - if it fails, fall back
+        let tree = match self.parser.parse(code, None) {
+            Some(tree) => tree,
+            None => return self.highlight_fallback(code, theme),
+        };
+
+        let mut cursor = QueryCursor::new();
+        let matches = cursor.matches(query, tree.root_node(), code.as_bytes());
+
+        let mut results = Vec::new();
+        let mut last_end = 0;
+
+        for m in matches {
+            for capture in m.captures {
+                let node = capture.node;
+                let start = node.start_byte();
+                let end = node.end_byte();
+
+                // Add any text between last capture and this one
+                if start > last_end {
+                    results.push((Style::default(), code[last_end..start].to_string()));
+                }
+
+                let token_type = self.capture_to_token_type(capture.index);
+                let style = self.style_for_token(token_type, theme);
+                let text = code[start..end].to_string();
+
+                results.push((style, text));
+                last_end = end;
+            }
+        }
+
+        // Add remaining text
+        if last_end < code.len() {
+            results.push((Style::default(), code[last_end..].to_string()));
+        }
+
+        results
+    }
+
+    /// Convert tree-sitter capture index to token type.
+    fn capture_to_token_type(&self, capture_index: u32) -> TokenType {
+        // Map capture indices to token types based on query definition
+        // This would be defined when we have an actual SPL grammar
+        match capture_index {
+            0 => TokenType::Command,
+            1 => TokenType::Function,
+            2 => TokenType::String,
+            3 => TokenType::Number,
+            4 => TokenType::Comment,
+            5 => TokenType::Operator,
+            _ => TokenType::Default,
+        }
+    }
+
+    /// Get style for a token type.
+    fn style_for_token(&self, token_type: TokenType, theme: &Theme) -> Style {
+        match token_type {
+            TokenType::Command => Style::default()
+                .fg(theme.syntax_command)
+                .add_modifier(Modifier::BOLD),
+            TokenType::Operator => Style::default()
+                .fg(theme.syntax_operator)
+                .add_modifier(Modifier::BOLD),
+            TokenType::Function => Style::default().fg(theme.syntax_number),
+            TokenType::String => Style::default().fg(theme.syntax_string),
+            TokenType::Number => Style::default().fg(theme.syntax_number),
+            TokenType::Comment => Style::default().fg(theme.syntax_comment),
+            TokenType::Pipe => Style::default()
+                .fg(theme.syntax_pipe)
+                .add_modifier(Modifier::BOLD),
+            TokenType::Comparison => Style::default().fg(theme.syntax_comparison),
+            TokenType::Punctuation => Style::default().fg(theme.syntax_punctuation),
+            TokenType::Macro => Style::default()
+                .fg(theme.syntax_command)
+                .add_modifier(Modifier::BOLD),
+            TokenType::Default => Style::default(),
+        }
+    }
+
+    /// Fallback highlighting using regex-based approach.
+    fn highlight_fallback(&self, code: &str, theme: &Theme) -> Vec<(Style, String)> {
+        let text = highlight_spl(code, theme);
+        let mut results = Vec::new();
+
+        for line in text.lines {
+            for span in line.spans {
+                results.push((span.style, span.content.to_string()));
+            }
+            results.push((Style::default(), "\n".to_string()));
+        }
+
+        // Remove trailing newline if present
+        if results.last().map(|(_, s)| s == "\n").unwrap_or(false) {
+            results.pop();
+        }
+
+        results
+    }
+}
+
+impl Default for SyntaxHighlighter {
+    fn default() -> Self {
+        Self::new().expect("Failed to create SyntaxHighlighter")
+    }
+}
 
 /// List of common SPL commands to highlight.
 static SPL_COMMANDS: LazyLock<Vec<&'static str>> = LazyLock::new(|| {

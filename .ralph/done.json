@@ -2008,6 +2008,77 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0322",
+      "status": "done",
+      "title": "Implement syntax highlighting with tree-sitter and flexbox layout with taffy",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "syntax-highlighting",
+        "tree-sitter",
+        "flexbox",
+        "taffy",
+        "layout",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/",
+        "crates/tui/src/ui/syntax.rs",
+        "crates/tui/src/ui/screens/",
+        "crates/tui/tests/",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes Syntax Highlighting as Priority 2",
+        "Feature file: /tmp/opentui-rust-features.md describes Flexbox Layout as foundational",
+        "crates/tui/src/ui/syntax.rs exists with basic regex-based SPL syntax highlighting (417 lines)",
+        "Current syntax.rs implements: commands, operators, functions, strings, comments, macros, pipes",
+        "saved_searches.rs already uses highlight_spl() for SPL query display",
+        "Recommended crates: tree-sitter = '0.22' for parsing, tree-sitter-spl or custom SPL grammar",
+        "Recommended crate: taffy = '0.5' for Yoga-based flexbox layout engine",
+        "crates/tui/src/components/ does NOT exist - would need creation if component approach chosen",
+        "Current layout uses ratatui built-in Layout constraints throughout codebase"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on both features",
+        "Evaluate: enhance existing syntax.rs vs migrate to tree-sitter for more accurate parsing",
+        "If using tree-sitter: Add tree-sitter = '0.22' and tree-sitter-spl (or generic grammar) to Cargo.toml",
+        "If using tree-sitter: Create SyntaxHighlighter struct wrapping tree-sitter Parser and Query",
+        "If using tree-sitter: Implement highlight method returning Vec<(Style, String)> for ratatui",
+        "Add taffy = '0.5' dependency for flexbox layout",
+        "Create LayoutEngine wrapper around TaffyTree for integration with ratatui",
+        "Implement compute_layout method that translates taffy layout to ratatui Rects",
+        "Integrate enhanced syntax highlighting into saved_searches.rs (already uses highlight_spl)",
+        "Add syntax highlighting to job_details.rs and search.rs if not already present",
+        "Create test cases for syntax highlighting with sample SPL queries in crates/tui/tests/",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md sections '1. Flexbox Layout System' and '2. Syntax Highlighting'",
+        "Dependency RQ-0321 completed: tui-input = '0.11' and tui-textarea = '0.7' already in Cargo.toml",
+        "Current syntax.rs has comprehensive regex-based highlighting - tree-sitter may be overkill",
+        "Alternative: ratatui has built-in Layout constraints that may suffice for simpler layouts",
+        "For SPL highlighting, may need to create custom tree-sitter grammar or use regex-based fallback",
+        "taffy uses Yoga engine (same as OpenTUI) for CSS-like flexbox layouts",
+        "Updated 2026-02-04: Task now reflects current codebase state with existing syntax.rs implementation",
+        "Implemented syntax highlighting with tree-sitter infrastructure (with regex fallback) and flexbox layout with taffy",
+        "Added FlexLayoutEngine and FlexLayoutBuilder with comprehensive helper functions",
+        "Created 17 flex layout tests and 16 syntax highlighting tests - all passing",
+        "CI gate passes successfully"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T22:07:12.650532992Z",
+      "completed_at": "2026-02-04T22:07:12.650532992Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }

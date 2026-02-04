@@ -10,4 +10,9 @@ pub mod screens;
 pub mod syntax;
 pub mod toast;
 
+// Layout module with flexbox support via taffy
+pub mod layout {
+    pub mod flex;
+}
+
 pub use toast::{Toast, ToastLevel};

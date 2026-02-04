@@ -59,6 +59,12 @@ secrecy = { workspace = true }
 tui-input = "0.11"
 tui-textarea = "0.7"
 
+# Syntax highlighting with tree-sitter
+tree-sitter = "0.22"
+
+# Flexbox layout with taffy (Yoga-based)
+taffy = "0.5"
+
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }
 tempfile = "3.10"
