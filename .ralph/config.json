@@ -8,8 +8,8 @@
     "id_width": 4
   },
   "agent": {
-    "runner": "opencode",
-    "model": "kimi-for-coding/k2p5",
+    "runner": "kimi",
+    "model": "kimi-code/kimi-for-coding",
     "phases": 3,
     "iterations": 1,
     "repoprompt_plan_required": false,
@@ -30,9 +30,8 @@
     },
     "phase_overrides": {
       "phase1": {
-        "runner": "codex",
-        "model": "gpt-5.2",
-        "reasoning_effort": "medium"
+        "runner": "kimi",
+        "model": "kimi-code/kimi-for-coding"
       },
       "phase2": {
         "runner": "kimi",
