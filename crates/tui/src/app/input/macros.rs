@@ -20,8 +20,17 @@ impl App {
             // Refresh macros list
             KeyCode::Char('r') if key.modifiers.is_empty() => Some(Action::LoadMacros),
 
-            // Copy macro definition to clipboard
+            // Copy macro definition to clipboard (Ctrl+C or 'y' vim-style)
             KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                if let Some(macros) = &self.macros
+                    && let Some(selected) = self.macros_state.selected()
+                    && let Some(macro_item) = macros.get(selected)
+                {
+                    return Some(Action::CopyToClipboard(macro_item.definition.clone()));
+                }
+                None
+            }
+            KeyCode::Char('y') if key.modifiers.is_empty() => {
                 if let Some(macros) = &self.macros
                     && let Some(selected) = self.macros_state.selected()
                     && let Some(macro_item) = macros.get(selected)

@@ -19,6 +19,9 @@ use ratatui::{
 use crate::app::state::CurrentScreen;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Render the macros screen with a split view (list on top, preview on bottom).
 pub fn render_macros_screen(
     f: &mut Frame,
@@ -27,6 +30,7 @@ pub fn render_macros_screen(
     list_state: &mut ratatui::widgets::ListState,
     loading: bool,
     theme: &Theme,
+    spinner_frame: u8,
 ) {
     // Split area into list (top 50%) and preview (bottom 50%)
     let chunks = Layout::default()
@@ -38,7 +42,15 @@ pub fn render_macros_screen(
     let preview_area = chunks[1];
 
     // Render the macros list
-    render_macros_list(f, list_area, macros, list_state, loading, theme);
+    render_macros_list(
+        f,
+        list_area,
+        macros,
+        list_state,
+        loading,
+        theme,
+        spinner_frame,
+    );
 
     // Render the macro preview
     render_macro_preview(f, preview_area, macros, list_state, theme);
@@ -51,14 +63,16 @@ fn render_macros_list(
     list_state: &mut ratatui::widgets::ListState,
     loading: bool,
     theme: &Theme,
+    spinner_frame: u8,
 ) {
     let block = Block::default()
         .title(" Search Macros ")
         .borders(Borders::ALL)
         .border_style(theme.border);
 
-    if loading {
-        let loading_text = Paragraph::new("Loading macros...")
+    if loading && macros.is_none() {
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_text = Paragraph::new(format!("{} Loading macros...", spinner))
             .block(block)
             .style(theme.text);
         f.render_widget(loading_text, area);

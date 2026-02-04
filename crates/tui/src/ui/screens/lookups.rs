@@ -18,6 +18,9 @@ use splunk_client::models::LookupTable;
 
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the lookups screen.
 pub struct LookupsRenderConfig<'a> {
     /// Whether data is currently loading.
@@ -28,6 +31,8 @@ pub struct LookupsRenderConfig<'a> {
     pub lookups_state: &'a mut TableState,
     /// The theme to use for styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the lookups screen.
@@ -37,12 +42,15 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
         lookups,
         lookups_state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && lookups.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading lookup tables...")
-            .block(Block::default().borders(Borders::ALL).title("Lookups"))
-            .alignment(ratatui::layout::Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading lookup tables...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Lookups"))
+                .alignment(ratatui::layout::Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

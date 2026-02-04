@@ -1,7 +1,7 @@
 //! SHC screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of SHC info
+//! - Handle Ctrl+C or 'y' copy of SHC info (vim-style)
 //! - Handle Ctrl+E export of SHC info
 //! - Handle SHC management actions (rolling restart, set captain)
 //!
@@ -19,8 +19,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the SHC screen.
     pub fn handle_shc_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy captain URI if available
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy captain URI if available (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             if let Some(status) = &self.shc_status
                 && let Some(uri) = &status.captain_uri
             {

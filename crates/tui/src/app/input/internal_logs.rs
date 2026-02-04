@@ -1,7 +1,7 @@
 //! Internal logs screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of selected log message
+//! - Handle Ctrl+C or 'y' copy of selected log message (vim-style)
 //! - Handle Ctrl+E export of internal logs
 //! - Handle auto-refresh toggle (a key)
 //!
@@ -19,8 +19,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the internal logs screen.
     pub fn handle_internal_logs_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected log message
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected log message (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.internal_logs.as_ref().and_then(|logs| {
                 self.internal_logs_state
                     .selected()

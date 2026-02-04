@@ -23,8 +23,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the indexes screen.
     pub fn handle_indexes_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected index name
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected index name (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self
                 .indexes
                 .as_ref()

@@ -59,8 +59,17 @@ impl App {
                 None
             }
 
-            // Copy selected lookup name
+            // Copy selected lookup name (Ctrl+C or 'y' vim-style)
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if let Some(index) = self.lookups_state.selected()
+                    && let Some(lookups) = &self.lookups
+                    && let Some(lookup) = lookups.get(index)
+                {
+                    return Some(Action::CopyToClipboard(lookup.name.clone()));
+                }
+                None
+            }
+            KeyCode::Char('y') if key.modifiers.is_empty() => {
                 if let Some(index) = self.lookups_state.selected()
                     && let Some(lookups) = &self.lookups
                     && let Some(lookup) = lookups.get(index)

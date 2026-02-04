@@ -70,8 +70,11 @@ impl App {
 
     /// Handle input for the search screen.
     pub fn handle_search_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Handle Ctrl+* shortcuts while in input
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Handle Ctrl+C or 'y' copy shortcut while in input (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             // Decision:
             // - If results exist, copy the JSON for the "current" result (at scroll offset).
             // - Otherwise, copy the current search query.

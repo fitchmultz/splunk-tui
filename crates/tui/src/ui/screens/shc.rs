@@ -23,6 +23,9 @@ use splunk_config::Theme;
 
 use crate::app::state::ShcViewMode;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the SHC screen.
 pub struct ShcRenderConfig<'a> {
     /// Whether data is currently loading
@@ -37,6 +40,8 @@ pub struct ShcRenderConfig<'a> {
     pub members_state: &'a mut TableState,
     /// Theme for consistent styling
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the SHC screen.
@@ -54,16 +59,19 @@ pub fn render_shc(f: &mut Frame, area: Rect, config: ShcRenderConfig) {
         view_mode,
         members_state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && shc_status.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading SHC info...")
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("SHC Information"),
-            )
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading SHC info...", spinner))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("SHC Information"),
+                )
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

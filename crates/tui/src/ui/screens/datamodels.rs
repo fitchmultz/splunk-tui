@@ -11,6 +11,9 @@ use ratatui::{
 use splunk_client::models::DataModel;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the data models screen.
 pub struct DataModelsRenderConfig<'a> {
     /// Whether data is currently loading
@@ -21,6 +24,8 @@ pub struct DataModelsRenderConfig<'a> {
     pub state: &'a mut ListState,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the data models screen.
@@ -36,12 +41,15 @@ pub fn render_datamodels(f: &mut Frame, area: Rect, config: DataModelsRenderConf
         data_models,
         state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && data_models.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading data models...")
-            .block(Block::default().borders(Borders::ALL).title("Data Models"))
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading data models...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Data Models"))
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

@@ -57,7 +57,17 @@ impl App {
                 None
             }
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                // Copy selected input name to clipboard
+                // Copy selected input name to clipboard (Ctrl+C)
+                if let Some(ref inputs) = self.inputs
+                    && let Some(selected) = self.inputs_state.selected()
+                    && let Some(input) = inputs.get(selected)
+                {
+                    return Some(Action::CopyToClipboard(input.name.clone()));
+                }
+                None
+            }
+            KeyCode::Char('y') if key.modifiers.is_empty() => {
+                // Copy selected input name to clipboard (vim-style 'y')
                 if let Some(ref inputs) = self.inputs
                     && let Some(selected) = self.inputs_state.selected()
                     && let Some(input) = inputs.get(selected)

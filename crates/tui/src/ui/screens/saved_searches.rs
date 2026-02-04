@@ -14,6 +14,9 @@ use splunk_client::models::SavedSearch;
 use crate::ui::syntax::highlight_spl;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the saved searches screen.
 pub struct SavedSearchesRenderConfig<'a> {
     /// Whether data is currently loading
@@ -24,6 +27,8 @@ pub struct SavedSearchesRenderConfig<'a> {
     pub state: &'a mut ListState,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the saved searches screen.
@@ -33,10 +38,12 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
         saved_searches,
         state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && saved_searches.is_none() {
-        let loading_widget = Paragraph::new("Loading saved searches...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading saved searches...", spinner))
             .block(
                 Block::default()
                     .borders(Borders::ALL)

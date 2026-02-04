@@ -1,7 +1,7 @@
 //! Health screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of health status or server name
+//! - Handle Ctrl+C or 'y' copy of health status or server name (vim-style)
 //! - Handle Ctrl+E export of health info
 //!
 //! Non-responsibilities:
@@ -18,8 +18,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the health screen.
     pub fn handle_health_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy health status
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy health status (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.health_info.as_ref().and_then(|h| {
                 h.splunkd_health
                     .as_ref()

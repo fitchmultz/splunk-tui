@@ -13,6 +13,9 @@ use ratatui::{
 use splunk_client::models::{ConfigFile, ConfigStanza};
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// View mode for the configs screen.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum ConfigViewMode {
@@ -51,6 +54,8 @@ pub struct ConfigsRenderConfig<'a> {
     pub search_query: &'a str,
     /// Filtered indices when searching
     pub filtered_indices: &'a [usize],
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the configs screen.
@@ -75,11 +80,13 @@ fn render_file_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         config_files,
         files_state,
         theme,
+        spinner_frame,
         ..
     } = config;
 
     if loading && config_files.is_none() {
-        let loading_widget = Paragraph::new("Loading config files...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading config files...", spinner))
             .block(
                 Block::default()
                     .borders(Borders::ALL)
@@ -173,13 +180,15 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         is_searching,
         search_query,
         filtered_indices,
+        spinner_frame,
         ..
     } = config;
 
     let title = format!("Stanzas for {}.conf", selected_file.unwrap_or("unknown"));
 
     if loading && stanzas.is_none() {
-        let loading_widget = Paragraph::new("Loading stanzas...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading stanzas...", spinner))
             .block(Block::default().borders(Borders::ALL).title(title))
             .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);

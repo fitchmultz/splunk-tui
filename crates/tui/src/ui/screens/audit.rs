@@ -11,6 +11,9 @@ use ratatui::{
 use splunk_client::models::AuditEvent;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the audit events screen.
 pub struct AuditRenderConfig<'a> {
     /// Whether data is currently loading
@@ -21,6 +24,8 @@ pub struct AuditRenderConfig<'a> {
     pub state: &'a mut TableState,
     /// Theme for consistent styling
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the audit events screen.
@@ -34,9 +39,11 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
         .title_style(Style::default().fg(theme.title));
 
     if config.loading && config.events.is_none() {
-        let loading = ratatui::widgets::Paragraph::new("Loading audit events...")
-            .block(block)
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[config.spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading =
+            ratatui::widgets::Paragraph::new(format!("{} Loading audit events...", spinner))
+                .block(block)
+                .alignment(Alignment::Center);
         f.render_widget(loading, area);
         return;
     }

@@ -22,8 +22,11 @@ use splunk_client::SearchMode;
 impl App {
     /// Handle input for the saved searches screen.
     pub fn handle_saved_searches_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected saved search name
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected saved search name (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.saved_searches.as_ref().and_then(|searches| {
                 self.saved_searches_state
                     .selected()

@@ -210,6 +210,9 @@ pub struct App {
     pub current_error: Option<ErrorDetails>,
     pub error_scroll_offset: usize,
 
+    // Loading spinner animation state (cycles 0-7 for spinner frames)
+    pub spinner_frame: u8,
+
     // Index details popup scroll offset
     pub index_details_scroll_offset: usize,
 

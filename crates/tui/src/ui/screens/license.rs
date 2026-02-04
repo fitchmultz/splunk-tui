@@ -13,6 +13,9 @@ use ratatui::{
 };
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the license screen.
 pub struct LicenseRenderConfig<'a> {
     /// Whether data is currently loading
@@ -21,6 +24,8 @@ pub struct LicenseRenderConfig<'a> {
     pub license_info: Option<&'a LicenseData>,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the license screen.
@@ -35,10 +40,12 @@ pub fn render_license(f: &mut Frame, area: Rect, config: LicenseRenderConfig) {
         loading,
         license_info,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && license_info.is_none() {
-        let loading_widget = Paragraph::new("Loading license info...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading license info...", spinner))
             .block(Block::default().borders(Borders::ALL).title("License"))
             .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);

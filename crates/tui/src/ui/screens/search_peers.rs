@@ -18,6 +18,9 @@ use splunk_client::models::SearchPeer;
 
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the search peers screen.
 pub struct SearchPeersRenderConfig<'a> {
     /// Whether data is currently loading.
@@ -28,6 +31,8 @@ pub struct SearchPeersRenderConfig<'a> {
     pub peers_state: &'a mut TableState,
     /// The theme to use for styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the search peers screen.
@@ -37,12 +42,15 @@ pub fn render_search_peers(f: &mut Frame, area: Rect, config: SearchPeersRenderC
         search_peers,
         peers_state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && search_peers.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading search peers...")
-            .block(Block::default().borders(Borders::ALL).title("Search Peers"))
-            .alignment(ratatui::layout::Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading search peers...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Search Peers"))
+                .alignment(ratatui::layout::Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

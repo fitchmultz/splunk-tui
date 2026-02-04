@@ -14,6 +14,9 @@ use splunk_config::Theme;
 
 use crate::action::OverviewData;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the overview screen.
 pub struct OverviewRenderConfig<'a> {
     /// Whether data is currently loading
@@ -22,6 +25,8 @@ pub struct OverviewRenderConfig<'a> {
     pub overview_data: Option<&'a OverviewData>,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the overview screen.
@@ -36,10 +41,12 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
         loading,
         overview_data,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && overview_data.is_none() {
-        let loading_widget = Paragraph::new("Loading overview...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading overview...", spinner))
             .block(Block::default().borders(Borders::ALL).title("Overview"))
             .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
@@ -156,6 +163,7 @@ mod tests {
                         loading: false,
                         overview_data: Some(&data),
                         theme: &theme,
+                        spinner_frame: 0,
                     },
                 );
             })
@@ -188,6 +196,7 @@ mod tests {
                         loading: true,
                         overview_data: None,
                         theme: &theme,
+                        spinner_frame: 0,
                     },
                 );
             })
@@ -217,6 +226,7 @@ mod tests {
                         loading: false,
                         overview_data: None,
                         theme: &theme,
+                        spinner_frame: 0,
                     },
                 );
             })

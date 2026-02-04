@@ -9,8 +9,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the overview screen.
     pub fn handle_overview_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy resource summary
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy resource summary (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.overview_data.as_ref().map(|d| {
                 d.resources
                     .iter()

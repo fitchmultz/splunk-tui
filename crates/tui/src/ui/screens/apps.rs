@@ -2,6 +2,9 @@
 //!
 //! Renders the list of installed Splunk apps with their versions and status.
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -21,6 +24,8 @@ pub struct AppsRenderConfig<'a> {
     pub state: &'a mut ListState,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner animation frame
+    pub spinner_frame: u8,
 }
 
 /// Render the apps screen.
@@ -36,12 +41,15 @@ pub fn render_apps(f: &mut Frame, area: Rect, config: AppsRenderConfig) {
         apps,
         state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && apps.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading apps...")
-            .block(Block::default().borders(Borders::ALL).title("Apps"))
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading apps...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Apps"))
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

@@ -11,6 +11,9 @@ use ratatui::{
 use splunk_client::models::User;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the users screen.
 pub struct UsersRenderConfig<'a> {
     /// Whether data is currently loading
@@ -21,6 +24,8 @@ pub struct UsersRenderConfig<'a> {
     pub state: &'a mut ListState,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the users screen.
@@ -36,12 +41,15 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
         users,
         state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && users.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading users...")
-            .block(Block::default().borders(Borders::ALL).title("Users"))
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading users...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Users"))
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

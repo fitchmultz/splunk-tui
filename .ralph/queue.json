@@ -2,52 +2,232 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0319",
+      "id": "RQ-0321",
       "status": "todo",
-      "title": "Implement TUI UX polish: consistent feedback, loading states, and flow optimization",
+      "title": "Implement rich input components: tui-input and tui-textarea for enhanced text editing",
       "priority": "high",
       "tags": [
         "tui",
-        "ux",
-        "polish",
-        "feedback",
-        "loading-states"
+        "input",
+        "textarea",
+        "ratatui",
+        "opentui-port"
       ],
       "scope": [
-        "crates/tui/src/ui/",
-        "crates/tui/src/app/render.rs",
-        "crates/tui/src/app/popups/",
-        "crates/tui/src/ui/toast.rs",
-        "docs/usage.md"
+        "crates/tui/src/",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
       ],
       "evidence": [
-        "User request: 'IT CANNOT BE CLUNKY OR HARD TO GRASP'",
-        "User requirement: 'NO UNNECESSARY FLOWS'",
-        "Current TUI has 25+ screens with varying UX patterns",
-        "Loading states exist but may not be consistent across all async operations",
-        "AGENTS.md requires CLI/TUI feature parity and shared abstractions"
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes Rich Input Components as Priority 1",
+        "Recommended crates: tui-input = '0.11' for single-line input, tui-textarea = '0.7' for multi-line",
+        "Current TUI uses basic String inputs; these components provide cursor handling, navigation, and better UX",
+        "Input fields needed for: SPL query editor, search inputs, profile configuration, form fields"
       ],
       "plan": [
-        "Audit all loading states: ensure every async operation shows clear, consistent loading feedback",
-        "Review empty states: ensure all screens show helpful messages when no data exists",
-        "Standardize error presentation: consistent error banners/toasts across all screens",
-        "Optimize common workflows: reduce keystrokes for frequent operations (search, job inspection, navigation)",
-        "Review and improve help text: ensure in-app '?' help is accurate and complete",
-        "Check keyboard shortcut discoverability: ensure users can learn shortcuts naturally",
-        "Validate color/theme consistency across all screens and states",
-        "Review footer/help bar consistency: same format, same information density",
-        "Ensure clipboard/copy operations provide clear success feedback",
-        "Test profile switching flow for smoothness and clarity",
-        "Update docs/usage.md if any UX changes affect user-facing behavior",
-        "Run make generate to regenerate keybindings docs if needed",
+        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on input components",
+        "Add tui-input = '0.11' dependency to crates/tui/Cargo.toml for single-line text input",
+        "Add tui-textarea = '0.7' dependency for multi-line text editing (SPL queries)",
+        "Create wrapper component in crates/tui/src/components/ for SearchInput using tui-input",
+        "Create wrapper component for SplQueryEditor using tui-textarea with placeholder text support",
+        "Implement key event handling for both components (InsertChar, Backspace, navigation keys)",
+        "Integrate into existing screens: search.rs (input), job_details.rs (query display), saved_searches.rs",
+        "Add tests for input handling and edge cases (empty input, long text, unicode)",
         "Run make ci to verify all checks pass"
       ],
-      "notes": [],
-      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
-      "created_at": "2026-02-04T18:46:17Z",
-      "updated_at": "2026-02-04T18:46:17Z",
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md section '3. Rich Input Components'",
+        "tui-input provides InputRequest pattern for clean key event handling",
+        "tui-textarea supports placeholder text - useful for 'Enter SPL query...' hints",
+        "These components replace the current String-based input fields for better UX"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T19:33:53Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0322",
+      "status": "todo",
+      "title": "Implement syntax highlighting with tree-sitter and flexbox layout with taffy",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "syntax-highlighting",
+        "tree-sitter",
+        "flexbox",
+        "taffy",
+        "layout",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes Syntax Highlighting as Priority 2",
+        "Feature file: /tmp/opentui-rust-features.md describes Flexbox Layout as foundational",
+        "Recommended crates: tree-sitter = '0.22' for parsing, tree-sitter-spl or custom SPL grammar",
+        "Recommended crate: taffy = '0.5' for Yoga-based flexbox layout engine",
+        "Syntax highlighting needed for SPL (Splunk Processing Language) query display",
+        "Flexbox layout enables responsive UI design similar to CSS Flexbox"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on both features",
+        "Add tree-sitter = '0.22' and tree-sitter-rust (or tree-sitter-spl if available) to Cargo.toml",
+        "Create SyntaxHighlighter struct in crates/tui/src/components/syntax_highlighter.rs",
+        "Implement highlight method that returns Vec<(Style, String)> for ratatui rendering",
+        "Add taffy = '0.5' dependency for flexbox layout",
+        "Create LayoutEngine wrapper around TaffyTree for integration with ratatui",
+        "Implement compute_layout method that translates taffy layout to ratatui Rects",
+        "Add syntax highlighting to SPL query display in job_details.rs and search.rs",
+        "Create test cases for syntax highlighting with sample SPL queries",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md sections '1. Flexbox Layout System' and '2. Syntax Highlighting'",
+        "Alternative: ratatui has built-in Layout constraints that may suffice for simpler layouts",
+        "For SPL highlighting, may need to create custom tree-sitter grammar or use regex-based fallback",
+        "taffy uses Yoga engine (same as OpenTUI) for CSS-like flexbox layouts"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T19:33:53Z",
       "depends_on": [
-        "RQ-0318"
+        "RQ-0321"
+      ],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0323",
+      "status": "todo",
+      "title": "Implement scrollable containers with tui-scrollview and focus management system",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "scrollview",
+        "focus-management",
+        "navigation",
+        "tui-scrollview",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes Scrollable Containers as Priority 3",
+        "Feature file: /tmp/opentui-rust-features.md describes Focus Management as Priority 4",
+        "Recommended crate: tui-scrollview = '0.3' for scrollable content",
+        "Current TUI has scroll offset for search results; need proper scrollview for complex content",
+        "Focus management needed for navigating between input fields, buttons, and lists",
+        "OpenTUI has built-in focus handling; we need equivalent for Rust"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on scrollview and focus",
+        "Add tui-scrollview = '0.3' dependency to Cargo.toml",
+        "Create ScrollableContent wrapper component in crates/tui/src/components/scrollable.rs",
+        "Implement render method using ScrollView and ScrollViewState for stateful scrolling",
+        "Add scrollbar indicators to show scroll position",
+        "Create FocusManager struct in crates/tui/src/input/focus.rs",
+        "Implement focus_order Vec for component IDs and current_focus index",
+        "Add next(), previous(), and is_focused() methods to FocusManager",
+        "Integrate focus management into existing screen rendering (pass focus state to components)",
+        "Update keybindings to support Tab/Shift+Tab for focus navigation",
+        "Add tests for scrollview state management and focus transitions",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md sections '4. Scrollable Containers' and '10. Focus Management'",
+        "Alternative to custom FocusManager: tui-realm crate provides component-based architecture",
+        "Sticky scroll feature useful for log tails (auto-scroll to bottom)",
+        "Focus management enables keyboard-only navigation for accessibility"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T19:33:53Z",
+      "depends_on": [
+        "RQ-0322"
+      ],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0324",
+      "status": "todo",
+      "title": "Implement advanced TUI components: diff viewer, big text, animations, and markdown",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "diff-viewer",
+        "big-text",
+        "animations",
+        "markdown",
+        "line-numbers",
+        "slider",
+        "select",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes multiple advanced components",
+        "Diff viewer: similar = '2.5' crate for unified/split diff views",
+        "Big text: tui-big-text = '0.7' for ASCII font headers",
+        "Animations: tachyonfx = '0.14' for shader-like effects",
+        "Markdown: pulldown-cmark = '0.12' for markdown rendering",
+        "Line numbers: custom implementation with diagnostic highlights",
+        "Slider: custom implementation for value selection",
+        "Select/Dropdown: custom or tui-realm-stdlib for lists"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on all advanced components",
+        "Add similar = '2.5' for diff viewing capabilities",
+        "Add tui-big-text = '0.7' for large ASCII headers (e.g., 'SPLUNK' banner)",
+        "Add tachyonfx = '0.14' for animations and visual effects",
+        "Add pulldown-cmark = '0.12' for markdown documentation rendering",
+        "Create DiffViewer component in crates/tui/src/components/diff_viewer.rs using similar crate",
+        "Create BigTextWidget wrapper using tui-big-text with PixelSize options",
+        "Create AnimationController for tachyonfx effects (fade-in, transitions)",
+        "Create MarkdownRenderer using pulldown-cmark Event parser",
+        "Create LineNumberWidget with diagnostic highlight support (for SPL validation)",
+        "Create Slider component for numeric value selection (e.g., time range)",
+        "Create SelectList<T> component for dropdown selections",
+        "Add tests for each component with sample data",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md sections 5-12",
+        "Priority per document: Diff (7), Big Text (5), Animations (6), Markdown (8)",
+        "Diff viewer useful for comparing saved search versions or configuration changes",
+        "Big text useful for branding headers or important status displays",
+        "Animations should be subtle - focus on fade-in effects and smooth transitions",
+        "Markdown rendering useful for help documentation and user guides"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T19:33:53Z",
+      "depends_on": [
+        "RQ-0323"
       ],
       "blocks": [],
       "relates_to": [],
@@ -98,7 +278,6 @@
       "created_at": "2026-02-04T18:46:17Z",
       "updated_at": "2026-02-04T18:46:17Z",
       "depends_on": [
-        "RQ-0318",
         "RQ-0319"
       ],
       "blocks": [],

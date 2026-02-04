@@ -22,8 +22,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the jobs screen.
     pub fn handle_jobs_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected job SID
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected job SID (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             if let Some(job) = self.get_selected_job() {
                 return Some(Action::CopyToClipboard(job.sid.clone()));
             }

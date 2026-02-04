@@ -1,7 +1,7 @@
 //! Users screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of selected username
+//! - Handle Ctrl+C or 'y' copy of selected username (vim-style)
 //! - Handle Ctrl+E export of users list
 //! - Handle 'c' to open create user dialog
 //! - Handle 'm' to open modify user dialog
@@ -22,8 +22,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the users screen.
     pub fn handle_users_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected username
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected username (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.users.as_ref().and_then(|users| {
                 self.users_state
                     .selected()

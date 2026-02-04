@@ -61,6 +61,9 @@ impl App {
             .unwrap_or_else(|| self.search_input.clone());
         self.search_status = format!("Search complete: {}", query_for_status);
         self.loading = false;
+
+        // Auto-focus results when search completes successfully
+        self.search_input_mode = crate::app::state::SearchInputMode::ResultsFocused;
     }
 
     fn handle_search_error(

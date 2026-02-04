@@ -21,6 +21,9 @@ use splunk_config::Theme;
 
 use crate::app::state::WorkloadViewMode;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the workload management screen.
 pub struct WorkloadRenderConfig<'a> {
     /// Whether data is currently loading.
@@ -37,6 +40,8 @@ pub struct WorkloadRenderConfig<'a> {
     pub rules_state: &'a mut TableState,
     /// The theme to use for styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the workload management screen.
@@ -49,10 +54,12 @@ pub fn render_workload(f: &mut Frame, area: Rect, config: WorkloadRenderConfig) 
         pools_state,
         rules_state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && workload_pools.is_none() && workload_rules.is_none() {
-        let loading_widget = Paragraph::new("Loading workload management...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading workload management...", spinner))
             .block(
                 Block::default()
                     .borders(Borders::ALL)

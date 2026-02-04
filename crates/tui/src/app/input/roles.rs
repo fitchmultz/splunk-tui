@@ -1,7 +1,7 @@
 //! Roles screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of selected role name
+//! - Handle Ctrl+C or 'y' copy of selected role name (vim-style)
 //! - Handle Ctrl+E export of roles list
 //! - Handle 'c' to open create role dialog
 //! - Handle 'm' to open modify role dialog
@@ -22,8 +22,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the roles screen.
     pub fn handle_roles_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected role name
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected role name (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.roles.as_ref().and_then(|roles| {
                 self.roles_state
                     .selected()

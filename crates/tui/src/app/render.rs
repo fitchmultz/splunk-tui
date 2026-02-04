@@ -203,6 +203,7 @@ impl App {
                         indexes: self.indexes.as_deref(),
                         state: &mut self.indexes_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -217,6 +218,7 @@ impl App {
                         view_mode: self.cluster_view_mode,
                         peers_state: &mut self.cluster_peers_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -230,6 +232,7 @@ impl App {
                         loading: self.loading,
                         health_info: self.health_info.as_ref(),
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -241,6 +244,7 @@ impl App {
                         loading: self.loading,
                         license_info: self.license_info.as_ref(),
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -252,6 +256,7 @@ impl App {
                         loading: self.loading,
                         kvstore_status: self.kvstore_status.as_ref(),
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -264,6 +269,7 @@ impl App {
                         saved_searches: self.saved_searches.as_deref(),
                         state: &mut self.saved_searches_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -275,6 +281,7 @@ impl App {
                     &mut self.macros_state,
                     self.loading,
                     &self.theme,
+                    self.spinner_frame,
                 );
             }
             CurrentScreen::InternalLogs => self.render_internal_logs(f, area),
@@ -287,6 +294,7 @@ impl App {
                         apps: self.apps.as_deref(),
                         state: &mut self.apps_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -299,6 +307,7 @@ impl App {
                         users: self.users.as_deref(),
                         state: &mut self.users_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -311,6 +320,7 @@ impl App {
                         roles: self.roles.as_deref(),
                         state: &mut self.roles_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -323,6 +333,7 @@ impl App {
                         search_peers: self.search_peers.as_deref(),
                         peers_state: &mut self.search_peers_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -354,6 +365,7 @@ impl App {
                         loading: self.loading,
                         overview_data: self.overview_data.as_ref(),
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -366,6 +378,7 @@ impl App {
                         data: self.multi_instance_data.as_ref(),
                         selected_index: self.multi_instance_selected_index,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -378,6 +391,7 @@ impl App {
                         inputs: self.inputs.as_deref(),
                         state: &mut self.inputs_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -398,6 +412,7 @@ impl App {
                         is_searching: self.config_search_mode,
                         search_query: &self.config_search_query,
                         filtered_indices: &self.filtered_stanza_indices,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -410,6 +425,7 @@ impl App {
                         fired_alerts: self.fired_alerts.as_deref(),
                         state: &mut self.fired_alerts_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -422,6 +438,7 @@ impl App {
                         forwarders: self.forwarders.as_deref(),
                         forwarders_state: &mut self.forwarders_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -434,6 +451,7 @@ impl App {
                         lookups: self.lookups.as_deref(),
                         lookups_state: &mut self.lookups_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -446,6 +464,7 @@ impl App {
                         events: self.audit_events.as_deref(),
                         state: &mut self.audit_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -458,6 +477,7 @@ impl App {
                         dashboards: self.dashboards.as_deref(),
                         state: &mut self.dashboards_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -470,6 +490,7 @@ impl App {
                         data_models: self.data_models.as_deref(),
                         state: &mut self.data_models_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -485,6 +506,7 @@ impl App {
                         pools_state: &mut self.workload_pools_state,
                         rules_state: &mut self.workload_rules_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -499,6 +521,7 @@ impl App {
                         view_mode: self.shc_view_mode,
                         members_state: &mut self.shc_members_state,
                         theme: &self.theme,
+                        spinner_frame: self.spinner_frame,
                     },
                 );
             }
@@ -509,7 +532,8 @@ impl App {
         use crate::ui::screens::jobs;
 
         if self.loading && self.jobs.is_none() {
-            let loading = Paragraph::new("Loading jobs...")
+            let spinner = self.spinner_char();
+            let loading = Paragraph::new(format!("{} Loading jobs...", spinner))
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
@@ -603,6 +627,7 @@ impl App {
                 state: &mut self.internal_logs_state,
                 auto_refresh: self.auto_refresh,
                 theme: &self.theme,
+                spinner_frame: self.spinner_frame,
             },
         );
     }
@@ -662,6 +687,14 @@ impl App {
         }
     }
 
+    /// Spinner characters for animated loading indicator.
+    const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
+    /// Get the current spinner character based on frame counter.
+    fn spinner_char(&self) -> char {
+        Self::SPINNER_CHARS[self.spinner_frame as usize % Self::SPINNER_CHARS.len()]
+    }
+
     /// Build footer text with navigation hints, screen-specific hints, and controls.
     ///
     /// Layout: [Loading] | Tab:Next | Shift+Tab:Prev | [Screen Hints] | ?:Help | q:Quit
@@ -671,8 +704,9 @@ impl App {
         let available_width = self.last_area.width as usize;
 
         // Calculate minimum required width for fixed elements
+        // Loading format: " {spinner} Loading... {:.0}% " = original + 2 chars for spinner
         let loading_width = if self.loading {
-            format!(" Loading... {:.0}% |", self.progress * 100.0).len()
+            format!(" ⠋ Loading... {:.0}% |", self.progress * 100.0).len()
         } else {
             0
         };
@@ -705,8 +739,9 @@ impl App {
 
         // Loading indicator (if active)
         if self.loading {
+            let spinner = self.spinner_char();
             spans.push(Span::styled(
-                format!(" Loading... {:.0}% ", self.progress * 100.0),
+                format!(" {} Loading... {:.0}% ", spinner, self.progress * 100.0),
                 Style::default().fg(theme.warning),
             ));
             spans.push(Span::raw("|"));

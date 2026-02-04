@@ -1,7 +1,7 @@
 //! Audit events screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of selected event details
+//! - Handle Ctrl+C or 'y' copy of selected event details (vim-style)
 //! - Handle Ctrl+E export of audit events
 //!
 //! Non-responsibilities:
@@ -18,8 +18,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the audit events screen.
     pub fn handle_audit_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected event details
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected event details (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.audit_events.as_ref().and_then(|events| {
                 self.audit_state
                     .selected()

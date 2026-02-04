@@ -261,6 +261,7 @@ impl App {
             error_scroll_offset: 0,
             index_details_scroll_offset: 0,
             help_scroll_offset: 0,
+            spinner_frame: 0,
             last_area: ratatui::layout::Rect::default(),
             profile_name: connection_ctx.profile_name,
             base_url: Some(connection_ctx.base_url),

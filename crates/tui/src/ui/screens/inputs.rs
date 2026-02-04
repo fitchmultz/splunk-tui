@@ -12,6 +12,9 @@ use ratatui::{
 use splunk_client::models::Input;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the inputs screen.
 pub struct InputsRenderConfig<'a> {
     /// Whether data is currently loading
@@ -22,6 +25,8 @@ pub struct InputsRenderConfig<'a> {
     pub state: &'a mut TableState,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the inputs screen.
@@ -37,12 +42,15 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
         inputs,
         state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && inputs.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading inputs...")
-            .block(Block::default().borders(Borders::ALL).title("Data Inputs"))
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading inputs...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Data Inputs"))
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

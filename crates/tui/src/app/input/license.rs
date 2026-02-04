@@ -1,7 +1,7 @@
 //! License screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of license info
+//! - Handle Ctrl+C or 'y' copy of license info (vim-style)
 //! - Handle Ctrl+E export of license info
 //! - Handle 'r' key to refresh license data
 //!
@@ -19,8 +19,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the license screen.
     pub fn handle_license_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy license info summary
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy license info summary (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.license_info.as_ref().map(|info| {
                 // Create a summary of license usage
                 let mut parts = Vec::new();

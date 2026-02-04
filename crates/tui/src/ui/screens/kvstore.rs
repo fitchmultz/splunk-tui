@@ -12,6 +12,9 @@ use ratatui::{
 use splunk_client::models::KvStoreStatus;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the KVStore screen.
 pub struct KvstoreRenderConfig<'a> {
     /// Whether data is currently loading
@@ -20,6 +23,8 @@ pub struct KvstoreRenderConfig<'a> {
     pub kvstore_status: Option<&'a KvStoreStatus>,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the KVStore screen.
@@ -34,10 +39,12 @@ pub fn render_kvstore(f: &mut Frame, area: Rect, config: KvstoreRenderConfig) {
         loading,
         kvstore_status,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && kvstore_status.is_none() {
-        let loading_widget = Paragraph::new("Loading KVStore status...")
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget = Paragraph::new(format!("{} Loading KVStore status...", spinner))
             .block(Block::default().borders(Borders::ALL).title("KVStore"))
             .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
@@ -217,6 +224,7 @@ mod tests {
             loading: false,
             kvstore_status: None,
             theme: &theme,
+            spinner_frame: 0,
         };
 
         assert!(!config.loading);
@@ -244,6 +252,7 @@ mod tests {
             loading: false,
             kvstore_status: Some(&status),
             theme: &theme,
+            spinner_frame: 0,
         };
 
         assert!(!config.loading);

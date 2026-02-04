@@ -1,7 +1,7 @@
 //! Fired alerts screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of selected alert name
+//! - Handle Ctrl+C or 'y' copy of selected alert name (vim-style)
 //! - Handle Ctrl+E export of fired alerts list
 //!
 //! Non-responsibilities:
@@ -18,8 +18,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the fired alerts screen.
     pub fn handle_fired_alerts_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected alert name
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected alert name (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.fired_alerts.as_ref().and_then(|alerts| {
                 self.fired_alerts_state
                     .selected()

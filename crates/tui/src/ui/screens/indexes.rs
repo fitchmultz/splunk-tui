@@ -11,6 +11,9 @@ use ratatui::{
 use splunk_client::models::Index;
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the indexes screen.
 pub struct IndexesRenderConfig<'a> {
     /// Whether data is currently loading
@@ -21,6 +24,8 @@ pub struct IndexesRenderConfig<'a> {
     pub state: &'a mut ListState,
     /// Theme for consistent styling.
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation (0-7).
+    pub spinner_frame: u8,
 }
 
 /// Render the indexes screen.
@@ -36,12 +41,15 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
         indexes,
         state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && indexes.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading indexes...")
-            .block(Block::default().borders(Borders::ALL).title("Indexes"))
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading indexes...", spinner))
+                .block(Block::default().borders(Borders::ALL).title("Indexes"))
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

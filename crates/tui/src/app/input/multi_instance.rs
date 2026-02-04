@@ -27,8 +27,28 @@ impl App {
             }
             // Refresh data
             KeyCode::Char('r') => Some(Action::LoadMultiInstanceOverview),
-            // Ctrl+C: copy instance summary
+            // Ctrl+C or 'y': copy instance summary (vim-style)
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                let content = self.multi_instance_data.as_ref().map(|d| {
+                    d.instances
+                        .iter()
+                        .map(|i| {
+                            format!(
+                                "{} ({}): Health={}, Jobs={}",
+                                i.profile_name, i.base_url, i.health_status, i.job_count
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                });
+
+                if let Some(content) = content {
+                    return Some(Action::CopyToClipboard(content));
+                }
+                self.toasts.push(Toast::info("Nothing to copy"));
+                None
+            }
+            KeyCode::Char('y') if key.modifiers.is_empty() => {
                 let content = self.multi_instance_data.as_ref().map(|d| {
                     d.instances
                         .iter()

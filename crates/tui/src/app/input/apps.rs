@@ -23,8 +23,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the apps screen.
     pub fn handle_apps_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy selected app name
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy selected app name (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.apps.as_ref().and_then(|apps| {
                 self.apps_state
                     .selected()

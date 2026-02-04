@@ -34,6 +34,10 @@ impl App {
             Action::Tick => {
                 // Prune expired toasts
                 self.toasts.retain(|t| !t.is_expired());
+                // Advance spinner animation frame
+                if self.loading {
+                    self.spinner_frame = (self.spinner_frame + 1) % 8;
+                }
             }
             Action::CopyToClipboard(content) => {
                 self.handle_copy_to_clipboard(content);

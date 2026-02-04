@@ -23,6 +23,9 @@ use splunk_config::Theme;
 
 use crate::app::state::ClusterViewMode;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the cluster screen.
 pub struct ClusterRenderConfig<'a> {
     /// Whether data is currently loading
@@ -37,6 +40,8 @@ pub struct ClusterRenderConfig<'a> {
     pub peers_state: &'a mut TableState,
     /// Theme for consistent styling
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the cluster screen.
@@ -54,16 +59,19 @@ pub fn render_cluster(f: &mut Frame, area: Rect, config: ClusterRenderConfig) {
         view_mode,
         peers_state,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && cluster_info.is_none() {
-        let loading_widget = ratatui::widgets::Paragraph::new("Loading cluster info...")
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Cluster Information"),
-            )
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            ratatui::widgets::Paragraph::new(format!("{} Loading cluster info...", spinner))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Cluster Information"),
+                )
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }

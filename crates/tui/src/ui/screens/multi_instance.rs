@@ -17,6 +17,9 @@ use splunk_config::Theme;
 
 use crate::action::MultiInstanceOverviewData;
 
+/// Spinner characters for animated loading indicator.
+const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
 /// Configuration for rendering the multi-instance dashboard.
 pub struct MultiInstanceRenderConfig<'a> {
     /// Whether data is currently loading
@@ -27,6 +30,8 @@ pub struct MultiInstanceRenderConfig<'a> {
     pub selected_index: usize,
     /// Theme for consistent styling
     pub theme: &'a Theme,
+    /// Current spinner frame for loading animation
+    pub spinner_frame: u8,
 }
 
 /// Render the multi-instance dashboard screen.
@@ -42,16 +47,19 @@ pub fn render_multi_instance(f: &mut Frame, area: Rect, config: MultiInstanceRen
         data,
         selected_index,
         theme,
+        spinner_frame,
     } = config;
 
     if loading && data.is_none() {
-        let loading_widget = Paragraph::new("Loading multi-instance dashboard...")
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Multi-Instance"),
-            )
-            .alignment(Alignment::Center);
+        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let loading_widget =
+            Paragraph::new(format!("{} Loading multi-instance dashboard...", spinner))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Multi-Instance"),
+                )
+                .alignment(Alignment::Center);
         f.render_widget(loading_widget, area);
         return;
     }
@@ -341,6 +349,7 @@ mod tests {
                         data: Some(&data),
                         selected_index: 0,
                         theme: &theme,
+                        spinner_frame: 0,
                     },
                 );
             })
@@ -373,6 +382,7 @@ mod tests {
                         data: None,
                         selected_index: 0,
                         theme: &theme,
+                        spinner_frame: 0,
                     },
                 );
             })
@@ -403,6 +413,7 @@ mod tests {
                         data: None,
                         selected_index: 0,
                         theme: &theme,
+                        spinner_frame: 0,
                     },
                 );
             })

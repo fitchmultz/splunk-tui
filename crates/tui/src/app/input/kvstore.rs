@@ -1,7 +1,7 @@
 //! KVStore screen input handler.
 //!
 //! Responsibilities:
-//! - Handle Ctrl+C copy of KVStore status
+//! - Handle Ctrl+C or 'y' copy of KVStore status (vim-style)
 //! - Handle Ctrl+E export of KVStore status
 //! - Handle 'r' key to refresh KVStore data
 //!
@@ -19,8 +19,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 impl App {
     /// Handle input for the KVStore screen.
     pub fn handle_kvstore_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C: copy KVStore status summary
-        if key.modifiers.contains(KeyModifiers::CONTROL) && matches!(key.code, KeyCode::Char('c')) {
+        // Ctrl+C or 'y': copy KVStore status summary (vim-style)
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+        if is_copy {
             let content = self.kvstore_status.as_ref().map(|status| {
                 // Create a summary of KVStore status
                 let member = &status.current_member;
