@@ -17,6 +17,7 @@ use crate::app::state::{
     SortState,
 };
 use crate::error_details::ErrorDetails;
+use crate::focus::FocusManager;
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
 use ratatui::layout::Rect;
@@ -256,6 +257,12 @@ pub struct App {
     pub search_mode: SearchMode,
     /// Real-time window in seconds (only used when search_mode is Realtime).
     pub realtime_window: Option<u64>,
+
+    // Focus management (RQ-0323)
+    /// Focus manager for keyboard navigation between components.
+    pub focus_manager: FocusManager,
+    /// Whether focus navigation mode is active (Ctrl+Tab to toggle).
+    pub focus_navigation_mode: bool,
 }
 
 /// SPL validation state for real-time feedback in the search screen.

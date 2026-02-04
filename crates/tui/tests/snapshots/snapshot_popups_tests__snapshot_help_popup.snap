@@ -10,15 +10,15 @@ expression: harness.render()
 │                     No jobs loaded. Press 'r' to refresh.                    │
 │               ┌Help──────────────────────────────────────────┐               │
 │               │Global Keys:                                  ↑               │
-│               │  ?          Help                             █               │
-│               │  q          Quit                             ║               │
-│               │  Ctrl+Q     Quit (global)                    ║               │
-│               │  Tab        Next screen                      ║               │
-│               │  Shift+Tab  Previous screen                  ║               │
-│               │  Ctrl+c     Copy to clipboard                ║               │
-│               │                                              ║               │
-│               │Search Screen:                                ║               │
-│               │  Enter     Run search                        ↓               │
+│               │  ?               Help                        █               │
+│               │  q               Quit                        ║               │
+│               │  Ctrl+Q          Quit (global)               ║               │
+│               │  Tab             Next screen                 ║               │
+│               │  Shift+Tab       Previous screen             ║               │
+│               │  Ctrl+Tab        Next focus                  ║               │
+│               │  Ctrl+Shift+Tab  Previous focus              ║               │
+│               │  Ctrl+c          Copy to clipboard           ║               │
+│               │                                              ↓               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

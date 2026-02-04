@@ -167,6 +167,8 @@ Launch the interactive interface with `splunk-tui`.
 - `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen
 - `Shift+Tab`: Previous screen
+- `Ctrl+Tab`: Next focus
+- `Ctrl+Shift+Tab`: Previous focus
 - `Ctrl+c`: Copy to clipboard
 
 ### Screen Specific Shortcuts

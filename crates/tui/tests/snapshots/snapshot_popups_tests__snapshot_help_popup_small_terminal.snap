@@ -1,6 +1,6 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
-assertion_line: 215
+source: crates/tui/tests/snapshot_popups_tests.rs
+assertion_line: 24
 expression: harness.render()
 ---
 ┌──────────────────────────────────────┐
@@ -10,13 +10,13 @@ expression: harness.render()
 ┌Search Jobs───────────────────────────┐
 │ No job┌Help──────────────────┐efresh.│
 │       │Global Keys:          ↑       │
-│       │  ?          Help     █       │
-│       │  q          Quit     ║       │
-│       │  Ctrl+Q     Quit     ║       │
+│       │  ?               Help█       │
+│       │  q               Quit║       │
+│       │  Ctrl+Q          Quit║       │
 │       │(global)              ║       │
-│       │  Tab        Next     ║       │
+│       │  Tab             Next║       │
 │       │screen                ║       │
-│       │  Shift+Tab  Previous ↓       │
+│       │  Shift+Tab           ↓       │
 │       └──────────────────────┘       │
 │                                      │
 └──────────────────────────────────────┘

@@ -19,97 +19,119 @@ impl App {
             }
             Action::SwitchToSearch => {
                 self.current_screen = CurrentScreen::Search;
+                self.init_focus_manager_for_screen(CurrentScreen::Search);
                 self.clear_error_on_navigation();
             }
             Action::SwitchToSettingsScreen => {
                 self.current_screen = CurrentScreen::Settings;
+                self.init_focus_manager_for_screen(CurrentScreen::Settings);
                 self.clear_error_on_navigation();
             }
             Action::NextScreen => {
-                self.current_screen = self.current_screen.next();
+                let next_screen = self.current_screen.next();
+                self.current_screen = next_screen;
+                self.init_focus_manager_for_screen(next_screen);
                 self.clear_error_on_navigation();
             }
             Action::PreviousScreen => {
-                self.current_screen = self.current_screen.previous();
+                let prev_screen = self.current_screen.previous();
+                self.current_screen = prev_screen;
+                self.init_focus_manager_for_screen(prev_screen);
                 self.clear_error_on_navigation();
             }
             Action::LoadIndexes { offset, .. } => {
                 self.current_screen = CurrentScreen::Indexes;
+                self.init_focus_manager_for_screen(CurrentScreen::Indexes);
                 if offset == 0 {
                     self.indexes_pagination.reset();
                 }
             }
             Action::LoadClusterInfo => {
                 self.current_screen = CurrentScreen::Cluster;
+                self.init_focus_manager_for_screen(CurrentScreen::Cluster);
             }
             Action::ToggleClusterViewMode => {
                 self.toggle_cluster_view_mode();
             }
             Action::LoadJobs { offset, .. } => {
                 self.current_screen = CurrentScreen::Jobs;
+                self.init_focus_manager_for_screen(CurrentScreen::Jobs);
                 if offset == 0 {
                     self.jobs_pagination.reset();
                 }
             }
             Action::LoadHealth => {
                 self.current_screen = CurrentScreen::Health;
+                self.init_focus_manager_for_screen(CurrentScreen::Health);
             }
             Action::LoadLicense => {
                 self.current_screen = CurrentScreen::License;
+                self.init_focus_manager_for_screen(CurrentScreen::License);
             }
             Action::LoadKvstore => {
                 self.current_screen = CurrentScreen::Kvstore;
+                self.init_focus_manager_for_screen(CurrentScreen::Kvstore);
             }
             Action::LoadSavedSearches => {
                 self.current_screen = CurrentScreen::SavedSearches;
+                self.init_focus_manager_for_screen(CurrentScreen::SavedSearches);
             }
             Action::LoadInternalLogs { .. } => {
                 self.current_screen = CurrentScreen::InternalLogs;
+                self.init_focus_manager_for_screen(CurrentScreen::InternalLogs);
             }
             Action::LoadApps { offset, .. } => {
                 self.current_screen = CurrentScreen::Apps;
+                self.init_focus_manager_for_screen(CurrentScreen::Apps);
                 if offset == 0 {
                     self.apps_pagination.reset();
                 }
             }
             Action::LoadUsers { offset, .. } => {
                 self.current_screen = CurrentScreen::Users;
+                self.init_focus_manager_for_screen(CurrentScreen::Users);
                 if offset == 0 {
                     self.users_pagination.reset();
                 }
             }
             Action::LoadSearchPeers { offset, .. } => {
                 self.current_screen = CurrentScreen::SearchPeers;
+                self.init_focus_manager_for_screen(CurrentScreen::SearchPeers);
                 if offset == 0 {
                     self.search_peers_pagination.reset();
                 }
             }
             Action::LoadInputs { offset, .. } => {
                 self.current_screen = CurrentScreen::Inputs;
+                self.init_focus_manager_for_screen(CurrentScreen::Inputs);
                 if offset == 0 {
                     self.inputs_pagination.reset();
                 }
             }
             Action::LoadFiredAlerts { offset, .. } => {
                 self.current_screen = CurrentScreen::FiredAlerts;
+                self.init_focus_manager_for_screen(CurrentScreen::FiredAlerts);
                 if offset == 0 {
                     self.fired_alerts_pagination.reset();
                 }
             }
             Action::LoadLookups { offset, .. } => {
                 self.current_screen = CurrentScreen::Lookups;
+                self.init_focus_manager_for_screen(CurrentScreen::Lookups);
                 if offset == 0 {
                     self.lookups_pagination.reset();
                 }
             }
             Action::LoadDashboards { offset, .. } => {
                 self.current_screen = CurrentScreen::Dashboards;
+                self.init_focus_manager_for_screen(CurrentScreen::Dashboards);
                 if offset == 0 {
                     self.dashboards_pagination.reset();
                 }
             }
             Action::LoadDataModels { offset, .. } => {
                 self.current_screen = CurrentScreen::DataModels;
+                self.init_focus_manager_for_screen(CurrentScreen::DataModels);
                 if offset == 0 {
                     self.data_models_pagination.reset();
                 }
@@ -130,18 +152,21 @@ impl App {
             }
             Action::LoadWorkloadPools { offset, .. } => {
                 self.current_screen = CurrentScreen::WorkloadManagement;
+                self.init_focus_manager_for_screen(CurrentScreen::WorkloadManagement);
                 if offset == 0 {
                     self.workload_pools_pagination.reset();
                 }
             }
             Action::LoadWorkloadRules { offset, .. } => {
                 self.current_screen = CurrentScreen::WorkloadManagement;
+                self.init_focus_manager_for_screen(CurrentScreen::WorkloadManagement);
                 if offset == 0 {
                     self.workload_rules_pagination.reset();
                 }
             }
             Action::LoadForwarders { offset, .. } => {
                 self.current_screen = CurrentScreen::Forwarders;
+                self.init_focus_manager_for_screen(CurrentScreen::Forwarders);
                 if offset == 0 {
                     self.forwarders_pagination.reset();
                 }
@@ -205,6 +230,109 @@ impl App {
         if self.current_screen != CurrentScreen::Search {
             self.clear_validation_state();
         }
+    }
+
+    /// Initialize the FocusManager for the given screen.
+    /// Sets up focusable component IDs based on the screen type.
+    fn init_focus_manager_for_screen(&mut self, screen: CurrentScreen) {
+        use crate::focus::FocusManager;
+
+        let component_ids: Vec<String> = match screen {
+            CurrentScreen::Search => {
+                vec!["search_query".to_string(), "search_results".to_string()]
+            }
+            CurrentScreen::Configs => {
+                vec![
+                    "config_search".to_string(),
+                    "config_files".to_string(),
+                    "config_stanzas".to_string(),
+                ]
+            }
+            CurrentScreen::Jobs => {
+                // Jobs screen has filter input and job list
+                vec!["jobs_filter".to_string(), "jobs_list".to_string()]
+            }
+            CurrentScreen::Indexes => {
+                vec!["indexes_list".to_string()]
+            }
+            CurrentScreen::Cluster => {
+                vec!["cluster_summary".to_string(), "cluster_peers".to_string()]
+            }
+            CurrentScreen::Health => {
+                vec!["health_status".to_string()]
+            }
+            CurrentScreen::License => {
+                vec!["license_usage".to_string()]
+            }
+            CurrentScreen::Kvstore => {
+                vec!["kvstore_status".to_string()]
+            }
+            CurrentScreen::SavedSearches => {
+                vec!["saved_searches_list".to_string()]
+            }
+            CurrentScreen::Macros => {
+                vec!["macros_list".to_string()]
+            }
+            CurrentScreen::InternalLogs => {
+                vec!["internal_logs_list".to_string()]
+            }
+            CurrentScreen::Apps => {
+                vec!["apps_list".to_string()]
+            }
+            CurrentScreen::Users => {
+                vec!["users_list".to_string()]
+            }
+            CurrentScreen::Roles => {
+                vec!["roles_list".to_string()]
+            }
+            CurrentScreen::SearchPeers => {
+                vec!["search_peers_list".to_string()]
+            }
+            CurrentScreen::Inputs => {
+                vec!["inputs_list".to_string()]
+            }
+            CurrentScreen::FiredAlerts => {
+                vec!["fired_alerts_list".to_string()]
+            }
+            CurrentScreen::Forwarders => {
+                vec!["forwarders_list".to_string()]
+            }
+            CurrentScreen::Lookups => {
+                vec!["lookups_list".to_string()]
+            }
+            CurrentScreen::Dashboards => {
+                vec!["dashboards_list".to_string()]
+            }
+            CurrentScreen::DataModels => {
+                vec!["data_models_list".to_string()]
+            }
+            CurrentScreen::WorkloadManagement => {
+                vec!["workload_pools".to_string(), "workload_rules".to_string()]
+            }
+            CurrentScreen::Shc => {
+                vec!["shc_summary".to_string(), "shc_members".to_string()]
+            }
+            CurrentScreen::Audit => {
+                vec!["audit_events_list".to_string()]
+            }
+            CurrentScreen::Overview => {
+                vec!["overview_resources".to_string()]
+            }
+            CurrentScreen::MultiInstance => {
+                vec!["multi_instance_list".to_string()]
+            }
+            CurrentScreen::Settings => {
+                vec!["settings_options".to_string()]
+            }
+            CurrentScreen::JobInspect => {
+                // Job inspect is a detail view with single focus
+                vec!["job_inspect_details".to_string()]
+            }
+        };
+
+        self.focus_manager = FocusManager::new(component_ids);
+        // Enable focus navigation mode if there are focusable components
+        self.focus_navigation_mode = self.focus_manager.len() > 1;
     }
 }
 

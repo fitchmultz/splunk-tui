@@ -18,6 +18,7 @@
 
 use crate::action::Action;
 use crate::app::App;
+use crate::app::state::SearchInputMode;
 
 // Domain-specific action handler modules
 mod data_loading;
@@ -166,7 +167,69 @@ impl App {
                 self.handle_system_action(action);
             }
 
+            // Focus management actions
+            Action::NextFocus | Action::PreviousFocus | Action::SetFocus(_) | Action::ToggleFocusMode => {
+                self.handle_focus_action(action);
+            }
+
             // Catch-all for unhandled actions
+            _ => {}
+        }
+    }
+
+    /// Handle focus management actions.
+    fn handle_focus_action(&mut self, action: Action) {
+        match action {
+            Action::NextFocus => {
+                self.focus_manager.next();
+                self.update_focus_for_current_screen();
+            }
+            Action::PreviousFocus => {
+                self.focus_manager.prev();
+                self.update_focus_for_current_screen();
+            }
+            Action::SetFocus(id) => {
+                self.focus_manager.set_focus(&id);
+                self.update_focus_for_current_screen();
+            }
+            Action::ToggleFocusMode => {
+                self.focus_navigation_mode = !self.focus_navigation_mode;
+                let msg = if self.focus_navigation_mode {
+                    "Focus navigation mode ON (Ctrl+Tab to navigate)"
+                } else {
+                    "Focus navigation mode OFF"
+                };
+                self.toasts.push(crate::ui::Toast::new(
+                    msg.to_string(),
+                    crate::ui::ToastLevel::Info,
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    /// Update component focus states based on FocusManager for the current screen.
+    fn update_focus_for_current_screen(&mut self) {
+        use crate::app::state::CurrentScreen;
+
+        match self.current_screen {
+            CurrentScreen::Search => {
+                // Update SearchInputMode based on focus
+                if let Some(focused_id) = self.focus_manager.current_id() {
+                    self.search_input_mode = if focused_id == "search_query" {
+                        SearchInputMode::QueryFocused
+                    } else {
+                        SearchInputMode::ResultsFocused
+                    };
+                }
+            }
+            CurrentScreen::Configs => {
+                // Configs screen has search and results components
+                if let Some(focused_id) = self.focus_manager.current_id() {
+                    self.config_search_mode = focused_id == "config_search";
+                }
+            }
+            // Add other screens as needed
             _ => {}
         }
     }

@@ -34,12 +34,12 @@
         "model": "opus"
       },
       "phase2": {
-        "runner": "claude",
-        "model": "opus"
+        "runner": "kimi",
+        "model": "kimi-code/kimi-for-coding"
       },
       "phase3": {
-        "runner": "claude",
-        "model": "opus"
+        "runner": "kimi",
+        "model": "kimi-code/kimi-for-coding"
       }
     }
   }

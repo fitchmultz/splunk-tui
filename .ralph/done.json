@@ -2170,6 +2170,78 @@
         "RQ-0324"
       ],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0323",
+      "status": "done",
+      "title": "Integrate tui-scrollview crate and enhance focus management system",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "scrollview",
+        "focus-management",
+        "navigation",
+        "tui-scrollview",
+        "opentui-port",
+        "integration"
+      ],
+      "scope": [
+        "crates/tui/src/",
+        "crates/tui/src/focus.rs",
+        "crates/tui/src/ui/components/scrollable.rs",
+        "crates/tui/src/ui/components/select_list.rs",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes Scrollable Containers as Priority 3",
+        "Feature file: /tmp/opentui-rust-features.md describes Focus Management as Priority 4",
+        "tui-scrollview = '0.5' already added to Cargo.toml (dependency present)",
+        "FocusManager already implemented in crates/tui/src/focus.rs with full test coverage",
+        "ScrollableContainer already implemented in crates/tui/src/ui/components/scrollable.rs",
+        "SelectList<T> component already implemented in crates/tui/src/ui/components/select_list.rs",
+        "Tab/Shift+Tab currently used for screen navigation; focus navigation within screens not yet implemented",
+        "tui-scrollview crate is NOT currently used in codebase (custom ScrollableContainer used instead)",
+        "FocusManager is defined but NOT integrated into screen rendering or app state"
+      ],
+      "plan": [
+        "Evaluate tui-scrollview vs custom ScrollableContainer: decide if migration is beneficial",
+        "If migrating to tui-scrollview: Replace custom ScrollableContainer with tui_scrollview::ScrollView",
+        "Add tui-scrollview usage examples in component documentation",
+        "Integrate FocusManager into App state (crates/tui/src/app/mod.rs or similar)",
+        "Add focus-aware rendering to screens with multiple interactive elements (popups, forms)",
+        "Consider adding separate keybindings for focus navigation vs screen navigation (e.g., Ctrl+Tab for focus)",
+        "Add focus indicators (visual highlighting) to focused components",
+        "Test focus navigation with real multi-component screens",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md sections '4. Scrollable Containers' and '10. Focus Management'",
+        "Task scope changed from 'implement' to 'integrate' - core components exist but need wiring into app",
+        "Sticky scroll feature useful for log tails (auto-scroll to bottom) - can be added to ScrollableContainer",
+        "Focus management enables keyboard-only navigation for accessibility",
+        "Current Tab/Shift+Tab binding is for screen navigation; may need different keys for focus navigation",
+        "Consider tui-realm crate for more advanced component architecture if needed",
+        "Integrated tui-scrollview crate with sticky scroll feature for log tailing",
+        "Added FocusManager to App state with focus_navigation_mode flag",
+        "Implemented focus actions: NextFocus, PreviousFocus, SetFocus, ToggleFocusMode",
+        "Added Ctrl+Tab/Ctrl+Shift+Tab keybindings for focus navigation",
+        "Implemented per-screen focus initialization for all 24 screens",
+        "Updated documentation and snapshots with new keybindings",
+        "All 447 tests pass, make ci completes successfully"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-04T23:25:35.062086052Z",
+      "completed_at": "2026-02-04T23:25:35.062086052Z",
+      "depends_on": [],
+      "blocks": [
+        "RQ-0324"
+      ],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }

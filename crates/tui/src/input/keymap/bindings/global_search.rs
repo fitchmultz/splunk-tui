@@ -81,6 +81,31 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::PreviousScreen),
             handles_input: true,
         },
+        // Focus navigation (Ctrl+Tab to avoid conflict with screen navigation)
+        Keybinding {
+            section: Section::Global,
+            keys: "Ctrl+Tab",
+            description: "Next focus",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Tab,
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: Some(Action::NextFocus),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "Ctrl+Shift+Tab",
+            description: "Previous focus",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::BackTab,
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: Some(Action::PreviousFocus),
+            handles_input: true,
+        },
         Keybinding {
             section: Section::Global,
             keys: "Ctrl+c",

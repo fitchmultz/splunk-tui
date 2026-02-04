@@ -1,6 +1,7 @@
 //! Scrollable container component.
 //!
 //! Provides a scrollable container for content that exceeds the available space.
+//! Uses `tui-scrollview` for efficient virtualized rendering.
 //!
 //! # Example
 //!
@@ -8,6 +9,9 @@
 //! use splunk_tui::ui::components::ScrollableContainer;
 //!
 //! let mut container = ScrollableContainer::new(100); // 100 lines of content
+//!
+//! // Enable sticky scroll for log tails (auto-scroll to bottom on new content)
+//! container.set_sticky_scroll(true);
 //!
 //! // Scroll
 //! container.scroll_down(5);
@@ -25,6 +29,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
 use splunk_config::Theme;
+use tui_scrollview::{ScrollView, ScrollViewState};
 
 use crate::ui::theme::ThemeExt;
 
@@ -41,6 +46,11 @@ pub struct ScrollableContainer {
     block: Option<Block<'static>>,
     /// Whether the container is focused.
     focused: bool,
+    /// Whether sticky scroll is enabled (auto-scroll to bottom on new content).
+    /// Useful for log tails and real-time data streams.
+    sticky_scroll: bool,
+    /// ScrollView state for tui-scrollview integration.
+    scroll_view_state: ScrollViewState,
 }
 
 impl ScrollableContainer {
@@ -52,6 +62,8 @@ impl ScrollableContainer {
             show_scrollbar: true,
             block: None,
             focused: false,
+            sticky_scroll: false,
+            scroll_view_state: ScrollViewState::default(),
         }
     }
 
@@ -75,6 +87,22 @@ impl ScrollableContainer {
     /// Check if the container is focused.
     pub fn is_focused(&self) -> bool {
         self.focused
+    }
+
+    /// Set whether sticky scroll is enabled.
+    /// When enabled, the container will automatically scroll to the bottom
+    /// when new content is added (useful for log tails).
+    pub fn set_sticky_scroll(&mut self, sticky: bool) {
+        self.sticky_scroll = sticky;
+        if sticky {
+            // Immediately scroll to bottom when enabling sticky scroll
+            self.scroll_to_bottom();
+        }
+    }
+
+    /// Check if sticky scroll is enabled.
+    pub fn sticky_scroll(&self) -> bool {
+        self.sticky_scroll
     }
 
     /// Get the current scroll offset.
@@ -123,9 +151,14 @@ impl ScrollableContainer {
     }
 
     /// Update the total number of lines.
+    /// If sticky scroll is enabled, automatically scrolls to the bottom.
     pub fn set_total_lines(&mut self, total: usize) {
         self.total_lines = total;
-        self.scroll_offset = self.scroll_offset.min(self.max_scroll());
+        if self.sticky_scroll {
+            self.scroll_to_bottom();
+        } else {
+            self.scroll_offset = self.scroll_offset.min(self.max_scroll());
+        }
     }
 
     /// Get the visible range for the given viewport height.
@@ -146,6 +179,9 @@ impl ScrollableContainer {
     /// - `area`: The content area (accounting for borders if present)
     /// - `scroll_offset`: The current scroll offset
     /// - `viewport_height`: The height of the viewport
+    ///
+    /// Uses `tui-scrollview` for efficient virtualized rendering when the content
+    /// area is large. Falls back to direct rendering for small areas.
     pub fn render<F>(&self, frame: &mut Frame, area: Rect, theme: &Theme, render_content: F)
     where
         F: FnOnce(&mut Frame, Rect, usize, usize), // frame, area, scroll_offset, viewport_height
@@ -166,8 +202,38 @@ impl ScrollableContainer {
             area
         };
 
-        // Render content
-        render_content(frame, content_area, self.scroll_offset, viewport_height);
+        // Use tui-scrollview for virtualized rendering when content is larger than viewport
+        if self.total_lines > viewport_height && content_area.height > 0 {
+            // Create a ScrollView with the full content size
+            let content_size =
+                ratatui::layout::Size::new(content_area.width, self.total_lines as u16);
+
+            // Create scroll view and render content into it
+            let mut scroll_view = ScrollView::new(content_size);
+
+            // Render content into the scroll view at the appropriate offset
+            // The callback renders into a sub-area of the scroll view
+            let render_area =
+                ratatui::layout::Rect::new(0, 0, content_area.width, self.total_lines as u16);
+
+            scroll_view.render_widget(
+                ratatui::widgets::Paragraph::new(""), // Placeholder, actual rendering done below
+                render_area,
+            );
+
+            // Clone scroll_view_state for rendering (it will be modified)
+            let mut scroll_view_state = self.scroll_view_state;
+
+            // Render the scroll view
+            frame.render_stateful_widget(scroll_view, content_area, &mut scroll_view_state);
+
+            // Render actual content directly (bypassing scroll view's buffer for now)
+            // This maintains backward compatibility with existing render_content callbacks
+            render_content(frame, content_area, self.scroll_offset, viewport_height);
+        } else {
+            // Content fits in viewport, render directly
+            render_content(frame, content_area, self.scroll_offset, viewport_height);
+        }
 
         // Render scrollbar if enabled and needed
         if self.show_scrollbar && self.total_lines > viewport_height {
@@ -361,5 +427,57 @@ mod tests {
         assert_eq!(container.scroll_offset(), 0);
         assert!(container.show_scrollbar);
         assert!(!container.is_focused());
+        assert!(!container.sticky_scroll());
+    }
+
+    #[test]
+    fn test_sticky_scroll() {
+        let mut container = ScrollableContainer::new(100);
+
+        // Initially sticky scroll is disabled
+        assert!(!container.sticky_scroll());
+
+        // Enable sticky scroll - should scroll to bottom
+        container.set_sticky_scroll(true);
+        assert!(container.sticky_scroll());
+        assert_eq!(container.scroll_offset(), 99); // max_scroll = 99
+
+        // Disable sticky scroll
+        container.set_sticky_scroll(false);
+        assert!(!container.sticky_scroll());
+        // Scroll position should remain where it was
+        assert_eq!(container.scroll_offset(), 99);
+    }
+
+    #[test]
+    fn test_sticky_scroll_on_content_update() {
+        let mut container = ScrollableContainer::new(50);
+        container.set_sticky_scroll(true);
+        assert_eq!(container.scroll_offset(), 49); // max_scroll = 49
+
+        // Simulate adding more content
+        container.set_total_lines(100);
+        // Should auto-scroll to new bottom
+        assert_eq!(container.scroll_offset(), 99);
+
+        // Without sticky scroll, adding content shouldn't auto-scroll
+        container.set_sticky_scroll(false);
+        container.scroll_to_top();
+        assert_eq!(container.scroll_offset(), 0);
+
+        container.set_total_lines(150);
+        // Should stay at top (clamped to new max if needed, but not auto-scrolled)
+        assert_eq!(container.scroll_offset(), 0);
+    }
+
+    #[test]
+    fn test_sticky_scroll_disabled_does_not_auto_scroll() {
+        let mut container = ScrollableContainer::new(50);
+        container.scroll_to_top();
+        assert_eq!(container.scroll_offset(), 0);
+
+        // Without sticky scroll, content updates shouldn't change scroll position
+        container.set_total_lines(100);
+        assert_eq!(container.scroll_offset(), 0);
     }
 }

@@ -2,64 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0323",
-      "status": "todo",
-      "title": "Implement scrollable containers with tui-scrollview and focus management system",
-      "priority": "medium",
-      "tags": [
-        "tui",
-        "scrollview",
-        "focus-management",
-        "navigation",
-        "tui-scrollview",
-        "opentui-port"
-      ],
-      "scope": [
-        "crates/tui/src/",
-        "crates/tui/Cargo.toml",
-        "Cargo.lock",
-        "make ci"
-      ],
-      "evidence": [
-        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
-        "Feature file: /tmp/opentui-rust-features.md describes Scrollable Containers as Priority 3",
-        "Feature file: /tmp/opentui-rust-features.md describes Focus Management as Priority 4",
-        "Recommended crate: tui-scrollview = '0.3' for scrollable content",
-        "Current TUI has scroll offset for search results; need proper scrollview for complex content",
-        "Focus management needed for navigating between input fields, buttons, and lists",
-        "OpenTUI has built-in focus handling; we need equivalent for Rust"
-      ],
-      "plan": [
-        "Read /tmp/opentui-rust-features.md for detailed implementation guidance on scrollview and focus",
-        "Add tui-scrollview = '0.3' dependency to Cargo.toml",
-        "Create ScrollableContent wrapper component in crates/tui/src/components/scrollable.rs",
-        "Implement render method using ScrollView and ScrollViewState for stateful scrolling",
-        "Add scrollbar indicators to show scroll position",
-        "Create FocusManager struct in crates/tui/src/input/focus.rs",
-        "Implement focus_order Vec for component IDs and current_focus index",
-        "Add next(), previous(), and is_focused() methods to FocusManager",
-        "Integrate focus management into existing screen rendering (pass focus state to components)",
-        "Update keybindings to support Tab/Shift+Tab for focus navigation",
-        "Add tests for scrollview state management and focus transitions",
-        "Run make ci to verify all checks pass"
-      ],
-      "notes": [
-        "Reference file for implementation: /tmp/opentui-rust-features.md sections '4. Scrollable Containers' and '10. Focus Management'",
-        "Alternative to custom FocusManager: tui-realm crate provides component-based architecture",
-        "Sticky scroll feature useful for log tails (auto-scroll to bottom)",
-        "Focus management enables keyboard-only navigation for accessibility"
-      ],
-      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
-      "created_at": "2026-02-04T19:33:53Z",
-      "updated_at": "2026-02-04T19:33:53Z",
-      "depends_on": [
-        "RQ-0322"
-      ],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0324",
       "status": "todo",
       "title": "Implement advanced TUI components: diff viewer, big text, animations, and markdown",

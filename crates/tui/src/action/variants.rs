@@ -141,6 +141,16 @@ pub enum Action {
     /// Navigate to the previous screen in cyclic order.
     PreviousScreen,
 
+    // Focus Management
+    /// Move focus to the next component within the current screen.
+    NextFocus,
+    /// Move focus to the previous component within the current screen.
+    PreviousFocus,
+    /// Set focus to a specific component by ID.
+    SetFocus(String),
+    /// Toggle focus navigation mode (Ctrl+Tab to navigate between components).
+    ToggleFocusMode,
+
     // Input
     /// Raw keyboard input event
     Input(KeyEvent),

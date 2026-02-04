@@ -15,6 +15,7 @@ use crate::app::state::{
     ClusterViewMode, CurrentScreen, ListPaginationState, SearchInputMode, SortState,
 };
 use crate::app::structs::{App, ConnectionContext, SplValidationState};
+use crate::focus::FocusManager;
 use splunk_client::SearchMode;
 use splunk_config::constants::DEFAULT_SEARCH_PAGE_SIZE;
 use splunk_config::{
@@ -274,6 +275,8 @@ impl App {
             last_input_change: None,
             search_mode: SearchMode::Normal,
             realtime_window: None,
+            focus_manager: FocusManager::default(),
+            focus_navigation_mode: false,
         }
     }
 
