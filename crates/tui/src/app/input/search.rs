@@ -35,6 +35,18 @@ impl App {
         self.last_input_change = Some(Instant::now());
     }
 
+    /// Clear validation state.
+    ///
+    /// Should be called when leaving the search screen or when
+    /// the search input is no longer relevant.
+    pub fn clear_validation_state(&mut self) {
+        self.spl_validation_pending = false;
+        self.last_input_change = None;
+        self.spl_validation_state.valid = None;
+        self.spl_validation_state.errors.clear();
+        self.spl_validation_state.warnings.clear();
+    }
+
     /// Handle debounced validation in tick.
     ///
     /// Called from the main tick handler. If validation is pending and
@@ -135,20 +147,39 @@ impl App {
                         KeyCode::Backspace => {
                             self.history_index = None;
                             if self.search_cursor_position > 0 {
-                                // Remove character before cursor
-                                let pos = self.search_cursor_position;
-                                self.search_input.remove(pos - 1);
-                                self.search_cursor_position -= 1;
+                                // Remove character before cursor using safe char-based indexing
+                                let char_count = self.search_input.chars().count();
+                                if self.search_cursor_position <= char_count {
+                                    let byte_pos = self
+                                        .search_input
+                                        .char_indices()
+                                        .nth(self.search_cursor_position)
+                                        .map(|(i, _)| i)
+                                        .unwrap_or(self.search_input.len());
+                                    let prev_char_start = self.search_input[..byte_pos]
+                                        .char_indices()
+                                        .next_back()
+                                        .map(|(i, _)| i)
+                                        .unwrap_or(0);
+                                    self.search_input.remove(prev_char_start);
+                                    self.search_cursor_position -= 1;
+                                }
                             }
                             self.trigger_validation();
                             None
                         }
                         KeyCode::Delete => {
                             self.history_index = None;
-                            if self.search_cursor_position < self.search_input.len() {
-                                // Remove character at cursor
-                                let pos = self.search_cursor_position;
-                                self.search_input.remove(pos);
+                            let char_count = self.search_input.chars().count();
+                            if self.search_cursor_position < char_count {
+                                // Remove character at cursor using safe char-based indexing
+                                if let Some((byte_pos, _)) = self
+                                    .search_input
+                                    .char_indices()
+                                    .nth(self.search_cursor_position)
+                                {
+                                    self.search_input.remove(byte_pos);
+                                }
                             }
                             self.trigger_validation();
                             None
@@ -160,7 +191,8 @@ impl App {
                             None
                         }
                         KeyCode::Right => {
-                            if self.search_cursor_position < self.search_input.len() {
+                            let char_count = self.search_input.chars().count();
+                            if self.search_cursor_position < char_count {
                                 self.search_cursor_position += 1;
                             }
                             None
@@ -170,7 +202,7 @@ impl App {
                             None
                         }
                         KeyCode::End => {
-                            self.search_cursor_position = self.search_input.len();
+                            self.search_cursor_position = self.search_input.chars().count();
                             None
                         }
                         KeyCode::Down => {
@@ -183,8 +215,8 @@ impl App {
                                     self.search_input = self.saved_search_input.clone();
                                 }
                             }
-                            // Move cursor to end of new text
-                            self.search_cursor_position = self.search_input.len();
+                            // Move cursor to end of new text (using char count for consistency)
+                            self.search_cursor_position = self.search_input.chars().count();
                             self.trigger_validation();
                             None
                         }
@@ -205,8 +237,8 @@ impl App {
                             if let Some(idx) = self.history_index {
                                 self.search_input = self.search_history[idx].clone();
                             }
-                            // Move cursor to end of new text
-                            self.search_cursor_position = self.search_input.len();
+                            // Move cursor to end of new text (using char count for consistency)
+                            self.search_cursor_position = self.search_input.chars().count();
                             self.trigger_validation();
                             None
                         }
@@ -218,8 +250,21 @@ impl App {
                         }
                         KeyCode::Char(c) => {
                             self.history_index = None;
-                            // Insert character at cursor position
-                            self.search_input.insert(self.search_cursor_position, c);
+                            // Insert character at cursor position using safe char-based indexing
+                            let char_count = self.search_input.chars().count();
+                            if self.search_cursor_position >= char_count {
+                                // Append at end
+                                self.search_input.push(c);
+                            } else if let Some((byte_pos, _)) = self
+                                .search_input
+                                .char_indices()
+                                .nth(self.search_cursor_position)
+                            {
+                                self.search_input.insert(byte_pos, c);
+                            } else {
+                                // Fallback to append
+                                self.search_input.push(c);
+                            }
                             self.search_cursor_position += 1;
                             self.trigger_validation();
                             None

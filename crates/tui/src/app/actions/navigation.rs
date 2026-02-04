@@ -19,15 +19,19 @@ impl App {
             }
             Action::SwitchToSearch => {
                 self.current_screen = CurrentScreen::Search;
+                self.clear_error_on_navigation();
             }
             Action::SwitchToSettingsScreen => {
                 self.current_screen = CurrentScreen::Settings;
+                self.clear_error_on_navigation();
             }
             Action::NextScreen => {
                 self.current_screen = self.current_screen.next();
+                self.clear_error_on_navigation();
             }
             Action::PreviousScreen => {
                 self.current_screen = self.current_screen.previous();
+                self.clear_error_on_navigation();
             }
             Action::LoadIndexes { offset, .. } => {
                 self.current_screen = CurrentScreen::Indexes;
@@ -163,6 +167,7 @@ impl App {
 
     fn open_help_popup(&mut self) {
         use crate::ui::popup::{Popup, PopupType};
+        self.help_scroll_offset = 0; // Reset scroll on open
         self.popup = Some(Popup::builder(PopupType::Help).build());
     }
 
@@ -189,6 +194,16 @@ impl App {
             && self.jobs_state.selected().is_some()
         {
             self.current_screen = CurrentScreen::JobInspect;
+        }
+    }
+
+    /// Clear error state when navigating to a new screen.
+    /// This prevents errors from persisting across screen changes.
+    fn clear_error_on_navigation(&mut self) {
+        self.current_error = None;
+        // Also clear validation state if leaving the Search screen
+        if self.current_screen != CurrentScreen::Search {
+            self.clear_validation_state();
         }
     }
 }

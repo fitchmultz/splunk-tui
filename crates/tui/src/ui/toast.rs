@@ -128,10 +128,14 @@ impl Toast {
     }
 }
 
+/// Maximum number of toasts to display at once (prevents screen overflow).
+const MAX_TOASTS: usize = 5;
+
 /// Renders all active toasts in the bottom-right corner.
 ///
 /// Toasts are stacked vertically with the most recent at the bottom.
 /// Expired toasts are filtered out before rendering.
+/// Limited to MAX_TOASTS to prevent screen overflow.
 ///
 /// # Arguments
 ///
@@ -144,6 +148,14 @@ pub fn render_toasts(f: &mut Frame, toasts: &[Toast], has_error: bool, theme: &T
     if active.is_empty() {
         return;
     }
+
+    // Limit to MAX_TOASTS (take the most recent ones)
+    let active: Vec<_> = if active.len() > MAX_TOASTS {
+        let skip_count = active.len() - MAX_TOASTS;
+        active.into_iter().skip(skip_count).collect()
+    } else {
+        active
+    };
 
     // Calculate total height needed
     let toast_height = 4; // Each toast is 4 lines tall (for 'e' hint)

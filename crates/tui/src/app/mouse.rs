@@ -64,6 +64,10 @@ impl App {
 
     /// Handle clicks in the main content area.
     fn handle_content_click(&mut self, row: u16, _col: u16) -> Option<Action> {
+        // Ignore content clicks during loading
+        if self.loading {
+            return None;
+        }
         match self.current_screen {
             CurrentScreen::Jobs => {
                 // If filtering is active, the table area is pushed down by 3 rows

@@ -751,6 +751,7 @@ impl App {
         ));
         self.toasts.push(Toast::error(error_msg));
         self.loading = false;
+        self.loading_since = None;
     }
 }
 

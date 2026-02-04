@@ -129,7 +129,7 @@ impl App {
         Self {
             current_screen: CurrentScreen::Search,
             search_input: last_search_query.clone().unwrap_or_default(),
-            search_cursor_position: last_search_query.unwrap_or_default().len(),
+            search_cursor_position: last_search_query.unwrap_or_default().chars().count(),
             running_query: None,
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
@@ -213,6 +213,7 @@ impl App {
             config_search_before_edit: None,
             filtered_stanza_indices: Vec::new(),
             loading: false,
+            loading_since: None,
             progress: 0.0,
             toasts: Vec::new(),
             auto_refresh,

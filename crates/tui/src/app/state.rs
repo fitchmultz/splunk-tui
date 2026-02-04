@@ -306,6 +306,8 @@ pub struct ListPaginationState {
     pub total_loaded: usize,
     /// Maximum number of items to load (safety cap).
     pub max_items: u64,
+    /// Whether a load operation is currently in progress (prevents duplicate requests).
+    pub is_loading: bool,
 }
 
 impl ListPaginationState {
@@ -317,12 +319,14 @@ impl ListPaginationState {
             has_more: false,
             total_loaded: 0,
             max_items,
+            is_loading: false,
         }
     }
 
     /// Check if more items can be loaded without exceeding max_items cap.
+    /// Returns false if a load is already in progress (prevents race conditions).
     pub fn can_load_more(&self) -> bool {
-        self.has_more && (self.total_loaded as u64) < self.max_items
+        !self.is_loading && self.has_more && (self.total_loaded as u64) < self.max_items
     }
 
     /// Reset pagination state (e.g., on refresh).
@@ -330,6 +334,17 @@ impl ListPaginationState {
         self.current_offset = 0;
         self.has_more = false;
         self.total_loaded = 0;
+        self.is_loading = false;
+    }
+
+    /// Mark that a load operation is starting.
+    pub fn start_loading(&mut self) {
+        self.is_loading = true;
+    }
+
+    /// Mark that a load operation has completed (success or failure).
+    pub fn finish_loading(&mut self) {
+        self.is_loading = false;
     }
 
     /// Update state after loading items.
@@ -338,6 +353,7 @@ impl ListPaginationState {
         self.current_offset = self.total_loaded as u64;
         // If we got a full page, there might be more
         self.has_more = count >= self.page_size as usize;
+        self.is_loading = false;
     }
 
     /// Mark that there are no more items.
@@ -518,6 +534,7 @@ mod tests {
         assert!(!state.has_more);
         assert_eq!(state.total_loaded, 0);
         assert_eq!(state.max_items, 1000);
+        assert!(!state.is_loading);
     }
 
     #[test]
@@ -567,13 +584,16 @@ mod tests {
     fn test_list_pagination_state_reset() {
         let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(100);
+        state.start_loading();
         assert!(state.has_more);
+        assert!(state.is_loading);
 
         state.reset();
 
         assert_eq!(state.current_offset, 0);
         assert!(!state.has_more);
         assert_eq!(state.total_loaded, 0);
+        assert!(!state.is_loading);
         // page_size and max_items should remain unchanged
         assert_eq!(state.page_size, 100);
         assert_eq!(state.max_items, 1000);
@@ -642,6 +662,39 @@ mod tests {
             !state.can_load_more(),
             "Should not be able to load more when has_more is false"
         );
+    }
+
+    #[test]
+    fn test_can_load_more_respects_is_loading() {
+        let mut state = ListPaginationState::new(100, 1000);
+        state.update_loaded(100); // Full page, has_more = true
+        assert!(
+            state.can_load_more(),
+            "Should be able to load more initially"
+        );
+
+        state.start_loading();
+        assert!(
+            !state.can_load_more(),
+            "Should not be able to load more while already loading"
+        );
+
+        state.finish_loading();
+        assert!(
+            state.can_load_more(),
+            "Should be able to load more after loading finishes"
+        );
+    }
+
+    #[test]
+    fn test_update_loaded_clears_is_loading() {
+        let mut state = ListPaginationState::new(100, 1000);
+        state.start_loading();
+        assert!(state.is_loading);
+
+        state.update_loaded(50);
+        assert!(!state.is_loading);
+        assert_eq!(state.total_loaded, 50)
     }
 
     #[test]

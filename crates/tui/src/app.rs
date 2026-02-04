@@ -468,8 +468,35 @@ impl App {
         self.dispatch_screen_input(key)
     }
 
+    /// Set loading state with automatic timestamp tracking.
+    pub fn set_loading(&mut self, loading: bool) {
+        self.loading = loading;
+        if loading {
+            self.loading_since = Some(std::time::Instant::now());
+        } else {
+            self.loading_since = None;
+        }
+    }
+
     /// Handle periodic tick events - returns Action if one should be dispatched.
     pub fn handle_tick(&mut self) -> Option<Action> {
+        // Check for loading timeout to prevent stuck loading state
+        const LOADING_TIMEOUT_SECS: u64 = 30;
+        if self.loading {
+            if let Some(since) = self.loading_since {
+                if since.elapsed().as_secs() > LOADING_TIMEOUT_SECS {
+                    self.loading = false;
+                    self.loading_since = None;
+                    self.toasts.push(crate::ui::Toast::warning(
+                        "Operation timed out after 30 seconds",
+                    ));
+                }
+            } else {
+                // If loading is true but no timestamp, set it now (backwards compatibility)
+                self.loading_since = Some(std::time::Instant::now());
+            }
+        }
+
         // Handle debounced SPL validation first
         if let Some(action) = self.handle_validation_tick() {
             return Some(action);

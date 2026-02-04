@@ -2,58 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0318",
-      "status": "todo",
-      "title": "Audit and fix TUI glitches, visual bugs, and input handling edge cases",
-      "priority": "critical",
-      "tags": [
-        "tui",
-        "ux",
-        "robustness",
-        "bug-fix",
-        "polish"
-      ],
-      "scope": [
-        "crates/tui/src/app/",
-        "crates/tui/src/input/",
-        "crates/tui/src/ui/",
-        "crates/tui/src/runtime/",
-        "crates/tui/tests/",
-        "make test",
-        "make ci"
-      ],
-      "evidence": [
-        "User request: 'WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED'",
-        "User requirement: 'USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS'",
-        "User requirement: 'IT CANNOT BE CLUNKY OR HARD TO GRASP'",
-        "TUI has 25+ screens with complex state management in crates/tui/src/app/",
-        "Input handling spans multiple modules: input/, app/input/, app/popups/",
-        "Error handling exists but may have gaps in async error propagation"
-      ],
-      "plan": [
-        "Review all input handlers (crates/tui/src/app/input/*.rs) for key event handling edge cases (rapid keypresses, focus changes mid-input, etc.)",
-        "Audit popup handling in crates/tui/src/app/popups/ for dismiss-on-escape, focus restoration, and z-index issues",
-        "Check screen transition logic for race conditions between data loading and navigation",
-        "Review error display flow: ensure errors don't get stuck, can be dismissed, and don't block navigation",
-        "Test pagination across all list screens (Jobs, Indexes, Apps, etc.) for consistent behavior",
-        "Validate search input handling: cursor positioning, history navigation, SPL validation debounce",
-        "Check toast notification system for overflow, overlapping, and auto-dismiss timing issues",
-        "Review progress indicator behavior during long-running operations (search, export)",
-        "Test terminal resize handling across all screens",
-        "Add or fix unit/integration tests for any identified issues",
-        "Run full test suite: make test && make test-integration",
-        "Run make ci to ensure all quality gates pass"
-      ],
-      "notes": [],
-      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
-      "created_at": "2026-02-04T18:46:17Z",
-      "updated_at": "2026-02-04T18:46:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0319",
       "status": "todo",
       "title": "Implement TUI UX polish: consistent feedback, loading states, and flow optimization",

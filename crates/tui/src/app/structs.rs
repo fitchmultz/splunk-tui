@@ -32,7 +32,7 @@ use std::collections::HashSet;
 pub struct App {
     pub current_screen: CurrentScreen,
     pub search_input: String,
-    /// Cursor position within search_input (byte index, not character index).
+    /// Cursor position within search_input (character index, not byte index).
     /// Must be kept in sync with search_input modifications.
     pub search_cursor_position: usize,
     /// The query that was submitted for the currently running search.
@@ -148,6 +148,7 @@ pub struct App {
 
     // UI State
     pub loading: bool,
+    pub loading_since: Option<std::time::Instant>,
     pub progress: f32,
     pub toasts: Vec<Toast>,
     pub auto_refresh: bool,

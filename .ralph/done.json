@@ -1781,6 +1781,83 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0318",
+      "status": "done",
+      "title": "Audit and fix TUI glitches, visual bugs, and input handling edge cases",
+      "priority": "critical",
+      "tags": [
+        "tui",
+        "ux",
+        "robustness",
+        "bug-fix",
+        "polish"
+      ],
+      "scope": [
+        "crates/tui/src/app/",
+        "crates/tui/src/app/input/",
+        "crates/tui/src/app/popups/",
+        "crates/tui/src/app/actions/",
+        "crates/tui/src/app/core.rs",
+        "crates/tui/src/input/",
+        "crates/tui/src/ui/",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/runtime/",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/app/render.rs",
+        "crates/tui/tests/",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: 'WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED'",
+        "User requirement: 'USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS'",
+        "User requirement: 'IT CANNOT BE CLUNKY OR HARD TO GRASP'",
+        "TUI has 25+ screens defined in CurrentScreen enum (crates/tui/src/app/state.rs)",
+        "Input handling spans 25+ modules in crates/tui/src/app/input/ (one per screen)",
+        "Toast notification system exists in crates/tui/src/ui/toast.rs with 4 severity levels",
+        "Pagination state management exists via ListPaginationState in crates/tui/src/app/state.rs",
+        "50+ test files in crates/tui/tests/ covering snapshot, input, and side effect tests",
+        "Error handling framework exists in crates/tui/src/error_details.rs",
+        "Popup system with 8+ popup types in crates/tui/src/app/popups/ and crates/tui/src/ui/popup/",
+        "Main event loop in crates/tui/src/main.rs handles input channels with overflow protection"
+      ],
+      "plan": [
+        "Review all input handlers (crates/tui/src/app/input/*.rs) for key event handling edge cases (rapid keypresses, focus changes mid-input, etc.)",
+        "Audit popup handling in crates/tui/src/app/popups/ and crates/tui/src/ui/popup/ for dismiss-on-escape, focus restoration, and z-index issues",
+        "Check screen transition logic in crates/tui/src/app/navigation.rs for race conditions between data loading and navigation",
+        "Review error display flow in crates/tui/src/ui/error_details.rs: ensure errors don't get stuck, can be dismissed, and don't block navigation",
+        "Test pagination across all list screens (Jobs, Indexes, Apps, Users, etc.) using ListPaginationState for consistent behavior",
+        "Validate search input handling in crates/tui/src/app/input/search.rs: cursor positioning, history navigation, SPL validation debounce",
+        "Check toast notification system (crates/tui/src/ui/toast.rs) for overflow, overlapping, and auto-dismiss timing issues",
+        "Review progress indicator behavior in crates/tui/src/app/ for long-running operations (search, export)",
+        "Test terminal resize handling across all 25+ screens using resize_tests.rs patterns",
+        "Review action handlers in crates/tui/src/app/actions/ for async error propagation gaps",
+        "Add or fix unit/integration tests for any identified issues in crates/tui/tests/",
+        "Run full test suite: make test",
+        "Run make ci to ensure all quality gates pass"
+      ],
+      "notes": [
+        "Repository has comprehensive test coverage with 50+ test files including snapshot tests, input tests, and side effect tests",
+        "CurrentScreen enum defines 25 screens including Search, Jobs, Indexes, Cluster, Health, License, etc.",
+        "Each screen has dedicated input handler in crates/tui/src/app/input/ directory",
+        "Toast system supports Info, Success, Warning, Error levels with configurable TTL (5-10 seconds)",
+        "Main event loop uses bounded channels with overflow protection (drops events when channel full)",
+        "Fixed critical UTF-8 handling bug in search input cursor positioning (cursor now character-based, UI rendering correctly converts to byte position)",
+        "Fixed UTF-8 cursor position in saved_searches.rs loading",
+        "Updated documentation comments for search_cursor_position field",
+        "All tests pass (347 lib tests, 13 input tests, 10 search snapshot tests, 23 resize tests, etc.)",
+        "Lint and format checks pass"
+      ],
+      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
+      "created_at": "2026-02-04T18:46:17Z",
+      "updated_at": "2026-02-04T19:21:09.070629608Z",
+      "completed_at": "2026-02-04T19:21:09.070629608Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }

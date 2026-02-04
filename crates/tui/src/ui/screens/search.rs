@@ -20,7 +20,7 @@ use splunk_config::Theme;
 pub struct SearchRenderConfig<'a> {
     /// The current search input text
     pub search_input: &'a str,
-    /// Cursor position within search_input (byte index)
+    /// Cursor position within search_input (character index)
     pub search_cursor_position: usize,
     /// Whether the query input is focused (cursor visible when true)
     pub is_query_focused: bool,
@@ -133,8 +133,13 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
         let content_y = input_area.y + 1;
 
         // Calculate display width of text before cursor
-        // Use byte index directly since we're dealing with ASCII cursor movement
-        let text_before_cursor = &search_input[..search_cursor_position.min(search_input.len())];
+        // search_cursor_position is character-based, so find the byte position first
+        let byte_pos = search_input
+            .char_indices()
+            .nth(search_cursor_position)
+            .map(|(i, _)| i)
+            .unwrap_or(search_input.len());
+        let text_before_cursor = &search_input[..byte_pos];
         let cursor_offset = text_before_cursor.chars().count() as u16;
 
         // Set cursor position

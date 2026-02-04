@@ -41,6 +41,8 @@ impl App {
             Action::Resize(width, height) => {
                 // Update last_area to reflect new terminal dimensions
                 self.last_area = ratatui::layout::Rect::new(0, 0, width, height);
+                // Clamp scroll offsets to ensure they don't exceed available data
+                self.clamp_scroll_offsets();
             }
             Action::EnterSearchMode => {
                 self.enter_search_mode();
@@ -230,12 +232,14 @@ impl App {
     fn show_error_details(&mut self, details: crate::error_details::ErrorDetails) {
         use crate::ui::popup::{Popup, PopupType};
         self.current_error = Some(details);
+        self.error_scroll_offset = 0; // Reset scroll on open
         self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
     }
 
     fn show_error_details_from_current(&mut self) {
         use crate::ui::popup::{Popup, PopupType};
         if self.current_error.is_some() {
+            self.error_scroll_offset = 0; // Reset scroll on open
             self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
         }
     }
@@ -315,6 +319,232 @@ impl App {
             );
         } else {
             self.toasts.push(Toast::info("No macro selected"));
+        }
+    }
+
+    /// Clamp all scroll offsets to ensure they don't exceed available data.
+    /// Called after terminal resize to prevent out-of-bounds scrolling.
+    pub fn clamp_scroll_offsets(&mut self) {
+        // Clamp search results scroll offset
+        let max_search_offset = self.search_results.len().saturating_sub(1);
+        self.search_scroll_offset = self.search_scroll_offset.min(max_search_offset);
+
+        // Clamp jobs selection to visible items
+        if let Some(selected) = self.jobs_state.selected() {
+            let max = self.filtered_jobs_len().saturating_sub(1);
+            if selected > max {
+                self.jobs_state.select(Some(max));
+            }
+        }
+
+        // Clamp indexes selection
+        if let Some(ref indexes) = self.indexes
+            && let Some(selected) = self.indexes_state.selected()
+        {
+            let max = indexes.len().saturating_sub(1);
+            if selected > max {
+                self.indexes_state.select(Some(max));
+            }
+        }
+
+        // Clamp saved searches selection
+        if let Some(ref searches) = self.saved_searches
+            && let Some(selected) = self.saved_searches_state.selected()
+        {
+            let max = searches.len().saturating_sub(1);
+            if selected > max {
+                self.saved_searches_state.select(Some(max));
+            }
+        }
+
+        // Clamp apps selection
+        if let Some(ref apps) = self.apps
+            && let Some(selected) = self.apps_state.selected()
+        {
+            let max = apps.len().saturating_sub(1);
+            if selected > max {
+                self.apps_state.select(Some(max));
+            }
+        }
+
+        // Clamp users selection
+        if let Some(ref users) = self.users
+            && let Some(selected) = self.users_state.selected()
+        {
+            let max = users.len().saturating_sub(1);
+            if selected > max {
+                self.users_state.select(Some(max));
+            }
+        }
+
+        // Clamp internal logs selection
+        if let Some(ref logs) = self.internal_logs
+            && let Some(selected) = self.internal_logs_state.selected()
+        {
+            let max = logs.len().saturating_sub(1);
+            if selected > max {
+                self.internal_logs_state.select(Some(max));
+            }
+        }
+
+        // Clamp cluster peers selection
+        if let Some(ref peers) = self.cluster_peers
+            && let Some(selected) = self.cluster_peers_state.selected()
+        {
+            let max = peers.len().saturating_sub(1);
+            if selected > max {
+                self.cluster_peers_state.select(Some(max));
+            }
+        }
+
+        // Clamp macros selection
+        if let Some(ref macros) = self.macros
+            && let Some(selected) = self.macros_state.selected()
+        {
+            let max = macros.len().saturating_sub(1);
+            if selected > max {
+                self.macros_state.select(Some(max));
+            }
+        }
+
+        // Clamp search peers selection
+        if let Some(ref peers) = self.search_peers
+            && let Some(selected) = self.search_peers_state.selected()
+        {
+            let max = peers.len().saturating_sub(1);
+            if selected > max {
+                self.search_peers_state.select(Some(max));
+            }
+        }
+
+        // Clamp inputs selection
+        if let Some(ref inputs) = self.inputs
+            && let Some(selected) = self.inputs_state.selected()
+        {
+            let max = inputs.len().saturating_sub(1);
+            if selected > max {
+                self.inputs_state.select(Some(max));
+            }
+        }
+
+        // Clamp fired alerts selection
+        if let Some(ref alerts) = self.fired_alerts
+            && let Some(selected) = self.fired_alerts_state.selected()
+        {
+            let max = alerts.len().saturating_sub(1);
+            if selected > max {
+                self.fired_alerts_state.select(Some(max));
+            }
+        }
+
+        // Clamp forwarders selection
+        if let Some(ref forwarders) = self.forwarders
+            && let Some(selected) = self.forwarders_state.selected()
+        {
+            let max = forwarders.len().saturating_sub(1);
+            if selected > max {
+                self.forwarders_state.select(Some(max));
+            }
+        }
+
+        // Clamp lookups selection
+        if let Some(ref lookups) = self.lookups
+            && let Some(selected) = self.lookups_state.selected()
+        {
+            let max = lookups.len().saturating_sub(1);
+            if selected > max {
+                self.lookups_state.select(Some(max));
+            }
+        }
+
+        // Clamp dashboards selection
+        if let Some(ref dashboards) = self.dashboards
+            && let Some(selected) = self.dashboards_state.selected()
+        {
+            let max = dashboards.len().saturating_sub(1);
+            if selected > max {
+                self.dashboards_state.select(Some(max));
+            }
+        }
+
+        // Clamp data models selection
+        if let Some(ref data_models) = self.data_models
+            && let Some(selected) = self.data_models_state.selected()
+        {
+            let max = data_models.len().saturating_sub(1);
+            if selected > max {
+                self.data_models_state.select(Some(max));
+            }
+        }
+
+        // Clamp workload pools selection
+        if let Some(ref pools) = self.workload_pools
+            && let Some(selected) = self.workload_pools_state.selected()
+        {
+            let max = pools.len().saturating_sub(1);
+            if selected > max {
+                self.workload_pools_state.select(Some(max));
+            }
+        }
+
+        // Clamp workload rules selection
+        if let Some(ref rules) = self.workload_rules
+            && let Some(selected) = self.workload_rules_state.selected()
+        {
+            let max = rules.len().saturating_sub(1);
+            if selected > max {
+                self.workload_rules_state.select(Some(max));
+            }
+        }
+
+        // Clamp SHC members selection
+        if let Some(ref members) = self.shc_members
+            && let Some(selected) = self.shc_members_state.selected()
+        {
+            let max = members.len().saturating_sub(1);
+            if selected > max {
+                self.shc_members_state.select(Some(max));
+            }
+        }
+
+        // Clamp config files selection
+        if let Some(ref files) = self.config_files
+            && let Some(selected) = self.config_files_state.selected()
+        {
+            let max = files.len().saturating_sub(1);
+            if selected > max {
+                self.config_files_state.select(Some(max));
+            }
+        }
+
+        // Clamp config stanzas selection
+        if let Some(ref stanzas) = self.config_stanzas
+            && let Some(selected) = self.config_stanzas_state.selected()
+        {
+            let max = stanzas.len().saturating_sub(1);
+            if selected > max {
+                self.config_stanzas_state.select(Some(max));
+            }
+        }
+
+        // Clamp audit events selection
+        if let Some(ref events) = self.audit_events
+            && let Some(selected) = self.audit_state.selected()
+        {
+            let max = events.len().saturating_sub(1);
+            if selected > max {
+                self.audit_state.select(Some(max));
+            }
+        }
+
+        // Clamp roles selection
+        if let Some(ref roles) = self.roles
+            && let Some(selected) = self.roles_state.selected()
+        {
+            let max = roles.len().saturating_sub(1);
+            if selected > max {
+                self.roles_state.select(Some(max));
+            }
         }
     }
 }

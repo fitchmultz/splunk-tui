@@ -60,7 +60,7 @@ impl App {
 
                 if let Some(query) = query {
                     self.search_input = query.clone();
-                    self.search_cursor_position = query.len();
+                    self.search_cursor_position = query.chars().count();
                     self.current_screen = CurrentScreen::Search;
                     self.add_to_history(query.clone());
                     self.search_status = format!("Running: {}", query);
