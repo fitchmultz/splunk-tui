@@ -3110,6 +3110,52 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0339",
+      "status": "done",
+      "title": "Preserve focus when removing earlier component in FocusManager",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "bug",
+        "focus-management"
+      ],
+      "scope": [
+        "crates/tui/src/focus.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/focus.rs:127-134 (remove_component removes index but only clamps when current_focus >= focus_order.len())",
+        "Bug: When removing a component at index < current_focus, current_focus is not decremented, causing focus to jump to wrong component",
+        "Repro: FocusManager::from_ids([\"a\",\"b\",\"c\"]).set_focus(\"b\"); remove_component(\"a\") => current_focus stays at 1, now pointing to \"c\" instead of \"b\" (which shifted to index 0)",
+        "Existing test test_remove_last_component_adjusts_focus (lines 388-400) may be passing incorrectly or needs verification"
+      ],
+      "plan": [
+        "Fix remove_component to decrement current_focus when removed index < current_focus",
+        "Ensure focused component removal picks stable focus (prefer previous or next, not arbitrary)",
+        "Add comprehensive unit tests: removal before current focus, removal of focused component, removal after current focus",
+        "Verify fix by running `cargo test -p splunk-tui --lib focus` and confirming all tests pass"
+      ],
+      "notes": [
+        "Principles: G (Least astonishment), E (Make bugs hard to write)",
+        "Why it matters: removing non-focused components can unexpectedly jump focus, breaking keyboard navigation predictability",
+        "Current code only handles out-of-bounds clamping but not index shifting",
+        "Task verified: focus.rs exists and remove_component logic confirmed buggy at lines 127-134",
+        "Fixed remove_component to decrement current_focus when removed index < current_focus",
+        "Added 5 comprehensive unit tests covering all removal scenarios",
+        "All 559 tests pass, CI clean, no breaking changes",
+        "Verified test_remove_last_component_adjusts_focus passes correctly (was not buggy)"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T18:47:39.784085773Z",
+      "completed_at": "2026-02-05T18:47:39.784085773Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

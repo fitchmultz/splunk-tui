@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0339",
-      "status": "todo",
-      "title": "Preserve focus when removing earlier component in FocusManager",
-      "priority": "medium",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/tui/src/focus.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/focus.rs:126-133 (remove_component removes index but only clamps when out of bounds)",
-        "Repro: FocusManager::from_ids([\"a\",\"b\",\"c\"]).set_focus(\"b\"); remove_component(\"a\") => current_focus points to \"c\" instead of staying on \"b\""
-      ],
-      "plan": [
-        "Adjust remove_component to decrement current_focus when a lower index is removed and to pick a stable focus when the current item is removed",
-        "Add unit tests covering removal before current focus and removal of the focused component",
-        "Verify by running `cargo test -p splunk-tui --lib focus` and confirming new tests pass"
-      ],
-      "notes": [
-        "Principles: G (Least astonishment), E (Make bugs hard to write)",
-        "Why it matters: removing non-focused components can unexpectedly jump focus, breaking keyboard navigation predictability",
-        "Minimal fix: update index math and add focused-removal tests"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0340",
       "status": "todo",
       "title": "Make FlexLayoutBuilder::column/row fallible instead of panicking",

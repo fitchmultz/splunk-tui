@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T18:37:09.785866143Z",
+  "last_updated_at": "2026-02-05T18:49:55.905937264Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 15,
+      "completed_count": 16,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -274,6 +274,11 @@
           "id": "RQ-0338",
           "title": "Implement SPLUNK_INTERNAL_LOGS_* env overrides (or remove docs claiming them)",
           "completed_at": "2026-02-05T18:37:09.785865062Z"
+        },
+        {
+          "id": "RQ-0339",
+          "title": "Preserve focus when removing earlier component in FocusManager",
+          "completed_at": "2026-02-05T18:49:55.905936226Z"
         }
       ]
     }
@@ -283,7 +288,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 50,
+  "total_completed": 51,
   "milestones": [
     {
       "threshold": 10,

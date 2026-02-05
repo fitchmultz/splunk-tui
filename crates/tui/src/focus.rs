@@ -127,7 +127,13 @@ impl FocusManager {
     pub fn remove_component(&mut self, id: &str) {
         if let Some(index) = self.focus_order.iter().position(|x| x == id) {
             self.focus_order.remove(index);
-            if self.current_focus >= self.focus_order.len() && self.current_focus > 0 {
+
+            // Adjust current_focus based on removal position
+            if index < self.current_focus {
+                // Removed component was before current focus, decrement to maintain focus
+                self.current_focus -= 1;
+            } else if self.current_focus >= self.focus_order.len() && self.current_focus > 0 {
+                // Removed at/after current focus but current_focus is now out of bounds
                 self.current_focus -= 1;
             }
         }
@@ -408,5 +414,80 @@ mod tests {
 
         assert!(fm.is_empty());
         assert_eq!(fm.current_focus, 0); // Should not underflow
+    }
+
+    #[test]
+    fn test_remove_component_before_current_focus() {
+        let mut fm = FocusManager::from_ids(&["a", "b", "c"]);
+        fm.set_focus("b"); // current_focus = 1
+        assert!(fm.is_focused("b"));
+
+        // Remove "a" at index 0 (before current_focus)
+        fm.remove_component("a");
+
+        // "b" should still be focused, now at index 0
+        assert!(fm.is_focused("b"));
+        assert_eq!(fm.current_focus, 0);
+        assert_eq!(fm.len(), 2);
+    }
+
+    #[test]
+    fn test_remove_focused_component_prefers_next() {
+        let mut fm = FocusManager::from_ids(&["a", "b", "c"]);
+        fm.set_focus("b"); // current_focus = 1, focused on "b"
+
+        // Remove the currently focused component "b"
+        // The new component at index 1 is "c", so focus stays at index 1
+        fm.remove_component("b");
+
+        // Should focus on "c" (next) since it shifted to current index
+        assert!(fm.is_focused("c"));
+        assert_eq!(fm.current_focus, 1);
+        assert_eq!(fm.len(), 2);
+    }
+
+    #[test]
+    fn test_remove_component_after_current_focus() {
+        let mut fm = FocusManager::from_ids(&["a", "b", "c"]);
+        fm.set_focus("b"); // current_focus = 1
+        assert!(fm.is_focused("b"));
+
+        // Remove "c" at index 2 (after current_focus)
+        fm.remove_component("c");
+
+        // "b" should still be focused at index 1
+        assert!(fm.is_focused("b"));
+        assert_eq!(fm.current_focus, 1);
+        assert_eq!(fm.len(), 2);
+    }
+
+    #[test]
+    fn test_remove_focused_component_at_index_zero() {
+        let mut fm = FocusManager::from_ids(&["a", "b", "c"]);
+        // current_focus starts at 0, focused on "a"
+        assert!(fm.is_focused("a"));
+
+        // Remove the currently focused component "a"
+        // "b" shifts to index 0, focus stays at index 0
+        fm.remove_component("a");
+
+        // Should focus on "b" (now at index 0)
+        assert!(fm.is_focused("b"));
+        assert_eq!(fm.current_focus, 0);
+        assert_eq!(fm.len(), 2);
+    }
+
+    #[test]
+    fn test_remove_focused_last_component() {
+        let mut fm = FocusManager::from_ids(&["a", "b", "c"]);
+        fm.set_focus("c"); // current_focus = 2, focused on "c"
+
+        // Remove the last focused component "c"
+        fm.remove_component("c");
+
+        // Should focus on "b" (previous, now at index 1)
+        assert!(fm.is_focused("b"));
+        assert_eq!(fm.current_focus, 1);
+        assert_eq!(fm.len(), 2);
     }
 }
