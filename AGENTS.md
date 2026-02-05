@@ -98,6 +98,41 @@ cargo test -p splunk-tui --test snapshot_tests
 - Before merging: run `make ci` and include a short testing note in the PR/summary.
 - This repo treats `make ci` as the source of truth; don’t rely on remote CI to catch issues.
 
+## Tooling & Build Configuration
+
+This section documents the tooling setup required for development and CI.
+
+### Required Tools
+
+- **Rust 1.84** (managed via `rustup` using `rust-toolchain.toml`)
+- **sccache** (optional but recommended): Configured in `.cargo/config.toml` as `rustc-wrapper` for faster incremental builds
+- **lld** linker (optional but recommended): Configured for Linux and macOS targets in `.cargo/config.toml`
+
+If sccache or lld are not available, the configuration gracefully degrades to default Rust behavior.
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `rust-toolchain.toml` | Pins Rust version to 1.84 with required components (rustfmt, clippy, rust-src) |
+| `rustfmt.toml` | Project-level rustfmt configuration for consistent formatting |
+| `clippy.toml` | Project-level clippy configuration (MSRV, lint levels) |
+| `.cargo/config.toml` | Build optimizations: sccache wrapper, parallel jobs, linker settings, dev profile |
+| `Cargo.toml` | Workspace configuration including `[profile.release]` and `[profile.ci]` |
+
+### Build Profiles
+
+- **dev** (`.cargo/config.toml`): Fast builds with `opt-level = 0`, `codegen-units = 256`
+- **release** (`Cargo.toml`): Optimized builds with `opt-level = 3`, `lto = true`, `strip = true`, `panic = "abort"`
+- **ci** (`Cargo.toml`): CI-optimized release with `opt-level = 2`, `lto = false`, `codegen-units = 16` for faster builds
+
+### Skipping Live Tests
+
+Set `SKIP_LIVE_TESTS=1` to skip live server tests:
+```bash
+make ci SKIP_LIVE_TESTS=1
+```
+
 ## Constraints & Defaults
 
 - Splunk Enterprise v9+ REST API; TLS 1.2+ required.

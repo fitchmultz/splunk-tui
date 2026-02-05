@@ -2,53 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0347",
-      "status": "todo",
-      "title": "Make local CI + tooling repeatable and convention-driven",
-      "priority": "high",
-      "tags": [
-        "consistency",
-        "tooling",
-        "ci",
-        "conventions",
-        "dry"
-      ],
-      "scope": [
-        "Makefile",
-        "rust-toolchain.toml",
-        ".cargo/",
-        "crates/*/Cargo.toml",
-        "docs/",
-        "make ci",
-        "make lint",
-        "make format",
-        "make type-check",
-        "make test",
-        "make release"
-      ],
-      "evidence": [
-        "User request: \"CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.\"",
-        "Repo guidance requires a project-root Makefile with a repeatable local CI gate (`make ci`) and consistent `format`/`lint`/`type-check`/`test` targets.",
-        "Repo is a Rust workspace (toolchain pinned) and should optimize for security, type safety, and testability; repeatable tooling is the foundation for safe refactors."
-      ],
-      "plan": [
-        "Inventory current developer commands (`make` targets, cargo aliases, scripts) and identify overlap/inconsistencies.",
-        "Align the project-root `Makefile` with the repo's Makefile contract (targets, ordering, and deterministic behavior).",
-        "Centralize tool configuration (rustfmt/clippy/cargo) so all crates behave consistently under `make lint` and `make format`.",
-        "Ensure `make ci` is an explicit, repeatable local gate and document exact expectations (what it runs, in what order, and how to opt out of live tests).",
-        "Add/adjust repo-local checks (docs/lint-secrets, etc.) so failures are actionable and consistent across environments.",
-        "Run `make ci` and address any newly surfaced convention drift strictly within scope."
-      ],
-      "notes": [],
-      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
-      "created_at": "2026-02-05T22:57:08Z",
-      "updated_at": "2026-02-05T22:57:08Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0348",
       "status": "todo",
       "title": "Centralize configuration + secrets handling via crates/config",

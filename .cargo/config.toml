@@ -16,7 +16,4 @@ opt-level = 0
 debug = true
 codegen-units = 256
 
-# Optimized release builds
-[profile.release]
-codegen-units = 1
-lto = "thin"
+# Note: Release profile is defined in workspace Cargo.toml with more comprehensive settings

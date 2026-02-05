@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T22:39:55.433847545Z",
+  "last_updated_at": "2026-02-05T23:18:17.926638013Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 23,
+      "completed_count": 24,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -314,6 +314,11 @@
           "id": "RQ-0346",
           "title": "Remove or wire handle_get_macro to avoid dead side-effect path",
           "completed_at": "2026-02-05T22:39:55.433846521Z"
+        },
+        {
+          "id": "RQ-0347",
+          "title": "Make local CI + tooling repeatable and convention-driven",
+          "completed_at": "2026-02-05T23:18:17.926635821Z"
         }
       ]
     }
@@ -323,7 +328,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 58,
+  "total_completed": 59,
   "milestones": [
     {
       "threshold": 10,

@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "lines_of_dead_code": "598",
+        "scan_agent": "scan-maintenance",
         "unused_dependency": "tachyonfx@0.14",
-        "scan_agent": "scan-maintenance"
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -3547,6 +3547,77 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0347",
+      "status": "done",
+      "title": "Make local CI + tooling repeatable and convention-driven",
+      "priority": "high",
+      "tags": [
+        "consistency",
+        "tooling",
+        "ci",
+        "conventions",
+        "dry"
+      ],
+      "scope": [
+        "Makefile",
+        "rust-toolchain.toml",
+        ".cargo/config.toml",
+        "crates/*/Cargo.toml",
+        "scripts/check-secrets.sh",
+        "scripts/test-live-server.sh",
+        "docs/",
+        "make ci",
+        "make lint",
+        "make lint-secrets",
+        "make lint-docs",
+        "make format",
+        "make type-check",
+        "make test",
+        "make test-live",
+        "make release",
+        "make generate",
+        "make install-hooks"
+      ],
+      "evidence": [
+        "User request: \"CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.\"",
+        "Repo guidance requires a project-root Makefile with a repeatable local CI gate (`make ci`) and consistent `format`/`lint`/`type-check`/`test` targets.",
+        "Repo is a Rust workspace (toolchain pinned to 1.84) and should optimize for security, type safety, and testability; repeatable tooling is the foundation for safe refactors.",
+        "Makefile exists with comprehensive targets: install, update, format, lint (two-phase clippy), lint-secrets, type-check, test (unit/integration/live), release (with PROFILE=ci support), generate, lint-docs, ci pipeline",
+        "rust-toolchain.toml pins channel=1.84 with components rustfmt, clippy, rust-src",
+        ".cargo/config.toml configures sccache wrapper, parallel jobs=8, and optimized release profile with thin LTO",
+        "scripts/check-secrets.sh guards against secret commits; install-hooks target links it as git pre-commit hook",
+        "Hermetic test rule enforced via DOTENV_DISABLED=1 in Makefile for test targets",
+        "CI pipeline order: install -> format -> lint-secrets -> lint -> type-check -> test -> test-live -> release PROFILE=ci -> _lint-docs-check"
+      ],
+      "plan": [
+        "Inventory current developer commands (`make` targets, cargo aliases, scripts) and identify overlap/inconsistencies.",
+        "Align the project-root `Makefile` with the repo's Makefile contract (targets, ordering, and deterministic behavior).",
+        "Centralize tool configuration (rustfmt/clippy/cargo) so all crates behave consistently under `make lint` and `make format`.",
+        "Ensure `make ci` is an explicit, repeatable local gate and document exact expectations (what it runs, in what order, and how to opt out of live tests).",
+        "Add/adjust repo-local checks (docs/lint-secrets, etc.) so failures are actionable and consistent across environments.",
+        "Run `make ci` and address any newly surfaced convention drift strictly within scope."
+      ],
+      "notes": [
+        "Repository already has well-structured Makefile with comprehensive CI pipeline. Task focus should be on validating consistency and identifying any gaps rather than major restructuring.",
+        "Architecture-tests crate exists but may not be fully integrated into standard workflow - verify it's covered by make targets.",
+        "Consider whether .cargo/config.toml optimizations (sccache, lld linker) are documented for new contributors.",
+        "Centralized tool configuration: added rustfmt.toml and clippy.toml with Rust 1.84 settings",
+        "Standardized workspace metadata: all 5 crates (cli, client, config, tui, architecture-tests) now use workspace inheritance for authors/license/repository",
+        "Fixed config drift: removed duplicate [profile.release] from .cargo/config.toml (source of truth is Cargo.toml)",
+        "Updated documentation: AGENTS.md now includes Tooling & Build Configuration section",
+        "make ci SKIP_LIVE_TESTS=1 passes (1000+ tests across all crates)"
+      ],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-05T23:16:06.562648548Z",
+      "completed_at": "2026-02-05T23:16:06.562648548Z",
+      "started_at": "2026-02-05T23:04:44.185485043Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }
