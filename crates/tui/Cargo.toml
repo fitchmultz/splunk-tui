@@ -69,8 +69,6 @@ taffy = "0.5"
 # Big ASCII text headers
 tui-big-text = "0.7"
 
-# Markdown rendering
-pulldown-cmark = "0.12"
 
 [dev-dependencies]
 insta = { version = "1.42", features = ["filters"] }

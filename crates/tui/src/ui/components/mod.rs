@@ -10,7 +10,6 @@
 //! - [`LineNumberWidget`]: Line number gutter with diagnostic support
 //! - [`Slider`]: Interactive slider for numeric input
 //! - [`BigTextWidget`]: Large ASCII text headers
-//! - [`MarkdownRenderer`]: Markdown to text renderer
 //!
 //! # Usage
 //!
@@ -35,14 +34,12 @@
 
 pub mod big_text;
 pub mod line_numbers;
-pub mod markdown;
 pub mod scrollable;
 pub mod select_list;
 pub mod slider;
 
 pub use big_text::{BigTextWidget, render_header, render_sub_header};
 pub use line_numbers::{Diagnostic, DiagnosticSeverity, LineNumberWidget};
-pub use markdown::{MarkdownRenderer, render_help_text, render_markdown};
 pub use scrollable::ScrollableContainer;
 pub use select_list::SelectList;
 pub use slider::Slider;

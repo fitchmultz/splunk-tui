@@ -3362,8 +3362,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "lines_of_dead_code": "598",
+        "scan_agent": "scan-maintenance",
         "unused_dependency": "tachyonfx@0.14"
       }
     },
@@ -3413,6 +3413,76 @@
       "updated_at": "2026-02-05T21:41:43.734216793Z",
       "completed_at": "2026-02-05T21:41:43.734216793Z",
       "started_at": "2026-02-05T21:28:21.449454900Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0345",
+      "status": "done",
+      "title": "Prune or integrate unused MarkdownRenderer UI component",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "rust",
+        "tui",
+        "deps"
+      ],
+      "scope": [
+        "crates/tui/src/lib.rs",
+        "crates/tui/Cargo.toml",
+        "crates/tui/src/bin/generate_tui_docs.rs",
+        "crates/tui/src/input/docs.rs",
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/ui/components/markdown.rs",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/src/ui/mod.rs",
+        "crates/tui/src/ui/popup/mod.rs",
+        "crates/tui/src/ui/popup/builder.rs",
+        "crates/tui/src/ui/popup/render.rs",
+        "crates/tui/src/ui/popup/types.rs",
+        "crates/tui/tests/doc_generation_tests.rs"
+      ],
+      "evidence": [
+        "command: rg -n \"MarkdownRenderer\" -S crates (only docs + component export + markdown.rs; no runtime call sites)",
+        "crates/tui/src/ui/components/mod.rs:45 (markdown module is public and re-exports MarkdownRenderer/render_help_text/render_markdown)",
+        "command: rg -n \"render_help_text\\(\" crates/tui/src (only in crates/tui/src/ui/components/markdown.rs + its unit tests)",
+        "command: rg -n \"render_markdown\\(\" crates/tui/src/ui (only in crates/tui/src/ui/components/markdown.rs + its unit tests)",
+        "command: rg -n \"pulldown_cmark\" -S crates (only in crates/tui/src/ui/components/markdown.rs)",
+        "crates/tui/src/ui/popup/builder.rs:82 (Help popup content comes from plaintext help::help_text() -> String)",
+        "crates/tui/src/ui/popup/render.rs:108 (Help popup renders popup.content as &str via Paragraph::new(...), not Text/Markdown)",
+        "crates/tui/src/input/help.rs:17 (help_text() generates aligned plaintext keybindings, not Markdown)",
+        "crates/tui/Cargo.toml:73 (pulldown-cmark dependency exists solely for MarkdownRenderer module)",
+        "crates/tui/src/input/docs.rs:17 + crates/tui/src/ui/components/markdown.rs:316 (two different render_markdown() helpers: docs Markdown String vs UI Text renderer)",
+        "crates/tui/src/lib.rs:44 (render_tui_keybinding_docs() wraps input::docs::render_markdown() for docs generation)"
+      ],
+      "plan": [
+        "Confirm no non-test consumers of MarkdownRenderer/render_* (rg across crates + workspace)",
+        "Decide: prune (default) vs integrate into Help popup (current Popup.content is String rendered via Paragraph::new(&str))",
+        "If pruning: delete crates/tui/src/ui/components/markdown.rs and remove exports/docs bullets in crates/tui/src/ui/components/mod.rs + crates/tui/src/ui/mod.rs",
+        "If pruning: remove pulldown-cmark from crates/tui/Cargo.toml and ensure no other crate depends on it",
+        "If integrating: decide help source format (keep aligned plaintext vs emit Markdown), then render to ratatui::Text at draw-time (or change Popup content type) and add snapshot/regression tests",
+        "Verify with `cargo test -p splunk-tui` and `SKIP_LIVE_TESTS=1 make ci`"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), Public API discipline",
+        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
+        "Current Help popup content is aligned plaintext from crates/tui/src/input/help.rs and is rendered as a String via Paragraph::new(popup.content.as_str()); MarkdownRenderer is not currently used",
+        "There is a separate docs-generation pipeline (crates/tui/src/input/docs.rs + crates/tui/src/lib.rs render_tui_keybinding_docs) that produces Markdown Strings for docs/usage.md; avoid confusing name overlaps with ui::components::render_markdown()",
+        "Minimal fix: prune the component and dependency, or at least reduce visibility to pub(crate) unless there’s a concrete in-app use case",
+        "Pruned unused TUI MarkdownRenderer component and exports (no runtime call sites).",
+        "Removed pulldown-cmark dependency from crates/tui and cleaned Cargo.lock.",
+        "Verified no remaining references via ripgrep; docs generation pipeline untouched.",
+        "Ran SKIP_LIVE_TESTS=1 make ci successfully."
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T22:11:07.510400268Z",
+      "completed_at": "2026-02-05T22:11:07.510400268Z",
+      "started_at": "2026-02-05T21:49:24.590764384Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],
