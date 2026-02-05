@@ -2320,6 +2320,79 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0320",
+      "status": "done",
+      "title": "End-to-end TUI robustness validation and stress testing",
+      "priority": "high",
+      "tags": [
+        "tui",
+        "testing",
+        "robustness",
+        "e2e",
+        "validation",
+        "performance"
+      ],
+      "scope": [
+        "crates/tui/tests/",
+        "crates/tui/tests/snapshots/",
+        "crates/tui/src/app/",
+        "crates/tui/src/runtime/",
+        "crates/tui/src/ui/",
+        "scripts/test-live-server.sh",
+        "scripts/check-secrets.sh",
+        "Makefile",
+        "make test",
+        "make test-live",
+        "make test-live-manual",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: 'MAKE SURE EVERYTHING ACTUALLY WORKS'",
+        "TUI has 53 test files covering app, snapshot, side effects, and integration scenarios",
+        "AGENTS.md: 'make ci' is the local gate before merging",
+        "Project has live tests (test-live) for real Splunk server validation via crates/client/tests/live_tests.rs",
+        "Tests include 50+ snapshot tests for UI regression prevention in crates/tui/tests/snapshots/",
+        "Performance tests exist in crates/tui/tests/app_performance_tests.rs for large dataset rendering",
+        "Dependency RQ-0319 (TUI UX polish) is completed - robustness validation can now proceed",
+        "Key test categories: app_navigation, app_search, app_jobs, app_popup, app_clipboard, app_performance, side_effects_*, snapshot_*, config_loading, profile_switch"
+      ],
+      "plan": [
+        "Review existing 53 test files: identify gaps in screen transitions, error paths, and async flows",
+        "Run full test suite: make test to establish baseline",
+        "Add stress tests for rapid input sequences (key spam, quick navigation) if gaps found",
+        "Add tests for connection failure recovery and reconnection flows",
+        "Validate session expiration handling: ensure graceful degradation and clear re-auth prompts",
+        "Test with live Splunk instance: make test-live (requires configured .env.test or env vars)",
+        "Verify 50+ snapshot tests are current: run with TRYBUILD=overwrite if updates needed",
+        "Test clipboard integration across different terminal emulators if possible",
+        "Validate export functionality end-to-end with various formats and data sizes",
+        "Run performance check: ensure TUI remains responsive with large result sets (see app_performance_tests.rs)",
+        "Document any manual testing steps needed for full validation",
+        "Run full CI pipeline: make ci",
+        "Verify all tests pass and TUI binary works correctly when installed to ~/.local/bin"
+      ],
+      "notes": [
+        "Updated 2026-02-04: Task scope refreshed to reflect current repo state",
+        "TUI test count: 53 test files, 50+ snapshot files",
+        "RQ-0319 dependency is completed (in done.json) - UX polish foundation is in place",
+        "Key areas to validate: focus management, error handling, async side effects, clipboard, export",
+        "Phase 3 review complete: 6 new test files (75 tests) added for TUI robustness validation",
+        "All tests pass: make ci successful",
+        "Verified 3 flagged items from Phase 2 are correct by design, not bugs",
+        "Test coverage: stress input, session/auth, screen transitions, pagination, connection failures, async ordering"
+      ],
+      "request": "WE NEED A TASK OR TASKS TO MAKE SURE EVERYTHING ACTUALLY WORKS AND THE TUI IS NOT GLITCHY AND BUSTED. USERS EXPECT A ROBUST, USABLE EXPERIENCE WITH NO HICCUPS OR UNNECESSARY FLOWS. IT CANNOT BE CLUNKY OR HARD TO GRASP",
+      "created_at": "2026-02-04T18:46:17Z",
+      "updated_at": "2026-02-05T01:19:05.288213327Z",
+      "completed_at": "2026-02-05T01:19:05.288213327Z",
+      "depends_on": [
+        "RQ-0319"
+      ],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }
