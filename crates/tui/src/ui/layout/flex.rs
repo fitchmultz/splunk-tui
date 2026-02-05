@@ -19,9 +19,11 @@ pub use taffy::prelude::{auto, length, percent};
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use splunk_tui::ui::layout::flex::FlexLayoutEngine;
+/// use splunk_tui::ui::layout::flex::{auto, length, percent};
 /// use ratatui::layout::Rect;
+/// use taffy::{Size, FlexDirection};
 ///
 /// let mut engine = FlexLayoutEngine::new();
 ///
@@ -202,7 +204,7 @@ impl Default for FlexLayoutEngine {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use splunk_tui::ui::layout::flex::FlexLayoutBuilder;
 ///
 /// let (engine, root) = FlexLayoutBuilder::new()

@@ -66,6 +66,18 @@ tree-sitter = "0.22"
 # Flexbox layout with taffy (Yoga-based)
 taffy = "0.5"
 
+# Diff viewing capabilities
+similar = "2.5"
+
+# Big ASCII text headers
+tui-big-text = "0.7"
+
+# Animations and visual effects
+tachyonfx = "0.14"
+
+# Markdown rendering
+pulldown-cmark = "0.12"
+
 [dev-dependencies]
 insta = { version = "1.39", features = ["filters"] }
 tempfile = "3.10"

@@ -6,13 +6,24 @@
 //! # Component Library
 //!
 //! The `components` module provides reusable, theme-aware components:
-//! - [`SelectList<T>`]: Generic selectable list
+//! - [`SelectList<T>`]: Generic selectable list with keyboard navigation
 //! - [`ScrollableContainer`]: Scrollable content container
+//! - [`DiffViewer`]: Unified diff viewer for comparing text
+//! - [`LineNumberWidget`]: Line number gutter with diagnostic support
+//! - [`Slider`]: Interactive slider for numeric input
+//! - [`BigTextWidget`]: Large ASCII text headers
+//! - [`AnimationController`]: Animation effects controller
+//! - [`MarkdownRenderer`]: Markdown to text renderer
 //!
 //! # Theme Helpers
 //!
 //! The [`theme`] module extends `splunk_config::Theme` with ergonomic
 //! style builders via the [`ThemeExt`] trait.
+//!
+//! # Layout
+//!
+//! The [`layout`] module provides flexbox layout support via `taffy`
+//! (Yoga-based layout engine).
 //!
 //! # Example
 //!

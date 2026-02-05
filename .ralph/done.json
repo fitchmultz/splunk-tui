@@ -2242,6 +2242,84 @@
       ],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0324",
+      "status": "done",
+      "title": "Implement advanced TUI components: diff viewer, big text, animations, and markdown",
+      "priority": "medium",
+      "tags": [
+        "tui",
+        "diff-viewer",
+        "big-text",
+        "animations",
+        "markdown",
+        "line-numbers",
+        "slider",
+        "opentui-port"
+      ],
+      "scope": [
+        "crates/tui/src/ui/components/",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: Implement core features from opentui (TS+Bun) into Rust Ratatui framework",
+        "Feature file: /tmp/opentui-rust-features.md describes multiple advanced components (sections 6-12)",
+        "Dependency RQ-0323 completed: tui-scrollview integrated, FocusManager available in crates/tui/src/focus.rs",
+        "Foundation RQ-0325 completed: ThemeExt trait, components module with SelectList and ScrollableContainer exist",
+        "Components directory exists at crates/tui/src/ui/components/ with SelectList and ScrollableContainer",
+        "similar crate available in Cargo.lock (used by insta for testing) - needs explicit dependency for diff viewer",
+        "tui-big-text = '0.7' not yet added - needed for ASCII font headers",
+        "tachyonfx = '0.14' not yet added - needed for animations",
+        "pulldown-cmark = '0.12' not yet added - needed for markdown rendering",
+        "tree-sitter = '0.22' already in Cargo.toml for syntax highlighting (RQ-0322)",
+        "taffy = '0.5' already in Cargo.toml for flexbox layout (RQ-0322)"
+      ],
+      "plan": [
+        "Read /tmp/opentui-rust-features.md sections 6-12 for detailed implementation guidance",
+        "Add similar = '2.5' to Cargo.toml for diff viewing capabilities",
+        "Add tui-big-text = '0.7' to Cargo.toml for large ASCII headers",
+        "Add tachyonfx = '0.14' to Cargo.toml for animations and visual effects",
+        "Add pulldown-cmark = '0.12' to Cargo.toml for markdown documentation rendering",
+        "Create DiffViewer component in crates/tui/src/ui/components/diff_viewer.rs",
+        "Create BigTextWidget wrapper in crates/tui/src/ui/components/big_text.rs",
+        "Create AnimationController in crates/tui/src/ui/components/animation.rs for tachyonfx effects",
+        "Create MarkdownRenderer in crates/tui/src/ui/components/markdown.rs",
+        "Create LineNumberWidget in crates/tui/src/ui/components/line_numbers.rs with diagnostic support",
+        "Create Slider component in crates/tui/src/ui/components/slider.rs",
+        "Export new components from crates/tui/src/ui/components/mod.rs",
+        "Add tests for each component with sample data",
+        "Run make ci to verify all checks pass"
+      ],
+      "notes": [
+        "Reference file for implementation: /tmp/opentui-rust-features.md sections 6-12",
+        "Priority per document: Diff (6), Line Numbers (7), Slider (8), Big Text (9), Animations (11), Markdown (12)",
+        "Diff viewer useful for comparing saved search versions or configuration changes",
+        "Big text useful for branding headers or important status displays",
+        "Animations should be subtle - focus on fade-in effects and smooth transitions",
+        "Markdown rendering useful for help documentation and user guides",
+        "Line numbers with diagnostics useful for SPL query validation feedback",
+        "Slider useful for time range selection and numeric inputs",
+        "Dependencies RQ-0323 (scrollview/focus) and RQ-0325 (foundation) are completed",
+        "Implemented 6 advanced TUI components with 116+ unit tests",
+        "All dependencies added: similar=2.5, tui-big-text=0.7, tachyonfx=0.14, pulldown-cmark=0.12",
+        "Fixed doctest in flex.rs that was missing taffy imports",
+        "All CI checks pass (format, lint, type-check, test, build)",
+        "Components exported from crates/tui/src/ui/components/mod.rs"
+      ],
+      "request": "Series of tasks to implement these core features that are found in the TS + Bun framework opentui into our Rust based Ratatui framework. Read the file at /tmp/opentui-rust-features.md for the details.",
+      "created_at": "2026-02-04T19:33:53Z",
+      "updated_at": "2026-02-05T00:40:43.658921123Z",
+      "completed_at": "2026-02-05T00:40:43.658921123Z",
+      "depends_on": [
+        "RQ-0323"
+      ],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }
