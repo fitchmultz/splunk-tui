@@ -2564,6 +2564,65 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0329",
+      "status": "done",
+      "title": "Align Macros help/keybinding catalog with actual Macros shortcuts",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "tui",
+        "keybindings",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/macros.rs",
+        "crates/tui/src/input/keymap/bindings/screens/macros.rs",
+        "crates/tui/src/ui/screens/macros.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/tests/doc_generation_tests.rs",
+        "make test",
+        "make generate"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/screens/macros.rs:241-243 hard-codes a help string listing keys (`d`, `Ctrl+C`, `Enter`, etc.).",
+        "crates/tui/src/app/input/macros.rs:20-104 implements additional shortcuts (`d` delete, `Ctrl+c`/`y` copy, navigation, paging, Home/End) that are not present in the keybinding catalog.",
+        "crates/tui/src/input/keymap/bindings/screens/macros.rs:15-55 only documents `r`, `e`, and `n` for Macros; lines 53-54 acknowledge DeleteMacro and CopyToClipboard are handled in app/input/macros.rs.",
+        "crates/tui/src/input/keymap/mod.rs:345 prioritizes Macros footer hints including `d` and `Ctrl+c`, but those keys are missing from the catalog so they can never be hinted.",
+        "crates/tui/tests/doc_generation_tests.rs:55-81 tests for expected screens but does not include Macros Screen in the expected_screens list (line 58-72)."
+      ],
+      "plan": [
+        "Expand the Macros keybinding catalog to include the implemented shortcuts (delete, copy, navigation/paging) with accurate descriptions",
+        "Remove or replace `crates/tui/src/ui/screens/macros.rs::help_text()` so screen help is generated from the centralized catalog instead of being hard-coded",
+        "Add Macros Screen to the expected screens test in doc_generation_tests.rs",
+        "Add tests to ensure the help popup includes the Macros shortcuts and footer hints prioritize expected keys",
+        "Run `make generate` to regenerate keybinding documentation",
+        "Verify by running `make test`"
+      ],
+      "notes": [
+        "Principles violated: C (DRY), G (Least astonishment), E (Make bugs hard to write).",
+        "Why it matters: users see different keybinding sets depending on where they look (hard-coded screen help vs centralized help popup/docs); footer hint prioritization is already out-of-sync with the catalog.",
+        "Minimal fix: treat the keybinding catalog as the single source of truth for all user-visible shortcuts, even if some actions are resolved in per-screen handlers.",
+        "Acceptance criteria: Macros help popup/docs list `d` delete and `Ctrl+c`/`y` copy (and navigation keys); no hard-coded Macros help string remains; `make test` passes.",
+        "Dependency RQ-0328 completed: Section::Macros was added and CurrentScreen::Macros is now correctly mapped.",
+        "Expanded Macros keybinding catalog with all shortcuts (delete, copy, navigation, paging)",
+        "Removed hard-coded help_text() from ui/screens/macros.rs",
+        "Added Macros Screen to doc generation tests",
+        "Added tests for help popup and footer hints",
+        "Regenerated documentation via make generate",
+        "make ci passes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T03:25:35.200993319Z",
+      "completed_at": "2026-02-05T03:25:35.200993319Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

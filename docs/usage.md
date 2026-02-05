@@ -1034,8 +1034,17 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Macros Screen
 - `r`: Refresh macros
+- `Ctrl+e`: Export macros
+- `Ctrl+c`: Copy definition
+- `y`: Copy definition (vim-style)
 - `e`: Edit macro
 - `n`: New macro
+- `d`: Delete macro
+- `j/k or Up/Down`: Navigate list
+- `PgDn`: Page down
+- `PgUp`: Page up
+- `Home`: Go to top
+- `End`: Go to bottom
 
 #### Internal Logs Screen
 - `r`: Refresh logs

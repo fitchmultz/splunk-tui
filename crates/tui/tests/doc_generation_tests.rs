@@ -62,6 +62,7 @@ fn keybinding_docs_render_contains_all_screens() {
         "Cluster Screen",
         "Health Screen",
         "Saved Searches Screen",
+        "Macros Screen",
         "Internal Logs Screen",
         "Apps Screen",
         "Users Screen",

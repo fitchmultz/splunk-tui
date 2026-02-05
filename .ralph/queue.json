@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0329",
-      "status": "todo",
-      "title": "Align Macros help/keybinding catalog with actual Macros shortcuts",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tui",
-        "keybindings",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app/input/macros.rs",
-        "crates/tui/src/input/keymap/bindings/screens/macros.rs",
-        "crates/tui/src/ui/screens/macros.rs",
-        "crates/tui/src/input/keymap/mod.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/screens/macros.rs:240-243 hard-codes a help string listing keys (`d`, `Ctrl+C`, `Enter`, etc.).",
-        "crates/tui/src/app/input/macros.rs:20-104 implements additional shortcuts (`d` delete, `Ctrl+c`/`y` copy, navigation, paging, Home/End) that are not present in the keybinding catalog.",
-        "crates/tui/src/input/keymap/bindings/screens/macros.rs:15-55 only documents `r`, `e`, and `n` for Macros.",
-        "crates/tui/src/input/keymap/mod.rs:293-325 prioritizes Macros footer hints including `d` and `Ctrl+c` (line 306), but those keys are missing from the catalog so they can never be hinted."
-      ],
-      "plan": [
-        "Expand the Macros keybinding catalog to include the implemented shortcuts (delete, copy, navigation/paging) with accurate descriptions",
-        "Remove or replace `crates/tui/src/ui/screens/macros.rs::help_text()` so screen help is generated from the centralized catalog instead of being hard-coded",
-        "Add tests to ensure the help popup includes the Macros shortcuts and footer hints prioritize expected keys",
-        "Verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: C (DRY), G (Least astonishment), E (Make bugs hard to write).",
-        "Why it matters: users see different keybinding sets depending on where they look (hard-coded screen help vs centralized help popup/docs); footer hint prioritization is already out-of-sync with the catalog.",
-        "Minimal fix: treat the keybinding catalog as the single source of truth for all user-visible shortcuts, even if some actions are resolved in per-screen handlers.",
-        "Acceptance criteria: Macros help popup/docs list `d` delete and `Ctrl+c`/`y` copy (and navigation keys); no hard-coded Macros help string remains; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [
-        "RQ-0328"
-      ],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0330",
       "status": "todo",
       "title": "Document the conditional 'e' Error Details shortcut in the keybinding catalog",

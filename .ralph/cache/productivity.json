@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T03:07:25.216043814Z",
+  "last_updated_at": "2026-02-05T03:27:47.690726187Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 5,
+      "completed_count": 6,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -224,6 +224,11 @@
           "id": "RQ-0328",
           "title": "Add a dedicated Macros keybinding section and map Macros screen correctly",
           "completed_at": "2026-02-05T03:07:25.216041835Z"
+        },
+        {
+          "id": "RQ-0329",
+          "title": "Align Macros help/keybinding catalog with actual Macros shortcuts",
+          "completed_at": "2026-02-05T03:27:47.690725242Z"
         }
       ]
     }
@@ -233,7 +238,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 40,
+  "total_completed": 41,
   "milestones": [
     {
       "threshold": 10,

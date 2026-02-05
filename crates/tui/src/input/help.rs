@@ -133,4 +133,13 @@ mod tests {
             "Help should include Global Keys section"
         );
     }
+
+    #[test]
+    fn help_text_includes_macros_section() {
+        let help = help_text();
+        assert!(
+            help.contains("Macros Screen:"),
+            "Help should include Macros section"
+        );
+    }
 }

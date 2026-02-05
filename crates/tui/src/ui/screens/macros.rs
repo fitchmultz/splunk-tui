@@ -16,7 +16,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
 
-use crate::app::state::CurrentScreen;
 use splunk_config::Theme;
 
 /// Spinner characters for animated loading indicator.
@@ -235,14 +234,4 @@ fn render_macro_preview(
 /// Get the title for the macros screen.
 pub fn title() -> &'static str {
     "Macros"
-}
-
-/// Get the help text for the macros screen.
-pub fn help_text() -> &'static str {
-    "r: Refresh | e: Edit | n: New | d: Delete | Ctrl+C: Copy | Enter: Details | q: Quit"
-}
-
-/// Get the current screen variant for macros.
-pub fn current_screen() -> CurrentScreen {
-    CurrentScreen::Macros
 }

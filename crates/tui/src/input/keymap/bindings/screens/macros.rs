@@ -24,6 +24,39 @@ pub fn bindings() -> Vec<Keybinding> {
                 modifiers: KeyModifiers::NONE,
             }),
             action: Some(Action::LoadMacros),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "Ctrl+e",
+            description: "Export macros",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "Ctrl+c",
+            description: "Copy definition",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: None, // Handled directly in app/input/macros.rs (needs selected macro)
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "y",
+            description: "Copy definition (vim-style)",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('y'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled directly in app/input/macros.rs (needs selected macro)
             handles_input: false,
         },
         Keybinding {
@@ -36,7 +69,7 @@ pub fn bindings() -> Vec<Keybinding> {
                 modifiers: KeyModifiers::NONE,
             }),
             action: Some(Action::EditMacro),
-            handles_input: false,
+            handles_input: true,
         },
         Keybinding {
             section: Section::Macros,
@@ -48,9 +81,116 @@ pub fn bindings() -> Vec<Keybinding> {
                 modifiers: KeyModifiers::NONE,
             }),
             action: Some(Action::OpenCreateMacroDialog),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "d",
+            description: "Delete macro",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('d'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Handled directly in app/input/macros.rs (needs selected macro)
             handles_input: false,
         },
-        // Note: DeleteMacro and CopyToClipboard are handled in app/input/macros.rs
-        // because they require access to the currently selected macro
+        // Navigation keys
+        Keybinding {
+            section: Section::Macros,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('j'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('k'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateDown),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "j/k or Up/Down",
+            description: "Navigate list",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Up,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::NavigateUp),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "PgDn",
+            description: "Page down",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::PageDown,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Page down handled directly in app/input/macros.rs
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "PgUp",
+            description: "Page up",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::PageUp,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Page up handled directly in app/input/macros.rs
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "Home",
+            description: "Go to top",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Home,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // Home handled directly in app/input/macros.rs
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Macros,
+            keys: "End",
+            description: "Go to bottom",
+            scope: BindingScope::Screen(CurrentScreen::Macros),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::End,
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: None, // End handled directly in app/input/macros.rs
+            handles_input: false,
+        },
     ]
 }

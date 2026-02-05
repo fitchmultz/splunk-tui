@@ -424,4 +424,16 @@ mod tests {
             "Ctrl+k on Search screen should return NavigateUp action"
         );
     }
+
+    #[test]
+    fn macros_footer_hints_include_expected_keys() {
+        let hints = footer_hints(CurrentScreen::Macros);
+        let hint_keys: Vec<_> = hints.iter().map(|(k, _)| *k).collect();
+
+        // Should include the prioritized keys
+        assert!(hint_keys.contains(&"r"), "Should include 'r' for refresh");
+        assert!(hint_keys.contains(&"e"), "Should include 'e' for edit");
+        assert!(hint_keys.contains(&"n"), "Should include 'n' for new");
+        assert!(hint_keys.contains(&"d"), "Should include 'd' for delete");
+    }
 }
