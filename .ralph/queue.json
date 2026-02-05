@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0337",
-      "status": "todo",
-      "title": "Fail HEC send on unparseable response instead of returning Success",
-      "priority": "high",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/hec.rs"
-      ],
-      "evidence": [
-        "crates/client/src/endpoints/hec.rs:85-110 (send_event returns generic Success when JSON parsing fails on <400)",
-        "crates/client/src/endpoints/hec.rs:190-215 (send_batch returns generic Success when JSON parsing fails on <400)"
-      ],
-      "plan": [
-        "Extract HEC response parsing into a helper that returns ClientError on JSON parse failure regardless of status",
-        "Update send_event/send_batch to propagate body-read failures instead of substituting a Success response",
-        "Add unit tests for 2xx + invalid JSON and body-read error paths",
-        "Verify by running `cargo test -p splunk-client --lib` and confirming new tests pass"
-      ],
-      "notes": [
-        "Principles: F (Fail fast appropriately), G (Least astonishment)",
-        "Why it matters: a 2xx response with non-JSON body (or unreadable body) is treated as Success, which can mask ingestion failures or corrupt responses",
-        "Minimal fix: return a structured ClientError with status/body when parsing fails; avoid success fallback"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0338",
       "status": "todo",
       "title": "Implement SPLUNK_INTERNAL_LOGS_* env overrides (or remove docs claiming them)",

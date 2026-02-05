@@ -15,6 +15,7 @@ mod common;
 
 use common::*;
 use serde_json::json;
+use splunk_client::error::ClientError;
 use splunk_client::models::hec::{HecAckStatus, HecEvent, HecHealth, HecResponse};
 use std::collections::HashMap;
 use wiremock::matchers::{header, method, path};
@@ -362,4 +363,131 @@ async fn test_hec_ack_status_methods() {
     let all_indexed = HecAckStatus { acks: all_acks };
     assert!(all_indexed.all_indexed());
     assert!(all_indexed.pending_ids().is_empty());
+}
+
+#[tokio::test]
+async fn test_send_event_invalid_json_response() {
+    let mock_server = MockServer::start().await;
+
+    // Return 200 OK with invalid JSON body
+    Mock::given(method("POST"))
+        .and(path("/services/collector/event"))
+        .and(header("Authorization", "Splunk test-hec-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("not valid json"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let event = HecEvent::new(json!({"message": "Test event"}));
+
+    let result = endpoints::hec::send_event(
+        &client,
+        &mock_server.uri(),
+        "test-hec-token",
+        &event,
+        3,
+        None,
+    )
+    .await;
+
+    // Should return an error, not Ok(Success)
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(
+        matches!(err, ClientError::InvalidResponse(_)),
+        "Expected InvalidResponse error, got {:?}",
+        err
+    );
+    let err_msg = err.to_string();
+    assert!(
+        err_msg.contains("Failed to parse HEC response"),
+        "Error message should mention parse failure: {}",
+        err_msg
+    );
+}
+
+#[tokio::test]
+async fn test_send_batch_invalid_json_response() {
+    let mock_server = MockServer::start().await;
+
+    // Return 200 OK with invalid JSON body
+    Mock::given(method("POST"))
+        .and(path("/services/collector/event"))
+        .and(header("Authorization", "Splunk test-hec-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("not valid json"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let events = vec![
+        HecEvent::new(json!({"message": "Event 1"})),
+        HecEvent::new(json!({"message": "Event 2"})),
+    ];
+
+    let result = endpoints::hec::send_batch(
+        &client,
+        &mock_server.uri(),
+        "test-hec-token",
+        &events,
+        false,
+        3,
+        None,
+    )
+    .await;
+
+    // Should return an error, not Ok(Success)
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(
+        matches!(err, ClientError::InvalidResponse(_)),
+        "Expected InvalidResponse error, got {:?}",
+        err
+    );
+    let err_msg = err.to_string();
+    assert!(
+        err_msg.contains("Failed to parse HEC batch response"),
+        "Error message should mention parse failure: {}",
+        err_msg
+    );
+}
+
+#[tokio::test]
+async fn test_check_ack_status_invalid_json_response() {
+    let mock_server = MockServer::start().await;
+
+    // Return 200 OK with invalid JSON body
+    Mock::given(method("POST"))
+        .and(path("/services/collector/ack"))
+        .and(header("Authorization", "Splunk test-hec-token"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("not valid json"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let ack_ids = vec![1, 2, 3];
+
+    let result = endpoints::hec::check_ack_status(
+        &client,
+        &mock_server.uri(),
+        "test-hec-token",
+        &ack_ids,
+        3,
+        None,
+    )
+    .await;
+
+    // Should return an error, not Ok
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(
+        matches!(err, ClientError::InvalidResponse(_)),
+        "Expected InvalidResponse error, got {:?}",
+        err
+    );
+    let err_msg = err.to_string();
+    assert!(
+        err_msg.contains("Failed to parse HEC ack status response"),
+        "Error message should mention parse failure: {}",
+        err_msg
+    );
 }

@@ -3000,6 +3000,56 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0337",
+      "status": "done",
+      "title": "Fail HEC send on unparseable response instead of returning Success",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "rust",
+        "error-handling"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/hec.rs",
+        "crates/client/src/error.rs",
+        "crates/client/tests/hec_tests.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/hec.rs:85-112 (send_event returns generic Success HecResponse when JSON parsing fails on <400 status)",
+        "crates/client/src/endpoints/hec.rs:190-217 (send_batch returns generic Success HecBatchResponse when JSON parsing fails on <400 status)",
+        "crates/client/src/error.rs:33-35 (InvalidResponse error variant available for parse failures)",
+        "Issue: Both functions use unwrap_or_else for body reading and return Ok(Success) fallback when serde_json::from_str fails on non-error HTTP status"
+      ],
+      "plan": [
+        "Extract HEC response parsing into a helper that returns ClientError::InvalidResponse on JSON parse failure regardless of HTTP status",
+        "Update send_event to propagate body-read failures and parse failures as ClientError::InvalidResponse instead of substituting Success",
+        "Update send_batch with same error handling pattern for consistency",
+        "Add unit tests in crates/client/tests/hec_tests.rs for 2xx + invalid JSON response body",
+        "Add unit tests for body-read error simulation (optional, may require mock setup)",
+        "Verify by running `cargo test -p splunk-client --test hec_tests` and `cargo test -p splunk-client --lib` confirming all tests pass"
+      ],
+      "notes": [
+        "Principles: F (Fail fast appropriately), G (Least astonishment)",
+        "Why it matters: a 2xx response with non-JSON body (or unreadable body) is treated as Success, which can mask ingestion failures or corrupt responses",
+        "Minimal fix: return ClientError::InvalidResponse with status/body context when parsing fails; avoid success fallback",
+        "Use existing InvalidResponse error variant at crates/client/src/error.rs:33-35",
+        "Fixed HEC send_event and send_batch to return ClientError::InvalidResponse instead of fabricated Success on unparseable 2xx responses",
+        "Also fixed health_check and check_ack_status for consistency across HEC module",
+        "Added 3 tests covering invalid JSON response scenarios for all affected functions",
+        "All 14 HEC tests and full CI gate pass"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T18:10:13.590507551Z",
+      "completed_at": "2026-02-05T18:10:13.590507551Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

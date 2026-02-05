@@ -86,14 +86,14 @@ pub async fn send_event(
     let body = response
         .text()
         .await
-        .unwrap_or_else(|_| "Could not read response body".to_string());
+        .map_err(|e| ClientError::InvalidResponse(format!("Failed to read response body: {e}")))?;
 
     // Try to parse as HEC response
     match serde_json::from_str::<HecResponse>(&body) {
         Ok(hec_response) => Ok(hec_response),
-        Err(_) => {
-            // If parsing fails, treat as error based on status code
+        Err(parse_err) => {
             if status >= 400 {
+                // HTTP error status with unparseable body
                 Err(ClientError::ApiError {
                     status,
                     url,
@@ -101,12 +101,10 @@ pub async fn send_event(
                     request_id: None,
                 })
             } else {
-                // Return a generic success response for non-error statuses
-                Ok(HecResponse {
-                    code: 0,
-                    text: "Success".to_string(),
-                    ack_id: None,
-                })
+                // HTTP success status but unparseable JSON - this is an error
+                Err(ClientError::InvalidResponse(format!(
+                    "Failed to parse HEC response (HTTP {status}): {parse_err}"
+                )))
             }
         }
     }
@@ -191,14 +189,14 @@ pub async fn send_batch(
     let response_body = response
         .text()
         .await
-        .unwrap_or_else(|_| "Could not read response body".to_string());
+        .map_err(|e| ClientError::InvalidResponse(format!("Failed to read response body: {e}")))?;
 
     // Try to parse as HEC batch response
     match serde_json::from_str::<HecBatchResponse>(&response_body) {
         Ok(hec_response) => Ok(hec_response),
-        Err(_) => {
-            // If parsing fails, treat as error based on status code
+        Err(parse_err) => {
             if status >= 400 {
+                // HTTP error status with unparseable body
                 Err(ClientError::ApiError {
                     status,
                     url,
@@ -206,12 +204,10 @@ pub async fn send_batch(
                     request_id: None,
                 })
             } else {
-                // Return a generic success response for non-error statuses
-                Ok(HecBatchResponse {
-                    code: 0,
-                    text: "Success".to_string(),
-                    ack_ids: None,
-                })
+                // HTTP success status but unparseable JSON - this is an error
+                Err(ClientError::InvalidResponse(format!(
+                    "Failed to parse HEC batch response (HTTP {status}): {parse_err}"
+                )))
             }
         }
     }
@@ -266,7 +262,7 @@ pub async fn health_check(
     let body = response
         .text()
         .await
-        .unwrap_or_else(|_| "Could not read response body".to_string());
+        .map_err(|e| ClientError::InvalidResponse(format!("Failed to read response body: {e}")))?;
 
     Ok(HecHealth {
         text: body.trim().to_string(),
@@ -333,19 +329,26 @@ pub async fn check_ack_status(
     let body = response
         .text()
         .await
-        .unwrap_or_else(|_| "Could not read response body".to_string());
+        .map_err(|e| ClientError::InvalidResponse(format!("Failed to read response body: {e}")))?;
 
     // Try to parse as HEC ack status
     match serde_json::from_str::<HecAckStatus>(&body) {
         Ok(ack_status) => Ok(ack_status),
-        Err(_) => {
-            // If parsing fails, treat as error based on status code
-            Err(ClientError::ApiError {
-                status,
-                url,
-                message: body,
-                request_id: None,
-            })
+        Err(parse_err) => {
+            if status >= 400 {
+                // HTTP error status with unparseable body
+                Err(ClientError::ApiError {
+                    status,
+                    url,
+                    message: body,
+                    request_id: None,
+                })
+            } else {
+                // HTTP success status but unparseable JSON - this is an error
+                Err(ClientError::InvalidResponse(format!(
+                    "Failed to parse HEC ack status response (HTTP {status}): {parse_err}"
+                )))
+            }
         }
     }
 }
