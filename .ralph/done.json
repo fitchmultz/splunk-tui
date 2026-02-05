@@ -3250,6 +3250,62 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0342",
+      "status": "done",
+      "title": "Remove or wire DEFAULT_SEARCH_PAGE_SIZE to avoid dead constant",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "config",
+        "dead-code",
+        "search"
+      ],
+      "scope": [
+        "crates/config/src/constants.rs",
+        "crates/config/src/persistence/state.rs",
+        "crates/client/src/client/search.rs",
+        "crates/tui/src/app/core.rs",
+        "crates/tui/src/app/actions/search.rs",
+        "crates/tui/tests/app_search_pagination_tests.rs"
+      ],
+      "evidence": [
+        "crates/config/src/constants.rs:58-59 (DEFAULT_SEARCH_PAGE_SIZE defined, but unused)",
+        "command: rg -n \"DEFAULT_SEARCH_PAGE_SIZE\" -S crates (only definition found)",
+        "crates/client/src/client/search.rs:165-167 (search results are fetched with count=request.effective_max_results(); no separate page size)",
+        "crates/config/src/persistence/state.rs:45-60 (SearchDefaults models max_results but no page-size concept)",
+        "crates/tui/src/app/core.rs:139-146 (TUI pagination page size is derived from search_defaults.max_results)",
+        "crates/tui/src/app/actions/search.rs:52-56 (TUI assumes page fullness based on search_results_page_size synced to max_results)"
+      ],
+      "plan": [
+        "Decide whether search pagination should have an independent page-size (separate from max_results); today, count == max_results",
+        "Preferred fix: delete DEFAULT_SEARCH_PAGE_SIZE (dead constant) and ensure no docs imply a 100-result page default",
+        "If an independent page size is required, add it to SearchDefaults persistence + loader, then wire client/TUI/CLI pagination to use it",
+        "Verify with `make test` (and ideally `make ci`) and confirm `rg -n \"DEFAULT_SEARCH_PAGE_SIZE\" crates` has no matches"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), C (DRY/Single source of truth)",
+        "Why it matters: unused defaults make it unclear which values are authoritative and invite drift",
+        "Observation: the workspace currently treats page size as max_results (default 1000), so DEFAULT_SEARCH_PAGE_SIZE=100 is misleading",
+        "Minimal fix: remove the constant; larger fix: introduce a real, persisted page-size concept and keep CLI/TUI parity",
+        "Removed dead constant DEFAULT_SEARCH_PAGE_SIZE from crates/config/src/constants.rs",
+        "Wired SearchDefaults to use shared DEFAULT_MAX_RESULTS constant instead of hardcoded 1000",
+        "Verified: rg -n 'DEFAULT_SEARCH_PAGE_SIZE' crates/ returns no matches",
+        "Verified: make ci passes (format, lint, type-check, test, release)",
+        "No other tasks in queue are affected by these changes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T20:54:00.994442797Z",
+      "completed_at": "2026-02-05T20:54:00.994442797Z",
+      "started_at": "2026-02-05T20:37:45.412089400Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

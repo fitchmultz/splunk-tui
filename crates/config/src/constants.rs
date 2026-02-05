@@ -55,9 +55,6 @@ pub const DEFAULT_MAX_WAIT_SECS: u64 = 300;
 /// Default maximum number of search results to return.
 pub const DEFAULT_MAX_RESULTS: u64 = 1000;
 
-/// Default page size for paginated search results.
-pub const DEFAULT_SEARCH_PAGE_SIZE: u64 = 100;
-
 // =============================================================================
 // TUI/UI Defaults
 // =============================================================================

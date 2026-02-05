@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0342",
-      "status": "todo",
-      "title": "Remove or wire DEFAULT_SEARCH_PAGE_SIZE to avoid dead constant",
-      "priority": "low",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/config/src/constants.rs"
-      ],
-      "evidence": [
-        "crates/config/src/constants.rs:58-59 (DEFAULT_SEARCH_PAGE_SIZE defined)",
-        "command: rg -n \"DEFAULT_SEARCH_PAGE_SIZE\" crates (only definition found)"
-      ],
-      "plan": [
-        "Decide whether search pagination should use DEFAULT_SEARCH_PAGE_SIZE or the constant should be removed",
-        "Update any defaults/docs/tests if the constant is wired in; otherwise delete the constant",
-        "Verify by running `cargo test -p splunk-config` and confirming tests pass"
-      ],
-      "notes": [
-        "Principles: B (YAGNI), C (DRY/Single source of truth)",
-        "Why it matters: unused defaults make it unclear which values are authoritative and invite drift",
-        "Minimal fix: remove or connect to actual search pagination defaults"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0343",
       "status": "todo",
       "title": "Prune or integrate unused AnimationController UI component",

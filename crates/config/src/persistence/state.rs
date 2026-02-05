@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::constants::{DEFAULT_LIST_MAX_ITEMS, DEFAULT_LIST_PAGE_SIZE};
+use crate::constants::{DEFAULT_LIST_MAX_ITEMS, DEFAULT_LIST_PAGE_SIZE, DEFAULT_MAX_RESULTS};
 use crate::types::{ColorTheme, KeybindOverrides, ProfileConfig};
 
 /// Default search parameters to avoid unbounded searches.
@@ -56,7 +56,7 @@ impl Default for SearchDefaults {
         Self {
             earliest_time: "-24h".to_string(),
             latest_time: "now".to_string(),
-            max_results: 1000,
+            max_results: DEFAULT_MAX_RESULTS,
         }
     }
 }
@@ -84,7 +84,7 @@ impl SearchDefaults {
         };
 
         let max_results = if self.max_results == 0 {
-            1000
+            DEFAULT_MAX_RESULTS
         } else {
             self.max_results
         };
