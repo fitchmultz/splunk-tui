@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0330",
-      "status": "todo",
-      "title": "Document the conditional 'e' Error Details shortcut in the keybinding catalog",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tui",
-        "keybindings",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/app.rs",
-        "crates/tui/src/input/keymap/bindings/global_search.rs",
-        "crates/tui/src/input/help.rs",
-        "crates/tui/src/input/docs.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/app.rs:442-450 intercepts plain `e` and returns `Action::ShowErrorDetailsFromCurrent` whenever `current_error` is set, overriding screen-specific `e` bindings.",
-        "crates/tui/src/input/keymap/bindings/global_search.rs:16-120 has no entry for plain `e` (only `?`, `q`, navigation, focus, etc.), so the centralized help/docs do not disclose this global behavior."
-      ],
-      "plan": [
-        "Add a global keybinding catalog entry for `e` describing \"Show error details (when an error is present)\" (metadata-only if necessary)",
-        "Ensure the help popup and docs output include this shortcut",
-        "Add/extend tests to prevent regressions in help output",
-        "Verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: G (Least astonishment), C (DRY).",
-        "Why it matters: the keybinding catalog is intended as the single source of truth for help/docs, but a user-visible global shortcut is implemented outside it; this increases drift risk and surprises users when `e` behaves differently in error states.",
-        "Minimal fix: document the behavior in the centralized catalog so help/docs match runtime behavior; keep implementation unchanged if desired.",
-        "Acceptance criteria: help popup/docs mention `e` for error details (conditional); `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0331",
       "status": "todo",
       "title": "Sync search pagination page size with configured SearchDefaults.max_results",

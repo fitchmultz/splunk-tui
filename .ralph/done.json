@@ -2623,6 +2623,61 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0330",
+      "status": "done",
+      "title": "Document the conditional 'e' Error Details shortcut in the keybinding catalog",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "tui",
+        "keybindings",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/tests.rs",
+        "crates/tui/src/input/keymap/bindings/global_search.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/input/docs.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/app.rs:442-450 intercepts plain `e` and returns `Action::ShowErrorDetailsFromCurrent` whenever `current_error` is set, overriding screen-specific `e` bindings.",
+        "crates/tui/src/input/keymap/bindings/global_search.rs:19-246 has no entry for plain `e` (only `?`, `q`, navigation, focus, etc.), so the centralized help/docs do not disclose this global behavior.",
+        "crates/tui/src/app/tests.rs:81-113 already contains tests for the global `e` keybinding behavior (test_global_e_keybinding_shows_error_details and test_global_e_keybinding_no_error_does_nothing).",
+        "Action::ShowErrorDetailsFromCurrent is defined in crates/tui/src/action/variants.rs:822 and handled in crates/tui/src/app/actions/system.rs:86."
+      ],
+      "plan": [
+        "Add a global keybinding catalog entry for `e` describing \"Show error details (when an error is present)\" in global_search.rs",
+        "Ensure the help popup and docs output include this shortcut by adding it to the keybindings() function",
+        "Verify existing tests in app/tests.rs still pass; add test in help.rs or docs.rs to assert `e` appears in generated output",
+        "Verify by running `cargo test -p splunk-tui`"
+      ],
+      "notes": [
+        "Principles violated: G (Least astonishment), C (DRY).",
+        "Why it matters: the keybinding catalog is intended as the single source of truth for help/docs, but a user-visible global shortcut is implemented outside it; this increases drift risk and surprises users when `e` behaves differently in error states.",
+        "Minimal fix: document the behavior in the centralized catalog so help/docs match runtime behavior; keep implementation unchanged if desired.",
+        "Acceptance criteria: help popup/docs mention `e` for error details (conditional); `make test` passes.",
+        "Note: The `e` keybinding is conditional - it only works when `current_error.is_some()`. This may require a metadata-only entry (matcher: None, handles_input: false) since the actual handling is in app.rs before keymap resolution.",
+        "Added metadata-only keybinding entry for conditional 'e' shortcut in global_search.rs",
+        "Added tests in help.rs and docs.rs to verify documentation includes error details keybinding",
+        "Updated snapshot files to reflect new help popup content",
+        "Auto-generated documentation updated via make generate",
+        "All 544 tests pass, make ci clean"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T03:48:54.371988442Z",
+      "completed_at": "2026-02-05T03:48:54.371988442Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

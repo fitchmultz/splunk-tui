@@ -150,6 +150,7 @@ Configuration values are loaded in the following order (highest to lowest):
 - `Ctrl+Tab`: Next focus
 - `Ctrl+Shift+Tab`: Previous focus
 - `Ctrl+c`: Copy to clipboard
+- `e`: Show error details (when an error is present)
 
 ### Screen Specific Shortcuts
 

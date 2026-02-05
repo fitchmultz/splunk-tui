@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T03:27:47.690726187Z",
+  "last_updated_at": "2026-02-05T03:51:03.965665149Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 6,
+      "completed_count": 7,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -229,6 +229,11 @@
           "id": "RQ-0329",
           "title": "Align Macros help/keybinding catalog with actual Macros shortcuts",
           "completed_at": "2026-02-05T03:27:47.690725242Z"
+        },
+        {
+          "id": "RQ-0330",
+          "title": "Document the conditional 'e' Error Details shortcut in the keybinding catalog",
+          "completed_at": "2026-02-05T03:51:03.965663964Z"
         }
       ]
     }
@@ -238,7 +243,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 41,
+  "total_completed": 42,
   "milestones": [
     {
       "threshold": 10,

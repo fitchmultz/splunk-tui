@@ -19,7 +19,7 @@ expression: harness.render()
 │Disk Usage: 204│  Ctrl+Tab        Next focus                  ║               │
 │Priority: 5    │  Ctrl+Shift+Tab  Previous focus              ║               │
 │Label: Schedule│  Ctrl+c          Copy to clipboard           ║               │
-│Cursor Time: 20│                                              ↓               │
+│Cursor Time: 20│  e               Show error details (when an ↓               │
 │Finalized: No  └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

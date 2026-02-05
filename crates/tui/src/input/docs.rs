@@ -142,4 +142,13 @@ mod tests {
         let markdown = render_markdown();
         assert!(!markdown.ends_with('\n'));
     }
+
+    #[test]
+    fn render_markdown_includes_error_details_keybinding() {
+        let markdown = render_markdown();
+        assert!(
+            markdown.contains("Show error details (when an error is present)"),
+            "Documentation should include 'e' keybinding for error details"
+        );
+    }
 }

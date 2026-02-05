@@ -115,6 +115,16 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None,
             handles_input: false,
         },
+        // Error handling (conditional - only active when error is present)
+        Keybinding {
+            section: Section::Global,
+            keys: "e",
+            description: "Show error details (when an error is present)",
+            scope: BindingScope::Global,
+            matcher: None, // Handled in app.rs before keymap resolution
+            action: None,
+            handles_input: false,
+        },
         // Search
         Keybinding {
             section: Section::Search,

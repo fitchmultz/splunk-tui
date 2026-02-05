@@ -170,6 +170,7 @@ Launch the interactive interface with `splunk-tui`.
 - `Ctrl+Tab`: Next focus
 - `Ctrl+Shift+Tab`: Previous focus
 - `Ctrl+c`: Copy to clipboard
+- `e`: Show error details (when an error is present)
 
 ### Screen Specific Shortcuts
 

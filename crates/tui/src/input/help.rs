@@ -142,4 +142,13 @@ mod tests {
             "Help should include Macros section"
         );
     }
+
+    #[test]
+    fn help_text_includes_error_details_keybinding() {
+        let help = help_text();
+        assert!(
+            help.contains("Show error details (when an error is present)"),
+            "Help should include 'e' keybinding for error details"
+        );
+    }
 }

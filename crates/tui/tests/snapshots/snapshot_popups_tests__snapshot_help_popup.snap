@@ -1,5 +1,6 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_popups_tests.rs
+assertion_line: 14
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -18,7 +19,7 @@ expression: harness.render()
 │               │  Ctrl+Tab        Next focus                  ║               │
 │               │  Ctrl+Shift+Tab  Previous focus              ║               │
 │               │  Ctrl+c          Copy to clipboard           ║               │
-│               │                                              ↓               │
+│               │  e               Show error details (when an ↓               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │
