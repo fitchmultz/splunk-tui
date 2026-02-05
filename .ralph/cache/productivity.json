@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T04:45:22.519793618Z",
+  "last_updated_at": "2026-02-05T05:05:30.559627083Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 9,
+      "completed_count": 10,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -244,6 +244,11 @@
           "id": "RQ-0332",
           "title": "Add drift-prevention test: footer hint priority keys must exist in keymap catalog",
           "completed_at": "2026-02-05T04:45:22.519790814Z"
+        },
+        {
+          "id": "RQ-0333",
+          "title": "Deduplicate overview resource fetchers shared by Overview and Multi-Instance screens",
+          "completed_at": "2026-02-05T05:05:30.559625937Z"
         }
       ]
     }
@@ -253,7 +258,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 44,
+  "total_completed": 45,
   "milestones": [
     {
       "threshold": 10,

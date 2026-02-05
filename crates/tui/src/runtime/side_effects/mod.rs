@@ -102,6 +102,7 @@ mod lookups;
 mod macros;
 mod multi_instance;
 mod overview;
+mod overview_fetch;
 mod profiles;
 mod roles;
 mod search_peers;

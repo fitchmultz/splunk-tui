@@ -2787,6 +2787,60 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0333",
+      "status": "done",
+      "title": "Deduplicate overview resource fetchers shared by Overview and Multi-Instance screens",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "dry",
+        "runtime"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/overview.rs",
+        "crates/tui/src/runtime/side_effects/multi_instance.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/overview.rs:88-95 defines `resource_error` function.",
+        "crates/tui/src/runtime/side_effects/overview.rs:97-305 defines fetch functions (indexes, jobs, apps, users, cluster, health, kvstore, license, saved_searches) with identical timeout (30s) and limit patterns.",
+        "crates/tui/src/runtime/side_effects/multi_instance.rs:218-226 defines duplicate `resource_error` function with identical logic.",
+        "crates/tui/src/runtime/side_effects/multi_instance.rs:228-434 defines duplicate fetch functions with identical timeout (30s), list limits (indexes/apps/users: 1000, jobs: 100), and error mapping.",
+        "Both files share 9 identical fetch helper patterns: fetch_indexes, fetch_jobs, fetch_apps, fetch_users, fetch_cluster, fetch_health, fetch_kvstore, fetch_license, fetch_saved_searches."
+      ],
+      "plan": [
+        "Extract shared OverviewResource fetch helpers into a new internal module (e.g., `crates/tui/src/runtime/side_effects/overview_fetch.rs`)",
+        "Update both Overview and Multi-Instance side effect handlers to use the shared helpers",
+        "Update `crates/tui/src/runtime/side_effects/mod.rs` to expose the new module",
+        "Add focused unit tests for the helper functions (e.g., timeout mapping -> `ClientError::Timeout`) without mocking",
+        "Verify by running `cargo test -p splunk-tui`"
+      ],
+      "notes": [
+        "Principles violated: C (DRY), D (Localize change).",
+        "Why it matters: duplicated async timeout + error mapping logic increases the chance of inconsistent behavior and makes future changes (timeouts, limits, error handling) require edits in multiple places.",
+        "Minimal fix: extract and reuse a shared helper module with tests, keeping the public API private (`pub(crate)` at most).",
+        "Acceptance criteria: no duplicated fetch helpers remain across these modules; tests cover the shared helper behavior; `make test` passes.",
+        "Updated 2026-02-04: Verified duplication still exists; 9 fetch functions duplicated with identical 30s timeouts and list limits (1000 for indexes/apps/users, 100 for jobs).",
+        "Extracted 9 duplicate fetch helper functions (fetch_indexes, fetch_jobs, fetch_apps, fetch_users, fetch_cluster, fetch_health, fetch_kvstore, fetch_license, fetch_saved_searches) and resource_error() into new shared module overview_fetch.rs",
+        "Reduced code duplication: eliminated ~196 lines of duplicate code (739 -> 543 lines)",
+        "Added unit tests for shared helpers (resource_error, timeout constants, list limits)",
+        "All 554 tests pass; make ci passes",
+        "Related task RQ-0334 depends on this - constants are now centralized in overview_fetch.rs with FETCH_TIMEOUT, LIST_LIMIT_1000, LIST_LIMIT_100"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T05:03:08.875868614Z",
+      "completed_at": "2026-02-05T05:03:08.875868614Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }
