@@ -173,11 +173,13 @@ async fn main() -> Result<()> {
 
     // Apply environment variable overrides to search defaults
     // Precedence: env vars > persisted values > hardcoded defaults
+    // Sanitize to ensure invariants (non-empty times, max_results >= 1) are enforced
     persisted_state.search_defaults = SearchDefaults {
         earliest_time: search_default_config.earliest_time,
         latest_time: search_default_config.latest_time,
         max_results: search_default_config.max_results,
-    };
+    }
+    .sanitize();
 
     // Initialize keybinding overrides from persisted state
     if let Err(e) =

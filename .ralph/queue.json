@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0335",
-      "status": "todo",
-      "title": "Sanitize persisted SearchDefaults invariants on load (max_results >= 1, non-empty times)",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "config",
-        "correctness",
-        "tui"
-      ],
-      "scope": [
-        "crates/config/src/persistence/state.rs",
-        "crates/config/src/persistence/profiles.rs",
-        "crates/tui/src/runtime/side_effects/searches.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/config/src/persistence/state.rs:39-42 documents invariants for `SearchDefaults` (max_results >= 1), but the type is plain data with no validation hook.",
-        "crates/tui/src/runtime/side_effects/searches.rs:61-79 performs runtime sanitization and warns when earliest/latest are empty or `max_results == 0`, proving invalid persisted values are representable and can reach runtime."
-      ],
-      "plan": [
-        "Add a `SearchDefaults::sanitize()` (or equivalent) in `crates/config` and call it when loading persisted state (ConfigManager load path)",
-        "Add unit tests covering empty earliest/latest and max_results=0 cases to ensure they normalize to defaults",
-        "Remove or downgrade runtime fallback warnings in TUI once invariants are enforced at the config boundary",
-        "Verify by running `cargo test --workspace --all-targets --all-features --locked`"
-      ],
-      "notes": [
-        "Principles violated: E (Make bugs hard to write), F (Fail fast appropriately), C (DRY).",
-        "Why it matters: illegal states (empty times, max_results=0) make it to runtime, forcing defensive code and producing inconsistent behavior depending on where the defaults were applied.",
-        "Minimal fix: enforce invariants in config loading/persistence so downstream code can assume validated defaults.",
-        "Acceptance criteria: persisted invalid values are normalized at load time; TUI no longer needs to warn+patch these invariants at run-search time; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0336",
       "status": "todo",
       "title": "Cache footer_hints to avoid per-frame keybinding catalog allocations",

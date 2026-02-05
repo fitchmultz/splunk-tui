@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T05:21:15.034462663Z",
+  "last_updated_at": "2026-02-05T05:41:13.621801111Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 11,
+      "completed_count": 12,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -254,6 +254,11 @@
           "id": "RQ-0334",
           "title": "Replace overview/multi-instance magic timeouts and list limits with shared constants",
           "completed_at": "2026-02-05T05:21:15.034461710Z"
+        },
+        {
+          "id": "RQ-0335",
+          "title": "Sanitize persisted SearchDefaults invariants on load (max_results >= 1, non-empty times)",
+          "completed_at": "2026-02-05T05:41:13.621798838Z"
         }
       ]
     }
@@ -263,7 +268,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 46,
+  "total_completed": 47,
   "milestones": [
     {
       "threshold": 10,

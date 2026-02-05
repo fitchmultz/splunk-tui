@@ -2891,6 +2891,62 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0335",
+      "status": "done",
+      "title": "Sanitize persisted SearchDefaults invariants on load (max_results >= 1, non-empty times)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "config",
+        "correctness",
+        "tui"
+      ],
+      "scope": [
+        "crates/config/src/persistence/state.rs",
+        "crates/config/src/persistence/profiles.rs",
+        "crates/config/src/loader/builder.rs",
+        "crates/tui/src/runtime/side_effects/searches.rs",
+        "crates/config/src/loader/tests/search_defaults_tests.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/config/src/persistence/state.rs:39-42 documents invariants for `SearchDefaults` (max_results >= 1), but the type is plain data with no validation hook.",
+        "crates/tui/src/runtime/side_effects/searches.rs:74-92 performs runtime sanitization and warns when earliest/latest are empty or `max_results == 0`, proving invalid persisted values are representable and can reach runtime.",
+        "crates/config/src/persistence/profiles.rs:127-129 `ConfigManager::load()` returns state directly without sanitization - this is the key injection point.",
+        "crates/config/src/loader/builder.rs:341-348 `build_search_defaults()` uses persisted values directly without validation."
+      ],
+      "plan": [
+        "Add a `SearchDefaults::sanitize()` method in `crates/config/src/persistence/state.rs` that normalizes invalid values (empty earliest/latest, max_results=0) to defaults",
+        "Call `sanitize()` in `ConfigManager::load()` (profiles.rs:127) before returning state to ensure all loaded values are validated",
+        "Add unit tests in `crates/config/src/loader/tests/search_defaults_tests.rs` covering empty earliest/latest and max_results=0 cases to ensure they normalize to defaults",
+        "Remove or downgrade runtime fallback warnings in TUI (searches.rs:74-92) once invariants are enforced at the config boundary",
+        "Verify by running `make test`"
+      ],
+      "notes": [
+        "Principles violated: E (Make bugs hard to write), F (Fail fast appropriately), C (DRY).",
+        "Why it matters: illegal states (empty times, max_results=0) make it to runtime, forcing defensive code and producing inconsistent behavior depending on where the defaults were applied.",
+        "Minimal fix: enforce invariants in config loading/persistence so downstream code can assume validated defaults.",
+        "Acceptance criteria: persisted invalid values are normalized at load time; TUI no longer needs to warn+patch these invariants at run-search time; `make test` passes.",
+        "Updated 2026-02-04: Verified evidence lines are accurate, added builder.rs to scope, clarified plan with specific line references.",
+        "Added SearchDefaults::sanitize() method in state.rs to normalize invalid values (empty times -> defaults, max_results=0 -> 1000)",
+        "Updated ConfigManager::load() to call sanitize() before returning state",
+        "Added sanitize() call in main.rs when applying env var overrides for complete coverage",
+        "Removed redundant runtime validation in TUI searches.rs (with explanatory comment)",
+        "Added 16 total tests (8 unit + 8 integration) covering all sanitization cases",
+        "All CI checks pass; no other tasks affected by this change"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T05:39:00.543613964Z",
+      "completed_at": "2026-02-05T05:39:00.543613964Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

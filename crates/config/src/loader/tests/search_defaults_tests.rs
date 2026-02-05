@@ -172,3 +172,101 @@ fn test_invalid_max_results_env_var() {
         },
     );
 }
+
+#[test]
+fn test_search_defaults_sanitize_empty_earliest_time() {
+    let defaults = SearchDefaults {
+        earliest_time: "".to_string(),
+        latest_time: "now".to_string(),
+        max_results: 1000,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-24h");
+    assert_eq!(sanitized.latest_time, "now");
+    assert_eq!(sanitized.max_results, 1000);
+}
+
+#[test]
+fn test_search_defaults_sanitize_whitespace_earliest_time() {
+    let defaults = SearchDefaults {
+        earliest_time: "   ".to_string(),
+        latest_time: "now".to_string(),
+        max_results: 1000,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-24h");
+    assert_eq!(sanitized.latest_time, "now");
+    assert_eq!(sanitized.max_results, 1000);
+}
+
+#[test]
+fn test_search_defaults_sanitize_empty_latest_time() {
+    let defaults = SearchDefaults {
+        earliest_time: "-24h".to_string(),
+        latest_time: "".to_string(),
+        max_results: 1000,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-24h");
+    assert_eq!(sanitized.latest_time, "now");
+    assert_eq!(sanitized.max_results, 1000);
+}
+
+#[test]
+fn test_search_defaults_sanitize_whitespace_latest_time() {
+    let defaults = SearchDefaults {
+        earliest_time: "-24h".to_string(),
+        latest_time: "   ".to_string(),
+        max_results: 1000,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-24h");
+    assert_eq!(sanitized.latest_time, "now");
+    assert_eq!(sanitized.max_results, 1000);
+}
+
+#[test]
+fn test_search_defaults_sanitize_zero_max_results() {
+    let defaults = SearchDefaults {
+        earliest_time: "-24h".to_string(),
+        latest_time: "now".to_string(),
+        max_results: 0,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-24h");
+    assert_eq!(sanitized.latest_time, "now");
+    assert_eq!(sanitized.max_results, 1000);
+}
+
+#[test]
+fn test_search_defaults_sanitize_multiple_invalid() {
+    let defaults = SearchDefaults {
+        earliest_time: "".to_string(),
+        latest_time: "   ".to_string(),
+        max_results: 0,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-24h");
+    assert_eq!(sanitized.latest_time, "now");
+    assert_eq!(sanitized.max_results, 1000);
+}
+
+#[test]
+fn test_search_defaults_sanitize_valid_values_unchanged() {
+    let defaults = SearchDefaults {
+        earliest_time: "-7d".to_string(),
+        latest_time: "2024-01-01T00:00:00".to_string(),
+        max_results: 500,
+    };
+
+    let sanitized = defaults.sanitize();
+    assert_eq!(sanitized.earliest_time, "-7d");
+    assert_eq!(sanitized.latest_time, "2024-01-01T00:00:00");
+    assert_eq!(sanitized.max_results, 500);
+}

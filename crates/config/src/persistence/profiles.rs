@@ -124,8 +124,12 @@ impl ConfigManager {
     /// Loads persisted state from disk.
     ///
     /// Returns default state if the file doesn't exist or cannot be read.
+    /// Invalid persisted values are sanitized to their defaults.
     pub fn load(&self) -> PersistedState {
-        self.config_file.state.clone().unwrap_or_default()
+        let mut state = self.config_file.state.clone().unwrap_or_default();
+        // Sanitize search defaults to enforce invariants
+        state.search_defaults = state.search_defaults.sanitize();
+        state
     }
 
     /// Saves persisted state to disk.
