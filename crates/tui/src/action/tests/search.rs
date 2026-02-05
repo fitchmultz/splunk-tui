@@ -18,12 +18,21 @@ fn test_redact_run_search() {
 
     assert!(output.contains("RunSearch"), "Should contain action name");
     assert!(
-        output.contains("SELECT * FROM users"),
-        "Should contain query content"
+        !output.contains("SELECT * FROM users"),
+        "Should NOT contain query content"
     );
     assert!(
-        output.contains("password='secret'"),
-        "Should contain full query including password string"
+        !output.contains("password='secret'"),
+        "Should NOT contain password string"
+    );
+    assert!(
+        output.contains("<43 chars,"),
+        "Should show query length, got: {}",
+        output
+    );
+    assert!(
+        output.contains("hash="),
+        "Should show query hash for correlation"
     );
 }
 
@@ -37,12 +46,21 @@ fn test_redact_search_started() {
         "Should contain action name"
     );
     assert!(
-        output.contains("SELECT * FROM users"),
-        "Should contain query content"
+        !output.contains("SELECT * FROM users"),
+        "Should NOT contain query content"
     );
     assert!(
-        output.contains("password='secret'"),
-        "Should contain full query"
+        !output.contains("password='secret'"),
+        "Should NOT contain password string"
+    );
+    assert!(
+        output.contains("<43 chars,"),
+        "Should show query length, got: {}",
+        output
+    );
+    assert!(
+        output.contains("hash="),
+        "Should show query hash for correlation"
     );
 }
 

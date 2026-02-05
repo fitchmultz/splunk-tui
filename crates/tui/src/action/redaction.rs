@@ -9,8 +9,8 @@
 //!
 //! - All Action variants containing sensitive data MUST be handled explicitly
 //! - Sensitive data includes: passwords, tokens, API responses, user names,
-//!   profile names, and error messages
-//! - Search queries are NOT considered sensitive (operational/debugging data)
+//!   profile names, error messages, and search queries (may contain PII, tokens)
+//! - Search queries ARE considered sensitive (may contain PII, tokens, incident IDs)
 //! - Non-sensitive simple variants fall through to default Debug
 //!
 //! # What This Module Does NOT Handle
@@ -28,10 +28,21 @@
 //!     search_defaults: SearchDefaults::default(),
 //! };
 //! tracing::info!("Handling action: {:?}", RedactedAction(&action));
-//! // Logs: Handling action: RunSearch("SELECT * FROM users WHERE password='secret'")
+//! // Logs: Handling action: RunSearch(<43 chars, hash=296582a1>)
 //! ```
 
 use crate::action::variants::Action;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+/// Redact a query string for logging, showing only length and a short hash prefix.
+/// This allows operators to correlate logs without exposing query content.
+fn redact_query(query: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    query.hash(&mut hasher);
+    let hash = hasher.finish();
+    format!("<{} chars, hash={:08x}>", query.len(), hash)
+}
 
 /// Redacted wrapper for Action that prevents sensitive payloads from being logged.
 ///
@@ -47,7 +58,7 @@ use crate::action::variants::Action;
 ///     search_defaults: SearchDefaults::default(),
 /// };
 /// tracing::info!("Handling action: {:?}", RedactedAction(&action));
-/// // Logs: Handling action: RunSearch("SELECT * FROM users WHERE password='secret'")
+/// // Logs: Handling action: RunSearch(<43 chars, hash=296582a1>)
 /// ```
 pub struct RedactedAction<'a>(pub &'a Action);
 
@@ -55,7 +66,7 @@ impl std::fmt::Debug for RedactedAction<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             Action::RunSearch { query, .. } => {
-                write!(f, "RunSearch({:?})", query)
+                write!(f, "RunSearch({})", redact_query(query))
             }
             Action::CopyToClipboard(text) => {
                 write!(f, "CopyToClipboard(<{} chars>)", text.len())
@@ -85,7 +96,7 @@ impl std::fmt::Debug for RedactedAction<'_> {
 
             // Search-related actions with sensitive data
             Action::SearchStarted(query) => {
-                write!(f, "SearchStarted({:?})", query)
+                write!(f, "SearchStarted({})", redact_query(query))
             }
             Action::SearchComplete(result) => match result {
                 Ok((results, sid, total)) => {

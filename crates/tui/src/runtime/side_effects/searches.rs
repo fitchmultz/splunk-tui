@@ -14,10 +14,20 @@ use crate::action::{Action, progress_callback_to_action_sender};
 use crate::error_details::{build_search_error_details, search_error_message};
 use splunk_client::{SearchMode, SearchRequest};
 use splunk_config::SearchDefaults;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
+
+/// Helper to redact a query string for logging, showing only length and hash.
+fn redact_query_for_log(query: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    query.hash(&mut hasher);
+    let hash = hasher.finish();
+    format!("<{} chars, hash={:08x}>", query.len(), hash)
+}
 
 /// Handle loading saved searches.
 pub async fn handle_load_saved_searches(client: SharedClient, tx: Sender<Action>) {
@@ -44,7 +54,10 @@ pub async fn handle_run_search(
     search_mode: SearchMode,
     realtime_window: Option<u64>,
 ) {
-    tracing::debug!("handle_run_search called with query: {}", query);
+    tracing::debug!(
+        "handle_run_search called with query: {}",
+        redact_query_for_log(&query)
+    );
     tracing::debug!(
         "search_defaults.earliest_time: {}",
         search_defaults.earliest_time

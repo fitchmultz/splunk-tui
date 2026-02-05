@@ -2393,6 +2393,63 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0326",
+      "status": "done",
+      "title": "Redact search query from TUI debug logs",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "security",
+        "tui",
+        "logging"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/searches.rs",
+        "crates/tui/src/action/redaction.rs",
+        "crates/tui/src/action/tests/search.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/searches.rs:47 `handle_run_search` logs the full query via `tracing::debug!(\"handle_run_search called with query: {}\", query)`.",
+        "crates/tui/src/runtime/side_effects/searches.rs:48-59 logs raw search_defaults (earliest_time, latest_time, max_results) which may contain sensitive timing info.",
+        "crates/tui/src/action/redaction.rs:13 documents current policy: 'Search queries are NOT considered sensitive (operational/debugging data)' - this policy needs to change.",
+        "crates/tui/src/action/redaction.rs:57-58 `RunSearch` action explicitly logs the full query: `write!(f, \"RunSearch({:?})\", query)`.",
+        "crates/tui/src/action/redaction.rs:87-89 `SearchStarted` action explicitly logs the full query: `write!(f, \"SearchStarted({:?})\", query)`.",
+        "crates/tui/src/action/tests/search.rs:10-28 tests verify queries are currently NOT redacted (test_redact_run_search, test_redact_search_started).",
+        "Command: `DOTENV_DISABLED=1 cargo test --workspace --all-targets --all-features --locked` (pass)."
+      ],
+      "plan": [
+        "Update `crates/tui/src/runtime/side_effects/searches.rs` to log query metadata (length + hash prefix) instead of full query",
+        "Update `crates/tui/src/action/redaction.rs` to redact queries in `RunSearch` and `SearchStarted` actions (change policy + implementation)",
+        "Update `crates/tui/src/action/tests/search.rs` to verify queries ARE redacted (invert current test assertions)",
+        "Add redaction helper function for query metadata (length + short hash) in `crates/tui/src/action/redaction.rs`",
+        "Run `cargo test -p splunk-tui` and confirm all tests pass"
+      ],
+      "notes": [
+        "Principles violated: I (Security baseline), H (Operational hygiene), G (Least astonishment).",
+        "Why it matters: search queries can contain sensitive information (PII, incident IDs, tokens embedded in SPL, etc.); logging them to disk at debug level creates an easy exfiltration path.",
+        "Current state: A redaction system exists but explicitly excludes search queries from redaction. This is a policy change as much as an implementation change.",
+        "Minimal fix: Update redaction.rs policy comment, redact queries in RunSearch/SearchStarted, update side_effects/searches.rs debug logging, and update tests.",
+        "Acceptance criteria: `handle_run_search` no longer logs raw query; `RedactedAction` redacts queries; tests verify redaction behavior; `make test` passes.",
+        "Updated redaction policy: search queries now treated as sensitive",
+        "Added redact_query() helper in redaction.rs with <len chars, hash=xxxxxxx> format",
+        "Redacted queries in RunSearch and SearchStarted action logging",
+        "Redacted queries in handle_run_search debug logging",
+        "Updated doc examples to show new redaction format",
+        "Updated tests to verify query redaction behavior"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T02:26:37.946993847Z",
+      "completed_at": "2026-02-05T02:26:37.946993847Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }
