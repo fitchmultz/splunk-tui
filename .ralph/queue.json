@@ -1,4 +1,368 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0337",
+      "status": "todo",
+      "title": "Fail HEC send on unparseable response instead of returning Success",
+      "priority": "high",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/hec.rs"
+      ],
+      "evidence": [
+        "crates/client/src/endpoints/hec.rs:85-110 (send_event returns generic Success when JSON parsing fails on <400)",
+        "crates/client/src/endpoints/hec.rs:190-215 (send_batch returns generic Success when JSON parsing fails on <400)"
+      ],
+      "plan": [
+        "Extract HEC response parsing into a helper that returns ClientError on JSON parse failure regardless of status",
+        "Update send_event/send_batch to propagate body-read failures instead of substituting a Success response",
+        "Add unit tests for 2xx + invalid JSON and body-read error paths",
+        "Verify by running `cargo test -p splunk-client --lib` and confirming new tests pass"
+      ],
+      "notes": [
+        "Principles: F (Fail fast appropriately), G (Least astonishment)",
+        "Why it matters: a 2xx response with non-JSON body (or unreadable body) is treated as Success, which can mask ingestion failures or corrupt responses",
+        "Minimal fix: return a structured ClientError with status/body when parsing fails; avoid success fallback"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0338",
+      "status": "todo",
+      "title": "Implement SPLUNK_INTERNAL_LOGS_* env overrides (or remove docs claiming them)",
+      "priority": "medium",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/config/src/loader/env.rs",
+        "crates/config/src/loader/tests",
+        ".env.example"
+      ],
+      "evidence": [
+        "docs/usage.md:88-89 (documents SPLUNK_INTERNAL_LOGS_COUNT/EARLIEST)",
+        "docs/usage.md:1263-1273 (documents env overrides for internal logs)",
+        "command: rg -n \"SPLUNK_INTERNAL_LOGS\" crates (no matches)"
+      ],
+      "plan": [
+        "Add env parsing for SPLUNK_INTERNAL_LOGS_COUNT and SPLUNK_INTERNAL_LOGS_EARLIEST in config loader and wire into InternalLogsDefaults",
+        "Add validation (count > 0, earliest non-empty) and update .env.example with commented examples",
+        "Add loader tests covering valid and invalid env values",
+        "Verify by running `cargo test -p splunk-config` and confirming new tests pass"
+      ],
+      "notes": [
+        "Principles: G (Least astonishment), H (Operational hygiene)",
+        "Why it matters: users setting documented env vars get no effect, leading to confusing runtime defaults and misconfigured TUI behavior",
+        "Minimal fix: implement env overrides in config loader and document them consistently"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0339",
+      "status": "todo",
+      "title": "Preserve focus when removing earlier component in FocusManager",
+      "priority": "medium",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/src/focus.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/focus.rs:126-133 (remove_component removes index but only clamps when out of bounds)",
+        "Repro: FocusManager::from_ids([\"a\",\"b\",\"c\"]).set_focus(\"b\"); remove_component(\"a\") => current_focus points to \"c\" instead of staying on \"b\""
+      ],
+      "plan": [
+        "Adjust remove_component to decrement current_focus when a lower index is removed and to pick a stable focus when the current item is removed",
+        "Add unit tests covering removal before current focus and removal of the focused component",
+        "Verify by running `cargo test -p splunk-tui --lib focus` and confirming new tests pass"
+      ],
+      "notes": [
+        "Principles: G (Least astonishment), E (Make bugs hard to write)",
+        "Why it matters: removing non-focused components can unexpectedly jump focus, breaking keyboard navigation predictability",
+        "Minimal fix: update index math and add focused-removal tests"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0340",
+      "status": "todo",
+      "title": "Make FlexLayoutBuilder::column/row fallible instead of panicking",
+      "priority": "medium",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/src/ui/layout/flex.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/ui/layout/flex.rs:233-262 (column/row call new_leaf().unwrap())"
+      ],
+      "plan": [
+        "Change column/row to return anyhow::Result<Self> (or internal error type) and propagate new_leaf errors",
+        "Update builder call sites (currently local to flex module tests) and docs/examples",
+        "Add/adjust unit tests to cover the new fallible API",
+        "Verify by running `cargo test -p splunk-tui --lib` and confirming flex layout tests pass"
+      ],
+      "notes": [
+        "Principles: F (Fail fast appropriately), E (Make bugs hard to write)",
+        "Why it matters: unexpected taffy errors currently panic the process, turning layout errors into crashes",
+        "Minimal fix: make builder methods return Result and propagate errors"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0341",
+      "status": "todo",
+      "title": "Document SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN in .env.example",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        ".env.example",
+        "crates/cli/src/commands/hec.rs"
+      ],
+      "evidence": [
+        "command: rg -n \"SPLUNK_HEC\" .env.example (no matches)",
+        "crates/cli/src/commands/hec.rs:37-103 (HEC commands read SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN env vars)"
+      ],
+      "plan": [
+        "Add commented SPLUNK_HEC_URL and SPLUNK_HEC_TOKEN entries to .env.example with short usage notes",
+        "Keep examples aligned with docs/usage.md",
+        "Verify by running `rg -n \"SPLUNK_HEC\" .env.example` and confirming entries exist"
+      ],
+      "notes": [
+        "Principles: G (Least astonishment), H (Operational hygiene)",
+        "Why it matters: users following .env.example won’t discover required HEC env vars even though the CLI supports them",
+        "Minimal fix: add commented entries with brief descriptions"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0342",
+      "status": "todo",
+      "title": "Remove or wire DEFAULT_SEARCH_PAGE_SIZE to avoid dead constant",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/config/src/constants.rs"
+      ],
+      "evidence": [
+        "crates/config/src/constants.rs:58-59 (DEFAULT_SEARCH_PAGE_SIZE defined)",
+        "command: rg -n \"DEFAULT_SEARCH_PAGE_SIZE\" crates (only definition found)"
+      ],
+      "plan": [
+        "Decide whether search pagination should use DEFAULT_SEARCH_PAGE_SIZE or the constant should be removed",
+        "Update any defaults/docs/tests if the constant is wired in; otherwise delete the constant",
+        "Verify by running `cargo test -p splunk-config` and confirming tests pass"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), C (DRY/Single source of truth)",
+        "Why it matters: unused defaults make it unclear which values are authoritative and invite drift",
+        "Minimal fix: remove or connect to actual search pagination defaults"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0343",
+      "status": "todo",
+      "title": "Prune or integrate unused AnimationController UI component",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/src/ui/components/animation.rs",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/src/ui/mod.rs"
+      ],
+      "evidence": [
+        "command: rg -n \"AnimationController\" crates/tui/src (matches only in animation module/docs, no usage in app code)"
+      ],
+      "plan": [
+        "Confirm there are no internal consumers beyond the component module",
+        "Either remove the module/exports and update docs, or integrate it into real UI rendering",
+        "Update tests and public exports accordingly",
+        "Verify by running `cargo test -p splunk-tui` and confirming no dead-code warnings or test failures"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), Public API discipline",
+        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
+        "Minimal fix: remove or make pub(crate) unless there’s a concrete use case"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0344",
+      "status": "todo",
+      "title": "Prune or integrate unused DiffViewer UI component",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/src/ui/components/diff_viewer.rs",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/src/ui/mod.rs"
+      ],
+      "evidence": [
+        "command: rg -n \"DiffViewer\" crates/tui/src (matches only in diff_viewer module/docs, no usage in app code)"
+      ],
+      "plan": [
+        "Confirm no internal consumers beyond the component module",
+        "Either remove the module/exports and update docs, or integrate it into a screen that needs diffs",
+        "Update tests and public exports accordingly",
+        "Verify by running `cargo test -p splunk-tui` and confirming no dead-code warnings or test failures"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), Public API discipline",
+        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
+        "Minimal fix: remove or make pub(crate) unless there’s a concrete use case"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0345",
+      "status": "todo",
+      "title": "Prune or integrate unused MarkdownRenderer UI component",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/src/ui/components/markdown.rs",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/src/ui/mod.rs"
+      ],
+      "evidence": [
+        "command: rg -n \"MarkdownRenderer\" crates/tui/src (matches only in markdown module/docs, no usage in app code)"
+      ],
+      "plan": [
+        "Confirm no internal consumers beyond the component module",
+        "Either remove the module/exports and update docs, or integrate it into UI (e.g., help rendering)",
+        "Update tests and public exports accordingly",
+        "Verify by running `cargo test -p splunk-tui` and confirming no dead-code warnings or test failures"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), Public API discipline",
+        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
+        "Minimal fix: remove or make pub(crate) unless there’s a concrete use case"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0346",
+      "status": "todo",
+      "title": "Remove or wire handle_get_macro to avoid dead side-effect path",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/macros.rs"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/macros.rs:151-167 (handle_get_macro is marked dead_code)",
+        "command: rg -n \"handle_get_macro\" crates/tui/src (only definition found)"
+      ],
+      "plan": [
+        "Decide whether get-macro is a real feature path; if not, delete the function and dead_code allowance",
+        "If it is needed, add an Action + UI flow that calls handle_get_macro and add tests",
+        "Verify by running `cargo test -p splunk-tui` and confirming tests pass"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), D (Localize change)",
+        "Why it matters: dead async paths add complexity and can drift from real behavior, making maintenance harder",
+        "Minimal fix: remove if unused or wire into an explicit action flow"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T13:35:13Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    }
+  ]
 }
