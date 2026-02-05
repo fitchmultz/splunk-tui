@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T23:18:17.926638013Z",
+  "last_updated_at": "2026-02-05T23:37:52.420204085Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 24,
+      "completed_count": 25,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -319,6 +319,11 @@
           "id": "RQ-0347",
           "title": "Make local CI + tooling repeatable and convention-driven",
           "completed_at": "2026-02-05T23:18:17.926635821Z"
+        },
+        {
+          "id": "RQ-0348",
+          "title": "Centralize configuration + secrets handling via crates/config",
+          "completed_at": "2026-02-05T23:37:52.420203407Z"
         }
       ]
     }
@@ -328,7 +333,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 59,
+  "total_completed": 60,
   "milestones": [
     {
       "threshold": 10,

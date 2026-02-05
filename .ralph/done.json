@@ -3362,8 +3362,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "unused_dependency": "tachyonfx@0.14",
+        "scan_agent": "scan-maintenance",
         "lines_of_dead_code": "598"
       }
     },
@@ -3614,6 +3614,77 @@
       "updated_at": "2026-02-05T23:16:06.562648548Z",
       "completed_at": "2026-02-05T23:16:06.562648548Z",
       "started_at": "2026-02-05T23:04:44.185485043Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0348",
+      "status": "done",
+      "title": "Centralize configuration + secrets handling via crates/config",
+      "priority": "high",
+      "tags": [
+        "config",
+        "security",
+        "consistency",
+        "dry",
+        "rust"
+      ],
+      "scope": [
+        "crates/config/src/lib.rs",
+        "crates/config/src/types/",
+        "crates/config/src/loader/",
+        "crates/config/src/loader/tests/",
+        "crates/config/src/persistence/",
+        "crates/config/src/constants.rs",
+        "crates/cli/src/args.rs",
+        "crates/cli/src/main.rs",
+        "crates/cli/src/config_context.rs",
+        "crates/tui/src/cli.rs",
+        "crates/tui/src/runtime/config.rs",
+        ".env",
+        ".env.example",
+        ".env.test.example",
+        "docs/usage.md",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/config already exists with comprehensive structure: types (auth, connection, profile, theme), loader (builder, env, profile, error), persistence, and constants.",
+        "Secrets already use secrecy::SecretString with tests verifying no leakage in Debug output (crates/config/src/types/auth.rs:131-168).",
+        "ConfigLoader builder pattern implements proper precedence: CLI args > env vars > profile config > defaults (crates/config/src/loader/builder.rs).",
+        "DOTENV_DISABLED hermetic behavior implemented in ConfigLoader::load_dotenv() with tests in crates/config/src/loader/tests/dotenv_tests.rs.",
+        "CLI already uses ConfigLoader in main.rs:38-128 with proper precedence handling.",
+        "TUI already uses ConfigLoader in runtime/config.rs:48-85.",
+        "Both .env.example and .env.test.example exist with documented configuration options.",
+        "Comprehensive test coverage exists: basic_tests, dotenv_tests, env_tests, profile_tests, validation_tests, search_defaults_tests, internal_logs_defaults_tests, session_tests."
+      ],
+      "plan": [
+        "Audit CLI args.rs to ensure all config options use env_var_or_none from splunk_config for consistency.",
+        "Verify TUI cli.rs uses splunk_config::env_var_or_none instead of direct std::env::var calls.",
+        "Review error handling in ConfigLoader to ensure secrets are never exposed in error messages.",
+        "Add integration test verifying end-to-end config loading from both CLI and TUI entrypoints.",
+        "Run `make ci` to verify all existing tests pass with DOTENV_DISABLED=1 hermetic behavior.",
+        "Update docs/usage.md if any configuration precedence details are missing or unclear."
+      ],
+      "notes": [
+        "The crates/config crate is already well-implemented with proper architecture.",
+        "Both CLI and TUI already depend on crates/config as the single source of truth.",
+        "Task scope reduced from 'build it' to 'verify and polish' - the heavy lifting is done.",
+        "Consider closing this task if `make ci` passes and no gaps are found during audit.",
+        "Created 12 integration tests in crates/config/tests/integration_test.rs verifying end-to-end config loading, auth precedence, and error handling",
+        "Updated docs/usage.md with Configuration Loading Order section explaining .env file loading precedence and DOTENV_DISABLED behavior",
+        "Verified CLI args.rs uses splunk_config::env_var_or_none consistently (line 13 import, line 371 usage)",
+        "Verified TUI runtime/config.rs uses splunk_config::env_var_or_none correctly (lines 21, 56, 66)",
+        "Confirmed error handling properly avoids secret exposure - error messages only contain variable names/paths, not values",
+        "All 890+ tests pass including new integration tests; make ci passes completely"
+      ],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-05T23:35:40.707786192Z",
+      "completed_at": "2026-02-05T23:35:40.707786192Z",
+      "started_at": "2026-02-05T23:19:58.048225756Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],

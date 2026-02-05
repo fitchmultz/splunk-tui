@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0348",
-      "status": "todo",
-      "title": "Centralize configuration + secrets handling via crates/config",
-      "priority": "high",
-      "tags": [
-        "config",
-        "security",
-        "consistency",
-        "dry",
-        "rust"
-      ],
-      "scope": [
-        "crates/config/",
-        "crates/cli/",
-        "crates/tui/",
-        ".env",
-        ".env.example",
-        ".env.test.example",
-        "docs/",
-        "make test",
-        "make ci"
-      ],
-      "evidence": [
-        "User request: \"STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE\" implies a single source of truth for configuration and defaults.",
-        "Repo layout includes `crates/config` dedicated to configuration loading and validation.",
-        "Repo guidelines emphasize secrets safety (never log credentials; use `secrecy` types) and hermetic tests (`DOTENV_DISABLED=1` during `make test`)."
-      ],
-      "plan": [
-        "Audit all configuration entrypoints (CLI flags, TUI settings, env vars, dotenv) and document the current precedence order.",
-        "Define one canonical, typed configuration model in `crates/config` (validated defaults + explicit overrides).",
-        "Ensure all secrets are represented using `secrecy` (and are never formatted via `Debug`/`Display` in logs/errors).",
-        "Refactor CLI and TUI to depend on `crates/config` as the only config loader (remove duplicated parsing/validation).",
-        "Add unit + integration tests covering success and failure modes: missing required vars, invalid URLs, precedence, and DOTENV_DISABLED hermetic behavior.",
-        "Update `.env.example` / `.env.test.example` and docs to match the canonical configuration model."
-      ],
-      "notes": [],
-      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
-      "created_at": "2026-02-05T22:57:08Z",
-      "updated_at": "2026-02-05T22:57:08Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {}
-    },
-    {
       "id": "RQ-0349",
       "status": "todo",
       "title": "DRY: move duplicated CLI/TUI behavior into crates/client",
