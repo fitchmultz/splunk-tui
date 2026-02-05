@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0327",
-      "status": "todo",
-      "title": "Make TUI help popup section ordering a single source of truth",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tui",
-        "keybindings",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/input/help.rs",
-        "crates/tui/src/input/docs.rs",
-        "crates/tui/src/input/keymap/mod.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/input/help.rs:18-44 hard-codes `order` and omits `Section::DataModels`, `Section::Workload`, and `Section::Shc`, even though titles exist for them (crates/tui/src/input/help.rs:113-119).",
-        "crates/tui/src/input/docs.rs:69-98 uses a separate `screen_sections()` list that includes `Section::DataModels`, `Section::Workload`, and `Section::Shc` (lines 92-95), so docs and in-app help can drift.",
-        "Command: `DOTENV_DISABLED=1 cargo test --workspace --all-targets --all-features --locked` (pass)."
-      ],
-      "plan": [
-        "Add a canonical ordered section list in `crates/tui/src/input/keymap/mod.rs` (used by both help + docs renderers)",
-        "Update `crates/tui/src/input/help.rs` and `crates/tui/src/input/docs.rs` to consume the canonical list instead of maintaining duplicates",
-        "Add tests that assert help output includes headings for Data Models, Workload, and SHC when bindings exist",
-        "Verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: C (DRY), G (Least astonishment), H (Operational hygiene).",
-        "Why it matters: missing sections in the help popup prevents discovery of keybindings for entire screens, and duplicated ordering lists have already drifted (help omits DataModels/Workload/SHC while docs include them).",
-        "Minimal fix: centralize the ordered `Section` list in one place (keymap module) and reuse it for both help and doc generation; add tests to prevent future drift.",
-        "Acceptance criteria: help popup includes bindings for Data Models, Workload Management, and SHC screens; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0328",
       "status": "todo",
       "title": "Add a dedicated Macros keybinding section and map Macros screen correctly",

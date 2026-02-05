@@ -66,6 +66,9 @@ fn keybinding_docs_render_contains_all_screens() {
         "Apps Screen",
         "Users Screen",
         "Settings Screen",
+        "Data Models Screen",
+        "Workload Management Screen",
+        "SHC Screen",
     ];
 
     for screen in expected_screens {

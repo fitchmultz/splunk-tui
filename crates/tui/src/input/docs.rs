@@ -12,7 +12,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::input::keymap::{Section, keybindings};
+use crate::input::keymap::{Section, keybindings, sections_in_order};
 
 pub(crate) fn render_markdown() -> String {
     let mut out = String::new();
@@ -67,35 +67,11 @@ fn render_search_screen_docs() -> String {
 }
 
 fn screen_sections() -> Vec<Section> {
-    vec![
-        Section::Search,
-        Section::Jobs,
-        Section::JobDetails,
-        Section::Indexes,
-        Section::Cluster,
-        Section::Health,
-        Section::License,
-        Section::Kvstore,
-        Section::SavedSearches,
-        Section::InternalLogs,
-        Section::Apps,
-        Section::Users,
-        Section::Roles,
-        Section::SearchPeers,
-        Section::Inputs,
-        Section::Configs,
-        Section::FiredAlerts,
-        Section::Forwarders,
-        Section::Lookups,
-        Section::Audit,
-        Section::Dashboards,
-        Section::DataModels,
-        Section::Workload,
-        Section::Shc,
-        Section::Settings,
-        Section::Overview,
-        Section::MultiInstance,
-    ]
+    sections_in_order()
+        .iter()
+        .copied()
+        .filter(|s| *s != Section::Global)
+        .collect()
 }
 
 fn section_heading(section: Section) -> &'static str {

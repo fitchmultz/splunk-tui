@@ -102,6 +102,43 @@ pub fn keybindings() -> Vec<Keybinding> {
     bindings::all()
 }
 
+/// Returns all sections in their canonical display order.
+///
+/// This is the single source of truth for section ordering used by both
+/// the help popup and documentation generation.
+pub fn sections_in_order() -> &'static [Section] {
+    &[
+        Section::Global,
+        Section::Search,
+        Section::Jobs,
+        Section::JobDetails,
+        Section::Indexes,
+        Section::Cluster,
+        Section::Health,
+        Section::License,
+        Section::Kvstore,
+        Section::SavedSearches,
+        Section::InternalLogs,
+        Section::Apps,
+        Section::Users,
+        Section::Roles,
+        Section::SearchPeers,
+        Section::Inputs,
+        Section::Configs,
+        Section::FiredAlerts,
+        Section::Forwarders,
+        Section::Lookups,
+        Section::Audit,
+        Section::Dashboards,
+        Section::DataModels,
+        Section::Workload,
+        Section::Shc,
+        Section::Settings,
+        Section::Overview,
+        Section::MultiInstance,
+    ]
+}
+
 pub fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Action> {
     // First: check user overrides (if initialized)
     if let Some(action) = overrides::resolve_override(key) {

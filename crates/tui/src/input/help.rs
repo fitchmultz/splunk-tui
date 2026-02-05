@@ -12,39 +12,13 @@
 
 use std::collections::BTreeSet;
 
-use crate::input::keymap::{Section, keybindings};
+use crate::input::keymap::{Section, keybindings, sections_in_order};
 
 pub(crate) fn help_text() -> String {
-    let order = [
-        Section::Global,
-        Section::Search,
-        Section::Jobs,
-        Section::JobDetails,
-        Section::Indexes,
-        Section::Cluster,
-        Section::Health,
-        Section::License,
-        Section::Kvstore,
-        Section::SavedSearches,
-        Section::InternalLogs,
-        Section::Apps,
-        Section::Users,
-        Section::Roles,
-        Section::SearchPeers,
-        Section::Inputs,
-        Section::Configs,
-        Section::FiredAlerts,
-        Section::Forwarders,
-        Section::Lookups,
-        Section::Audit,
-        Section::Dashboards,
-        Section::Settings,
-        Section::Overview,
-        Section::MultiInstance,
-    ];
+    let order = sections_in_order();
 
     let mut out = String::new();
-    for section in order {
+    for &section in order {
         let entries = unique_entries(section);
         if entries.is_empty() {
             continue;
@@ -116,5 +90,46 @@ fn section_title(section: Section) -> &'static str {
         Section::Overview => "Overview Screen:",
         Section::MultiInstance => "Multi-Instance Dashboard Screen:",
         Section::Shc => "SHC Screen:",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn help_text_includes_data_models_section() {
+        let help = help_text();
+        assert!(
+            help.contains("Data Models Screen:"),
+            "Help should include Data Models section"
+        );
+    }
+
+    #[test]
+    fn help_text_includes_workload_section() {
+        let help = help_text();
+        assert!(
+            help.contains("Workload Management Screen:"),
+            "Help should include Workload Management section"
+        );
+    }
+
+    #[test]
+    fn help_text_includes_shc_section() {
+        let help = help_text();
+        assert!(
+            help.contains("SHC Screen:"),
+            "Help should include SHC section"
+        );
+    }
+
+    #[test]
+    fn help_text_includes_global_section() {
+        let help = help_text();
+        assert!(
+            help.contains("Global Keys:"),
+            "Help should include Global Keys section"
+        );
     }
 }
