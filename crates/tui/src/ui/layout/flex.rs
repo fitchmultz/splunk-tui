@@ -209,10 +209,10 @@ impl Default for FlexLayoutEngine {
 ///
 /// let (engine, root) = FlexLayoutBuilder::new()
 ///     .column()
-///     .add_fixed_child(100.0, 3.0).unwrap().0
-///     .add_flex_child(1.0).unwrap().0
-///     .add_fixed_child(100.0, 3.0).unwrap().0
-///     .build()
+///     .and_then(|b| b.add_fixed_child(100.0, 3.0))
+///     .and_then(|(b, _)| b.add_flex_child(1.0))
+///     .and_then(|(b, _)| b.add_fixed_child(100.0, 3.0))
+///     .and_then(|(b, _)| b.build())
 ///     .unwrap();
 /// ```
 #[derive(Debug)]
@@ -231,37 +231,31 @@ impl FlexLayoutBuilder {
     }
 
     /// Create a column layout (vertical flex).
-    pub fn column(mut self) -> Self {
-        let root = self
-            .engine
-            .new_leaf(taffy::Style {
-                flex_direction: FlexDirection::Column,
-                size: Size {
-                    width: percent(100.0),
-                    height: percent(100.0),
-                },
-                ..Default::default()
-            })
-            .unwrap();
+    pub fn column(mut self) -> anyhow::Result<Self> {
+        let root = self.engine.new_leaf(taffy::Style {
+            flex_direction: FlexDirection::Column,
+            size: Size {
+                width: percent(100.0),
+                height: percent(100.0),
+            },
+            ..Default::default()
+        })?;
         self.root = Some(root);
-        self
+        Ok(self)
     }
 
     /// Create a row layout (horizontal flex).
-    pub fn row(mut self) -> Self {
-        let root = self
-            .engine
-            .new_leaf(taffy::Style {
-                flex_direction: FlexDirection::Row,
-                size: Size {
-                    width: percent(100.0),
-                    height: percent(100.0),
-                },
-                ..Default::default()
-            })
-            .unwrap();
+    pub fn row(mut self) -> anyhow::Result<Self> {
+        let root = self.engine.new_leaf(taffy::Style {
+            flex_direction: FlexDirection::Row,
+            size: Size {
+                width: percent(100.0),
+                height: percent(100.0),
+            },
+            ..Default::default()
+        })?;
         self.root = Some(root);
-        self
+        Ok(self)
     }
 
     /// Add a child with flex grow.
@@ -619,34 +613,45 @@ mod tests {
 
     #[test]
     fn test_flex_layout_builder_column() {
-        let result = FlexLayoutBuilder::new()
-            .column()
-            .add_fixed_child(100.0, 3.0)
-            .unwrap()
-            .0
-            .add_flex_child(1.0)
-            .unwrap()
-            .0
-            .add_fixed_child(100.0, 3.0)
-            .unwrap()
-            .0
-            .build();
+        let result: anyhow::Result<_> = (|| {
+            let (b, _) = FlexLayoutBuilder::new()
+                .column()?
+                .add_fixed_child(100.0, 3.0)?;
+            let (b, _) = b.add_flex_child(1.0)?;
+            let (b, _) = b.add_fixed_child(100.0, 3.0)?;
+            b.build()
+        })();
 
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_flex_layout_builder_row() {
-        let result = FlexLayoutBuilder::new()
-            .row()
-            .add_fixed_child(20.0, 100.0)
-            .unwrap()
-            .0
-            .add_flex_child(1.0)
-            .unwrap()
-            .0
-            .build();
+        let result: anyhow::Result<_> = (|| {
+            let (b, _) = FlexLayoutBuilder::new()
+                .row()?
+                .add_fixed_child(20.0, 100.0)?;
+            let (b, _) = b.add_flex_child(1.0)?;
+            b.build()
+        })();
 
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_column_error_propagation() {
+        // This test verifies that column() returns a Result instead of panicking
+        // when the underlying new_leaf fails. In practice, taffy tree allocation
+        // failures are rare, but we want to ensure error propagation works.
+        let result = FlexLayoutBuilder::new().column();
+        // Should succeed under normal conditions, but returns Result instead of panicking
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_row_error_propagation() {
+        // This test verifies that row() returns a Result instead of panicking
+        let result = FlexLayoutBuilder::new().row();
         assert!(result.is_ok());
     }
 

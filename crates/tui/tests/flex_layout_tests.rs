@@ -387,18 +387,14 @@ fn test_set_style() {
 
 #[test]
 fn test_flex_layout_builder_column() {
-    let result = FlexLayoutBuilder::new()
-        .column()
-        .add_fixed_child(100.0, 3.0)
-        .unwrap()
-        .0
-        .add_flex_child(1.0)
-        .unwrap()
-        .0
-        .add_fixed_child(100.0, 3.0)
-        .unwrap()
-        .0
-        .build();
+    let result: anyhow::Result<_> = (|| {
+        let (b, _) = FlexLayoutBuilder::new()
+            .column()?
+            .add_fixed_child(100.0, 3.0)?;
+        let (b, _) = b.add_flex_child(1.0)?;
+        let (b, _) = b.add_fixed_child(100.0, 3.0)?;
+        b.build()
+    })();
 
     assert!(result.is_ok());
     let (engine, root) = result.unwrap();
@@ -408,15 +404,13 @@ fn test_flex_layout_builder_column() {
 
 #[test]
 fn test_flex_layout_builder_row() {
-    let result = FlexLayoutBuilder::new()
-        .row()
-        .add_fixed_child(20.0, 100.0)
-        .unwrap()
-        .0
-        .add_flex_child(1.0)
-        .unwrap()
-        .0
-        .build();
+    let result: anyhow::Result<_> = (|| {
+        let (b, _) = FlexLayoutBuilder::new()
+            .row()?
+            .add_fixed_child(20.0, 100.0)?;
+        let (b, _) = b.add_flex_child(1.0)?;
+        b.build()
+    })();
 
     assert!(result.is_ok());
 }
@@ -429,34 +423,32 @@ fn test_builder_without_root_fails() {
 
 #[test]
 fn test_builder_add_percent_child() {
-    let result = FlexLayoutBuilder::new()
-        .column()
-        .add_percent_child(100.0, 50.0)
-        .unwrap()
-        .0
-        .add_percent_child(100.0, 50.0)
-        .unwrap()
-        .0
-        .build();
+    let result: anyhow::Result<_> = (|| {
+        let (b, _) = FlexLayoutBuilder::new()
+            .column()?
+            .add_percent_child(100.0, 50.0)?;
+        let (b, _) = b.add_percent_child(100.0, 50.0)?;
+        b.build()
+    })();
 
     assert!(result.is_ok());
 }
 
 #[test]
 fn test_builder_add_child_with_style() {
-    let result = FlexLayoutBuilder::new()
-        .column()
-        .add_child_with_style(taffy::Style {
-            flex_grow: 2.0,
-            size: Size {
-                width: percent(100.0),
-                height: auto(),
-            },
-            ..Default::default()
-        })
-        .unwrap()
-        .0
-        .build();
+    let result: anyhow::Result<_> = (|| {
+        let (b, _) = FlexLayoutBuilder::new()
+            .column()?
+            .add_child_with_style(taffy::Style {
+                flex_grow: 2.0,
+                size: Size {
+                    width: percent(100.0),
+                    height: auto(),
+                },
+                ..Default::default()
+            })?;
+        b.build()
+    })();
 
     assert!(result.is_ok());
 }

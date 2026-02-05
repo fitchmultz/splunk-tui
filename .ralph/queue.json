@@ -2,41 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0340",
-      "status": "todo",
-      "title": "Make FlexLayoutBuilder::column/row fallible instead of panicking",
-      "priority": "medium",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/tui/src/ui/layout/flex.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/ui/layout/flex.rs:233-262 (column/row call new_leaf().unwrap())"
-      ],
-      "plan": [
-        "Change column/row to return anyhow::Result<Self> (or internal error type) and propagate new_leaf errors",
-        "Update builder call sites (currently local to flex module tests) and docs/examples",
-        "Add/adjust unit tests to cover the new fallible API",
-        "Verify by running `cargo test -p splunk-tui --lib` and confirming flex layout tests pass"
-      ],
-      "notes": [
-        "Principles: F (Fail fast appropriately), E (Make bugs hard to write)",
-        "Why it matters: unexpected taffy errors currently panic the process, turning layout errors into crashes",
-        "Minimal fix: make builder methods return Result and propagate errors"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0341",
       "status": "todo",
       "title": "Document SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN in .env.example",
