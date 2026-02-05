@@ -3206,6 +3206,50 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0341",
+      "status": "done",
+      "title": "Document SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN in .env.example",
+      "priority": "low",
+      "tags": [
+        "maintenance"
+      ],
+      "scope": [
+        ".env.example",
+        "docs/usage.md",
+        "crates/cli/src/commands/hec.rs",
+        "command: rg -n \"SPLUNK_HEC\" .env.example"
+      ],
+      "evidence": [
+        "command: rg -n \"SPLUNK_HEC\" .env.example (no matches)",
+        "docs/usage.md:295-304 (HEC env vars + CLI flags documented)",
+        "crates/cli/src/commands/hec.rs:7-103 (clap args use env SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN)"
+      ],
+      "plan": [
+        "Add commented SPLUNK_HEC_URL and SPLUNK_HEC_TOKEN entries to .env.example under a dedicated HEC section",
+        "Keep naming/examples aligned with docs/usage.md (e.g., https://localhost:8088)",
+        "Verify with `rg -n \"SPLUNK_HEC\" .env.example` and confirm both vars are present"
+      ],
+      "notes": [
+        "Principles: G (Least astonishment), H (Operational hygiene)",
+        "Why it matters: docs/usage.md mentions HEC env vars, but .env.example omits them so new users may miss required configuration",
+        "Minimal fix: add commented entries with brief descriptions and an example URL (typically port 8088)",
+        "Added SPLUNK_HEC_URL and SPLUNK_HEC_TOKEN to .env.example with clear documentation",
+        "Verified with rg -n SPLUNK_HEC .env.example showing both vars on lines 11-12",
+        "CI passes: type-check, lint, tests all green"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T20:31:55.550754199Z",
+      "completed_at": "2026-02-05T20:31:55.550754199Z",
+      "started_at": "2026-02-05T20:18:25.428055649Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

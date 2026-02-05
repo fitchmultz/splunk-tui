@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T19:05:04.921987148Z",
+  "last_updated_at": "2026-02-05T20:34:04.207489588Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 17,
+      "completed_count": 18,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -284,6 +284,11 @@
           "id": "RQ-0340",
           "title": "Make FlexLayoutBuilder::column/row fallible instead of panicking",
           "completed_at": "2026-02-05T19:05:04.921986590Z"
+        },
+        {
+          "id": "RQ-0341",
+          "title": "Document SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN in .env.example",
+          "completed_at": "2026-02-05T20:34:04.207488816Z"
         }
       ]
     }
@@ -293,7 +298,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 52,
+  "total_completed": 53,
   "milestones": [
     {
       "threshold": 10,

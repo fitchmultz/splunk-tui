@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0341",
-      "status": "todo",
-      "title": "Document SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN in .env.example",
-      "priority": "low",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        ".env.example",
-        "crates/cli/src/commands/hec.rs"
-      ],
-      "evidence": [
-        "command: rg -n \"SPLUNK_HEC\" .env.example (no matches)",
-        "crates/cli/src/commands/hec.rs:37-103 (HEC commands read SPLUNK_HEC_URL/SPLUNK_HEC_TOKEN env vars)"
-      ],
-      "plan": [
-        "Add commented SPLUNK_HEC_URL and SPLUNK_HEC_TOKEN entries to .env.example with short usage notes",
-        "Keep examples aligned with docs/usage.md",
-        "Verify by running `rg -n \"SPLUNK_HEC\" .env.example` and confirming entries exist"
-      ],
-      "notes": [
-        "Principles: G (Least astonishment), H (Operational hygiene)",
-        "Why it matters: users following .env.example won’t discover required HEC env vars even though the CLI supports them",
-        "Minimal fix: add commented entries with brief descriptions"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0342",
       "status": "todo",
       "title": "Remove or wire DEFAULT_SEARCH_PAGE_SIZE to avoid dead constant",
