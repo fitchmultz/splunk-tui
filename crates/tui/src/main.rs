@@ -191,6 +191,9 @@ async fn main() -> Result<()> {
         );
     }
 
+    // Initialize footer hints cache to avoid per-frame allocations (RQ-0336)
+    splunk_tui::input::keymap::init_footer_cache();
+
     // Build connection context for TUI header display (RQ-0134)
     let connection_ctx = ConnectionContext {
         profile_name: cli

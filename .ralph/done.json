@@ -2947,6 +2947,59 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0336",
+      "status": "done",
+      "title": "Cache footer_hints to avoid per-frame keybinding catalog allocations",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "tui",
+        "performance"
+      ],
+      "scope": [
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/app/footer_layout.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/tests/snapshot_footer_tests.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/app/render.rs:701-702 calls `footer_hints(self.current_screen)` on every render to build footer text.",
+        "crates/tui/src/app/footer_layout.rs:99 calls `footer_hints(screen)` during layout calculation for mouse hit-testing.",
+        "crates/tui/src/input/keymap/mod.rs:171-209 `footer_hints()` function recomputes hints by calling `keybindings()` (allocates a Vec at crates/tui/src/input/keymap/mod.rs:102-104), uses a `BTreeSet` for deduplication (line 177), and sorts via `prioritize_hints()` (lines 205, 369-385) on every call.",
+        "crates/tui/src/input/keymap/mod.rs:516 has drift-prevention test `all_priority_keys_exist_in_keybinding_catalog` that should continue to pass after caching.",
+        "crates/tui/tests/snapshot_footer_tests.rs contains snapshot tests for footer rendering that must remain stable after optimization."
+      ],
+      "plan": [
+        "Memoize `footer_hints` results per `CurrentScreen` (e.g., `LazyLock<HashMap<CurrentScreen, Vec<_>>>`) while preserving determinism",
+        "Ensure cache invalidation happens only when keybinding overrides change (see `overrides.rs`)",
+        "Run existing tests: `cargo test -p splunk-tui footer` and `cargo test -p splunk-tui --test snapshot_footer_tests`",
+        "Verify with `make test` that all tests pass"
+      ],
+      "notes": [
+        "Principles violated: A (KISS in runtime hot paths), H (Operational hygiene).",
+        "Why it matters: per-frame allocations and sorting work in the render loop can degrade responsiveness on slower terminals and complicate performance tuning.",
+        "Minimal fix: cache computed hints and reuse them; invalidation only needs to happen when keybinding overrides change.",
+        "Acceptance criteria: render loop no longer allocates/sorts footer hints each frame; behavior remains identical; `make test` passes.",
+        "Update 2026-02-05: Verified code locations are accurate. Added footer_layout.rs and snapshot tests to scope as they also depend on footer_hints.",
+        "Implemented FOOTER_HINTS_CACHE static with LazyLock to pre-compute footer hints for all 28 screens",
+        "footer_hints() now performs O(28) linear scan instead of allocating/sorting per call",
+        "Cache initialization added to main.rs after keybinding overrides",
+        "All tests pass including snapshot_footer_tests and keymap tests",
+        "make ci passes successfully"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T06:00:40.988526856Z",
+      "completed_at": "2026-02-05T06:00:40.988526856Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

@@ -1,45 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0336",
-      "status": "todo",
-      "title": "Cache footer_hints to avoid per-frame keybinding catalog allocations",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "tui",
-        "performance"
-      ],
-      "scope": [
-        "crates/tui/src/app/render.rs",
-        "crates/tui/src/input/keymap/mod.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/app/render.rs:701-734 calls `footer_hints(self.current_screen)` on every render to build footer text.",
-        "crates/tui/src/input/keymap/mod.rs:132-170 recomputes footer hints by calling `keybindings()` (allocates a Vec at crates/tui/src/input/keymap/mod.rs:101-103) and uses a `BTreeSet` plus sorting per call."
-      ],
-      "plan": [
-        "Memoize `footer_hints` results per `CurrentScreen` (e.g., `LazyLock<HashMap<CurrentScreen, Vec<_>>>`) while preserving determinism",
-        "Add tests asserting `footer_hints(screen)` output is stable and matches expected hints for a representative subset of screens",
-        "Verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: A (KISS in runtime hot paths), H (Operational hygiene).",
-        "Why it matters: per-frame allocations and sorting work in the render loop can degrade responsiveness on slower terminals and complicate performance tuning.",
-        "Minimal fix: cache computed hints and reuse them; invalidation only needs to happen when keybinding overrides change.",
-        "Acceptance criteria: render loop no longer allocates/sorts footer hints each frame; behavior remains identical; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    }
-  ]
+  "tasks": []
 }

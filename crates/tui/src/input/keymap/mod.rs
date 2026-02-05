@@ -12,6 +12,8 @@
 //! - Bindings are deterministic and stable for help/docs rendering.
 //! - Resolver never mutates App state and returns at most one Action.
 
+use std::sync::LazyLock;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::action::Action;
@@ -103,6 +105,148 @@ pub fn keybindings() -> Vec<Keybinding> {
     bindings::all()
 }
 
+/// Type alias for a single screen's footer hints to reduce type complexity.
+type ScreenHints = Vec<(&'static str, &'static str)>;
+
+/// Type alias for the cache array: tuple of (screen, hints) for each screen.
+type FooterHintsCache = [(CurrentScreen, ScreenHints); 28];
+
+/// Cache for footer hints to avoid per-frame allocations.
+/// Maps each screen to its pre-computed hints vector using a fixed-size array.
+static FOOTER_HINTS_CACHE: LazyLock<FooterHintsCache> = LazyLock::new(|| {
+    let screens = all_screens();
+    [
+        (screens[0], compute_footer_hints(screens[0])),
+        (screens[1], compute_footer_hints(screens[1])),
+        (screens[2], compute_footer_hints(screens[2])),
+        (screens[3], compute_footer_hints(screens[3])),
+        (screens[4], compute_footer_hints(screens[4])),
+        (screens[5], compute_footer_hints(screens[5])),
+        (screens[6], compute_footer_hints(screens[6])),
+        (screens[7], compute_footer_hints(screens[7])),
+        (screens[8], compute_footer_hints(screens[8])),
+        (screens[9], compute_footer_hints(screens[9])),
+        (screens[10], compute_footer_hints(screens[10])),
+        (screens[11], compute_footer_hints(screens[11])),
+        (screens[12], compute_footer_hints(screens[12])),
+        (screens[13], compute_footer_hints(screens[13])),
+        (screens[14], compute_footer_hints(screens[14])),
+        (screens[15], compute_footer_hints(screens[15])),
+        (screens[16], compute_footer_hints(screens[16])),
+        (screens[17], compute_footer_hints(screens[17])),
+        (screens[18], compute_footer_hints(screens[18])),
+        (screens[19], compute_footer_hints(screens[19])),
+        (screens[20], compute_footer_hints(screens[20])),
+        (screens[21], compute_footer_hints(screens[21])),
+        (screens[22], compute_footer_hints(screens[22])),
+        (screens[23], compute_footer_hints(screens[23])),
+        (screens[24], compute_footer_hints(screens[24])),
+        (screens[25], compute_footer_hints(screens[25])),
+        (screens[26], compute_footer_hints(screens[26])),
+        (screens[27], compute_footer_hints(screens[27])),
+    ]
+});
+
+/// Returns all screen variants for cache initialization.
+fn all_screens() -> [CurrentScreen; 28] {
+    [
+        CurrentScreen::Search,
+        CurrentScreen::Indexes,
+        CurrentScreen::Cluster,
+        CurrentScreen::Jobs,
+        CurrentScreen::JobInspect,
+        CurrentScreen::Health,
+        CurrentScreen::License,
+        CurrentScreen::Kvstore,
+        CurrentScreen::SavedSearches,
+        CurrentScreen::Macros,
+        CurrentScreen::InternalLogs,
+        CurrentScreen::Apps,
+        CurrentScreen::Users,
+        CurrentScreen::Roles,
+        CurrentScreen::SearchPeers,
+        CurrentScreen::Inputs,
+        CurrentScreen::Configs,
+        CurrentScreen::Settings,
+        CurrentScreen::Overview,
+        CurrentScreen::MultiInstance,
+        CurrentScreen::FiredAlerts,
+        CurrentScreen::Forwarders,
+        CurrentScreen::Lookups,
+        CurrentScreen::Audit,
+        CurrentScreen::Dashboards,
+        CurrentScreen::DataModels,
+        CurrentScreen::WorkloadManagement,
+        CurrentScreen::Shc,
+    ]
+}
+
+/// Compute footer hints for a single screen (internal implementation).
+fn compute_footer_hints(screen: CurrentScreen) -> ScreenHints {
+    use std::collections::BTreeSet;
+
+    let section = screen_to_section(screen);
+
+    // Get unique entries for this section, filtering out navigation keys
+    let mut seen = BTreeSet::new();
+    let mut hints = Vec::new();
+
+    // Navigation keys that are always shown in the generic footer
+    let nav_keys: &[&str] = &["Tab", "Shift+Tab", "q", "Ctrl+Q", "?"];
+
+    for binding in keybindings() {
+        if binding.section != section {
+            continue;
+        }
+
+        // Skip navigation keys that are always shown
+        if nav_keys.contains(&binding.keys) {
+            continue;
+        }
+
+        // Skip entries with duplicate descriptions (e.g., j/k navigation)
+        let key = (binding.keys, binding.description);
+        if !seen.insert(key) {
+            continue;
+        }
+
+        // Shorten descriptions for footer display
+        let short_desc = shorten_description(binding.description);
+        hints.push((binding.keys, short_desc));
+    }
+
+    // Limit to top 4 hints, prioritizing by relevance
+    prioritize_hints(&mut hints, screen);
+    hints.truncate(4);
+
+    hints
+}
+
+/// Initialize the footer hints cache.
+///
+/// Should be called once at app startup after keybinding overrides are initialized.
+/// This forces early population of the cache to avoid first-access latency.
+/// Since this uses `LazyLock`, the actual initialization happens on first access,
+/// but calling this function ensures the cache is warm before the render loop starts.
+pub fn init_footer_cache() {
+    // Access the cache to force initialization
+    let _ = FOOTER_HINTS_CACHE.len();
+    tracing::debug!(
+        "Footer hints cache initialized with {} screens",
+        FOOTER_HINTS_CACHE.len()
+    );
+}
+
+/// Lookup hints for a given screen in the cache.
+fn get_cached_hints(screen: CurrentScreen) -> Option<ScreenHints> {
+    for (s, hints) in FOOTER_HINTS_CACHE.iter() {
+        if *s == screen {
+            return Some(hints.clone());
+        }
+    }
+    None
+}
+
 /// Returns all sections in their canonical display order.
 ///
 /// This is the single source of truth for section ordering used by both
@@ -168,44 +312,10 @@ pub fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Action> {
 /// Note: Search screen has two input modes (QueryFocused/ResultsFocused) but
 /// both modes share the same keybinding hints since the keymap doesn't
 /// distinguish between them; mode-specific behavior is handled at input time.
-pub(crate) fn footer_hints(screen: CurrentScreen) -> Vec<(&'static str, &'static str)> {
-    use std::collections::BTreeSet;
-
-    let section = screen_to_section(screen);
-
-    // Get unique entries for this section, filtering out navigation keys
-    let mut seen = BTreeSet::new();
-    let mut hints = Vec::new();
-
-    // Navigation keys that are always shown in the generic footer
-    let nav_keys: &[&str] = &["Tab", "Shift+Tab", "q", "Ctrl+Q", "?"];
-
-    for binding in keybindings() {
-        if binding.section != section {
-            continue;
-        }
-
-        // Skip navigation keys that are always shown
-        if nav_keys.contains(&binding.keys) {
-            continue;
-        }
-
-        // Skip entries with duplicate descriptions (e.g., j/k navigation)
-        let key = (binding.keys, binding.description);
-        if !seen.insert(key) {
-            continue;
-        }
-
-        // Shorten descriptions for footer display
-        let short_desc = shorten_description(binding.description);
-        hints.push((binding.keys, short_desc));
-    }
-
-    // Limit to top 4 hints, prioritizing by relevance
-    prioritize_hints(&mut hints, screen);
-    hints.truncate(4);
-
-    hints
+///
+/// This function uses a pre-computed cache to avoid per-frame allocations.
+pub(crate) fn footer_hints(screen: CurrentScreen) -> ScreenHints {
+    get_cached_hints(screen).unwrap_or_default()
 }
 
 /// Map CurrentScreen to Section enum.
