@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T22:13:35.521637198Z",
+  "last_updated_at": "2026-02-05T22:39:55.433847545Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 22,
+      "completed_count": 23,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -309,6 +309,11 @@
           "id": "RQ-0345",
           "title": "Prune or integrate unused MarkdownRenderer UI component",
           "completed_at": "2026-02-05T22:13:35.521636103Z"
+        },
+        {
+          "id": "RQ-0346",
+          "title": "Remove or wire handle_get_macro to avoid dead side-effect path",
+          "completed_at": "2026-02-05T22:39:55.433846521Z"
         }
       ]
     }
@@ -318,7 +323,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 57,
+  "total_completed": 58,
   "milestones": [
     {
       "threshold": 10,

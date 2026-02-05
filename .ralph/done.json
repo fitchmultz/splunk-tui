@@ -3363,8 +3363,8 @@
       "relates_to": [],
       "custom_fields": {
         "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance",
-        "unused_dependency": "tachyonfx@0.14"
+        "unused_dependency": "tachyonfx@0.14",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -3483,6 +3483,64 @@
       "updated_at": "2026-02-05T22:11:07.510400268Z",
       "completed_at": "2026-02-05T22:11:07.510400268Z",
       "started_at": "2026-02-05T21:49:24.590764384Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0346",
+      "status": "done",
+      "title": "Remove or wire handle_get_macro to avoid dead side-effect path",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "tui",
+        "rust",
+        "dead-code"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/macros.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/action/variants.rs",
+        "crates/tui/src/app/actions/system.rs",
+        "crates/tui/tests/side_effects_macros_tests.rs",
+        "crates/client/src/models/macros.rs",
+        "command: rg -n \"handle_get_macro\\\\b\" crates/tui/src",
+        "command: make test",
+        "command: make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/macros.rs:151-168 (handle_get_macro exists behind #[allow(dead_code)])",
+        "command: rg -n \"handle_get_macro\\\\b\" crates/tui/src (only the definition is found)",
+        "crates/tui/src/runtime/side_effects/mod.rs:176-217 (macro side effects wired for Load/Create/Update/Delete only; no get-macro path)",
+        "crates/tui/src/action/variants.rs:428-460 (macro actions exist, but no GetMacro/MacroLoaded-by-name action variant)",
+        "crates/tui/src/app/actions/system.rs:311-332 (EditMacro popup uses selected item from self.macros and does not fetch a single macro)",
+        "crates/client/src/models/macros.rs:12-41 (Macro model already includes definition/args/description, so list_macros typically has enough data to prefill edit UI)"
+      ],
+      "plan": [
+        "Confirm intended EditMacro behavior (prefill vs blank); verify Macro list data is sufficient (crates/client/src/models/macros.rs)",
+        "Preferred cleanup: delete handle_get_macro and remove #[allow(dead_code)] in crates/tui/src/runtime/side_effects/macros.rs",
+        "If prefill is desired: populate EditMacro popup fields from the selected Macro in crates/tui/src/app/actions/system.rs (avoid new API call)",
+        "If a per-macro fetch is truly required: add Action::GetMacro + a result action, wire it in crates/tui/src/runtime/side_effects/mod.rs, and add wiremock coverage in crates/tui/tests/side_effects_macros_tests.rs",
+        "Verify via make test (and make ci if touching multiple layers)"
+      ],
+      "notes": [
+        "Current state: handle_get_macro is dead code (allowed) and not wired via Action or handle_side_effects.",
+        "Observation: the EditMacro dialog is opened from self.macros; it does not fetch a single macro, and it currently seeds empty definition/args/description inputs.",
+        "Likely simplest fix: delete handle_get_macro (and the dead_code allowance) and, if UX requires prefill, use the Macro already returned by list_macros rather than adding a new side effect path.",
+        "Removed unused TUI side-effect handler handle_get_macro (dead code).",
+        "No Action/side-effect wiring existed; deletion eliminates dead async path.",
+        "Verified no remaining references via ripgrep; make test + make ci pass.",
+        "No user-visible behavior change; macro editing continues to use list_macros data."
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T22:36:48.707223679Z",
+      "completed_at": "2026-02-05T22:36:48.707223679Z",
+      "started_at": "2026-02-05T22:18:21.369461410Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],

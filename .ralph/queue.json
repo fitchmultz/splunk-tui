@@ -1,40 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0346",
-      "status": "todo",
-      "title": "Remove or wire handle_get_macro to avoid dead side-effect path",
-      "priority": "low",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/macros.rs"
-      ],
-      "evidence": [
-        "crates/tui/src/runtime/side_effects/macros.rs:151-167 (handle_get_macro is marked dead_code)",
-        "command: rg -n \"handle_get_macro\" crates/tui/src (only definition found)"
-      ],
-      "plan": [
-        "Decide whether get-macro is a real feature path; if not, delete the function and dead_code allowance",
-        "If it is needed, add an Action + UI flow that calls handle_get_macro and add tests",
-        "Verify by running `cargo test -p splunk-tui` and confirming tests pass"
-      ],
-      "notes": [
-        "Principles: B (YAGNI), D (Localize change)",
-        "Why it matters: dead async paths add complexity and can drift from real behavior, making maintenance harder",
-        "Minimal fix: remove if unused or wire into an explicit action flow"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    }
-  ]
+  "tasks": []
 }

@@ -148,25 +148,6 @@ pub async fn handle_delete_macro(client: SharedClient, action_tx: Sender<Action>
     });
 }
 
-#[allow(dead_code)]
-/// Get a single macro by name.
-pub async fn handle_get_macro(client: SharedClient, action_tx: Sender<Action>, name: String) {
-    // Note: This function does not send Loading(true) because it's typically used
-    // for pre-populating edit dialogs and doesn't have a corresponding "clear loading"
-    // action in the success case. Errors are reported via Notify.
-    tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        if let Err(e) = guard.get_macro(&name).await {
-            let _ = action_tx
-                .send(Action::Notify(
-                    crate::ui::ToastLevel::Error,
-                    format!("Failed to load macro: {}", e),
-                ))
-                .await;
-        }
-    });
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
