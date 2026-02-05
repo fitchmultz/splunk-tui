@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T02:51:21.423294417Z",
+  "last_updated_at": "2026-02-05T03:07:25.216043814Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 4,
+      "completed_count": 5,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -219,6 +219,11 @@
           "id": "RQ-0327",
           "title": "Make TUI help popup section ordering a single source of truth",
           "completed_at": "2026-02-05T02:51:21.423292547Z"
+        },
+        {
+          "id": "RQ-0328",
+          "title": "Add a dedicated Macros keybinding section and map Macros screen correctly",
+          "completed_at": "2026-02-05T03:07:25.216041835Z"
         }
       ]
     }
@@ -228,7 +233,7 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 39,
+  "total_completed": 40,
   "milestones": [
     {
       "threshold": 10,

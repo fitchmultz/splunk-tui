@@ -15,7 +15,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 pub fn bindings() -> Vec<Keybinding> {
     vec![
         Keybinding {
-            section: Section::SavedSearches,
+            section: Section::Macros,
             keys: "r",
             description: "Refresh macros",
             scope: BindingScope::Screen(CurrentScreen::Macros),
@@ -27,7 +27,7 @@ pub fn bindings() -> Vec<Keybinding> {
             handles_input: false,
         },
         Keybinding {
-            section: Section::SavedSearches,
+            section: Section::Macros,
             keys: "e",
             description: "Edit macro",
             scope: BindingScope::Screen(CurrentScreen::Macros),
@@ -39,7 +39,7 @@ pub fn bindings() -> Vec<Keybinding> {
             handles_input: false,
         },
         Keybinding {
-            section: Section::SavedSearches,
+            section: Section::Macros,
             keys: "n",
             description: "New macro",
             scope: BindingScope::Screen(CurrentScreen::Macros),

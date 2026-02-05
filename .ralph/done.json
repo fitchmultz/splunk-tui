@@ -2505,6 +2505,65 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0328",
+      "status": "done",
+      "title": "Add a dedicated Macros keybinding section and map Macros screen correctly",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "tui",
+        "keybindings",
+        "consistency"
+      ],
+      "scope": [
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/input/keymap/bindings/screens/macros.rs",
+        "crates/tui/src/input/docs.rs",
+        "crates/tui/src/input/help.rs",
+        "make test",
+        "make generate"
+      ],
+      "evidence": [
+        "crates/tui/src/input/keymap/mod.rs:24-53 `Section` enum has no Macros variant.",
+        "crates/tui/src/input/keymap/mod.rs:210-241 `screen_to_section` maps `CurrentScreen::Macros` to `Section::SavedSearches` (line 221), causing Macros shortcuts to be grouped under Saved Searches.",
+        "crates/tui/src/input/keymap/bindings/screens/macros.rs:15-55 assigns Macros bindings to `Section::SavedSearches` (lines 18, 30, 42).",
+        "crates/tui/src/app/render.rs:85-112 renders the tab label `CurrentScreen::Macros => \"Macros\"` (line 94), so the UI names the screen but help/docs categorize it elsewhere.",
+        "crates/tui/src/input/docs.rs:77-108 `section_heading` has no case for Macros section.",
+        "crates/tui/src/input/help.rs:63-94 `section_title` has no case for Macros section.",
+        "crates/tui/src/input/keymap/mod.rs:109-140 `sections_in_order` does not include Macros in the canonical ordering."
+      ],
+      "plan": [
+        "Introduce `Section::Macros` in `crates/tui/src/input/keymap/mod.rs` and map `CurrentScreen::Macros` to it",
+        "Update Macros keybinding definitions in `macros.rs` to use the new section",
+        "Update `sections_in_order` to include `Section::Macros` in appropriate position",
+        "Update `section_heading` in `docs.rs` to include Macros section title",
+        "Update `section_title` in `help.rs` to include Macros section title",
+        "Run `make generate` to regenerate keybinding documentation",
+        "Verify by running `make test`"
+      ],
+      "notes": [
+        "Principles violated: G (Least astonishment), C (DRY/knowledge consistency).",
+        "Why it matters: the Macros screen exists and is labeled as such in the UI, but keybindings are documented under the Saved Searches section, making help output confusing and harder to maintain.",
+        "Minimal fix: add a dedicated section and update the mapping + bindings so help/docs match the actual screen identity.",
+        "Acceptance criteria: help/docs show a distinct \"Macros\" section; `make test` passes; `make generate` produces correct docs.",
+        "Added Section::Macros variant and mapped CurrentScreen::Macros correctly",
+        "Updated macros.rs keybindings to use new section",
+        "Updated docs.rs and help.rs with Macros section titles",
+        "make ci passes, all tests pass",
+        "Generated docs now show distinct Macros Screen section"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T03:05:14.971964495Z",
+      "completed_at": "2026-02-05T03:05:14.971964495Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

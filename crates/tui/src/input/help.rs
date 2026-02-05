@@ -72,6 +72,7 @@ fn section_title(section: Section) -> &'static str {
         Section::License => "License Screen:",
         Section::Kvstore => "KVStore Screen:",
         Section::SavedSearches => "Saved Searches Screen:",
+        Section::Macros => "Macros Screen:",
         Section::InternalLogs => "Internal Logs Screen:",
         Section::Apps => "Apps Screen:",
         Section::Users => "Users Screen:",
