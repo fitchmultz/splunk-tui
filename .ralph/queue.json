@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0344",
-      "status": "todo",
-      "title": "Prune or integrate unused DiffViewer UI component",
-      "priority": "low",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "crates/tui/src/ui/components/diff_viewer.rs",
-        "crates/tui/src/ui/components/mod.rs",
-        "crates/tui/src/ui/mod.rs"
-      ],
-      "evidence": [
-        "command: rg -n \"DiffViewer\" crates/tui/src (matches only in diff_viewer module/docs, no usage in app code)"
-      ],
-      "plan": [
-        "Confirm no internal consumers beyond the component module",
-        "Either remove the module/exports and update docs, or integrate it into a screen that needs diffs",
-        "Update tests and public exports accordingly",
-        "Verify by running `cargo test -p splunk-tui` and confirming no dead-code warnings or test failures"
-      ],
-      "notes": [
-        "Principles: B (YAGNI), Public API discipline",
-        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
-        "Minimal fix: remove or make pub(crate) unless there’s a concrete use case"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0345",
       "status": "todo",
       "title": "Prune or integrate unused MarkdownRenderer UI component",

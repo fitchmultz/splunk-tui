@@ -2597,7 +2597,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serial_test",
- "similar",
  "splunk-client",
  "splunk-config",
  "taffy",

@@ -8,7 +8,6 @@
 //! The `components` module provides reusable, theme-aware components:
 //! - [`SelectList<T>`]: Generic selectable list with keyboard navigation
 //! - [`ScrollableContainer`]: Scrollable content container
-//! - [`DiffViewer`]: Unified diff viewer for comparing text
 //! - [`LineNumberWidget`]: Line number gutter with diagnostic support
 //! - [`Slider`]: Interactive slider for numeric input
 //! - [`BigTextWidget`]: Large ASCII text headers

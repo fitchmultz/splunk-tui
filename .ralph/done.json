@@ -3366,6 +3366,59 @@
         "lines_of_dead_code": "598",
         "unused_dependency": "tachyonfx@0.14"
       }
+    },
+    {
+      "id": "RQ-0344",
+      "status": "done",
+      "title": "Prune or integrate unused DiffViewer UI component",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/Cargo.toml",
+        "crates/tui/src/lib.rs",
+        "crates/tui/src/ui/components/diff_viewer.rs",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/src/ui/mod.rs"
+      ],
+      "evidence": [
+        "command: rg -n \"\\bDiffViewer\\b\" crates/tui/src -S (only matches in diff_viewer module + ui/components docs/exports; no usage in screens/app)",
+        "command: rg -n \"use\\s+similar::|\\bTextDiff\\b|\\bChangeTag\\b\" crates/tui/src -S (only used by DiffViewer component)",
+        "crates/tui/src/ui/components/mod.rs:46 (pub use diff_viewer::DiffViewer; exposes it as public API)",
+        "crates/tui/src/ui/components/diff_viewer.rs:75 (context_lines is currently unused: `let _ = self.context_lines` placeholder)",
+        "crates/tui/Cargo.toml:70 (declares `similar = \\\"2.7\\\"`, apparently only needed for DiffViewer)"
+      ],
+      "plan": [
+        "Confirm no internal consumers beyond the component module (repo-wide ripgrep)",
+        "Pick a direction: (A) delete DiffViewer + exports + docs + similar dep, or (B) integrate into a real screen with a concrete workflow",
+        "If integrating, either implement context_lines behavior or remove the unused field/builder to keep API honest",
+        "Update tests accordingly (remove module tests if deleted; add screen/snapshot tests if integrated)",
+        "Verify via `SKIP_LIVE_TESTS=1 make ci` (or full `make ci` when a live Splunk dev server is available)"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), Public API discipline",
+        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
+        "Additional note: DiffViewer currently carries an unused `context_lines` setting (placeholder), which is extra API surface if we keep it",
+        "Minimal fix: delete it end-to-end (module + exports + docs + `similar` dep) unless there’s a concrete use case",
+        "Deleted unused DiffViewer component (dead code)",
+        "Removed DiffViewer public re-export + doc mentions",
+        "Dropped direct \"similar\" dependency from splunk-tui",
+        "Verified no remaining DiffViewer/similar refs via ripgrep",
+        "CI: SKIP_LIVE_TESTS=1 make ci"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T21:41:43.734216793Z",
+      "completed_at": "2026-02-05T21:41:43.734216793Z",
+      "started_at": "2026-02-05T21:28:21.449454900Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }
