@@ -47,10 +47,10 @@ tracing-appender = "0.2"
 clap = { workspace = true }
 
 # UUID for unique tracking
-uuid = { version = "1.11", features = ["v4"] }
+uuid = { version = "1.12", features = ["v4"] }
 
 # Clipboard
-arboard = "3.4"
+arboard = "3.5"
 
 # Secrets handling
 secrecy = { workspace = true }
@@ -67,7 +67,7 @@ tree-sitter = "0.22"
 taffy = "0.5"
 
 # Diff viewing capabilities
-similar = "2.5"
+similar = "2.7"
 
 # Big ASCII text headers
 tui-big-text = "0.7"
@@ -79,7 +79,7 @@ tachyonfx = "0.14"
 pulldown-cmark = "0.12"
 
 [dev-dependencies]
-insta = { version = "1.39", features = ["filters"] }
+insta = { version = "1.42", features = ["filters"] }
 tempfile = "3.10"
 serial_test = { workspace = true }
 wiremock = "0.6"

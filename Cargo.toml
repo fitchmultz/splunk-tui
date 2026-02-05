@@ -11,7 +11,7 @@ repository = "https://github.com/fitchmultz/splunk-tui"
 
 [workspace.dependencies]
 # Async Runtime
-tokio = { version = "1.42", features = ["full"] }
+tokio = { version = "1.43", features = ["full"] }
 futures = "0.3"
 
 # HTTP
@@ -35,7 +35,7 @@ anyhow = "1.0"
 
 # Secrets
 secrecy = { version = "0.10", features = ["serde"] }
-keyring = "3.1"
+keyring = "3.6"
 
 # Config
 dotenvy = "0.15"
@@ -50,7 +50,7 @@ time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Testing
-mockito = "1.5"
+mockito = "1.6"
 wiremock = "0.6"
 assert_cmd = "2.1"
 serial_test = "3.2"
