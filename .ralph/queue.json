@@ -1,4 +1,183 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0347",
+      "status": "todo",
+      "title": "Make local CI + tooling repeatable and convention-driven",
+      "priority": "high",
+      "tags": [
+        "consistency",
+        "tooling",
+        "ci",
+        "conventions",
+        "dry"
+      ],
+      "scope": [
+        "Makefile",
+        "rust-toolchain.toml",
+        ".cargo/",
+        "crates/*/Cargo.toml",
+        "docs/",
+        "make ci",
+        "make lint",
+        "make format",
+        "make type-check",
+        "make test",
+        "make release"
+      ],
+      "evidence": [
+        "User request: \"CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.\"",
+        "Repo guidance requires a project-root Makefile with a repeatable local CI gate (`make ci`) and consistent `format`/`lint`/`type-check`/`test` targets.",
+        "Repo is a Rust workspace (toolchain pinned) and should optimize for security, type safety, and testability; repeatable tooling is the foundation for safe refactors."
+      ],
+      "plan": [
+        "Inventory current developer commands (`make` targets, cargo aliases, scripts) and identify overlap/inconsistencies.",
+        "Align the project-root `Makefile` with the repo's Makefile contract (targets, ordering, and deterministic behavior).",
+        "Centralize tool configuration (rustfmt/clippy/cargo) so all crates behave consistently under `make lint` and `make format`.",
+        "Ensure `make ci` is an explicit, repeatable local gate and document exact expectations (what it runs, in what order, and how to opt out of live tests).",
+        "Add/adjust repo-local checks (docs/lint-secrets, etc.) so failures are actionable and consistent across environments.",
+        "Run `make ci` and address any newly surfaced convention drift strictly within scope."
+      ],
+      "notes": [],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-05T22:57:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0348",
+      "status": "todo",
+      "title": "Centralize configuration + secrets handling via crates/config",
+      "priority": "high",
+      "tags": [
+        "config",
+        "security",
+        "consistency",
+        "dry",
+        "rust"
+      ],
+      "scope": [
+        "crates/config/",
+        "crates/cli/",
+        "crates/tui/",
+        ".env",
+        ".env.example",
+        ".env.test.example",
+        "docs/",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "User request: \"STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE\" implies a single source of truth for configuration and defaults.",
+        "Repo layout includes `crates/config` dedicated to configuration loading and validation.",
+        "Repo guidelines emphasize secrets safety (never log credentials; use `secrecy` types) and hermetic tests (`DOTENV_DISABLED=1` during `make test`)."
+      ],
+      "plan": [
+        "Audit all configuration entrypoints (CLI flags, TUI settings, env vars, dotenv) and document the current precedence order.",
+        "Define one canonical, typed configuration model in `crates/config` (validated defaults + explicit overrides).",
+        "Ensure all secrets are represented using `secrecy` (and are never formatted via `Debug`/`Display` in logs/errors).",
+        "Refactor CLI and TUI to depend on `crates/config` as the only config loader (remove duplicated parsing/validation).",
+        "Add unit + integration tests covering success and failure modes: missing required vars, invalid URLs, precedence, and DOTENV_DISABLED hermetic behavior.",
+        "Update `.env.example` / `.env.test.example` and docs to match the canonical configuration model."
+      ],
+      "notes": [],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-05T22:57:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0349",
+      "status": "todo",
+      "title": "DRY: move duplicated CLI/TUI behavior into crates/client",
+      "priority": "medium",
+      "tags": [
+        "refactor",
+        "dry",
+        "client",
+        "cli",
+        "tui",
+        "consistency"
+      ],
+      "scope": [
+        "crates/client/",
+        "crates/cli/",
+        "crates/tui/",
+        "crates/*/tests/",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "User request calls out DRY and consistency across the codebase.",
+        "Repo guidelines require CLI/TUI feature parity via shared business logic in `crates/client` (UIs should be presentation-only)."
+      ],
+      "plan": [
+        "Search the workspace for duplicated patterns (endpoint calls, request building, error mapping, formatting) across `crates/cli` and `crates/tui`.",
+        "Design a small set of shared client-level operations/APIs (prefer `pub(crate)`; avoid expanding public surface unnecessarily).",
+        "Move business logic into `crates/client` and update both frontends to call the shared operations.",
+        "Normalize error handling: `thiserror` in libraries and `anyhow` only at app edges; ensure no secrets leak in errors.",
+        "Add tests close to the new shared logic covering both expected behavior and failure modes; add integration tests as needed per concept.",
+        "Run `make ci` and remove any now-dead/duplicated code paths."
+      ],
+      "notes": [],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-05T22:57:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0350",
+      "status": "todo",
+      "title": "Standardize module documentation, CLI/script help, and docs sync",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "ux",
+        "consistency",
+        "help",
+        "quality"
+      ],
+      "scope": [
+        "crates/*/src/",
+        "crates/*/tests/",
+        "docs/",
+        "README.md",
+        "scripts/",
+        "make generate",
+        "make lint-docs",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "User request targets standardization and repeatability; clear docs + consistent help output are part of repeatable workflows.",
+        "Repo guidance: all code files should have module-level documentation describing responsibilities, non-responsibilities, and invariants; executable scripts must provide useful `--help` with examples.",
+        "Repo docs are partially generated (TUI keybindings); `make generate` and `make lint-docs` are the expected sync workflow."
+      ],
+      "plan": [
+        "Audit crate module boundaries and add/normalize module-level docs (`//!`) so each file states responsibility, non-goals, and invariants.",
+        "Audit executable scripts for `--help` coverage and add examples; ensure help output avoids printing secrets.",
+        "Ensure CLI `--help` and docs (`docs/usage.md`, etc.) stay in sync; add lightweight tests/snapshots around help output where stable.",
+        "If TUI keymap docs generation is used, run `make generate` and update generated sections only via the generator path.",
+        "Run `make lint-docs` and `make test` to prevent regressions; then run `make ci` as the final gate."
+      ],
+      "notes": [],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-05T22:57:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    }
+  ]
 }
