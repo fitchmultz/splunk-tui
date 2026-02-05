@@ -2,52 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0334",
-      "status": "todo",
-      "title": "Replace overview/multi-instance magic timeouts and list limits with shared constants",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "consistency",
-        "performance"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/overview.rs",
-        "crates/tui/src/runtime/side_effects/multi_instance.rs",
-        "crates/tui/src/app.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/runtime/side_effects/overview.rs:100-174 repeats `Duration::from_secs(30)` and hard-coded list limits (indexes/apps/users use `Some(1000)`, jobs use `Some(100)`).",
-        "crates/tui/src/runtime/side_effects/multi_instance.rs:228-321 repeats the same timeout and limits.",
-        "crates/tui/src/app.rs:483-492 defines an unrelated hard-coded loading timeout of 30 seconds, with a hard-coded message string."
-      ],
-      "plan": [
-        "Introduce shared constants for \"overview fetch timeout\" and per-resource list limits (or wire them to config defaults where appropriate)",
-        "Apply the constants consistently across overview + multi-instance fetchers and loading timeout messaging",
-        "Add tests that validate the constants are used (behavioral tests via timeout mapping and page-size usage)",
-        "Verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: C (DRY), D (Localize change), H (Operational hygiene).",
-        "Why it matters: hard-coded magic numbers scattered across the runtime make it easy for limits/timeouts to diverge, and the user-visible timeout message can become incorrect if only one value is changed.",
-        "Minimal fix: centralize the constants (prefer `splunk_config::constants` if broadly applicable) and reference them everywhere they apply.",
-        "Acceptance criteria: timeouts and list limits are defined once and used consistently; user-visible timeout messaging matches the configured value; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [
-        "RQ-0333"
-      ],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0335",
       "status": "todo",
       "title": "Sanitize persisted SearchDefaults invariants on load (max_results >= 1, non-empty times)",

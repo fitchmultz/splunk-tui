@@ -43,6 +43,7 @@ use crate::ui::Toast;
 use crossterm::event::{KeyCode, KeyEvent};
 use splunk_config::constants::{
     DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
+    DEFAULT_TIMEOUT_SECS,
 };
 
 impl App {
@@ -481,15 +482,16 @@ impl App {
     /// Handle periodic tick events - returns Action if one should be dispatched.
     pub fn handle_tick(&mut self) -> Option<Action> {
         // Check for loading timeout to prevent stuck loading state
-        const LOADING_TIMEOUT_SECS: u64 = 30;
+        const LOADING_TIMEOUT_SECS: u64 = DEFAULT_TIMEOUT_SECS;
         if self.loading {
             if let Some(since) = self.loading_since {
                 if since.elapsed().as_secs() > LOADING_TIMEOUT_SECS {
                     self.loading = false;
                     self.loading_since = None;
-                    self.toasts.push(crate::ui::Toast::warning(
-                        "Operation timed out after 30 seconds",
-                    ));
+                    self.toasts.push(crate::ui::Toast::warning(format!(
+                        "Operation timed out after {} seconds",
+                        LOADING_TIMEOUT_SECS
+                    )));
                 }
             } else {
                 // If loading is true but no timestamp, set it now (backwards compatibility)

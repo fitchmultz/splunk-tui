@@ -2841,6 +2841,56 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0334",
+      "status": "done",
+      "title": "Replace overview/multi-instance magic timeouts and list limits with shared constants",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "consistency",
+        "performance"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/overview_fetch.rs",
+        "crates/tui/src/runtime/side_effects/overview.rs",
+        "crates/tui/src/runtime/side_effects/multi_instance.rs",
+        "crates/tui/src/app.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/overview_fetch.rs:19-26 defines shared constants FETCH_TIMEOUT (30s), LIST_LIMIT_1000, and LIST_LIMIT_100 that are already used consistently across fetchers.",
+        "crates/tui/src/runtime/side_effects/overview.rs:27-78 uses overview_fetch helpers (no longer has hardcoded values - already refactored).",
+        "crates/tui/src/runtime/side_effects/multi_instance.rs:110-171 uses overview_fetch helpers (no longer has hardcoded values - already refactored).",
+        "crates/tui/src/app.rs:484 defines hard-coded LOADING_TIMEOUT_SECS: u64 = 30 with hardcoded message at line 491 \"Operation timed out after 30 seconds\" - this could be consolidated with FETCH_TIMEOUT."
+      ],
+      "plan": [
+        "Consolidate the loading timeout in app.rs with the shared FETCH_TIMEOUT constant from overview_fetch.rs (or move all timeout constants to splunk_config::constants)",
+        "Update the user-visible timeout message in app.rs to reference the constant value instead of hardcoded '30'",
+        "Verify overview_fetch constants are exported and accessible where needed",
+        "Run `make test` to verify no regressions"
+      ],
+      "notes": [
+        "Task partially completed: overview_fetch.rs was created in RQ-0333 with shared constants FETCH_TIMEOUT, LIST_LIMIT_1000, LIST_LIMIT_100.",
+        "overview.rs and multi_instance.rs already use the shared constants via overview_fetch helpers.",
+        "Remaining work: app.rs has a separate hardcoded 30-second loading timeout that could share the FETCH_TIMEOUT constant.",
+        "Dependency RQ-0333 is completed (moved to done.json).",
+        "Consolidated timeout constants: overview_fetch.rs FETCH_TIMEOUT and app.rs LOADING_TIMEOUT_SECS now both use splunk_config::constants::DEFAULT_TIMEOUT_SECS as single source of truth",
+        "Updated user-visible timeout message in app.rs to reference constant value instead of hardcoded '30'",
+        "All tests pass (make type-check, make lint, cargo test -p splunk-tui)"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T05:19:03.403079387Z",
+      "completed_at": "2026-02-05T05:19:03.403079387Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

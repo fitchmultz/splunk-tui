@@ -5,6 +5,7 @@
 
 use crate::action::OverviewResource;
 use splunk_client::ClientError;
+use splunk_config::constants::DEFAULT_TIMEOUT_SECS;
 
 /// Create an OverviewResource representing a failed fetch.
 pub fn resource_error(resource_type: &str, error: ClientError) -> OverviewResource {
@@ -17,7 +18,7 @@ pub fn resource_error(resource_type: &str, error: ClientError) -> OverviewResour
 }
 
 /// Standard timeout for overview resource fetches.
-pub const FETCH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+pub const FETCH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(DEFAULT_TIMEOUT_SECS);
 
 /// List limit for indexes, apps, and users.
 pub const LIST_LIMIT_1000: u64 = 1000;
