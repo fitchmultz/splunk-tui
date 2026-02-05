@@ -117,6 +117,18 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
             }
         })?));
     }
+    // Internal logs defaults
+    if let Some(count) = env_var_or_none("SPLUNK_INTERNAL_LOGS_COUNT") {
+        loader.set_internal_logs_count(Some(count.parse().map_err(|_| {
+            ConfigError::InvalidValue {
+                var: "SPLUNK_INTERNAL_LOGS_COUNT".to_string(),
+                message: "must be a positive number".to_string(),
+            }
+        })?));
+    }
+    if let Some(earliest) = env_var_or_none("SPLUNK_INTERNAL_LOGS_EARLIEST") {
+        loader.set_internal_logs_earliest(Some(earliest));
+    }
     Ok(())
 }
 

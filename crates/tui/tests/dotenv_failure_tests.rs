@@ -182,7 +182,7 @@ fn test_dotenv_error_message_includes_dotenv_disabled_hint() {
     );
 }
 
-// Note: Testing load_config_with_search_defaults directly requires constructing
+// Note: Testing load_config_with_defaults directly requires constructing
 // a Cli instance, which requires clap parsing. Instead, we rely on the
 // ConfigLoader::load_dotenv() tests above to verify dotenv behavior, and the
 // integration tests in dotenv_isolation_tests.rs to verify the full TUI startup path.

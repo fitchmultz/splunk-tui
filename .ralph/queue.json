@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0338",
-      "status": "todo",
-      "title": "Implement SPLUNK_INTERNAL_LOGS_* env overrides (or remove docs claiming them)",
-      "priority": "medium",
-      "tags": [
-        "maintenance"
-      ],
-      "scope": [
-        "docs/usage.md",
-        "crates/config/src/loader/env.rs",
-        "crates/config/src/loader/tests",
-        ".env.example"
-      ],
-      "evidence": [
-        "docs/usage.md:88-89 (documents SPLUNK_INTERNAL_LOGS_COUNT/EARLIEST)",
-        "docs/usage.md:1263-1273 (documents env overrides for internal logs)",
-        "command: rg -n \"SPLUNK_INTERNAL_LOGS\" crates (no matches)"
-      ],
-      "plan": [
-        "Add env parsing for SPLUNK_INTERNAL_LOGS_COUNT and SPLUNK_INTERNAL_LOGS_EARLIEST in config loader and wire into InternalLogsDefaults",
-        "Add validation (count > 0, earliest non-empty) and update .env.example with commented examples",
-        "Add loader tests covering valid and invalid env values",
-        "Verify by running `cargo test -p splunk-config` and confirming new tests pass"
-      ],
-      "notes": [
-        "Principles: G (Least astonishment), H (Operational hygiene)",
-        "Why it matters: users setting documented env vars get no effect, leading to confusing runtime defaults and misconfigured TUI behavior",
-        "Minimal fix: implement env overrides in config loader and document them consistently"
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T13:35:13Z",
-      "updated_at": "2026-02-05T13:35:13Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0339",
       "status": "todo",
       "title": "Preserve focus when removing earlier component in FocusManager",

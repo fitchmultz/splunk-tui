@@ -3050,6 +3050,66 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0338",
+      "status": "done",
+      "title": "Implement SPLUNK_INTERNAL_LOGS_* env overrides (or remove docs claiming them)",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "config",
+        "env-vars"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/config/src/loader/env.rs",
+        "crates/config/src/loader/builder.rs",
+        "crates/config/src/loader/defaults.rs",
+        "crates/config/src/loader/tests",
+        "crates/config/src/persistence/state.rs",
+        ".env.example"
+      ],
+      "evidence": [
+        "docs/usage.md:88-89 (documents SPLUNK_INTERNAL_LOGS_COUNT/EARLIEST env vars)",
+        "docs/usage.md:1263-1273 (documents env overrides for internal logs)",
+        "crates/config/src/persistence/state.rs:162-176 (InternalLogsDefaults struct exists with count/earliest_time)",
+        "crates/config/src/loader/env.rs:105-119 (only parses SPLUNK_EARLIEST_TIME/LATEST_TIME/MAX_RESULTS, no INTERNAL_LOGS)",
+        "crates/config/src/loader/builder.rs:50-52 (ConfigLoader has earliest_time/latest_time/max_results but no internal_logs fields)",
+        ".env.example:46-51 (has Search Defaults section but no Internal Logs section)",
+        "command: rg -n \"SPLUNK_INTERNAL_LOGS\" crates/config/src (no matches - env vars not implemented)"
+      ],
+      "plan": [
+        "Add internal_logs_count and internal_logs_earliest fields to ConfigLoader in builder.rs with setter methods",
+        "Add env parsing for SPLUNK_INTERNAL_LOGS_COUNT and SPLUNK_INTERNAL_LOGS_EARLIEST in env.rs apply_env()",
+        "Add build_internal_logs_defaults() method to ConfigLoader similar to build_search_defaults()",
+        "Add validation (count > 0, earliest non-empty) and update .env.example with commented examples",
+        "Add loader tests in crates/config/src/loader/tests/ covering valid and invalid env values",
+        "Verify by running `cargo test -p splunk-config` and confirming new tests pass"
+      ],
+      "notes": [
+        "Principles: G (Least astonishment), H (Operational hygiene)",
+        "Why it matters: users setting documented env vars get no effect, leading to confusing runtime defaults and misconfigured TUI behavior",
+        "Minimal fix: implement env overrides in config loader and document them consistently",
+        "InternalLogsDefaults struct already exists in persistence/state.rs - just needs wiring through the loader",
+        "Pattern to follow: existing search defaults implementation in builder.rs/env.rs",
+        "Implemented SPLUNK_INTERNAL_LOGS_COUNT and SPLUNK_INTERNAL_LOGS_EARLIEST env overrides",
+        "Added build_internal_logs_defaults() to ConfigLoader following search defaults pattern",
+        "Added sanitize() to InternalLogsDefaults with 5 unit tests",
+        "Created internal_logs_defaults_tests.rs with 6 comprehensive tests",
+        "Updated TUI to apply env overrides (env vars > persisted > hardcoded defaults)",
+        "CI passes, all 193+ tests pass"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T18:34:55.281087349Z",
+      "completed_at": "2026-02-05T18:34:55.281087349Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

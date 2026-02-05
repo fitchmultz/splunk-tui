@@ -38,12 +38,13 @@ use splunk_config::constants::{
     DEFAULT_CHANNEL_CAPACITY, DEFAULT_REFRESH_INTERVAL_SECS, DEFAULT_UI_TICK_MS,
 };
 use splunk_config::{
-    AuthStrategy as ConfigAuthStrategy, ConfigManager, SearchDefaults, env_var_or_none,
+    AuthStrategy as ConfigAuthStrategy, ConfigManager, InternalLogsDefaults, SearchDefaults,
+    env_var_or_none,
 };
 
 use splunk_tui::runtime::{
     client::create_client,
-    config::{load_config_with_search_defaults, save_and_quit},
+    config::{load_config_with_defaults, save_and_quit},
     side_effects::{SharedClient, handle_side_effects},
     terminal::TerminalGuard,
 };
@@ -71,8 +72,9 @@ async fn main() -> Result<()> {
     // Note: _guard must live for entire main() duration to ensure logs are flushed
 
     // Load config at startup with CLI overrides
-    // Also get search defaults with env var overrides applied
-    let (search_default_config, config) = load_config_with_search_defaults(&cli)?;
+    // Also get search defaults and internal logs defaults with env var overrides applied
+    let (search_default_config, internal_logs_default_config, config) =
+        load_config_with_defaults(&cli)?;
 
     // Warn if using default credentials (security check)
     if config.is_using_default_credentials() {
@@ -178,6 +180,15 @@ async fn main() -> Result<()> {
         earliest_time: search_default_config.earliest_time,
         latest_time: search_default_config.latest_time,
         max_results: search_default_config.max_results,
+    }
+    .sanitize();
+
+    // Apply environment variable overrides to internal logs defaults
+    // Precedence: env vars > persisted values > hardcoded defaults
+    // Sanitize to ensure invariants (count > 0, non-empty earliest_time) are enforced
+    persisted_state.internal_logs_defaults = InternalLogsDefaults {
+        count: internal_logs_default_config.count,
+        earliest_time: internal_logs_default_config.earliest_time,
     }
     .sanitize();
 

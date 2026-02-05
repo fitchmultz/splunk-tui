@@ -21,6 +21,7 @@ use std::sync::Mutex;
 pub mod basic_tests;
 pub mod dotenv_tests;
 pub mod env_tests;
+pub mod internal_logs_defaults_tests;
 pub mod profile_tests;
 pub mod search_defaults_tests;
 pub mod session_tests;

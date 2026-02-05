@@ -175,6 +175,30 @@ impl Default for InternalLogsDefaults {
     }
 }
 
+impl InternalLogsDefaults {
+    /// Sanitize internal logs defaults to enforce invariants.
+    ///
+    /// Normalizes invalid values to their defaults:
+    /// - `count == 0` -> 100
+    /// - Empty or whitespace-only `earliest_time` -> "-15m"
+    ///
+    /// Returns a new `InternalLogsDefaults` with sanitized values.
+    pub fn sanitize(&self) -> Self {
+        let count = if self.count == 0 { 100 } else { self.count };
+
+        let earliest_time = if self.earliest_time.trim().is_empty() {
+            "-15m".to_string()
+        } else {
+            self.earliest_time.clone()
+        };
+
+        Self {
+            count,
+            earliest_time,
+        }
+    }
+}
+
 /// User preferences that persist across application runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersistedState {
@@ -843,5 +867,65 @@ mod tests {
 
         assert_eq!(deserialized.internal_logs_defaults.count, 200);
         assert_eq!(deserialized.internal_logs_defaults.earliest_time, "-30m");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_sanitize_zero_count() {
+        let defaults = InternalLogsDefaults {
+            count: 0,
+            earliest_time: "-15m".to_string(),
+        };
+
+        let sanitized = defaults.sanitize();
+        assert_eq!(sanitized.count, 100);
+        assert_eq!(sanitized.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_sanitize_empty_earliest_time() {
+        let defaults = InternalLogsDefaults {
+            count: 50,
+            earliest_time: "".to_string(),
+        };
+
+        let sanitized = defaults.sanitize();
+        assert_eq!(sanitized.count, 50);
+        assert_eq!(sanitized.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_sanitize_whitespace_earliest_time() {
+        let defaults = InternalLogsDefaults {
+            count: 50,
+            earliest_time: "   ".to_string(),
+        };
+
+        let sanitized = defaults.sanitize();
+        assert_eq!(sanitized.count, 50);
+        assert_eq!(sanitized.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_sanitize_multiple_invalid() {
+        let defaults = InternalLogsDefaults {
+            count: 0,
+            earliest_time: "".to_string(),
+        };
+
+        let sanitized = defaults.sanitize();
+        assert_eq!(sanitized.count, 100);
+        assert_eq!(sanitized.earliest_time, "-15m");
+    }
+
+    #[test]
+    fn test_internal_logs_defaults_sanitize_valid_values_unchanged() {
+        let defaults = InternalLogsDefaults {
+            count: 200,
+            earliest_time: "-1h".to_string(),
+        };
+
+        let sanitized = defaults.sanitize();
+        assert_eq!(sanitized.count, 200);
+        assert_eq!(sanitized.earliest_time, "-1h");
     }
 }

@@ -29,7 +29,7 @@ use crate::constants::{
     DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS, MAX_HEALTH_CHECK_INTERVAL_SECS,
     MAX_SESSION_TTL_SECS, MAX_TIMEOUT_SECS,
 };
-use crate::persistence::SearchDefaults;
+use crate::persistence::{InternalLogsDefaults, SearchDefaults};
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
 
 /// Configuration loader that builds config from environment variables and profiles.
@@ -50,6 +50,8 @@ pub struct ConfigLoader {
     earliest_time: Option<String>,
     latest_time: Option<String>,
     max_results: Option<u64>,
+    internal_logs_count: Option<u64>,
+    internal_logs_earliest: Option<String>,
 }
 
 impl Default for ConfigLoader {
@@ -78,6 +80,8 @@ impl ConfigLoader {
             earliest_time: None,
             latest_time: None,
             max_results: None,
+            internal_logs_count: None,
+            internal_logs_earliest: None,
         }
     }
 
@@ -347,6 +351,24 @@ impl ConfigLoader {
         }
     }
 
+    /// Build the internal logs default configuration from loaded values.
+    ///
+    /// This uses environment variable values if set, otherwise falls back
+    /// to the provided persisted defaults.
+    pub fn build_internal_logs_defaults(
+        &self,
+        persisted: Option<InternalLogsDefaults>,
+    ) -> InternalLogsDefaults {
+        let defaults = persisted.unwrap_or_default();
+        InternalLogsDefaults {
+            count: self.internal_logs_count.unwrap_or(defaults.count),
+            earliest_time: self
+                .internal_logs_earliest
+                .clone()
+                .unwrap_or(defaults.earliest_time),
+        }
+    }
+
     /// Get the earliest time if set via environment variable.
     pub fn earliest_time(&self) -> Option<&String> {
         self.earliest_time.as_ref()
@@ -360,6 +382,16 @@ impl ConfigLoader {
     /// Get the max results if set via environment variable.
     pub fn max_results(&self) -> Option<u64> {
         self.max_results
+    }
+
+    /// Get the internal logs count if set via environment variable.
+    pub fn internal_logs_count(&self) -> Option<u64> {
+        self.internal_logs_count
+    }
+
+    /// Get the internal logs earliest time if set via environment variable.
+    pub fn internal_logs_earliest(&self) -> Option<&String> {
+        self.internal_logs_earliest.as_ref()
     }
 
     // Internal accessor methods for use by other loader modules
@@ -426,6 +458,14 @@ impl ConfigLoader {
 
     pub(crate) fn set_max_results(&mut self, max_results: Option<u64>) {
         self.max_results = max_results;
+    }
+
+    pub(crate) fn set_internal_logs_count(&mut self, count: Option<u64>) {
+        self.internal_logs_count = count;
+    }
+
+    pub(crate) fn set_internal_logs_earliest(&mut self, earliest: Option<String>) {
+        self.internal_logs_earliest = earliest;
     }
 }
 

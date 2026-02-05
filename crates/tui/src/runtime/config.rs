@@ -17,17 +17,19 @@
 
 use crate::app::App;
 use anyhow::{Result, anyhow};
-use splunk_config::{Config, ConfigLoader, ConfigManager, SearchDefaultConfig, env_var_or_none};
+use splunk_config::{
+    Config, ConfigLoader, ConfigManager, InternalLogsDefaults, SearchDefaultConfig, env_var_or_none,
+};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::cli::Cli;
 
-/// Load configuration and search defaults from CLI args, environment variables, and profile.
+/// Load configuration, search defaults, and internal logs defaults from CLI args, environment variables, and profile.
 ///
-/// This function returns both the main Config and the SearchDefaultConfig so that
-/// search defaults with environment variable overrides can be applied to the App state.
+/// This function returns the main Config along with SearchDefaultConfig and InternalLogsDefaults so that
+/// defaults with environment variable overrides can be applied to the App state.
 ///
 /// Configuration precedence (highest to lowest):
 /// 1. CLI arguments (e.g., --profile, --config-path)
@@ -43,7 +45,9 @@ use crate::cli::Cli;
 ///
 /// Returns an error if configuration loading fails (e.g., profile not found,
 /// missing required fields like base_url or auth credentials).
-pub fn load_config_with_search_defaults(cli: &Cli) -> Result<(SearchDefaultConfig, Config)> {
+pub fn load_config_with_defaults(
+    cli: &Cli,
+) -> Result<(SearchDefaultConfig, InternalLogsDefaults, Config)> {
     let mut loader = ConfigLoader::new().load_dotenv()?;
 
     // Apply config path from CLI if provided (highest precedence)
@@ -68,14 +72,16 @@ pub fn load_config_with_search_defaults(cli: &Cli) -> Result<(SearchDefaultConfi
     // Environment variables are loaded last - they override profile values
     let loader = loader.from_env()?;
 
-    // Build search defaults with env var overrides (pass None for now, will merge with persisted later)
+    // Build search defaults and internal logs defaults with env var overrides
+    // (pass None for now, will merge with persisted later)
     let search_defaults = loader.build_search_defaults(None);
+    let internal_logs_defaults = loader.build_internal_logs_defaults(None);
 
     let config = loader
         .build()
         .map_err(|e| anyhow!("Failed to load config: {}", e))?;
 
-    Ok((search_defaults, config))
+    Ok((search_defaults, internal_logs_defaults, config))
 }
 
 /// Save persisted state and prepare to quit.

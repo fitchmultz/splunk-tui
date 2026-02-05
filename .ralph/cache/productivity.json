@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T18:12:39.493361887Z",
+  "last_updated_at": "2026-02-05T18:37:09.785866143Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -198,7 +198,7 @@
     },
     "2026-02-05": {
       "date": "2026-02-05",
-      "completed_count": 14,
+      "completed_count": 15,
       "tasks": [
         {
           "id": "RQ-0324",
@@ -269,6 +269,11 @@
           "id": "RQ-0337",
           "title": "Fail HEC send on unparseable response instead of returning Success",
           "completed_at": "2026-02-05T18:12:39.493360855Z"
+        },
+        {
+          "id": "RQ-0338",
+          "title": "Implement SPLUNK_INTERNAL_LOGS_* env overrides (or remove docs claiming them)",
+          "completed_at": "2026-02-05T18:37:09.785865062Z"
         }
       ]
     }
@@ -278,11 +283,16 @@
     "longest_streak": 4,
     "last_completed_date": "2026-02-05"
   },
-  "total_completed": 49,
+  "total_completed": 50,
   "milestones": [
     {
       "threshold": 10,
       "achieved_at": "2026-02-02T19:46:12.807755820Z",
+      "celebrated": true
+    },
+    {
+      "threshold": 50,
+      "achieved_at": "2026-02-05T18:37:09.785871793Z",
       "celebrated": true
     }
   ]
