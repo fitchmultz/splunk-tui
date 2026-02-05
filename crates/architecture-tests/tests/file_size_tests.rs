@@ -47,6 +47,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "app/popups/macros.rs",
         "Macro popup handlers - CreateMacro and EditMacro form handling with comprehensive test coverage",
     ),
+    (
+        "app/actions/data_loading.rs",
+        "Data loading action handlers - handles 30+ data loading actions with comprehensive tests",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

@@ -76,7 +76,7 @@ fn test_search_complete_with_no_total() {
 
     assert_eq!(app.search_results.len(), 10);
     assert_eq!(app.search_results_total_count, None);
-    // When total is None and results < page_size (100), assume no more
+    // When total is None and results < page_size (1000), assume no more
     assert!(
         !app.search_has_more_results,
         "Should not have more when total is None and results < page_size"
@@ -89,7 +89,8 @@ fn test_search_complete_when_total_is_none_with_full_page() {
     app.current_screen = CurrentScreen::Search;
 
     // Simulate search completion with total = None but full page (exactly page_size)
-    let results = create_mock_search_results(100); // Exactly page_size
+    // Note: search_results_page_size is now synced with SearchDefaults::default().max_results (1000)
+    let results = create_mock_search_results(1000); // Exactly page_size
     let sid = "test_sid_total_none_full".to_string();
 
     app.update(Action::SearchComplete(Ok((
@@ -98,7 +99,7 @@ fn test_search_complete_when_total_is_none_with_full_page() {
         None,
     ))));
 
-    assert_eq!(app.search_results.len(), 100);
+    assert_eq!(app.search_results.len(), 1000);
     assert_eq!(app.search_results_total_count, None);
     // When total is None and results == page_size, assume more may exist
     assert!(
@@ -187,12 +188,13 @@ fn test_append_search_results_reaches_total() {
 fn test_maybe_fetch_more_results_returns_action_when_needed() {
     let mut app = App::new(None, ConnectionContext::default());
 
-    // Setup: 100 results loaded, 1000 total, scroll at position 90 (within threshold)
-    app.search_results = create_mock_search_results(100);
+    // Setup: 1000 results loaded, 2000 total, scroll at position 990 (within threshold)
+    // Note: search_results_page_size is now synced with SearchDefaults::default().max_results (1000)
+    app.search_results = create_mock_search_results(1000);
     app.search_sid = Some("test_sid".to_string());
-    app.search_results_total_count = Some(1000);
+    app.search_results_total_count = Some(2000);
     app.search_has_more_results = true;
-    app.search_scroll_offset = 90;
+    app.search_scroll_offset = 990;
     app.loading = false;
 
     let action = app.maybe_fetch_more_results();
@@ -203,8 +205,8 @@ fn test_maybe_fetch_more_results_returns_action_when_needed() {
     );
     if let Some(Action::LoadMoreSearchResults { sid, offset, count }) = action {
         assert_eq!(sid, "test_sid");
-        assert_eq!(offset, 100);
-        assert_eq!(count, 100); // default page size
+        assert_eq!(offset, 1000);
+        assert_eq!(count, 1000); // default page size (synced with SearchDefaults.max_results)
     } else {
         panic!("Expected LoadMoreSearchResults action");
     }
@@ -324,21 +326,22 @@ fn test_append_search_results_when_total_is_none() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
-    // Setup: 100 results loaded, total is None
-    app.search_results = create_mock_search_results(100);
+    // Setup: 1000 results loaded, total is None
+    // Note: search_results_page_size is now synced with SearchDefaults::default().max_results (1000)
+    app.search_results = create_mock_search_results(1000);
     app.search_sid = Some("test_sid".to_string());
     app.search_results_total_count = None;
     app.search_has_more_results = true;
 
-    // Append a full page (100 results)
-    let more_results = create_mock_search_results(100);
+    // Append a full page (1000 results)
+    let more_results = create_mock_search_results(1000);
     app.update(Action::MoreSearchResultsLoaded(Ok((
         more_results,
-        100,
+        1000,
         None, // total is None
     ))));
 
-    assert_eq!(app.search_results.len(), 200);
+    assert_eq!(app.search_results.len(), 2000);
     assert_eq!(app.search_results_total_count, None);
     assert!(
         app.search_has_more_results,

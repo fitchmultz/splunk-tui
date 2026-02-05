@@ -2,52 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0331",
-      "status": "todo",
-      "title": "Sync search pagination page size with configured SearchDefaults.max_results",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "tui",
-        "correctness",
-        "pagination"
-      ],
-      "scope": [
-        "crates/tui/src/app/core.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/src/runtime/side_effects/searches.rs",
-        "crates/tui/src/ui/screens/settings.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/app/core.rs:118-142 initializes `search_results_page_size` to `DEFAULT_SEARCH_PAGE_SIZE` regardless of persisted `search_defaults`.",
-        "crates/tui/src/app.rs:358-377 uses `search_results_page_size` as the `count` for `Action::LoadMoreSearchResults` (line 373).",
-        "crates/tui/src/runtime/side_effects/searches.rs:61-79 uses `search_defaults.max_results` to build the Splunk `SearchRequest` (line 99), so the request page size can diverge from the UI's pagination assumptions.",
-        "Command: `rg -n \"search_results_page_size\" crates/tui/src -g'*.rs'` shows no runtime updates to `search_results_page_size` outside initialization/tests."
-      ],
-      "plan": [
-        "Treat `SearchDefaults.max_results` as the single source of truth for search pagination size",
-        "Update app initialization and settings updates to set `search_results_page_size = search_defaults.max_results` (with validation for zero/invalid values)",
-        "Adjust has-more inference for `total=None` to use the actual page size used for the request",
-        "Add tests for pagination/count behavior and verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: C (DRY), E (Make bugs hard to write), G (Least astonishment).",
-        "Why it matters: when UI pagination `count` diverges from the request `max_results`, the TUI can over/under-fetch, miscompute `has_more_results` when total is unknown, and behave inconsistently with configured defaults.",
-        "Minimal fix: unify on `SearchDefaults.max_results` and update the app state whenever the configured value changes; enforce `>= 1` invariant at the boundary.",
-        "Acceptance criteria: pagination uses the same page size as the last search request; regression tests cover both `total=Some` and `total=None` cases; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0332",
       "status": "todo",
       "title": "Add drift-prevention test: footer hint priority keys must exist in keymap catalog",

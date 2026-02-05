@@ -17,7 +17,6 @@ use crate::app::state::{
 use crate::app::structs::{App, ConnectionContext, SplValidationState};
 use crate::focus::FocusManager;
 use splunk_client::SearchMode;
-use splunk_config::constants::DEFAULT_SEARCH_PAGE_SIZE;
 use splunk_config::{
     ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
 };
@@ -137,7 +136,14 @@ impl App {
             search_scroll_offset: 0,
             search_sid: None,
             search_results_total_count: None,
-            search_results_page_size: DEFAULT_SEARCH_PAGE_SIZE,
+            // Use search_defaults.max_results as the source of truth for pagination page size.
+            // This ensures the UI's pagination assumptions match the actual API request page size.
+            // Enforce the invariant that max_results must be at least 1 (see persistence/state.rs).
+            search_results_page_size: if search_defaults.max_results == 0 {
+                SearchDefaults::default().max_results
+            } else {
+                search_defaults.max_results
+            },
             search_has_more_results: false,
             indexes: None,
             indexes_state,

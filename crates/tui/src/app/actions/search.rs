@@ -49,8 +49,9 @@ impl App {
         self.search_has_more_results = if let Some(t) = total {
             results_count < t
         } else {
-            // When total is None, infer from page fullness
-            // Note: initial fetch in main.rs uses 1000, but we use app's page_size for consistency
+            // When total is None, infer from page fullness using the actual page size.
+            // search_results_page_size is synced with search_defaults.max_results,
+            // so this correctly matches the API request page size.
             results_count >= self.search_results_page_size
         };
 
@@ -82,6 +83,7 @@ impl App {
 mod tests {
     use super::*;
     use crate::ConnectionContext;
+    use splunk_config::{PersistedState, SearchDefaults};
 
     #[test]
     fn test_search_started_sets_running_query() {
@@ -164,5 +166,93 @@ mod tests {
         assert!(app.running_query.is_none());
         assert!(!app.loading);
         assert_eq!(app.toasts.len(), 1);
+    }
+
+    #[test]
+    fn test_search_results_page_size_initialized_from_search_defaults() {
+        // Test with default search_defaults (max_results = 1000)
+        let app = App::new(None, ConnectionContext::default());
+        assert_eq!(app.search_results_page_size, 1000);
+
+        // Test with custom search_defaults
+        let persisted = PersistedState {
+            search_defaults: SearchDefaults {
+                max_results: 500,
+                ..SearchDefaults::default()
+            },
+            ..PersistedState::default()
+        };
+        let app = App::new(Some(persisted), ConnectionContext::default());
+        assert_eq!(app.search_results_page_size, 500);
+    }
+
+    #[test]
+    fn test_search_results_page_size_handles_zero_max_results() {
+        // Test that zero max_results is handled gracefully (defaults to 1000)
+        let persisted = PersistedState {
+            search_defaults: SearchDefaults {
+                max_results: 0,
+                ..SearchDefaults::default()
+            },
+            ..PersistedState::default()
+        };
+        let app = App::new(Some(persisted), ConnectionContext::default());
+        assert_eq!(app.search_results_page_size, 1000);
+    }
+
+    #[test]
+    fn test_has_more_inference_uses_correct_page_size_with_total() {
+        // Test that has_more_results is computed correctly when total is Some
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_results_page_size = 500; // Use a smaller page size for testing
+
+        // Results count (100) < total (200) => has_more should be true
+        let results: Vec<Value> = (0..100)
+            .map(|i| serde_json::json!({"_raw": format!("event {}", i)}))
+            .collect();
+
+        app.handle_search_action(Action::SearchComplete(Ok((
+            results,
+            "sid".to_string(),
+            Some(200),
+        ))));
+
+        assert!(app.search_has_more_results);
+    }
+
+    #[test]
+    fn test_has_more_inference_uses_correct_page_size_without_total() {
+        // Test that has_more inference uses the correct page size when total is None
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_results_page_size = 100; // Explicitly set for this test
+
+        // Results count equals page size => has_more should be true (might have more)
+        let results: Vec<Value> = (0..100)
+            .map(|i| serde_json::json!({"_raw": format!("event {}", i)}))
+            .collect();
+
+        app.handle_search_action(Action::SearchComplete(Ok((
+            results,
+            "sid".to_string(),
+            None,
+        ))));
+
+        assert!(app.search_has_more_results);
+
+        // Results count less than page size => has_more should be false (at end)
+        let mut app2 = App::new(None, ConnectionContext::default());
+        app2.search_results_page_size = 100;
+
+        let results: Vec<Value> = (0..50)
+            .map(|i| serde_json::json!({"_raw": format!("event {}", i)}))
+            .collect();
+
+        app2.handle_search_action(Action::SearchComplete(Ok((
+            results,
+            "sid".to_string(),
+            None,
+        ))));
+
+        assert!(!app2.search_has_more_results);
     }
 }

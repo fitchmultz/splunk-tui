@@ -735,6 +735,14 @@ impl App {
         if let Some(query) = state.last_search_query {
             self.search_input.set_value(query);
         }
+        // Update search_defaults and sync search_results_page_size to stay consistent
+        // with the persisted max_results value (RQ-0331)
+        self.search_defaults = state.search_defaults;
+        self.search_results_page_size = if self.search_defaults.max_results == 0 {
+            splunk_config::SearchDefaults::default().max_results
+        } else {
+            self.search_defaults.max_results
+        };
         self.toasts.push(Toast::info("Settings loaded from file"));
         self.loading = false;
     }
@@ -1122,5 +1130,79 @@ mod tests {
         assert_eq!(app.toasts.len(), 1);
         assert!(!app.loading);
         assert!(app.toasts[0].message.contains("delete macro"));
+    }
+
+    #[test]
+    fn test_settings_loaded_updates_search_defaults_and_page_size() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        // Verify initial state (default max_results = 1000)
+        assert_eq!(app.search_defaults.max_results, 1000);
+        assert_eq!(app.search_results_page_size, 1000);
+
+        // Create new persisted state with different search_defaults
+        let new_state = splunk_config::PersistedState {
+            search_defaults: splunk_config::SearchDefaults {
+                max_results: 500,
+                earliest_time: "-48h".to_string(),
+                latest_time: "now".to_string(),
+            },
+            auto_refresh: true,
+            sort_column: "sid".to_string(),
+            sort_direction: "asc".to_string(),
+            last_search_query: Some("test query".to_string()),
+            search_history: vec!["query1".to_string()],
+            selected_theme: splunk_config::ColorTheme::Default,
+            keybind_overrides: splunk_config::KeybindOverrides::default(),
+            list_defaults: splunk_config::ListDefaults::default(),
+            internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
+        };
+
+        app.handle_data_loading_action(Action::SettingsLoaded(new_state));
+
+        // Verify search_defaults was updated
+        assert_eq!(app.search_defaults.max_results, 500);
+        assert_eq!(app.search_defaults.earliest_time, "-48h");
+
+        // Verify search_results_page_size was synced to new max_results
+        assert_eq!(app.search_results_page_size, 500);
+
+        // Verify other fields were updated
+        assert!(app.auto_refresh);
+        assert_eq!(app.search_input.value(), "test query");
+        assert!(!app.loading);
+    }
+
+    #[test]
+    fn test_settings_loaded_handles_zero_max_results() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.loading = true;
+
+        // Create persisted state with max_results = 0 (invalid, should default to 1000)
+        let new_state = splunk_config::PersistedState {
+            search_defaults: splunk_config::SearchDefaults {
+                max_results: 0,
+                earliest_time: "-24h".to_string(),
+                latest_time: "now".to_string(),
+            },
+            auto_refresh: false,
+            sort_column: "sid".to_string(),
+            sort_direction: "asc".to_string(),
+            last_search_query: None,
+            search_history: vec![],
+            selected_theme: splunk_config::ColorTheme::Default,
+            keybind_overrides: splunk_config::KeybindOverrides::default(),
+            list_defaults: splunk_config::ListDefaults::default(),
+            internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
+        };
+
+        app.handle_data_loading_action(Action::SettingsLoaded(new_state));
+
+        // Verify search_defaults.max_results was set to 0 (raw value stored)
+        assert_eq!(app.search_defaults.max_results, 0);
+
+        // But search_results_page_size should default to 1000 (validation applied)
+        assert_eq!(app.search_results_page_size, 1000);
     }
 }
