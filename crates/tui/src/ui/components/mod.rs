@@ -11,7 +11,6 @@
 //! - [`LineNumberWidget`]: Line number gutter with diagnostic support
 //! - [`Slider`]: Interactive slider for numeric input
 //! - [`BigTextWidget`]: Large ASCII text headers
-//! - [`AnimationController`]: Animation effects controller
 //! - [`MarkdownRenderer`]: Markdown to text renderer
 //!
 //! # Usage
@@ -35,7 +34,6 @@
 //! }
 //! ```
 
-pub mod animation;
 pub mod big_text;
 pub mod diff_viewer;
 pub mod line_numbers;
@@ -44,7 +42,6 @@ pub mod scrollable;
 pub mod select_list;
 pub mod slider;
 
-pub use animation::{AnimatedWidget, AnimationController, AnimationType, FadeIn, Opacity};
 pub use big_text::{BigTextWidget, render_header, render_sub_header};
 pub use diff_viewer::DiffViewer;
 pub use line_numbers::{Diagnostic, DiagnosticSeverity, LineNumberWidget};

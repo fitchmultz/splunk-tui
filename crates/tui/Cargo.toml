@@ -72,9 +72,6 @@ similar = "2.7"
 # Big ASCII text headers
 tui-big-text = "0.7"
 
-# Animations and visual effects
-tachyonfx = "0.14"
-
 # Markdown rendering
 pulldown-cmark = "0.12"
 

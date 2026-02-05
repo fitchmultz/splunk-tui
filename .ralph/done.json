@@ -3306,6 +3306,66 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0343",
+      "status": "done",
+      "title": "Prune or integrate unused AnimationController UI component",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dead-code",
+        "deps"
+      ],
+      "scope": [
+        "crates/tui/src/ui/components/animation.rs",
+        "crates/tui/src/ui/components/mod.rs",
+        "crates/tui/src/ui/mod.rs",
+        "crates/tui/src/lib.rs",
+        "crates/tui/Cargo.toml",
+        "Cargo.lock",
+        "command: rg -n \"AnimationController|AnimatedWidget|FadeIn\\b|Opacity\\b|AnimationType\" crates/tui/src",
+        "command: rg -n \"tachyonfx\""
+      ],
+      "evidence": [
+        "crates/tui/src/ui/components/animation.rs: defines AnimationType/AnimationController/AnimatedWidget/FadeIn/Opacity; tests start at line 355 (#[cfg(test)] mod tests)",
+        "crates/tui/src/ui/components/mod.rs:38 declares pub mod animation; line 47 re-exports AnimatedWidget/AnimationController/AnimationType/FadeIn/Opacity (public API surface)",
+        "crates/tui/src/ui/mod.rs:15 mentions AnimationController in docs; no production code imports or uses it",
+        "command: rg -n \"AnimationController|AnimatedWidget|FadeIn\\b|Opacity\\b|AnimationType\" crates/tui/src -> matches only animation.rs + docs/re-exports (no app/screen/popup usage)",
+        "crates/tui/Cargo.toml:76 depends on tachyonfx = \"0.14\"; command rg -n tachyonfx -> only Cargo.toml, Cargo.lock, and animation.rs"
+      ],
+      "plan": [
+        "Re-verify no non-test consumers (rg in scope; include full-repo search if needed)",
+        "Decide: remove (recommended) vs integrate (only if a concrete UX requirement exists)",
+        "If removing: delete animation.rs; remove components/mod.rs module + re-exports; remove doc references in ui/mod.rs + components/mod.rs",
+        "If removing: drop tachyonfx from crates/tui/Cargo.toml and regenerate Cargo.lock via `cargo update -w` (or `cargo check` to refresh lock)",
+        "If integrating: wire into a real rendering path (candidate: toast enter/exit fade) and add screen/snapshot tests covering runtime behavior",
+        "Run `make ci` and ensure no unused-dep or dead-code warnings"
+      ],
+      "notes": [
+        "Principles: B (YAGNI), Public API discipline",
+        "Why it matters: unused public components expand surface area and maintenance burden without delivering value",
+        "Minimal fix: remove module and exports unless there's a concrete use case",
+        "Update 2026-02-05: Verified still unused across the repo; only animation.rs docs/tests reference these types",
+        "tachyonfx appears to be a single-use dependency for this module; removing the module likely enables removing tachyonfx as well",
+        "Pruned unused animation component module + public re-exports",
+        "Removed single-use dependency (tachyonfx) and refreshed Cargo.lock",
+        "Removed doc references; verified no remaining AnimationController/tachyonfx references",
+        "Validated with SKIP_LIVE_TESTS=1 make ci"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T13:35:13Z",
+      "updated_at": "2026-02-05T21:20:25.856953851Z",
+      "completed_at": "2026-02-05T21:20:25.856953851Z",
+      "started_at": "2026-02-05T21:04:06.945923942Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "lines_of_dead_code": "598",
+        "unused_dependency": "tachyonfx@0.14"
+      }
     }
   ]
 }

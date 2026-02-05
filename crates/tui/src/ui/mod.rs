@@ -12,7 +12,6 @@
 //! - [`LineNumberWidget`]: Line number gutter with diagnostic support
 //! - [`Slider`]: Interactive slider for numeric input
 //! - [`BigTextWidget`]: Large ASCII text headers
-//! - [`AnimationController`]: Animation effects controller
 //! - [`MarkdownRenderer`]: Markdown to text renderer
 //!
 //! # Theme Helpers
