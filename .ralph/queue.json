@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0332",
-      "status": "todo",
-      "title": "Add drift-prevention test: footer hint priority keys must exist in keymap catalog",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "tui",
-        "tests",
-        "keybindings"
-      ],
-      "scope": [
-        "crates/tui/src/input/keymap/mod.rs",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/input/keymap/mod.rs:293-325 defines `priority_keys` lists (e.g., Macros includes `d` and `Ctrl+c` at line 306).",
-        "crates/tui/src/input/keymap/bindings/screens/macros.rs:15-55 does not contain entries for `d` or `Ctrl+c`, so prioritization cannot actually surface those hints."
-      ],
-      "plan": [
-        "Add a unit test in `crates/tui/src/input/keymap/mod.rs` that asserts every `priority_keys` entry exists in the keybinding catalog for that screen/section",
-        "Fix any failing screens by adding missing keybinding metadata or adjusting priority lists to match reality",
-        "Verify by running `cargo test -p splunk-tui`"
-      ],
-      "notes": [
-        "Principles violated: C (DRY), H (Operational hygiene).",
-        "Why it matters: the footer hint priority lists are manual and can drift from the authoritative keybinding catalog; a test makes this class of bug hard to reintroduce.",
-        "Minimal fix: enforce consistency via unit tests (and treat missing keys as a failing invariant).",
-        "Acceptance criteria: the new test passes; adding/removing a prioritized key requires updating the catalog or the list explicitly; `make test` passes."
-      ],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-05T01:56:01Z",
-      "updated_at": "2026-02-05T01:56:01Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0333",
       "status": "todo",
       "title": "Deduplicate overview resource fetchers shared by Overview and Multi-Instance screens",

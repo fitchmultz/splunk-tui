@@ -315,6 +315,12 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy selected lookup name
 - `j/k or Up/Down`: Navigate list
 
+#### Audit Events Screen
+- `r`: Refresh audit events
+- `Ctrl+e`: Export audit events
+- `Ctrl+c`: Copy selected event
+- `j/k or Up/Down`: Navigate list
+
 #### Dashboards Screen
 - `r`: Refresh dashboards
 - `j/k or Up/Down`: Navigate list

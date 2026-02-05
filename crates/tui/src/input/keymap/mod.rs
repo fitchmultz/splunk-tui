@@ -329,10 +329,12 @@ fn shorten_description(desc: &'static str) -> &'static str {
     }
 }
 
-/// Prioritize hints based on screen and relevance.
-fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: CurrentScreen) {
-    // Define priority order for each screen
-    let priority_keys: &[&str] = match screen {
+/// Returns the priority key list for a given screen.
+///
+/// This is extracted for testability and to prevent drift between the
+/// priority lists and the actual keybinding catalog.
+pub(crate) fn get_priority_keys(screen: CurrentScreen) -> &'static [&'static str] {
+    match screen {
         CurrentScreen::Search => &["Enter", "Ctrl+e", "PgDn", "PgUp", "Ctrl+j/k", "Home", "End"],
         CurrentScreen::Jobs => &["r", "/", "s", "a", "Space", "c", "d", "Enter"],
         CurrentScreen::JobInspect => &["Esc", "Ctrl+c"],
@@ -361,7 +363,12 @@ fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: Curre
         CurrentScreen::DataModels => &["r", "j/k or Up/Down"],
         CurrentScreen::WorkloadManagement => &["r", "w", "j/k or Up/Down", "Ctrl+e"],
         CurrentScreen::Shc => &["r", "m", "j/k or Up/Down", "Ctrl+e"],
-    };
+    }
+}
+
+/// Prioritize hints based on screen and relevance.
+fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: CurrentScreen) {
+    let priority_keys = get_priority_keys(screen);
 
     // Sort hints by priority order
     hints.sort_by(|(key_a, _), (key_b, _)| {
@@ -435,5 +442,75 @@ mod tests {
         assert!(hint_keys.contains(&"e"), "Should include 'e' for edit");
         assert!(hint_keys.contains(&"n"), "Should include 'n' for new");
         assert!(hint_keys.contains(&"d"), "Should include 'd' for delete");
+    }
+
+    /// Drift-prevention test: ensures all priority keys exist in the keybinding catalog.
+    ///
+    /// This test prevents "drift" where a key is added to a priority list but not
+    /// to the actual keybinding catalog for that screen (or vice versa).
+    #[test]
+    fn all_priority_keys_exist_in_keybinding_catalog() {
+        use std::collections::HashSet;
+
+        // All screen variants to test
+        let all_screens = [
+            CurrentScreen::Search,
+            CurrentScreen::Jobs,
+            CurrentScreen::JobInspect,
+            CurrentScreen::Indexes,
+            CurrentScreen::Cluster,
+            CurrentScreen::Health,
+            CurrentScreen::License,
+            CurrentScreen::Kvstore,
+            CurrentScreen::SavedSearches,
+            CurrentScreen::Macros,
+            CurrentScreen::InternalLogs,
+            CurrentScreen::Apps,
+            CurrentScreen::Users,
+            CurrentScreen::Roles,
+            CurrentScreen::SearchPeers,
+            CurrentScreen::Settings,
+            CurrentScreen::Overview,
+            CurrentScreen::MultiInstance,
+            CurrentScreen::Inputs,
+            CurrentScreen::Configs,
+            CurrentScreen::FiredAlerts,
+            CurrentScreen::Forwarders,
+            CurrentScreen::Lookups,
+            CurrentScreen::Audit,
+            CurrentScreen::Dashboards,
+            CurrentScreen::DataModels,
+            CurrentScreen::WorkloadManagement,
+            CurrentScreen::Shc,
+        ];
+
+        for screen in all_screens {
+            let section = screen_to_section(screen);
+            let priority_keys = get_priority_keys(screen);
+
+            // Skip screens with no priority keys defined
+            if priority_keys.is_empty() {
+                continue;
+            }
+
+            // Collect all keys from the keybinding catalog for this section
+            let catalog_keys: HashSet<&str> = keybindings()
+                .into_iter()
+                .filter(|b| b.section == section)
+                .map(|b| b.keys)
+                .collect();
+
+            // Verify each priority key exists in the catalog
+            for key in priority_keys {
+                assert!(
+                    catalog_keys.contains(key),
+                    "Drift detected: priority key '{}' for screen {:?} (section {:?}) does not exist in the keybinding catalog. \
+                     Either add the keybinding to the catalog or remove it from the priority list.",
+                    key,
+                    screen,
+                    section
+                );
+            }
+        }
     }
 }

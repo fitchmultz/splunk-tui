@@ -2736,6 +2736,57 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance"
       }
+    },
+    {
+      "id": "RQ-0332",
+      "status": "done",
+      "title": "Add drift-prevention test: footer hint priority keys must exist in keymap catalog",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "tui",
+        "tests",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/input/keymap/bindings/screens/",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/input/keymap/mod.rs:335-364 defines `priority_keys` lists for each screen (e.g., Macros includes `r`, `e`, `n`, `d`, `Ctrl+c`, `j/k or Up/Down` at line 345).",
+        "crates/tui/src/input/keymap/bindings/screens/macros.rs:15-196 now contains entries for `d` (lines 86-97) and `Ctrl+c` (lines 40-48), so prioritization can surface those hints.",
+        "The `prioritize_hints()` function sorts footer hints based on `priority_keys`, but there is no enforcement that every key in `priority_keys` actually exists in the keybinding catalog for that screen.",
+        "A drift-prevention test would catch when a priority key is added to the list but not to the catalog, or when a key is removed from the catalog but still in the priority list."
+      ],
+      "plan": [
+        "Add a unit test in `crates/tui/src/input/keymap/mod.rs` that asserts every `priority_keys` entry exists in the keybinding catalog for that screen/section",
+        "The test should iterate through all screens, collect the actual keys from the catalog for each screen's Section, and verify all priority_keys entries are present",
+        "Fix any failing screens by adding missing keybinding metadata or adjusting priority lists to match reality",
+        "Verify by running `cargo test -p splunk-tui`"
+      ],
+      "notes": [
+        "Principles violated: C (DRY), H (Operational hygiene).",
+        "Why it matters: the footer hint priority lists are manual and can drift from the authoritative keybinding catalog; a test makes this class of bug hard to reintroduce.",
+        "Minimal fix: enforce consistency via unit tests (and treat missing keys as a failing invariant).",
+        "Acceptance criteria: the new test passes; adding/removing a prioritized key requires updating the catalog or the list explicitly; `make test` passes.",
+        "Note: The Macros screen was previously out of sync but has been fixed. This test prevents regression across all screens.",
+        "Added drift-prevention test  in crates/tui/src/input/keymap/mod.rs",
+        "Extracted  helper function for testability",
+        "Created missing audit.rs keybindings file to fix detected drift",
+        "Updated screens/mod.rs to include audit bindings",
+        "All 551 tests pass, CI clean"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-05T01:56:01Z",
+      "updated_at": "2026-02-05T04:43:08.633492710Z",
+      "completed_at": "2026-02-05T04:43:08.633492710Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
     }
   ]
 }

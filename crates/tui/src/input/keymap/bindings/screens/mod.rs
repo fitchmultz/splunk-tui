@@ -10,6 +10,7 @@
 //! - Ordering matches the rendered help/docs expectations.
 
 mod apps;
+mod audit;
 mod cluster;
 mod configs;
 mod dashboards;
@@ -33,6 +34,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
     let mut bindings = Vec::new();
     bindings.extend(indexes::bindings());
     bindings.extend(cluster::bindings());
+    bindings.extend(audit::bindings());
     bindings.extend(status::bindings());
     bindings.extend(saved_searches::bindings());
     bindings.extend(macros::bindings());
