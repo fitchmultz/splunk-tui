@@ -31,7 +31,7 @@ impl Default for SearchDefaultConfig {
         Self {
             earliest_time: "-24h".to_string(),
             latest_time: "now".to_string(),
-            max_results: 1000,
+            max_results: crate::constants::DEFAULT_MAX_RESULTS,
         }
     }
 }

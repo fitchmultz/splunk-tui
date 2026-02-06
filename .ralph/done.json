@@ -3362,8 +3362,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "lines_of_dead_code": "598",
+        "scan_agent": "scan-maintenance",
         "unused_dependency": "tachyonfx@0.14"
       }
     },
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "production_files_affected": "8",
-        "scan_agent": "scan-maintenance",
         "dead_code_count": "25",
-        "test_files_affected": "4"
+        "test_files_affected": "4",
+        "production_files_affected": "8",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4061,6 +4061,59 @@
       "updated_at": "2026-02-06T19:54:52.891817888Z",
       "completed_at": "2026-02-06T19:54:52.891817888Z",
       "started_at": "2026-02-06T19:34:42.594368948Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0355",
+      "status": "done",
+      "title": "Extract magic numbers to named constants in configuration",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "magic-numbers",
+        "config"
+      ],
+      "scope": [
+        "crates/config/src/constants.rs",
+        "crates/config/src/loader/defaults.rs",
+        "crates/config/src/persistence/state.rs",
+        "crates/config/src/persistence/profiles.rs"
+      ],
+      "evidence": [
+        "defaults.rs:34 max_results: 1000 (still uses literal instead of DEFAULT_MAX_RESULTS constant)",
+        "constants.rs:56 DEFAULT_MAX_RESULTS=1000 exists but is not used by defaults.rs",
+        "state.rs:172,187 count: 100 hardcoded for internal logs (needs DEFAULT_INTERNAL_LOGS_COUNT constant)",
+        "state.rs:173,190 earliest_time: -15m hardcoded (needs DEFAULT_INTERNAL_LOGS_EARLIEST_TIME constant)",
+        "profiles.rs:832 Duration::from_millis(1100) test timing (needs MIGRATION_DELAY_MS constant)",
+        "state.rs now imports DEFAULT_MAX_RESULTS from constants.rs (lines 24, 59, 87) - partial progress"
+      ],
+      "plan": [
+        "Add DEFAULT_INTERNAL_LOGS_COUNT=100 and DEFAULT_INTERNAL_LOGS_EARLIEST_TIME=\"-15m\" to constants.rs",
+        "Add MIGRATION_DELAY_MS=1100 constant for test timing in profiles.rs",
+        "Update defaults.rs:34 to use DEFAULT_MAX_RESULTS instead of literal 1000",
+        "Update state.rs internal logs defaults to use new constants",
+        "Update profiles.rs:832 to use MIGRATION_DELAY_MS constant",
+        "Verify with `make test -p splunk-config`"
+      ],
+      "notes": [
+        "Partial progress detected: state.rs now uses DEFAULT_MAX_RESULTS from constants.rs",
+        "Missing constants for internal logs defaults and test timing remain to be addressed",
+        "Extracted 3 magic numbers to named constants in constants.rs",
+        "defaults.rs:34 now uses DEFAULT_MAX_RESULTS constant",
+        "state.rs:172-190 now uses DEFAULT_INTERNAL_LOGS_COUNT and DEFAULT_INTERNAL_LOGS_EARLIEST_TIME constants",
+        "profiles.rs:832 now uses MIGRATION_DELAY_MS constant",
+        "All 193 unit tests pass, CI gate passed"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T20:10:28.654053545Z",
+      "completed_at": "2026-02-06T20:10:28.654053545Z",
+      "started_at": "2026-02-06T19:58:24.742940780Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],

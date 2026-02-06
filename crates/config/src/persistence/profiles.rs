@@ -346,6 +346,7 @@ impl ConfigManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::constants::MIGRATION_DELAY_MS;
     use secrecy::SecretString;
     use serial_test::serial;
     use tempfile::NamedTempFile;
@@ -829,7 +830,7 @@ mod tests {
         let _manager1 = ConfigManager::new_with_path(config_path.clone()).unwrap();
 
         // Small delay to ensure different timestamp
-        thread::sleep(Duration::from_millis(1100));
+        thread::sleep(Duration::from_millis(MIGRATION_DELAY_MS));
 
         // Second corruption (create new file and corrupt it)
         std::fs::write(&config_path, "{ corrupt 2 }").unwrap();

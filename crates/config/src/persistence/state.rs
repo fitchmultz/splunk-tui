@@ -21,7 +21,10 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::constants::{DEFAULT_LIST_MAX_ITEMS, DEFAULT_LIST_PAGE_SIZE, DEFAULT_MAX_RESULTS};
+use crate::constants::{
+    DEFAULT_INTERNAL_LOGS_COUNT, DEFAULT_INTERNAL_LOGS_EARLIEST_TIME, DEFAULT_LIST_MAX_ITEMS,
+    DEFAULT_LIST_PAGE_SIZE, DEFAULT_MAX_RESULTS,
+};
 use crate::types::{ColorTheme, KeybindOverrides, ProfileConfig};
 
 /// Default search parameters to avoid unbounded searches.
@@ -169,8 +172,8 @@ pub struct InternalLogsDefaults {
 impl Default for InternalLogsDefaults {
     fn default() -> Self {
         Self {
-            count: 100,                        // Match current hardcoded value
-            earliest_time: "-15m".to_string(), // Match current hardcoded value
+            count: DEFAULT_INTERNAL_LOGS_COUNT,
+            earliest_time: DEFAULT_INTERNAL_LOGS_EARLIEST_TIME.to_string(),
         }
     }
 }
@@ -184,10 +187,14 @@ impl InternalLogsDefaults {
     ///
     /// Returns a new `InternalLogsDefaults` with sanitized values.
     pub fn sanitize(&self) -> Self {
-        let count = if self.count == 0 { 100 } else { self.count };
+        let count = if self.count == 0 {
+            DEFAULT_INTERNAL_LOGS_COUNT
+        } else {
+            self.count
+        };
 
         let earliest_time = if self.earliest_time.trim().is_empty() {
-            "-15m".to_string()
+            DEFAULT_INTERNAL_LOGS_EARLIEST_TIME.to_string()
         } else {
             self.earliest_time.clone()
         };

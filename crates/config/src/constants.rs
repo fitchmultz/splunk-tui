@@ -93,3 +93,20 @@ pub const DEFAULT_CLIPBOARD_PREVIEW_CHARS: usize = 30;
 
 /// Default license usage percentage threshold for alerting.
 pub const DEFAULT_LICENSE_ALERT_PCT: f64 = 90.0;
+
+// =============================================================================
+// Internal Logs Defaults
+// =============================================================================
+
+/// Default number of internal log entries to fetch per query.
+pub const DEFAULT_INTERNAL_LOGS_COUNT: u64 = 100;
+
+/// Default earliest time for internal logs queries (last 15 minutes).
+pub const DEFAULT_INTERNAL_LOGS_EARLIEST_TIME: &str = "-15m";
+
+// =============================================================================
+// Test Timing Constants
+// =============================================================================
+
+/// Delay duration for migration tests to ensure different timestamps (milliseconds).
+pub const MIGRATION_DELAY_MS: u64 = 1100;
