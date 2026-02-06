@@ -13,10 +13,6 @@ use splunk_client::models::KvStoreCollection;
 
 /// Format KV store collections as CSV.
 pub fn format_kvstore_collections(collections: &[KvStoreCollection]) -> Result<String> {
-    if collections.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

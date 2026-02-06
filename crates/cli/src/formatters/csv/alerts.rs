@@ -12,10 +12,6 @@ use splunk_client::models::FiredAlert;
 
 /// Format fired alerts as CSV.
 pub fn format_fired_alerts(alerts: &[FiredAlert]) -> Result<String> {
-    if alerts.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

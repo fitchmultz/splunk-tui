@@ -12,10 +12,6 @@ use splunk_client::Index;
 
 /// Format indexes as CSV.
 pub fn format_indexes(indexes: &[Index], detailed: bool) -> Result<String> {
-    if indexes.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

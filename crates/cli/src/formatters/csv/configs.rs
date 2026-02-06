@@ -12,10 +12,6 @@ use splunk_client::models::{ConfigFile, ConfigStanza};
 
 /// Format config files as CSV.
 pub fn format_config_files(files: &[ConfigFile]) -> Result<String> {
-    if files.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header
@@ -34,10 +30,6 @@ pub fn format_config_files(files: &[ConfigFile]) -> Result<String> {
 
 /// Format config stanzas as CSV.
 pub fn format_config_stanzas(stanzas: &[ConfigStanza]) -> Result<String> {
-    if stanzas.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

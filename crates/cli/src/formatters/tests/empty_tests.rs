@@ -1,16 +1,32 @@
-//! Empty result set tests for all formatters (RQ-0195).
+//! Empty result set tests for all formatters (RQ-0195, RQ-0359).
+//!
+//! ## Empty-State Behavior Standards
+//!
+//! Different formatters handle empty result sets differently based on their use case:
+//!
+//! | Format | Empty State Behavior | Rationale |
+//! |--------|---------------------|-----------|
+//! | JSON | Valid empty structure (`[]`) | Machine parseable |
+//! | XML | Valid empty container (`<items></items>`) | Valid XML structure |
+//! | CSV | Headers only, no data rows | Valid CSV - pipelines can parse headers |
+//! | Table | Human message (`No items found.`) | Interactive format needs human feedback |
 
 use crate::formatters::{CsvFormatter, Formatter, JsonFormatter, TableFormatter, XmlFormatter};
+use splunk_client::models::{ConfigFile, ConfigStanza, FiredAlert, KvStoreCollection, LookupTable};
 use splunk_client::{App, Index, LogEntry, SavedSearch, SearchJobStatus, User};
 use splunk_config::types::ProfileConfig;
 
 // === CSV Empty Tests ===
+// CSV returns headers-only for empty results with static schemas,
+// providing valid parseable structure for programmatic pipelines.
 
 #[test]
 fn test_csv_empty_search_results() {
     let formatter = CsvFormatter;
     let results: Vec<serde_json::Value> = vec![];
     let output = formatter.format_search_results(&results).unwrap();
+    // Dynamic schema (search results) - headers cannot be determined without data
+    // Empty string is acceptable for truly dynamic content
     assert_eq!(output, "");
 }
 
@@ -19,7 +35,8 @@ fn test_csv_empty_indexes() {
     let formatter = CsvFormatter;
     let indexes: Vec<Index> = vec![];
     let output = formatter.format_indexes(&indexes, false).unwrap();
-    assert_eq!(output, "");
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "Name,SizeMB,Events,MaxSizeMB\n");
 }
 
 #[test]
@@ -27,7 +44,11 @@ fn test_csv_empty_indexes_detailed() {
     let formatter = CsvFormatter;
     let indexes: Vec<Index> = vec![];
     let output = formatter.format_indexes(&indexes, true).unwrap();
-    assert_eq!(output, "");
+    // Static schema (detailed) - should return headers even for empty results
+    assert_eq!(
+        output,
+        "Name,SizeMB,Events,MaxSizeMB,RetentionSecs,HomePath,ColdPath,ThawedPath\n"
+    );
 }
 
 #[test]
@@ -35,7 +56,8 @@ fn test_csv_empty_jobs() {
     let formatter = CsvFormatter;
     let jobs: Vec<SearchJobStatus> = vec![];
     let output = formatter.format_jobs(&jobs).unwrap();
-    assert_eq!(output, "");
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "SID,Done,Progress,Results,Duration\n");
 }
 
 #[test]
@@ -43,7 +65,8 @@ fn test_csv_empty_logs() {
     let formatter = CsvFormatter;
     let logs: Vec<LogEntry> = vec![];
     let output = formatter.format_logs(&logs).unwrap();
-    assert_eq!(output, "");
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "Time,Level,Component,Message\n");
 }
 
 #[test]
@@ -52,7 +75,59 @@ fn test_csv_empty_profiles() {
     let profiles: std::collections::BTreeMap<String, ProfileConfig> =
         std::collections::BTreeMap::new();
     let output = formatter.format_profiles(&profiles).unwrap();
-    assert_eq!(output, "");
+    // Static schema - should return headers even for empty results
+    assert_eq!(
+        output,
+        "profile,base_url,username,skip_verify,timeout_seconds,max_retries\n"
+    );
+}
+
+#[test]
+fn test_csv_empty_config_files() {
+    let formatter = CsvFormatter;
+    let files: Vec<ConfigFile> = vec![];
+    let output = formatter.format_config_files(&files).unwrap();
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "Name,Title,Description\n");
+}
+
+#[test]
+fn test_csv_empty_config_stanzas() {
+    let formatter = CsvFormatter;
+    let stanzas: Vec<ConfigStanza> = vec![];
+    let output = formatter.format_config_stanzas(&stanzas).unwrap();
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "Config File,Stanza Name\n");
+}
+
+#[test]
+fn test_csv_empty_lookups() {
+    let formatter = CsvFormatter;
+    let lookups: Vec<LookupTable> = vec![];
+    let output = formatter.format_lookups(&lookups).unwrap();
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "Name,Filename,Owner,App,Sharing,Size\n");
+}
+
+#[test]
+fn test_csv_empty_kvstore_collections() {
+    let formatter = CsvFormatter;
+    let collections: Vec<KvStoreCollection> = vec![];
+    let output = formatter.format_kvstore_collections(&collections).unwrap();
+    // Static schema - should return headers even for empty results
+    assert_eq!(output, "name,app,owner,sharing,disabled\n");
+}
+
+#[test]
+fn test_csv_empty_fired_alerts() {
+    let formatter = CsvFormatter;
+    let alerts: Vec<FiredAlert> = vec![];
+    let output = formatter.format_fired_alerts(&alerts).unwrap();
+    // Static schema - should return headers even for empty results
+    assert_eq!(
+        output,
+        "Name,SavedSearch,Severity,TriggerTime,SID,Actions\n"
+    );
 }
 
 // === JSON Empty Tests ===

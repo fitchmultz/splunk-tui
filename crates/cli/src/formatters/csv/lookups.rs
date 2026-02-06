@@ -12,10 +12,6 @@ use splunk_client::LookupTable;
 
 /// Format lookup tables as CSV.
 pub fn format_lookups(lookups: &[LookupTable]) -> Result<String> {
-    if lookups.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

@@ -12,10 +12,6 @@ use splunk_client::SearchJobStatus;
 
 /// Format jobs list as CSV.
 pub fn format_jobs(jobs: &[SearchJobStatus]) -> Result<String> {
-    if jobs.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

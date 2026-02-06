@@ -79,10 +79,6 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 
 /// Format all profiles as CSV.
 pub fn format_profiles(profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
-    if profiles.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut csv = String::new();
     csv.push_str(&build_csv_header(&[
         "profile",

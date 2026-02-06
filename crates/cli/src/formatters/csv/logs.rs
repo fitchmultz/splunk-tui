@@ -12,10 +12,6 @@ use splunk_client::models::LogEntry;
 
 /// Format logs as CSV.
 pub fn format_logs(logs: &[LogEntry]) -> Result<String> {
-    if logs.is_empty() {
-        return Ok(String::new());
-    }
-
     let mut output = String::new();
 
     // Header

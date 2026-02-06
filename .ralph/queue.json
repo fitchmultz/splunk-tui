@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0359",
-      "status": "todo",
-      "title": "Standardize empty-state handling across formatters",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "consistency",
-        "ux",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/csv/*.rs",
-        "crates/cli/src/formatters/table/*.rs",
-        "crates/cli/src/formatters/xml/*.rs"
-      ],
-      "evidence": [
-        "CSV formatter returns Ok(String::new()) for empty (csv/alerts.rs:15-17)",
-        "Table formatter returns 'No fired alerts found.' message (table/alerts.rs:16-18)",
-        "XML formatter returns XML with empty elements (xml/alerts.rs:15)",
-        "Inconsistent UX: CSV gives no output, table gives message, XML gives valid but empty XML"
-      ],
-      "plan": [
-        "Define EmptyStateBehavior enum: Silent, Message(&str), ValidEmpty",
-        "Add empty_state_behavior() method to Formatter trait with default",
-        "Update CSV formatter to use ValidEmpty (headers only) for consistency",
-        "Document the chosen behavior in formatters/mod.rs",
-        "Update tests to expect consistent behavior"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T17:55:35Z",
-      "updated_at": "2026-02-06T17:55:35Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0360",
       "status": "todo",
       "title": "Split oversized side_effects/mod.rs (523 lines) into submodules",

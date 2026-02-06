@@ -12,6 +12,23 @@
 //! Invariants:
 //! - Tables use tab-separation for consistent alignment in standard terminals.
 //! - XML output includes a standard version/encoding declaration.
+//!
+//! ## Empty-State Handling
+//!
+//! Different formatters handle empty result sets differently based on their use case:
+//!
+//! | Format | Empty State Behavior | Example | Rationale |
+//! |--------|---------------------|---------|-----------|
+//! | JSON | Valid empty structure | `[]` | Machine parseable - valid JSON |
+//! | XML | Valid empty container | `<items></items>` | Valid XML structure |
+//! | CSV | Headers only, no data | `Name,Status\n` | Valid CSV - pipelines can parse headers |
+//! | Table | Human message | `No items found.` | Interactive format needs human feedback |
+//!
+//! This ensures:
+//! - Machine-readable formats (JSON, XML, CSV) produce valid, parseable output
+//! - Human-facing formats (Table) provide clear feedback
+//!
+//! See RQ-0359 for the standardization effort.
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
