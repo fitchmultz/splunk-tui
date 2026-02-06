@@ -128,8 +128,8 @@ impl Formatter for CsvFormatter {
         users::format_users(users)
     }
 
-    fn format_apps(&self, apps: &[App]) -> Result<String> {
-        apps::format_apps(apps)
+    crate::impl_csv_formatter! {
+        format_apps: &[App] => apps,
     }
 
     fn format_app_info(&self, app: &App) -> Result<String> {

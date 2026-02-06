@@ -30,8 +30,12 @@ pub use splunk_client::HealthCheckOutput;
 mod common;
 mod csv;
 mod json;
+mod macros;
+mod resource_impls;
 mod table;
 mod xml;
+
+// Macros are exported at crate root via #[macro_export]
 
 pub use common::write_to_file;
 pub use csv::CsvFormatter;
@@ -454,6 +458,97 @@ pub struct ShcManagementOutput {
     pub target: String,
     pub success: bool,
     pub message: String,
+}
+
+/// Trait for types that can be displayed in tabular formats (CSV, Table, XML).
+///
+/// Resources implement this trait to define their display schema once,
+/// and all formatters automatically support them.
+///
+/// This trait supports format-specific customizations through separate methods
+/// for CSV, Table, and XML output formats. Each method has a default implementation
+/// that delegates to the standard methods, so types only need to override
+/// the formats where they differ.
+///
+/// # Example
+/// ```ignore
+/// impl ResourceDisplay for User {
+///     fn headers(_detailed: bool) -> Vec<&'static str> {
+///         vec!["Name", "Real Name", "Type", "Roles"]
+///     }
+///
+///     fn headers_csv(detailed: bool) -> Vec<&'static str> {
+///         // CSV uses lowercase headers
+///         Self::headers(detailed).into_iter()
+///             .map(|h| h.to_lowercase().leak())
+///             .collect()
+///     }
+///
+///     fn headers_table(detailed: bool) -> Vec<&'static str> {
+///         // Table uses UPPERCASE headers
+///         Self::headers(detailed).into_iter()
+///             .map(|h| h.to_uppercase().leak())
+///             .collect()
+///     }
+///
+///     fn row_data(&self, _detailed: bool) -> Vec<Vec<String>> {
+///         vec![vec![
+///             self.name.clone(),
+///             self.realname.clone().unwrap_or_default(),
+///             // ... more fields
+///         ]]
+///     }
+///
+///     fn xml_element_name() -> &'static str {
+///         "user"
+///     }
+///
+///     fn xml_fields(&self) -> Vec<(&'static str, Option<String>)> {
+///         vec![
+///             ("name", Some(self.name.clone())),
+///             ("email", self.email.clone()),
+///         ]
+///     }
+/// }
+/// ```
+pub trait ResourceDisplay {
+    /// Returns the column headers for this resource type (default/standard format).
+    fn headers(detailed: bool) -> Vec<&'static str>;
+
+    /// Returns the column headers for CSV format.
+    /// Default implementation uses the standard headers.
+    fn headers_csv(detailed: bool) -> Vec<&'static str> {
+        Self::headers(detailed)
+    }
+
+    /// Returns the column headers for Table format.
+    /// Default implementation uses the standard headers.
+    fn headers_table(detailed: bool) -> Vec<&'static str> {
+        Self::headers(detailed)
+    }
+
+    /// Returns the row data for this instance (default/standard format).
+    /// Each inner Vec contains the cell values for one row.
+    fn row_data(&self, detailed: bool) -> Vec<Vec<String>>;
+
+    /// Returns the row data for CSV format.
+    /// Default implementation delegates to `row_data`.
+    fn row_data_csv(&self, detailed: bool) -> Vec<Vec<String>> {
+        self.row_data(detailed)
+    }
+
+    /// Returns the row data for Table format.
+    /// Default implementation delegates to `row_data`.
+    fn row_data_table(&self, detailed: bool) -> Vec<Vec<String>> {
+        self.row_data(detailed)
+    }
+
+    /// Returns the XML element name for this resource type (for XML formatter).
+    fn xml_element_name() -> &'static str;
+
+    /// Returns individual fields as (name, value) pairs for XML output.
+    /// The Option allows XML to omit empty/unset fields.
+    fn xml_fields(&self) -> Vec<(&'static str, Option<String>)>;
 }
 
 /// Get a formatter for the specified output format.

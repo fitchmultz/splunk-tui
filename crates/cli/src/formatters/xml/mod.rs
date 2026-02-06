@@ -132,12 +132,12 @@ impl Formatter for XmlFormatter {
         users::format_users(users)
     }
 
-    fn format_apps(&self, apps: &[App]) -> Result<String> {
-        apps::format_apps(apps)
+    crate::impl_xml_list_formatter! {
+        format_apps: &[App] => apps,
     }
 
-    fn format_app_info(&self, app: &App) -> Result<String> {
-        apps::format_app_info(app)
+    crate::impl_xml_detail_formatter! {
+        format_app_info: &App => app,
     }
 
     fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
