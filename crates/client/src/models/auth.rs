@@ -4,11 +4,12 @@
 //! Note: Most auth logic is handled in the `auth` module; this contains
 //! only the API response types.
 
-use serde::Deserialize;
-
 /// Authentication response from login.
-#[derive(Debug, Deserialize, Clone)]
-#[allow(dead_code)] // Test fixture only, not used in production code
+///
+/// Note: This type is only used in tests. Production auth handling
+/// uses different mechanisms in the `auth` module.
+#[derive(Debug, Clone, serde::Deserialize)]
+#[cfg(test)]
 pub struct AuthResponse {
     #[serde(rename = "sessionKey")]
     pub session_key: String,

@@ -151,7 +151,6 @@ impl SideEffectsTestHarness {
     ///
     /// # Returns
     /// The received action, or panics if timeout exceeded
-    #[allow(dead_code)]
     pub async fn expect_action(&mut self, timeout_ms: u64) -> Action {
         tokio::time::timeout(
             tokio::time::Duration::from_millis(timeout_ms),
@@ -166,7 +165,6 @@ impl SideEffectsTestHarness {
     ///
     /// # Returns
     /// A vector of all actions currently in the channel
-    #[allow(dead_code)]
     pub async fn drain_actions(&mut self) -> Vec<Action> {
         let mut actions = Vec::new();
         while let Ok(Some(action)) = tokio::time::timeout(
@@ -227,7 +225,6 @@ pub async fn create_test_config_manager() -> Arc<Mutex<ConfigManager>> {
 /// * `path` - URL path to match
 /// * `fixture` - Fixture data to return
 /// * `status` - HTTP status code (default: 200)
-#[allow(dead_code)]
 pub async fn mock_endpoint(
     server: &MockServer,
     method: &str,
@@ -252,7 +249,6 @@ pub async fn mock_endpoint(
 /// * `path` - URL path to match
 /// * `status` - HTTP error status code
 /// * `error_body` - Optional error response body
-#[allow(dead_code)]
 pub async fn mock_endpoint_error(
     server: &MockServer,
     method: &str,

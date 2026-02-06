@@ -42,7 +42,6 @@ use super::indexes;
 use super::inputs;
 use super::jobs;
 use super::license;
-use super::list_all;
 use super::logs;
 use super::lookups;
 use super::macros;
@@ -155,10 +154,6 @@ impl Formatter for TableFormatter {
 
     fn format_app_info(&self, app: &App) -> Result<String> {
         apps::format_app_info(app)
-    }
-
-    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
-        list_all::format_list_all(output)
     }
 
     fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {

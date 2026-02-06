@@ -71,6 +71,7 @@ impl KeybindOverrideTable {
     }
 
     /// Returns the number of active overrides.
+    /// Note: Only used in tests, but kept for test convenience.
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.overrides.len()
@@ -191,12 +192,6 @@ pub fn init_overrides(overrides: &KeybindOverrides) -> Result<(), String> {
 /// This should be called by `resolve_action` before checking default bindings.
 pub(crate) fn resolve_override(key: KeyEvent) -> Option<Action> {
     KEYBIND_OVERRIDES.get().and_then(|table| table.resolve(key))
-}
-
-/// Returns true if keybinding overrides have been initialized.
-#[allow(dead_code)]
-pub(crate) fn overrides_initialized() -> bool {
-    KEYBIND_OVERRIDES.get().is_some()
 }
 
 #[cfg(test)]

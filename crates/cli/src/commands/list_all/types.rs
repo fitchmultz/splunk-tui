@@ -24,14 +24,6 @@ pub struct ResourceSummary {
     pub error: Option<String>,
 }
 
-/// Single-profile list-all output structure.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct ListAllOutput {
-    pub timestamp: String,
-    pub resources: Vec<ResourceSummary>,
-}
-
 /// Per-profile resource summary for multi-profile aggregation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProfileResult {

@@ -36,6 +36,7 @@ pub mod workload;
 pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
 pub use apps::{App, AppEntry, AppListResponse};
 pub use audit::{AuditEvent, AuditEventEntry, AuditEventListResponse, ListAuditEventsParams};
+#[cfg(test)]
 pub use auth::AuthResponse;
 pub use capabilities::{Capability, CapabilityEntry, CapabilityListResponse};
 pub use cluster::{

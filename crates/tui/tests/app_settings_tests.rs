@@ -17,7 +17,6 @@ mod helpers;
 use helpers::*;
 use splunk_tui::{CurrentScreen, action::Action, app::App, app::ConnectionContext};
 
-#[allow(dead_code)]
 #[test]
 fn test_settings_screen_navigation() {
     let mut app = App::new(None, ConnectionContext::default());

@@ -41,7 +41,6 @@ mod inputs;
 mod jobs;
 mod kvstore;
 mod license;
-mod list_all;
 mod logs;
 mod profiles;
 mod saved_searches;
@@ -138,10 +137,6 @@ impl Formatter for XmlFormatter {
 
     crate::impl_xml_detail_formatter! {
         format_app_info: &App => app,
-    }
-
-    fn format_list_all(&self, output: &crate::commands::list_all::ListAllOutput) -> Result<String> {
-        list_all::format_list_all(output)
     }
 
     fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {

@@ -19,7 +19,6 @@ use crate::app::{FOOTER_HEIGHT, HEADER_HEIGHT};
 
 /// Severity level for toast notifications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
 pub enum ToastLevel {
     /// Informational message
     Info,
@@ -51,7 +50,6 @@ impl ToastLevel {
     }
 
     /// Parses a toast level from a string (for deserialization).
-    #[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
@@ -66,7 +64,6 @@ impl ToastLevel {
 
 /// A single toast notification.
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
 pub struct Toast {
     /// Unique identifier for this toast
     pub id: Uuid,
@@ -99,19 +96,18 @@ impl Toast {
     }
 
     /// Returns the remaining time before expiry.
-    #[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
+    /// Note: Only used in tests.
+    #[cfg(test)]
     pub fn remaining(&self) -> Duration {
         self.ttl.saturating_sub(self.created_at.elapsed())
     }
 
     /// Creates an info toast.
-    #[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
     pub fn info(message: impl Into<String>) -> Self {
         Self::new(message.into(), ToastLevel::Info)
     }
 
     /// Creates a success toast.
-    #[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
     pub fn success(message: impl Into<String>) -> Self {
         Self::new(message.into(), ToastLevel::Success)
     }
@@ -122,7 +118,6 @@ impl Toast {
     }
 
     /// Creates an error toast.
-    #[allow(dead_code)] // Public API for future use, tested in #[cfg(test)]
     pub fn error(message: impl Into<String>) -> Self {
         Self::new(message.into(), ToastLevel::Error)
     }

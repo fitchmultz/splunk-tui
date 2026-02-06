@@ -30,7 +30,6 @@ mod inputs;
 mod jobs;
 mod kvstore;
 mod license;
-mod list_all;
 mod logs;
 mod lookups;
 mod macros;

@@ -7,7 +7,6 @@
 //! - Other output formats.
 //! - Pagination (JSON output doesn't paginate).
 
-use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
@@ -108,10 +107,6 @@ impl Formatter for JsonFormatter {
 
     fn format_app_info(&self, app: &App) -> Result<String> {
         Ok(serde_json::to_string_pretty(app)?)
-    }
-
-    fn format_list_all(&self, output: &ListAllOutput) -> Result<String> {
-        Ok(serde_json::to_string_pretty(output)?)
     }
 
     fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {

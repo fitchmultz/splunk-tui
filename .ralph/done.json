@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "unused_dependency": "tachyonfx@0.14",
         "lines_of_dead_code": "598",
-        "unused_dependency": "tachyonfx@0.14"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -3938,8 +3938,78 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0353",
+      "status": "done",
+      "title": "Remove or utilize dead code flagged with #[allow(dead_code)]",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "yagni",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/mod.rs:190-191",
+        "crates/cli/src/formatters/csv/list_all.rs:14",
+        "crates/cli/src/formatters/table/list_all.rs:13",
+        "crates/cli/src/formatters/xml/list_all.rs:14",
+        "crates/cli/src/commands/list_all/types.rs:29",
+        "crates/tui/src/ui/toast.rs:22,54,69,102,108,114,125",
+        "crates/tui/src/input/keymap/overrides.rs:74,197",
+        "crates/client/src/models/auth.rs:11",
+        "crates/tui/tests/common/mod.rs:18,154,169,230,255",
+        "crates/cli/tests/common/mod.rs:26,64",
+        "crates/client/tests/common/mod.rs",
+        "crates/tui/tests/app_settings_tests.rs:20"
+      ],
+      "evidence": [
+        "25 #[allow(dead_code)] attributes found across codebase (updated count)",
+        "crates/cli/src/formatters/mod.rs:190 marks format_list_all() trait method as dead_code",
+        "crates/cli/src/formatters/{csv,table,xml}/list_all.rs all have #[allow(dead_code)] on implementations (unused)",
+        "crates/cli/src/commands/list_all/types.rs:29 marks ListAllOutput struct as dead_code (API exists but unused)",
+        "crates/tui/src/ui/toast.rs: 7 dead_code markers on public API methods (info, success, error constructors, etc.)",
+        "crates/tui/src/input/keymap/overrides.rs: len() at line 74, overrides_initialized() at line 197",
+        "crates/client/src/models/auth.rs:11 marks AuthResponse as dead_code (test fixture only per comment)",
+        "Test common files have legitimate dead code patterns (test utilities not used by all tests)",
+        "crates/tui/tests/common/mod.rs uses #![allow(dead_code)] at module level (line 18)"
+      ],
+      "plan": [
+        "Categorize each dead_code site: (1) legitimate test helper, (2) trait-required method, (3) YAGNI candidate",
+        "For toast.rs: decide - integrate into UI flows or remove speculative API (7 methods)",
+        "For list_all formatters: either wire up the list-all command or remove trait method + implementations",
+        "For keymap overrides: verify len() and overrides_initialized() usage; remove if truly unused",
+        "For AuthResponse: keep if used by tests, document clearly, consider pub(crate) or #[cfg(test)]",
+        "For test common files: review if #[allow(dead_code)] is still needed or can be narrowed",
+        "After changes, run `make ci` to verify nothing breaks"
+      ],
+      "notes": [
+        "2026-02-06: Task updated - found 25 dead_code markers (was 24), added new files to scope",
+        "list_all feature exists but appears to be partially implemented - formatters exist but not wired up",
+        "toast.rs methods are tested but not integrated into actual UI flows - potential YAGNI",
+        "Test common files legitimately use dead_code for shared utilities - may be acceptable",
+        "Removed 25+ #[allow(dead_code)] attributes across 12 files",
+        "Deleted speculative list_all formatters (CSV, table, XML) and ListAllOutput struct",
+        "Removed overrides_initialized() function (truly unused)",
+        "Added #[cfg(test)] to test-only code (AuthResponse, Toast::remaining)",
+        "Verified remaining #[allow(dead_code)] attributes are legitimate test helpers"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T19:28:43.610583771Z",
+      "completed_at": "2026-02-06T19:28:43.610583771Z",
+      "started_at": "2026-02-06T19:06:58.471578451Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "test_files_affected": "4",
+        "dead_code_count": "25",
+        "production_files_affected": "8"
       }
     }
   ]

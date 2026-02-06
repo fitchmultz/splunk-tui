@@ -12,7 +12,6 @@
 //! - CSV output follows RFC 4180 for compatibility with standard tools
 //! - Nested structures are flattened using dot notation
 
-use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
@@ -47,7 +46,6 @@ use super::inputs;
 use super::jobs;
 use super::kvstore;
 use super::license;
-use super::list_all;
 use super::logs;
 use super::lookups;
 use super::macros;
@@ -134,10 +132,6 @@ impl Formatter for CsvFormatter {
 
     fn format_app_info(&self, app: &App) -> Result<String> {
         apps::format_app_info(app)
-    }
-
-    fn format_list_all(&self, output: &ListAllOutput) -> Result<String> {
-        list_all::format_list_all(output)
     }
 
     fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {

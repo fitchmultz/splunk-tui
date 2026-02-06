@@ -27,7 +27,7 @@ use crate::cancellation::CancellationToken;
 use crate::commands::build_client_from_config;
 use crate::formatters::{OutputFormat, write_to_file};
 
-pub use types::{ListAllMultiOutput, ListAllOutput, ProfileResult, VALID_RESOURCES};
+pub use types::{ListAllMultiOutput, ProfileResult, VALID_RESOURCES};
 
 /// Normalize and validate resource types for fetching.
 ///
