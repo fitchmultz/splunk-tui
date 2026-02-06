@@ -1,4 +1,468 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0351",
+      "status": "todo",
+      "title": "Extract formatter trait to eliminate 11K lines of duplicated formatting code",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "refactor",
+        "dry",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/",
+        "crates/cli/src/formatters/csv/*.rs",
+        "crates/cli/src/formatters/table/*.rs",
+        "crates/cli/src/formatters/xml/*.rs"
+      ],
+      "evidence": [
+        "Formatter modules contain ~11,105 lines of near-identical code (wc -l output)",
+        "CSV/Table/XML formatters duplicate field extraction logic for same types (e.g., FiredAlert fields repeated 3x)",
+        "Adding a new resource requires implementing format_* in 4+ files",
+        "Formatter trait at crates/cli/src/formatters/mod.rs:102-300 has 35+ methods, each with 3+ implementations"
+      ],
+      "plan": [
+        "Define a `ResourceDisplay` trait with methods: headers(), fields(), format_value()",
+        "Implement macro `impl_resource_display!` to auto-derive formatters from struct fields",
+        "Migrate FiredAlert, App, User as pilot types to new trait-based system",
+        "Deprecate per-format modules (csv/, table/, xml/) once trait covers all cases",
+        "Verify by running `make test` - all formatter tests must pass"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0352",
+      "status": "todo",
+      "title": "Decompose oversized CLI command functions over 100 lines",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "refactor",
+        "complexity",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs:1474-1657 (fn run_edit - 183 lines)",
+        "crates/cli/src/commands/cluster.rs:590-768 (fn run_show - 178 lines)",
+        "crates/cli/src/commands/config.rs:1113-1228 (fn handle_management_output - 115 lines)"
+      ],
+      "evidence": [
+        "run_edit spans 183 lines (lines 1474-1657), handling profile editing, TUI mode, validation, persistence",
+        "run_show at cluster.rs:590-768 contains nested match arms for multiple cluster operations",
+        "handle_management_output at config.rs:1113-1228 mixes formatting, file I/O, and user confirmation logic"
+      ],
+      "plan": [
+        "Extract input gathering into `prompt_for_*` helper functions",
+        "Move validation logic to standalone `validate_*` functions",
+        "Create `render_*` functions for output formatting separate from business logic",
+        "Target: no function exceeds 60 lines, single responsibility per function",
+        "Verify by running `make lint` and `make test`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0353",
+      "status": "todo",
+      "title": "Remove or utilize dead code flagged with #[allow(dead_code)]",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "yagni",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/mod.rs:186",
+        "crates/tui/src/input/keymap/overrides.rs:74,197",
+        "crates/tui/src/ui/toast.rs:22,54,69,102,108,114,125",
+        "crates/cli/src/commands/list_all/types.rs:29"
+      ],
+      "evidence": [
+        "24 #[allow(dead_code)] attributes found across codebase (grep count)",
+        "crates/cli/src/formatters/mod.rs:186 marks format_list_all() as dead_code - but trait requires it",
+        "crates/tui/src/ui/toast.rs has 7 dead_code markers for 'Public API for future use' - indicates speculative generality",
+        "crates/cli/src/formatters/csv/list_all.rs:14, table/list_all.rs:13, xml/list_all.rs:14 all marked dead"
+      ],
+      "plan": [
+        "Audit each dead_code site: is it truly needed, can it be removed, or should it be pub(crate)?",
+        "For toast.rs: either use the methods in UI or remove them (YAGNI)",
+        "For format_list_all: consider removing from trait if truly unused, or add integration test",
+        "For keymap overrides: verify overrides_initialized() is needed or remove",
+        "After changes, run `make ci` to verify nothing breaks"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0354",
+      "status": "todo",
+      "title": "Simplify deeply nested match statements in TUI input handlers",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "complexity",
+        "tui",
+        "readability"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/*.rs (55 files with nested matches)"
+      ],
+      "evidence": [
+        "55 input handler files contain nested if-match patterns (grep -r 'match.*{' | wc -l)",
+        "Pattern repeats: if key == X { match state { A => ..., B => ..., C => ... } } creating deep nesting",
+        "Examples: shc.rs, macros.rs, fired_alerts.rs, jobs.rs all show if-then-match nesting",
+        "Deep nesting makes control flow hard to follow and test"
+      ],
+      "plan": [
+        "Introduce early-return pattern: `let action = match key { ... }?;` instead of nested ifs",
+        "Extract match arms into named helper functions (e.g., handle_job_selection, handle_search_submit)",
+        "Consider using `action` enum dispatch instead of direct key matching in input handlers",
+        "Add unit tests for extracted helper functions",
+        "Verify by running TUI tests: `cargo test -p splunk-tui --test app_input_tests`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0355",
+      "status": "todo",
+      "title": "Extract magic numbers to named constants in configuration",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "magic-numbers",
+        "config"
+      ],
+      "scope": [
+        "crates/config/src/loader/defaults.rs",
+        "crates/config/src/persistence/state.rs",
+        "crates/config/src/persistence/profiles.rs"
+      ],
+      "evidence": [
+        "defaults.rs:34 max_results: 1000 (magic number)",
+        "state.rs:172 count: 100 (hardcoded comment says 'Match current hardcoded value')",
+        "state.rs:187 if self.count == 0 { 100 } else { self.count } (100 appears 3 times)",
+        "profiles.rs:371 session_ttl_seconds: Some(3600), :832 Duration::from_millis(1100)"
+      ],
+      "plan": [
+        "Define constants: DEFAULT_MAX_RESULTS=1000, DEFAULT_LOG_COUNT=100, DEFAULT_SESSION_TTL=3600",
+        "Add MIGRATION_DELAY_MS=1100 for the test timing value",
+        "Replace all literal occurrences with named constants",
+        "Keep constants in crate-level constants module for discoverability",
+        "Verify with `make test -p splunk-config`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0356",
+      "status": "todo",
+      "title": "Split table formatter imp.rs (872 lines) into cohesive submodules",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "complexity",
+        "file-size",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/table/imp.rs"
+      ],
+      "evidence": [
+        "imp.rs is 872 lines - significantly larger than typical Rust modules (~200-300 lines)",
+        "Contains: ImplTableFormatter struct, 30+ format methods, pagination footer logic",
+        "Lines 400-500: cluster formatting with nested if-let chains",
+        "Lines 827-871: build_pagination_footer with complex arithmetic"
+      ],
+      "plan": [
+        "Extract pagination logic to table/pagination.rs",
+        "Extract resource-specific formatters to table/resources/*.rs (or use trait approach from RQ-0351)",
+        "Keep imp.rs focused on ImplTableFormatter struct and trait impl only",
+        "Target: no file exceeds 300 lines after split",
+        "Verify with `make test -p splunk-cli`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0357",
+      "status": "todo",
+      "title": "Refactor TUI side_effects oversized functions over 100 lines",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "complexity",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/multi_instance.rs:2355-2478 (fetch_single_instance - 123 lines)",
+        "crates/tui/src/runtime/side_effects/overview.rs:2481-2597 (build_auth_strategy - 116 lines)",
+        "crates/tui/src/runtime/side_effects/profiles.rs (multiple 100+ line functions)"
+      ],
+      "evidence": [
+        "fetch_single_instance spans 123 lines handling profile resolution, auth, client building, fetching",
+        "build_auth_strategy at 116 lines contains deeply nested conditional logic for auth methods",
+        "profiles.rs has multiple resource_error() definitions ranging 100-200+ lines (grep output showed duplicates)"
+      ],
+      "plan": [
+        "Extract profile resolution to `resolve_profile_config()` function",
+        "Extract client building to `build_client_for_profile()` function",
+        "Extract fetching to `fetch_resource_with_timeout()` function",
+        "Create AuthStrategy enum to encapsulate auth decision logic",
+        "Target: maximum 60 lines per function",
+        "Verify with `make test -p splunk-tui`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0358",
+      "status": "todo",
+      "title": "Deduplicate pagination footer patterns in table formatter",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/table/imp.rs:428-488"
+      ],
+      "evidence": [
+        "format_indexes_paginated, format_forwarders_paginated, format_search_peers_paginated have identical structure",
+        "Each function: check empty, check offset, call base formatter, append footer",
+        "Comments even admit: 'Reuse existing table rendering, then append footer' - indicating copy-paste"
+      ],
+      "plan": [
+        "Create generic `format_paginated<T>(items: &[T], formatter: Fn, pagination: Pagination)` helper",
+        "Replace the three nearly-identical functions with calls to the generic helper",
+        "Remove ~60 lines of duplicated boilerplate",
+        "Verify pagination tests still pass: `cargo test -p splunk-cli pagination`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0359",
+      "status": "todo",
+      "title": "Standardize empty-state handling across formatters",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/csv/*.rs",
+        "crates/cli/src/formatters/table/*.rs",
+        "crates/cli/src/formatters/xml/*.rs"
+      ],
+      "evidence": [
+        "CSV formatter returns Ok(String::new()) for empty (csv/alerts.rs:15-17)",
+        "Table formatter returns 'No fired alerts found.' message (table/alerts.rs:16-18)",
+        "XML formatter returns XML with empty elements (xml/alerts.rs:15)",
+        "Inconsistent UX: CSV gives no output, table gives message, XML gives valid but empty XML"
+      ],
+      "plan": [
+        "Define EmptyStateBehavior enum: Silent, Message(&str), ValidEmpty",
+        "Add empty_state_behavior() method to Formatter trait with default",
+        "Update CSV formatter to use ValidEmpty (headers only) for consistency",
+        "Document the chosen behavior in formatters/mod.rs",
+        "Update tests to expect consistent behavior"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0360",
+      "status": "todo",
+      "title": "Split oversized side_effects/mod.rs (523 lines) into submodules",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "file-size",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/mod.rs"
+      ],
+      "evidence": [
+        "mod.rs is 523 lines - too large for a module file",
+        "Contains Effect, EffectResult enums, handle_effect function, and multiple use statements",
+        "Complexity shown by 55+ nested match patterns across input handlers"
+      ],
+      "plan": [
+        "Extract Effect and EffectResult to side_effects/types.rs",
+        "Extract handle_effect to side_effects/dispatcher.rs",
+        "Keep mod.rs focused on module re-exports only",
+        "Target: mod.rs under 100 lines after split",
+        "Verify with `cargo check -p splunk-tui`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0361",
+      "status": "todo",
+      "title": "Create macro for repetitive formatter trait implementations",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "dry",
+        "macro",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/csv/imp.rs",
+        "crates/cli/src/formatters/table/imp.rs",
+        "crates/cli/src/formatters/xml/mod.rs"
+      ],
+      "evidence": [
+        "CsvFormatter, TableFormatter, XmlFormatter all have identical trait impl structure",
+        "Each has 35+ methods that delegate to submodule functions (e.g., jobs::format_jobs)",
+        "Pattern: `fn format_x(&self, ...) -> Result<String> { x::format_x(...) }` repeated 35 times per formatter"
+      ],
+      "plan": [
+        "Create `impl_formatter!` macro that generates trait impl from a map of method->module",
+        "Example: impl_formatter!(CsvFormatter, { jobs => jobs, logs => logs, ... })",
+        "Apply macro to all three formatters, reducing ~300 lines of boilerplate to ~30",
+        "Ensure macro preserves documentation comments",
+        "Verify with `make test -p splunk-cli`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0362",
+      "status": "todo",
+      "title": "Unify error message formatting style across CLI",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/*.rs"
+      ],
+      "evidence": [
+        "Mixed error styles found: 'Failed to X', 'Could not X', 'Error: X', 'X failed'",
+        "Some use anyhow::bail! with format strings, others use eprintln + return Err",
+        "Inconsistent capitalization: some lowercase, some Title Case",
+        "Context chaining inconsistent: some use .with_context(), others inline format"
+      ],
+      "plan": [
+        "Define error style guide: lowercase start, action-oriented ('failed to...'), use with_context()",
+        "Document style in AGENTS.md or STYLE.md",
+        "Audit all error messages in commands/ for consistency",
+        "Refactor to use consistent anyhow::Context pattern",
+        "Add clippy lint for error message format if possible",
+        "Verify with `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T17:55:35Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    }
+  ]
 }
