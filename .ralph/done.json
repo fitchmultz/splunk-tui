@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "production_files_affected": "8",
         "test_files_affected": "4",
         "dead_code_count": "25",
-        "scan_agent": "scan-maintenance",
-        "production_files_affected": "8"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "current_line_count": "867",
         "macro_already_adopted": "true",
-        "scan_agent": "scan-maintenance",
-        "target_line_count": "300"
+        "current_line_count": "867",
+        "target_line_count": "300",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "remaining_duplicates": "3",
-        "macro_solved_count": "9",
-        "scan_agent": "scan-maintenance"
+        "macro_solved_count": "9"
       }
     },
     {
@@ -4353,8 +4353,65 @@
       "relates_to": [],
       "custom_fields": {
         "affected_formatters": "4",
-        "estimated_methods": "35+",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "estimated_methods": "35+"
+      }
+    },
+    {
+      "id": "RQ-0360",
+      "status": "done",
+      "title": "Split oversized side_effects/mod.rs (523 lines) into submodules",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "file-size",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/runtime/side_effects/dispatcher.rs",
+        "crates/tui/src/runtime/side_effects/types.rs"
+      ],
+      "evidence": [
+        "mod.rs is 523 lines - exceeds 500 line threshold per AGENTS.md guidelines",
+        "Contains 28 submodule declarations (alerts, apps, audit, cluster, configs, dashboards, datamodels, export, forwarders, health, indexes, inputs, jobs, kvstore, license, logs, lookups, macros, multi_instance, overview, overview_fetch, profiles, roles, search_peers, searches, shc, users, workload)",
+        "handle_side_effects function contains a large match expression with 94+ Action variants",
+        "File includes extensive design documentation (85 lines) explaining task spawning patterns",
+        "SharedClient type alias and imports add boilerplate before the main function"
+      ],
+      "plan": [
+        "Extract SharedClient type alias and related imports to side_effects/types.rs",
+        "Extract handle_side_effects function (with 94 Action match arms) to side_effects/dispatcher.rs",
+        "Keep mod.rs focused on module re-exports, submodule declarations, and design documentation",
+        "Target: mod.rs under 150 lines after split",
+        "Verify all 28 submodules still compile correctly with `cargo check -p splunk-tui`",
+        "Run `make ci` to ensure full test suite passes"
+      ],
+      "notes": [
+        "All 28 submodule files already exist and are well-organized by domain",
+        "The large match expression in handle_side_effects is the primary size contributor",
+        "Design documentation could optionally move to a README.md in the module directory",
+        "Successfully split side_effects/mod.rs (523 → 123 lines)",
+        "Created types.rs (15 lines) with SharedClient type alias",
+        "Created dispatcher.rs (416 lines) with handle_side_effects function",
+        "All 700+ tests pass, CI green",
+        "Backward compatibility preserved via re-exports"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T21:44:58.192803303Z",
+      "completed_at": "2026-02-06T21:44:58.192803303Z",
+      "started_at": "2026-02-06T21:33:31.537331789Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "action_variants": "94",
+        "target_line_count": "150",
+        "current_line_count": "523",
+        "scan_agent": "scan-maintenance",
+        "submodule_count": "28"
       }
     }
   ]

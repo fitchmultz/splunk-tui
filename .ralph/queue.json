@@ -2,42 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0360",
-      "status": "todo",
-      "title": "Split oversized side_effects/mod.rs (523 lines) into submodules",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "file-size",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/mod.rs"
-      ],
-      "evidence": [
-        "mod.rs is 523 lines - too large for a module file",
-        "Contains Effect, EffectResult enums, handle_effect function, and multiple use statements",
-        "Complexity shown by 55+ nested match patterns across input handlers"
-      ],
-      "plan": [
-        "Extract Effect and EffectResult to side_effects/types.rs",
-        "Extract handle_effect to side_effects/dispatcher.rs",
-        "Keep mod.rs focused on module re-exports only",
-        "Target: mod.rs under 100 lines after split",
-        "Verify with `cargo check -p splunk-tui`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T17:55:35Z",
-      "updated_at": "2026-02-06T17:55:35Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0361",
       "status": "todo",
       "title": "Create macro for repetitive formatter trait implementations",
