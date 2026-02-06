@@ -197,6 +197,81 @@ fn prompt_for_secret(
     }
 }
 
+/// Store password with optional keyring fallback.
+fn store_password(
+    manager: &ConfigManager,
+    profile_name: &str,
+    username: Option<&String>,
+    password: Option<SecureValue>,
+    plaintext: bool,
+) -> Option<SecureValue> {
+    if plaintext {
+        return password;
+    }
+
+    if let (Some(u), Some(SecureValue::Plain(pw))) = (username, &password) {
+        let keyring_value = manager.try_store_password_in_keyring(profile_name, u, pw);
+        if matches!(keyring_value, SecureValue::Plain(_)) {
+            eprintln!("Warning: Failed to store password in keyring. Storing as plaintext.");
+        }
+        return Some(keyring_value);
+    }
+
+    password
+}
+
+/// Store API token with optional keyring fallback.
+fn store_api_token(
+    manager: &ConfigManager,
+    profile_name: &str,
+    api_token: Option<SecureValue>,
+    plaintext: bool,
+) -> Option<SecureValue> {
+    if plaintext {
+        return api_token;
+    }
+
+    if let Some(SecureValue::Plain(token)) = &api_token {
+        let keyring_value = manager.try_store_token_in_keyring(profile_name, token);
+        if matches!(keyring_value, SecureValue::Plain(_)) {
+            eprintln!("Warning: Failed to store API token in keyring. Storing as plaintext.");
+        }
+        return Some(keyring_value);
+    }
+
+    api_token
+}
+
+/// Validate that required fields are present for profile creation/update.
+fn validate_profile_requirements(
+    base_url: &Option<String>,
+    username: &Option<String>,
+    password: &Option<SecureValue>,
+    api_token: &Option<SecureValue>,
+    profile_username: &Option<String>,
+    profile_password: &Option<SecureValue>,
+    profile_token: &Option<SecureValue>,
+) -> Result<()> {
+    // Validate that we have required fields
+    if base_url.is_none() {
+        anyhow::bail!("Base URL is required. Use --base-url to specify the Splunk server URL");
+    }
+
+    // Validate auth requirements BEFORE prompting to avoid interactive prompts in test environments
+    // Check if we have auth from CLI args or existing profile
+    let has_password = password.is_some() || profile_password.is_some();
+    let has_token = api_token.is_some() || profile_token.is_some();
+
+    // If username is set (CLI or profile), password or token must also be set
+    if (username.is_some() || profile_username.is_some()) && !has_password && !has_token {
+        anyhow::bail!(
+            "Either --password or --api-token must be provided when using username. Use one for authentication"
+        );
+    }
+
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_set(
     manager: &mut ConfigManager,
@@ -212,32 +287,29 @@ fn run_set(
 ) -> Result<()> {
     // Load existing profile if it exists
     let existing_profile = manager.list_profiles().get(profile_name).cloned();
-
-    let profile = existing_profile.unwrap_or_default();
-
-    let base_url = base_url.or(profile.base_url);
-    let username = username.or(profile.username.clone());
+    let profile = existing_profile.clone().unwrap_or_default();
 
     // Filter out empty strings from CLI args - treat as None
     let password = password.filter(|s| !s.is_empty());
     let api_token = api_token.filter(|s| !s.is_empty());
 
-    // Validate that we have required fields
-    if base_url.is_none() {
-        anyhow::bail!("Base URL is required. Use --base-url to specify the Splunk server URL");
-    }
+    // Validate required fields
+    validate_profile_requirements(
+        &base_url,
+        &username,
+        &password
+            .as_ref()
+            .map(|p| SecureValue::Plain(secrecy::SecretString::new(p.clone().into()))),
+        &api_token
+            .as_ref()
+            .map(|t| SecureValue::Plain(secrecy::SecretString::new(t.clone().into()))),
+        &profile.username,
+        &profile.password,
+        &profile.api_token,
+    )?;
 
-    // Validate auth requirements BEFORE prompting to avoid interactive prompts in test environments
-    // Check if we have auth from CLI args or existing profile
-    let has_password = password.is_some() || profile.password.is_some();
-    let has_token = api_token.is_some() || profile.api_token.is_some();
-
-    // If username is set (CLI or profile), password or token must also be set
-    if (username.is_some() || profile.username.is_some()) && !has_password && !has_token {
-        anyhow::bail!(
-            "Either --password or --api-token must be provided when using username. Use one for authentication"
-        );
-    }
+    let resolved_base_url = base_url.or(profile.base_url.clone());
+    let resolved_username = username.or(profile.username.clone());
 
     // Resolve password: CLI arg → existing profile → interactive prompt
     let password = password
@@ -252,49 +324,23 @@ fn run_set(
         .or_else(|| prompt_for_secret("API Token", &None));
 
     let mut profile_config = ProfileConfig {
-        base_url,
-        username: username.clone(),
+        base_url: resolved_base_url,
+        username: resolved_username.clone(),
         skip_verify: skip_verify.or(profile.skip_verify),
         timeout_seconds: timeout.or(profile.timeout_seconds),
         max_retries: max_retries.or(profile.max_retries),
         ..Default::default()
     };
 
-    // Store credentials: try keyring first (default), fallback to plaintext with warning
-    // Only use plaintext if --plaintext flag is explicitly set
-    let password = if plaintext {
-        // User explicitly requested plaintext storage
-        password
-    } else {
-        // Try keyring first, fallback to plaintext with warning
-        if let (Some(username), Some(SecureValue::Plain(pw))) = (&username, &password) {
-            let keyring_value = manager.try_store_password_in_keyring(profile_name, username, pw);
-            // Log warning if we fell back to plaintext
-            if matches!(keyring_value, SecureValue::Plain(_)) {
-                eprintln!("Warning: Failed to store password in keyring. Storing as plaintext.");
-            }
-            Some(keyring_value)
-        } else {
-            password
-        }
-    };
-
-    let api_token = if plaintext {
-        // User explicitly requested plaintext storage
-        api_token
-    } else {
-        // Try keyring first, fallback to plaintext with warning
-        if let Some(SecureValue::Plain(token)) = &api_token {
-            let keyring_value = manager.try_store_token_in_keyring(profile_name, token);
-            // Log warning if we fell back to plaintext
-            if matches!(keyring_value, SecureValue::Plain(_)) {
-                eprintln!("Warning: Failed to store API token in keyring. Storing as plaintext.");
-            }
-            Some(keyring_value)
-        } else {
-            api_token
-        }
-    };
+    // Store credentials with keyring fallback
+    let password = store_password(
+        manager,
+        profile_name,
+        resolved_username.as_ref(),
+        password,
+        plaintext,
+    );
+    let api_token = store_api_token(manager, profile_name, api_token, plaintext);
 
     profile_config.password = password.or(profile.password);
     profile_config.api_token = api_token.or(profile.api_token);
@@ -336,6 +382,124 @@ fn run_show(
     Ok(())
 }
 
+/// Prompt for base URL, using existing value as default if present.
+fn prompt_for_base_url(existing: Option<&String>) -> Result<Option<String>> {
+    let input = dialoguer::Input::<String>::new();
+    let input = input.with_prompt("Base URL");
+    let input = if let Some(current) = existing {
+        input.default(current.clone())
+    } else {
+        input
+    };
+    Ok(input.interact().ok())
+}
+
+/// Prompt for username, using existing value as default if present.
+fn prompt_for_username(existing: Option<&String>) -> Result<Option<String>> {
+    let input = dialoguer::Input::<String>::new();
+    let input = input.with_prompt("Username").allow_empty(true);
+    let input = if let Some(current) = existing {
+        input.default(current.clone())
+    } else {
+        input
+    };
+    Ok(input.interact().ok().filter(|s| !s.is_empty()))
+}
+
+/// Prompt for password during edit, allowing keep existing.
+fn prompt_for_password_edit(existing: Option<&SecureValue>) -> Result<Option<SecureValue>> {
+    let input = dialoguer::Password::new()
+        .with_prompt("Password (press Enter to keep existing)")
+        .allow_empty_password(true)
+        .interact()?;
+
+    if input.is_empty() {
+        Ok(existing.cloned())
+    } else {
+        Ok(Some(SecureValue::Plain(secrecy::SecretString::new(
+            input.into(),
+        ))))
+    }
+}
+
+/// Prompt for API token during edit, allowing keep existing.
+fn prompt_for_token_edit(existing: Option<&SecureValue>) -> Result<Option<SecureValue>> {
+    let input = dialoguer::Password::new()
+        .with_prompt("API Token (press Enter to keep existing or skip)")
+        .allow_empty_password(true)
+        .interact()?;
+
+    if input.is_empty() {
+        Ok(existing.cloned())
+    } else {
+        Ok(Some(SecureValue::Plain(secrecy::SecretString::new(
+            input.into(),
+        ))))
+    }
+}
+
+/// Prompt for boolean confirmation with default.
+fn prompt_for_bool(prompt: &str, existing: Option<bool>) -> Result<Option<bool>> {
+    let confirm = dialoguer::Confirm::new();
+    let confirm = confirm
+        .with_prompt(prompt)
+        .default(existing.unwrap_or(false));
+    Ok(confirm.interact().ok())
+}
+
+/// Prompt for numeric input with default.
+fn prompt_for_number<T>(prompt: &str, existing: Option<T>, default: T) -> Result<Option<T>>
+where
+    T: Clone + std::fmt::Display + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    let input = dialoguer::Input::<T>::new();
+    let input = input
+        .with_prompt(prompt)
+        .default(existing.unwrap_or(default));
+    Ok(input.interact().ok())
+}
+
+/// Gather all profile inputs interactively for edit command.
+fn gather_edit_inputs(profile: &ProfileConfig) -> Result<ProfileConfig> {
+    let base_url = prompt_for_base_url(profile.base_url.as_ref())?;
+    let username = prompt_for_username(profile.username.as_ref())?;
+
+    // Validate required fields
+    if base_url.is_none() {
+        anyhow::bail!("Base URL is required");
+    }
+
+    let password = if username.is_some() {
+        prompt_for_password_edit(profile.password.as_ref())?
+    } else {
+        profile.password.clone()
+    };
+
+    let api_token = prompt_for_token_edit(profile.api_token.as_ref())?;
+
+    // Validate auth requirements
+    if username.is_some() && password.is_none() && api_token.is_none() {
+        anyhow::bail!("Either password or API token must be provided when using username");
+    }
+
+    let skip_verify = prompt_for_bool("Skip TLS certificate verification?", profile.skip_verify)?;
+    let timeout_seconds =
+        prompt_for_number("Connection timeout (seconds)", profile.timeout_seconds, 30)?;
+    let max_retries = prompt_for_number("Maximum retries", profile.max_retries, 3)?;
+
+    Ok(ProfileConfig {
+        base_url,
+        username: username.clone(),
+        skip_verify,
+        timeout_seconds,
+        max_retries,
+        password,
+        api_token,
+        ..Default::default()
+    })
+}
+
 fn run_edit(manager: &mut ConfigManager, profile_name: &str, plaintext: bool) -> Result<()> {
     let profiles = manager.list_profiles();
 
@@ -347,173 +511,31 @@ fn run_edit(manager: &mut ConfigManager, profile_name: &str, plaintext: bool) ->
         )
     })?;
 
-    let profile = existing_profile.clone();
+    // Gather all inputs interactively
+    let gathered = gather_edit_inputs(existing_profile)?;
 
-    // Prompt for each field interactively
-    let base_url = if let Some(current) = &profile.base_url {
-        dialoguer::Input::<String>::new()
-            .with_prompt("Base URL")
-            .default(current.clone())
-            .interact()
-            .ok()
-    } else {
-        dialoguer::Input::<String>::new()
-            .with_prompt("Base URL")
-            .interact()
-            .ok()
-    };
-
-    let username = if let Some(current) = &profile.username {
-        dialoguer::Input::<String>::new()
-            .with_prompt("Username")
-            .default(current.clone())
-            .allow_empty(true)
-            .interact()
-            .ok()
-            .filter(|s| !s.is_empty())
-    } else {
-        dialoguer::Input::<String>::new()
-            .with_prompt("Username")
-            .allow_empty(true)
-            .interact()
-            .ok()
-            .filter(|s| !s.is_empty())
-    };
-
-    // Validate that we have required fields
-    if base_url.is_none() {
-        anyhow::bail!("Base URL is required");
-    }
-
-    // Prompt for password if username is set
-    let password = if username.is_some() {
-        // For edit, always prompt but allow keeping existing
-        if let Ok(input) = dialoguer::Password::new()
-            .with_prompt("Password (press Enter to keep existing)")
-            .allow_empty_password(true)
-            .interact()
-        {
-            if input.is_empty() {
-                profile.password.clone()
-            } else {
-                Some(SecureValue::Plain(secrecy::SecretString::new(input.into())))
-            }
-        } else {
-            profile.password.clone()
-        }
-    } else {
-        profile.password.clone()
-    };
-
-    // Prompt for API token (alternative to password)
-    let api_token = if let Ok(input) = dialoguer::Password::new()
-        .with_prompt("API Token (press Enter to keep existing or skip)")
-        .allow_empty_password(true)
-        .interact()
-    {
-        if input.is_empty() {
-            profile.api_token.clone()
-        } else {
-            Some(SecureValue::Plain(secrecy::SecretString::new(input.into())))
-        }
-    } else {
-        profile.api_token.clone()
-    };
-
-    // Validate auth requirements
-    if username.is_some() && password.is_none() && api_token.is_none() {
-        anyhow::bail!("Either password or API token must be provided when using username");
-    }
-
-    let skip_verify = if let Some(current) = profile.skip_verify {
-        dialoguer::Confirm::new()
-            .with_prompt("Skip TLS certificate verification?")
-            .default(current)
-            .interact()
-            .ok()
-    } else {
-        dialoguer::Confirm::new()
-            .with_prompt("Skip TLS certificate verification?")
-            .default(false)
-            .interact()
-            .ok()
-    };
-
-    let timeout_seconds = if let Some(current) = profile.timeout_seconds {
-        dialoguer::Input::<u64>::new()
-            .with_prompt("Connection timeout (seconds)")
-            .default(current)
-            .interact()
-            .ok()
-    } else {
-        dialoguer::Input::<u64>::new()
-            .with_prompt("Connection timeout (seconds)")
-            .default(30)
-            .interact()
-            .ok()
-    };
-
-    let max_retries = if let Some(current) = profile.max_retries {
-        dialoguer::Input::<usize>::new()
-            .with_prompt("Maximum retries")
-            .default(current)
-            .interact()
-            .ok()
-    } else {
-        dialoguer::Input::<usize>::new()
-            .with_prompt("Maximum retries")
-            .default(3)
-            .interact()
-            .ok()
-    };
-
+    // Build final profile config, falling back to existing values
     let mut profile_config = ProfileConfig {
-        base_url,
-        username: username.clone(),
-        skip_verify,
-        timeout_seconds,
-        max_retries,
+        base_url: gathered.base_url.clone(),
+        username: gathered.username.clone(),
+        skip_verify: gathered.skip_verify,
+        timeout_seconds: gathered.timeout_seconds,
+        max_retries: gathered.max_retries,
         ..Default::default()
     };
 
-    // Store credentials: try keyring first (default), fallback to plaintext with warning
-    // Only use plaintext if --plaintext flag is explicitly set
-    let password = if plaintext {
-        // User explicitly requested plaintext storage
-        password
-    } else {
-        // Try keyring first, fallback to plaintext with warning
-        if let (Some(username), Some(SecureValue::Plain(pw))) = (&username, &password) {
-            let keyring_value = manager.try_store_password_in_keyring(profile_name, username, pw);
-            // Log warning if we fell back to plaintext
-            if matches!(keyring_value, SecureValue::Plain(_)) {
-                eprintln!("Warning: Failed to store password in keyring. Storing as plaintext.");
-            }
-            Some(keyring_value)
-        } else {
-            password
-        }
-    };
+    // Store credentials with keyring fallback
+    let password = store_password(
+        manager,
+        profile_name,
+        gathered.username.as_ref(),
+        gathered.password,
+        plaintext,
+    );
+    let api_token = store_api_token(manager, profile_name, gathered.api_token, plaintext);
 
-    let api_token = if plaintext {
-        // User explicitly requested plaintext storage
-        api_token
-    } else {
-        // Try keyring first, fallback to plaintext with warning
-        if let Some(SecureValue::Plain(token)) = &api_token {
-            let keyring_value = manager.try_store_token_in_keyring(profile_name, token);
-            // Log warning if we fell back to plaintext
-            if matches!(keyring_value, SecureValue::Plain(_)) {
-                eprintln!("Warning: Failed to store API token in keyring. Storing as plaintext.");
-            }
-            Some(keyring_value)
-        } else {
-            api_token
-        }
-    };
-
-    profile_config.password = password.or(profile.password);
-    profile_config.api_token = api_token.or(profile.api_token);
+    profile_config.password = password.or(existing_profile.password.clone());
+    profile_config.api_token = api_token.or(existing_profile.api_token.clone());
 
     manager.save_profile(profile_name, profile_config)?;
     println!("Profile '{}' updated successfully.", profile_name);

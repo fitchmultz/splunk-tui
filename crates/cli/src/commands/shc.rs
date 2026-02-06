@@ -140,6 +140,76 @@ pub async fn run(
     }
 }
 
+/// Fetch a page of SHC members with pagination.
+async fn fetch_shc_members_page(
+    client: &mut splunk_client::SplunkClient,
+    offset: usize,
+    page_size: usize,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<(Option<Vec<ShcMemberOutput>>, Option<Pagination>)> {
+    let members_result = tokio::select! {
+        res = client.get_shc_members() => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+
+    match members_result {
+        Ok(members) => {
+            let total = members.len();
+            let page: Vec<_> = members
+                .into_iter()
+                .skip(offset)
+                .take(page_size)
+                .map(ShcMemberOutput::from)
+                .collect();
+
+            Ok((
+                Some(page),
+                Some(Pagination {
+                    offset,
+                    page_size,
+                    total: Some(total),
+                }),
+            ))
+        }
+        Err(e) => {
+            warn!("Could not fetch SHC members: {}", e);
+            Ok((None, None))
+        }
+    }
+}
+
+/// Render SHC status output to file or stdout.
+async fn render_shc_output(
+    status: &ShcStatusOutput,
+    detailed: bool,
+    members: Option<Vec<ShcMemberOutput>>,
+    pagination: Option<Pagination>,
+    format: OutputFormat,
+    output_file: Option<&PathBuf>,
+) -> Result<()> {
+    let output = if format == OutputFormat::Table {
+        let formatter = TableFormatter;
+        formatter.format_shc_status_paginated(status, detailed, members, pagination)?
+    } else {
+        let formatter = get_formatter(format);
+        formatter.format_shc_status(status)?
+    };
+
+    if let Some(path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
+
+    Ok(())
+}
+
 async fn run_show(
     config: splunk_config::Config,
     detailed: bool,
@@ -170,36 +240,7 @@ async fn run_show(
         Ok(shc_status) => {
             // Fetch members if detailed (fetch ALL once, then paginate locally)
             let (members_output, members_pagination) = if detailed {
-                let members_result = tokio::select! {
-                    res = client.get_shc_members() => res,
-                    _ = cancel.cancelled() => return Err(Cancelled.into()),
-                };
-                match members_result {
-                    Ok(members) => {
-                        let total = members.len();
-
-                        // Slice safely (empty slice if offset beyond end)
-                        let page: Vec<_> = members
-                            .into_iter()
-                            .skip(offset)
-                            .take(page_size)
-                            .map(ShcMemberOutput::from)
-                            .collect();
-
-                        (
-                            Some(page),
-                            Some(Pagination {
-                                offset,
-                                page_size,
-                                total: Some(total),
-                            }),
-                        )
-                    }
-                    Err(e) => {
-                        warn!("Could not fetch SHC members: {}", e);
-                        (None, None)
-                    }
-                }
+                fetch_shc_members_page(&mut client, offset, page_size, cancel).await?
             } else {
                 (None, None)
             };
@@ -214,45 +255,16 @@ async fn run_show(
                 service_ready_flag: shc_status.service_ready_flag,
             };
 
-            // Parse output format
             let format = OutputFormat::from_str(output_format)?;
-
-            // Table output gets pagination footer; machine-readable formats must not.
-            if format == OutputFormat::Table {
-                let formatter = TableFormatter;
-                let output = formatter.format_shc_status_paginated(
-                    &status,
-                    detailed,
-                    members_output,
-                    members_pagination,
-                )?;
-                if let Some(ref path) = output_file {
-                    write_to_file(&output, path)
-                        .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                    eprintln!(
-                        "Results written to {} ({:?} format)",
-                        path.display(),
-                        format
-                    );
-                } else {
-                    print!("{}", output);
-                }
-                return Ok(());
-            }
-
-            let formatter = get_formatter(format);
-            let output = formatter.format_shc_status(&status)?;
-            if let Some(ref path) = output_file {
-                write_to_file(&output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", output);
-            }
+            render_shc_output(
+                &status,
+                detailed,
+                members_output,
+                members_pagination,
+                format,
+                output_file.as_ref(),
+            )
+            .await?;
         }
         Err(e) => {
             // Not all Splunk instances are in SHC

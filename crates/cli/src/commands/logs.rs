@@ -24,7 +24,7 @@ use tokio::time::{Duration, sleep};
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{Formatter, OutputFormat, get_formatter, write_to_file};
 
 /// Cursor for tracking log position during tailing.
 #[derive(Debug, Clone)]
@@ -96,82 +96,142 @@ pub async fn run(
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
-
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
 
     if tail {
-        info!("Tailing internal logs...");
-        let mut cursor: Option<LogCursor> = None;
-        let mut is_first = true;
-
-        loop {
-            let fetch_result: Result<Vec<LogEntry>> = tokio::select! {
-                res = client.get_internal_logs(count as u64, Some(cursor.as_ref().map(|c| c.time.as_str()).unwrap_or(&earliest))) => res.map_err(|e| e.into()),
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            };
-
-            match fetch_result {
-                Ok(logs) => {
-                    let logs: Vec<LogEntry> = logs;
-                    if !logs.is_empty() {
-                        // Filter out logs we've already seen
-                        let mut new_logs: Vec<_> = if let Some(ref cursor) = cursor {
-                            logs.into_iter().filter(|l| cursor.is_after(l)).collect()
-                        } else {
-                            logs
-                        };
-
-                        if !new_logs.is_empty() {
-                            // Ensure deterministic ordering before cursor update (defensive)
-                            // API returns sorted results, but client-side filtering could
-                            // theoretically disrupt ordering. Explicit sort adds resilience
-                            // against future changes to filtering or data flow.
-                            sort_logs_newest_first(&mut new_logs);
-
-                            // Update cursor to the NEWEST new log (first in sorted descending list)
-                            // This prevents re-querying same-timestamp events on next poll
-                            if let Some(newest_new) = new_logs.first() {
-                                cursor = Some(LogCursor::from_entry(newest_new));
-                            }
-
-                            // Print new logs using streaming formatter (sorted newest-first, which is correct for tailing)
-                            let output = formatter.format_logs_streaming(&new_logs, is_first)?;
-                            if !output.is_empty() {
-                                print!("{}", output);
-                            }
-                            is_first = false;
-                        }
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Error fetching logs: {}", e);
-                }
-            }
-
-            tokio::select! {
-                _ = sleep(Duration::from_secs(2)) => {}
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }
-        }
+        run_tail_mode(&mut client, count, &earliest, formatter.as_ref(), cancel).await
     } else {
-        info!("Fetching internal logs...");
-        let logs: Vec<LogEntry> = tokio::select! {
-            res = client.get_internal_logs(count as u64, Some(&earliest)) => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        };
-        let output = formatter.format_logs(&logs)?;
-        if let Some(ref path) = output_file {
-            write_to_file(&output, path)
-                .with_context(|| format!("Failed to write output to {}", path.display()))?;
-            eprintln!(
-                "Results written to {} ({:?} format)",
-                path.display(),
-                format
-            );
-        } else {
-            println!("{}", output);
+        run_normal_mode(
+            &mut client,
+            count,
+            &earliest,
+            formatter.as_ref(),
+            output_file.as_ref(),
+            format,
+            cancel,
+        )
+        .await
+    }
+}
+
+/// Run in continuous tail mode, polling for new logs.
+async fn run_tail_mode(
+    client: &mut splunk_client::SplunkClient,
+    count: usize,
+    earliest: &str,
+    formatter: &dyn Formatter,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Tailing internal logs...");
+    let mut cursor: Option<LogCursor> = None;
+    let mut is_first = true;
+
+    loop {
+        let fetch_result = fetch_logs_batch(client, count, earliest, &cursor, cancel).await;
+
+        match fetch_result {
+            Ok(logs) => {
+                process_log_batch(&logs, &mut cursor, formatter, &mut is_first).await?;
+            }
+            Err(e) => {
+                eprintln!("Error fetching logs: {}", e);
+            }
         }
+
+        tokio::select! {
+            _ = sleep(Duration::from_secs(2)) => {}
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        }
+    }
+}
+
+/// Fetch a batch of logs from the Splunk server.
+async fn fetch_logs_batch(
+    client: &mut splunk_client::SplunkClient,
+    count: usize,
+    earliest: &str,
+    cursor: &Option<LogCursor>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<Vec<LogEntry>> {
+    let time_filter = cursor.as_ref().map(|c| c.time.as_str()).unwrap_or(earliest);
+
+    tokio::select! {
+        res = client.get_internal_logs(count as u64, Some(time_filter)) => res.map_err(|e| e.into()),
+        _ = cancel.cancelled() => Err(Cancelled.into()),
+    }
+}
+
+/// Process a batch of logs, filtering already-seen entries and updating cursor.
+async fn process_log_batch(
+    logs: &[LogEntry],
+    cursor: &mut Option<LogCursor>,
+    formatter: &dyn Formatter,
+    is_first: &mut bool,
+) -> Result<()> {
+    if logs.is_empty() {
+        return Ok(());
+    }
+
+    // Filter out logs we've already seen
+    let mut new_logs: Vec<_> = match cursor {
+        Some(c) => logs.iter().filter(|l| c.is_after(l)).cloned().collect(),
+        None => logs.to_vec(),
+    };
+
+    if new_logs.is_empty() {
+        return Ok(());
+    }
+
+    // Ensure deterministic ordering before cursor update (defensive)
+    // API returns sorted results, but client-side filtering could
+    // theoretically disrupt ordering. Explicit sort adds resilience
+    // against future changes to filtering or data flow.
+    sort_logs_newest_first(&mut new_logs);
+
+    // Update cursor to the NEWEST new log (first in sorted descending list)
+    // This prevents re-querying same-timestamp events on next poll
+    if let Some(newest_new) = new_logs.first() {
+        *cursor = Some(LogCursor::from_entry(newest_new));
+    }
+
+    // Print new logs using streaming formatter (sorted newest-first, which is correct for tailing)
+    let output = formatter.format_logs_streaming(&new_logs, *is_first)?;
+    if !output.is_empty() {
+        print!("{}", output);
+    }
+    *is_first = false;
+
+    Ok(())
+}
+
+/// Run in normal mode, fetching logs once and outputting.
+async fn run_normal_mode(
+    client: &mut splunk_client::SplunkClient,
+    count: usize,
+    earliest: &str,
+    formatter: &dyn Formatter,
+    output_file: Option<&std::path::PathBuf>,
+    format: OutputFormat,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Fetching internal logs...");
+    let logs: Vec<LogEntry> = tokio::select! {
+        res = client.get_internal_logs(count as u64, Some(earliest)) => res?,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+
+    let output = formatter.format_logs(&logs)?;
+    if let Some(path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        println!("{}", output);
     }
 
     Ok(())

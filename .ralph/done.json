@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
         "scan_agent": "scan-maintenance",
-        "lines_of_dead_code": "598"
+        "lines_of_dead_code": "598",
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -3878,6 +3878,68 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0352",
+      "status": "done",
+      "title": "Decompose oversized CLI command functions over 100 lines",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "refactor",
+        "complexity",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/logs.rs:82-458 (fn run - ~377 lines)",
+        "crates/cli/src/commands/config.rs:339-524 (fn run_edit - ~186 lines)",
+        "crates/cli/src/commands/macros.rs:115-248 (fn run - ~134 lines)",
+        "crates/cli/src/commands/shc.rs:143-267 (fn run_show - ~125 lines)",
+        "crates/cli/src/commands/cluster.rs:147-269 (fn run_show - ~123 lines)",
+        "crates/cli/src/commands/config.rs:201-308 (fn run_set - ~108 lines)"
+      ],
+      "evidence": [
+        "logs.rs:run spans ~377 lines (lines 82-458) - handles tail mode, pagination, cursor management, multiple output formats",
+        "config.rs:run_edit spans ~186 lines (lines 339-524) - handles profile editing, interactive prompts, validation, persistence",
+        "macros.rs:run spans ~134 lines (lines 115-248) - contains deeply nested subcommand match arms for macro operations",
+        "shc.rs:run_show spans ~125 lines (lines 143-267) - handles SHC status fetching with complex match logic",
+        "cluster.rs:run_show spans ~123 lines (lines 147-269) - fetches cluster info with detailed/peer modes and pagination",
+        "config.rs:run_set spans ~108 lines (lines 201-308) - handles profile creation with interactive input gathering",
+        "Original scope paths were outdated (file sizes reduced significantly from original scan)"
+      ],
+      "plan": [
+        "Start with logs.rs:run - extract tail mode loop to separate function",
+        "Extract cursor management logic in logs.rs to helper functions",
+        "For config.rs:run_edit - extract input gathering into `prompt_for_*` helper functions",
+        "Move validation logic in config.rs to standalone `validate_*` functions",
+        "For macros.rs, shc.rs, cluster.rs - extract subcommand handlers to named functions",
+        "Create `render_*` functions for output formatting separate from business logic",
+        "Target: no function exceeds 60 lines, single responsibility per function",
+        "Verify by running `make lint` and `make test`"
+      ],
+      "notes": [
+        "Scope refreshed: original file line references were stale - files have been reorganized",
+        "logs.rs:run is the largest at ~377 lines and should be tackled first for maximum impact",
+        "Decomposed 6 oversized CLI command functions across 5 files",
+        "logs.rs: run() reduced from ~97 to 35 lines; extracted run_tail_mode, fetch_logs_batch, process_log_batch, run_normal_mode",
+        "config.rs: run_edit() reduced from ~184 to 43 lines; run_set() reduced from ~106 to 77 lines; extracted 9 helper functions",
+        "macros.rs: run() reduced from ~132 to 69 lines; extracted run_create, run_update",
+        "shc.rs: run_show() reduced from ~123 to 66 lines; extracted fetch_shc_members_page, render_shc_output",
+        "cluster.rs: run_show() reduced from ~121 to 66 lines; extracted fetch_cluster_peers_page, render_cluster_output",
+        "All functions now under 85 lines (most under 60); make ci passes with 531+ tests"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T19:02:41.705074378Z",
+      "completed_at": "2026-02-06T19:02:41.705074378Z",
+      "started_at": "2026-02-06T18:44:02.751964259Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "oversized_function_count": "6"
       }
     }
   ]

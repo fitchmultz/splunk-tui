@@ -144,6 +144,75 @@ pub async fn run(
     }
 }
 
+/// Fetch a page of cluster peers with pagination.
+async fn fetch_cluster_peers_page(
+    client: &mut splunk_client::SplunkClient,
+    offset: usize,
+    page_size: usize,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<(Option<Vec<ClusterPeerOutput>>, Option<Pagination>)> {
+    let peers_result = tokio::select! {
+        res = client.get_cluster_peers() => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    };
+
+    match peers_result {
+        Ok(peers) => {
+            let total = peers.len();
+            let page: Vec<_> = peers
+                .into_iter()
+                .skip(offset)
+                .take(page_size)
+                .map(ClusterPeerOutput::from)
+                .collect();
+
+            Ok((
+                Some(page),
+                Some(Pagination {
+                    offset,
+                    page_size,
+                    total: Some(total),
+                }),
+            ))
+        }
+        Err(e) => {
+            warn!("Could not fetch cluster peers: {}", e);
+            Ok((None, None))
+        }
+    }
+}
+
+/// Render cluster info output to file or stdout.
+async fn render_cluster_output(
+    info: &ClusterInfoOutput,
+    detailed: bool,
+    pagination: Option<Pagination>,
+    format: OutputFormat,
+    output_file: Option<&PathBuf>,
+) -> Result<()> {
+    let output = if format == OutputFormat::Table {
+        let formatter = TableFormatter;
+        formatter.format_cluster_info_paginated(info, detailed, pagination)?
+    } else {
+        let formatter = get_formatter(format);
+        formatter.format_cluster_info(info, detailed)?
+    };
+
+    if let Some(path) = output_file {
+        write_to_file(&output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
+
+    Ok(())
+}
+
 async fn run_show(
     config: splunk_config::Config,
     detailed: bool,
@@ -174,36 +243,7 @@ async fn run_show(
         Ok(cluster_info) => {
             // Fetch peers if detailed (fetch ALL once, then paginate locally)
             let (peers_output, peers_pagination) = if detailed {
-                let peers_result = tokio::select! {
-                    res = client.get_cluster_peers() => res,
-                    _ = cancel.cancelled() => return Err(Cancelled.into()),
-                };
-                match peers_result {
-                    Ok(peers) => {
-                        let total = peers.len();
-
-                        // Slice safely (empty slice if offset beyond end)
-                        let page: Vec<_> = peers
-                            .into_iter()
-                            .skip(offset)
-                            .take(page_size)
-                            .map(ClusterPeerOutput::from)
-                            .collect();
-
-                        (
-                            Some(page),
-                            Some(Pagination {
-                                offset,
-                                page_size,
-                                total: Some(total),
-                            }),
-                        )
-                    }
-                    Err(e) => {
-                        warn!("Could not fetch cluster peers: {}", e);
-                        (None, None)
-                    }
-                }
+                fetch_cluster_peers_page(&mut client, offset, page_size, cancel).await?
             } else {
                 (None, None)
             };
@@ -220,41 +260,15 @@ async fn run_show(
                 peers: peers_output,
             };
 
-            // Parse output format
             let format = OutputFormat::from_str(output_format)?;
-
-            // Table output gets pagination footer; machine-readable formats must not.
-            if format == OutputFormat::Table {
-                let formatter = TableFormatter;
-                let output =
-                    formatter.format_cluster_info_paginated(&info, detailed, peers_pagination)?;
-                if let Some(ref path) = output_file {
-                    write_to_file(&output, path)
-                        .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                    eprintln!(
-                        "Results written to {} ({:?} format)",
-                        path.display(),
-                        format
-                    );
-                } else {
-                    print!("{}", output);
-                }
-                return Ok(());
-            }
-
-            let formatter = get_formatter(format);
-            let output = formatter.format_cluster_info(&info, detailed)?;
-            if let Some(ref path) = output_file {
-                write_to_file(&output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", output);
-            }
+            render_cluster_output(
+                &info,
+                detailed,
+                peers_pagination,
+                format,
+                output_file.as_ref(),
+            )
+            .await?;
         }
         Err(e) => {
             // Not all Splunk instances are clustered

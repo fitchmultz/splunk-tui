@@ -136,30 +136,19 @@ pub async fn run(
             validation,
             errormsg,
         } => {
-            info!("Creating macro: {}", name);
-
-            let mut client = crate::commands::build_client_from_config(&config)?;
-
-            let params = MacroCreateParams {
-                name: &name,
-                definition: &definition,
-                args: args.as_deref(),
-                description: description.as_deref(),
+            run_create(
+                config,
+                name,
+                definition,
+                args,
+                description,
                 disabled,
                 iseval,
-                validation: validation.as_deref(),
-                errormsg: errormsg.as_deref(),
-            };
-
-            tokio::select! {
-                res = client.create_macro(params) => {
-                    res?;
-                    eprintln!("Macro '{}' created successfully", name);
-                }
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }
-
-            Ok(())
+                validation,
+                errormsg,
+                cancel,
+            )
+            .await
         }
         MacrosCommand::Update {
             name,
@@ -173,76 +162,147 @@ pub async fn run(
             validation,
             errormsg,
         } => {
-            info!("Updating macro: {}", name);
-
-            // Validate conflicting flags
-            if disable && enable {
-                return Err(anyhow::anyhow!(
-                    "Cannot use both --disable and --enable flags"
-                ));
-            }
-            if iseval && no_iseval {
-                return Err(anyhow::anyhow!(
-                    "Cannot use both --iseval and --no-iseval flags"
-                ));
-            }
-
-            // Build optional values
-            let disabled = if disable {
-                Some(true)
-            } else if enable {
-                Some(false)
-            } else {
-                None
-            };
-
-            let iseval_flag = if iseval {
-                Some(true)
-            } else if no_iseval {
-                Some(false)
-            } else {
-                None
-            };
-
-            // Validate at least one field is provided
-            if definition.is_none()
-                && args.is_none()
-                && description.is_none()
-                && disabled.is_none()
-                && iseval_flag.is_none()
-                && validation.is_none()
-                && errormsg.is_none()
-            {
-                return Err(anyhow::anyhow!(
-                    "At least one field must be provided to update"
-                ));
-            }
-
-            let mut client = crate::commands::build_client_from_config(&config)?;
-
-            let params = MacroUpdateParams {
-                name: &name,
-                definition: definition.as_deref(),
-                args: args.as_deref(),
-                description: description.as_deref(),
-                disabled,
-                iseval: iseval_flag,
-                validation: validation.as_deref(),
-                errormsg: errormsg.as_deref(),
-            };
-
-            tokio::select! {
-                res = client.update_macro(params) => {
-                    res?;
-                    eprintln!("Macro '{}' updated successfully", name);
-                }
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }
-
-            Ok(())
+            run_update(
+                config,
+                name,
+                definition,
+                args,
+                description,
+                disable,
+                enable,
+                iseval,
+                no_iseval,
+                validation,
+                errormsg,
+                cancel,
+            )
+            .await
         }
         MacrosCommand::Delete { name, force } => run_delete(config, &name, force, cancel).await,
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_create(
+    config: splunk_config::Config,
+    name: String,
+    definition: String,
+    args: Option<String>,
+    description: Option<String>,
+    disabled: bool,
+    iseval: bool,
+    validation: Option<String>,
+    errormsg: Option<String>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Creating macro: {}", name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let params = MacroCreateParams {
+        name: &name,
+        definition: &definition,
+        args: args.as_deref(),
+        description: description.as_deref(),
+        disabled,
+        iseval,
+        validation: validation.as_deref(),
+        errormsg: errormsg.as_deref(),
+    };
+
+    tokio::select! {
+        res = client.create_macro(params) => {
+            res?;
+            eprintln!("Macro '{}' created successfully", name);
+        }
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_update(
+    config: splunk_config::Config,
+    name: String,
+    definition: Option<String>,
+    args: Option<String>,
+    description: Option<String>,
+    disable: bool,
+    enable: bool,
+    iseval: bool,
+    no_iseval: bool,
+    validation: Option<String>,
+    errormsg: Option<String>,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Updating macro: {}", name);
+
+    // Validate conflicting flags
+    if disable && enable {
+        return Err(anyhow::anyhow!(
+            "Cannot use both --disable and --enable flags"
+        ));
+    }
+    if iseval && no_iseval {
+        return Err(anyhow::anyhow!(
+            "Cannot use both --iseval and --no-iseval flags"
+        ));
+    }
+
+    // Build optional values
+    let disabled = if disable {
+        Some(true)
+    } else if enable {
+        Some(false)
+    } else {
+        None
+    };
+
+    let iseval_flag = if iseval {
+        Some(true)
+    } else if no_iseval {
+        Some(false)
+    } else {
+        None
+    };
+
+    // Validate at least one field is provided
+    if definition.is_none()
+        && args.is_none()
+        && description.is_none()
+        && disabled.is_none()
+        && iseval_flag.is_none()
+        && validation.is_none()
+        && errormsg.is_none()
+    {
+        return Err(anyhow::anyhow!(
+            "At least one field must be provided to update"
+        ));
+    }
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let params = MacroUpdateParams {
+        name: &name,
+        definition: definition.as_deref(),
+        args: args.as_deref(),
+        description: description.as_deref(),
+        disabled,
+        iseval: iseval_flag,
+        validation: validation.as_deref(),
+        errormsg: errormsg.as_deref(),
+    };
+
+    tokio::select! {
+        res = client.update_macro(params) => {
+            res?;
+            eprintln!("Macro '{}' updated successfully", name);
+        }
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+
+    Ok(())
 }
 
 async fn run_list(
