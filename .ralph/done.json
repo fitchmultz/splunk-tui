@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
+        "scan_agent": "scan-maintenance",
         "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance"
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -4006,10 +4006,66 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "production_files_affected": "8",
         "scan_agent": "scan-maintenance",
-        "test_files_affected": "4",
         "dead_code_count": "25",
-        "production_files_affected": "8"
+        "test_files_affected": "4"
+      }
+    },
+    {
+      "id": "RQ-0354",
+      "status": "done",
+      "title": "Simplify deeply nested match statements in TUI input handlers",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "complexity",
+        "tui",
+        "readability"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/*.rs (31 input handler files)",
+        "crates/tui/src/input/keymap/bindings/screens/*.rs (19 screen binding files)",
+        "crates/tui/src/app/input/search.rs (primary 3-level nesting)",
+        "crates/tui/src/app/input/workload.rs (view mode nesting)",
+        "crates/tui/src/app/input/configs.rs (multiple view mode matches)"
+      ],
+      "evidence": [
+        "50 total input-related files: 31 in app/input/ + 19 in input/keymap/bindings/screens/",
+        "search.rs: 3-level nesting at lines 102-211 (match key.code -> match search_input_mode -> match key.code)",
+        "workload.rs: Nested match self.workload_view_mode at lines 32-55, 59-76, 86-95, 106-121",
+        "configs.rs: Multiple match view_mode patterns at lines 77, 92, 126, 150, 177, 192",
+        "settings.rs: Match on sort_state.column/direction at lines 33, 47",
+        "Pattern creates cognitive load: control flow hard to follow and unit test in isolation"
+      ],
+      "plan": [
+        "Introduce early-return pattern: `let action = match key { ... }?;` instead of nested ifs",
+        "Extract match arms into named helper functions (e.g., handle_workload_pools_nav, handle_workload_rules_nav)",
+        "Consider Action enum dispatch or strategy pattern instead of direct view-mode matching",
+        "Add unit tests for extracted helper functions in existing app_input_tests.rs",
+        "Verify by running TUI tests: `cargo test -p splunk-tui --test app_input_tests`"
+      ],
+      "notes": [
+        "Updated scope: corrected file count from 55 to 50 (31 app/input + 19 keymap bindings)",
+        "search.rs has the deepest nesting (3 levels) and should be priority for refactoring",
+        "configs.rs has 6 separate match view_mode patterns that could be unified",
+        "Refactored deeply nested match statements in TUI input handlers",
+        "search.rs: Flattened 3-level nesting with early-return pattern and extracted helpers",
+        "workload.rs: Extracted navigation/refresh/load_more helpers",
+        "settings.rs: Extracted toggle/cycle helpers, uses new state methods",
+        "state.rs: Added SortColumn::next() and SortDirection::toggle() methods",
+        "Added 43+ unit tests, all pass, CI green"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T19:54:52.891817888Z",
+      "completed_at": "2026-02-06T19:54:52.891817888Z",
+      "started_at": "2026-02-06T19:34:42.594368948Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

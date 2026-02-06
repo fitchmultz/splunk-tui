@@ -70,32 +70,9 @@ impl App {
 
     /// Handle input for the search screen.
     pub fn handle_search_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Handle Ctrl+C or 'y' copy shortcut while in input (vim-style)
-        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
-            && matches!(key.code, KeyCode::Char('c')))
-            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
-        if is_copy {
-            // Decision:
-            // - If results exist, copy the JSON for the "current" result (at scroll offset).
-            // - Otherwise, copy the current search query.
-            let content = if !self.search_results.is_empty() {
-                let idx = self
-                    .search_scroll_offset
-                    .min(self.search_results.len().saturating_sub(1));
-                self.search_results
-                    .get(idx)
-                    .and_then(|v| serde_json::to_string_pretty(v).ok())
-                    .unwrap_or_else(|| "<invalid>".to_string())
-            } else {
-                self.search_input.value().to_string()
-            };
-
-            if content.trim().is_empty() {
-                self.toasts.push(crate::ui::Toast::info("Nothing to copy"));
-                return None;
-            }
-
-            return Some(Action::CopyToClipboard(content));
+        // Handle copy shortcut early (early return pattern)
+        if let Some(action) = self.try_handle_search_copy(key) {
+            return action;
         }
 
         // Handle mode switching and input based on current mode
@@ -105,110 +82,176 @@ impl App {
                 self.search_input_mode = self.search_input_mode.toggle();
                 None
             }
-            // Esc switches back to QueryFocused mode (or clears if already focused)
-            KeyCode::Esc => {
-                if matches!(self.search_input_mode, SearchInputMode::ResultsFocused) {
-                    self.search_input_mode = SearchInputMode::QueryFocused;
-                }
+            // Esc switches back to QueryFocused mode
+            KeyCode::Esc => self.handle_search_esc(),
+            // Delegate to mode-specific handler
+            _ => self.handle_search_by_mode(key),
+        }
+    }
+
+    /// Try to handle copy shortcut (Ctrl+C or 'y').
+    ///
+    /// Returns `Some(action)` if copy was handled, `None` otherwise.
+    fn try_handle_search_copy(&mut self, key: KeyEvent) -> Option<Option<Action>> {
+        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('c')))
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
+
+        if !is_copy {
+            return None;
+        }
+
+        // Decision:
+        // - If results exist, copy the JSON for the "current" result (at scroll offset).
+        // - Otherwise, copy the current search query.
+        let content = if !self.search_results.is_empty() {
+            let idx = self
+                .search_scroll_offset
+                .min(self.search_results.len().saturating_sub(1));
+            self.search_results
+                .get(idx)
+                .and_then(|v| serde_json::to_string_pretty(v).ok())
+                .unwrap_or_else(|| "<invalid>".to_string())
+        } else {
+            self.search_input.value().to_string()
+        };
+
+        if content.trim().is_empty() {
+            self.toasts.push(crate::ui::Toast::info("Nothing to copy"));
+            return Some(None);
+        }
+
+        Some(Some(Action::CopyToClipboard(content)))
+    }
+
+    /// Handle Esc key in search screen.
+    fn handle_search_esc(&mut self) -> Option<Action> {
+        if matches!(self.search_input_mode, SearchInputMode::ResultsFocused) {
+            self.search_input_mode = SearchInputMode::QueryFocused;
+        }
+        None
+    }
+
+    /// Dispatch to mode-specific handler based on current input mode.
+    fn handle_search_by_mode(&mut self, key: KeyEvent) -> Option<Action> {
+        match self.search_input_mode {
+            SearchInputMode::QueryFocused => self.handle_search_query_focused(key),
+            SearchInputMode::ResultsFocused => self.handle_search_results_focused(key),
+        }
+    }
+
+    /// Handle input when in QueryFocused mode.
+    fn handle_search_query_focused(&mut self, key: KeyEvent) -> Option<Action> {
+        match key.code {
+            KeyCode::Enter => self.execute_search(),
+            KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                self.toggle_search_mode()
+            }
+            KeyCode::Down => self.navigate_search_history_forward(),
+            KeyCode::Up => self.navigate_search_history_backward(),
+            KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                self.begin_search_export()
+            }
+            _ => {
+                // For all other keys, use tui-input's InputRequest handling
+                // This handles: character input, backspace, delete, cursor movement
+                self.history_index = None;
+                self.search_input.handle_key(key);
+                self.trigger_validation();
                 None
             }
-            _ => match self.search_input_mode {
-                SearchInputMode::QueryFocused => {
-                    // In QueryFocused mode, handle text input
-                    match key.code {
-                        KeyCode::Enter => {
-                            if !self.search_input.is_empty() {
-                                let query = self.search_input.value().to_string();
-                                self.add_to_history(query.clone());
-                                self.search_status = format!("Running: {}", query);
-                                // Switch to ResultsFocused after running search
-                                self.search_input_mode = SearchInputMode::ResultsFocused;
-                                Some(Action::RunSearch {
-                                    query,
-                                    search_defaults: self.search_defaults.clone(),
-                                    search_mode: self.search_mode,
-                                    realtime_window: self.realtime_window,
-                                })
-                            } else {
-                                None
-                            }
-                        }
-                        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                            // Toggle search mode between Normal and Realtime
-                            self.search_mode = match self.search_mode {
-                                SearchMode::Normal => SearchMode::Realtime,
-                                SearchMode::Realtime => SearchMode::Normal,
-                            };
-                            let mode_str = match self.search_mode {
-                                SearchMode::Normal => "Normal",
-                                SearchMode::Realtime => "Realtime",
-                            };
-                            self.toasts
-                                .push(crate::ui::Toast::info(format!("Search mode: {}", mode_str)));
-                            None
-                        }
-                        KeyCode::Down => {
-                            // Navigate forward in history (towards newer queries)
-                            if let Some(curr) = self.history_index {
-                                if curr > 0 {
-                                    self.history_index = Some(curr - 1);
-                                    self.search_input
-                                        .set_value(self.search_history[curr - 1].clone());
-                                } else {
-                                    self.history_index = None;
-                                    // Restore saved input
-                                    self.search_input.set_value(self.saved_search_input.value());
-                                }
-                            }
-                            self.trigger_validation();
-                            None
-                        }
-                        KeyCode::Up => {
-                            // Navigate backward in history (towards older queries)
-                            if self.search_history.is_empty() {
-                                return None;
-                            }
-
-                            if let Some(curr) = self.history_index {
-                                if curr < self.search_history.len().saturating_sub(1) {
-                                    self.history_index = Some(curr + 1);
-                                }
-                            } else {
-                                // Save current input before navigating
-                                self.saved_search_input.set_value(self.search_input.value());
-                                self.history_index = Some(0);
-                            }
-
-                            if let Some(idx) = self.history_index {
-                                self.search_input
-                                    .set_value(self.search_history[idx].clone());
-                            }
-                            self.trigger_validation();
-                            None
-                        }
-                        KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                            if !self.search_results.is_empty() {
-                                self.begin_export(ExportTarget::SearchResults);
-                            }
-                            None
-                        }
-                        _ => {
-                            // For all other keys, use tui-input's InputRequest handling
-                            // This handles: character input, backspace, delete, cursor movement
-                            self.history_index = None;
-                            self.search_input.handle_key(key);
-                            self.trigger_validation();
-                            None
-                        }
-                    }
-                }
-                SearchInputMode::ResultsFocused => {
-                    // In ResultsFocused mode, navigation keys are handled by global bindings
-                    // We just return None here and let the global bindings handle navigation
-                    None
-                }
-            },
         }
+    }
+
+    /// Handle input when in ResultsFocused mode.
+    fn handle_search_results_focused(&mut self, _key: KeyEvent) -> Option<Action> {
+        // In ResultsFocused mode, navigation keys are handled by global bindings
+        // We just return None here and let the global bindings handle navigation
+        None
+    }
+
+    /// Execute the search with current query.
+    fn execute_search(&mut self) -> Option<Action> {
+        if self.search_input.is_empty() {
+            return None;
+        }
+
+        let query = self.search_input.value().to_string();
+        self.add_to_history(query.clone());
+        self.search_status = format!("Running: {}", query);
+        // Switch to ResultsFocused after running search
+        self.search_input_mode = SearchInputMode::ResultsFocused;
+        Some(Action::RunSearch {
+            query,
+            search_defaults: self.search_defaults.clone(),
+            search_mode: self.search_mode,
+            realtime_window: self.realtime_window,
+        })
+    }
+
+    /// Toggle search mode between Normal and Realtime.
+    fn toggle_search_mode(&mut self) -> Option<Action> {
+        self.search_mode = match self.search_mode {
+            SearchMode::Normal => SearchMode::Realtime,
+            SearchMode::Realtime => SearchMode::Normal,
+        };
+        let mode_str = match self.search_mode {
+            SearchMode::Normal => "Normal",
+            SearchMode::Realtime => "Realtime",
+        };
+        self.toasts
+            .push(crate::ui::Toast::info(format!("Search mode: {}", mode_str)));
+        None
+    }
+
+    /// Navigate forward in search history (towards newer queries).
+    fn navigate_search_history_forward(&mut self) -> Option<Action> {
+        if let Some(curr) = self.history_index {
+            if curr > 0 {
+                self.history_index = Some(curr - 1);
+                self.search_input
+                    .set_value(self.search_history[curr - 1].clone());
+            } else {
+                self.history_index = None;
+                // Restore saved input
+                self.search_input.set_value(self.saved_search_input.value());
+            }
+        }
+        self.trigger_validation();
+        None
+    }
+
+    /// Navigate backward in search history (towards older queries).
+    fn navigate_search_history_backward(&mut self) -> Option<Action> {
+        if self.search_history.is_empty() {
+            return None;
+        }
+
+        if let Some(curr) = self.history_index {
+            if curr < self.search_history.len().saturating_sub(1) {
+                self.history_index = Some(curr + 1);
+            }
+        } else {
+            // Save current input before navigating
+            self.saved_search_input.set_value(self.search_input.value());
+            self.history_index = Some(0);
+        }
+
+        if let Some(idx) = self.history_index {
+            self.search_input
+                .set_value(self.search_history[idx].clone());
+        }
+        self.trigger_validation();
+        None
+    }
+
+    /// Begin export of search results.
+    fn begin_search_export(&mut self) -> Option<Action> {
+        if self.search_results.is_empty() {
+            return None;
+        }
+        self.begin_export(ExportTarget::SearchResults);
+        None
     }
 }
 
@@ -437,5 +480,310 @@ mod tests {
 
         assert!(app.spl_validation_pending);
         assert!(app.last_input_change.is_some());
+    }
+
+    // Tests for extracted helper functions
+
+    #[test]
+    fn test_try_handle_search_copy_with_results() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_results = vec![serde_json::json!({"key": "value"})];
+        app.search_scroll_offset = 0;
+
+        let result = app.try_handle_search_copy(ctrl_key('c'));
+
+        assert!(result.is_some());
+        let action = result.unwrap();
+        assert!(action.is_some());
+        assert!(matches!(action, Some(Action::CopyToClipboard(s)) if s.contains("key")));
+    }
+
+    #[test]
+    fn test_try_handle_search_copy_without_results() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("test query");
+        app.search_results.clear();
+
+        let result = app.try_handle_search_copy(ctrl_key('c'));
+
+        assert!(result.is_some());
+        let action = result.unwrap();
+        assert!(matches!(action, Some(Action::CopyToClipboard(s)) if s == "test query"));
+    }
+
+    #[test]
+    fn test_try_handle_search_copy_with_empty_content() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("   ");
+        app.search_results.clear();
+
+        let result = app.try_handle_search_copy(ctrl_key('c'));
+
+        assert!(result.is_some());
+        let action = result.unwrap();
+        assert!(action.is_none()); // Returns None when empty
+        assert_eq!(app.toasts.len(), 1);
+    }
+
+    #[test]
+    fn test_try_handle_search_copy_not_copy_key() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let result = app.try_handle_search_copy(key('a'));
+
+        assert!(result.is_none()); // Not handled
+    }
+
+    #[test]
+    fn test_handle_search_esc_from_results_focused() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input_mode = SearchInputMode::ResultsFocused;
+
+        let action = app.handle_search_esc();
+
+        assert!(action.is_none());
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::QueryFocused
+        ));
+    }
+
+    #[test]
+    fn test_handle_search_esc_from_query_focused() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input_mode = SearchInputMode::QueryFocused;
+
+        let action = app.handle_search_esc();
+
+        assert!(action.is_none());
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::QueryFocused
+        ));
+    }
+
+    #[test]
+    fn test_execute_search_with_input() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("index=main");
+
+        let action = app.execute_search();
+
+        assert!(matches!(action, Some(Action::RunSearch { .. })));
+        assert!(matches!(
+            app.search_input_mode,
+            SearchInputMode::ResultsFocused
+        ));
+        assert_eq!(app.search_history.len(), 1);
+    }
+
+    #[test]
+    fn test_execute_search_empty_input() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("");
+
+        let action = app.execute_search();
+
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn test_toggle_search_mode_normal_to_realtime() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_mode = SearchMode::Normal;
+
+        let action = app.toggle_search_mode();
+
+        assert!(action.is_none());
+        assert!(matches!(app.search_mode, SearchMode::Realtime));
+        assert_eq!(app.toasts.len(), 1);
+    }
+
+    #[test]
+    fn test_toggle_search_mode_realtime_to_normal() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_mode = SearchMode::Realtime;
+
+        let action = app.toggle_search_mode();
+
+        assert!(action.is_none());
+        assert!(matches!(app.search_mode, SearchMode::Normal));
+        assert_eq!(app.toasts.len(), 1);
+    }
+
+    #[test]
+    fn test_navigate_search_history_backward_from_none() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("current");
+        app.search_history = vec!["old1".to_string(), "old2".to_string()];
+
+        let action = app.navigate_search_history_backward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, Some(0));
+        assert_eq!(app.search_input.value(), "old1");
+        assert_eq!(app.saved_search_input.value(), "current");
+    }
+
+    #[test]
+    fn test_navigate_search_history_backward_already_navigating() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history = vec!["old1".to_string(), "old2".to_string()];
+        app.history_index = Some(0);
+
+        let action = app.navigate_search_history_backward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, Some(1));
+        assert_eq!(app.search_input.value(), "old2");
+    }
+
+    #[test]
+    fn test_navigate_search_history_backward_at_end() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history = vec!["old1".to_string(), "old2".to_string()];
+        app.history_index = Some(1);
+
+        let action = app.navigate_search_history_backward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, Some(1)); // Stays at end
+        assert_eq!(app.search_input.value(), "old2");
+    }
+
+    #[test]
+    fn test_navigate_search_history_backward_empty_history() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history.clear();
+
+        let action = app.navigate_search_history_backward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, None);
+    }
+
+    #[test]
+    fn test_navigate_search_history_forward_from_middle() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history = vec!["old1".to_string(), "old2".to_string()];
+        app.history_index = Some(1);
+        app.search_input.set_value("old2");
+
+        let action = app.navigate_search_history_forward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, Some(0));
+        assert_eq!(app.search_input.value(), "old1");
+    }
+
+    #[test]
+    fn test_navigate_search_history_forward_to_original() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("original");
+        app.saved_search_input.set_value("original");
+        app.search_history = vec!["old1".to_string()];
+        app.history_index = Some(0);
+        app.search_input.set_value("old1");
+
+        let action = app.navigate_search_history_forward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, None);
+        assert_eq!(app.search_input.value(), "original");
+    }
+
+    #[test]
+    fn test_navigate_search_history_forward_from_none() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history = vec!["old1".to_string()];
+
+        let action = app.navigate_search_history_forward();
+
+        assert!(action.is_none());
+        assert_eq!(app.history_index, None);
+    }
+
+    #[test]
+    fn test_begin_search_export_with_results() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_results = vec![serde_json::json!({"key": "value"})];
+
+        let action = app.begin_search_export();
+
+        assert!(action.is_none());
+        // begin_export is called but doesn't return an action directly
+    }
+
+    #[test]
+    fn test_begin_search_export_without_results() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_results.clear();
+
+        let action = app.begin_search_export();
+
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn test_handle_search_query_focused_enter() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input.set_value("index=main");
+
+        let action =
+            app.handle_search_query_focused(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+
+        assert!(matches!(action, Some(Action::RunSearch { .. })));
+    }
+
+    #[test]
+    fn test_handle_search_query_focused_ctrl_r() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let action = app.handle_search_query_focused(ctrl_key('r'));
+
+        assert!(action.is_none());
+        assert!(matches!(app.search_mode, SearchMode::Realtime));
+    }
+
+    #[test]
+    fn test_handle_search_query_focused_down() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history = vec!["old1".to_string()];
+        app.history_index = Some(0);
+
+        let action =
+            app.handle_search_query_focused(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn test_handle_search_query_focused_up() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_history = vec!["old1".to_string()];
+
+        let action =
+            app.handle_search_query_focused(KeyEvent::new(KeyCode::Up, KeyModifiers::NONE));
+
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn test_handle_search_query_focused_ctrl_e() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_results = vec![serde_json::json!({})];
+
+        let action = app.handle_search_query_focused(ctrl_key('e'));
+
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn test_handle_search_results_focused_returns_none() {
+        let mut app = App::new(None, ConnectionContext::default());
+
+        let action = app.handle_search_results_focused(key('a'));
+
+        assert!(action.is_none());
     }
 }

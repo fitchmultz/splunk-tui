@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0354",
-      "status": "todo",
-      "title": "Simplify deeply nested match statements in TUI input handlers",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "complexity",
-        "tui",
-        "readability"
-      ],
-      "scope": [
-        "crates/tui/src/app/input/*.rs (55 files with nested matches)"
-      ],
-      "evidence": [
-        "55 input handler files contain nested if-match patterns (grep -r 'match.*{' | wc -l)",
-        "Pattern repeats: if key == X { match state { A => ..., B => ..., C => ... } } creating deep nesting",
-        "Examples: shc.rs, macros.rs, fired_alerts.rs, jobs.rs all show if-then-match nesting",
-        "Deep nesting makes control flow hard to follow and test"
-      ],
-      "plan": [
-        "Introduce early-return pattern: `let action = match key { ... }?;` instead of nested ifs",
-        "Extract match arms into named helper functions (e.g., handle_job_selection, handle_search_submit)",
-        "Consider using `action` enum dispatch instead of direct key matching in input handlers",
-        "Add unit tests for extracted helper functions",
-        "Verify by running TUI tests: `cargo test -p splunk-tui --test app_input_tests`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T17:55:35Z",
-      "updated_at": "2026-02-06T17:55:35Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0355",
       "status": "todo",
       "title": "Extract magic numbers to named constants in configuration",

@@ -167,6 +167,17 @@ impl SortColumn {
             Self::Events => "events",
         }
     }
+
+    /// Returns the next column in the cycle.
+    pub fn next(self) -> Self {
+        match self {
+            Self::Sid => Self::Status,
+            Self::Status => Self::Duration,
+            Self::Duration => Self::Results,
+            Self::Results => Self::Events,
+            Self::Events => Self::Sid,
+        }
+    }
 }
 
 /// Parse sort column from string (for deserialization).
@@ -193,6 +204,14 @@ impl SortDirection {
         match self {
             Self::Asc => "asc",
             Self::Desc => "desc",
+        }
+    }
+
+    /// Toggle between ascending and descending.
+    pub fn toggle(self) -> Self {
+        match self {
+            Self::Asc => Self::Desc,
+            Self::Desc => Self::Asc,
         }
     }
 }
