@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0361",
-      "status": "todo",
-      "title": "Create macro for repetitive formatter trait implementations",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "dry",
-        "macro",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/csv/imp.rs",
-        "crates/cli/src/formatters/table/imp.rs",
-        "crates/cli/src/formatters/xml/mod.rs"
-      ],
-      "evidence": [
-        "CsvFormatter, TableFormatter, XmlFormatter all have identical trait impl structure",
-        "Each has 35+ methods that delegate to submodule functions (e.g., jobs::format_jobs)",
-        "Pattern: `fn format_x(&self, ...) -> Result<String> { x::format_x(...) }` repeated 35 times per formatter"
-      ],
-      "plan": [
-        "Create `impl_formatter!` macro that generates trait impl from a map of method->module",
-        "Example: impl_formatter!(CsvFormatter, { jobs => jobs, logs => logs, ... })",
-        "Apply macro to all three formatters, reducing ~300 lines of boilerplate to ~30",
-        "Ensure macro preserves documentation comments",
-        "Verify with `make test -p splunk-cli`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T17:55:35Z",
-      "updated_at": "2026-02-06T17:55:35Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0362",
       "status": "todo",
       "title": "Unify error message formatting style across CLI",

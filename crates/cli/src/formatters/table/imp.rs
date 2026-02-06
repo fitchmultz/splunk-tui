@@ -70,16 +70,64 @@ pub struct Pagination {
 pub struct TableFormatter;
 
 impl Formatter for TableFormatter {
+    // Delegated implementations using macros
+    crate::impl_delegated_formatter_slice! {
+        format_jobs: &[SearchJobStatus] => jobs::format_jobs,
+        format_users: &[User] => users::format_users,
+        format_saved_searches: &[SavedSearch] => saved_searches::format_saved_searches,
+        format_logs: &[splunk_client::models::LogEntry] => logs::format_logs,
+        format_lookups: &[splunk_client::LookupTable] => lookups::format_lookups,
+        format_config_files: &[ConfigFile] => configs::format_config_files,
+        format_config_stanzas: &[ConfigStanza] => configs::format_config_stanzas,
+        format_fired_alerts: &[splunk_client::models::FiredAlert] => alerts::format_fired_alerts,
+        format_roles: &[splunk_client::Role] => roles::format_roles,
+        format_capabilities: &[splunk_client::Capability] => roles::format_capabilities,
+        format_installed_licenses: &[splunk_client::InstalledLicense] => license::format_installed_licenses,
+        format_license_pools: &[splunk_client::LicensePool] => license::format_license_pools,
+        format_macros: &[splunk_client::Macro] => macros::format_macros,
+    }
+
+    crate::impl_delegated_formatter_slice_detailed! {
+        format_indexes: &[Index] => indexes::format_indexes,
+        format_forwarders: &[Forwarder] => forwarders::format_forwarders,
+        format_search_peers: &[SearchPeer] => search_peers::format_search_peers,
+        format_inputs: &[Input] => inputs::format_inputs,
+        format_dashboards: &[Dashboard] => dashboards::format_dashboards,
+        format_datamodels: &[DataModel] => datamodels::format_datamodels,
+        format_workload_pools: &[splunk_client::WorkloadPool] => workload::format_workload_pools,
+        format_workload_rules: &[splunk_client::WorkloadRule] => workload::format_workload_rules,
+    }
+
+    crate::impl_delegated_formatter_single! {
+        format_job_details: &SearchJobStatus => jobs::format_job_details,
+        format_health: &HealthCheckOutput => health::format_health,
+        format_kvstore_status: &KvStoreStatus => health::format_kvstore_status,
+        format_license: &LicenseInfoOutput => license::format_license,
+        format_license_install: &LicenseInstallOutput => license::format_license_install,
+        format_license_pool_operation: &LicensePoolOperationOutput => license::format_license_pool_operation,
+        format_app_info: &App => apps::format_app_info,
+        format_saved_search_info: &SavedSearch => saved_searches::format_saved_search_info,
+        format_config_stanza: &ConfigStanza => configs::format_config_stanza_detail,
+        format_fired_alert_info: &splunk_client::models::FiredAlert => alerts::format_fired_alert_info,
+        format_dashboard: &Dashboard => dashboards::format_dashboard,
+        format_datamodel: &DataModel => datamodels::format_datamodel,
+        format_shc_status: &ShcStatusOutput => shc::format_shc_status,
+        format_shc_captain: &ShcCaptainOutput => shc::format_shc_captain,
+        format_shc_config: &ShcConfigOutput => shc::format_shc_config,
+        format_shc_management: &ShcManagementOutput => shc::format_shc_management,
+        format_macro_info: &splunk_client::Macro => macros::format_macro_info,
+    }
+
+    crate::impl_delegated_formatter_streaming! {
+        format_logs_streaming: &[splunk_client::models::LogEntry] => logs::format_logs_streaming,
+    }
+
+    crate::impl_table_formatter! {
+        format_apps: &[App] => apps,
+    }
+
     fn format_search_results(&self, results: &[serde_json::Value]) -> Result<String> {
         search::format_search_results(results)
-    }
-
-    fn format_indexes(&self, indexes: &[Index], detailed: bool) -> Result<String> {
-        indexes::format_indexes(indexes, detailed)
-    }
-
-    fn format_jobs(&self, jobs: &[SearchJobStatus]) -> Result<String> {
-        jobs::format_jobs(jobs)
     }
 
     fn format_cluster_info(
@@ -102,77 +150,6 @@ impl Formatter for TableFormatter {
         cluster::format_cluster_management(output)
     }
 
-    fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
-        health::format_health(health)
-    }
-
-    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
-        health::format_kvstore_status(status)
-    }
-
-    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
-        license::format_license(license)
-    }
-
-    fn format_installed_licenses(
-        &self,
-        licenses: &[splunk_client::InstalledLicense],
-    ) -> Result<String> {
-        license::format_installed_licenses(licenses)
-    }
-
-    fn format_license_install(&self, result: &LicenseInstallOutput) -> Result<String> {
-        license::format_license_install(result)
-    }
-
-    fn format_license_pools(&self, pools: &[splunk_client::LicensePool]) -> Result<String> {
-        license::format_license_pools(pools)
-    }
-
-    fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String> {
-        license::format_license_pool_operation(result)
-    }
-
-    fn format_logs(&self, logs: &[splunk_client::models::LogEntry]) -> Result<String> {
-        logs::format_logs(logs)
-    }
-
-    fn format_logs_streaming(
-        &self,
-        logs: &[splunk_client::models::LogEntry],
-        is_first: bool,
-    ) -> Result<String> {
-        logs::format_logs_streaming(logs, is_first)
-    }
-
-    fn format_users(&self, users: &[User]) -> Result<String> {
-        users::format_users(users)
-    }
-
-    crate::impl_table_formatter! {
-        format_apps: &[App] => apps,
-    }
-
-    fn format_app_info(&self, app: &App) -> Result<String> {
-        apps::format_app_info(app)
-    }
-
-    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {
-        saved_searches::format_saved_searches(searches)
-    }
-
-    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
-        saved_searches::format_saved_search_info(search)
-    }
-
-    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
-        jobs::format_job_details(job)
-    }
-
-    fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
-        lookups::format_lookups(lookups)
-    }
-
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
         profiles::format_profile(profile_name, profile)
     }
@@ -181,52 +158,12 @@ impl Formatter for TableFormatter {
         profiles::format_profiles(profiles)
     }
 
-    fn format_forwarders(&self, forwarders_list: &[Forwarder], detailed: bool) -> Result<String> {
-        forwarders::format_forwarders(forwarders_list, detailed)
-    }
-
-    fn format_search_peers(&self, peers: &[SearchPeer], detailed: bool) -> Result<String> {
-        search_peers::format_search_peers(peers, detailed)
-    }
-
-    fn format_inputs(&self, inputs: &[Input], detailed: bool) -> Result<String> {
-        inputs::format_inputs(inputs, detailed)
-    }
-
-    fn format_config_files(&self, files: &[ConfigFile]) -> Result<String> {
-        configs::format_config_files(files)
-    }
-
-    fn format_config_stanzas(&self, stanzas: &[ConfigStanza]) -> Result<String> {
-        configs::format_config_stanzas(stanzas)
-    }
-
-    fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
-        configs::format_config_stanza_detail(stanza)
-    }
-
-    fn format_fired_alerts(&self, alerts: &[splunk_client::models::FiredAlert]) -> Result<String> {
-        alerts::format_fired_alerts(alerts)
-    }
-
-    fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
-        alerts::format_fired_alert_info(alert)
-    }
-
-    fn format_roles(&self, roles: &[splunk_client::Role]) -> Result<String> {
-        roles::format_roles(roles)
-    }
-
-    fn format_capabilities(&self, capabilities: &[splunk_client::Capability]) -> Result<String> {
-        roles::format_capabilities(capabilities)
-    }
-
-    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
-        super::kvstore::format_kvstore_collections(collections)
-    }
-
-    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
-        super::kvstore::format_kvstore_records(records)
+    fn format_shc_members(
+        &self,
+        members: &[ShcMemberOutput],
+        pagination: &Pagination,
+    ) -> Result<String> {
+        shc::format_shc_members(members, pagination)
     }
 
     fn format_hec_response(&self, response: &splunk_client::HecResponse) -> Result<String> {
@@ -248,12 +185,12 @@ impl Formatter for TableFormatter {
         super::hec::format_hec_ack_status(status)
     }
 
-    fn format_macros(&self, macros: &[splunk_client::Macro]) -> Result<String> {
-        macros::format_macros(macros)
+    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
+        super::kvstore::format_kvstore_collections(collections)
     }
 
-    fn format_macro_info(&self, macro_info: &splunk_client::Macro) -> Result<String> {
-        macros::format_macro_info(macro_info)
+    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
+        super::kvstore::format_kvstore_records(records)
     }
 
     fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {
@@ -272,62 +209,6 @@ impl Formatter for TableFormatter {
         }
 
         Ok(lines.join("\n"))
-    }
-
-    fn format_dashboards(&self, dashboards: &[Dashboard], detailed: bool) -> Result<String> {
-        dashboards::format_dashboards(dashboards, detailed)
-    }
-
-    fn format_dashboard(&self, dashboard: &Dashboard) -> Result<String> {
-        dashboards::format_dashboard(dashboard)
-    }
-
-    fn format_datamodels(&self, datamodels_list: &[DataModel], detailed: bool) -> Result<String> {
-        datamodels::format_datamodels(datamodels_list, detailed)
-    }
-
-    fn format_datamodel(&self, datamodel: &DataModel) -> Result<String> {
-        datamodels::format_datamodel(datamodel)
-    }
-
-    fn format_workload_pools(
-        &self,
-        pools: &[splunk_client::WorkloadPool],
-        detailed: bool,
-    ) -> Result<String> {
-        workload::format_workload_pools(pools, detailed)
-    }
-
-    fn format_workload_rules(
-        &self,
-        rules: &[splunk_client::WorkloadRule],
-        detailed: bool,
-    ) -> Result<String> {
-        workload::format_workload_rules(rules, detailed)
-    }
-
-    fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {
-        shc::format_shc_status(status)
-    }
-
-    fn format_shc_members(
-        &self,
-        members: &[ShcMemberOutput],
-        pagination: &Pagination,
-    ) -> Result<String> {
-        shc::format_shc_members(members, pagination)
-    }
-
-    fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {
-        shc::format_shc_captain(captain)
-    }
-
-    fn format_shc_config(&self, config: &ShcConfigOutput) -> Result<String> {
-        shc::format_shc_config(config)
-    }
-
-    fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
-        shc::format_shc_management(output)
     }
 }
 

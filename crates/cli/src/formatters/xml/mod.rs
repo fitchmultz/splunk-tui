@@ -53,16 +53,59 @@ mod workload;
 pub struct XmlFormatter;
 
 impl Formatter for XmlFormatter {
+    // Delegated implementations using macros
+    crate::impl_delegated_formatter_slice! {
+        format_jobs: &[SearchJobStatus] => jobs::format_jobs,
+        format_users: &[User] => users::format_users,
+        format_saved_searches: &[SavedSearch] => saved_searches::format_saved_searches,
+        format_logs: &[splunk_client::models::LogEntry] => logs::format_logs,
+        format_kvstore_collections: &[KvStoreCollection] => kvstore::format_kvstore_collections,
+        format_kvstore_records: &[KvStoreRecord] => kvstore::format_kvstore_records,
+        format_config_files: &[ConfigFile] => configs::format_config_files,
+        format_config_stanzas: &[ConfigStanza] => configs::format_config_stanzas,
+        format_fired_alerts: &[splunk_client::models::FiredAlert] => alerts::format_fired_alerts,
+        format_installed_licenses: &[splunk_client::InstalledLicense] => license::format_installed_licenses,
+        format_license_pools: &[splunk_client::LicensePool] => license::format_license_pools,
+    }
+
+    crate::impl_delegated_formatter_slice_detailed! {
+        format_indexes: &[Index] => indexes::format_indexes,
+        format_forwarders: &[Forwarder] => forwarders::format_forwarders,
+        format_search_peers: &[SearchPeer] => search_peers::format_search_peers,
+        format_inputs: &[Input] => inputs::format_inputs,
+        format_workload_pools: &[splunk_client::WorkloadPool] => workload::format_workload_pools,
+        format_workload_rules: &[splunk_client::WorkloadRule] => workload::format_workload_rules,
+    }
+
+    crate::impl_delegated_formatter_single! {
+        format_job_details: &SearchJobStatus => jobs::format_job_details,
+        format_health: &HealthCheckOutput => health::format_health,
+        format_kvstore_status: &KvStoreStatus => health::format_kvstore_status,
+        format_license: &LicenseInfoOutput => license::format_license,
+        format_license_install: &LicenseInstallOutput => license::format_license_install,
+        format_license_pool_operation: &LicensePoolOperationOutput => license::format_license_pool_operation,
+        format_config_stanza: &ConfigStanza => configs::format_config_stanza,
+        format_fired_alert_info: &splunk_client::models::FiredAlert => alerts::format_fired_alert_info,
+        format_hec_response: &splunk_client::HecResponse => hec::format_hec_response,
+        format_hec_batch_response: &splunk_client::HecBatchResponse => hec::format_hec_batch_response,
+        format_hec_health: &splunk_client::HecHealth => hec::format_hec_health,
+        format_hec_ack_status: &splunk_client::HecAckStatus => hec::format_hec_ack_status,
+    }
+
+    crate::impl_delegated_formatter_streaming! {
+        format_logs_streaming: &[splunk_client::models::LogEntry] => logs::format_logs_streaming,
+    }
+
+    crate::impl_xml_list_formatter! {
+        format_apps: &[App] => apps,
+    }
+
+    crate::impl_xml_detail_formatter! {
+        format_app_info: &App => app,
+    }
+
     fn format_search_results(&self, results: &[serde_json::Value]) -> Result<String> {
         search::format_search_results(results)
-    }
-
-    fn format_indexes(&self, indexes: &[Index], detailed: bool) -> Result<String> {
-        indexes::format_indexes(indexes, detailed)
-    }
-
-    fn format_jobs(&self, jobs: &[SearchJobStatus]) -> Result<String> {
-        jobs::format_jobs(jobs)
     }
 
     fn format_cluster_info(
@@ -78,7 +121,6 @@ impl Formatter for XmlFormatter {
         _peers: &[ClusterPeerOutput],
         _pagination: &Pagination,
     ) -> Result<String> {
-        // XML doesn't support paginated peer lists; use JSON for programmatic access
         anyhow::bail!("XML format not supported for cluster peers. Use JSON format.")
     }
 
@@ -103,54 +145,6 @@ impl Formatter for XmlFormatter {
         Ok(result)
     }
 
-    fn format_health(&self, health: &HealthCheckOutput) -> Result<String> {
-        health::format_health(health)
-    }
-
-    fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
-        health::format_kvstore_status(status)
-    }
-
-    fn format_license(&self, license: &LicenseInfoOutput) -> Result<String> {
-        license::format_license(license)
-    }
-
-    fn format_logs(&self, logs: &[splunk_client::models::LogEntry]) -> Result<String> {
-        logs::format_logs(logs)
-    }
-
-    fn format_logs_streaming(
-        &self,
-        logs: &[splunk_client::models::LogEntry],
-        is_first: bool,
-    ) -> Result<String> {
-        logs::format_logs_streaming(logs, is_first)
-    }
-
-    fn format_users(&self, users: &[User]) -> Result<String> {
-        users::format_users(users)
-    }
-
-    crate::impl_xml_list_formatter! {
-        format_apps: &[App] => apps,
-    }
-
-    crate::impl_xml_detail_formatter! {
-        format_app_info: &App => app,
-    }
-
-    fn format_saved_searches(&self, searches: &[SavedSearch]) -> Result<String> {
-        saved_searches::format_saved_searches(searches)
-    }
-
-    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
-        saved_searches::format_saved_search_info(search)
-    }
-
-    fn format_job_details(&self, job: &SearchJobStatus) -> Result<String> {
-        jobs::format_job_details(job)
-    }
-
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
         profiles::format_profile(profile_name, profile)
     }
@@ -159,44 +153,8 @@ impl Formatter for XmlFormatter {
         profiles::format_profiles(profiles)
     }
 
-    fn format_forwarders(&self, forwarders_list: &[Forwarder], detailed: bool) -> Result<String> {
-        forwarders::format_forwarders(forwarders_list, detailed)
-    }
-
-    fn format_search_peers(&self, peers: &[SearchPeer], detailed: bool) -> Result<String> {
-        search_peers::format_search_peers(peers, detailed)
-    }
-
-    fn format_inputs(&self, inputs: &[Input], detailed: bool) -> Result<String> {
-        inputs::format_inputs(inputs, detailed)
-    }
-
-    fn format_config_files(&self, files: &[ConfigFile]) -> Result<String> {
-        configs::format_config_files(files)
-    }
-
-    fn format_config_stanzas(&self, stanzas: &[ConfigStanza]) -> Result<String> {
-        configs::format_config_stanzas(stanzas)
-    }
-
-    fn format_config_stanza(&self, stanza: &ConfigStanza) -> Result<String> {
-        configs::format_config_stanza(stanza)
-    }
-
-    fn format_fired_alerts(&self, alerts: &[splunk_client::models::FiredAlert]) -> Result<String> {
-        alerts::format_fired_alerts(alerts)
-    }
-
-    fn format_fired_alert_info(&self, alert: &splunk_client::models::FiredAlert) -> Result<String> {
-        alerts::format_fired_alert_info(alert)
-    }
-
-    fn format_kvstore_collections(&self, collections: &[KvStoreCollection]) -> Result<String> {
-        kvstore::format_kvstore_collections(collections)
-    }
-
-    fn format_kvstore_records(&self, records: &[KvStoreRecord]) -> Result<String> {
-        kvstore::format_kvstore_records(records)
+    fn format_saved_search_info(&self, search: &SavedSearch) -> Result<String> {
+        saved_searches::format_saved_search_info(search)
     }
 
     fn format_lookups(&self, lookups: &[splunk_client::LookupTable]) -> Result<String> {
@@ -281,44 +239,6 @@ impl Formatter for XmlFormatter {
         }
         output.push_str("</capabilities>\n");
         Ok(output)
-    }
-
-    fn format_installed_licenses(
-        &self,
-        licenses: &[splunk_client::InstalledLicense],
-    ) -> Result<String> {
-        license::format_installed_licenses(licenses)
-    }
-
-    fn format_license_install(&self, result: &LicenseInstallOutput) -> Result<String> {
-        license::format_license_install(result)
-    }
-
-    fn format_license_pools(&self, pools: &[splunk_client::LicensePool]) -> Result<String> {
-        license::format_license_pools(pools)
-    }
-
-    fn format_license_pool_operation(&self, result: &LicensePoolOperationOutput) -> Result<String> {
-        license::format_license_pool_operation(result)
-    }
-
-    fn format_hec_response(&self, response: &splunk_client::HecResponse) -> Result<String> {
-        hec::format_hec_response(response)
-    }
-
-    fn format_hec_batch_response(
-        &self,
-        response: &splunk_client::HecBatchResponse,
-    ) -> Result<String> {
-        hec::format_hec_batch_response(response)
-    }
-
-    fn format_hec_health(&self, health: &splunk_client::HecHealth) -> Result<String> {
-        hec::format_hec_health(health)
-    }
-
-    fn format_hec_ack_status(&self, status: &splunk_client::HecAckStatus) -> Result<String> {
-        hec::format_hec_ack_status(status)
     }
 
     fn format_macros(&self, macros: &[splunk_client::Macro]) -> Result<String> {
@@ -597,22 +517,6 @@ impl Formatter for XmlFormatter {
         }
         output.push_str("</datamodel>\n");
         Ok(output)
-    }
-
-    fn format_workload_pools(
-        &self,
-        pools: &[splunk_client::WorkloadPool],
-        detailed: bool,
-    ) -> Result<String> {
-        workload::format_workload_pools(pools, detailed)
-    }
-
-    fn format_workload_rules(
-        &self,
-        rules: &[splunk_client::WorkloadRule],
-        detailed: bool,
-    ) -> Result<String> {
-        workload::format_workload_rules(rules, detailed)
     }
 
     fn format_shc_status(&self, status: &ShcStatusOutput) -> Result<String> {

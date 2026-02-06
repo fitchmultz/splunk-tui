@@ -480,3 +480,137 @@ macro_rules! impl_xml_detail_formatter {
         )*
     };
 }
+
+// =============================================================================
+// DELEGATED FORMATTER MACROS
+// =============================================================================
+// These macros eliminate repetitive delegation boilerplate by generating
+// trait method implementations that simply forward to submodule functions.
+// =============================================================================
+
+/// Macro to implement formatter methods that delegate to submodule functions
+/// for slice parameters (e.g., `&[T]`) without detailed parameter.
+///
+/// # Usage
+/// ```ignore
+/// impl_delegated_formatter_slice! {
+///     format_jobs: &[SearchJobStatus] => jobs::format_jobs,
+///     format_users: &[User] => users::format_users,
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_delegated_formatter_slice {
+    (
+        $(
+            $method:ident: &[$param_type:ty] => $module:ident :: $func:ident
+        ),*$(,)?
+    ) => {
+        $(
+            fn $method(&self, items: &[$param_type]) -> anyhow::Result<String> {
+                $module::$func(items)
+            }
+        )*
+    };
+}
+
+/// Macro to implement formatter methods that delegate to submodule functions
+/// for slice parameters with `detailed: bool` parameter.
+///
+/// # Usage
+/// ```ignore
+/// impl_delegated_formatter_slice_detailed! {
+///     format_indexes: &[Index] => indexes::format_indexes,
+///     format_forwarders: &[Forwarder] => forwarders::format_forwarders,
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_delegated_formatter_slice_detailed {
+    (
+        $(
+            $method:ident: &[$param_type:ty] => $module:ident :: $func:ident
+        ),*$(,)?
+    ) => {
+        $(
+            fn $method(&self, items: &[$param_type], detailed: bool) -> anyhow::Result<String> {
+                $module::$func(items, detailed)
+            }
+        )*
+    };
+}
+
+/// Macro to implement formatter methods that delegate to submodule functions
+/// for single item reference parameters.
+///
+/// # Usage
+/// ```ignore
+/// impl_delegated_formatter_single! {
+///     format_job_details: &SearchJobStatus => jobs::format_job_details,
+///     format_health: &HealthCheckOutput => health::format_health,
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_delegated_formatter_single {
+    (
+        $(
+            $method:ident: &$param_type:ty => $module:ident :: $func:ident
+        ),*$(,)?
+    ) => {
+        $(
+            fn $method(&self, item: &$param_type) -> anyhow::Result<String> {
+                $module::$func(item)
+            }
+        )*
+    };
+}
+
+/// Macro to implement formatter methods that delegate to submodule functions
+/// for slice parameters with `is_first: bool` parameter (streaming).
+///
+/// # Usage
+/// ```ignore
+/// impl_delegated_formatter_streaming! {
+///     format_logs_streaming: &[LogEntry] => logs::format_logs_streaming,
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_delegated_formatter_streaming {
+    (
+        $(
+            $method:ident: &[$param_type:ty] => $module:ident :: $func:ident
+        ),*$(,)?
+    ) => {
+        $(
+            fn $method(&self, items: &[$param_type], is_first: bool) -> anyhow::Result<String> {
+                $module::$func(items, is_first)
+            }
+        )*
+    };
+}
+
+/// Macro to implement formatter methods that return bail errors for unsupported formats.
+///
+/// # Usage
+/// ```ignore
+/// impl_unsupported_formatter! {
+///     format_cluster_peers => "CSV format not supported for cluster peers. Use JSON format.",
+///     format_shc_members => "CSV format not supported for SHC members. Use JSON format.",
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_unsupported_formatter {
+    (
+        $(
+            $method:ident => $msg:expr
+        ),*$(,)?
+    ) => {
+        $(
+            fn $method(
+                &self,
+                _arg1: impl std::any::Any,
+                _pagination: &$crate::formatters::Pagination,
+            ) -> anyhow::Result<String> {
+                anyhow::bail!($msg)
+            }
+        )*
+    };
+}
