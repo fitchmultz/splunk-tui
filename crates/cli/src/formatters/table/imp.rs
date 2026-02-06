@@ -45,7 +45,7 @@ use super::license;
 use super::logs;
 use super::lookups;
 use super::macros;
-use super::pagination::{build_pagination_footer, format_empty_message};
+use super::pagination::build_pagination_footer;
 use super::profiles;
 use super::roles;
 use super::saved_searches;
@@ -334,6 +334,7 @@ impl Formatter for TableFormatter {
 impl TableFormatter {
     // Paginated formatters using macros
     crate::impl_table_paginated_detailed! {
+        format_audit_events_paginated: &[AuditEvent] => events, base: format_audit_events, resource_name: "audit events",
         format_indexes_paginated: &[Index] => indexes, base: format_indexes, resource_name: "indexes",
         format_forwarders_paginated: &[Forwarder] => forwarders_list, base: format_forwarders, resource_name: "forwarders",
         format_search_peers_paginated: &[SearchPeer] => peers, base: format_search_peers, resource_name: "search peers",
@@ -346,28 +347,6 @@ impl TableFormatter {
     crate::impl_table_paginated! {
         format_config_stanzas_paginated: &[ConfigStanza] => stanzas, base: format_config_stanzas, resource_name: "config stanzas",
         format_kvstore_collections_paginated: &[KvStoreCollection] => collections, base: format_kvstore_collections, resource_name: "KVStore collections",
-    }
-
-    /// Table-only formatter for audit events with pagination footer.
-    pub fn format_audit_events_paginated(
-        &self,
-        events: &[AuditEvent],
-        _detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if events.is_empty() {
-            return Ok(format_empty_message("audit events", pagination.offset));
-        }
-
-        let mut output = Formatter::format_audit_events(self, events, _detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, events.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
     }
 
     /// Table-only formatter for SHC status with pagination footer (members only).

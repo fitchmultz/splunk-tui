@@ -3363,8 +3363,8 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "lines_of_dead_code": "598",
-        "unused_dependency": "tachyonfx@0.14"
+        "unused_dependency": "tachyonfx@0.14",
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "dead_code_count": "25",
         "test_files_affected": "4",
-        "scan_agent": "scan-maintenance",
-        "production_files_affected": "8"
+        "dead_code_count": "25",
+        "production_files_affected": "8",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4178,8 +4178,8 @@
       ],
       "custom_fields": {
         "macro_already_adopted": "true",
-        "current_line_count": "867",
         "scan_agent": "scan-maintenance",
+        "current_line_count": "867",
         "target_line_count": "300"
       }
     },
@@ -4234,6 +4234,60 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0358",
+      "status": "done",
+      "title": "Deduplicate pagination footer patterns in table formatter",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/table/imp.rs:352-371",
+        "crates/cli/src/formatters/table/imp.rs:375-454",
+        "crates/cli/src/formatters/table/imp.rs:458-537",
+        "crates/cli/src/formatters/macros.rs:264-345"
+      ],
+      "evidence": [
+        "Most paginated formatters now use macros: impl_table_paginated! and impl_table_paginated_detailed! (lines 336-349)",
+        "Three functions still have manual implementations with duplicated patterns:",
+        "  - format_audit_events_paginated (lines 352-371): check empty, call base formatter, append footer",
+        "  - format_shc_status_paginated (lines 375-454): complex case with nested member pagination",
+        "  - format_cluster_info_paginated (lines 458-537): complex case with nested peer pagination",
+        "Macros at macros.rs:264-345 already provide generic pattern - audit_events could use similar approach",
+        "SHC and cluster formatters have unique nested structures requiring different abstraction strategy"
+      ],
+      "plan": [
+        "Extract simple paginated wrapper for format_audit_events_paginated using existing macro pattern",
+        "Evaluate if SHC/cluster formatters can share nested pagination logic for members/peers",
+        "Create shared helper for nested collection pagination if patterns align",
+        "Verify with `make test -p splunk-cli` and `make ci`"
+      ],
+      "notes": [
+        "REFACTORED: Most paginated formatters were already deduplicated using macros since task creation",
+        "Only 3 of ~12 paginated formatters still have manual implementations",
+        "The simple list-based paginated formatters are now generated via impl_table_paginated! macros",
+        "Deduplicated format_audit_events_paginated using impl_table_paginated_detailed! macro",
+        "Removed 21 lines of manual implementation, net reduction of 20 lines",
+        "All tests pass (373+), CI gate clean",
+        "Remaining 2 complex formatters (SHC/cluster) have unique nested patterns outside macro scope"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T21:10:08.372416672Z",
+      "completed_at": "2026-02-06T21:10:08.372416672Z",
+      "started_at": "2026-02-06T20:59:34.181722816Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "remaining_duplicates": "3",
+        "macro_solved_count": "9",
         "scan_agent": "scan-maintenance"
       }
     }
