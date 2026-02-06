@@ -30,8 +30,8 @@
     },
     "phase_overrides": {
       "phase1": {
-        "runner": "claude",
-        "model": "opus"
+        "runner": "kimi",
+        "model": "kimi-code/kimi-for-coding"
       },
       "phase2": {
         "runner": "kimi",
