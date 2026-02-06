@@ -22,9 +22,12 @@ use crate::auth::{AuthStrategy, SessionManager};
 use crate::client::SplunkClient;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
-use splunk_config::constants::{
-    DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_MAX_REDIRECTS, DEFAULT_MAX_RETRIES,
-    DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
+use splunk_config::{
+    AuthStrategy as ConfigAuthStrategy, Config,
+    constants::{
+        DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_MAX_REDIRECTS, DEFAULT_MAX_RETRIES,
+        DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
+    },
 };
 
 /// Builder for creating a new [`SplunkClient`].
@@ -169,6 +172,50 @@ impl SplunkClientBuilder {
         self
     }
 
+    /// Create a client builder from configuration.
+    ///
+    /// This method centralizes the conversion from config crate types to client crate types,
+    /// eliminating duplication between CLI and TUI.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The loaded configuration containing connection and auth settings
+    ///
+    /// # Returns
+    ///
+    /// A `SplunkClientBuilder` pre-configured with settings from the config
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use splunk_client::SplunkClient;
+    /// use splunk_config::Config;
+    ///
+    /// let config = Config::default();
+    /// let client = SplunkClient::builder()
+    ///     .from_config(&config)
+    ///     .build()?;
+    /// ```
+    pub fn from_config(mut self, config: &Config) -> Self {
+        let auth_strategy = match &config.auth.strategy {
+            ConfigAuthStrategy::SessionToken { username, password } => AuthStrategy::SessionToken {
+                username: username.clone(),
+                password: password.clone(),
+            },
+            ConfigAuthStrategy::ApiToken { token } => AuthStrategy::ApiToken {
+                token: token.clone(),
+            },
+        };
+
+        self.base_url = Some(config.connection.base_url.clone());
+        self.auth_strategy = Some(auth_strategy);
+        self.skip_verify = config.connection.skip_verify;
+        self.timeout = config.connection.timeout;
+        self.session_ttl_seconds = config.connection.session_ttl_seconds;
+        self.session_expiry_buffer_seconds = config.connection.session_expiry_buffer_seconds;
+        self
+    }
+
     /// Normalize a base URL by removing trailing slashes.
     ///
     /// This prevents double slashes when concatenating with endpoint paths.
@@ -233,6 +280,61 @@ impl SplunkClientBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::SecretString;
+
+    #[test]
+    fn test_from_config_with_api_token() {
+        let config = Config::with_api_token(
+            "https://splunk.example.com:8089".to_string(),
+            SecretString::new("test-token".to_string().into()),
+        );
+
+        let client = SplunkClient::builder().from_config(&config).build();
+
+        assert!(client.is_ok());
+        let client = client.unwrap();
+        assert_eq!(client.base_url(), "https://splunk.example.com:8089");
+        assert!(client.is_api_token_auth());
+    }
+
+    #[test]
+    fn test_from_config_with_session_token() {
+        let config = Config::with_session_token(
+            "https://splunk.example.com:8089".to_string(),
+            "admin".to_string(),
+            SecretString::new("test-password".to_string().into()),
+        );
+
+        let client = SplunkClient::builder().from_config(&config).build();
+
+        assert!(client.is_ok());
+        let client = client.unwrap();
+        assert_eq!(client.base_url(), "https://splunk.example.com:8089");
+        assert!(!client.is_api_token_auth());
+    }
+
+    #[test]
+    fn test_from_config_preserves_settings() {
+        let mut config = Config::with_api_token(
+            "https://splunk.example.com:8089".to_string(),
+            SecretString::new("test-token".to_string().into()),
+        );
+        config.connection.skip_verify = true;
+        config.connection.timeout = std::time::Duration::from_secs(120);
+        config.connection.session_ttl_seconds = 7200;
+        config.connection.session_expiry_buffer_seconds = 120;
+
+        let builder = SplunkClient::builder().from_config(&config);
+
+        assert_eq!(
+            builder.base_url,
+            Some("https://splunk.example.com:8089".to_string())
+        );
+        assert!(builder.skip_verify);
+        assert_eq!(builder.timeout, std::time::Duration::from_secs(120));
+        assert_eq!(builder.session_ttl_seconds, 7200);
+        assert_eq!(builder.session_expiry_buffer_seconds, 120);
+    }
 
     #[test]
     fn test_normalize_base_url_trailing_slash() {

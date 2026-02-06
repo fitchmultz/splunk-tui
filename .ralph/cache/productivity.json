@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-05T23:37:52.420204085Z",
+  "last_updated_at": "2026-02-06T00:08:22.360098469Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -326,14 +326,25 @@
           "completed_at": "2026-02-05T23:37:52.420203407Z"
         }
       ]
+    },
+    "2026-02-06": {
+      "date": "2026-02-06",
+      "completed_count": 1,
+      "tasks": [
+        {
+          "id": "RQ-0349",
+          "title": "DRY: move duplicated CLI/TUI behavior into crates/client",
+          "completed_at": "2026-02-06T00:08:22.360097233Z"
+        }
+      ]
     }
   },
   "streak": {
-    "current_streak": 4,
-    "longest_streak": 4,
-    "last_completed_date": "2026-02-05"
+    "current_streak": 5,
+    "longest_streak": 5,
+    "last_completed_date": "2026-02-06"
   },
-  "total_completed": 60,
+  "total_completed": 61,
   "milestones": [
     {
       "threshold": 10,

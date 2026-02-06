@@ -7,10 +7,14 @@
 //! Does NOT handle:
 //! - Direct state modification (sends actions for that).
 //! - UI rendering.
+//!
+//! Note: Health check aggregation logic has been moved to the shared client crate
+//! (`splunk_client::SplunkClient::check_health_aggregate`) to avoid duplication
+//! between CLI and TUI. This handler maintains TUI-specific behavior of failing
+//! if any health check endpoint fails (for backward compatibility with existing tests).
 
 use crate::action::Action;
 use splunk_client::ClientError;
-use splunk_client::models::HealthCheckOutput;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
@@ -22,81 +26,32 @@ pub async fn handle_load_health(client: SharedClient, tx: Sender<Action>) {
     tokio::spawn(async move {
         let mut c = client.lock().await;
 
-        // Construct the HealthCheckOutput
-        let mut health_output = HealthCheckOutput {
-            server_info: None,
-            splunkd_health: None,
-            license_usage: None,
-            kvstore_status: None,
-            log_parsing_health: None,
-        };
-
-        let mut first_error: Option<ClientError> = None;
-
-        // Collect health info sequentially due to the &mut self requirement
-        // on client methods. Each call may need to refresh the session token,
-        // requiring exclusive access to the client.
-        //
-        // Parallelization options:
-        // 1. Spawn 5 separate tasks (each waits for the same mutex - minimal gain)
-        // 2. Refactor client to support concurrent calls (significant effort)
-        // 3. Use a connection pool (adds complexity for health checks only)
-        //
-        // Given that health checks run infrequently and network latency
-        // dominates, sequential execution is the pragmatic choice.
-        match c.get_server_info().await {
-            Ok(info) => health_output.server_info = Some(info),
-            Err(e) => {
-                if first_error.is_none() {
-                    first_error = Some(e);
+        // Use shared health check aggregation from client crate
+        match c.check_health_aggregate().await {
+            Ok(health_result) => {
+                // Check if there were any partial errors
+                // TUI behavior: if any endpoint failed, return the first error
+                // for backward compatibility with existing tests
+                if let Some((endpoint, err)) = health_result.partial_errors.into_iter().next() {
+                    // Convert the partial error to a ClientError for the TUI
+                    let error_msg = format!("{}: {}", endpoint, err);
+                    let client_error = ClientError::InvalidResponse(error_msg);
+                    let _ = tx
+                        .send(Action::HealthLoaded(Box::new(Err(Arc::new(client_error)))))
+                        .await;
+                } else {
+                    // All health checks succeeded
+                    let _ = tx
+                        .send(Action::HealthLoaded(Box::new(Ok(health_result.output))))
+                        .await;
                 }
             }
-        }
-
-        match c.get_health().await {
-            Ok(health) => health_output.splunkd_health = Some(health),
             Err(e) => {
-                if first_error.is_none() {
-                    first_error = Some(e);
-                }
+                // Server info failed - this is a critical error
+                let _ = tx
+                    .send(Action::HealthLoaded(Box::new(Err(Arc::new(e)))))
+                    .await;
             }
-        }
-
-        match c.get_license_usage().await {
-            Ok(license) => health_output.license_usage = Some(license),
-            Err(e) => {
-                if first_error.is_none() {
-                    first_error = Some(e);
-                }
-            }
-        }
-
-        match c.get_kvstore_status().await {
-            Ok(kvstore) => health_output.kvstore_status = Some(kvstore),
-            Err(e) => {
-                if first_error.is_none() {
-                    first_error = Some(e);
-                }
-            }
-        }
-
-        match c.check_log_parsing_health().await {
-            Ok(log_parsing) => health_output.log_parsing_health = Some(log_parsing),
-            Err(e) => {
-                if first_error.is_none() {
-                    first_error = Some(e);
-                }
-            }
-        }
-
-        if let Some(e) = first_error {
-            let _ = tx
-                .send(Action::HealthLoaded(Box::new(Err(Arc::new(e)))))
-                .await;
-        } else {
-            let _ = tx
-                .send(Action::HealthLoaded(Box::new(Ok(health_output))))
-                .await;
         }
     });
 }

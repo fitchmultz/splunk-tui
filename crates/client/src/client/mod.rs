@@ -43,6 +43,7 @@ mod configs;
 mod dashboards;
 mod datamodels;
 mod forwarders;
+pub mod health;
 mod hec;
 mod indexes;
 mod inputs;
@@ -148,6 +149,45 @@ impl SplunkClient {
     /// Get the base URL.
     pub fn base_url(&self) -> &str {
         &self.base_url
+    }
+
+    /// Create a client from configuration with optional auto-login.
+    ///
+    /// This is a convenience method that builds a client from the provided configuration
+    /// and automatically logs in if using session token authentication.
+    ///
+    /// For session token auth, this will perform the initial login.
+    /// For API token auth, no login is needed.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The loaded configuration containing connection and auth settings
+    ///
+    /// # Returns
+    ///
+    /// A configured and authenticated `SplunkClient` ready for API calls
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if client construction fails or if login fails for
+    /// session token authentication.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use splunk_client::SplunkClient;
+    /// use splunk_config::Config;
+    ///
+    /// let config = Config::default();
+    /// let client = SplunkClient::from_config(&config).await?;
+    /// ```
+    pub async fn from_config(config: &splunk_config::Config) -> crate::error::Result<Self> {
+        let mut client = Self::builder().from_config(config).build()?;
+
+        if !client.is_api_token_auth() {
+            client.login().await?;
+        }
+        Ok(client)
     }
 }
 

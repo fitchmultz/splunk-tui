@@ -29,35 +29,13 @@ pub mod users;
 pub mod workload;
 
 use anyhow::Result;
-use splunk_client::{AuthStrategy as ClientAuth, SplunkClient};
-use splunk_config::AuthStrategy as ConfigAuth;
-
-/// Convert configuration authentication strategy to client authentication strategy.
-///
-/// This helper centralizes AuthStrategy conversion logic to avoid duplication
-/// across all CLI command modules.
-///
-/// # Arguments
-/// * `config_auth` - The config crate's AuthStrategy variant
-///
-/// # Returns
-/// The corresponding client crate's AuthStrategy variant
-pub fn convert_auth_strategy(config_auth: &ConfigAuth) -> ClientAuth {
-    match config_auth {
-        ConfigAuth::SessionToken { username, password } => ClientAuth::SessionToken {
-            username: username.clone(),
-            password: password.clone(),
-        },
-        ConfigAuth::ApiToken { token } => ClientAuth::ApiToken {
-            token: token.clone(),
-        },
-    }
-}
+use splunk_client::SplunkClient;
 
 /// Build a SplunkClient from configuration.
 ///
-/// This helper centralizes client construction to avoid duplication
-/// across all CLI command modules.
+/// This is a thin wrapper around the shared client builder in the client crate.
+/// The shared implementation centralizes client construction to avoid duplication
+/// between CLI and TUI.
 ///
 /// # Arguments
 /// * `config` - The loaded configuration containing connection and auth settings
@@ -68,15 +46,8 @@ pub fn convert_auth_strategy(config_auth: &ConfigAuth) -> ClientAuth {
 /// # Errors
 /// Returns an error if the client builder fails (e.g., invalid base_url)
 pub fn build_client_from_config(config: &splunk_config::Config) -> Result<SplunkClient> {
-    let auth_strategy = convert_auth_strategy(&config.auth.strategy);
-
     SplunkClient::builder()
-        .base_url(config.connection.base_url.clone())
-        .auth_strategy(auth_strategy)
-        .skip_verify(config.connection.skip_verify)
-        .timeout(config.connection.timeout)
-        .session_ttl_seconds(config.connection.session_ttl_seconds)
-        .session_expiry_buffer_seconds(config.connection.session_expiry_buffer_seconds)
+        .from_config(config)
         .build()
         .map_err(|e| e.into())
 }
@@ -87,42 +58,33 @@ mod tests {
     use secrecy::SecretString;
 
     #[test]
-    fn test_convert_session_token_auth() {
-        use secrecy::ExposeSecret;
+    fn test_build_client_from_config_with_api_token() {
+        let config = splunk_config::Config::with_api_token(
+            "https://splunk.example.com:8089".to_string(),
+            SecretString::new("test-token".to_string().into()),
+        );
 
-        let config_auth = ConfigAuth::SessionToken {
-            username: "test_user".to_string(),
-            password: SecretString::new("test_pass".to_string().into()),
-        };
+        let client = build_client_from_config(&config);
 
-        let client_auth = convert_auth_strategy(&config_auth);
-
-        match client_auth {
-            ClientAuth::SessionToken { username, password } => {
-                assert_eq!(username, "test_user");
-                assert_eq!(password.expose_secret(), "test_pass");
-            }
-            _ => unreachable!(
-                "convert_auth_strategy always returns SessionToken for SessionToken input"
-            ),
-        }
+        assert!(client.is_ok());
+        let client = client.unwrap();
+        assert_eq!(client.base_url(), "https://splunk.example.com:8089");
+        assert!(client.is_api_token_auth());
     }
 
     #[test]
-    fn test_convert_api_token_auth() {
-        use secrecy::ExposeSecret;
+    fn test_build_client_from_config_with_session_token() {
+        let config = splunk_config::Config::with_session_token(
+            "https://splunk.example.com:8089".to_string(),
+            "admin".to_string(),
+            SecretString::new("test-password".to_string().into()),
+        );
 
-        let config_auth = ConfigAuth::ApiToken {
-            token: SecretString::new("test_token".to_string().into()),
-        };
+        let client = build_client_from_config(&config);
 
-        let client_auth = convert_auth_strategy(&config_auth);
-
-        match client_auth {
-            ClientAuth::ApiToken { token } => {
-                assert_eq!(token.expose_secret(), "test_token");
-            }
-            _ => unreachable!("convert_auth_strategy always returns ApiToken for ApiToken input"),
-        }
+        assert!(client.is_ok());
+        let client = client.unwrap();
+        assert_eq!(client.base_url(), "https://splunk.example.com:8089");
+        assert!(!client.is_api_token_auth());
     }
 }

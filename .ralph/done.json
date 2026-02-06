@@ -3363,8 +3363,8 @@
       "relates_to": [],
       "custom_fields": {
         "unused_dependency": "tachyonfx@0.14",
-        "scan_agent": "scan-maintenance",
-        "lines_of_dead_code": "598"
+        "lines_of_dead_code": "598",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -3685,6 +3685,78 @@
       "updated_at": "2026-02-05T23:35:40.707786192Z",
       "completed_at": "2026-02-05T23:35:40.707786192Z",
       "started_at": "2026-02-05T23:19:58.048225756Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
+    },
+    {
+      "id": "RQ-0349",
+      "status": "done",
+      "title": "DRY: move duplicated CLI/TUI behavior into crates/client",
+      "priority": "medium",
+      "tags": [
+        "refactor",
+        "dry",
+        "client",
+        "cli",
+        "tui",
+        "consistency"
+      ],
+      "scope": [
+        "crates/client/src/client/",
+        "crates/client/src/models/",
+        "crates/cli/src/commands/mod.rs",
+        "crates/cli/src/commands/health.rs",
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/src/commands/search.rs",
+        "crates/cli/src/formatters/",
+        "crates/tui/src/runtime/client.rs",
+        "crates/tui/src/runtime/side_effects/health.rs",
+        "crates/tui/src/runtime/side_effects/jobs.rs",
+        "crates/tui/src/export.rs",
+        "crates/*/tests/",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "Duplicated client creation: `crates/cli/src/commands/mod.rs:70-82` has `build_client_from_config()` with auth strategy conversion, while `crates/tui/src/runtime/client.rs:33-59` has nearly identical `create_client()` function.",
+        "Duplicated health check aggregation: `crates/cli/src/commands/health.rs:21-99` and `crates/tui/src/runtime/side_effects/health.rs:20-102` both manually collect server_info, splunkd_health, license_usage, kvstore_status, log_parsing_health into HealthCheckOutput.",
+        "HealthCheckOutput already exists in `crates/client/src/models/logs.rs:141-152` - shared model is available but aggregation logic is duplicated.",
+        "Job operations (list, cancel, delete) have similar patterns: CLI in `crates/cli/src/commands/jobs.rs:22-108` and TUI in `crates/tui/src/runtime/side_effects/jobs.rs:18-202`.",
+        "Export/formatting overlap: CLI has extensive formatters in `crates/cli/src/formatters/` (JSON/CSV/XML/Table), TUI has separate export in `crates/tui/src/export.rs` for JSON/CSV.",
+        "Repo guidelines (AGENTS.md) explicitly require CLI/TUI feature parity via shared business logic in `crates/client` - UIs should be presentation-only."
+      ],
+      "plan": [
+        "Audit and catalog duplicated patterns: client creation/auth strategy conversion, health check aggregation, job operations, and export formatting.",
+        "Move client creation helper to `crates/client/src/client/builder.rs` as a shared `from_config()` method on SplunkClientBuilder.",
+        "Create shared health check aggregation operation in `crates/client/src/client/health.rs` that both CLI and TUI can call.",
+        "Evaluate if job batch operations can be unified in client crate (batch cancel/delete with progress reporting).",
+        "Consider shared export/formatting utilities in client crate for common JSON/CSV serialization (keep CLI-specific table/XML formatters in CLI).",
+        "Update CLI to use shared client creation and health aggregation from client crate.",
+        "Update TUI to use shared client creation and health aggregation from client crate.",
+        "Normalize error handling: ensure `thiserror` in client crate and `anyhow` only at CLI/TUI edges; verify no secrets leak in errors.",
+        "Add unit tests for new shared operations in `crates/client/tests/`.",
+        "Add integration tests verifying both CLI and TUI use shared logic correctly.",
+        "Run `make ci` and remove dead/duplicated code paths."
+      ],
+      "notes": [
+        "HealthCheckOutput is already shared in client crate - only the aggregation logic needs to be moved.",
+        "Auth strategy conversion (ConfigAuth -> ClientAuth) is duplicated in both CLI commands/mod.rs and TUI runtime/client.rs.",
+        "TUI export.rs has good CSV/JSON export with tests - this could be a candidate for sharing if CLI also needs programmatic export.",
+        "CLI formatters are extensive (table, xml, csv, json) and UI-specific; likely should stay in CLI crate.",
+        "No dependencies on other RQ tasks - this can be worked independently.",
+        "Moved duplicated client creation logic to SplunkClientBuilder::from_config() in client crate",
+        "Created shared health check aggregation in client crate with AggregatedHealth struct",
+        "Refactored CLI to use shared from_config() and check_health_aggregate()",
+        "Refactored TUI to use shared SplunkClient::from_config() and check_health_aggregate()",
+        "CI passes, net-negative diff (241 lines removed, 257 added)"
+      ],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-06T00:06:14.300187743Z",
+      "completed_at": "2026-02-06T00:06:14.300187743Z",
+      "started_at": "2026-02-05T23:40:06.282076098Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],
