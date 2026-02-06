@@ -34,6 +34,7 @@ mod license;
 mod logs;
 mod lookups;
 mod macros;
+mod pagination;
 mod profiles;
 mod roles;
 mod saved_searches;

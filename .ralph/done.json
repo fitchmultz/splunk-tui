@@ -3362,8 +3362,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "lines_of_dead_code": "598",
         "scan_agent": "scan-maintenance",
+        "lines_of_dead_code": "598",
         "unused_dependency": "tachyonfx@0.14"
       }
     },
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "oversized_function_count": "6",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "oversized_function_count": "6"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "dead_code_count": "25",
-        "test_files_affected": "4",
         "production_files_affected": "8",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "test_files_affected": "4",
+        "dead_code_count": "25"
       }
     },
     {
@@ -4119,6 +4119,68 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0356",
+      "status": "done",
+      "title": "Split table formatter imp.rs (867 lines) into cohesive submodules",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "complexity",
+        "file-size",
+        "cli",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/table/imp.rs",
+        "crates/cli/src/formatters/table/mod.rs",
+        "crates/cli/src/formatters/macros.rs",
+        "crates/cli/src/formatters/table/*.rs"
+      ],
+      "evidence": [
+        "imp.rs is 867 lines - significantly larger than typical Rust modules (~200-300 lines per AGENTS.md)",
+        "Contains: TableFormatter struct, Formatter trait impl (lines 71-335), 17 paginated format methods (lines 339-819)",
+        "Lines 339-420: format_shc_status_paginated with complex nested if-let chains for members",
+        "Lines 739-819: format_cluster_info_paginated with deep peer formatting logic",
+        "Lines 827-867: build_pagination_footer with complex arithmetic for page calculations",
+        "Partial macro adoption: impl_table_formatter! already used for format_apps (lines 151-153)",
+        "All paginated formatters follow identical pattern: check empty, check offset, call base formatter, append footer - 60+ lines of boilerplate each"
+      ],
+      "plan": [
+        "Extract build_pagination_footer to table/pagination.rs with Pagination struct",
+        "Create generic format_paginated<T> helper to deduplicate paginated formatters (see also RQ-0358)",
+        "Extract SHC/cluster-specific formatting logic to table/shc.rs and table/cluster.rs if not already covered",
+        "Keep imp.rs focused on TableFormatter struct, trait impl, and thin delegate methods",
+        "Target: imp.rs under 300 lines after split (per AGENTS.md file size heuristics)",
+        "Verify with `make test -p splunk-cli` and `make ci`"
+      ],
+      "notes": [
+        "Macro infrastructure already exists in crates/cli/src/formatters/macros.rs - can be extended for paginated variants",
+        "Related to RQ-0358 (pagination deduplication) and RQ-0361 (formatter macro) - consider execution order",
+        "Extracted pagination utilities to table/pagination.rs (66 lines)",
+        "Added impl_table_paginated! and impl_table_paginated_detailed! macros to eliminate ~60 lines of boilerplate per formatter",
+        "Reduced imp.rs from 867 to 538 lines (-38% reduction, -329 lines)",
+        "All 9 simple paginated formatters now use macros; 3 complex ones remain manual",
+        "All tests pass, make ci clean, rustfmt clean"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T20:35:17.389062318Z",
+      "completed_at": "2026-02-06T20:35:17.389062318Z",
+      "started_at": "2026-02-06T20:13:27.791906439Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [
+        "RQ-0358",
+        "RQ-0361"
+      ],
+      "custom_fields": {
+        "current_line_count": "867",
+        "scan_agent": "scan-maintenance",
+        "target_line_count": "300",
+        "macro_already_adopted": "true"
       }
     }
   ]

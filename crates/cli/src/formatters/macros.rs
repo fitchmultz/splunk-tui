@@ -3,6 +3,8 @@
 //! These macros eliminate boilerplate by delegating to the ResourceDisplay trait.
 //! Each formatter macro generates the appropriate formatting logic based on
 //! the resource type's self-describing schema.
+
+/// Macro to implement CSV formatter methods for ResourceDisplay types (without detailed parameter).
 ///
 /// # Usage
 /// ```ignore
@@ -250,6 +252,89 @@ macro_rules! impl_table_formatter_detailed {
                         let width = widths.get(i).copied().unwrap_or(10);
                         output.push_str(&format!("{:<width$}", cell, width = width));
                     }
+                    output.push('\n');
+                }
+
+                Ok(output)
+            }
+        )*
+    };
+}
+
+/// Macro to implement paginated Table formatter methods (with detailed parameter).
+///
+/// # Usage
+/// ```ignore
+/// impl_table_paginated_detailed! {
+///     format_indexes_paginated: &[Index] => indexes, base: format_indexes, resource_name: "indexes",
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_table_paginated_detailed {
+    (
+        $(
+            $method:ident: &[$resource:ty] => $param:ident, base: $base:ident, resource_name: $name:expr
+        ),*$(,)?
+    ) => {
+        $(
+            pub fn $method(
+                &self,
+                $param: &[$resource],
+                detailed: bool,
+                pagination: $crate::formatters::table::Pagination,
+            ) -> anyhow::Result<String> {
+                use $crate::formatters::table::pagination::{build_pagination_footer, format_empty_message};
+
+                if $param.is_empty() {
+                    return Ok(format_empty_message($name, pagination.offset));
+                }
+
+                let mut output = self.$base($param, detailed)?;
+
+                if let Some(footer) = build_pagination_footer(pagination, $param.len()) {
+                    output.push('\n');
+                    output.push_str(&footer);
+                    output.push('\n');
+                }
+
+                Ok(output)
+            }
+        )*
+    };
+}
+
+/// Macro to implement paginated Table formatter methods (without detailed parameter).
+///
+/// # Usage
+/// ```ignore
+/// impl_table_paginated! {
+///     format_kvstore_collections_paginated: &[KvStoreCollection] => collections, base: format_kvstore_collections, resource_name: "KVStore collections",
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_table_paginated {
+    (
+        $(
+            $method:ident: &[$resource:ty] => $param:ident, base: $base:ident, resource_name: $name:expr
+        ),*$(,)?
+    ) => {
+        $(
+            pub fn $method(
+                &self,
+                $param: &[$resource],
+                pagination: $crate::formatters::table::Pagination,
+            ) -> anyhow::Result<String> {
+                use $crate::formatters::table::pagination::{build_pagination_footer, format_empty_message};
+
+                if $param.is_empty() {
+                    return Ok(format_empty_message($name, pagination.offset));
+                }
+
+                let mut output = self.$base($param)?;
+
+                if let Some(footer) = build_pagination_footer(pagination, $param.len()) {
+                    output.push('\n');
+                    output.push_str(&footer);
                     output.push('\n');
                 }
 

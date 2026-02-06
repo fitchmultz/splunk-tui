@@ -45,6 +45,7 @@ use super::license;
 use super::logs;
 use super::lookups;
 use super::macros;
+use super::pagination::{build_pagination_footer, format_empty_message};
 use super::profiles;
 use super::roles;
 use super::saved_searches;
@@ -260,13 +261,9 @@ impl Formatter for TableFormatter {
             return Ok("No audit events found.".to_string());
         }
 
-        // Tab-separated table format
         let mut lines = Vec::new();
-
-        // Header
         lines.push("Time\tUser\tAction\tTarget\tResult".to_string());
 
-        // Rows
         for event in events {
             lines.push(format!(
                 "{}\t{}\t{}\t{}\t{}",
@@ -335,6 +332,44 @@ impl Formatter for TableFormatter {
 }
 
 impl TableFormatter {
+    // Paginated formatters using macros
+    crate::impl_table_paginated_detailed! {
+        format_indexes_paginated: &[Index] => indexes, base: format_indexes, resource_name: "indexes",
+        format_forwarders_paginated: &[Forwarder] => forwarders_list, base: format_forwarders, resource_name: "forwarders",
+        format_search_peers_paginated: &[SearchPeer] => peers, base: format_search_peers, resource_name: "search peers",
+        format_inputs_paginated: &[Input] => inputs, base: format_inputs, resource_name: "inputs",
+        format_dashboards_paginated: &[Dashboard] => dashboards, base: format_dashboards, resource_name: "dashboards",
+        format_datamodels_paginated: &[DataModel] => datamodels, base: format_datamodels, resource_name: "data models",
+        format_workload_pools_paginated: &[splunk_client::WorkloadPool] => pools, base: format_workload_pools, resource_name: "workload pools",
+    }
+
+    crate::impl_table_paginated! {
+        format_config_stanzas_paginated: &[ConfigStanza] => stanzas, base: format_config_stanzas, resource_name: "config stanzas",
+        format_kvstore_collections_paginated: &[KvStoreCollection] => collections, base: format_kvstore_collections, resource_name: "KVStore collections",
+    }
+
+    /// Table-only formatter for audit events with pagination footer.
+    pub fn format_audit_events_paginated(
+        &self,
+        events: &[AuditEvent],
+        _detailed: bool,
+        pagination: Pagination,
+    ) -> Result<String> {
+        if events.is_empty() {
+            return Ok(format_empty_message("audit events", pagination.offset));
+        }
+
+        let mut output = Formatter::format_audit_events(self, events, _detailed)?;
+
+        if let Some(footer) = build_pagination_footer(pagination, events.len()) {
+            output.push('\n');
+            output.push_str(&footer);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
     /// Table-only formatter for SHC status with pagination footer (members only).
     #[allow(clippy::collapsible_if)]
     pub fn format_shc_status_paginated(
@@ -376,7 +411,6 @@ impl TableFormatter {
                 output.push_str("\nSHC Members:\n");
 
                 if members.is_empty() {
-                    // Offset out of range is especially important to explain in table output.
                     if let Some(p) = members_pagination
                         && let Some(total) = p.total
                         && total > 0
@@ -419,321 +453,6 @@ impl TableFormatter {
         Ok(output)
     }
 
-    /// Table-only formatter for indexes with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for indexes (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_indexes_paginated(
-        &self,
-        indexes: &[Index],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if indexes.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No indexes found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No indexes found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_indexes(indexes, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, indexes.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for forwarders with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for forwarders (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_forwarders_paginated(
-        &self,
-        forwarders_list: &[Forwarder],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if forwarders_list.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No forwarders found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No forwarders found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_forwarders(forwarders_list, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, forwarders_list.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for search peers with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for search peers (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_search_peers_paginated(
-        &self,
-        peers: &[SearchPeer],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if peers.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No search peers found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No search peers found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_search_peers(peers, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, peers.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for inputs with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for inputs (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_inputs_paginated(
-        &self,
-        inputs: &[Input],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if inputs.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!("No inputs found for offset {}.", pagination.offset));
-            }
-            return Ok("No inputs found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_inputs(inputs, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, inputs.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for config stanzas with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for config stanzas (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_config_stanzas_paginated(
-        &self,
-        stanzas: &[ConfigStanza],
-        pagination: Pagination,
-    ) -> Result<String> {
-        if stanzas.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No config stanzas found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No config stanzas found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_config_stanzas(stanzas)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, stanzas.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for KVStore collections with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for collections (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_kvstore_collections_paginated(
-        &self,
-        collections: &[KvStoreCollection],
-        pagination: Pagination,
-    ) -> Result<String> {
-        if collections.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No KVStore collections found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No KVStore collections found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_kvstore_collections(collections)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, collections.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for dashboards with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for dashboards (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_dashboards_paginated(
-        &self,
-        dashboards: &[Dashboard],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if dashboards.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No dashboards found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No dashboards found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_dashboards(dashboards, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, dashboards.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for data models with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for data models (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_datamodels_paginated(
-        &self,
-        datamodels: &[DataModel],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if datamodels.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No data models found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No data models found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_datamodels(datamodels, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, datamodels.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for audit events with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for audit events (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_audit_events_paginated(
-        &self,
-        events: &[AuditEvent],
-        _detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if events.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No audit events found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No audit events found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = Formatter::format_audit_events(self, events, _detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, events.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
-    /// Table-only formatter for workload pools with pagination footer.
-    ///
-    /// NOTE: This does not attempt to discover a server-side total for workload pools (not exposed by the
-    /// current client API return type). Footer omits total/page-count when `total` is None.
-    pub fn format_workload_pools_paginated(
-        &self,
-        pools: &[splunk_client::WorkloadPool],
-        detailed: bool,
-        pagination: Pagination,
-    ) -> Result<String> {
-        if pools.is_empty() {
-            if pagination.offset > 0 {
-                return Ok(format!(
-                    "No workload pools found for offset {}.",
-                    pagination.offset
-                ));
-            }
-            return Ok("No workload pools found.".to_string());
-        }
-
-        // Reuse existing table rendering, then append footer.
-        let mut output = self.format_workload_pools(pools, detailed)?;
-
-        if let Some(footer) = build_pagination_footer(pagination, pools.len()) {
-            output.push('\n');
-            output.push_str(&footer);
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
-
     /// Table-only formatter for cluster output with pagination footer (peers only).
     #[allow(clippy::collapsible_if)]
     pub fn format_cluster_info_paginated(
@@ -771,7 +490,6 @@ impl TableFormatter {
                 output.push_str("\nCluster Peers:\n");
 
                 if peers.is_empty() {
-                    // Offset out of range is especially important to explain in table output.
                     if let Some(p) = peers_pagination
                         && let Some(total) = p.total
                         && total > 0
@@ -816,52 +534,5 @@ impl TableFormatter {
         }
 
         Ok(output)
-    }
-}
-
-/// Build a pagination footer string.
-///
-/// - `offset` is zero-based
-/// - `page_size` is the requested page size
-/// - `total` is optional; when absent, footer omits total/page-count
-pub fn build_pagination_footer(p: Pagination, shown: usize) -> Option<String> {
-    if p.page_size == 0 {
-        // Avoid division by zero; caller should validate for client-side pagination.
-        return None;
-    }
-
-    // If nothing is shown, caller should usually emit a friendlier message.
-    if shown == 0 {
-        if let Some(total) = p.total {
-            if total == 0 {
-                return Some("No results.".to_string());
-            }
-            if p.offset >= total {
-                return Some(format!(
-                    "Showing 0 of {} (offset {} out of range)",
-                    total, p.offset
-                ));
-            }
-            return Some(format!("Showing 0 of {}", total));
-        }
-        return Some("No results.".to_string());
-    }
-
-    let start = p.offset.saturating_add(1);
-    let end = p.offset.saturating_add(shown);
-    let page = (p.offset / p.page_size).saturating_add(1);
-
-    if let Some(total) = p.total {
-        let total_pages: usize = if total == 0 {
-            0
-        } else {
-            (total.saturating_add(p.page_size).saturating_sub(1)) / p.page_size
-        };
-        Some(format!(
-            "Showing {}-{} of {} (page {} of {})",
-            start, end, total, page, total_pages
-        ))
-    } else {
-        Some(format!("Showing {}-{} (page {})", start, end, page))
     }
 }
