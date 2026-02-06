@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-06T20:37:28.859802349Z",
+  "last_updated_at": "2026-02-06T20:58:28.929369243Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -329,7 +329,7 @@
     },
     "2026-02-06": {
       "date": "2026-02-06",
-      "completed_count": 8,
+      "completed_count": 9,
       "tasks": [
         {
           "id": "RQ-0349",
@@ -370,6 +370,11 @@
           "id": "RQ-0356",
           "title": "Split table formatter imp.rs (867 lines) into cohesive submodules",
           "completed_at": "2026-02-06T20:37:28.859801260Z"
+        },
+        {
+          "id": "RQ-0357",
+          "title": "Refactor TUI side_effects oversized functions over 100 lines",
+          "completed_at": "2026-02-06T20:58:28.929367315Z"
         }
       ]
     }
@@ -379,7 +384,7 @@
     "longest_streak": 5,
     "last_completed_date": "2026-02-06"
   },
-  "total_completed": 68,
+  "total_completed": 69,
   "milestones": [
     {
       "threshold": 10,

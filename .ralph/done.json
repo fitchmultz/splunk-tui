@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "production_files_affected": "8",
-        "scan_agent": "scan-maintenance",
+        "dead_code_count": "25",
         "test_files_affected": "4",
-        "dead_code_count": "25"
+        "scan_agent": "scan-maintenance",
+        "production_files_affected": "8"
       }
     },
     {
@@ -4177,10 +4177,64 @@
         "RQ-0361"
       ],
       "custom_fields": {
+        "macro_already_adopted": "true",
         "current_line_count": "867",
         "scan_agent": "scan-maintenance",
-        "target_line_count": "300",
-        "macro_already_adopted": "true"
+        "target_line_count": "300"
+      }
+    },
+    {
+      "id": "RQ-0357",
+      "status": "done",
+      "title": "Refactor TUI side_effects oversized functions over 100 lines",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "complexity",
+        "tui",
+        "refactoring"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/multi_instance.rs:58-181 (fetch_single_instance - 123 lines)",
+        "crates/tui/src/runtime/side_effects/profiles.rs:64-204 (handle_profile_selected - 140 lines)",
+        "crates/tui/src/runtime/side_effects/profiles.rs:247-351 (handle_save_profile - 104 lines)"
+      ],
+      "evidence": [
+        "fetch_single_instance spans 123 lines handling profile resolution, auth, client building, and fetching 9 resources",
+        "handle_profile_selected at 140 lines handles profile lookup, auth strategy building, client creation, authentication, and state updates",
+        "handle_save_profile at 104 lines handles keyring storage, profile saving, and rename logic",
+        "build_auth_strategy in multi_instance.rs is only 33 lines - already acceptable",
+        "resource_error is a small 7-line helper in overview_fetch.rs, not in profiles.rs",
+        "overview.rs has no oversized functions (handle_load_overview is 66 lines)"
+      ],
+      "plan": [
+        "Extract resource fetching loop in fetch_single_instance to a helper function (fetch_resources_parallel)",
+        "Extract client building logic from fetch_single_instance to build_client_for_profile() function",
+        "Extract auth strategy building from handle_profile_selected to shared helper (reuse from multi_instance if possible)",
+        "Extract keyring credential storage from handle_save_profile to store_credentials_in_keyring() helper",
+        "Target: maximum 60 lines per function after refactoring",
+        "Verify with make test -p splunk-tui"
+      ],
+      "notes": [
+        "Updated 2026-02-06: Corrected function locations and sizes based on current repo state",
+        "Removed incorrect reference to overview.rs - file is only 83 lines, not 2500+",
+        "profiles.rs has 2 oversized functions, not resource_error definitions",
+        "Refactored 3 oversized functions in TUI side_effects module",
+        "fetch_single_instance: 123 to 35 lines, extracted build_client_from_profile and fetch_all_resources",
+        "handle_profile_selected: 140 to 86 lines, extracted auth/client builders and get_auth_mode_display",
+        "handle_save_profile: 104 to 42 lines, extracted store_profile_credentials_in_keyring, handle_profile_rename, send_profile_save_result",
+        "make ci passes, all functions now under 100 lines target"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T20:56:07.539815131Z",
+      "completed_at": "2026-02-06T20:56:07.539815131Z",
+      "started_at": "2026-02-06T20:38:47.920075665Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

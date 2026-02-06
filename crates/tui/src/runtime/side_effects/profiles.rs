@@ -70,10 +70,11 @@ pub async fn handle_profile_selected(
     let _ = tx.send(Action::Loading(true)).await;
     let config_manager_clone = config_manager.clone();
     let client_clone = client.clone();
+
     tokio::spawn(async move {
         let cm = config_manager_clone.lock().await;
 
-        // Get the profile config
+        // Get profile config
         let profiles = cm.list_profiles();
         let Some(profile_config) = profiles.get(&profile_name) else {
             let _ = tx
@@ -85,7 +86,16 @@ pub async fn handle_profile_selected(
             return;
         };
 
-        // Build new config from profile
+        // Build auth strategy
+        let auth_strategy = match build_auth_strategy_from_profile(profile_config) {
+            Ok(s) => s,
+            Err(e) => {
+                let _ = tx.send(Action::ProfileSwitchResult(Err(e))).await;
+                return;
+            }
+        };
+
+        // Get base_url
         let Some(base_url) = profile_config.base_url.clone() else {
             let _ = tx
                 .send(Action::ProfileSwitchResult(Err(
@@ -94,73 +104,17 @@ pub async fn handle_profile_selected(
                 .await;
             return;
         };
-        let auth_strategy = if let Some(token) = &profile_config.api_token {
-            // API token auth
-            match token.resolve() {
-                Ok(resolved_token) => AuthStrategy::ApiToken {
-                    token: resolved_token,
-                },
-                Err(e) => {
-                    let _ = tx
-                        .send(Action::ProfileSwitchResult(Err(format!(
-                            "Failed to resolve API token: {}",
-                            e
-                        ))))
-                        .await;
-                    return;
-                }
-            }
-        } else if let (Some(username), Some(password)) =
-            (&profile_config.username, &profile_config.password)
-        {
-            // Session token auth
-            match password.resolve() {
-                Ok(resolved_password) => AuthStrategy::SessionToken {
-                    username: username.clone(),
-                    password: resolved_password,
-                },
-                Err(e) => {
-                    let _ = tx
-                        .send(Action::ProfileSwitchResult(Err(format!(
-                            "Failed to resolve password: {}",
-                            e
-                        ))))
-                        .await;
-                    return;
-                }
-            }
-        } else {
-            let _ = tx
-                .send(Action::ProfileSwitchResult(Err(
-                    "Profile has no authentication configured".to_string(),
-                )))
-                .await;
-            return;
-        };
 
-        // Build new client
-        let mut new_client = match SplunkClient::builder()
-            .base_url(base_url.clone())
-            .auth_strategy(auth_strategy)
-            .skip_verify(profile_config.skip_verify.unwrap_or(false))
-            .timeout(std::time::Duration::from_secs(
-                profile_config.timeout_seconds.unwrap_or(30),
-            ))
-            .build()
-        {
+        // Build client
+        let mut new_client = match build_client_for_profile(profile_config, auth_strategy) {
             Ok(c) => c,
             Err(e) => {
-                let _ = tx
-                    .send(Action::ProfileSwitchResult(Err(format!(
-                        "Failed to build client: {}",
-                        e
-                    ))))
-                    .await;
+                let _ = tx.send(Action::ProfileSwitchResult(Err(e))).await;
                 return;
             }
         };
 
-        // Authenticate if using session tokens
+        // Authenticate if needed
         if !new_client.is_api_token_auth()
             && let Err(e) = new_client.login().await
         {
@@ -173,34 +127,85 @@ pub async fn handle_profile_selected(
             return;
         }
 
-        // Replace the shared client
+        // Replace shared client
         let mut client_guard = client_clone.lock().await;
         *client_guard = new_client;
         drop(client_guard);
 
-        // Determine auth mode display string
-        let auth_mode = if profile_config.api_token.is_some() {
-            "token".to_string()
-        } else if let Some(username) = &profile_config.username {
-            format!("session ({})", username)
-        } else {
-            "unknown".to_string()
-        };
-
-        // Send success result
+        // Build success result
+        let auth_mode = get_auth_mode_display(profile_config);
         let ctx = ConnectionContext {
             profile_name: Some(profile_name.clone()),
             base_url,
             auth_mode,
         };
         let _ = tx.send(Action::ProfileSwitchResult(Ok(ctx))).await;
-
-        // Clear all cached data
         let _ = tx.send(Action::ClearAllData).await;
-
-        // Trigger reload for current screen
         let _ = tx.send(Action::Loading(false)).await;
     });
+}
+
+/// Build authentication strategy from profile configuration.
+/// Returns Err with user-friendly message if auth cannot be built.
+fn build_auth_strategy_from_profile(
+    profile_config: &ProfileConfig,
+) -> Result<AuthStrategy, String> {
+    // Check for API token first
+    if let Some(ref token_secure) = profile_config.api_token {
+        match token_secure.resolve() {
+            Ok(token) => return Ok(AuthStrategy::ApiToken { token }),
+            Err(e) => return Err(format!("Failed to resolve API token: {}", e)),
+        }
+    }
+
+    // Fall back to username/password
+    if let (Some(username), Some(password_secure)) =
+        (&profile_config.username, &profile_config.password)
+    {
+        match password_secure.resolve() {
+            Ok(password) => {
+                return Ok(AuthStrategy::SessionToken {
+                    username: username.clone(),
+                    password,
+                });
+            }
+            Err(e) => return Err(format!("Failed to resolve password: {}", e)),
+        }
+    }
+
+    Err("Profile has no authentication configured".to_string())
+}
+
+/// Build SplunkClient from profile configuration.
+fn build_client_for_profile(
+    profile_config: &ProfileConfig,
+    auth_strategy: AuthStrategy,
+) -> Result<SplunkClient, String> {
+    let base_url = profile_config
+        .base_url
+        .clone()
+        .ok_or_else(|| "Profile has no base_url configured".to_string())?;
+
+    SplunkClient::builder()
+        .base_url(base_url)
+        .auth_strategy(auth_strategy)
+        .skip_verify(profile_config.skip_verify.unwrap_or(false))
+        .timeout(std::time::Duration::from_secs(
+            profile_config.timeout_seconds.unwrap_or(30),
+        ))
+        .build()
+        .map_err(|e| format!("Failed to build client: {}", e))
+}
+
+/// Determine auth mode display string for connection context.
+fn get_auth_mode_display(profile_config: &ProfileConfig) -> String {
+    if profile_config.api_token.is_some() {
+        "token".to_string()
+    } else if let Some(username) = &profile_config.username {
+        format!("session ({})", username)
+    } else {
+        "unknown".to_string()
+    }
 }
 
 /// Handle opening the profile edit dialog by loading profile data.
@@ -260,94 +265,122 @@ pub async fn handle_save_profile(
     tokio::spawn(async move {
         let mut cm = config_manager_clone.lock().await;
 
-        // Store credentials: try keyring first (default), fallback to plaintext with warning
-        // use_keyring=false means user explicitly requested plaintext storage
-        let mut profile_to_save = profile.clone();
-
-        if use_keyring {
-            // Try keyring first for password
-            if let (Some(username), Some(splunk_config::types::SecureValue::Plain(pw))) =
-                (&profile.username, &profile.password)
-            {
-                let keyring_value = cm.try_store_password_in_keyring(&name_clone, username, pw);
-                // Check if we fell back to plaintext
-                if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
-                    let _ = tx_clone
-                        .send(Action::Notify(
-                            ToastLevel::Warning,
-                            "Failed to store password in keyring. Saving as plaintext.".to_string(),
-                        ))
-                        .await;
-                }
-                profile_to_save.password = Some(keyring_value);
-            }
-
-            // Try keyring first for API token
-            if let Some(splunk_config::types::SecureValue::Plain(token)) = &profile.api_token {
-                let keyring_value = cm.try_store_token_in_keyring(&name_clone, token);
-                // Check if we fell back to plaintext
-                if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
-                    let _ = tx_clone
-                        .send(Action::Notify(
-                            ToastLevel::Warning,
-                            "Failed to store API token in keyring. Saving as plaintext."
-                                .to_string(),
-                        ))
-                        .await;
-                }
-                profile_to_save.api_token = Some(keyring_value);
-            }
-        }
+        // Store credentials in keyring if enabled
+        let profile_to_save = if use_keyring {
+            store_profile_credentials_in_keyring(&cm, &tx_clone, &name_clone, profile).await
+        } else {
+            profile
+        };
 
         // Save the profile
-        match cm.save_profile(&name_clone, profile_to_save) {
-            Ok(()) => {
-                // Handle rename: delete old profile after saving new one
-                if let Some(old_name) = original_name_clone
-                    && old_name != name_clone
-                {
-                    if let Err(e) = cm.delete_profile(&old_name) {
-                        // Log error but don't fail the save operation
-                        let _ = tx_clone
-                            .send(Action::Notify(
-                                ToastLevel::Warning,
-                                format!(
-                                    "Profile saved but failed to remove old profile '{}': {}",
-                                    old_name, e
-                                ),
-                            ))
-                            .await;
-                    } else {
-                        let _ = tx_clone
-                            .send(Action::Notify(
-                                ToastLevel::Info,
-                                format!("Old profile '{}' removed after rename", old_name),
-                            ))
-                            .await;
-                    }
-                }
+        let result = cm
+            .save_profile(&name_clone, profile_to_save)
+            .map_err(|e| e.to_string());
 
-                let _ = tx_clone
-                    .send(Action::ProfileSaved(Ok(name_clone.clone())))
-                    .await;
-                let _ = tx_clone
-                    .send(Action::Notify(
-                        ToastLevel::Success,
-                        format!("Profile '{}' saved successfully", name_clone),
-                    ))
-                    .await;
-            }
-            Err(e) => {
-                let error_msg = format!("Failed to save profile '{}': {}", name_clone, e);
-                let _ = tx_clone
-                    .send(Action::ProfileSaved(Err(error_msg.clone())))
-                    .await;
-                let _ = tx_clone
-                    .send(Action::Notify(ToastLevel::Error, error_msg))
-                    .await;
+        // Handle rename if needed
+        if result.is_ok() {
+            if let Some(old_name) = original_name_clone.filter(|old| old != &name_clone) {
+                handle_profile_rename(&mut cm, &tx_clone, &old_name, &name_clone).await;
             }
         }
+
+        send_profile_save_result(&tx_clone, &name_clone, result).await;
     });
+}
+
+/// Store profile credentials in keyring if enabled.
+/// Returns the profile with credentials potentially converted to keyring storage.
+/// Sends warning notifications for any failures.
+async fn store_profile_credentials_in_keyring(
+    cm: &ConfigManager,
+    tx: &Sender<Action>,
+    profile_name: &str,
+    mut profile: ProfileConfig,
+) -> ProfileConfig {
+    // Store password in keyring
+    if let (Some(username), Some(splunk_config::types::SecureValue::Plain(pw))) =
+        (&profile.username, &profile.password)
+    {
+        let keyring_value = cm.try_store_password_in_keyring(profile_name, username, pw);
+        if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
+            let _ = tx
+                .send(Action::Notify(
+                    ToastLevel::Warning,
+                    "Failed to store password in keyring. Saving as plaintext.".to_string(),
+                ))
+                .await;
+        }
+        profile.password = Some(keyring_value);
+    }
+
+    // Store API token in keyring
+    if let Some(splunk_config::types::SecureValue::Plain(token)) = &profile.api_token {
+        let keyring_value = cm.try_store_token_in_keyring(profile_name, token);
+        if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
+            let _ = tx
+                .send(Action::Notify(
+                    ToastLevel::Warning,
+                    "Failed to store API token in keyring. Saving as plaintext.".to_string(),
+                ))
+                .await;
+        }
+        profile.api_token = Some(keyring_value);
+    }
+
+    profile
+}
+
+/// Handle profile rename: delete old profile after successful save.
+async fn handle_profile_rename(
+    cm: &mut ConfigManager,
+    tx: &Sender<Action>,
+    old_name: &str,
+    _new_name: &str,
+) {
+    if let Err(e) = cm.delete_profile(old_name) {
+        let _ = tx
+            .send(Action::Notify(
+                ToastLevel::Warning,
+                format!(
+                    "Profile saved but failed to remove old profile '{}': {}",
+                    old_name, e
+                ),
+            ))
+            .await;
+    } else {
+        let _ = tx
+            .send(Action::Notify(
+                ToastLevel::Info,
+                format!("Old profile '{}' removed after rename", old_name),
+            ))
+            .await;
+    }
+}
+
+/// Send notifications for profile save result.
+async fn send_profile_save_result(
+    tx: &Sender<Action>,
+    profile_name: &str,
+    result: Result<(), String>,
+) {
+    match result {
+        Ok(()) => {
+            let _ = tx
+                .send(Action::ProfileSaved(Ok(profile_name.to_string())))
+                .await;
+            let _ = tx
+                .send(Action::Notify(
+                    ToastLevel::Success,
+                    format!("Profile '{}' saved successfully", profile_name),
+                ))
+                .await;
+        }
+        Err(e) => {
+            let error_msg = format!("Failed to save profile '{}': {}", profile_name, e);
+            let _ = tx.send(Action::ProfileSaved(Err(error_msg.clone()))).await;
+            let _ = tx.send(Action::Notify(ToastLevel::Error, error_msg)).await;
+        }
+    }
 }
 
 /// Handle deleting a profile.
