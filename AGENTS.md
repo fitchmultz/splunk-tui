@@ -95,6 +95,25 @@ When adding a feature:
 2. Call that shared code from both `crates/cli` and `crates/tui`.
 3. Keep UI crates limited to parsing/formatting/rendering/event handling.
 
+### Error Message Style
+
+CLI error messages must follow these conventions for consistency:
+
+1. **Title Case**: All error messages must start with a capital letter.
+2. **Action-Oriented**: Use "Failed to...", "Unable to...", "Invalid..." patterns.
+3. **No lowercase starts**: Avoid starting error messages with lowercase words.
+
+Examples:
+- ✅ `"Failed to write output to {}"`
+- ✅ `"Invalid output format: {}"`
+- ✅ `"The --page-size value must be greater than 0"`
+- ❌ `"--page-size must be greater than 0"` (starts with flag)
+- ❌ `"no events found in file"` (lowercase start)
+
+For `warn!` messages, always use `"Failed to {action}"` pattern:
+- ✅ `warn!("Failed to fetch cluster peers: {}", e)`
+- ❌ `warn!("Could not fetch cluster peers: {}", e)`
+
 ## Testing Guidelines
 
 ### Test Organization

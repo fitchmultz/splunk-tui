@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
+        "lines_of_dead_code": "598",
         "scan_agent": "scan-maintenance",
-        "lines_of_dead_code": "598"
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -4006,8 +4006,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "production_files_affected": "8",
         "scan_agent": "scan-maintenance",
+        "production_files_affected": "8",
         "test_files_affected": "4",
         "dead_code_count": "25"
       }
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "macro_already_adopted": "true",
         "scan_agent": "scan-maintenance",
-        "current_line_count": "867",
-        "target_line_count": "300"
+        "target_line_count": "300",
+        "macro_already_adopted": "true",
+        "current_line_count": "867"
       }
     },
     {
@@ -4286,8 +4286,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "remaining_duplicates": "3",
+        "scan_agent": "scan-maintenance",
         "macro_solved_count": "9"
       }
     },
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_methods": "35+",
         "scan_agent": "scan-maintenance",
-        "affected_formatters": "4"
+        "affected_formatters": "4",
+        "estimated_methods": "35+"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "action_variants": "94",
-        "target_line_count": "150",
         "submodule_count": "28",
-        "current_line_count": "523"
+        "scan_agent": "scan-maintenance",
+        "current_line_count": "523",
+        "action_variants": "94",
+        "target_line_count": "150"
       }
     },
     {
@@ -4471,8 +4471,76 @@
       "relates_to": [],
       "custom_fields": {
         "estimated_method_count": "45",
-        "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
+        "scan_agent": "scan-maintenance",
+        "existing_macro_coverage": "4 methods total across all formatters"
+      }
+    },
+    {
+      "id": "RQ-0362",
+      "status": "done",
+      "title": "Unify error message formatting style across CLI",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/*.rs",
+        "crates/cli/src/commands/list_all/*.rs",
+        "crates/cli/src/formatters/*.rs",
+        "crates/cli/src/formatters/**/*.rs",
+        "crates/cli/src/main.rs",
+        "crates/cli/src/config_context.rs",
+        "AGENTS.md"
+      ],
+      "evidence": [
+        "Found 18 anyhow::bail! usages with inconsistent capitalization styles",
+        "Title Case starts: 'Base URL is required', 'No profiles configured', 'CSV format not supported'",
+        "Lowercase starts: '--page-size must be greater than 0', 'no events found in file'",
+        "Consistent with_context() pattern used: 'Failed to write output to {}' (120+ occurrences)",
+        "Inconsistent warn! patterns: 'Could not fetch...' vs 'Failed to fetch...' in cluster.rs, shc.rs, health.rs",
+        "eprintln! error in main.rs: 'Failed to listen for Ctrl+C' follows correct pattern",
+        "bail! in config_context.rs: 'Config command requires a subcommand' (correct style)",
+        "No STYLE.md exists - needs creation for error style documentation",
+        "27 command files need audit for error message consistency"
+      ],
+      "plan": [
+        "Define error style guide: Title Case start, action-oriented ('Failed to...'), consistent with existing with_context() pattern",
+        "Document style in AGENTS.md under new 'Error Handling' section",
+        "Audit all 27 command files in commands/ for error message consistency",
+        "Audit formatters/ for error message consistency",
+        "Standardize all bail! messages to use 'Failed to...' or 'Unable to...' pattern with Title Case",
+        "Standardize warn! messages to use consistent 'Failed to...' pattern",
+        "Verify with `make ci`"
+      ],
+      "notes": [
+        "Evidence updated after grep analysis of codebase on 2026-02-06",
+        "Current with_context() usage already follows good pattern: 'Failed to {action}'",
+        "bail! messages are the primary inconsistency - mix of Title Case and lowercase starts",
+        "No clippy lint exists for error message format - must enforce via code review",
+        "Scope expanded to include formatters/ and list_all/ subdirectories",
+        "Standardized all CLI error messages to use Title Case and action-oriented patterns",
+        "Fixed 8 warn! messages: 'Could not...' → 'Failed to...'",
+        "Fixed 11 bail! messages: added 'Failed to...' / 'The...' prefixes",
+        "Updated 1 test assertion to match new error message",
+        "Added Error Message Style section to AGENTS.md",
+        "make ci passes with all tests green"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T17:55:35Z",
+      "updated_at": "2026-02-06T22:27:11.419290969Z",
+      "completed_at": "2026-02-06T22:27:11.419290969Z",
+      "started_at": "2026-02-06T22:11:26.089734803Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "command_files": "27",
+        "with_context_usages": "120+",
+        "bail_usages": "18",
         "scan_agent": "scan-maintenance"
       }
     }

@@ -165,7 +165,9 @@ pub async fn run_multi_profile(
     };
 
     if target_profiles.is_empty() {
-        anyhow::bail!("No profiles configured. Use 'splunk-cli config set <profile>' to add one.");
+        anyhow::bail!(
+            "Failed to list profiles: No profiles configured. Use 'splunk-cli config set <profile>' to add one."
+        );
     }
 
     // Validate that specified profiles exist

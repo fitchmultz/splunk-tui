@@ -176,7 +176,7 @@ async fn fetch_cluster_peers_page(
             ))
         }
         Err(e) => {
-            warn!("Could not fetch cluster peers: {}", e);
+            warn!("Failed to fetch cluster peers: {}", e);
             Ok((None, None))
         }
     }
@@ -229,7 +229,7 @@ async fn run_show(
 
     // Validate pagination inputs (client-side pagination must be safe)
     if page_size == 0 {
-        anyhow::bail!("--page-size must be greater than 0");
+        anyhow::bail!("The --page-size value must be greater than 0");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -272,7 +272,7 @@ async fn run_show(
         }
         Err(e) => {
             // Not all Splunk instances are clustered
-            warn!("Could not fetch cluster info: {}", e);
+            warn!("Failed to fetch cluster info: {}", e);
             println!("Note: This Splunk instance may not be configured as a cluster.");
         }
     }
@@ -294,7 +294,7 @@ async fn run_peers(
     );
 
     if page_size == 0 {
-        anyhow::bail!("--page-size must be greater than 0");
+        anyhow::bail!("The --page-size value must be greater than 0");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -339,7 +339,7 @@ async fn run_peers(
             }
         }
         Err(e) => {
-            warn!("Could not fetch cluster peers: {}", e);
+            warn!("Failed to fetch cluster peers: {}", e);
             println!("Note: This Splunk instance may not be configured as a cluster.");
         }
     }

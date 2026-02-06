@@ -152,7 +152,7 @@ impl Formatter for CsvFormatter {
         _peers: &[ClusterPeerOutput],
         _pagination: &Pagination,
     ) -> Result<String> {
-        anyhow::bail!("CSV format not supported for cluster peers. Use JSON format.")
+        anyhow::bail!("Failed to format cluster peers: CSV format not supported. Use JSON format.")
     }
 
     fn format_shc_members(
@@ -160,7 +160,7 @@ impl Formatter for CsvFormatter {
         _members: &[ShcMemberOutput],
         _pagination: &Pagination,
     ) -> Result<String> {
-        anyhow::bail!("CSV format not supported for SHC members. Use JSON format.")
+        anyhow::bail!("Failed to format SHC members: CSV format not supported. Use JSON format.")
     }
 
     fn format_audit_events(&self, events: &[AuditEvent], _detailed: bool) -> Result<String> {

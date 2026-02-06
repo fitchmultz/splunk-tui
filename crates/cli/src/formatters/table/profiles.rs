@@ -56,7 +56,7 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 pub fn format_profiles(profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
     if profiles.is_empty() {
         return Ok(
-            "No profiles configured. Use 'splunk-cli config set <profile-name>' to add one."
+            "Failed to list profiles: No profiles configured. Use 'splunk-cli config set <profile-name>' to add one."
                 .to_string(),
         );
     }

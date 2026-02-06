@@ -290,7 +290,7 @@ async fn run_send_batch(
         .with_context(|| format!("Invalid JSON in events file: {}", events_file.display()))?;
 
     if events.is_empty() {
-        anyhow::bail!("No events found in file");
+        anyhow::bail!("Failed to read events: No events found in file");
     }
 
     // Create a minimal client (HEC doesn't use standard auth)
@@ -392,7 +392,7 @@ async fn run_check_ack(
     );
 
     if ack_ids.is_empty() {
-        anyhow::bail!("No acknowledgment IDs provided");
+        anyhow::bail!("Failed to check acknowledgment status: No acknowledgment IDs provided");
     }
 
     // Create a minimal client (HEC doesn't use standard auth)

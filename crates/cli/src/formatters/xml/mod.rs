@@ -121,7 +121,7 @@ impl Formatter for XmlFormatter {
         _peers: &[ClusterPeerOutput],
         _pagination: &Pagination,
     ) -> Result<String> {
-        anyhow::bail!("XML format not supported for cluster peers. Use JSON format.")
+        anyhow::bail!("Failed to format cluster peers: XML format not supported. Use JSON format.")
     }
 
     fn format_cluster_management(&self, output: &ClusterManagementOutput) -> Result<String> {
@@ -560,7 +560,7 @@ impl Formatter for XmlFormatter {
         _members: &[ShcMemberOutput],
         _pagination: &Pagination,
     ) -> Result<String> {
-        anyhow::bail!("XML format not supported for SHC members. Use JSON format.")
+        anyhow::bail!("Failed to format SHC members: XML format not supported. Use JSON format.")
     }
 
     fn format_shc_captain(&self, captain: &ShcCaptainOutput) -> Result<String> {

@@ -172,7 +172,7 @@ async fn fetch_shc_members_page(
             ))
         }
         Err(e) => {
-            warn!("Could not fetch SHC members: {}", e);
+            warn!("Failed to fetch SHC members: {}", e);
             Ok((None, None))
         }
     }
@@ -226,7 +226,7 @@ async fn run_show(
 
     // Validate pagination inputs (client-side pagination must be safe)
     if page_size == 0 {
-        anyhow::bail!("--page-size must be greater than 0");
+        anyhow::bail!("The --page-size value must be greater than 0");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -268,7 +268,7 @@ async fn run_show(
         }
         Err(e) => {
             // Not all Splunk instances are in SHC
-            warn!("Could not fetch SHC status: {}", e);
+            warn!("Failed to fetch SHC status: {}", e);
             println!("Note: This Splunk instance may not be configured as a search head cluster.");
         }
     }
@@ -290,7 +290,7 @@ async fn run_members(
     );
 
     if page_size == 0 {
-        anyhow::bail!("--page-size must be greater than 0");
+        anyhow::bail!("The --page-size value must be greater than 0");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -335,7 +335,7 @@ async fn run_members(
             }
         }
         Err(e) => {
-            warn!("Could not fetch SHC members: {}", e);
+            warn!("Failed to fetch SHC members: {}", e);
             println!("Note: This Splunk instance may not be configured as a search head cluster.");
         }
     }
@@ -379,7 +379,7 @@ async fn run_captain(
             }
         }
         Err(e) => {
-            warn!("Could not fetch SHC captain: {}", e);
+            warn!("Failed to fetch SHC captain: {}", e);
             println!("Note: This Splunk instance may not be configured as a search head cluster.");
         }
     }
@@ -423,7 +423,7 @@ async fn run_config(
             }
         }
         Err(e) => {
-            warn!("Could not fetch SHC config: {}", e);
+            warn!("Failed to fetch SHC config: {}", e);
             println!("Note: This Splunk instance may not be configured as a search head cluster.");
         }
     }

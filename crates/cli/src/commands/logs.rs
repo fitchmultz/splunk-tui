@@ -90,9 +90,7 @@ pub async fn run(
 ) -> Result<()> {
     // Tail mode is incompatible with file output
     if tail && output_file.is_some() {
-        anyhow::bail!(
-            "--output-file cannot be used with --tail mode. Tail mode streams output continuously."
-        );
+        anyhow::bail!("The --output-file option cannot be used with --tail mode");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
