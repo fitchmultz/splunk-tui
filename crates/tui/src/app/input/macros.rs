@@ -4,7 +4,7 @@
 //! - Handle keyboard input for the macros screen.
 //! - Return actions for macro operations.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does not render (see ui/screens/macros.rs).
 //! - Does not execute async operations (see runtime/side_effects/macros.rs).
 

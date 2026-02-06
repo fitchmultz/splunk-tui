@@ -5,7 +5,7 @@
 //! - Handle Ctrl+E export of KVStore status
 //! - Handle 'r' key to refresh KVStore data
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch KVStore data (handled by actions)

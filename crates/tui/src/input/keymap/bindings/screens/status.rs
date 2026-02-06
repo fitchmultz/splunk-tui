@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for status screens that share a similar pattern (refresh, export, copy).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

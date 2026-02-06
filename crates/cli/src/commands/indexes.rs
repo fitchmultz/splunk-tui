@@ -1,4 +1,23 @@
 //! Indexes command implementation.
+//!
+//! Responsibilities:
+//! - List indexes with optional count limiting and pagination
+//! - Create new indexes with configurable parameters
+//! - Modify existing index properties
+//! - Delete indexes with confirmation
+//! - Show detailed index information when requested
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Index data ingestion or searching
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Delete operations require confirmation unless --force is used
+//! - Index names are passed through without modification
+//! - Server-side total may not be available for all index listings
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

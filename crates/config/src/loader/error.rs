@@ -8,7 +8,7 @@
 //! - Error handling for persistence operations (see persistence.rs).
 //! - Error handling for type conversions (see types.rs).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - All error variants include context for debugging (variable names, paths, etc.).
 //! - ConfigFileError is converted to ConfigError for unified error handling.
 //! - Dotenv errors NEVER include raw .env line contents to prevent secret leakage.

@@ -7,6 +7,10 @@
 //! Does NOT handle:
 //! - Other output formats.
 //! - Table-style pagination.
+//!
+//! Invariants:
+//! - CSV output follows RFC 4180 for compatibility with standard tools
+//! - Nested structures are flattened using dot notation
 
 use crate::commands::list_all::ListAllOutput;
 use crate::formatters::{

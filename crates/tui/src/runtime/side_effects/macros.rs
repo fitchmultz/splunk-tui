@@ -4,7 +4,7 @@
 //! - Handle async API calls for macro operations.
 //! - Send results back via action channel.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does not handle UI rendering (see ui/screens/macros.rs).
 //! - Does not handle input (see app/input/macros.rs).
 

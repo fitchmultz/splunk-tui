@@ -7,7 +7,7 @@
 //! Does NOT:
 //! - Handle live test configuration (see `test-live` in Makefile).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - All integration tests using this helper will be hermetic by default.
 //! - `SPLUNK_API_TOKEN` is set to "test-token" unless overridden.
 

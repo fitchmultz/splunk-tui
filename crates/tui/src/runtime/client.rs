@@ -7,7 +7,7 @@
 //! - Configuration loading (see `runtime::config`).
 //! - Terminal state management (see `runtime::terminal`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - The provided config has valid base_url and auth credentials.
 //! - Session token auth requires calling `login()` before use.
 //!

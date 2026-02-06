@@ -7,7 +7,7 @@
 //! - Handle Ctrl+C copy from results
 //! - Trigger SPL validation on input changes (debounced)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT perform actual validation (handled by side effects)

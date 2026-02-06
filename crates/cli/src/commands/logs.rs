@@ -1,4 +1,21 @@
-//! Logs command implementation with tail support.
+//! Internal logs command implementation with tail support.
+//!
+//! Responsibilities:
+//! - Fetch internal logs with optional count limiting and time filtering
+//! - Support continuous tail mode with cursor tracking
+//! - Handle deduplication in tail mode using serial/content hash
+//! - Format output via shared formatters including streaming format
+//!
+//! Does NOT handle:
+//! - Log file management or rotation
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Tail mode is incompatible with file output (--output-file)
+//! - Cursor tracks position using time, index_time, and serial/hash
+//! - Deduplication ensures no duplicate entries in tail output
+//! - Time filtering uses Splunk's standard time format
 
 use anyhow::{Context, Result};
 use splunk_client::models::LogEntry;

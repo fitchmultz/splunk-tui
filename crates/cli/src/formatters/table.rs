@@ -7,6 +7,10 @@
 //! Does NOT handle:
 //! - Other output formats.
 //! - File I/O.
+//!
+//! Invariants:
+//! - Tables use tab-separation for consistent terminal alignment
+//! - Empty collections display a clear "No X found" message
 
 pub use self::imp::Pagination;
 pub use self::imp::TableFormatter;

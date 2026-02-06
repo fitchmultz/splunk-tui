@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for monitoring screens (refresh, export, copy, navigate).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

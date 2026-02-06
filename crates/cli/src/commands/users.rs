@@ -1,4 +1,21 @@
 //! Users command implementation.
+//!
+//! Responsibilities:
+//! - List users with optional count limiting
+//! - Create new users with roles and authentication
+//! - Delete users with confirmation
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - User password changes (use Splunk web UI or API directly)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Usernames are validated as non-empty
+//! - Delete operations require confirmation unless --force is used
+//! - Role assignments are passed through without validation
+//! - Passwords are handled securely via SecretString
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

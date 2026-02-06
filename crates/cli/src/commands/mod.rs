@@ -1,4 +1,19 @@
 //! CLI command implementations.
+//!
+//! Responsibilities:
+//! - Implement CLI subcommand handlers for all Splunk operations
+//! - Coordinate between CLI argument parsing and client crate APIs
+//! - Handle command-specific output formatting via formatters
+//!
+//! Does NOT handle:
+//! - Argument parsing (see args module)
+//! - Direct REST API implementation (see client crate)
+//! - Output format implementation details (see formatters module)
+//!
+//! Invariants:
+//! - All commands use build_client_from_config for client construction
+//! - All async commands respect cancellation tokens
+//! - All output goes through shared formatters for consistency
 
 pub mod alerts;
 pub mod apps;

@@ -4,7 +4,7 @@
 //! - Handle saved search editing popup
 //! - Form navigation and input handling
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT execute the actual saved search operations (just returns Action variants)
 

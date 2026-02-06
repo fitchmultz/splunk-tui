@@ -7,6 +7,12 @@
 //!
 //! Does NOT handle:
 //! - Low-level SHC API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - SHC operations require captain access or administrative privileges
+//! - Member removal requires the member to be decommissioned first
+//! - Rolling restart affects all cluster members
 
 use std::path::PathBuf;
 

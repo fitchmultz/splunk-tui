@@ -5,9 +5,13 @@
 //! - Extract and validate configuration for each command.
 //! - Handle command execution with cancellation support.
 //!
-//! Non-responsibilities:
-//! - Does not define CLI structure (see `args` module).
-//! - Does not load configuration (see `main()` and `config_context`).
+//! Does NOT handle:
+//! - CLI structure definitions (see `args` module).
+//! - Configuration loading (see `main()` and `config_context`).
+//!
+//! Invariants:
+//! - All commands receive a valid cancellation token
+//! - Commands are routed based on the top-level Commands enum variant
 
 use anyhow::Result;
 

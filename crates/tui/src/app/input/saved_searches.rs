@@ -6,7 +6,7 @@
 //! - Handle Ctrl+E export of saved searches list
 //! - Handle 'e' key to edit selected saved search
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch saved searches data (handled by actions)

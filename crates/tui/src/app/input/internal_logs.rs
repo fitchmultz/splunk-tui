@@ -5,7 +5,7 @@
 //! - Handle Ctrl+E export of internal logs
 //! - Handle auto-refresh toggle (a key)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch internal logs data (handled by actions)

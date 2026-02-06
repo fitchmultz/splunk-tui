@@ -10,7 +10,7 @@
 //! Does NOT:
 //! - Test live Splunk server interactions (see `test-live` in Makefile).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - All tests use hermetic CLI commands via `splunk_cmd()` to prevent env leakage.
 //! - Tests use temporary config files to avoid interfering with user config.
 

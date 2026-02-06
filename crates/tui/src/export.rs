@@ -4,7 +4,7 @@
 //! - Export *any* serializable payload to JSON or CSV.
 //! - Keep CSV behavior consistent with search-result exporting (object rows become columns).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Path validation / directory creation.
 //! - Enforcing filename extensions.
 //! - Streaming extremely large exports efficiently (payload is provided in-memory).

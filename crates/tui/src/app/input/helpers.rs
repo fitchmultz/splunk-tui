@@ -4,7 +4,7 @@
 //! - Classify key events for input handling
 //! - Determine if keys are printable, mode switches, or cursor editing
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle App state
 //! - Does NOT dispatch actions
 

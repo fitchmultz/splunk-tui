@@ -4,7 +4,7 @@
 //! - Handle Ctrl+C or 'y' copy of health status or server name (vim-style)
 //! - Handle Ctrl+E export of health info
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch health data (handled by actions)

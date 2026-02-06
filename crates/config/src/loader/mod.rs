@@ -9,7 +9,7 @@
 //! - Persisting configuration changes back to disk (see `persistence.rs`).
 //! - Interaction with system keyrings directly (delegated to `types.rs` via `resolve()`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Environment variables take precedence over profile file values.
 //! - `load_dotenv()` must be called explicitly to enable `.env` file loading.
 //! - The `DOTENV_DISABLED` variable is checked before `dotenvy::dotenv()` is called.

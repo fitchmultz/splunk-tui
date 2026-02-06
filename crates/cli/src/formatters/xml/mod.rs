@@ -7,6 +7,10 @@
 //! Does NOT handle:
 //! - Other output formats.
 //! - Schema validation.
+//!
+//! Invariants:
+//! - XML output includes standard version/encoding declaration
+//! - Special characters are properly escaped in XML content
 
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,

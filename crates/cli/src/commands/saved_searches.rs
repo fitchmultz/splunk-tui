@@ -1,4 +1,22 @@
 //! Saved searches command implementation.
+//!
+//! Responsibilities:
+//! - List saved searches with optional count limiting
+//! - Show detailed information about specific saved searches
+//! - Execute saved searches with optional time bounds
+//! - Edit saved search properties (search query, description, disabled status)
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Saved search scheduling or alerting configuration
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Saved search names are validated as non-empty
+//! - At least one field must be provided for edit operations
+//! - Execution uses saved search's stored SPL query
+//! - Time bounds default to -24h/now if not specified
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

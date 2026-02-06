@@ -10,7 +10,7 @@
 //! - Terminal state management (see `runtime::terminal`).
 //! - Async API calls (see `runtime::side_effects`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Configuration precedence: CLI args > env vars > profile config > defaults.
 //! - `load_dotenv()` is called before loading configuration.
 //! - ConfigManager is wrapped in Arc<Mutex<>> for thread-safe access.

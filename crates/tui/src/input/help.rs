@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Convert keybinding metadata into a human-readable help string.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Mutating application state.
 //! - Owning keybinding definitions (delegated to keymap).
 //!

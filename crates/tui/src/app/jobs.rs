@@ -5,7 +5,7 @@
 //! - Manage job selection with filtering
 //! - Compare jobs for sorting
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle job API operations
 //! - Does NOT render the jobs table
 

@@ -5,7 +5,7 @@
 //! - Handle Ctrl+E export of cluster info
 //! - Handle cluster management actions (maintenance mode, rebalance, decommission, remove)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch cluster data (handled by actions)

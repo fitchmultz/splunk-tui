@@ -4,7 +4,7 @@
 //! - Render the macros list with a split view (list + preview).
 //! - Handle selection highlighting and scrolling.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does not handle input (see app/input/macros.rs).
 //! - Does not fetch data (see runtime/side_effects/macros.rs).
 

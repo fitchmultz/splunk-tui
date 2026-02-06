@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for input management (refresh, enable, disable, copy, navigate).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

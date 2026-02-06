@@ -1,15 +1,19 @@
-//! Inputs command implementation.
+//! Data inputs command implementation.
 //!
-//! This module provides the CLI command for listing Splunk data inputs.
+//! Responsibilities:
+//! - List data inputs with optional type filtering (tcp/raw, tcp/cooked, udp, monitor, script)
+//! - Support pagination via offset parameter
+//! - Show detailed input information when requested
+//! - Format output via shared formatters
 //!
-//! # What this module handles:
-//! - Listing data inputs with optional type filtering
-//! - Multiple output formats (table, JSON, CSV, XML)
-//! - Cancellation support
+//! Does NOT handle:
+//! - Input configuration or creation
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
 //!
-//! # What this module does NOT handle:
-//! - Direct HTTP API calls (delegated to client library)
-//! - Output formatting (delegated to formatters)
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Input type filters are passed through without modification
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

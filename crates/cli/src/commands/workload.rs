@@ -1,15 +1,20 @@
 //! Workload management command implementation.
 //!
-//! This module provides the CLI command for listing Splunk workload pools and rules.
+//! Responsibilities:
+//! - List workload pools with optional count limiting and pagination
+//! - List workload rules with optional count limiting
+//! - Show detailed information when requested
+//! - Format output via shared formatters
 //!
-//! # What this module handles:
-//! - Listing workload pools and rules with pagination support
-//! - Multiple output formats (table, JSON, CSV, XML)
-//! - Cancellation support
+//! Does NOT handle:
+//! - Workload pool or rule configuration
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
 //!
-//! # What this module does NOT handle:
-//! - Direct HTTP API calls (delegated to client library)
-//! - Output formatting (delegated to formatters)
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Pools and rules are fetched concurrently for efficiency
+//! - Server-side total may not be available for all listings
 
 use anyhow::{Context, Result};
 use tracing::info;

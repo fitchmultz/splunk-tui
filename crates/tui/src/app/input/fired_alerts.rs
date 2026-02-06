@@ -4,7 +4,7 @@
 //! - Handle Ctrl+C or 'y' copy of selected alert name (vim-style)
 //! - Handle Ctrl+E export of fired alerts list
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch fired alerts data (handled by actions)

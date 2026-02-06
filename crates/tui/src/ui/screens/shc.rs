@@ -8,7 +8,7 @@
 //! - Render SHC members as a table with status indicators
 //! - Handle view mode switching (Summary vs Members)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT fetch data (handled by async tasks in side_effects)
 //! - Does NOT handle user input (handled by input module)
 

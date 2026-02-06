@@ -9,7 +9,7 @@
 //! - Direct printing to stdout (returns formatted strings).
 //! - Terminal UI rendering (see `crates/tui`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Tables use tab-separation for consistent alignment in standard terminals.
 //! - XML output includes a standard version/encoding declaration.
 

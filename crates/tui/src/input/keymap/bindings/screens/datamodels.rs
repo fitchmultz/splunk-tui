@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for data model viewing (refresh, navigate).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

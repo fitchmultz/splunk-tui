@@ -1,22 +1,28 @@
 //! HEC (HTTP Event Collector) command implementation.
 //!
-//! This module provides CLI commands for sending events to Splunk via HEC.
 //! HEC uses a separate endpoint (typically port 8088) and separate authentication
 //! (HEC tokens) from the standard Splunk REST API.
 //!
-//! # Environment Variables
+//! Responsibilities:
+//! - Send single events with optional metadata (index, source, sourcetype, host)
+//! - Send batches of events from JSON files
+//! - Check HEC health status
+//! - Query acknowledgment status for guaranteed delivery
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - HEC token management or configuration storage
+//! - Direct HTTP implementation (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Environment Variables:
 //! - `SPLUNK_HEC_URL`: HEC endpoint URL (e.g., `https://localhost:8088`)
 //! - `SPLUNK_HEC_TOKEN`: HEC authentication token
 //!
-//! # What this module handles:
-//! - Sending single events with optional metadata
-//! - Sending batches of events from JSON files
-//! - Checking HEC health status
-//! - Querying acknowledgment status for guaranteed delivery
-//!
-//! # What this module does NOT handle:
-//! - Direct HTTP implementation (see `crates/client`)
-//! - Token management or configuration storage
+//! Invariants:
+//! - Event data is validated as valid JSON before sending
+//! - File paths are validated before read operations
+//! - HEC URLs and tokens are passed through without modification
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

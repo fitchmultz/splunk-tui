@@ -5,9 +5,13 @@
 //! - Parse command-line arguments and environment variables.
 //! - Provide config path resolution helpers.
 //!
-//! Non-responsibilities:
-//! - Does not execute commands (see `dispatch` module).
-//! - Does not handle config loading (see `config_context` module).
+//! Does NOT handle:
+//! - Command execution (see `dispatch` module).
+//! - Configuration loading (see `config_context` module).
+//!
+//! Invariants:
+//! - All arguments have sensible defaults where applicable
+//! - Environment variable fallbacks are documented in --help
 
 use clap::{Parser, Subcommand};
 use splunk_config::env_var_or_none;

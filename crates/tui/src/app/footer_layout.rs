@@ -4,7 +4,7 @@
 //! - Calculate the exact positions of footer elements (loading, hints, quit button)
 //! - Provide consistent layout information for both rendering and mouse hit-testing
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render the footer (see render.rs)
 //! - Does NOT handle mouse events (see mouse.rs)
 //!

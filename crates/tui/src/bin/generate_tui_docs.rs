@@ -4,7 +4,7 @@
 //! - Replace the marked keybinding block in documentation files with generated content.
 //! - Provide a stable, repeatable output for local CI.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Editing any other documentation sections.
 //! - Validating runtime TUI behavior.
 //!

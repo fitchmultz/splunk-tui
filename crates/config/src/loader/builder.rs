@@ -10,7 +10,7 @@
 //! - Profile file loading logic (delegated to profile.rs).
 //! - Persisting configuration changes (see persistence.rs).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Environment variables take precedence over profile file values.
 //! - Builder methods take precedence over environment variables.
 //! - `load_dotenv()` must be called explicitly to enable `.env` file loading.

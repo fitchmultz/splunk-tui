@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for list/detail screens like indexes, apps, users, and settings.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

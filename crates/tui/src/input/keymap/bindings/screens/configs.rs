@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for config file management (refresh, search stanzas, view details, back, navigate).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

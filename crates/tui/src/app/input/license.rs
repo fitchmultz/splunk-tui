@@ -5,7 +5,7 @@
 //! - Handle Ctrl+E export of license info
 //! - Handle 'r' key to refresh license data
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch license data (handled by actions)

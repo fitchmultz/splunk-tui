@@ -6,7 +6,7 @@
 //! - Handle 'd' key to toggle sort direction
 //! - Handle 'c' key to clear search history
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT persist settings (handled by actions)

@@ -4,7 +4,7 @@
 //! - Handle user creation, modification, and deletion popups
 //! - Manage form input for user fields (name, password, roles, etc.)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT execute the actual user operations (just returns Action variants)
 

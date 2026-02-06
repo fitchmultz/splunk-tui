@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for settings management (cycle theme, toggle auto-refresh, sort, clear history, reload, profile management).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

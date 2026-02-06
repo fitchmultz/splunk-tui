@@ -7,7 +7,7 @@
 //! - Handle 'm' to open modify role dialog
 //! - Handle 'd' to open delete role confirmation
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch roles data (handled by actions)

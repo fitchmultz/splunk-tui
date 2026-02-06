@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define job list navigation and job inspect shortcuts.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

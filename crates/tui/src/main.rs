@@ -11,7 +11,7 @@
 //! - Configuration persistence (see `crates/config`).
 //! - Async API calls (see `runtime::side_effects`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - The TUI enters raw mode and alternate screen on startup.
 //! - `load_dotenv()` is called at startup to support `.env` configuration.
 //! - Configuration precedence: CLI args > env vars > profile config > defaults.

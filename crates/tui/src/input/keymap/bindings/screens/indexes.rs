@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for index management (refresh, view, export, create, modify, delete).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

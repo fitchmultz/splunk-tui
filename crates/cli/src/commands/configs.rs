@@ -1,17 +1,20 @@
-//! Configs command implementation.
+//! Configuration files command implementation.
 //!
-//! This module provides the CLI command for viewing Splunk configuration files.
+//! Responsibilities:
+//! - List available configuration files (e.g., props, transforms, indexes)
+//! - List configuration stanzas for a specific config file
+//! - View detailed configuration for specific stanzas
+//! - Support pagination for large config file listings
+//! - Format output via shared formatters
 //!
-//! # What this module handles:
-//! - Listing configuration files
-//! - Listing configuration stanzas for a specific config file
-//! - Viewing specific configuration stanzas
-//! - Multiple output formats (table, JSON, CSV, XML)
-//! - Cancellation support
+//! Does NOT handle:
+//! - Configuration modification (read-only operations)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
 //!
-//! # What this module does NOT handle:
-//! - Direct HTTP API calls (delegated to client library)
-//! - Output formatting (delegated to formatters)
+//! Invariants:
+//! - Config file names and stanza names are passed through without modification
+//! - Count and offset parameters are validated for safe pagination
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

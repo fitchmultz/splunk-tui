@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Handle Ctrl+C or 'y' copy of the inspected job's SID (vim-style)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch job details (handled by actions)

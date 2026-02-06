@@ -10,7 +10,7 @@
 //! - UI rendering or terminal management.
 //! - Configuration loading or persistence.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - All API calls are spawned as separate tokio tasks.
 //! - Results are always sent back via the action channel.
 //! - Loading state is set before API calls and cleared after.

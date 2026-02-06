@@ -8,7 +8,7 @@
 //! - Handle 'm' to open modify index dialog
 //! - Handle 'd' to open delete index confirmation
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch index data (handled by actions)

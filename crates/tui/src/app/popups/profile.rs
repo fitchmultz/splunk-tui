@@ -6,7 +6,7 @@
 //! - Handle character input and backspace for text fields
 //! - Handle boolean toggles for checkboxes (Space key)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT persist profiles (just returns Action::SaveProfile/DeleteProfile)
 

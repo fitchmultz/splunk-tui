@@ -4,7 +4,7 @@
 //! - Low-level HTTP calls to /services/admin/macros endpoints.
 //! - Handle request serialization and response parsing.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does not handle auth retry (see client module).
 //! - Does not contain business logic.
 

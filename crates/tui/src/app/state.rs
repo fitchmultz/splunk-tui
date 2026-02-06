@@ -5,7 +5,7 @@
 //! - Define health state enum (HealthState)
 //! - Define sorting types (SortColumn, SortDirection, SortState)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle state mutations (in App impl)
 //! - Does NOT define the main App struct
 

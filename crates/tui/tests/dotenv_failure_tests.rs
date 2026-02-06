@@ -5,7 +5,7 @@
 //! - Prove that error messages do not leak secrets from the `.env` file.
 //! - Ensure DOTENV_DISABLED=1 allows the TUI to skip a malformed `.env`.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Tests use `serial_test` to prevent cross-test contamination.
 //! - Tests serialize mutations to process-global state (cwd/env).
 //! - Error messages must never contain secret values from `.env` files.

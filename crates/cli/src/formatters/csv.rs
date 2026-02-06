@@ -7,6 +7,10 @@
 //! Does NOT handle:
 //! - Other output formats.
 //! - Table-style pagination.
+//!
+//! Invariants:
+//! - CSV output follows RFC 4180 for compatibility with standard tools
+//! - Header row is always included in CSV output
 
 pub use self::imp::CsvFormatter;
 

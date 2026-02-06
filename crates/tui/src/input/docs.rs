@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Render the keybinding catalog into Markdown for docs/usage.md.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Reading or writing files (handled by generator binaries).
 //! - Determining where generated blocks live in documentation files.
 //!

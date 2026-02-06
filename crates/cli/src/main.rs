@@ -9,7 +9,7 @@
 //! - Core business logic or REST API implementation (see `crates/client`).
 //! - Long-term persistence of search results.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - `load_dotenv()` is called BEFORE CLI parsing to allow `.env` to provide clap defaults.
 //! - Global options (like `--base-url`) are applied consistently across all subcommands.
 

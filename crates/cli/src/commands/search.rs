@@ -1,4 +1,22 @@
-//! Search command implementation.
+//! Search execution command implementation.
+//!
+//! Responsibilities:
+//! - Execute SPL queries with configurable time bounds
+//! - Support blocking (wait) and non-blocking execution modes
+//! - Handle real-time search with optional window
+//! - Apply search defaults from configuration when CLI flags not provided
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Saved search management (see saved_searches module)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Search queries are passed through without modification
+//! - Time bounds default to configuration values or -24h/now
+//! - Max results default to configuration or 100
+//! - Progress callbacks are only used in non-quiet mode
 
 use anyhow::{Context, Result};
 use splunk_client::{SearchMode, SearchRequest};

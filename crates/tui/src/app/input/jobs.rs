@@ -7,7 +7,7 @@
 //! - Handle Ctrl+C copy of selected job SID
 //! - Handle filter input mode
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT execute the actual cancel/delete operations (handled by actions)

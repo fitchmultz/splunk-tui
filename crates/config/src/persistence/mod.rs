@@ -12,7 +12,7 @@
 //! - High-level configuration merging (see `loader.rs`).
 //! - Direct REST API communication (see `crates/client`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - The standard configuration path is preferred over the legacy path.
 //! - Migration is best-effort and atomic (using rename); it should not block startup.
 //! - Profile names are unique within a configuration file.

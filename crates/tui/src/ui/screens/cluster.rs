@@ -8,7 +8,7 @@
 //! - Render cluster peers as a table with status indicators
 //! - Handle view mode switching (Summary vs Peers)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT fetch data (handled by async tasks in main.rs)
 //! - Does NOT handle user input (handled by input module)
 

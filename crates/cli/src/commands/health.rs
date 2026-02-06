@@ -1,4 +1,18 @@
-//! Health command implementation.
+//! Health check command implementation.
+//!
+//! Responsibilities:
+//! - Perform comprehensive health checks against Splunk instance
+//! - Aggregate health status from multiple endpoints
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Health remediation or automated fixes
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Partial failures are logged but do not fail the overall command
+//! - Health check results are aggregated from multiple endpoints
 
 use anyhow::{Context, Result};
 use tracing::{info, warn};

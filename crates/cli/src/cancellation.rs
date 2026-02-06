@@ -7,7 +7,7 @@
 //!   cancellation (Ctrl+C/SIGINT) through `anyhow::Result`.
 //! - Centralize cancellation message and Unix-standard SIGINT exit code (130).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - This module does not install signal handlers by itself.
 //! - This module does not decide *when* to check for cancellation; callers must do so.
 //!

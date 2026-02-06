@@ -4,7 +4,7 @@
 //! - Dispatch keyboard input to the appropriate screen handler
 //! - Re-export all screen-specific input handlers
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT define handler implementations (see submodules)
 //! - Does NOT handle global keybindings (handled by keymap module)
 //! - Does NOT handle popup input (handled by popups module)

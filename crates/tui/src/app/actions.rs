@@ -5,7 +5,7 @@
 //! - Handle API result actions
 //! - Handle navigation actions
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT create Actions (handled by input handlers)
 //! - Does NOT perform async operations
 //!

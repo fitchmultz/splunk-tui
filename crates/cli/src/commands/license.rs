@@ -10,7 +10,7 @@
 //! Does NOT handle:
 //! - License file validation (handled by Splunk server).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Requires an authenticated Splunk client.
 
 use std::path::PathBuf;

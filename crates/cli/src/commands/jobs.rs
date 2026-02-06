@@ -1,4 +1,21 @@
-//! Jobs command implementation.
+//! Search jobs command implementation.
+//!
+//! Responsibilities:
+//! - List search jobs with optional count limiting
+//! - Inspect detailed information about specific jobs
+//! - Cancel running jobs by SID
+//! - Delete completed jobs by SID
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Job creation (see search module)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Job SIDs are validated as non-empty strings
+//! - Cancel/delete operations are idempotent (safe to retry)
+//! - Only the job owner or admin can cancel/delete jobs
 
 use anyhow::{Context, Result};
 use tracing::info;

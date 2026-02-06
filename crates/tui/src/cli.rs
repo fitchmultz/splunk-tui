@@ -9,7 +9,7 @@
 //! - Terminal state management (see `runtime::terminal`).
 //! - Environment variable parsing (handled by `splunk_config`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - CLI arguments are parsed once at startup via `Cli::parse()`.
 //! - All path arguments are resolved relative to the current working directory.
 

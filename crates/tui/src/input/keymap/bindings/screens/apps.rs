@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for app management (refresh, export, copy, navigate, enable, disable, install, remove).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

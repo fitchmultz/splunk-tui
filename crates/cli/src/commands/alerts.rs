@@ -1,4 +1,18 @@
-//! Alerts command implementation.
+//! Fired alerts (triggered alert instances) command implementation.
+//!
+//! Responsibilities:
+//! - List fired alerts with optional count limiting
+//! - Show detailed information about specific fired alerts
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Alert definition management (see saved_searches module)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Count parameter is validated to be positive
+//! - Alert names are passed through without modification
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

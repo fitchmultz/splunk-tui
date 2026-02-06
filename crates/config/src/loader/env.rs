@@ -10,7 +10,7 @@
 //! - Building the final Config (see builder.rs).
 //! - .env file loading (handled by ConfigLoader::load_dotenv).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Environment variables take precedence over profile settings.
 //! - Empty or whitespace-only environment variables are treated as unset.
 //! - Returned values are trimmed (leading/trailing whitespace removed).

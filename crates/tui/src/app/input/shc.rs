@@ -5,7 +5,7 @@
 //! - Handle Ctrl+E export of SHC info
 //! - Handle SHC management actions (rolling restart, set captain)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch SHC data (handled by actions)

@@ -8,7 +8,7 @@
 //! Does NOT:
 //! - Perform live tests against a real Splunk server (see `test-live`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - All tests use the hermetic `splunk_cmd()` helper.
 
 mod common;

@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for saved search management (refresh, export, copy, run, navigate).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

@@ -5,7 +5,7 @@
 //! - Handle ErrorDetails popup (scrolling, closing)
 //! - Handle InstallAppDialog popup (file input)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT install apps (just returns Action::InstallApp)
 

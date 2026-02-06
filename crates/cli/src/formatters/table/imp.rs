@@ -7,6 +7,10 @@
 //! Does NOT handle:
 //! - Other output formats.
 //! - File I/O.
+//!
+//! Invariants:
+//! - Tables use tab-separation for consistent terminal alignment
+//! - Column widths are calculated for readable output
 
 use crate::formatters::table::workload;
 use crate::formatters::{

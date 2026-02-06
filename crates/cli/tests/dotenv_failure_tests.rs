@@ -5,7 +5,7 @@
 //! - Prove that error messages do not leak secrets from the `.env` file.
 //! - Ensure DOTENV_DISABLED=1 allows the CLI to skip a malformed `.env`.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Tests use `assert_cmd` to spawn the CLI as a subprocess.
 //! - Tests must explicitly clear `DOTENV_DISABLED` to enable dotenv loading.
 //! - Tests use temp directories and set current_dir to isolate `.env` file effects.

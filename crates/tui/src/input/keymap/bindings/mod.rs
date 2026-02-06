@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Provide ordered keybinding groups for the keymap resolver.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events into Actions.
 //! - Rendering help or documentation content.
 //!

@@ -1,4 +1,19 @@
-//! Audit command implementation.
+//! Audit events command implementation.
+//!
+//! Responsibilities:
+//! - List audit events with optional filtering and count limiting
+//! - Show detailed information about audit events
+//! - Support pagination via offset parameter
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Audit configuration or policy management
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Time-based filtering uses Splunk's standard time format
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

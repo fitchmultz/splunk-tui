@@ -4,7 +4,7 @@
 //! - Handle confirmation dialogs for job/app/user/index operations
 //! - Confirm or cancel destructive actions
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT execute the actions (just returns Action variants)
 

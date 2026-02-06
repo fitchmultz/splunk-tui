@@ -1,15 +1,19 @@
 //! Search peers command implementation.
 //!
-//! This module provides the CLI command for listing Splunk distributed search peers.
+//! Responsibilities:
+//! - List distributed search peers with optional count limiting
+//! - Support pagination via offset parameter
+//! - Show detailed peer information when requested
+//! - Format output via shared formatters
 //!
-//! # What this module handles:
-//! - Listing search peers with pagination support
-//! - Multiple output formats (table, JSON, CSV, XML)
-//! - Cancellation support
+//! Does NOT handle:
+//! - Search peer configuration or management
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
 //!
-//! # What this module does NOT handle:
-//! - Direct HTTP API calls (delegated to client library)
-//! - Output formatting (delegated to formatters)
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Server-side total may not be available for all peer listings
 
 use anyhow::{Context, Result};
 use tracing::info;

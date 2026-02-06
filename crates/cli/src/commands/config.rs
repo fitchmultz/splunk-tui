@@ -9,7 +9,7 @@
 //! - Automated configuration loading for other commands (see `splunk_config`).
 //! - TUI configuration persistence (shared via `splunk_config::persistence`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Commands assume a valid terminal for user interaction (especially for password prompts).
 //! - Keyring operations require a supported system keyring service.
 

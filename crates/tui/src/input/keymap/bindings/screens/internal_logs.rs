@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for internal log viewing (refresh, export, auto-refresh toggle, copy, navigate).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

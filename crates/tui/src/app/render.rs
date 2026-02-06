@@ -5,7 +5,7 @@
 //! - Dispatch to screen-specific renderers
 //! - Render jobs and job details screens
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle input
 //! - Does NOT mutate app state (except for ListState/TableState selection)
 

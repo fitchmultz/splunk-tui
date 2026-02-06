@@ -5,7 +5,7 @@
 //! - State persistence (get_persisted_state)
 //! - Initial state setup
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle runtime updates (see actions/)
 //! - Does NOT handle input (see input/)
 //! - Does NOT render (see render.rs)

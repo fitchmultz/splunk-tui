@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Handle keyboard input for the dashboards list screen.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render UI (handled by screens::dashboards)
 //! - Does NOT manage state directly (returns Actions for that)
 

@@ -7,7 +7,7 @@
 //! - Handle 'm' to open modify user dialog
 //! - Handle 'd' to open delete user confirmation
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch users data (handled by actions)

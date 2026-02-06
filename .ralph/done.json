@@ -3761,6 +3761,72 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {}
+    },
+    {
+      "id": "RQ-0350",
+      "status": "done",
+      "title": "Standardize module documentation, CLI/script help, and docs sync",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "ux",
+        "consistency",
+        "help",
+        "quality"
+      ],
+      "scope": [
+        "crates/client/src/",
+        "crates/config/src/",
+        "crates/cli/src/",
+        "crates/tui/src/",
+        "crates/*/tests/",
+        "docs/",
+        "README.md",
+        "scripts/check-secrets.sh",
+        "scripts/test-live-server.sh",
+        "Makefile",
+        "make generate",
+        "make lint-docs",
+        "make test",
+        "make ci"
+      ],
+      "evidence": [
+        "User request targets standardization and repeatability; clear docs + consistent help output are part of repeatable workflows.",
+        "Repo guidance: all code files should have module-level documentation describing responsibilities, non-responsibilities, and invariants; executable scripts must provide useful `--help` with examples.",
+        "Repo docs are partially generated (TUI keybindings); `make generate` and `make lint-docs` are the expected sync workflow.",
+        "Current state: Main crate lib.rs files (client, config, cli, tui) have good module docs with responsibilities/non-responsibilities/invariants pattern.",
+        "Current state: CLI args.rs has clap `after_help` with examples; scripts/check-secrets.sh and scripts/test-live-server.sh both have `--help` support.",
+        "Current state: TUI keybindings are auto-generated via `generate-tui-docs` binary; markers exist in README.md and docs/usage.md.",
+        "Gap identified: Not all submodules have consistent module-level documentation (e.g., some formatter modules, command modules may lack full docs)."
+      ],
+      "plan": [
+        "Audit crate module boundaries and add/normalize module-level docs (`//!`) so each file states responsibility, non-goals, and invariants.",
+        "Audit executable scripts for `--help` coverage and add examples; ensure help output avoids printing secrets.",
+        "Ensure CLI `--help` and docs (`docs/usage.md`, etc.) stay in sync; add lightweight tests/snapshots around help output where stable.",
+        "If TUI keymap docs generation is used, run `make generate` and update generated sections only via the generator path.",
+        "Run `make lint-docs` and `make test` to prevent regressions; then run `make ci` as the final gate."
+      ],
+      "notes": [
+        "Main entry points (main.rs, lib.rs) already follow the module documentation pattern well.",
+        "Scripts already have --help support; verify completeness and consistency.",
+        "The generate-tui-docs binary is installed and used via make generate/lint-docs.",
+        "Focus on ensuring consistency across all formatter modules and command modules.",
+        "Standardized 140 files: 555 insertions, 190 deletions",
+        "Normalized all module docs to use consistent 'Responsibilities/Does NOT handle/Invariants' pattern",
+        "Fixed 67 files with 'Non-responsibilities:' -> 'Does NOT handle:'",
+        "Fixed 19 files with 'Invariants / Assumptions:' -> 'Invariants:'",
+        "Added missing Invariants sections to 12 CLI formatter modules and command modules",
+        "CI gate passes (make ci SKIP_LIVE_TESTS=1)"
+      ],
+      "request": "CREATE A SERIES OF TASKS TO STANDARDIZE, CENTRALIZE, AND MAKE THIS CODEBASE CONSISTENT AND REPEATABLE. BEST PRACTICES. DRY, RUBY PRINCIPALS.",
+      "created_at": "2026-02-05T22:57:08Z",
+      "updated_at": "2026-02-06T00:39:48.614893911Z",
+      "completed_at": "2026-02-06T00:39:48.614893911Z",
+      "started_at": "2026-02-06T00:10:29.433210637Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {}
     }
   ]
 }

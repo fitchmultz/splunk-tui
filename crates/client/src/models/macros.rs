@@ -4,7 +4,7 @@
 //! - Define structs for macro data from /services/admin/macros endpoint.
 //! - Provide serialization/deserialization via serde.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does not handle HTTP requests (see endpoints module).
 //! - Does not contain business logic (see client module).
 

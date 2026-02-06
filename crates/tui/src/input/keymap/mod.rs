@@ -4,7 +4,7 @@
 //! - Define a single source of truth for keybindings and their descriptions.
 //! - Resolve KeyEvents into Actions without mutating App state.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Performing App state mutations or side effects.
 //! - Handling text entry modes (those remain in App screen handlers).
 //!

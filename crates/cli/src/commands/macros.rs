@@ -1,8 +1,23 @@
 //! Search macro command implementation.
 //!
 //! Responsibilities:
-//! - Define macro subcommands (list, info, create, update, delete).
-//! - Handle argument parsing and dispatch.
+//! - List search macros with optional count limiting
+//! - Show detailed information about specific macros
+//! - Create new macros with definitions, arguments, and metadata
+//! - Update existing macro properties
+//! - Delete macros with confirmation
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Macro expansion or execution (done by Splunk at search time)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Macro names are validated as non-empty
+//! - Delete operations require confirmation unless --force is used
+//! - Conflicting flags (--disable/--enable, --iseval/--no-iseval) are rejected
+//! - At least one field must be provided for update operations
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

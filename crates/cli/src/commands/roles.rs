@@ -1,4 +1,23 @@
-//! Roles command implementation.
+//! Roles and capabilities command implementation.
+//!
+//! Responsibilities:
+//! - List roles with optional count limiting
+//! - List available capabilities
+//! - Create new roles with assigned capabilities and settings
+//! - Modify existing role properties
+//! - Delete roles with confirmation
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Role assignment to users (see users module)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Role names are validated as non-empty
+//! - Delete operations require confirmation unless --force is used
+//! - Capability lists are passed through without validation
+//! - At least one field must be provided for update operations
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

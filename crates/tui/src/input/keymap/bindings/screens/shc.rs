@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define bindings for SHC info and member management (refresh, toggle view, navigate, export, copy).
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Resolving input events or mutating App state.
 //!
 //! Invariants:

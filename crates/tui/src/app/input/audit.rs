@@ -4,7 +4,7 @@
 //! - Handle Ctrl+C or 'y' copy of selected event details (vim-style)
 //! - Handle Ctrl+E export of audit events
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT fetch audit data (handled by actions)

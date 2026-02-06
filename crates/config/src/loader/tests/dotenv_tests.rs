@@ -5,7 +5,7 @@
 //! - Test that invalid `.env` files return errors without leaking secrets.
 //! - Test that `DOTENV_DISABLED=1`/`true` skips dotenv loading.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Tests use `env_lock()` to prevent cross-test contamination.
 //! - Tests must serialize mutations to process-global state (cwd/env).
 //! - Error messages must never contain secret values from `.env` files.

@@ -8,7 +8,7 @@
 //! - Loading or parsing configuration from files or environment variables.
 //! - Persisting search defaults back to disk.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Default values are: earliest_time="-24h", latest_time="now", max_results=1000.
 //! - These defaults are used when no other configuration source provides values.
 

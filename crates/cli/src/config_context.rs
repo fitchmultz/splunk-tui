@@ -4,9 +4,13 @@
 //! - Distinguish between real and placeholder configs at compile time.
 //! - Provide type-safe extraction of config for commands that need it.
 //!
-//! Non-responsibilities:
-//! - Does not load configuration (done in `main()`).
-//! - Does not define CLI arguments (see `args` module).
+//! Does NOT handle:
+//! - Configuration loading (done in `main()`).
+//! - CLI argument definitions (see `args` module).
+//!
+//! Invariants:
+//! - Placeholder configs cannot be used for actual Splunk API connections
+//! - Real configs are validated before command execution
 
 use splunk_config::SearchDefaultConfig;
 

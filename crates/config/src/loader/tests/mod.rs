@@ -11,7 +11,7 @@
 //! - Profile file loading logic (tested in profile.rs).
 //! - Persisting configuration changes (tested in persistence.rs).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Tests use `serial_test` to prevent environment variable pollution.
 //! - Tests use `global_test_lock()` for additional synchronization.
 //! - Temporary directories are cleaned up automatically via `tempfile`.

@@ -1,4 +1,19 @@
 //! Dashboards command implementation.
+//!
+//! Responsibilities:
+//! - List dashboards with optional count limiting and pagination
+//! - Show detailed information about specific dashboards
+//! - Support detailed view with descriptions
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Dashboard creation or editing (use Splunk web UI or API directly)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Dashboard names are passed through without modification
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

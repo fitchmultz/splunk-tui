@@ -1,4 +1,22 @@
 //! Apps command implementation.
+//!
+//! Responsibilities:
+//! - List installed apps with optional count limiting
+//! - Show detailed information about specific apps
+//! - Enable/disable apps by name
+//! - Install apps from .spl package files
+//! - Remove (uninstall) apps with confirmation
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - App development or packaging (use Splunk SDK)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - File paths are validated before upload operations
+//! - Confirmation prompts are shown unless --force is used
+//! - App names are passed through without modification
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

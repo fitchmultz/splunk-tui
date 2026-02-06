@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define global navigation bindings and search screen shortcuts.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Handling input resolution or application state updates.
 //!
 //! Invariants:

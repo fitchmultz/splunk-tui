@@ -4,7 +4,7 @@
 //! - Handle index creation, modification, and deletion popups
 //! - Handle index details view with scrolling and copy-to-clipboard
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT execute the actual index operations (just returns Action variants)
 

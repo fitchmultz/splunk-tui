@@ -10,7 +10,7 @@
 //!   manipulate `DOTENV_DISABLED` and other raw environment variables to
 //!   validate loading logic.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! These tests explicitly clear `SPLUNK_*` environment variables for isolation.
 //! The test environment may have pre-existing `SPLUNK_*` vars that would
 //! otherwise override `.env` file values (which is correct behavior but breaks tests).

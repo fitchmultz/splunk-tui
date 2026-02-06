@@ -10,7 +10,7 @@
 //! - Building the final Config (see builder.rs).
 //! - Persisting configuration changes (see persistence.rs).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Profile settings are applied before environment variables (env vars take precedence).
 //! - Missing profiles are recorded for later error handling in build().
 //! - Config file migration is attempted only when using the default config path.

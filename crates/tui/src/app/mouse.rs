@@ -5,7 +5,7 @@
 //! - Handle footer button clicks
 //! - Handle content area clicks for selection
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle keyboard input
 //! - Does NOT render the UI
 

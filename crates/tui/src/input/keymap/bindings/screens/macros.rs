@@ -3,7 +3,7 @@
 //! Responsibilities:
 //! - Define keybindings for the macros screen.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does not handle input parsing (see app/input/macros.rs).
 //! - Does not execute actions (see runtime/side_effects/macros.rs).
 

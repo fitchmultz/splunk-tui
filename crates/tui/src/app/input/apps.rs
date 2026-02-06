@@ -8,7 +8,7 @@
 //! - Handle Ctrl+C copy of selected app name
 //! - Handle Ctrl+E export of apps list
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
 //! - Does NOT render the UI (handled by render module)
 //! - Does NOT execute enable/disable/install/remove operations (handled by actions)

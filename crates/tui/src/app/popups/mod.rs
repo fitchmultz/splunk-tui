@@ -5,7 +5,7 @@
 //! - Dispatch to appropriate sub-handlers based on popup type
 //! - Manage export popup state and input
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT define popup types (handled by ui::popup module)
 

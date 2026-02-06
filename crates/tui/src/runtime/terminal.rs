@@ -8,7 +8,7 @@
 //! - Initial terminal setup (done in `main.rs`).
 //! - Mouse capture configuration beyond tracking the flag.
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - Must be created after terminal setup is complete.
 //! - Must live for the duration of the TUI session.
 //! - Drop implementation must not panic.

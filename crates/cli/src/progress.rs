@@ -6,9 +6,13 @@
 //!   command output (json/table/csv/xml) is not contaminated.
 //! - Allow global suppression via a caller-provided `enabled` boolean (driven by `--quiet`).
 //!
-//! Non-responsibilities:
-//! - This module does not decide *when* progress should be shown; callers do.
-//! - This module does not print command results; stdout remains reserved for results.
+//! Does NOT handle:
+//! - Deciding when progress should be shown (callers control this).
+//! - Printing command results (stdout remains reserved for results).
+//!
+//! Invariants:
+//! - ALL progress output is written to STDERR (never stdout)
+//! - Progress indicators are no-ops when disabled via `enabled` boolean
 
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use std::time::Duration;

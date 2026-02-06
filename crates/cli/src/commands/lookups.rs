@@ -1,4 +1,16 @@
-//! Lookups command implementation.
+//! Lookup tables command implementation.
+//!
+//! Responsibilities:
+//! - List lookup tables with optional count limiting and pagination
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Lookup table content management or editing
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
 
 use anyhow::{Context, Result};
 use tracing::info;

@@ -5,7 +5,7 @@
 //! - Define ConnectionContext for connection info
 //! - Define SplValidationState for SPL validation
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT implement behavior methods (see core.rs, actions/, input/)
 //! - Does NOT handle state mutations directly
 

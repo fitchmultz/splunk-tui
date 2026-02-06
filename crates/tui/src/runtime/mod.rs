@@ -10,7 +10,7 @@
 //! - UI rendering or input handling (see `splunk_tui::app` and `splunk_tui::ui`).
 //! - Business logic for Splunk operations (see `splunk_client`).
 //!
-//! Invariants / Assumptions:
+//! Invariants:
 //! - All modules are initialized during application startup in `main()`.
 //! - Side effects run in separate tokio tasks to avoid blocking the UI.
 

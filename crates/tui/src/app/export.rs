@@ -5,7 +5,7 @@
 //! - Collect data for export from various screens
 //! - Manage export popup state
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT perform actual file I/O (handled by Action::ExportData)
 //! - Does NOT render UI (handled by popup module)
 

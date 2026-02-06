@@ -4,7 +4,7 @@
 //! - Define the shared keybinding catalog used by input resolution, help popup, and docs.
 //! - Provide deterministic rendering helpers for help and documentation output.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Mutating application state directly (handled by App via Actions).
 //! - Performing I/O or file writes (handled by generator binaries).
 //!

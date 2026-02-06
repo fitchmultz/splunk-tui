@@ -1,4 +1,19 @@
 //! Data models command implementation.
+//!
+//! Responsibilities:
+//! - List data models with optional count limiting and pagination
+//! - Show detailed information about specific data models
+//! - Support detailed view with descriptions
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Data model creation or editing (use Splunk web UI or API directly)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Count and offset parameters are validated for safe pagination
+//! - Data model names are passed through without modification
 
 use anyhow::{Context, Result};
 use clap::Subcommand;

@@ -4,7 +4,7 @@
 //! - Handle export dialog input and format toggling
 //! - Manage export filename input with automatic extension updates
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
 //! - Does NOT perform the actual export (just returns Action::ExportData)
 

@@ -8,6 +8,11 @@
 //!
 //! Does NOT handle:
 //! - Low-level cluster API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Cluster operations require appropriate administrative privileges
+//! - Peer decommissioning is irreversible and requires confirmation
 
 use std::path::PathBuf;
 

@@ -5,7 +5,7 @@
 //! - Provide a test-only (but always compiled) per-thread override backend so
 //!   integration tests do not depend on the host OS clipboard.
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT implement per-screen "what should be copied" decisions (handled by `App`).
 //! - Does NOT manage UI feedback (toasts) (handled by `App::update`).
 //!

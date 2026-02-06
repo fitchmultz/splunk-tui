@@ -5,7 +5,7 @@
 //! - Handle page navigation (page up/down)
 //! - Handle jump navigation (top/bottom)
 //!
-//! Non-responsibilities:
+//! Does NOT handle:
 //! - Does NOT handle screen switching (handled by actions)
 //! - Does NOT handle input events
 
