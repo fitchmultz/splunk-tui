@@ -4,13 +4,14 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::User;
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the users screen.
 pub struct UsersRenderConfig<'a> {
@@ -43,23 +44,14 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
     } = config;
 
     if loading && users.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading users...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Users"))
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(f, area, "Users", "Loading users...", spinner_frame, theme);
         return;
     }
 
     let users = match users {
         Some(u) => u,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No users loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Users"))
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Users", "users");
             return;
         }
     };

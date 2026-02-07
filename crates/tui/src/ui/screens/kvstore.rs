@@ -3,12 +3,13 @@
 //! Renders KVStore status information including current member details
 //! and replication status.
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Rect},
     style::Style,
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
+    widgets::{Block, Borders, Cell, Row, Table},
 };
 use splunk_client::models::KvStoreStatus;
 use splunk_config::Theme;
@@ -41,21 +42,21 @@ pub fn render_kvstore(f: &mut Frame, area: Rect, config: KvstoreRenderConfig) {
     } = config;
 
     if loading && kvstore_status.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading KVStore status...", spinner))
-            .block(Block::default().borders(Borders::ALL).title("KVStore"))
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "KVStore",
+            "Loading KVStore status...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let status = match kvstore_status {
         Some(s) => s,
         None => {
-            let placeholder = Paragraph::new("No KVStore status loaded. Press 'r' to refresh.")
-                .block(Block::default().borders(Borders::ALL).title("KVStore"))
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "KVStore", "KVStore status");
             return;
         }
     };

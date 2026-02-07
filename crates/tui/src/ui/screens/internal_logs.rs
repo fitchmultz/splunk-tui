@@ -2,13 +2,14 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::LogEntry;
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the internal logs screen.
 pub struct InternalLogsRenderConfig<'a> {
@@ -38,23 +39,21 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
         .title_style(theme.title());
 
     if config.loading && config.logs.is_none() {
-        let spinner = spinner_char(config.spinner_frame);
-        let loading =
-            ratatui::widgets::Paragraph::new(format!("{} Loading internal logs...", spinner))
-                .block(block)
-                .alignment(Alignment::Center);
-        f.render_widget(loading, area);
+        render_loading_state(
+            f,
+            area,
+            title,
+            "Loading internal logs...",
+            config.spinner_frame,
+            theme,
+        );
         return;
     }
 
     let logs = match config.logs {
         Some(l) => l,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No logs loaded. Press 'r' to refresh.")
-                    .block(block)
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, title, "logs");
             return;
         }
     };

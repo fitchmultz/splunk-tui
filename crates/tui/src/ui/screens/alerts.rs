@@ -9,7 +9,8 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 use splunk_client::models::FiredAlert;
 
 use splunk_config::Theme;
@@ -39,21 +40,21 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
     } = config;
 
     if loading && fired_alerts.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading fired alerts...", spinner))
-            .block(Block::default().borders(Borders::ALL).title("Fired Alerts"))
-            .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Fired Alerts",
+            "Loading fired alerts...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let alerts = match fired_alerts {
         Some(a) => a,
         None => {
-            let placeholder = Paragraph::new("No fired alerts loaded. Press 'r' to refresh.")
-                .block(Block::default().borders(Borders::ALL).title("Fired Alerts"))
-                .alignment(ratatui::layout::Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Fired Alerts", "fired alerts");
             return;
         }
     };

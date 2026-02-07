@@ -17,7 +17,8 @@ use splunk_client::models::SearchPeer;
 
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the search peers screen.
 pub struct SearchPeersRenderConfig<'a> {
@@ -44,23 +45,21 @@ pub fn render_search_peers(f: &mut Frame, area: Rect, config: SearchPeersRenderC
     } = config;
 
     if loading && search_peers.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading search peers...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Search Peers"))
-                .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Search Peers",
+            "Loading search peers...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let peers = match search_peers {
         Some(p) => p,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No search peers loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Search Peers"))
-                    .alignment(ratatui::layout::Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Search Peers", "search peers");
             return;
         }
     };

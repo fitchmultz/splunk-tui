@@ -4,13 +4,14 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Dashboard;
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the dashboards screen.
 pub struct DashboardsRenderConfig<'a> {
@@ -43,23 +44,21 @@ pub fn render_dashboards(f: &mut Frame, area: Rect, config: DashboardsRenderConf
     } = config;
 
     if loading && dashboards.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading dashboards...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Dashboards"))
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Dashboards",
+            "Loading dashboards...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let dashboards = match dashboards {
         Some(d) => d,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No dashboards loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Dashboards"))
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Dashboards", "dashboards");
             return;
         }
     };

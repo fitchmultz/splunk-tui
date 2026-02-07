@@ -2,10 +2,11 @@
 //!
 //! Renders the list of Splunk data models.
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::DataModel;
@@ -42,23 +43,21 @@ pub fn render_datamodels(f: &mut Frame, area: Rect, config: DataModelsRenderConf
     } = config;
 
     if loading && data_models.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading data models...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Data Models"))
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Data Models",
+            "Loading data models...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let data_models = match data_models {
         Some(d) => d,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No data models loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Data Models"))
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Data Models", "data models");
             return;
         }
     };

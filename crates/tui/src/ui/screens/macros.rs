@@ -18,7 +18,8 @@ use ratatui::{
 
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_empty_state_custom, render_loading_state};
 
 /// Render the macros screen with a split view (list on top, preview on bottom).
 pub fn render_macros_screen(
@@ -69,26 +70,23 @@ fn render_macros_list(
         .border_style(theme.border());
 
     if loading && macros.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_text = Paragraph::new(format!("{} Loading macros...", spinner))
-            .block(block)
-            .style(theme.text());
-        f.render_widget(loading_text, area);
+        render_loading_state(
+            f,
+            area,
+            " Search Macros ",
+            "Loading macros...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     match macros {
         None => {
-            let empty_text = Paragraph::new("Press 'r' to load macros")
-                .block(block)
-                .style(theme.text());
-            f.render_widget(empty_text, area);
+            render_empty_state_custom(f, area, " Search Macros ", "Press 'r' to load macros");
         }
         Some([]) => {
-            let empty_text = Paragraph::new("No macros found")
-                .block(block)
-                .style(theme.text());
-            f.render_widget(empty_text, area);
+            render_empty_state(f, area, " Search Macros ", "macros");
         }
         Some(macros_list) => {
             let items: Vec<ListItem> = macros_list

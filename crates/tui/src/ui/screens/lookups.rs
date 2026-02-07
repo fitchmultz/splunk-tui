@@ -17,7 +17,8 @@ use splunk_client::models::LookupTable;
 
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the lookups screen.
 pub struct LookupsRenderConfig<'a> {
@@ -44,23 +45,21 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
     } = config;
 
     if loading && lookups.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading lookup tables...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Lookups"))
-                .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Lookups",
+            "Loading lookup tables...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let lookups = match lookups {
         Some(l) => l,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No lookup tables loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Lookups"))
-                    .alignment(ratatui::layout::Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Lookups", "lookup tables");
             return;
         }
     };

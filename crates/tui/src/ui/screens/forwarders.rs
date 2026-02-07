@@ -17,7 +17,8 @@ use splunk_client::models::Forwarder;
 
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the forwarders screen.
 pub struct ForwardersRenderConfig<'a> {
@@ -44,23 +45,21 @@ pub fn render_forwarders(f: &mut Frame, area: Rect, config: ForwardersRenderConf
     } = config;
 
     if loading && forwarders.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading forwarders...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Forwarders"))
-                .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Forwarders",
+            "Loading forwarders...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let forwarders = match forwarders {
         Some(f) => f,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No forwarders loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Forwarders"))
-                    .alignment(ratatui::layout::Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Forwarders", "forwarders");
             return;
         }
     };

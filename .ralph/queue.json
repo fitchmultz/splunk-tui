@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0365",
-      "status": "todo",
-      "title": "Extract shared loading and empty state widgets to reduce 200+ lines of duplication",
-      "description": "Nearly identical loading state code exists in 20+ TUI screen files (~10 lines each = 200+ duplicated lines). Empty state pattern exists in 15+ files (~8 lines each = 120+ duplicated lines). Both patterns should be extracted to reusable widget functions for consistent UX and easier maintenance.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/*.rs",
-        "crates/tui/src/ui/widgets/"
-      ],
-      "evidence": [
-        "Loading pattern: 'if loading && data.is_none() { let spinner = SPINNER_CHARS[...]; Paragraph::new(format!(\"{} Loading...\", spinner))... }'",
-        "Empty pattern: 'None => { Paragraph::new(\"No X loaded. Press 'r' to refresh.\")... }'",
-        "Inconsistency: Some screens omit 'Press 'r' to refresh' hint"
-      ],
-      "plan": [
-        "Create crates/tui/src/ui/widgets/loading.rs with render_loading_state() function",
-        "Create render_empty_state() function with consistent messaging",
-        "Add optional 'refresh_hint' parameter for screens that support refresh",
-        "Replace duplicated code in indexes.rs, users.rs, alerts.rs, etc.",
-        "Verify by running: 'cargo test -p splunk-tui' and checking snapshot tests pass"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0366",
       "status": "todo",
       "title": "Centralize status color mapping in ThemeExt to eliminate duplication",
@@ -158,8 +118,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -196,8 +156,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -235,8 +195,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -274,8 +234,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -349,8 +309,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -425,8 +385,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {

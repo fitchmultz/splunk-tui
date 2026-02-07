@@ -22,7 +22,8 @@ use splunk_client::models::{ClusterInfo, ClusterPeer};
 use splunk_config::Theme;
 
 use crate::app::state::ClusterViewMode;
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_empty_state_custom, render_loading_state};
 
 /// Configuration for rendering the cluster screen.
 pub struct ClusterRenderConfig<'a> {
@@ -61,31 +62,21 @@ pub fn render_cluster(f: &mut Frame, area: Rect, config: ClusterRenderConfig) {
     } = config;
 
     if loading && cluster_info.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading cluster info...", spinner))
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Cluster Information"),
-                )
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Cluster Information",
+            "Loading cluster info...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let info = match cluster_info {
         Some(i) => i,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No cluster info loaded. Press 'r' to refresh.")
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Cluster Information"),
-                    )
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Cluster Information", "cluster info");
             return;
         }
     };
@@ -147,15 +138,12 @@ fn render_peers(
     let peers = match peers {
         Some(p) => p,
         None => {
-            // Show loading or empty state
-            let paragraph = ratatui::widgets::Paragraph::new(if loading {
+            let message = if loading {
                 "Loading peers..."
             } else {
                 "No peers loaded. Press 'r' to refresh."
-            })
-            .block(block)
-            .alignment(Alignment::Center);
-            f.render_widget(paragraph, area);
+            };
+            render_empty_state_custom(f, area, title, message);
             return;
         }
     };

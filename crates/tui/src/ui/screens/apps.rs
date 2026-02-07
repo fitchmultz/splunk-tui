@@ -4,13 +4,14 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::App;
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the apps screen.
 pub struct AppsRenderConfig<'a> {
@@ -43,23 +44,14 @@ pub fn render_apps(f: &mut Frame, area: Rect, config: AppsRenderConfig) {
     } = config;
 
     if loading && apps.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading apps...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Apps"))
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(f, area, "Apps", "Loading apps...", spinner_frame, theme);
         return;
     }
 
     let apps = match apps {
         Some(a) => a,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No apps loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Apps"))
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Apps", "apps");
             return;
         }
     };

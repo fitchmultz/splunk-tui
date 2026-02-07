@@ -5,15 +5,16 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Rect},
+    layout::{Constraint, Rect},
     style::Style,
     text::Span,
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
+    widgets::{Block, Borders, Cell, Row, Table},
 };
 use splunk_config::Theme;
 
 use crate::action::OverviewData;
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the overview screen.
 pub struct OverviewRenderConfig<'a> {
@@ -43,21 +44,21 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
     } = config;
 
     if loading && overview_data.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading overview...", spinner))
-            .block(Block::default().borders(Borders::ALL).title("Overview"))
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Overview",
+            "Loading overview...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let data = match overview_data {
         Some(d) => d,
         None => {
-            let placeholder = Paragraph::new("No overview data loaded. Press 'r' to refresh.")
-                .block(Block::default().borders(Borders::ALL).title("Overview"))
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Overview", "overview data");
             return;
         }
     };

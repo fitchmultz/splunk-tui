@@ -19,7 +19,8 @@ use splunk_client::models::{WorkloadPool, WorkloadRule};
 use splunk_config::Theme;
 
 use crate::app::state::WorkloadViewMode;
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state_custom, render_loading_state};
 
 /// Configuration for rendering the workload management screen.
 pub struct WorkloadRenderConfig<'a> {
@@ -55,15 +56,14 @@ pub fn render_workload(f: &mut Frame, area: Rect, config: WorkloadRenderConfig) 
     } = config;
 
     if loading && workload_pools.is_none() && workload_rules.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading workload management...", spinner))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Workload Management"),
-            )
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Workload Management",
+            "Loading workload management...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
@@ -101,14 +101,12 @@ fn render_pools(
     let pools = match pools {
         Some(p) => p,
         None => {
-            let paragraph = Paragraph::new(if loading {
+            let message = if loading {
                 "Loading pools..."
             } else {
                 "No pools loaded. Press 'r' to refresh."
-            })
-            .block(block)
-            .alignment(Alignment::Center);
-            f.render_widget(paragraph, area);
+            };
+            render_empty_state_custom(f, area, title, message);
             return;
         }
     };
@@ -208,14 +206,12 @@ fn render_rules(
     let rules = match rules {
         Some(r) => r,
         None => {
-            let paragraph = Paragraph::new(if loading {
+            let message = if loading {
                 "Loading rules..."
             } else {
                 "No rules loaded. Press 'r' to refresh."
-            })
-            .block(block)
-            .alignment(Alignment::Center);
-            f.render_widget(paragraph, area);
+            };
+            render_empty_state_custom(f, area, title, message);
             return;
         }
     };

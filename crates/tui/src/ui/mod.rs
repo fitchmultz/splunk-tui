@@ -40,6 +40,7 @@ pub mod screens;
 pub mod syntax;
 pub mod theme;
 pub mod toast;
+pub mod widgets;
 
 // Layout module with flexbox support via taffy
 pub mod layout {

@@ -4,13 +4,14 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Index;
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the indexes screen.
 pub struct IndexesRenderConfig<'a> {
@@ -43,23 +44,21 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
     } = config;
 
     if loading && indexes.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading indexes...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Indexes"))
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Indexes",
+            "Loading indexes...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let indexes = match indexes {
         Some(i) => i,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No indexes loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Indexes"))
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Indexes", "indexes");
             return;
         }
     };

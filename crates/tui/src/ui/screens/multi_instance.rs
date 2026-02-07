@@ -17,7 +17,8 @@ use splunk_config::Theme;
 
 use crate::action::MultiInstanceOverviewData;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the multi-instance dashboard.
 pub struct MultiInstanceRenderConfig<'a> {
@@ -50,31 +51,21 @@ pub fn render_multi_instance(f: &mut Frame, area: Rect, config: MultiInstanceRen
     } = config;
 
     if loading && data.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            Paragraph::new(format!("{} Loading multi-instance dashboard...", spinner))
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Multi-Instance"),
-                )
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Multi-Instance",
+            "Loading multi-instance dashboard...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let overview_data = match data {
         Some(d) => d,
         None => {
-            let placeholder =
-                Paragraph::new("No multi-instance data loaded. Press 'r' to refresh.")
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Multi-Instance"),
-                    )
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Multi-Instance", "multi-instance data");
             return;
         }
     };

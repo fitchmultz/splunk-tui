@@ -13,7 +13,8 @@ use ratatui::{
 use splunk_client::models::HealthCheckOutput;
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// Configuration for rendering the health screen.
 pub struct HealthRenderConfig<'a> {
@@ -43,21 +44,21 @@ pub fn render_health(f: &mut Frame, area: Rect, config: HealthRenderConfig) {
     } = config;
 
     if loading && health_info.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading health info...", spinner))
-            .block(Block::default().borders(Borders::ALL).title("Health Check"))
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Health Check",
+            "Loading health info...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let info = match health_info {
         Some(i) => i,
         None => {
-            let placeholder = Paragraph::new("No health info loaded. Press 'r' to refresh.")
-                .block(Block::default().borders(Borders::ALL).title("Health Check"))
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Health Check", "health info");
             return;
         }
     };

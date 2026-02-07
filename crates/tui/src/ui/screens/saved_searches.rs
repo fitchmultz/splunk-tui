@@ -11,7 +11,8 @@ use ratatui::{
 use splunk_client::models::SavedSearch;
 
 use crate::ui::syntax::highlight_spl;
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 use splunk_config::Theme;
 
 /// Configuration for rendering the saved searches screen.
@@ -39,29 +40,21 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
     } = config;
 
     if loading && saved_searches.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading saved searches...", spinner))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Saved Searches"),
-            )
-            .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Saved Searches",
+            "Loading saved searches...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let searches = match saved_searches {
         Some(s) => s,
         None => {
-            let placeholder = Paragraph::new("No saved searches loaded. Press 'r' to refresh.")
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Saved Searches"),
-                )
-                .alignment(ratatui::layout::Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Saved Searches", "saved searches");
             return;
         }
     };

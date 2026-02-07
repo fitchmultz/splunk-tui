@@ -22,7 +22,8 @@ use splunk_client::models::{ShcMember, ShcStatus};
 use splunk_config::Theme;
 
 use crate::app::state::ShcViewMode;
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_empty_state_custom, render_loading_state};
 
 /// Configuration for rendering the SHC screen.
 pub struct ShcRenderConfig<'a> {
@@ -61,31 +62,21 @@ pub fn render_shc(f: &mut Frame, area: Rect, config: ShcRenderConfig) {
     } = config;
 
     if loading && shc_status.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading SHC info...", spinner))
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("SHC Information"),
-                )
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "SHC Information",
+            "Loading SHC info...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let status = match shc_status {
         Some(s) => s,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No SHC info loaded. Press 'r' to refresh.")
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("SHC Information"),
-                    )
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "SHC Information", "SHC info");
             return;
         }
     };
@@ -153,15 +144,12 @@ fn render_members(
     let members = match members {
         Some(m) => m,
         None => {
-            // Show loading or empty state
-            let paragraph = ratatui::widgets::Paragraph::new(if loading {
+            let message = if loading {
                 "Loading members..."
             } else {
                 "No members loaded. Press 'r' to refresh."
-            })
-            .block(block)
-            .alignment(Alignment::Center);
-            f.render_widget(paragraph, area);
+            };
+            render_empty_state_custom(f, area, title, message);
             return;
         }
     };

@@ -13,7 +13,8 @@ use ratatui::{
 use splunk_client::models::{ConfigFile, ConfigStanza};
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 
 /// View mode for the configs screen.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -84,29 +85,21 @@ fn render_file_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
     } = config;
 
     if loading && config_files.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading config files...", spinner))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Configuration Files"),
-            )
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "Configuration Files",
+            "Loading config files...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let files = match config_files {
         Some(f) => f,
         None => {
-            let placeholder = Paragraph::new("No config files loaded. Press 'r' to refresh.")
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Configuration Files"),
-                )
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Configuration Files", "config files");
             return;
         }
     };
@@ -181,21 +174,14 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
     let title = format!("Stanzas for {}.conf", selected_file.unwrap_or("unknown"));
 
     if loading && stanzas.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading stanzas...", spinner))
-            .block(Block::default().borders(Borders::ALL).title(title))
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(f, area, &title, "Loading stanzas...", spinner_frame, theme);
         return;
     }
 
     let stanzas = match stanzas {
         Some(s) => s,
         None => {
-            let placeholder = Paragraph::new("No stanzas loaded. Press 'r' to refresh.")
-                .block(Block::default().borders(Borders::ALL).title(title))
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, &title, "stanzas");
             return;
         }
     };

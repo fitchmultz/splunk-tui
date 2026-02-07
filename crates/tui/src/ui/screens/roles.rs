@@ -2,10 +2,11 @@
 //!
 //! Renders the list of Splunk roles with their capabilities and settings.
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 use ratatui::{
     Frame,
-    layout::{Alignment, Rect},
+    layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Role;
@@ -42,23 +43,14 @@ pub fn render_roles(f: &mut Frame, area: Rect, config: RolesRenderConfig) {
     } = config;
 
     if loading && roles.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget =
-            ratatui::widgets::Paragraph::new(format!("{} Loading roles...", spinner))
-                .block(Block::default().borders(Borders::ALL).title("Roles"))
-                .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(f, area, "Roles", "Loading roles...", spinner_frame, theme);
         return;
     }
 
     let roles = match roles {
         Some(r) => r,
         None => {
-            let placeholder =
-                ratatui::widgets::Paragraph::new("No roles loaded. Press 'r' to refresh.")
-                    .block(Block::default().borders(Borders::ALL).title("Roles"))
-                    .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "Roles", "roles");
             return;
         }
     };

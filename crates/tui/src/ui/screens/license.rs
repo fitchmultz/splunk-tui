@@ -4,6 +4,7 @@
 //! license pools, and license stacks.
 
 use crate::action::LicenseData;
+use crate::ui::widgets::{render_empty_state, render_loading_state};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -13,7 +14,7 @@ use ratatui::{
 };
 use splunk_config::Theme;
 
-use crate::ui::theme::{ThemeExt, spinner_char};
+use crate::ui::theme::ThemeExt;
 
 /// Configuration for rendering the license screen.
 pub struct LicenseRenderConfig<'a> {
@@ -43,21 +44,21 @@ pub fn render_license(f: &mut Frame, area: Rect, config: LicenseRenderConfig) {
     } = config;
 
     if loading && license_info.is_none() {
-        let spinner = spinner_char(spinner_frame);
-        let loading_widget = Paragraph::new(format!("{} Loading license info...", spinner))
-            .block(Block::default().borders(Borders::ALL).title("License"))
-            .alignment(Alignment::Center);
-        f.render_widget(loading_widget, area);
+        render_loading_state(
+            f,
+            area,
+            "License",
+            "Loading license info...",
+            spinner_frame,
+            theme,
+        );
         return;
     }
 
     let info = match license_info {
         Some(i) => i,
         None => {
-            let placeholder = Paragraph::new("No license info loaded. Press 'r' to refresh.")
-                .block(Block::default().borders(Borders::ALL).title("License"))
-                .alignment(Alignment::Center);
-            f.render_widget(placeholder, area);
+            render_empty_state(f, area, "License", "license info");
             return;
         }
     };
