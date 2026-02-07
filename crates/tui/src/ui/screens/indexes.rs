@@ -11,8 +11,7 @@ use ratatui::{
 use splunk_client::models::Index;
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the indexes screen.
 pub struct IndexesRenderConfig<'a> {
@@ -45,7 +44,7 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
     } = config;
 
     if loading && indexes.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading indexes...", spinner))
                 .block(Block::default().borders(Borders::ALL).title("Indexes"))

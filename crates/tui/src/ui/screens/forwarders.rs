@@ -18,8 +18,7 @@ use splunk_client::models::Forwarder;
 
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the forwarders screen.
 pub struct ForwardersRenderConfig<'a> {
@@ -46,7 +45,7 @@ pub fn render_forwarders(f: &mut Frame, area: Rect, config: ForwardersRenderConf
     } = config;
 
     if loading && forwarders.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading forwarders...", spinner))
                 .block(Block::default().borders(Borders::ALL).title("Forwarders"))

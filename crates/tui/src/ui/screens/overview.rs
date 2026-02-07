@@ -13,9 +13,7 @@ use ratatui::{
 use splunk_config::Theme;
 
 use crate::action::OverviewData;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the overview screen.
 pub struct OverviewRenderConfig<'a> {
@@ -45,7 +43,7 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
     } = config;
 
     if loading && overview_data.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading overview...", spinner))
             .block(Block::default().borders(Borders::ALL).title("Overview"))
             .alignment(Alignment::Center);

@@ -18,6 +18,7 @@ use crate::ui::screens::{
     kvstore, license, lookups, macros, multi_instance, overview, roles, saved_searches, search,
     search_peers, settings, shc, users, workload,
 };
+use crate::ui::theme::spinner_char;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -686,12 +687,9 @@ impl App {
         }
     }
 
-    /// Spinner characters for animated loading indicator.
-    const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
-
     /// Get the current spinner character based on frame counter.
     fn spinner_char(&self) -> char {
-        Self::SPINNER_CHARS[self.spinner_frame as usize % Self::SPINNER_CHARS.len()]
+        spinner_char(self.spinner_frame)
     }
 
     /// Build footer text with navigation hints, screen-specific hints, and controls.

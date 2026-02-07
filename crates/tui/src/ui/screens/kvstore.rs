@@ -3,6 +3,7 @@
 //! Renders KVStore status information including current member details
 //! and replication status.
 
+use crate::ui::theme::spinner_char;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -11,9 +12,6 @@ use ratatui::{
 };
 use splunk_client::models::KvStoreStatus;
 use splunk_config::Theme;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 /// Configuration for rendering the KVStore screen.
 pub struct KvstoreRenderConfig<'a> {
@@ -43,7 +41,7 @@ pub fn render_kvstore(f: &mut Frame, area: Rect, config: KvstoreRenderConfig) {
     } = config;
 
     if loading && kvstore_status.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading KVStore status...", spinner))
             .block(Block::default().borders(Borders::ALL).title("KVStore"))
             .alignment(Alignment::Center);

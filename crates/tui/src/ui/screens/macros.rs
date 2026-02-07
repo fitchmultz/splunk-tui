@@ -18,8 +18,7 @@ use ratatui::{
 
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Render the macros screen with a split view (list on top, preview on bottom).
 pub fn render_macros_screen(
@@ -70,7 +69,7 @@ fn render_macros_list(
         .border_style(theme.border);
 
     if loading && macros.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_text = Paragraph::new(format!("{} Loading macros...", spinner))
             .block(block)
             .style(theme.text);

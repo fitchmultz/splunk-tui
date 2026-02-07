@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk audit events with filtering capabilities.
 
+use crate::ui::theme::spinner_char;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -10,9 +11,6 @@ use ratatui::{
 };
 use splunk_client::models::AuditEvent;
 use splunk_config::Theme;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 /// Configuration for rendering the audit events screen.
 pub struct AuditRenderConfig<'a> {
@@ -39,7 +37,7 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
         .title_style(Style::default().fg(theme.title));
 
     if config.loading && config.events.is_none() {
-        let spinner = SPINNER_CHARS[config.spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(config.spinner_frame);
         let loading =
             ratatui::widgets::Paragraph::new(format!("{} Loading audit events...", spinner))
                 .block(block)

@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk data inputs with their types and status.
 
+use crate::ui::theme::spinner_char;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -11,9 +12,6 @@ use ratatui::{
 };
 use splunk_client::models::Input;
 use splunk_config::Theme;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 /// Configuration for rendering the inputs screen.
 pub struct InputsRenderConfig<'a> {
@@ -46,7 +44,7 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
     } = config;
 
     if loading && inputs.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading inputs...", spinner))
                 .block(Block::default().borders(Borders::ALL).title("Data Inputs"))

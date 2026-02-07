@@ -22,9 +22,7 @@ use splunk_client::models::{ShcMember, ShcStatus};
 use splunk_config::Theme;
 
 use crate::app::state::ShcViewMode;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the SHC screen.
 pub struct ShcRenderConfig<'a> {
@@ -63,7 +61,7 @@ pub fn render_shc(f: &mut Frame, area: Rect, config: ShcRenderConfig) {
     } = config;
 
     if loading && shc_status.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading SHC info...", spinner))
                 .block(

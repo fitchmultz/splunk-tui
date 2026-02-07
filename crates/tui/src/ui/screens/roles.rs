@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk roles with their capabilities and settings.
 
+use crate::ui::theme::spinner_char;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -10,9 +11,6 @@ use ratatui::{
 };
 use splunk_client::models::Role;
 use splunk_config::Theme;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 /// Configuration for rendering the roles screen.
 pub struct RolesRenderConfig<'a> {
@@ -45,7 +43,7 @@ pub fn render_roles(f: &mut Frame, area: Rect, config: RolesRenderConfig) {
     } = config;
 
     if loading && roles.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading roles...", spinner))
                 .block(Block::default().borders(Borders::ALL).title("Roles"))

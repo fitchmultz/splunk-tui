@@ -13,8 +13,7 @@ use ratatui::{
 };
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the license screen.
 pub struct LicenseRenderConfig<'a> {
@@ -44,7 +43,7 @@ pub fn render_license(f: &mut Frame, area: Rect, config: LicenseRenderConfig) {
     } = config;
 
     if loading && license_info.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading license info...", spinner))
             .block(Block::default().borders(Borders::ALL).title("License"))
             .alignment(Alignment::Center);

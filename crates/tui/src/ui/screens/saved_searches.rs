@@ -12,10 +12,8 @@ use ratatui::{
 use splunk_client::models::SavedSearch;
 
 use crate::ui::syntax::highlight_spl;
+use crate::ui::theme::spinner_char;
 use splunk_config::Theme;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 /// Configuration for rendering the saved searches screen.
 pub struct SavedSearchesRenderConfig<'a> {
@@ -42,7 +40,7 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
     } = config;
 
     if loading && saved_searches.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading saved searches...", spinner))
             .block(
                 Block::default()

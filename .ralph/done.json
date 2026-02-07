@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "unused_dependency": "tachyonfx@0.14",
         "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance",
-        "unused_dependency": "tachyonfx@0.14"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "dead_code_count": "25",
         "production_files_affected": "8",
-        "test_files_affected": "4",
-        "dead_code_count": "25"
+        "scan_agent": "scan-maintenance",
+        "test_files_affected": "4"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "target_line_count": "300",
+        "current_line_count": "867",
         "macro_already_adopted": "true",
-        "current_line_count": "867"
+        "target_line_count": "300",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4286,8 +4286,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "remaining_duplicates": "3",
         "scan_agent": "scan-maintenance",
+        "remaining_duplicates": "3",
         "macro_solved_count": "9"
       }
     },
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "estimated_methods": "35+",
         "scan_agent": "scan-maintenance",
-        "affected_formatters": "4",
-        "estimated_methods": "35+"
+        "affected_formatters": "4"
       }
     },
     {
@@ -4407,10 +4407,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "submodule_count": "28",
-        "scan_agent": "scan-maintenance",
-        "current_line_count": "523",
         "action_variants": "94",
+        "submodule_count": "28",
+        "current_line_count": "523",
+        "scan_agent": "scan-maintenance",
         "target_line_count": "150"
       }
     },
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_method_count": "45",
+        "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
-        "scan_agent": "scan-maintenance",
-        "existing_macro_coverage": "4 methods total across all formatters"
+        "estimated_method_count": "45",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4539,8 +4539,65 @@
       "relates_to": [],
       "custom_fields": {
         "command_files": "27",
-        "with_context_usages": "120+",
         "bail_usages": "18",
+        "scan_agent": "scan-maintenance",
+        "with_context_usages": "120+"
+      }
+    },
+    {
+      "id": "RQ-0363",
+      "status": "done",
+      "title": "Extract SPINNER_CHARS constant to eliminate 23-file duplication",
+      "description": "The SPINNER_CHARS constant is duplicated in 23 TUI files (22 screen files + app/render.rs). This violates DRY and creates maintenance burden when changing the animation. Extract to a shared location like theme.rs or a new widgets/spinner.rs module.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/*.rs",
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/ui/theme.rs"
+      ],
+      "evidence": [
+        "Duplicated in 22 screen files: indexes.rs:15, users.rs:15, alerts.rs:17, apps.rs:6, cluster.rs:27, dashboards.rs:15, health.rs:17, internal_logs.rs:13, license.rs:17, multi_instance.rs:21, overview.rs:18, search_peers.rs:22, forwarders.rs:22, saved_searches.rs:18, configs.rs:18, audit.rs:15, datamodels.rs:15, roles.rs:15, inputs.rs:16, kvstore.rs:16, lookups.rs:22, macros.rs:22, shc.rs:27, workload.rs:25",
+        "Also in: crates/tui/src/app/render.rs",
+        "Code: const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];",
+        "Usage pattern: let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];",
+        "crates/tui/src/ui/theme.rs exists (296 lines) and contains ThemeExt trait - ideal location for shared constant"
+      ],
+      "plan": [
+        "Add pub const SPINNER_CHARS: [char; 8] to crates/tui/src/ui/theme.rs (preferred location) or create crates/tui/src/ui/widgets/spinner.rs",
+        "Add helper function spinner_char(frame: u8) -> char for the modulo operation if needed",
+        "Remove the constant definition from all 23 files (22 screen files + app/render.rs)",
+        "Update imports in affected files to use the shared constant from theme module",
+        "Verify by running 'cargo check -p splunk-tui' and 'cargo test -p splunk-tui'"
+      ],
+      "notes": [
+        "Updated 2026-02-07: Found 23 duplications (not 16 as originally reported). The constant exists in 22 screen files plus crates/tui/src/app/render.rs.",
+        "crates/tui/src/ui/widgets/ directory does not exist - would need to be created if choosing that option.",
+        "crates/tui/src/ui/components/ exists with 6 component files - could also consider adding spinner component there.",
+        "Extracted SPINNER_CHARS constant to theme.rs with spinner_char() helper",
+        "Updated 23 files (22 screens + app/render.rs) to use shared implementation",
+        "Verified: cargo check passes, 563 tests pass, only 1 definition remains",
+        "Pure refactoring - no behavior change"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T00:32:58.180505686Z",
+      "completed_at": "2026-02-07T00:32:58.180505686Z",
+      "started_at": "2026-02-07T00:17:18.052576990Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "DRY",
+        "screen_files": "22",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
+        "file_count": "23",
         "scan_agent": "scan-maintenance"
       }
     }

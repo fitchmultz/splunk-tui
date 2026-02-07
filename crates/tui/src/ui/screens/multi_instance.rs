@@ -17,8 +17,7 @@ use splunk_config::Theme;
 
 use crate::action::MultiInstanceOverviewData;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the multi-instance dashboard.
 pub struct MultiInstanceRenderConfig<'a> {
@@ -51,7 +50,7 @@ pub fn render_multi_instance(f: &mut Frame, area: Rect, config: MultiInstanceRen
     } = config;
 
     if loading && data.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             Paragraph::new(format!("{} Loading multi-instance dashboard...", spinner))
                 .block(

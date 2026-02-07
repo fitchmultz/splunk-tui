@@ -6,6 +6,34 @@
 use ratatui::style::{Modifier, Style};
 use splunk_config::Theme;
 
+/// Spinner characters for animated loading indicator.
+///
+/// These Braille patterns create a smooth spinning animation when cycled.
+pub const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+
+/// Get the spinner character for a given animation frame.
+///
+/// This helper handles the modulo operation to cycle through the spinner characters.
+///
+/// # Arguments
+///
+/// * `frame` - The current animation frame (typically increments each render cycle)
+///
+/// # Returns
+///
+/// The spinner character to display for this frame.
+///
+/// # Example
+///
+/// ```
+/// use splunk_tui::ui::theme::spinner_char;
+///
+/// let char_for_frame = spinner_char(5);
+/// ```
+pub fn spinner_char(frame: u8) -> char {
+    SPINNER_CHARS[frame as usize % SPINNER_CHARS.len()]
+}
+
 /// Trait extending Theme with helper methods for creating styled widgets.
 pub trait ThemeExt {
     /// Get the base text style.

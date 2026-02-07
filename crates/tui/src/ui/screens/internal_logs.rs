@@ -9,8 +9,7 @@ use ratatui::{
 use splunk_client::models::LogEntry;
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the internal logs screen.
 pub struct InternalLogsRenderConfig<'a> {
@@ -40,7 +39,7 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
         .title_style(Style::default().fg(theme.title));
 
     if config.loading && config.logs.is_none() {
-        let spinner = SPINNER_CHARS[config.spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(config.spinner_frame);
         let loading =
             ratatui::widgets::Paragraph::new(format!("{} Loading internal logs...", spinner))
                 .block(block)

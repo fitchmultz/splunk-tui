@@ -14,8 +14,7 @@ use ratatui::{
 use splunk_client::models::{ConfigFile, ConfigStanza};
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// View mode for the configs screen.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -86,7 +85,7 @@ fn render_file_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
     } = config;
 
     if loading && config_files.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading config files...", spinner))
             .block(
                 Block::default()
@@ -188,7 +187,7 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
     let title = format!("Stanzas for {}.conf", selected_file.unwrap_or("unknown"));
 
     if loading && stanzas.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading stanzas...", spinner))
             .block(Block::default().borders(Borders::ALL).title(title))
             .alignment(Alignment::Center);

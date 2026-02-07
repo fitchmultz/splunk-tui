@@ -22,9 +22,7 @@ use splunk_client::models::{ClusterInfo, ClusterPeer};
 use splunk_config::Theme;
 
 use crate::app::state::ClusterViewMode;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the cluster screen.
 pub struct ClusterRenderConfig<'a> {
@@ -63,7 +61,7 @@ pub fn render_cluster(f: &mut Frame, area: Rect, config: ClusterRenderConfig) {
     } = config;
 
     if loading && cluster_info.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading cluster info...", spinner))
                 .block(

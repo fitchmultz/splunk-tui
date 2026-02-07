@@ -1,4 +1,552 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0364",
+      "status": "todo",
+      "title": "Migrate TUI screens to ThemeExt trait for consistent styling",
+      "description": "20+ TUI screen files use manual style construction (Pattern A) while ThemeExt trait exists (Pattern B). This causes inconsistent UI appearance and makes theme changes difficult. Pattern A manually constructs Style with theme.border, theme.highlight_fg, etc. Pattern B uses theme.border(), theme.highlight() which is cleaner and centralized.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "KISS",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/indexes.rs",
+        "crates/tui/src/ui/screens/users.rs",
+        "crates/tui/src/ui/screens/alerts.rs",
+        "crates/tui/src/ui/screens/apps.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/tui/src/ui/screens/dashboards.rs",
+        "crates/tui/src/ui/screens/health.rs",
+        "crates/tui/src/ui/screens/license.rs",
+        "crates/tui/src/ui/screens/theme.rs"
+      ],
+      "evidence": [
+        "Pattern A (20+ files): Block::default().borders(Borders::ALL).title('Indexes').border_style(Style::default().fg(theme.border))",
+        "Pattern B (2 files - correct): Block::default().borders(Borders::ALL).border_style(theme.border())",
+        "jobs.rs and settings.rs already use ThemeExt correctly"
+      ],
+      "plan": [
+        "Add styled_block(theme, title) helper to theme.rs for common block construction",
+        "Add highlight_style(theme) helper for consistent selection highlighting",
+        "Migrate indexes.rs, users.rs, alerts.rs, apps.rs, cluster.rs to ThemeExt",
+        "Migrate remaining screen files (dashboards, health, license, etc.)",
+        "Verify by running TUI snapshot tests: 'cargo test -p splunk-tui snapshot_'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
+      }
+    },
+    {
+      "id": "RQ-0365",
+      "status": "todo",
+      "title": "Extract shared loading and empty state widgets to reduce 200+ lines of duplication",
+      "description": "Nearly identical loading state code exists in 20+ TUI screen files (~10 lines each = 200+ duplicated lines). Empty state pattern exists in 15+ files (~8 lines each = 120+ duplicated lines). Both patterns should be extracted to reusable widget functions for consistent UX and easier maintenance.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/*.rs",
+        "crates/tui/src/ui/widgets/"
+      ],
+      "evidence": [
+        "Loading pattern: 'if loading && data.is_none() { let spinner = SPINNER_CHARS[...]; Paragraph::new(format!(\"{} Loading...\", spinner))... }'",
+        "Empty pattern: 'None => { Paragraph::new(\"No X loaded. Press 'r' to refresh.\")... }'",
+        "Inconsistency: Some screens omit 'Press 'r' to refresh' hint"
+      ],
+      "plan": [
+        "Create crates/tui/src/ui/widgets/loading.rs with render_loading_state() function",
+        "Create render_empty_state() function with consistent messaging",
+        "Add optional 'refresh_hint' parameter for screens that support refresh",
+        "Replace duplicated code in indexes.rs, users.rs, alerts.rs, etc.",
+        "Verify by running: 'cargo test -p splunk-tui' and checking snapshot tests pass"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0366",
+      "status": "todo",
+      "title": "Centralize status color mapping in ThemeExt to eliminate duplication",
+      "description": "Status-to-color mapping logic is duplicated across 4+ files (overview.rs, multi_instance.rs, cluster.rs) with slight variations. Some map 'ok'/'healthy'/'green' to success, others handle 'up'/'down'/'pending'. This should be centralized in ThemeExt for consistent semantic color usage across the TUI.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/overview.rs",
+        "crates/tui/src/ui/screens/multi_instance.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/tui/src/ui/theme.rs"
+      ],
+      "evidence": [
+        "overview.rs:109-116: matches status.to_lowercase() against 'ok'|'healthy'|'green'|'active'|'installed'|'available'",
+        "multi_instance.rs:267-283: Similar but different set of status strings",
+        "cluster.rs:247-253: Only handles 'up'/'down'/'pending'"
+      ],
+      "plan": [
+        "Add ThemeExt::status_color(&self, status: &str) -> Color method",
+        "Consolidate all known status strings: ok/healthy/green/active/installed/available/up → success",
+        "warning/yellow/degraded/pending → warning",
+        "error/unhealthy/red/timeout/down/critical → error",
+        "Update overview.rs, multi_instance.rs, cluster.rs to use the centralized method",
+        "Verify by running TUI tests: 'cargo test -p splunk-tui'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0367",
+      "status": "todo",
+      "title": "Extract duplicate format_bytes function to shared utility",
+      "description": "The format_bytes() function for human-readable byte formatting is duplicated in health.rs and license.rs with identical implementation. This utility should be extracted to a shared location for use across the TUI and potentially CLI.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/health.rs:252-269",
+        "crates/tui/src/ui/screens/license.rs:275-292"
+      ],
+      "evidence": [
+        "health.rs:252-269: fn format_bytes(bytes: u64) -> String with KB/MB/GB/TB logic",
+        "license.rs:275-292: Identical function with same constants and logic"
+      ],
+      "plan": [
+        "Create crates/tui/src/utils/format.rs or add to existing utils module",
+        "Extract format_bytes() with proper documentation",
+        "Remove duplicate from health.rs and license.rs",
+        "Add unit tests for the extracted function",
+        "Verify by running: 'cargo check -p splunk-tui' and 'cargo test -p splunk-tui'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
+      }
+    },
+    {
+      "id": "RQ-0368",
+      "status": "todo",
+      "title": "Remove dead code: placeholder/empty resource_impls and xml files",
+      "description": "Several files exist as placeholders after migration but contain no actual implementation, cluttering the codebase. resource_impls/users.rs has only a comment explaining why it wasn't implemented. xml/apps.rs is marked as placeholder after macro migration.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "YAGNI",
+        "cli",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/resource_impls/users.rs",
+        "crates/cli/src/formatters/xml/apps.rs"
+      ],
+      "evidence": [
+        "resource_impls/users.rs: Only contains comment '// User doesn't implement ResourceDisplay because...'",
+        "xml/apps.rs: Comment states 'This file is kept as a placeholder for any future app-specific XML formatting'"
+      ],
+      "plan": [
+        "Verify resource_impls/users.rs has no actual implementation",
+        "Verify xml/apps.rs has no actual implementation (only tests)",
+        "Delete confirmed placeholder files",
+        "Update any imports if needed",
+        "Verify by running: 'cargo check -p splunk-cli' and 'cargo test -p splunk-cli'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0369",
+      "status": "todo",
+      "title": "Deduplicate escape_xml function between common.rs and xml/mod.rs",
+      "description": "The escape_xml function for XML character escaping is defined identically in two locations: common.rs (public) and xml/mod.rs (private). The private version in xml/mod.rs should be removed and the public version from common.rs should be used instead.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "cli",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/common.rs:134-141",
+        "crates/cli/src/formatters/xml/mod.rs:629-635"
+      ],
+      "evidence": [
+        "common.rs:134-141: pub fn escape_xml(s: &str) -> String with &amp; &lt; &gt; &quot; &apos; replacements",
+        "xml/mod.rs:629-635: Identical private fn escape_xml(s: &str) -> String"
+      ],
+      "plan": [
+        "Remove private escape_xml from xml/mod.rs",
+        "Update xml/mod.rs to use common::escape_xml",
+        "Verify no other file has a third copy",
+        "Verify by running: 'cargo check -p splunk-cli' and 'cargo test -p splunk-cli'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
+      }
+    },
+    {
+      "id": "RQ-0370",
+      "status": "todo",
+      "title": "Synchronize .env and .env.example configuration drift",
+      "description": "The .env file is severely out of sync with .env.example. .env has only 18 lines while .env.example has 66 lines with comprehensive documentation. Many options documented in .env.example are missing from .env. ",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "configuration",
+        "documentation",
+        "cleanup"
+      ],
+      "scope": [
+        ".env",
+        ".env.example"
+      ],
+      "evidence": [
+        ".env: Only 18 lines,",
+        ".env.example: 66 lines with comprehensive docs for all SPLUNK_* variables",
+        "Missing from .env: SPLUNK_HEC_URL, SPLUNK_HEC_TOKEN, SPLUNK_PROFILE, SPLUNK_CONFIG_PATH, SPLUNK_TIMEOUT, SPLUNK_MAX_RETRIES, SPLUNK_SESSION_*, etc."
+      ],
+      "plan": [
+        "Audit .env.example to confirm it has all documented variables",
+        "Update .env to match .env.example structure with all variables commented out",
+        "Ensure .env remains in .gitignore",
+        "Verify by comparing line counts and key variables"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0371",
+      "status": "todo",
+      "title": "Fix error message style: 'Could not' to 'Failed to' in migration.rs",
+      "description": "AGENTS.md error message style guide requires 'Failed to...' pattern for warn! messages. Three violations found in migration.rs using 'Could not...' instead. This is a minor style inconsistency that should be fixed for compliance.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "style",
+        "config",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/config/src/persistence/migration.rs:39,59,78"
+      ],
+      "evidence": [
+        "Line 39: 'Could not stat legacy config file; skipping migration'",
+        "Line 59: 'Could not create config directory for migrated config'",
+        "Line 78: 'Could not migrate legacy config file'",
+        "AGENTS.md: 'For warn! messages, always use \"Failed to {action}\" pattern'"
+      ],
+      "plan": [
+        "Change line 39: 'Could not stat' → 'Failed to stat'",
+        "Change line 59: 'Could not create' → 'Failed to create'",
+        "Change line 78: 'Could not migrate' → 'Failed to migrate'",
+        "Verify by running: 'cargo clippy -p splunk-config' and 'cargo test -p splunk-config'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
+      }
+    },
+    {
+      "id": "RQ-0372",
+      "status": "todo",
+      "title": "Extract duplicate build_create_job_options functions in search.rs",
+      "description": "Two nearly identical functions exist in client/src/client/search.rs: build_create_job_options_for_search and build_create_job_options_for_search_with_progress. They differ only in the 'wait' field value. These should be consolidated into a single function with a parameter.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs:106-139"
+      ],
+      "evidence": [
+        "Lines 106-121: fn build_create_job_options_for_search with 'wait: Some(request.wait)'",
+        "Lines 127-139: fn build_create_job_options_for_search_with_progress with 'wait: Some(false)'",
+        "All other fields are identical between both functions"
+      ],
+      "plan": [
+        "Replace both functions with single fn build_create_job_options(request: &SearchRequest<'_>, force_wait_false: bool)",
+        "Use conditional: wait: Some(if force_wait_false { false } else { request.wait })",
+        "Update call sites to pass appropriate flag",
+        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
+      }
+    },
+    {
+      "id": "RQ-0373",
+      "status": "todo",
+      "title": "Extract duplicate error response parsing in endpoints/request.rs",
+      "description": "Identical error response parsing code appears twice in request.rs (lines 301-310 and 341-350). This JSON parsing logic for Splunk error messages should be extracted to a shared helper function to ensure consistent error handling.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs:301-310,341-350"
+      ],
+      "evidence": [
+        "Lines 301-310: let message = if let Ok(m) = serde_json::from_str::<SplunkMessages>(&body) { ... } else { body }",
+        "Lines 341-350: Identical 9-line block with same logic"
+      ],
+      "plan": [
+        "Create fn parse_splunk_error_response(body: &str) -> String near the error handling code",
+        "Replace both duplicate blocks with calls to the new function",
+        "Add unit test for the extracted function",
+        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
+      }
+    },
+    {
+      "id": "RQ-0374",
+      "status": "todo",
+      "title": "Consolidate duplicate session expiry check methods in auth.rs",
+      "description": "Two nearly identical methods in auth.rs (is_session_expired and session_expires_soon) share the same structure but call different underlying checks. They can be consolidated using a helper method with a closure to reduce duplication.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/auth.rs:128-149"
+      ],
+      "evidence": [
+        "Lines 128-136: is_session_expired() with if self.is_api_token() { return false } then checks is_expired()",
+        "Lines 141-149: session_expires_soon() with identical structure but checks will_expire_soon()"
+      ],
+      "plan": [
+        "Add private helper: fn check_session<F>(&self, check: F) -> bool where F: FnOnce(&SessionToken) -> bool",
+        "Implement is_session_expired as: self.check_session(|t| t.is_expired())",
+        "Implement session_expires_soon as: self.check_session(|t| t.will_expire_soon())",
+        "Verify by running: 'cargo test -p splunk-client auth_tests'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0375",
+      "status": "todo",
+      "title": "Remove per-session expiry_buffer_seconds from SessionToken",
+      "description": "The SessionToken struct stores expiry_buffer_seconds per instance, but this is always set to the same constant (DEFAULT_EXPIRY_BUFFER_SECS = 60). This adds unnecessary complexity and memory overhead. The constant should be used directly in the will_expire_soon method.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "YAGNI",
+        "KISS",
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/auth.rs:29-34,47,62-73"
+      ],
+      "evidence": [
+        "Lines 33-34: expiry_buffer_seconds: u64 stored per token",
+        "Line 47: Always set to DEFAULT_EXPIRY_BUFFER_SECS via unwrap_or()",
+        "Lines 62-73: Complex calculation using self.expiry_buffer_seconds for a constant value"
+      ],
+      "plan": [
+        "Remove expiry_buffer_seconds field from SessionToken struct",
+        "Update will_expire_soon() to use DEFAULT_EXPIRY_BUFFER_SECS directly",
+        "Remove expiry_buffer_seconds parameter from constructor",
+        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0376",
+      "status": "todo",
+      "title": "Fix expect() panic in SyntaxHighlighter Default implementation",
+      "description": "The Default implementation for SyntaxHighlighter in syntax.rs uses .expect() which can panic if syntax highlighting initialization fails. This should return a fallback highlighter instead of panicking, as syntax highlighting is a non-critical feature.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "fail-fast",
+        "tui",
+        "bugfix"
+      ],
+      "scope": [
+        "crates/tui/src/ui/syntax.rs:194-197"
+      ],
+      "evidence": [
+        "Lines 194-197: impl Default calls Self::new().expect(\"Failed to create SyntaxHighlighter\")",
+        "This can panic if tree-sitter initialization fails"
+      ],
+      "plan": [
+        "Modify Default to return a fallback highlighter with inner: None instead of panicking",
+        "Ensure all methods on SyntaxHighlighter handle the None case gracefully",
+        "Add test for Default implementation",
+        "Verify by running: 'cargo test -p splunk-tui' and 'cargo check -p splunk-tui'"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "fail-fast"
+      }
+    },
+    {
+      "id": "RQ-0377",
+      "status": "todo",
+      "title": "Add SKIP_LIVE_TESTS documentation to .env.test.example",
+      "description": "The SKIP_LIVE_TESTS environment variable is referenced in the Makefile but is not documented in .env.test.example. This variable allows users to skip live server tests even when a Splunk server is available. It should be documented for discoverability.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "documentation",
+        "configuration"
+      ],
+      "scope": [
+        ".env.test.example"
+      ],
+      "evidence": [
+        "Makefile references SKIP_LIVE_TESTS in test-live target",
+        ".env.test.example does not mention this variable"
+      ],
+      "plan": [
+        "Add SKIP_LIVE_TESTS=1 comment to .env.test.example with description",
+        "Verify the variable is mentioned consistently with Makefile behavior"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-06T22:50:42Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
+      }
+    }
+  ]
 }

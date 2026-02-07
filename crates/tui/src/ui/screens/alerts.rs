@@ -13,8 +13,7 @@ use splunk_client::models::FiredAlert;
 
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the fired alerts screen.
 pub struct FiredAlertsRenderConfig<'a> {
@@ -41,7 +40,7 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
     } = config;
 
     if loading && fired_alerts.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading fired alerts...", spinner))
             .block(Block::default().borders(Borders::ALL).title("Fired Alerts"))
             .alignment(ratatui::layout::Alignment::Center);

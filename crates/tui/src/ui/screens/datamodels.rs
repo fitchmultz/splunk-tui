@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk data models.
 
+use crate::ui::theme::spinner_char;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -10,9 +11,6 @@ use ratatui::{
 };
 use splunk_client::models::DataModel;
 use splunk_config::Theme;
-
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 /// Configuration for rendering the data models screen.
 pub struct DataModelsRenderConfig<'a> {
@@ -45,7 +43,7 @@ pub fn render_datamodels(f: &mut Frame, area: Rect, config: DataModelsRenderConf
     } = config;
 
     if loading && data_models.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget =
             ratatui::widgets::Paragraph::new(format!("{} Loading data models...", spinner))
                 .block(Block::default().borders(Borders::ALL).title("Data Models"))

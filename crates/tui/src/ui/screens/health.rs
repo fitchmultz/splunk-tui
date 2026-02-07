@@ -13,8 +13,7 @@ use ratatui::{
 use splunk_client::models::HealthCheckOutput;
 use splunk_config::Theme;
 
-/// Spinner characters for animated loading indicator.
-const SPINNER_CHARS: [char; 8] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
+use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the health screen.
 pub struct HealthRenderConfig<'a> {
@@ -44,7 +43,7 @@ pub fn render_health(f: &mut Frame, area: Rect, config: HealthRenderConfig) {
     } = config;
 
     if loading && health_info.is_none() {
-        let spinner = SPINNER_CHARS[spinner_frame as usize % SPINNER_CHARS.len()];
+        let spinner = spinner_char(spinner_frame);
         let loading_widget = Paragraph::new(format!("{} Loading health info...", spinner))
             .block(Block::default().borders(Borders::ALL).title("Health Check"))
             .alignment(Alignment::Center);
