@@ -288,7 +288,7 @@ The CLI tool is named `splunk-cli`.
 - `-b, --base-url <URL>`: Splunk base URL
 - `-u, --username <NAME>`: Username for session auth
 - `-p, --password <PASS>`: Password for session auth
-- `-a, --api-token <TOKEN>`: API token for bearer auth
+- `--api-token <TOKEN>`: API token for bearer auth
 - `--timeout <SECONDS>`: Connection timeout in seconds
 - `--max-retries <NUMBER>`: Maximum number of retries for failed requests
 - `--skip-verify`: Skip TLS certificate verification
@@ -956,7 +956,7 @@ splunk-cli config delete my-profile
   - `-p, --password <PASS>`: Password for session authentication (⚠️ **discouraged**: visible in shell history)
   - `--password-stdin`: Read password from stdin (single line, trailing newline trimmed)
   - `--password-file <PATH>`: Read password from file (content trimmed)
-  - `-a, --api-token <TOKEN>`: API token for bearer authentication (⚠️ **discouraged**: visible in shell history)
+  - `--api-token <TOKEN>`: API token for bearer authentication (⚠️ **discouraged**: visible in shell history)
   - `--api-token-stdin`: Read API token from stdin (single line, trailing newline trimmed)
   - `--api-token-file <PATH>`: Read API token from file (content trimmed)
   - `-s, --skip-verify`: Skip TLS certificate verification

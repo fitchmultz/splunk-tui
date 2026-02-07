@@ -80,7 +80,7 @@ pub enum MacrosCommand {
         #[arg(short, long)]
         args: Option<String>,
         /// New description
-        #[arg(short, long)]
+        #[arg(long)]
         description: Option<String>,
         /// Disable the macro
         #[arg(long)]

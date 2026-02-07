@@ -33,10 +33,10 @@ pub enum KvstoreCommand {
     /// List all collections
     List {
         /// App context (default: all apps)
-        #[arg(short, long)]
+        #[arg(long)]
         app: Option<String>,
         /// Owner context (default: nobody)
-        #[arg(short, long)]
+        #[arg(long)]
         owner: Option<String>,
         /// Maximum number of collections to list
         #[arg(short, long, default_value = "30")]
@@ -50,10 +50,10 @@ pub enum KvstoreCommand {
         /// Collection name
         name: String,
         /// App context
-        #[arg(short, long, default_value = "search")]
+        #[arg(long, default_value = "search")]
         app: String,
         /// Owner context
-        #[arg(short, long, default_value = "nobody")]
+        #[arg(long, default_value = "nobody")]
         owner: String,
         /// Field schema as JSON string
         #[arg(long)]
@@ -67,10 +67,10 @@ pub enum KvstoreCommand {
         /// Collection name
         name: String,
         /// App context
-        #[arg(short, long, default_value = "search")]
+        #[arg(long, default_value = "search")]
         app: String,
         /// Owner context
-        #[arg(short, long, default_value = "nobody")]
+        #[arg(long, default_value = "nobody")]
         owner: String,
         /// Skip confirmation prompt
         #[arg(short, long)]
@@ -81,10 +81,10 @@ pub enum KvstoreCommand {
         /// Collection name
         name: String,
         /// App context
-        #[arg(short, long, default_value = "search")]
+        #[arg(long, default_value = "search")]
         app: String,
         /// Owner context
-        #[arg(short, long, default_value = "nobody")]
+        #[arg(long, default_value = "nobody")]
         owner: String,
         /// MongoDB-style query (JSON)
         #[arg(short, long)]

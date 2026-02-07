@@ -59,7 +59,10 @@ async fn main() -> Result<()> {
     );
     let needs_real_config = !matches!(
         cli.command,
-        args::Commands::Config { .. } | args::Commands::Hec { .. }
+        args::Commands::Config { .. }
+            | args::Commands::Hec { .. }
+            | args::Commands::Completions { .. }
+            | args::Commands::Man
     ) && !is_multi_profile_list_all;
 
     // Build configuration only if needed

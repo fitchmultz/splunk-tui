@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-07T09:39:54.004309268Z",
+  "last_updated_at": "2026-02-07T10:05:38.780914892Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -405,7 +405,7 @@
     },
     "2026-02-07": {
       "date": "2026-02-07",
-      "completed_count": 24,
+      "completed_count": 25,
       "tasks": [
         {
           "id": "RQ-0363",
@@ -526,6 +526,11 @@
           "id": "RQ-0388",
           "title": "Ignore stale SPL validation results in TUI",
           "completed_at": "2026-02-07T09:39:54.004307918Z"
+        },
+        {
+          "id": "RQ-0389",
+          "title": "Add shell completions + manpage generation for splunk-cli/splunk-tui",
+          "completed_at": "2026-02-07T10:05:38.780914189Z"
         }
       ]
     }
@@ -535,7 +540,7 @@
     "longest_streak": 6,
     "last_completed_date": "2026-02-07"
   },
-  "total_completed": 98,
+  "total_completed": 99,
   "milestones": [
     {
       "threshold": 10,

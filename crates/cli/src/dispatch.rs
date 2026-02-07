@@ -454,6 +454,14 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
+        Commands::Completions { shell } => {
+            // Completions command doesn't need config - works offline
+            commands::completions::run(shell)?;
+        }
+        Commands::Man => {
+            // Manpage command doesn't need config - works offline
+            commands::manpage::run()?;
+        }
     }
 
     Ok(())
