@@ -1,39 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": "RQ-0377",
-      "status": "todo",
-      "title": "Add SKIP_LIVE_TESTS documentation to .env.test.example",
-      "description": "The SKIP_LIVE_TESTS environment variable is referenced in the Makefile but is not documented in .env.test.example. This variable allows users to skip live server tests even when a Splunk server is available. It should be documented for discoverability.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "documentation",
-        "configuration"
-      ],
-      "scope": [
-        ".env.test.example"
-      ],
-      "evidence": [
-        "Makefile references SKIP_LIVE_TESTS in test-live target",
-        ".env.test.example does not mention this variable"
-      ],
-      "plan": [
-        "Add SKIP_LIVE_TESTS=1 comment to .env.test.example with description",
-        "Verify the variable is mentioned consistently with Makefile behavior"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
-      }
-    }
-  ]
+  "tasks": []
 }
