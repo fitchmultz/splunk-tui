@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0395",
-      "status": "todo",
-      "title": "Fix error messages starting with flags in cluster.rs, shc.rs, and logs.rs",
-      "description": "Error messages in several CLI command files violate the AGENTS.md style guide by starting with flag names. According to the guide: 'Start with capital letter' and avoid patterns like '--page-size must be greater than 0'. The messages use 'The --page-size value...' which still starts with a flag reference. Rewrite to follow the 'Action-Oriented' pattern like 'The value for --page-size must be greater than 0'.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "consistency",
-        "error-messages",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/cluster.rs",
-        "crates/cli/src/commands/shc.rs",
-        "crates/cli/src/commands/logs.rs"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/shc.rs:229 - 'The --page-size value must be greater than 0'",
-        "crates/cli/src/commands/shc.rs:293 - 'The --page-size value must be greater than 0'",
-        "crates/cli/src/commands/cluster.rs:232 - 'The --page-size value must be greater than 0'",
-        "crates/cli/src/commands/cluster.rs:297 - 'The --page-size value must be greater than 0'",
-        "crates/cli/src/commands/logs.rs:93 - 'The --output-file option cannot be used with --tail mode'"
-      ],
-      "plan": [
-        "Rewrite error messages to follow AGENTS.md guidelines",
-        "Use patterns like: 'The value for --page-size must be greater than 0'",
-        "Use patterns like: 'The --output-file option cannot be used with --tail mode' -> 'Cannot use output file in tail mode'",
-        "Verify by running `make lint` and checking for style consistency"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0396",
       "status": "todo",
       "title": "Unify default values between CLI args and config constants",

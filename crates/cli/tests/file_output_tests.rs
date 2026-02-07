@@ -264,7 +264,7 @@ fn test_tail_mode_rejects_output_file() {
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "The --output-file option cannot be used with --tail mode",
+            "Cannot use output file in tail mode",
         ));
 }
 
