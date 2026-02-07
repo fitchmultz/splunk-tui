@@ -54,23 +54,14 @@ pub enum TokenType {
 impl SyntaxHighlighter {
     /// Create a new syntax highlighter.
     ///
-    /// Attempts to initialize tree-sitter parser. If no SPL grammar is available,
-    /// the parser will be initialized but queries will fail gracefully.
-    pub fn new() -> anyhow::Result<Self> {
-        let parser = Parser::new();
-
-        // Note: When tree-sitter-spl becomes available, initialize it here:
-        // parser.set_language(&tree_sitter_spl::LANGUAGE.into())?;
-        // let query = Query::new(
-        //     &tree_sitter_spl::LANGUAGE.into(),
-        //     include_str!("spl_highlight_query.scm")
-        // )?;
-
-        // For now, return without query since no SPL grammar is available
-        Ok(Self {
-            parser,
+    /// Since syntax highlighting is a non-critical feature, this constructor
+    /// never fails. If tree-sitter initialization fails, the highlighter
+    /// gracefully falls back to regex-based highlighting.
+    pub fn new() -> Self {
+        Self {
+            parser: Parser::new(),
             query: None,
-        })
+        }
     }
 
     /// Check if tree-sitter highlighting is available.
@@ -193,7 +184,7 @@ impl SyntaxHighlighter {
 
 impl Default for SyntaxHighlighter {
     fn default() -> Self {
-        Self::new().expect("Failed to create SyntaxHighlighter")
+        Self::new()
     }
 }
 

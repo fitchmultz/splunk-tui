@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0376",
-      "status": "todo",
-      "title": "Fix expect() panic in SyntaxHighlighter Default implementation",
-      "description": "The Default implementation for SyntaxHighlighter in syntax.rs uses .expect() which can panic if syntax highlighting initialization fails. This should return a fallback highlighter instead of panicking, as syntax highlighting is a non-critical feature.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "fail-fast",
-        "tui",
-        "bugfix"
-      ],
-      "scope": [
-        "crates/tui/src/ui/syntax.rs:194-197"
-      ],
-      "evidence": [
-        "Lines 194-197: impl Default calls Self::new().expect(\"Failed to create SyntaxHighlighter\")",
-        "This can panic if tree-sitter initialization fails"
-      ],
-      "plan": [
-        "Modify Default to return a fallback highlighter with inner: None instead of panicking",
-        "Ensure all methods on SyntaxHighlighter handle the None case gracefully",
-        "Add test for Default implementation",
-        "Verify by running: 'cargo test -p splunk-tui' and 'cargo check -p splunk-tui'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "principle": "fail-fast",
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0377",
       "status": "todo",
       "title": "Add SKIP_LIVE_TESTS documentation to .env.test.example",

@@ -163,7 +163,9 @@ fn test_highlight_multiline() {
 #[test]
 fn test_syntax_highlighter_creation() {
     let highlighter = SyntaxHighlighter::new();
-    assert!(highlighter.is_ok());
+    // SyntaxHighlighter::new() is infallible - it always returns successfully
+    // since syntax highlighting is non-critical
+    assert!(!highlighter.is_available());
 }
 
 #[test]
