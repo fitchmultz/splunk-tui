@@ -405,7 +405,7 @@ pub enum Action {
     ///
     /// Triggered when the user pauses typing in the search query input.
     /// The validation is performed asynchronously via the search parser endpoint.
-    ValidateSpl { search: String },
+    ValidateSpl { search: String, request_id: u64 },
     /// SPL validation completed.
     ///
     /// Contains the validation result with any errors or warnings found.
@@ -413,6 +413,7 @@ pub enum Action {
         valid: bool,
         errors: Vec<String>,
         warnings: Vec<String>,
+        request_id: u64,
     },
     /// Export data (pre-serialized as JSON) to a file.
     ///

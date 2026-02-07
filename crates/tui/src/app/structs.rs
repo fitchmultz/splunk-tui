@@ -255,6 +255,9 @@ pub struct App {
     pub spl_validation_pending: bool,
     /// Timestamp of last input change for debouncing.
     pub last_input_change: Option<std::time::Instant>,
+    /// Monotonically increasing request ID for SPL validation (for stale result detection).
+    /// Incremented each time a validation is triggered; used to correlate results.
+    pub validation_request_id: u64,
 
     // Search mode (RQ-0254)
     /// Current search mode (normal or realtime).
@@ -280,6 +283,8 @@ pub struct SplValidationState {
     pub warnings: Vec<String>,
     /// Timestamp of last validation
     pub last_validated: Option<std::time::Instant>,
+    /// Request ID of the validation that produced this state (for stale result detection)
+    pub request_id: u64,
 }
 
 /// Connection context for the TUI header display.

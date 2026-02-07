@@ -283,6 +283,7 @@ impl App {
             spl_validation_state: SplValidationState::default(),
             spl_validation_pending: false,
             last_input_change: None,
+            validation_request_id: 0,
             search_mode: SearchMode::Normal,
             realtime_window: None,
             focus_manager: FocusManager::default(),

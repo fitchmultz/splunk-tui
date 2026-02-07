@@ -243,8 +243,8 @@ pub async fn handle_side_effects(
         Action::LoadMoreSearchResults { sid, offset, count } => {
             searches::handle_load_more_search_results(client, tx, sid, offset, count).await;
         }
-        Action::ValidateSpl { search } => {
-            searches::handle_validate_spl(client, tx, search).await;
+        Action::ValidateSpl { search, request_id } => {
+            searches::handle_validate_spl(client, tx, search, request_id).await;
         }
         Action::CancelJob(sid) => {
             jobs::handle_cancel_job(client, tx, sid).await;

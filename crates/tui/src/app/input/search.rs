@@ -60,8 +60,10 @@ impl App {
             && last_change.elapsed().as_millis() >= VALIDATION_DEBOUNCE_MS as u128
         {
             self.spl_validation_pending = false;
+            self.validation_request_id += 1;
             return Some(Action::ValidateSpl {
                 search: self.search_input.value().to_string(),
+                request_id: self.validation_request_id,
             });
         }
 

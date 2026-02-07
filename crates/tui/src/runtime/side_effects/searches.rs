@@ -166,7 +166,12 @@ pub async fn handle_load_more_search_results(
 /// Validates SPL syntax without executing the search. Short queries (< 3 chars)
 /// are considered valid to reduce API load. Errors are logged but don't fail
 /// the UI - validation is best-effort.
-pub async fn handle_validate_spl(client: SharedClient, tx: Sender<Action>, search: String) {
+pub async fn handle_validate_spl(
+    client: SharedClient,
+    tx: Sender<Action>,
+    search: String,
+    request_id: u64,
+) {
     // Skip validation for empty or very short queries
     if search.len() < 3 {
         let _ = tx
@@ -174,6 +179,7 @@ pub async fn handle_validate_spl(client: SharedClient, tx: Sender<Action>, searc
                 valid: true,
                 errors: vec![],
                 warnings: vec![],
+                request_id,
             })
             .await;
         return;
@@ -189,6 +195,7 @@ pub async fn handle_validate_spl(client: SharedClient, tx: Sender<Action>, searc
                         valid: result.valid,
                         errors: result.errors.into_iter().map(|e| e.message).collect(),
                         warnings: result.warnings.into_iter().map(|w| w.message).collect(),
+                        request_id,
                     })
                     .await;
             }
@@ -200,6 +207,7 @@ pub async fn handle_validate_spl(client: SharedClient, tx: Sender<Action>, searc
                         valid: true, // Assume valid on error
                         errors: vec![],
                         warnings: vec!["Validation unavailable".to_string()],
+                        request_id,
                     })
                     .await;
             }

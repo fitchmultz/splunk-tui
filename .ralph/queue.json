@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0388",
-      "status": "todo",
-      "title": "Ignore stale SPL validation results in TUI",
-      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- SPL validation is debounced, but validation requests are executed asynchronously and results do not carry the originating query or a request id (`Action::SplValidationResult` lacks any correlation field).\n- Under latency, out-of-order responses can overwrite the UI state with errors/warnings for a previous query.\n\nWhy it matters:\n- Users can see incorrect validation errors for text they've already edited away, undermining trust in the validator and increasing friction while typing.\n\nProposed approach:\n- Minimal slice: add a monotonically-increasing `validation_request_id` (or hash of the query) to both the request action and the result action. Store the latest id in App state and ignore results that don't match the latest request.\n- Optional: cancel in-flight validation tasks when a new validation is scheduled (abort join handle), to reduce server load.\n\nRisks and mitigations:\n- Risk: more state plumbing. Mitigation: keep the id small and local to the Search screen state; add focused tests.\n\nAcceptance criteria:\n- Unit tests simulate two validations completing out of order and assert only the latest result is applied.\n- No regressions to existing search input/validation behavior.\n- `make test` passes.\n\nPriority rationale:\n- Medium: improves correctness of an always-on UX feature.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "tui",
-        "reliability",
-        "search"
-      ],
-      "scope": [
-        "crates/tui/src/action/variants.rs",
-        "crates/tui/src/app/input/search.rs",
-        "crates/tui/src/runtime/side_effects/searches.rs",
-        "crates/tui/src/app/actions/search.rs",
-        "crates/tui/tests/",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/action/variants.rs:382-394 defines ValidateSpl and SplValidationResult without including the validated query or request id",
-        "crates/tui/src/runtime/side_effects/searches.rs:169-216 spawns validate_spl() calls and sends SplValidationResult with no correlation"
-      ],
-      "plan": [
-        "Extend SPL validation actions to include a request id (and store latest id in App search state).",
-        "Update side effects to attach the request id to results.",
-        "Update App reducer to ignore stale validation results.",
-        "Add tests covering out-of-order completion and ensuring the latest result wins.",
-        "Verify by running `make test` and confirming TUI tests pass."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0389",
       "status": "todo",
       "title": "Add shell completions + manpage generation for splunk-cli/splunk-tui",
@@ -231,8 +189,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]

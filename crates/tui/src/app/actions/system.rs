@@ -77,8 +77,9 @@ impl App {
                 valid,
                 errors,
                 warnings,
+                request_id,
             } => {
-                self.handle_spl_validation_result(valid, errors, warnings);
+                self.handle_spl_validation_result(valid, errors, warnings, request_id);
             }
             Action::ShowErrorDetails(details) => {
                 self.show_error_details(details);
@@ -334,12 +335,24 @@ impl App {
         valid: bool,
         errors: Vec<String>,
         warnings: Vec<String>,
+        request_id: u64,
     ) {
+        // Ignore stale results - only apply if this matches the latest request
+        if request_id != self.validation_request_id {
+            tracing::debug!(
+                "Ignoring stale SPL validation result (got {}, current {})",
+                request_id,
+                self.validation_request_id
+            );
+            return;
+        }
+
         self.spl_validation_state = crate::app::SplValidationState {
             valid: Some(valid),
             errors,
             warnings,
             last_validated: Some(std::time::Instant::now()),
+            request_id,
         };
         self.spl_validation_pending = false;
     }
@@ -785,6 +798,7 @@ mod tests {
             valid: true,
             errors: vec![],
             warnings: vec!["Warning 1".to_string()],
+            request_id: 0,
         });
 
         assert_eq!(app.spl_validation_state.valid, Some(true));

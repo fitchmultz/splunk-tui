@@ -53,11 +53,12 @@ fn test_spl_validation_result_updates_state() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
-    // Simulate validation result
+    // Simulate validation result (request_id 0 matches initial state)
     app.update(Action::SplValidationResult {
         valid: true,
         errors: vec![],
         warnings: vec![],
+        request_id: 0,
     });
 
     assert_eq!(app.spl_validation_state.valid, Some(true));
@@ -71,11 +72,12 @@ fn test_spl_validation_result_with_errors() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
-    // Simulate validation result with errors
+    // Simulate validation result with errors (request_id 0 matches initial state)
     app.update(Action::SplValidationResult {
         valid: false,
         errors: vec!["Syntax error at position 10".to_string()],
         warnings: vec![],
+        request_id: 0,
     });
 
     assert_eq!(app.spl_validation_state.valid, Some(false));
@@ -88,11 +90,12 @@ fn test_spl_validation_result_with_warnings() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
-    // Simulate validation result with warnings
+    // Simulate validation result with warnings (request_id 0 matches initial state)
     app.update(Action::SplValidationResult {
         valid: true,
         errors: vec![],
         warnings: vec!["Deprecated command usage".to_string()],
+        request_id: 0,
     });
 
     assert_eq!(app.spl_validation_state.valid, Some(true));
@@ -130,6 +133,7 @@ fn test_validation_reset_on_new_input() {
         errors: vec![],
         warnings: vec![],
         last_validated: Some(std::time::Instant::now()),
+        request_id: 0,
     };
 
     // Type new character
@@ -170,4 +174,110 @@ fn test_delete_triggers_validation() {
         app.spl_validation_pending,
         "Validation should be triggered after delete"
     );
+}
+
+// ============================================================================
+// Stale Result Tests (RQ-0388)
+// ============================================================================
+
+#[test]
+fn test_spl_validation_ignores_stale_results() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate that a newer validation request has been made (request_id is now 2)
+    app.validation_request_id = 2;
+
+    // Stale result with old request_id arrives
+    app.update(Action::SplValidationResult {
+        valid: false,
+        errors: vec!["Stale error".to_string()],
+        warnings: vec![],
+        request_id: 1, // Old request ID
+    });
+
+    // State should NOT have updated (still no validation result)
+    assert_eq!(app.spl_validation_state.valid, None);
+    assert!(app.spl_validation_state.errors.is_empty());
+}
+
+#[test]
+fn test_spl_validation_accepts_current_results() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate validation result with matching request_id
+    app.validation_request_id = 1;
+    app.update(Action::SplValidationResult {
+        valid: true,
+        errors: vec![],
+        warnings: vec!["A warning".to_string()],
+        request_id: 1, // Matches current request ID
+    });
+
+    // State should have updated
+    assert_eq!(app.spl_validation_state.valid, Some(true));
+    assert_eq!(app.spl_validation_state.warnings.len(), 1);
+    assert_eq!(app.spl_validation_state.request_id, 1);
+}
+
+#[test]
+fn test_spl_validation_out_of_order_completion() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Simulate scenario: request 1 and 2 are in flight, 2 completes first, then 1 completes
+
+    // First, result for request 2 arrives
+    app.validation_request_id = 2;
+    app.update(Action::SplValidationResult {
+        valid: true,
+        errors: vec![],
+        warnings: vec!["Result from request 2".to_string()],
+        request_id: 2,
+    });
+
+    // Should be applied
+    assert_eq!(app.spl_validation_state.valid, Some(true));
+    assert_eq!(app.spl_validation_state.warnings.len(), 1);
+    assert_eq!(app.spl_validation_state.request_id, 2);
+
+    // Then, stale result for request 1 arrives
+    app.update(Action::SplValidationResult {
+        valid: false,
+        errors: vec!["Stale error from request 1".to_string()],
+        warnings: vec![],
+        request_id: 1,
+    });
+
+    // Should NOT overwrite - state should still reflect request 2
+    assert_eq!(app.spl_validation_state.valid, Some(true));
+    assert!(app.spl_validation_state.errors.is_empty());
+    assert_eq!(app.spl_validation_state.warnings.len(), 1);
+    assert_eq!(app.spl_validation_state.request_id, 2);
+}
+
+#[test]
+fn test_validation_request_id_increments_on_dispatch() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Initial request ID should be 0
+    assert_eq!(app.validation_request_id, 0);
+
+    // Simulate validation being triggered (as if debounce passed)
+    app.spl_validation_pending = false;
+    app.validation_request_id += 1;
+
+    // Request ID should now be 1
+    assert_eq!(app.validation_request_id, 1);
+
+    // Trigger another validation
+    app.spl_validation_pending = true;
+    app.last_input_change = Some(std::time::Instant::now());
+    app.spl_validation_pending = false;
+    app.validation_request_id += 1;
+
+    // Request ID should now be 2
+    assert_eq!(app.validation_request_id, 2);
 }
