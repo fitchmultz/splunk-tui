@@ -117,6 +117,21 @@ pub async fn handle_side_effects(
             searches::handle_update_saved_search(client, tx, name, search, description, disabled)
                 .await;
         }
+        Action::CreateSavedSearch {
+            name,
+            search,
+            description,
+            disabled,
+        } => {
+            searches::handle_create_saved_search(client, tx, name, search, description, disabled)
+                .await;
+        }
+        Action::DeleteSavedSearch { name } => {
+            searches::handle_delete_saved_search(client, tx, name).await;
+        }
+        Action::ToggleSavedSearch { name, disabled } => {
+            searches::handle_toggle_saved_search(client, tx, name, disabled).await;
+        }
         Action::LoadInternalLogs { count, earliest } => {
             logs::handle_load_internal_logs(client, tx, count, earliest).await;
         }

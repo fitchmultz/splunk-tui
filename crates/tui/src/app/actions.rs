@@ -160,6 +160,10 @@ impl App {
             | Action::OpenCreateIndexDialog
             | Action::EditSavedSearch
             | Action::SavedSearchUpdated(_)
+            | Action::OpenCreateSavedSearchDialog
+            | Action::SavedSearchCreated(_)
+            | Action::SavedSearchDeleted(_)
+            | Action::SavedSearchToggled(_)
             | Action::MaintenanceModeSet { .. }
             | Action::ClusterRebalanced { .. }
             | Action::PeerDecommissioned { .. }

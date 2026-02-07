@@ -100,8 +100,12 @@ impl App {
                 _ => None,
             },
 
-            // Saved search edit popup
-            Some(PopupType::EditSavedSearch { .. }) => self.handle_saved_search_popup(key),
+            // Saved search popups (edit, create, delete confirm)
+            Some(
+                PopupType::EditSavedSearch { .. }
+                | PopupType::CreateSavedSearch { .. }
+                | PopupType::DeleteSavedSearchConfirm { .. },
+            ) => self.handle_saved_search_popup(key),
 
             // Macro creation/editing popups
             Some(PopupType::CreateMacro { .. } | PopupType::EditMacro { .. }) => {

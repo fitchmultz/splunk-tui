@@ -118,5 +118,32 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::EditSavedSearch),
             handles_input: true,
         },
+        Keybinding {
+            section: Section::SavedSearches,
+            keys: "n",
+            description: "Create new saved search",
+            scope: BindingScope::Screen(SavedSearches),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::SavedSearches,
+            keys: "d",
+            description: "Delete selected saved search",
+            scope: BindingScope::Screen(SavedSearches),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::SavedSearches,
+            keys: "t",
+            description: "Toggle saved search enabled/disabled state",
+            scope: BindingScope::Screen(SavedSearches),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
     ]
 }

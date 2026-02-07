@@ -265,6 +265,26 @@ impl PopupBuilder {
                 *disabled,
                 *selected_field,
             ),
+            PopupType::CreateSavedSearch {
+                name_input,
+                search_input,
+                description_input,
+                disabled,
+                selected_field,
+            } => self.build_create_saved_search_defaults(
+                name_input,
+                search_input,
+                description_input,
+                *disabled,
+                *selected_field,
+            ),
+            PopupType::DeleteSavedSearchConfirm { search_name } => (
+                "Confirm Delete".to_string(),
+                format!(
+                    "Delete saved search '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    search_name
+                ),
+            ),
             PopupType::CreateMacro {
                 name_input,
                 definition_input,
@@ -554,6 +574,11 @@ impl PopupBuilder {
         let title = format!("Edit Saved Search '{}'", search_name);
         let mut content = String::from("Edit saved search:\n\n");
 
+        let name_marker = if selected_field == SavedSearchField::Name {
+            "> "
+        } else {
+            "  "
+        };
         let search_marker = if selected_field == SavedSearchField::Search {
             "> "
         } else {
@@ -570,6 +595,11 @@ impl PopupBuilder {
             "  "
         };
 
+        // Show name as readonly (included in navigation cycle but not editable)
+        content.push_str(&format!(
+            "{}Name: {} (readonly)\n",
+            name_marker, search_name
+        ));
         content.push_str(&format!(
             "{}Search Query: {}\n",
             search_marker,
@@ -592,6 +622,71 @@ impl PopupBuilder {
                     "(will update: {})",
                     &description_input[..description_input.len().min(40)]
                 )
+            }
+        ));
+        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
+
+        content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
+        (title, content)
+    }
+
+    fn build_create_saved_search_defaults(
+        &self,
+        name_input: &str,
+        search_input: &str,
+        description_input: &str,
+        disabled: bool,
+        selected_field: SavedSearchField,
+    ) -> (String, String) {
+        let title = "Create Saved Search".to_string();
+        let mut content = String::from("Create new saved search:\n\n");
+
+        let name_marker = if selected_field == SavedSearchField::Name {
+            "> "
+        } else {
+            "  "
+        };
+        let search_marker = if selected_field == SavedSearchField::Search {
+            "> "
+        } else {
+            "  "
+        };
+        let description_marker = if selected_field == SavedSearchField::Description {
+            "> "
+        } else {
+            "  "
+        };
+        let disabled_marker = if selected_field == SavedSearchField::Disabled {
+            "> "
+        } else {
+            "  "
+        };
+
+        content.push_str(&format!(
+            "{}Name: {}\n",
+            name_marker,
+            if name_input.is_empty() {
+                "(required)".to_string()
+            } else {
+                name_input.to_string()
+            }
+        ));
+        content.push_str(&format!(
+            "{}Search Query: {}\n",
+            search_marker,
+            if search_input.is_empty() {
+                "(required)".to_string()
+            } else {
+                search_input[..search_input.len().min(40)].to_string()
+            }
+        ));
+        content.push_str(&format!(
+            "{}Description: {}\n",
+            description_marker,
+            if description_input.is_empty() {
+                "(optional)".to_string()
+            } else {
+                description_input[..description_input.len().min(40)].to_string()
             }
         ));
         content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));

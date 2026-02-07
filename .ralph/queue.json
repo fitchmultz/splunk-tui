@@ -2,53 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0382",
-      "status": "todo",
-      "title": "Implement saved-searches create/delete/enable/disable (CLI + TUI)",
-      "description": "Opportunity type: feature gap / workflow coverage\n\nEvidence:\n- CLI saved searches are limited to list/info/run/edit (`crates/cli/src/commands/saved_searches.rs`), with explicit non-goal of scheduling. There is no create/delete or enable/disable command surface.\n- TUI Saved Searches screen supports run/edit/export, but not create/delete or enable/disable (keybindings in README).\n- The client already has `create_saved_search`, `delete_saved_search`, and `update_saved_search(..., disabled)` (`crates/client/src/client/search.rs`).\n\nWhy it matters:\n- Saves time by enabling full lifecycle management from the terminal: create -> iterate -> disable/enable -> delete.\n- Reduces reliance on Splunk Web for routine knowledge-object management.\n\nProposed approach:\n- Minimal slice:\n  - CLI: add `splunk-cli saved-searches create <NAME> --search <SPL>` and `delete <NAME> [--force]`, plus `enable/disable <NAME>` wrappers.\n  - TUI: add `n` (new), `d` (delete with confirmation), and `t` (toggle disabled) on Saved Searches screen using the existing popup/action patterns.\n- Expansion: add namespace flags (`--app`, `--owner`) if supported by endpoints; add schedule editing as a later phase.\n\nRisks and mitigations:\n- Risk: destructive operations. Mitigation: confirmations + `--force` in CLI, confirm modal in TUI, and clear error messaging.\n\nAcceptance criteria:\n- CLI help updated with examples; error messages match repo conventions.\n- Hermetic tests cover arg parsing and non-network failure modes; ignored live tests cover success paths.\n- TUI keybindings docs are regenerated and reflect new actions.\n- `make test` passes.\n\nPriority rationale:\n- High: closes a real end-to-end workflow gap using existing client capabilities.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "feature",
-        "cli",
-        "tui",
-        "workflow"
-      ],
-      "scope": [
-        "crates/cli/src/commands/saved_searches.rs",
-        "crates/tui/src/app/input/saved_searches.rs",
-        "crates/tui/src/runtime/side_effects/searches.rs",
-        "crates/client/src/client/search.rs",
-        "docs/usage.md",
-        "README.md",
-        "make generate",
-        "make test"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/saved_searches.rs defines only List/Info/Run/Edit subcommands (no Create/Delete/Enable/Disable)",
-        "crates/client/src/client/search.rs exposes create_saved_search(), delete_saved_search(), and update_saved_search(disabled)",
-        "README.md keybindings for Saved Searches show run/edit/export but no create/delete"
-      ],
-      "plan": [
-        "Extend `SavedSearchesCommand` to include create/delete/enable/disable with safe confirmation semantics.",
-        "Add corresponding client calls in CLI command handlers, reusing existing `SplunkClient` methods.",
-        "Add TUI actions + popups for create/delete/toggle-disabled on Saved Searches screen.",
-        "Add hermetic tests for CLI parsing and TUI state transitions; add `#[ignore]` live tests for server-backed behavior.",
-        "Regenerate keybinding docs (`make generate`) and verify docs drift check passes.",
-        "Verify by running `make test` and confirming `make ci` remains green."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0383",
       "status": "todo",
       "title": "Add lookup download/upload/delete (client + CLI + TUI)",
@@ -454,8 +407,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "fail-fast"
+        "principle": "fail-fast",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -488,8 +441,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]

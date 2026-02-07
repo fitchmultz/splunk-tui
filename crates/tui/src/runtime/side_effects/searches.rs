@@ -235,3 +235,106 @@ pub async fn handle_update_saved_search(
         }
     });
 }
+
+/// Handle creating a saved search.
+pub async fn handle_create_saved_search(
+    client: SharedClient,
+    action_tx: Sender<Action>,
+    name: String,
+    search: String,
+    description: Option<String>,
+    disabled: bool,
+) {
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
+        let mut guard = client.lock().await;
+
+        // First create the saved search
+        match guard.create_saved_search(&name, &search).await {
+            Ok(()) => {
+                // If description or disabled provided, update the saved search
+                if description.is_some() || disabled {
+                    match guard
+                        .update_saved_search(&name, None, description.as_deref(), Some(disabled))
+                        .await
+                    {
+                        Ok(()) => {
+                            let _ = action_tx.send(Action::SavedSearchCreated(Ok(()))).await;
+                            // Refresh saved searches list on success
+                            let _ = action_tx.send(Action::LoadSavedSearches).await;
+                        }
+                        Err(e) => {
+                            // Saved search was created but update failed
+                            let _ = action_tx
+                                .send(Action::SavedSearchCreated(Err(Arc::new(e))))
+                                .await;
+                            // Still refresh since the saved search was created
+                            let _ = action_tx.send(Action::LoadSavedSearches).await;
+                        }
+                    }
+                } else {
+                    let _ = action_tx.send(Action::SavedSearchCreated(Ok(()))).await;
+                    // Refresh saved searches list on success
+                    let _ = action_tx.send(Action::LoadSavedSearches).await;
+                }
+            }
+            Err(e) => {
+                let _ = action_tx
+                    .send(Action::SavedSearchCreated(Err(Arc::new(e))))
+                    .await;
+            }
+        }
+    });
+}
+
+/// Handle deleting a saved search.
+pub async fn handle_delete_saved_search(
+    client: SharedClient,
+    action_tx: Sender<Action>,
+    name: String,
+) {
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
+        let mut guard = client.lock().await;
+        match guard.delete_saved_search(&name).await {
+            Ok(()) => {
+                let _ = action_tx.send(Action::SavedSearchDeleted(Ok(name))).await;
+                // Refresh saved searches list on success
+                let _ = action_tx.send(Action::LoadSavedSearches).await;
+            }
+            Err(e) => {
+                let _ = action_tx
+                    .send(Action::SavedSearchDeleted(Err(Arc::new(e))))
+                    .await;
+            }
+        }
+    });
+}
+
+/// Handle toggling a saved search's enabled/disabled state.
+pub async fn handle_toggle_saved_search(
+    client: SharedClient,
+    action_tx: Sender<Action>,
+    name: String,
+    disabled: bool,
+) {
+    let _ = action_tx.send(Action::Loading(true)).await;
+    tokio::spawn(async move {
+        let mut guard = client.lock().await;
+        match guard
+            .update_saved_search(&name, None, None, Some(disabled))
+            .await
+        {
+            Ok(()) => {
+                let _ = action_tx.send(Action::SavedSearchToggled(Ok(()))).await;
+                // Refresh saved searches list on success
+                let _ = action_tx.send(Action::LoadSavedSearches).await;
+            }
+            Err(e) => {
+                let _ = action_tx
+                    .send(Action::SavedSearchToggled(Err(Arc::new(e))))
+                    .await;
+            }
+        }
+    });
+}

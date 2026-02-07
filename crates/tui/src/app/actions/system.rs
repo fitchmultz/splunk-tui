@@ -123,6 +123,73 @@ impl App {
                     }
                 }
             }
+            Action::OpenCreateSavedSearchDialog => {
+                self.popup = Some(
+                    crate::ui::popup::Popup::builder(
+                        crate::ui::popup::PopupType::CreateSavedSearch {
+                            name_input: String::new(),
+                            search_input: String::new(),
+                            description_input: String::new(),
+                            disabled: false,
+                            selected_field: crate::ui::popup::SavedSearchField::Name,
+                        },
+                    )
+                    .build(),
+                );
+            }
+            Action::SavedSearchCreated(result) => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts
+                            .push(Toast::success("Saved search created successfully"));
+                        // Refresh the saved searches list
+                        self.saved_searches = None;
+                    }
+                    Err(e) => {
+                        self.toasts.push(Toast::error(format!(
+                            "Failed to create saved search: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+            Action::SavedSearchDeleted(result) => {
+                self.loading = false;
+                match result {
+                    Ok(name) => {
+                        self.toasts
+                            .push(Toast::success(format!("Saved search '{}' deleted", name)));
+                        // Remove from local list if present
+                        if let Some(searches) = &mut self.saved_searches {
+                            searches.retain(|s| s.name != name);
+                        }
+                    }
+                    Err(e) => {
+                        self.toasts.push(Toast::error(format!(
+                            "Failed to delete saved search: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+            Action::SavedSearchToggled(result) => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts
+                            .push(Toast::success("Saved search state updated"));
+                        // Refresh to get updated state
+                        self.saved_searches = None;
+                    }
+                    Err(e) => {
+                        self.toasts.push(Toast::error(format!(
+                            "Failed to toggle saved search: {}",
+                            e
+                        )));
+                    }
+                }
+            }
             // Cluster management result actions
             Action::MaintenanceModeSet { result } => {
                 self.loading = false;

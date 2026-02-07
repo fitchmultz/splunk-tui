@@ -164,6 +164,21 @@ pub enum PopupType {
         /// Currently selected field for navigation
         selected_field: SavedSearchField,
     },
+    /// Create saved search dialog
+    CreateSavedSearch {
+        /// Name input
+        name_input: String,
+        /// Search query input
+        search_input: String,
+        /// Description input
+        description_input: String,
+        /// Disabled toggle
+        disabled: bool,
+        /// Currently selected field for navigation
+        selected_field: SavedSearchField,
+    },
+    /// Delete saved search confirmation
+    DeleteSavedSearchConfirm { search_name: String },
     /// Create macro dialog
     CreateMacro {
         /// Name input

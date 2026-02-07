@@ -424,6 +424,27 @@ pub enum Action {
     },
     /// Result of updating saved search
     SavedSearchUpdated(Result<(), Arc<ClientError>>),
+    /// Open create saved search dialog
+    OpenCreateSavedSearchDialog,
+    /// Create a new saved search
+    CreateSavedSearch {
+        name: String,
+        search: String,
+        description: Option<String>,
+        disabled: bool,
+    },
+    /// Open delete saved search confirmation
+    OpenDeleteSavedSearchConfirm { name: String },
+    /// Delete a saved search
+    DeleteSavedSearch { name: String },
+    /// Toggle saved search enabled/disabled state
+    ToggleSavedSearch { name: String, disabled: bool },
+    /// Result of creating a saved search
+    SavedSearchCreated(Result<(), Arc<ClientError>>),
+    /// Result of deleting a saved search
+    SavedSearchDeleted(Result<String, Arc<ClientError>>),
+    /// Result of toggling saved search state
+    SavedSearchToggled(Result<(), Arc<ClientError>>),
 
     // Macro Operations
     /// Result of loading macros

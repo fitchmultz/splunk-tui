@@ -1,7 +1,7 @@
 //! Integration tests for `splunk-cli saved-searches` command.
 //!
 //! Tests cover:
-//! - Help text verification for all subcommands (list, run, info, edit)
+//! - Help text verification for all subcommands (list, run, info, edit, create, delete, enable, disable)
 //! - Output format parsing validation (json, table, csv, xml)
 //!
 //! Does NOT:
@@ -25,7 +25,11 @@ fn test_saved_searches_help() {
         .stdout(predicate::str::contains("List saved searches"))
         .stdout(predicate::str::contains("Show detailed information"))
         .stdout(predicate::str::contains("Run a saved search"))
-        .stdout(predicate::str::contains("Edit a saved search"));
+        .stdout(predicate::str::contains("Edit a saved search"))
+        .stdout(predicate::str::contains("Create a new saved search"))
+        .stdout(predicate::str::contains("Delete a saved search"))
+        .stdout(predicate::str::contains("Enable a saved search"))
+        .stdout(predicate::str::contains("Disable a saved search"));
 }
 
 #[test]
@@ -84,4 +88,48 @@ fn test_saved_searches_list_output_format_parsing() {
             .assert()
             .success();
     }
+}
+
+#[test]
+fn test_saved_searches_create_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["saved-searches", "create", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("<NAME>"))
+        .stdout(predicate::str::contains("--search"))
+        .stdout(predicate::str::contains("--description"))
+        .stdout(predicate::str::contains("--disabled"));
+}
+
+#[test]
+fn test_saved_searches_delete_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["saved-searches", "delete", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("<NAME>"))
+        .stdout(predicate::str::contains("--force"));
+}
+
+#[test]
+fn test_saved_searches_enable_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["saved-searches", "enable", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("<NAME>"));
+}
+
+#[test]
+fn test_saved_searches_disable_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["saved-searches", "disable", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("<NAME>"));
 }

@@ -47,6 +47,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateProfile { .. }
         | PopupType::EditProfile { .. }
         | PopupType::EditSavedSearch { .. }
+        | PopupType::CreateSavedSearch { .. }
         | PopupType::CreateMacro { .. }
         | PopupType::EditMacro { .. } => theme.border,
         PopupType::ConfirmCancel(_)
@@ -58,6 +59,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::DeleteIndexConfirm { .. }
         | PopupType::DeleteUserConfirm { .. }
         | PopupType::DeleteRoleConfirm { .. }
+        | PopupType::DeleteSavedSearchConfirm { .. }
         | PopupType::ConfirmRemoveApp(_)
         | PopupType::DeleteProfileConfirm { .. } => theme.error,
     };
@@ -83,6 +85,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::EditProfile { .. }
         | PopupType::DeleteProfileConfirm { .. }
         | PopupType::EditSavedSearch { .. }
+        | PopupType::CreateSavedSearch { .. }
         | PopupType::CreateMacro { .. }
         | PopupType::EditMacro { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
@@ -91,7 +94,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ConfirmDeleteBatch(_)
         | PopupType::ConfirmEnableApp(_)
         | PopupType::ConfirmDisableApp(_)
-        | PopupType::ConfirmRemoveApp(_) => Wrap { trim: true },
+        | PopupType::ConfirmRemoveApp(_)
+        | PopupType::DeleteSavedSearchConfirm { .. } => Wrap { trim: true },
     };
 
     // Determine alignment based on popup type

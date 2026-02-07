@@ -5,6 +5,9 @@
 //! - Handle Ctrl+C copy of selected saved search name
 //! - Handle Ctrl+E export of saved searches list
 //! - Handle 'e' key to edit selected saved search
+//! - Handle 'n' key to create a new saved search
+//! - Handle 'd' key to delete selected saved search
+//! - Handle 't' key to toggle enabled/disabled state
 //!
 //! Does NOT handle:
 //! - Does NOT handle global navigation (handled by keymap)
@@ -72,6 +75,59 @@ impl App {
                         search_mode: SearchMode::Normal,
                         realtime_window: None,
                     });
+                }
+                None
+            }
+            // 'n' key: Create new saved search
+            KeyCode::Char('n') => {
+                self.popup = Some(
+                    crate::ui::popup::Popup::builder(
+                        crate::ui::popup::PopupType::CreateSavedSearch {
+                            name_input: String::new(),
+                            search_input: String::new(),
+                            description_input: String::new(),
+                            disabled: false,
+                            selected_field: crate::ui::popup::SavedSearchField::Name,
+                        },
+                    )
+                    .build(),
+                );
+                None
+            }
+            // 'd' key: Delete selected saved search (with confirmation)
+            KeyCode::Char('d') => {
+                if let Some(search) = self.saved_searches.as_ref().and_then(|searches| {
+                    self.saved_searches_state
+                        .selected()
+                        .and_then(|i| searches.get(i))
+                }) {
+                    self.popup = Some(
+                        crate::ui::popup::Popup::builder(
+                            crate::ui::popup::PopupType::DeleteSavedSearchConfirm {
+                                search_name: search.name.clone(),
+                            },
+                        )
+                        .build(),
+                    );
+                } else {
+                    self.toasts.push(Toast::info("No saved search selected"));
+                }
+                None
+            }
+            // 't' key: Toggle enabled/disabled state of selected saved search
+            KeyCode::Char('t') => {
+                if let Some(search) = self.saved_searches.as_ref().and_then(|searches| {
+                    self.saved_searches_state
+                        .selected()
+                        .and_then(|i| searches.get(i))
+                }) {
+                    // Toggle the disabled state
+                    return Some(Action::ToggleSavedSearch {
+                        name: search.name.clone(),
+                        disabled: !search.disabled,
+                    });
+                } else {
+                    self.toasts.push(Toast::info("No saved search selected"));
                 }
                 None
             }

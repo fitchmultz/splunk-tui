@@ -73,6 +73,42 @@ pub enum SavedSearchesCommand {
         #[arg(long)]
         disabled: Option<bool>,
     },
+    /// Create a new saved search
+    Create {
+        /// Name of the saved search to create
+        #[arg(value_name = "NAME")]
+        name: String,
+        /// Search query (SPL) - required
+        #[arg(short, long, required = true)]
+        search: String,
+        /// Description for the saved search
+        #[arg(short, long)]
+        description: Option<String>,
+        /// Create the saved search in disabled state
+        #[arg(long)]
+        disabled: bool,
+    },
+    /// Delete a saved search by name
+    Delete {
+        /// Name of the saved search to delete
+        #[arg(value_name = "NAME")]
+        name: String,
+        /// Force deletion without confirmation
+        #[arg(short, long)]
+        force: bool,
+    },
+    /// Enable a saved search
+    Enable {
+        /// Name of the saved search to enable
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+    /// Disable a saved search
+    Disable {
+        /// Name of the saved search to disable
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
 }
 
 pub async fn run(
@@ -124,6 +160,31 @@ pub async fn run(
                 cancel,
             )
             .await
+        }
+        SavedSearchesCommand::Create {
+            name,
+            search,
+            description,
+            disabled,
+        } => {
+            run_create(
+                config,
+                &name,
+                &search,
+                description.as_deref(),
+                disabled,
+                cancel,
+            )
+            .await
+        }
+        SavedSearchesCommand::Delete { name, force } => {
+            run_delete(config, &name, force, cancel).await
+        }
+        SavedSearchesCommand::Enable { name } => {
+            run_enable_disable(config, &name, false, cancel).await
+        }
+        SavedSearchesCommand::Disable { name } => {
+            run_enable_disable(config, &name, true, cancel).await
         }
     }
 }
@@ -270,6 +331,102 @@ async fn run_edit(
         }
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     }
+
+    Ok(())
+}
+
+async fn run_create(
+    config: splunk_config::Config,
+    name: &str,
+    search: &str,
+    description: Option<&str>,
+    disabled: bool,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Creating saved search: {}", name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    // First create the saved search
+    tokio::select! {
+        res = client.create_saved_search(name, search) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to create saved search '{}'", name))?;
+
+    // If description or disabled flag provided, update the saved search
+    if description.is_some() || disabled {
+        tokio::select! {
+            res = client.update_saved_search(name, None, description, Some(disabled)) => res,
+            _ = cancel.cancelled() => return Err(Cancelled.into()),
+        }
+        .with_context(|| {
+            format!(
+                "Failed to update saved search '{}' with description/disabled",
+                name
+            )
+        })?;
+    }
+
+    println!("Saved search '{}' created successfully.", name);
+    Ok(())
+}
+
+async fn run_delete(
+    config: splunk_config::Config,
+    name: &str,
+    force: bool,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    info!("Deleting saved search: {}", name);
+
+    if !force {
+        // Prompt for confirmation
+        eprint!(
+            "Are you sure you want to delete saved search '{}'? [y/N] ",
+            name
+        );
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        if !input.trim().eq_ignore_ascii_case("y") {
+            println!("Cancelled.");
+            return Ok(());
+        }
+    }
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    tokio::select! {
+        res = client.delete_saved_search(name) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to delete saved search '{}'", name))?;
+
+    println!("Saved search '{}' deleted successfully.", name);
+
+    Ok(())
+}
+
+async fn run_enable_disable(
+    config: splunk_config::Config,
+    name: &str,
+    disabled: bool,
+    cancel: &crate::cancellation::CancellationToken,
+) -> Result<()> {
+    let action = if disabled { "Disabling" } else { "Enabling" };
+    info!("{} saved search: {}", action, name);
+
+    let mut client = crate::commands::build_client_from_config(&config)?;
+
+    let status = if disabled { "disabled" } else { "enabled" };
+
+    tokio::select! {
+        res = client.update_saved_search(name, None, None, Some(disabled)) => res,
+        _ = cancel.cancelled() => return Err(Cancelled.into()),
+    }
+    .with_context(|| format!("Failed to {} saved search '{}'", status, name))?;
+
+    println!("Saved search '{}' {} successfully.", name, status);
 
     Ok(())
 }

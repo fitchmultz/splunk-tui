@@ -250,6 +250,9 @@ The Search screen has two input modes that affect how keys are handled:
 - `Enter`: Run selected search
 - `j/k or Up/Down`: Navigate list
 - `e`: Edit selected saved search
+- `n`: Create new saved search
+- `d`: Delete selected saved search
+- `t`: Toggle saved search enabled/disabled state
 
 #### Macros Screen
 - `r`: Refresh macros
