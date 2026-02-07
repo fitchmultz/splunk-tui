@@ -125,7 +125,7 @@ fn test_session_manager_set_token_not_in_debug_output() {
 
     let mut manager = SessionManager::new(strategy);
     let session_token = "new-session-token-after-login-123";
-    manager.set_session_token(session_token.to_string(), Some(3600), None);
+    manager.set_session_token(session_token.to_string(), Some(3600));
 
     let debug_output = format!("{:?}", manager);
 
@@ -147,7 +147,7 @@ fn test_session_clear_not_logged() {
 
     let mut manager = SessionManager::new(strategy);
     let session_token = "session-to-be-cleared-456";
-    manager.set_session_token(session_token.to_string(), Some(3600), None);
+    manager.set_session_token(session_token.to_string(), Some(3600));
 
     // Clear the session
     manager.clear_session();
@@ -271,7 +271,7 @@ fn test_multiple_secrets_redacted() {
     };
 
     let mut manager = SessionManager::new(strategy);
-    manager.set_session_token("session-token-123".to_string(), Some(3600), None);
+    manager.set_session_token("session-token-123".to_string(), Some(3600));
 
     let debug_output = format!("{:?}", manager);
 

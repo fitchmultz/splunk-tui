@@ -89,13 +89,10 @@ impl SplunkClient {
             )
             .await?;
 
-            // Use configured session TTL and buffer for proactive refresh
+            // Use configured session TTL for proactive refresh
             let token_clone = token.clone();
-            self.session_manager.set_session_token(
-                token_clone,
-                Some(self.session_ttl_seconds),
-                Some(self.session_expiry_buffer_seconds),
-            );
+            self.session_manager
+                .set_session_token(token_clone, Some(self.session_ttl_seconds));
 
             Ok(token)
         } else {

@@ -2,42 +2,586 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0375",
+      "id": "RQ-0378",
       "status": "todo",
-      "title": "Remove per-session expiry_buffer_seconds from SessionToken",
-      "description": "The SessionToken struct stores expiry_buffer_seconds per instance, but this is always set to the same constant (DEFAULT_EXPIRY_BUFFER_SECS = 60). This adds unnecessary complexity and memory overhead. The constant should be used directly in the will_expire_soon method.",
-      "priority": "low",
+      "title": "Fix TUI PageDown panic on empty lists",
+      "description": "Opportunity type: reliability\n\nEvidence:\n- `crates/tui/src/app/navigation.rs` uses `len() - 1` without an empty-list guard for multiple screens in `next_page()`, which panics when the loaded list is empty (e.g., `indexes.len() - 1`, `searches.len() - 1`, `logs.len() - 1`, `apps.len() - 1`).\n\nWhy it matters:\n- A single PageDown on an empty list can crash the TUI, potentially leaving the terminal in a bad state and breaking core navigation workflows.\n\nProposed approach:\n- Minimal slice: harden `next_page()` to handle `Some(vec![])` safely for all affected screens (Indexes, Saved Searches, Internal Logs, Apps) by short-circuiting on empty and/or using `saturating_sub(1)` with explicit empty handling.\n- Refactor: centralize the “safe next-page index clamp” into a small helper to avoid repeated edge-case bugs.\n\nRisks and mitigations:\n- Risk: behavior change for empty selections. Mitigation: define invariant: if list is empty, selection stays `None` and paging is a no-op.\n\nAcceptance criteria:\n- Unit/integration tests that exercise `next_page()` on each affected screen when the corresponding list is `Some(vec![])` and confirm no panic and stable selection semantics.\n- `make test` passes.\n\nPriority rationale:\n- High: prevents an end-user crash in normal navigation.",
+      "priority": "high",
       "tags": [
-        "maintenance",
-        "YAGNI",
-        "KISS",
-        "client",
-        "refactor"
+        "innovation",
+        "tui",
+        "reliability",
+        "bug"
       ],
       "scope": [
-        "crates/client/src/auth.rs:29-34,47,62-73"
+        "crates/tui/src/app/navigation.rs",
+        "crates/tui/tests/",
+        "make test"
       ],
       "evidence": [
-        "Lines 33-34: expiry_buffer_seconds: u64 stored per token",
-        "Line 47: Always set to DEFAULT_EXPIRY_BUFFER_SECS via unwrap_or()",
-        "Lines 62-73: Complex calculation using self.expiry_buffer_seconds for a constant value"
+        "crates/tui/src/app/navigation.rs:159-185 uses indexes.len() - 1 / searches.len() - 1 / logs.len() - 1 / apps.len() - 1 without empty checks in next_page()",
+        "crates/tui/src/app/navigation.rs:187-195 guards cluster peers with !peers.is_empty(), showing the intended pattern exists"
       ],
       "plan": [
-        "Remove expiry_buffer_seconds field from SessionToken struct",
-        "Update will_expire_soon() to use DEFAULT_EXPIRY_BUFFER_SECS directly",
-        "Remove expiry_buffer_seconds parameter from constructor",
-        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
+        "Add a small helper for safe page-forward selection clamping (handles empty lists by returning None/no-op).",
+        "Apply the helper in `App::next_page()` for Indexes, Saved Searches, Internal Logs, and Apps.",
+        "Add tests covering empty-list paging for each affected screen (no panic; selection stays None).",
+        "Verify by running `make test` and confirming `cargo test -p splunk-tui` passes."
       ],
       "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "YAGNI"
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0379",
+      "status": "todo",
+      "title": "Stop dropping TUI keyboard input under backpressure",
+      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- The TUI input task uses `try_send()` and explicitly drops input events when the action channel is full (`Input channel full, dropping input event`). This can drop keypresses and make user actions non-deterministic under load.\n\nWhy it matters:\n- Missed key events can lead to repeated commands, accidental operations, or the perception that the UI is frozen. This is especially harmful during incident response where operators hammer keys while the app is busy.\n\nProposed approach:\n- Minimal slice: never drop `Key` events. If the channel is full, apply backpressure by awaiting `send()` for keys while continuing to drop high-frequency mouse move events when full.\n- If necessary, split channels: `tx_user` (keys) and `tx_bg` (background updates), with the main loop prioritizing draining user input first.\n\nRisks and mitigations:\n- Risk: blocking the input stream could slow event ingestion. Mitigation: bounded channel + prioritization ensures the app drains keys first; mouse events remain droppable to avoid floods.\n\nAcceptance criteria:\n- New stress/regression test that fills the action channel and confirms a keypress is still delivered/processed.\n- No measurable regressions in existing TUI performance tests.\n- `make test` passes.\n\nPriority rationale:\n- High: protects core UX correctness (user intent should not be lost).",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "reliability",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/tests/",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:141-148 drops input events on TrySendError::Full (including Key events)",
+        "crates/tui/src/main.rs:109-113 uses a bounded action channel (DEFAULT_CHANNEL_CAPACITY), making backpressure behavior user-visible"
+      ],
+      "plan": [
+        "Decide on input pipeline strategy (recommended: await-send for Key events, drop-only for Mouse when full).",
+        "Implement the strategy in the input stream task in `crates/tui/src/main.rs`.",
+        "Add a regression test that simulates a full channel and asserts key input is not dropped.",
+        "Verify by running `make test` and confirming `cargo test -p splunk-tui` passes."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0380",
+      "status": "todo",
+      "title": "Add splunk-cli doctor + redacted support bundle",
+      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- There is no dedicated diagnostics command (`rg -n \"doctor\"` finds none in CLI/TUI code).\n- README onboarding doesn’t provide a single “first successful call” verification flow, and live verification is currently a separate script (`scripts/test-live-server.sh`).\n- The client already supports multiple health endpoints and an aggregate health check (`SplunkClient::check_health_aggregate`).\n\nWhy it matters:\n- Operators need a fast, repeatable way to validate config/auth/connectivity and produce actionable diagnostics during setup and incidents.\n- A support bundle (with redaction) reduces time-to-triage for bug reports without leaking secrets.\n\nProposed approach:\n- Minimal slice (CLI-only): add `splunk-cli doctor` that runs a curated checklist:\n  - Config load + precedence summary (profile/config-path/env)\n  - Auth strategy detection (token vs session)\n  - Server info fetch\n  - Health aggregate + partial error reporting\n  - Optional: license + kvstore status\n  - Exit non-zero if any required checks fail\n- Add `--bundle <path>` to write a JSON report plus a zip/tar containing:\n  - redacted config summary\n  - redacted environment keys (names only)\n  - recent `splunk-tui` logs (if present)\n  - command version + OS/arch\n\nRisks and mitigations:\n- Risk: tests needing a live Splunk. Mitigation: cover failure modes hermetically (missing config, invalid URL) and add live tests under `#[ignore]` for success path.\n\nAcceptance criteria:\n- `splunk-cli doctor --help` includes examples and documents bundle behavior and redaction guarantees.\n- Hermetic tests cover failure modes and output shape; ignored live test covers success path.\n- Docs updated to recommend `splunk-cli doctor` as the first verification step.\n- `make test` passes.\n\nPriority rationale:\n- High: unlocks faster onboarding and reliable troubleshooting for every user.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "reliability",
+        "ux",
+        "supportability"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/dispatch.rs",
+        "crates/cli/src/commands/",
+        "scripts/test-live-server.sh",
+        "README.md",
+        "docs/user-guide.md",
+        "make test"
+      ],
+      "evidence": [
+        "scripts/test-live-server.sh provides manual live verification outside the CLI command surface",
+        "crates/client/src/client/health.rs implements AggregatedHealth via check_health_aggregate() (reusable for doctor)",
+        "rg -n 'doctor' crates/cli crates/tui returns no command/surface for diagnostics"
+      ],
+      "plan": [
+        "Add a `Doctor` top-level subcommand to `crates/cli/src/args.rs` with `--bundle` and output-format flags.",
+        "Implement `crates/cli/src/commands/doctor.rs` using existing client health/server endpoints and strict redaction rules.",
+        "Add hermetic CLI tests for missing/invalid config and bundle redaction; add `#[ignore]` live test for a real server.",
+        "Update README/docs to include a Quick Verify section using `splunk-cli doctor`.",
+        "Verify by running `make test` and (optionally) `make test-live SKIP_LIVE_TESTS=0` against a configured Splunk server."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0381",
+      "status": "todo",
+      "title": "Add password/token stdin+file options to splunk-cli config",
+      "description": "Opportunity type: security / UX improvement\n\nEvidence:\n- `splunk-cli config set` accepts `--password` and `--api-token` as command-line flags (plain strings), which can leak via shell history and process listings.\n- There is no `--*-stdin`, `--*-file`, or `--no-prompt` mode for non-interactive automation.\n\nWhy it matters:\n- Secure automation should avoid placing secrets in argv. This reduces accidental leakage during setup and CI/CD usage.\n\nProposed approach:\n- Add mutually-exclusive options:\n  - `--password-stdin` and `--api-token-stdin` (read a single line from stdin, trim trailing newline).\n  - `--password-file <path>` and `--api-token-file <path>` (read file content, trim).\n  - `--no-prompt` to fail fast instead of prompting (useful for scripts/CI).\n- Keep current interactive prompts as default behavior when a tty is present and `--no-prompt` is not set.\n\nRisks and mitigations:\n- Risk: ambiguous precedence. Mitigation: document and enforce a single precedence order per secret (explicit flag > stdin/file > interactive prompt > existing profile).\n\nAcceptance criteria:\n- `splunk-cli config set --help` includes examples for stdin/file usage and notes that argv secrets are discouraged.\n- Integration tests cover: arg conflicts, stdin reading, file reading, and `--no-prompt` failure mode (no network required).\n- `make test` passes.\n\nPriority rationale:\n- High: directly reduces the chance of secret leakage in common workflows.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "security",
+        "ux",
+        "config"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs",
+        "crates/cli/src/args.rs",
+        "crates/cli/tests/",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/config.rs defines `--password` and `--api-token` as plain String options for ConfigCommand::Set",
+        "crates/cli/src/commands/config.rs uses dialoguer prompts for missing secrets, but offers no stdin/file or no-prompt automation mode"
+      ],
+      "plan": [
+        "Extend `ConfigCommand::Set`/`Edit` options in `crates/cli/src/commands/config.rs` to support stdin/file/no-prompt inputs.",
+        "Implement strict precedence + clap arg-group conflicts to prevent ambiguous secret sources.",
+        "Add integration tests using `assert_cmd` to validate stdin/file behavior and `--no-prompt` failures.",
+        "Update docs (`docs/usage.md`) with secure automation examples.",
+        "Verify by running `make test` and confirming the new tests pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0382",
+      "status": "todo",
+      "title": "Implement saved-searches create/delete/enable/disable (CLI + TUI)",
+      "description": "Opportunity type: feature gap / workflow coverage\n\nEvidence:\n- CLI saved searches are limited to list/info/run/edit (`crates/cli/src/commands/saved_searches.rs`), with explicit non-goal of scheduling. There is no create/delete or enable/disable command surface.\n- TUI Saved Searches screen supports run/edit/export, but not create/delete or enable/disable (keybindings in README).\n- The client already has `create_saved_search`, `delete_saved_search`, and `update_saved_search(..., disabled)` (`crates/client/src/client/search.rs`).\n\nWhy it matters:\n- Saves time by enabling full lifecycle management from the terminal: create → iterate → disable/enable → delete.\n- Reduces reliance on Splunk Web for routine knowledge-object management.\n\nProposed approach:\n- Minimal slice:\n  - CLI: add `splunk-cli saved-searches create <NAME> --search <SPL>` and `delete <NAME> [--force]`, plus `enable/disable <NAME>` wrappers.\n  - TUI: add `n` (new), `d` (delete with confirmation), and `t` (toggle disabled) on Saved Searches screen using the existing popup/action patterns.\n- Expansion: add namespace flags (`--app`, `--owner`) if supported by endpoints; add schedule editing as a later phase.\n\nRisks and mitigations:\n- Risk: destructive operations. Mitigation: confirmations + `--force` in CLI, confirm modal in TUI, and clear error messaging.\n\nAcceptance criteria:\n- CLI help updated with examples; error messages match repo conventions.\n- Hermetic tests cover arg parsing and non-network failure modes; ignored live tests cover success paths.\n- TUI keybindings docs are regenerated and reflect new actions.\n- `make test` passes.\n\nPriority rationale:\n- High: closes a real end-to-end workflow gap using existing client capabilities.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "feature",
+        "cli",
+        "tui",
+        "workflow"
+      ],
+      "scope": [
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/tui/src/app/input/saved_searches.rs",
+        "crates/tui/src/runtime/side_effects/searches.rs",
+        "crates/client/src/client/search.rs",
+        "docs/usage.md",
+        "README.md",
+        "make generate",
+        "make test"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/saved_searches.rs defines only List/Info/Run/Edit subcommands (no Create/Delete/Enable/Disable)",
+        "crates/client/src/client/search.rs exposes create_saved_search(), delete_saved_search(), and update_saved_search(disabled)",
+        "README.md keybindings for Saved Searches show run/edit/export but no create/delete"
+      ],
+      "plan": [
+        "Extend `SavedSearchesCommand` to include create/delete/enable/disable with safe confirmation semantics.",
+        "Add corresponding client calls in CLI command handlers, reusing existing `SplunkClient` methods.",
+        "Add TUI actions + popups for create/delete/toggle-disabled on Saved Searches screen.",
+        "Add hermetic tests for CLI parsing and TUI state transitions; add `#[ignore]` live tests for server-backed behavior.",
+        "Regenerate keybinding docs (`make generate`) and verify docs drift check passes.",
+        "Verify by running `make test` and confirming `make ci` remains green."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0383",
+      "status": "todo",
+      "title": "Add lookup download/upload/delete (client + CLI + TUI)",
+      "description": "Opportunity type: feature gap / integration\n\nEvidence:\n- The client lookup module only lists lookup tables and explicitly does not handle upload/download (`crates/client/src/client/lookups.rs`).\n- CLI and TUI expose lookup listing but not content management (docs show `splunk-cli lookups` list; TUI Lookups screen focuses on list/export).\n\nWhy it matters:\n- Lookup tables are a core Splunk workflow for enrichment. Without download/upload/delete, users must leave the terminal for everyday maintenance.\n\nProposed approach:\n- Minimal slice:\n  - Client: add endpoints for downloading a lookup file (CSV) and uploading/replacing a lookup file, plus deleting a lookup.\n  - CLI: add `lookups download/upload/delete` subcommands with safe defaults and `--force` for delete.\n  - TUI: add at least download (export) and delete, with a preview modal as a follow-up.\n- Expansion: namespace support (`app`, `owner`) and KV store lookup workflows.\n\nRisks and mitigations:\n- Risk: endpoint shape differences across Splunk versions. Mitigation: implement with explicit integration tests under `#[ignore]` and robust error reporting; document supported versions (v9+).\n\nAcceptance criteria:\n- New client methods with unit tests for request building/parsing where possible; live tests validate end-to-end.\n- CLI help includes examples for download/upload and piping-friendly output.\n- TUI keybindings updated + docs regenerated.\n- `make test` passes.\n\nPriority rationale:\n- High: enables a common Splunk admin workflow end-to-end from the terminal.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "feature",
+        "client",
+        "cli",
+        "tui"
+      ],
+      "scope": [
+        "crates/client/src/client/lookups.rs",
+        "crates/client/src/endpoints/lookups.rs",
+        "crates/cli/src/commands/lookups.rs",
+        "crates/tui/src/runtime/side_effects/lookups.rs",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "crates/client/src/client/lookups.rs states it does NOT handle lookup file content upload/download",
+        "docs/usage.md documents `splunk-cli lookups` listing and output formats but not download/upload/delete workflows",
+        "README.md keybindings include Lookups screen with refresh/export/copy but no view/download/upload/delete actions"
+      ],
+      "plan": [
+        "Confirm the Splunk REST endpoints for lookup file download/upload/delete (document links in docs as needed).",
+        "Implement client endpoints and models, keeping public API minimal (`pub(crate)` where possible).",
+        "Add CLI subcommands for download/upload/delete with safe confirmations.",
+        "Add TUI actions for at least download/export and delete (confirmation modal).",
+        "Add hermetic tests for parsing/formatting and ignored live tests for server behavior.",
+        "Verify by running `make test` and confirming `make ci` passes."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0384",
+      "status": "todo",
+      "title": "Centralize SPLUNK_CONFIG_PATH/SPLUNK_PROFILE handling in splunk_config",
+      "description": "Opportunity type: modernization / reliability\n\nEvidence:\n- The docs claim `SPLUNK_CONFIG_PATH` and `SPLUNK_PROFILE` work for both CLI and TUI (`docs/usage.md`).\n- CLI and TUI implement these env vars manually (e.g., TUI checks `env_var_or_none(\"SPLUNK_CONFIG_PATH\")` in `crates/tui/src/main.rs`).\n- The config env loader applies many env vars but does not apply `SPLUNK_CONFIG_PATH` or `SPLUNK_PROFILE` (`crates/config/src/loader/env.rs`).\n\nWhy it matters:\n- Duplicated precedence logic tends to drift and causes hard-to-debug inconsistencies across UI surfaces.\n\nProposed approach:\n- Add first-class support in `ConfigLoader` for config-path + profile env vars (with empty/whitespace filtering), matching the documented precedence rules.\n- Update CLI/TUI to delegate to `splunk_config` for env resolution, leaving only CLI-arg override logic at the app edge.\n\nRisks and mitigations:\n- Risk: subtle precedence changes. Mitigation: codify precedence in tests and update docs alongside code.\n\nAcceptance criteria:\n- New unit tests in `crates/config` covering env parsing and precedence (blank env var values ignored).\n- CLI/TUI code removes duplicated env-var logic and continues to behave as documented.\n- `make test` passes.\n\nPriority rationale:\n- Medium: reduces future bugs and keeps CLI/TUI consistent.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "config",
+        "modernization",
+        "consistency"
+      ],
+      "scope": [
+        "crates/config/src/loader/",
+        "crates/cli/src/main.rs",
+        "crates/tui/src/main.rs",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "docs/usage.md:84-96 documents SPLUNK_CONFIG_PATH and SPLUNK_PROFILE",
+        "crates/config/src/loader/env.rs applies SPLUNK_BASE_URL, SPLUNK_USERNAME, etc, but not SPLUNK_CONFIG_PATH/SPLUNK_PROFILE",
+        "crates/tui/src/main.rs:165-170 manually reads SPLUNK_CONFIG_PATH env var"
+      ],
+      "plan": [
+        "Add env parsing for `SPLUNK_CONFIG_PATH` and `SPLUNK_PROFILE` inside `splunk_config::ConfigLoader` (or a shared helper).",
+        "Update CLI and TUI startup to rely on the centralized loader behavior.",
+        "Add config crate tests proving precedence + blank-value behavior matches docs.",
+        "Update docs to reflect the single source of truth.",
+        "Verify by running `make test` and confirming config loader tests pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0385",
+      "status": "todo",
+      "title": "Fix config precedence docs + add Quick Verify onboarding",
+      "description": "Opportunity type: UX improvement (docs)\n\nEvidence:\n- README lists precedence as CLI args → env vars → profile → defaults, but `docs/usage.md` states `.env` is loaded first before CLI parsing, and documents a different loading order that includes `.env`.\n- README onboarding lacks a single quick verification command; the user guide contains troubleshooting, but new users reading only README don’t get a fast sanity check.\n\nWhy it matters:\n- Misunderstood precedence leads to misconfiguration and wasted debugging time.\n- A quick “first successful call” reduces setup friction and improves adoption.\n\nProposed approach:\n- Unify precedence wording across `README.md`, `docs/usage.md`, and `docs/user-guide.md` by explicitly separating:\n  - dotenv load timing (before clap parsing)\n  - override precedence (CLI flags override env/profile/defaults)\n- Add a “Quick Verify” section in `README.md` (recommended: `splunk-cli health` and expected output patterns), plus a pointer to `splunk-cli doctor` once implemented.\n\nRisks and mitigations:\n- Risk: docs drift again. Mitigation: keep generated keybindings isolated and add a docs-lint note for precedence sections.\n\nAcceptance criteria:\n- Updated docs show a single, consistent precedence order and explicitly mention `.env` load behavior.\n- README includes at least one fast verification flow and a troubleshooting link.\n- `make lint-docs` passes.\n\nPriority rationale:\n- Medium: reduces onboarding friction and support load.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "docs",
+        "ux",
+        "onboarding"
+      ],
+      "scope": [
+        "README.md",
+        "docs/usage.md",
+        "docs/user-guide.md",
+        "make lint-docs"
+      ],
+      "evidence": [
+        "README.md:131-137 documents precedence without mentioning `.env` layer",
+        "docs/usage.md:68-78 documents loading order starting with `.env` before CLI parsing",
+        "README.md lacks a single 'run X and expect Y' verification step"
+      ],
+      "plan": [
+        "Update README/docs to converge on a single configuration precedence explanation (include `.env` load timing and override semantics).",
+        "Add a Quick Verify section to README using existing CLI commands (health/search/indexes) with expected outcomes.",
+        "Run `make lint-docs` to ensure generated sections remain consistent.",
+        "Verify by running `make lint-docs` and confirming no docs drift is reported."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0386",
+      "status": "todo",
+      "title": "Make TUI 'r' key a true refresh (not pagination)",
+      "description": "Opportunity type: UX improvement\n\nEvidence:\n- Several TUI keybindings label `r` as “Refresh …” but bind to `LoadMore*` actions, which is pagination rather than refresh.\n\nWhy it matters:\n- Users expect refresh to reload current data from the beginning. Pagination on `r` makes the UI feel unpredictable and can hide failures (you think you refreshed; you actually appended).\n\nProposed approach:\n- Minimal slice: redefine `r` to reset pagination state and trigger a load at `offset=0` (true refresh) on affected screens (Jobs, Indexes, Apps, Users, etc.).\n- Add an explicit “Load more” key (e.g., `L`) for pagination to keep the capability discoverable.\n- Regenerate keybinding docs to match behavior.\n\nRisks and mitigations:\n- Risk: users accustomed to current behavior. Mitigation: include release note in docs; add a toast the first time the new load-more key is used.\n\nAcceptance criteria:\n- Keybindings and help text match behavior; `r` reliably reloads from offset 0 and clears selection/pagination as specified.\n- TUI tests cover pagination reset semantics.\n- `make test` passes.\n\nPriority rationale:\n- Medium: removes a repeated UX papercut across many screens.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "consistency"
+      ],
+      "scope": [
+        "crates/tui/src/input/keymap/bindings/",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/app/actions/",
+        "make generate",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/input/keymap/bindings/jobs.rs:25-35 describes 'Refresh jobs' but action is Action::LoadMoreJobs",
+        "crates/tui/src/input/keymap/bindings/screens/indexes.rs:22-33 describes 'Refresh indexes' but action is Action::LoadMoreIndexes"
+      ],
+      "plan": [
+        "Identify all screens where `r` is described as refresh but mapped to `LoadMore*`.",
+        "Introduce (or reuse) explicit refresh actions that load with offset=0 and reset pagination state.",
+        "Add a dedicated 'Load more' binding and update the keymap docs generator output.",
+        "Add TUI tests validating refresh resets pagination and load-more advances offset.",
+        "Verify by running `make generate` and `make test` and confirming docs + tests pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0387",
+      "status": "todo",
+      "title": "Make TUI footer/help hints mode- and override-aware",
+      "description": "Opportunity type: UX improvement / reliability\n\nEvidence:\n- The footer always prints “Tab:Next Screen | Shift+Tab:Previous Screen” (`crates/tui/src/app/render.rs`), but Search QueryFocused mode consumes `Tab` for focus toggling and explicitly bypasses global bindings (`crates/tui/src/app.rs`).\n- Footer hints are cached from the default keybinding catalog and do not reflect user keybind overrides (`crates/tui/src/input/keymap/mod.rs` builds FOOTER_HINTS_CACHE from `keybindings()` without overlays).\n- The footer hints cache relies on a manually maintained screen list (`all_screens()`), which can drift when new screens are added.\n\nWhy it matters:\n- Incorrect hints teach the wrong mental model and slow users down. Overrides that don’t show up in help make customization feel broken.\n- Drift in screen lists causes missing hints and hard-to-spot UX regressions.\n\nProposed approach:\n- Minimal slice:\n  - Make footer navigation hints context-aware for Search (QueryFocused: show “Tab:Toggle Focus”, keep screen navigation on `Shift+Tab` and/or `Ctrl+Tab`).\n  - Build help/footer hints from an effective keymap (defaults + overrides) after overrides are initialized.\n  - Add tests asserting `all_screens()` matches `CurrentScreen` variants and that Search footer hints differ by input mode.\n\nRisks and mitigations:\n- Risk: increased runtime work. Mitigation: keep caching, but regenerate cache after applying overrides (one-time).\n\nAcceptance criteria:\n- Help/footer hints match actual behavior for Search mode and overridden bindings.\n- Regression tests prevent screen list drift.\n- `make test` passes.\n\nPriority rationale:\n- Medium: improves ergonomics across every session and reduces confusion.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "documentation",
+        "reliability"
+      ],
+      "scope": [
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/tests/",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/app/render.rs:695-712 hardcodes footer nav width for 'Tab:Next Screen' and renders it unconditionally",
+        "crates/tui/src/app.rs:453-461 skips global bindings for Tab/BackTab in Search QueryFocused mode",
+        "crates/tui/src/input/keymap/mod.rs:111-148 precomputes FOOTER_HINTS_CACHE from default keybindings and does not incorporate overrides"
+      ],
+      "plan": [
+        "Update footer rendering to select navigation hints based on current screen + input mode (Search QueryFocused vs ResultsFocused).",
+        "Introduce an 'effective keybindings' view that merges overrides into the help/footer catalog, and regenerate cache after overrides init.",
+        "Add tests for screen list drift and for override-aware hint rendering.",
+        "Verify by running `make test` and confirming snapshot/help tests still pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0388",
+      "status": "todo",
+      "title": "Ignore stale SPL validation results in TUI",
+      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- SPL validation is debounced, but validation requests are executed asynchronously and results do not carry the originating query or a request id (`Action::SplValidationResult` lacks any correlation field).\n- Under latency, out-of-order responses can overwrite the UI state with errors/warnings for a previous query.\n\nWhy it matters:\n- Users can see incorrect validation errors for text they’ve already edited away, undermining trust in the validator and increasing friction while typing.\n\nProposed approach:\n- Minimal slice: add a monotonically-increasing `validation_request_id` (or hash of the query) to both the request action and the result action. Store the latest id in App state and ignore results that don’t match the latest request.\n- Optional: cancel in-flight validation tasks when a new validation is scheduled (abort join handle), to reduce server load.\n\nRisks and mitigations:\n- Risk: more state plumbing. Mitigation: keep the id small and local to the Search screen state; add focused tests.\n\nAcceptance criteria:\n- Unit tests simulate two validations completing out of order and assert only the latest result is applied.\n- No regressions to existing search input/validation behavior.\n- `make test` passes.\n\nPriority rationale:\n- Medium: improves correctness of an always-on UX feature.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "reliability",
+        "search"
+      ],
+      "scope": [
+        "crates/tui/src/action/variants.rs",
+        "crates/tui/src/app/input/search.rs",
+        "crates/tui/src/runtime/side_effects/searches.rs",
+        "crates/tui/src/app/actions/search.rs",
+        "crates/tui/tests/",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/action/variants.rs:382-394 defines ValidateSpl and SplValidationResult without including the validated query or request id",
+        "crates/tui/src/runtime/side_effects/searches.rs:169-216 spawns validate_spl() calls and sends SplValidationResult with no correlation"
+      ],
+      "plan": [
+        "Extend SPL validation actions to include a request id (and store latest id in App search state).",
+        "Update side effects to attach the request id to results.",
+        "Update App reducer to ignore stale validation results.",
+        "Add tests covering out-of-order completion and ensuring the latest result wins.",
+        "Verify by running `make test` and confirming TUI tests pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0389",
+      "status": "todo",
+      "title": "Add shell completions + manpage generation for splunk-cli/splunk-tui",
+      "description": "Opportunity type: UX improvement\n\nEvidence:\n- `splunk-cli` and `splunk-tui` have a large clap surface area (many subcommands/options) but there is no command to generate shell completions or manpages (no `clap_complete` usage found).\n\nWhy it matters:\n- Completions reduce typos and discovery time for power users and increase automation ergonomics. Manpages enable offline help and better packaging/distribution.\n\nProposed approach:\n- Minimal slice:\n  - Add `splunk-cli completions <shell>` to print completions to stdout.\n  - Add `splunk-cli man` (or `docs`) to print a manpage for the CLI.\n  - Mirror for `splunk-tui` options if useful.\n- Add examples in `--help` showing how to install completions for bash/zsh/fish.\n\nRisks and mitigations:\n- Risk: added dependencies. Mitigation: use minimal, well-maintained clap ecosystem crates (`clap_complete`, `clap_mangen`) behind a small module boundary.\n\nAcceptance criteria:\n- `splunk-cli completions --help` and `splunk-cli man --help` include examples.\n- Tests assert the subcommands produce non-empty output and exit 0 (no network required).\n- `make test` passes.\n\nPriority rationale:\n- Medium: big ergonomic win for relatively small implementation effort.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "cli",
+        "ux",
+        "docs"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/dispatch.rs",
+        "crates/cli/src/commands/",
+        "make test"
+      ],
+      "evidence": [
+        "rg -n 'clap_complete|completions|mangen' crates/cli returns no matches (no completion/man generation implemented)",
+        "crates/cli/src/args.rs defines many subcommands, making completions high leverage"
+      ],
+      "plan": [
+        "Add new clap subcommands for `completions` and `man` in `crates/cli/src/args.rs`.",
+        "Implement the generators using clap’s command model (no network; stdout-only).",
+        "Add tests validating output is non-empty for at least one shell and man generation.",
+        "Verify by running `make test` and confirming CLI tests pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0390",
+      "status": "todo",
+      "title": "Add splunk-cli jobs results subcommand (paginate/export)",
+      "description": "Opportunity type: feature gap / workflow coverage\n\nEvidence:\n- `splunk-cli jobs` supports list/inspect/cancel/delete, but cannot retrieve search job results by SID.\n- The client already supports fetching results for a SID with pagination (`SplunkClient::get_search_results(sid, count, offset)`).\n\nWhy it matters:\n- Job-centric workflows often start with a SID (from TUI, logs, Splunk Web). Being able to fetch results without re-running the search improves incident response and automation.\n\nProposed approach:\n- Minimal slice: add `splunk-cli jobs results <SID> [--count N] [--offset N] [-o json|table|csv|xml] [--output-file PATH]` that calls `get_search_results` and formats results via existing search result formatter.\n- Expansion: add `--all` to iterate pages until completion and stream to stdout/file; add `jobs events` later if needed.\n\nRisks and mitigations:\n- Risk: large outputs. Mitigation: default to a safe count; document `--output-file`; consider NDJSON streaming as a follow-up.\n\nAcceptance criteria:\n- CLI help includes examples and documents pagination flags.\n- Hermetic tests cover arg parsing and formatting glue; ignored live tests validate server behavior.\n- `make test` passes.\n\nPriority rationale:\n- Medium: meaningful workflow unlock with moderate effort.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "cli",
+        "feature",
+        "jobs"
+      ],
+      "scope": [
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/src/args.rs",
+        "crates/client/src/client/search.rs",
+        "crates/cli/tests/",
+        "make test"
+      ],
+      "evidence": [
+        "crates/client/src/client/search.rs exposes get_search_results(sid, count, offset)",
+        "docs/usage.md lists jobs list/inspect/cancel/delete examples but no results retrieval"
+      ],
+      "plan": [
+        "Extend the CLI jobs command surface to include a `results` subcommand with count/offset/output flags.",
+        "Implement handler that calls `SplunkClient::get_search_results` and formats via existing formatter.",
+        "Add hermetic CLI tests for parsing + formatting integration; add `#[ignore]` live test for end-to-end.",
+        "Verify by running `make test` and ensuring CLI tests pass."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0391",
+      "status": "todo",
+      "title": "Refactor SplunkClient to allow concurrent API calls (remove TUI mutex bottleneck)",
+      "description": "Opportunity type: performance / strategic refactor\n\nEvidence:\n- The TUI side-effects layer documents that all API calls are serialized behind a single `Arc<Mutex<SplunkClient>>` because client methods require `&mut self` for session refresh (`crates/tui/src/runtime/side_effects/mod.rs`).\n- CLI `list-all` explicitly fetches resources sequentially for the same reason (`crates/cli/src/commands/list_all/fetchers.rs`).\n\nWhy it matters:\n- Serialized calls increase perceived latency (slow screen loads, slow multi-resource commands) and increase the chance that background refreshes starve user-triggered actions.\n- Making the client concurrency-friendly unlocks parallel health aggregation, faster list-all, and smoother TUI refresh behavior.\n\nProposed approach:\n- Minimal viable slice:\n  - Refactor auth/session token refresh to use interior mutability so request methods can be `&self` (e.g., session manager behind an async lock with a singleflight refresh path).\n  - Update the client API surface accordingly and remove the global mutex in TUI (`Arc<SplunkClient>` instead of `Arc<Mutex<...>>`).\n  - Introduce a concurrency limit (semaphore) at the UI edge to prevent flooding Splunk.\n- Expansion:\n  - Parallelize multi-call aggregations (health aggregate, list-all resources) using `join!` with bounded concurrency.\n\nRisks and mitigations:\n- Risk: race conditions around token refresh. Mitigation: singleflight refresh with strict invariants and tests for concurrent callers.\n- Risk: wide blast radius (signature changes). Mitigation: staged refactor with clear compilation gates and workspace-wide updates.\n\nAcceptance criteria:\n- New tests covering concurrent token refresh behavior and ensuring correctness for both API-token and session-token auth.\n- Demonstrable latency reduction for health aggregation and list-all (documented benchmark or measured in a test/bench).\n- `make test` and `make ci` pass.\n\nPriority rationale:\n- Medium: higher effort, but a strategic enabler for performance and UX across the product.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "client",
+        "tui",
+        "performance",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/",
+        "crates/tui/src/runtime/side_effects/",
+        "crates/cli/src/commands/list_all/",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/mod.rs explains all API calls serialize on Arc<Mutex<SplunkClient>> due to &mut self requirement",
+        "crates/cli/src/commands/list_all/fetchers.rs:16-20 documents sequential resource fetch due to &mut SplunkClient"
+      ],
+      "plan": [
+        "Design the new auth/session management interior-mutability model (singleflight refresh, clear invariants).",
+        "Refactor `SplunkClient` methods to take `&self` where possible and update call sites across CLI/TUI.",
+        "Remove the TUI shared client mutex and add bounded concurrency controls at the runtime edge.",
+        "Parallelize health aggregation and list-all resource fetching with bounded concurrency.",
+        "Add concurrency-focused tests (token refresh races) and update any affected public API docs.",
+        "Verify by running `make ci` and confirming latency improvements via benchmarks/logs."
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T03:33:55Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
       }
     },
     {

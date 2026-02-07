@@ -134,6 +134,7 @@ pub struct SplunkClient {
     pub(crate) session_manager: SessionManager,
     pub(crate) max_retries: usize,
     pub(crate) session_ttl_seconds: u64,
+    #[allow(dead_code)]
     pub(crate) session_expiry_buffer_seconds: u64,
     pub(crate) metrics: Option<MetricsCollector>,
 }

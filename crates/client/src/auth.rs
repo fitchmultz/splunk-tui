@@ -30,22 +30,13 @@ pub struct SessionManager {
 struct SessionToken {
     value: SecretString,
     expires_at: Option<Instant>,
-    expiry_buffer_seconds: u64,
 }
 
 impl SessionToken {
-    fn new(
-        value: SecretString,
-        ttl_seconds: Option<u64>,
-        expiry_buffer_seconds: Option<u64>,
-    ) -> Self {
+    fn new(value: SecretString, ttl_seconds: Option<u64>) -> Self {
         let expires_at =
             ttl_seconds.map(|ttl| Instant::now() + std::time::Duration::from_secs(ttl));
-        Self {
-            value,
-            expires_at,
-            expiry_buffer_seconds: expiry_buffer_seconds.unwrap_or(DEFAULT_EXPIRY_BUFFER_SECS),
-        }
+        Self { value, expires_at }
     }
 
     /// Check if the token is past its actual expiry time.
@@ -62,7 +53,7 @@ impl SessionToken {
     fn will_expire_soon(&self) -> bool {
         self.expires_at
             .map(|exp| {
-                let buffer = std::time::Duration::from_secs(self.expiry_buffer_seconds);
+                let buffer = std::time::Duration::from_secs(DEFAULT_EXPIRY_BUFFER_SECS);
                 // Calculate the effective expiry time (actual expiry minus buffer)
                 // If buffer is larger than remaining time, treat as expiring soon
                 let now = Instant::now();
@@ -109,18 +100,10 @@ impl SessionManager {
     /// # Arguments
     /// * `token` - The session token string
     /// * `ttl_seconds` - Time-to-live in seconds (None means no expiry)
-    /// * `expiry_buffer_seconds` - Buffer before expiry to trigger proactive refresh
-    ///   (None uses the default of 60 seconds)
-    pub fn set_session_token(
-        &mut self,
-        token: String,
-        ttl_seconds: Option<u64>,
-        expiry_buffer_seconds: Option<u64>,
-    ) {
+    pub fn set_session_token(&mut self, token: String, ttl_seconds: Option<u64>) {
         self.session_token = Some(SessionToken::new(
             SecretString::new(token.into()),
             ttl_seconds,
-            expiry_buffer_seconds,
         ));
     }
 
@@ -181,7 +164,7 @@ mod tests {
         assert!(manager.get_bearer_token().is_none());
         assert!(manager.is_session_expired());
 
-        manager.set_session_token("session-key".to_string(), None, None);
+        manager.set_session_token("session-key".to_string(), None);
         assert_eq!(manager.get_bearer_token(), Some("session-key"));
         // Without TTL, session never expires
         assert!(!manager.is_session_expired());
@@ -195,7 +178,7 @@ mod tests {
         };
         let mut manager = SessionManager::new(strategy);
 
-        manager.set_session_token("session-key".to_string(), Some(1), None);
+        manager.set_session_token("session-key".to_string(), Some(1));
         assert!(!manager.is_session_expired());
 
         // Note: Can't easily test actual expiry in unit test without time manipulation
@@ -276,11 +259,7 @@ mod tests {
 
         let mut manager = SessionManager::new(strategy);
         let session_token = "new-session-token-after-login-123";
-        manager.set_session_token(
-            session_token.to_string(),
-            Some(DEFAULT_SESSION_TTL_SECS),
-            None,
-        );
+        manager.set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS));
 
         let debug_output = format!("{:?}", manager);
 
@@ -301,11 +280,7 @@ mod tests {
 
         let mut manager = SessionManager::new(strategy);
         let session_token = "session-to-be-cleared-456";
-        manager.set_session_token(
-            session_token.to_string(),
-            Some(DEFAULT_SESSION_TTL_SECS),
-            None,
-        );
+        manager.set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS));
 
         // Clear the session
         manager.clear_session();
@@ -367,7 +342,6 @@ mod tests {
         manager.set_session_token(
             "session-token-123".to_string(),
             Some(DEFAULT_SESSION_TTL_SECS),
-            None,
         );
 
         let debug_output = format!("{:?}", manager);
@@ -391,11 +365,7 @@ mod tests {
         let mut manager = SessionManager::new(strategy);
 
         // Set token with 120s TTL and 60s buffer - expires in 120s, buffer ends at 60s
-        manager.set_session_token(
-            "session-key".to_string(),
-            Some(120),
-            Some(DEFAULT_EXPIRY_BUFFER_SECS),
-        );
+        manager.set_session_token("session-key".to_string(), Some(120));
 
         // Should not expire soon immediately after setting
         assert!(!manager.session_expires_soon());
@@ -438,8 +408,8 @@ mod tests {
         };
         let mut manager = SessionManager::new(strategy);
 
-        // Set token with 120s TTL and 0s buffer
-        manager.set_session_token("session-key".to_string(), Some(120), Some(0));
+        // Set token with 120s TTL (buffer is DEFAULT_EXPIRY_BUFFER_SECS = 60)
+        manager.set_session_token("session-key".to_string(), Some(120));
 
         // With 0 buffer, will_expire_soon should behave like is_expired
         assert!(!manager.session_expires_soon());
@@ -451,23 +421,22 @@ mod tests {
     #[test]
     fn test_will_expire_soon_returns_true_within_buffer() {
         // Create a session token directly with a very short TTL
+        // With DEFAULT_EXPIRY_BUFFER_SECS = 60 and TTL = 1, will_expire_soon() is always true
         let token = SessionToken::new(
             SecretString::new("test-token".to_string().into()),
-            Some(1), // 1 second TTL
-            Some(2), // 2 second buffer (larger than TTL, so it expires immediately)
+            Some(1), // 1 second TTL (buffer is 60s, so it expires immediately)
         );
 
         // Should be considered expiring soon because buffer > remaining time
         assert!(token.will_expire_soon());
     }
 
-    /// Test that default buffer is applied when not specified.
+    /// Test that default buffer is applied when token is created.
     #[test]
     fn test_default_buffer_applied() {
         let token = SessionToken::new(
             SecretString::new("test-token".to_string().into()),
             Some(DEFAULT_SESSION_TTL_SECS),
-            None, // Use default
         );
 
         // Should have the default buffer (60 seconds)
