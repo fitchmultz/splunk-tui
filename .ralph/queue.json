@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0392",
-      "status": "todo",
-      "title": "Fix unused session_expiry_buffer_seconds field in SplunkClient",
-      "description": "The `session_expiry_buffer_seconds` field in `SplunkClient` struct (crates/client/src/client/mod.rs:137-138) is marked with `#[allow(dead_code)]` and never actually used. The session expiry logic in auth.rs uses the hardcoded `DEFAULT_EXPIRY_BUFFER_SECS` constant instead. This is misleading because users may think they're configuring a custom expiry buffer when it's actually not being used. Either remove the field if the hardcoded default is sufficient, or actually use the field value in the session expiry logic.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "dead-code",
-        "yagni",
-        "configuration"
-      ],
-      "scope": [
-        "crates/client/src/client/mod.rs",
-        "crates/client/src/auth.rs",
-        "crates/client/src/client/builder.rs"
-      ],
-      "evidence": [
-        "File: crates/client/src/client/mod.rs, lines 137-138: #[allow(dead_code)] pub(crate) session_expiry_buffer_seconds: u64",
-        "The field flows through config -> builder -> client but client never references it for actual logic",
-        "auth.rs uses hardcoded DEFAULT_EXPIRY_BUFFER_SECS constant instead"
-      ],
-      "plan": [
-        "Investigate how session_expiry_buffer_seconds is intended to be used",
-        "Either remove the field and #[allow(dead_code)] from SplunkClient, OR",
-        "Update auth.rs to use self.session_expiry_buffer_seconds instead of the constant",
-        "Verify by running `make ci` and ensuring no dead_code warnings"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0393",
       "status": "todo",
       "title": "Extract duplicated delete confirmation prompt into shared helper",

@@ -1,7 +1,6 @@
 //! Authentication strategies and session management.
 
 use secrecy::{ExposeSecret, SecretString};
-use splunk_config::constants::DEFAULT_EXPIRY_BUFFER_SECS;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{Mutex, RwLock};
@@ -34,6 +33,8 @@ pub struct SessionManager {
     refresh_notify: Mutex<Option<Arc<tokio::sync::Notify>>>,
     /// Session TTL in seconds for newly created tokens.
     session_ttl_seconds: u64,
+    /// Buffer in seconds before expiry when proactive refresh should occur.
+    expiry_buffer_seconds: u64,
 }
 
 impl std::fmt::Debug for SessionManager {
@@ -41,6 +42,7 @@ impl std::fmt::Debug for SessionManager {
         f.debug_struct("SessionManager")
             .field("auth_strategy", &self.auth_strategy)
             .field("session_ttl_seconds", &self.session_ttl_seconds)
+            .field("expiry_buffer_seconds", &self.expiry_buffer_seconds)
             .finish_non_exhaustive()
     }
 }
@@ -70,10 +72,10 @@ impl SessionToken {
     ///
     /// This is used to proactively refresh tokens before they expire,
     /// preventing race conditions where a token expires during an API call.
-    fn will_expire_soon(&self) -> bool {
+    fn will_expire_soon(&self, buffer_seconds: u64) -> bool {
         self.expires_at
             .map(|exp| {
-                let buffer = std::time::Duration::from_secs(DEFAULT_EXPIRY_BUFFER_SECS);
+                let buffer = std::time::Duration::from_secs(buffer_seconds);
                 // Calculate the effective expiry time (actual expiry minus buffer)
                 // If buffer is larger than remaining time, treat as expiring soon
                 let now = Instant::now();
@@ -86,12 +88,17 @@ impl SessionToken {
 
 impl SessionManager {
     /// Create a new session manager with the given auth strategy.
-    pub fn new(strategy: AuthStrategy, session_ttl_seconds: u64) -> Self {
+    pub fn new(
+        strategy: AuthStrategy,
+        session_ttl_seconds: u64,
+        expiry_buffer_seconds: u64,
+    ) -> Self {
         Self {
             auth_strategy: strategy,
             session_token: RwLock::new(None),
             refresh_notify: Mutex::new(None),
             session_ttl_seconds,
+            expiry_buffer_seconds,
         }
     }
 
@@ -158,7 +165,7 @@ impl SessionManager {
         let token_guard = self.session_token.read().await;
         token_guard
             .as_ref()
-            .map(|t| t.will_expire_soon())
+            .map(|t| t.will_expire_soon(self.expiry_buffer_seconds))
             .unwrap_or(true)
     }
 
@@ -196,7 +203,7 @@ impl SessionManager {
         {
             let token_guard = self.session_token.read().await;
             if let Some(token) = token_guard.as_ref() {
-                if !token.is_expired() && !token.will_expire_soon() {
+                if !token.is_expired() && !token.will_expire_soon(self.expiry_buffer_seconds) {
                     return Ok(token.value.expose_secret().to_string());
                 }
             }
@@ -261,14 +268,18 @@ impl SessionManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use splunk_config::constants::DEFAULT_SESSION_TTL_SECS;
+    use splunk_config::constants::{DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_SESSION_TTL_SECS};
 
     #[tokio::test]
     async fn test_api_token_bypasses_session() {
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new("test-token".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         assert!(manager.is_api_token());
         assert!(!manager.is_session_expired().await);
     }
@@ -278,7 +289,11 @@ mod tests {
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new("test-token".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         let token = manager.get_bearer_token().await;
         assert_eq!(token, Some("test-token".to_string()));
     }
@@ -289,7 +304,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         assert!(!manager.is_api_token());
         assert!(manager.get_bearer_token().await.is_none());
         assert!(manager.is_session_expired().await);
@@ -311,7 +330,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         manager
             .set_session_token("session-key".to_string(), Some(1))
@@ -376,7 +399,11 @@ mod tests {
             token: SecretString::new(secret_token.to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         let debug_output = format!("{:?}", manager);
 
         // The secret token should NOT appear in debug output
@@ -394,7 +421,11 @@ mod tests {
             password: SecretString::new("password".to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         let session_token = "new-session-token-after-login-123";
         manager
             .set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS))
@@ -417,7 +448,11 @@ mod tests {
             password: SecretString::new("password".to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         let session_token = "session-to-be-cleared-456";
         manager
             .set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS))
@@ -442,7 +477,11 @@ mod tests {
         let api_strategy = AuthStrategy::ApiToken {
             token: SecretString::new("api-token".to_string().into()),
         };
-        let api_manager = SessionManager::new(api_strategy, DEFAULT_SESSION_TTL_SECS);
+        let api_manager = SessionManager::new(
+            api_strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         assert!(!api_manager.is_session_expired().await);
         assert!(api_manager.is_api_token());
 
@@ -451,7 +490,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let session_manager = SessionManager::new(session_strategy, DEFAULT_SESSION_TTL_SECS);
+        let session_manager = SessionManager::new(
+            session_strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         assert!(session_manager.is_session_expired().await);
         assert!(!session_manager.is_api_token());
     }
@@ -464,7 +507,11 @@ mod tests {
             token: SecretString::new(secret_token.to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // Token should be accessible via get_bearer_token (for API calls)
         let bearer = manager.get_bearer_token().await;
@@ -479,7 +526,11 @@ mod tests {
             password: SecretString::new("password1".to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
         manager
             .set_session_token(
                 "session-token-123".to_string(),
@@ -505,7 +556,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // Set token with 120s TTL and 60s buffer - expires in 120s, buffer ends at 60s
         manager
@@ -523,7 +578,11 @@ mod tests {
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new("api-token".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // API tokens never expire
         assert!(!manager.session_expires_soon().await);
@@ -537,7 +596,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // No token set - should be considered expiring soon
         assert!(manager.session_expires_soon().await);
@@ -551,7 +614,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // Set token with 120s TTL (buffer is DEFAULT_EXPIRY_BUFFER_SECS = 60)
         manager
@@ -575,7 +642,7 @@ mod tests {
         );
 
         // Should be considered expiring soon because buffer > remaining time
-        assert!(token.will_expire_soon());
+        assert!(token.will_expire_soon(DEFAULT_EXPIRY_BUFFER_SECS));
     }
 
     /// Test that default buffer is applied when token is created.
@@ -588,7 +655,7 @@ mod tests {
 
         // Should have the default buffer (60 seconds)
         assert!(!token.is_expired());
-        assert!(!token.will_expire_soon());
+        assert!(!token.will_expire_soon(DEFAULT_EXPIRY_BUFFER_SECS));
     }
 
     // ============================================================================
@@ -601,7 +668,11 @@ mod tests {
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new("api-token".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         let login_called = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let login_called_clone = login_called.clone();
@@ -624,7 +695,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // Set a valid token
         manager
@@ -652,7 +727,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         let token = manager
             .get_or_refresh_token(|| async { Ok("new-token".to_string()) })
@@ -672,7 +751,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let manager = SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        );
 
         // Set an expired token (0 seconds TTL = already expired)
         manager
@@ -697,7 +780,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = Arc::new(SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS));
+        let manager = Arc::new(SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        ));
 
         let login_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
 
@@ -740,7 +827,11 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("wrong-pass".to_string().into()),
         };
-        let manager = Arc::new(SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS));
+        let manager = Arc::new(SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        ));
 
         // Spawn 5 concurrent tasks
         let mut handles = vec![];

@@ -104,7 +104,7 @@ fn test_session_manager_token_not_in_debug_output() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy, 3600);
+    let manager = SessionManager::new(strategy, 3600, 60);
     let debug_output = format!("{:?}", manager);
 
     // The secret token should NOT appear in debug output
@@ -123,7 +123,7 @@ async fn test_session_manager_set_token_not_in_debug_output() {
         password: SecretString::new("password".to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy, 3600);
+    let manager = SessionManager::new(strategy, 3600, 60);
     let session_token = "new-session-token-after-login-123";
     manager
         .set_session_token(session_token.to_string(), Some(3600))
@@ -147,7 +147,7 @@ async fn test_session_clear_not_logged() {
         password: SecretString::new("password".to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy, 3600);
+    let manager = SessionManager::new(strategy, 3600, 60);
     let session_token = "session-to-be-cleared-456";
     manager
         .set_session_token(session_token.to_string(), Some(3600))
@@ -187,7 +187,7 @@ async fn test_session_token_expires_api_token_does_not() {
     let api_strategy = AuthStrategy::ApiToken {
         token: SecretString::new("api-token".to_string().into()),
     };
-    let api_manager = SessionManager::new(api_strategy, 3600);
+    let api_manager = SessionManager::new(api_strategy, 3600, 60);
     assert!(
         !api_manager.is_session_expired().await,
         "API token auth should never be expired"
@@ -199,7 +199,7 @@ async fn test_session_token_expires_api_token_does_not() {
         username: "admin".to_string(),
         password: SecretString::new("pass".to_string().into()),
     };
-    let session_manager = SessionManager::new(session_strategy, 3600);
+    let session_manager = SessionManager::new(session_strategy, 3600, 60);
     assert!(
         session_manager.is_session_expired().await,
         "Session auth without token should be expired"
@@ -221,7 +221,7 @@ async fn test_bearer_token_accessible_via_expose_secret() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy, 3600);
+    let manager = SessionManager::new(strategy, 3600, 60);
 
     // Token should be accessible via get_bearer_token (for API calls)
     let bearer = manager.get_bearer_token().await;
@@ -274,7 +274,7 @@ async fn test_multiple_secrets_redacted() {
         password: SecretString::new("password1".to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy, 3600);
+    let manager = SessionManager::new(strategy, 3600, 60);
     manager
         .set_session_token("session-token-123".to_string(), Some(3600))
         .await;
