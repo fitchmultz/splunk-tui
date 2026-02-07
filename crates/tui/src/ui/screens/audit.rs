@@ -2,11 +2,10 @@
 //!
 //! Renders the list of Splunk audit events with filtering capabilities.
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::AuditEvent;
@@ -33,8 +32,8 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title("Audit Events")
-        .border_style(Style::default().fg(theme.border))
-        .title_style(Style::default().fg(theme.title));
+        .border_style(theme.border())
+        .title_style(theme.title());
 
     if config.loading && config.events.is_none() {
         let spinner = spinner_char(config.spinner_frame);
@@ -69,22 +68,14 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
 
     let header_cells = ["Time", "User", "Action", "Target", "Result"]
         .iter()
-        .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.table_header_fg)
-                    .add_modifier(Modifier::BOLD),
-            )
-        });
-    let header = Row::new(header_cells)
-        .style(Style::default().bg(theme.table_header_bg))
-        .height(1);
+        .map(|h| Cell::from(*h).style(theme.table_header()));
+    let header = Row::new(header_cells).height(1);
 
     let rows = events.iter().map(|event| {
-        let result_color = match event.result.to_lowercase().as_str() {
-            "success" => theme.log_info,
-            "failure" | "error" => theme.log_error,
-            _ => theme.text,
+        let result_style = match event.result.to_lowercase().as_str() {
+            "success" => theme.success(),
+            "failure" | "error" => theme.error(),
+            _ => theme.text(),
         };
 
         let cells = vec![
@@ -92,7 +83,7 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
             Cell::from(event.user.as_str()),
             Cell::from(event.action.as_str()),
             Cell::from(event.target.as_str()),
-            Cell::from(event.result.as_str()).style(Style::default().fg(result_color)),
+            Cell::from(event.result.as_str()).style(result_style),
         ];
         Row::new(cells)
     });
@@ -109,12 +100,7 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
     )
     .header(header)
     .block(block)
-    .row_highlight_style(
-        Style::default()
-            .fg(theme.highlight_fg)
-            .bg(theme.highlight_bg)
-            .add_modifier(Modifier::BOLD),
-    )
+    .row_highlight_style(theme.highlight())
     .highlight_symbol(">> ");
 
     f.render_stateful_widget(table, area, config.state);

@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
         "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "test_files_affected": "4",
         "dead_code_count": "25",
         "production_files_affected": "8",
-        "scan_agent": "scan-maintenance",
-        "test_files_affected": "4"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4286,8 +4286,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "remaining_duplicates": "3",
+        "scan_agent": "scan-maintenance",
         "macro_solved_count": "9"
       }
     },
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_methods": "35+",
+        "affected_formatters": "4",
         "scan_agent": "scan-maintenance",
-        "affected_formatters": "4"
+        "estimated_methods": "35+"
       }
     },
     {
@@ -4408,10 +4408,10 @@
       "relates_to": [],
       "custom_fields": {
         "action_variants": "94",
-        "submodule_count": "28",
         "current_line_count": "523",
-        "scan_agent": "scan-maintenance",
-        "target_line_count": "150"
+        "target_line_count": "150",
+        "submodule_count": "28",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "existing_macro_coverage": "4 methods total across all formatters",
+        "scan_agent": "scan-maintenance",
         "formatter_count": "3",
         "estimated_method_count": "45",
-        "scan_agent": "scan-maintenance"
+        "existing_macro_coverage": "4 methods total across all formatters"
       }
     },
     {
@@ -4540,8 +4540,8 @@
       "custom_fields": {
         "command_files": "27",
         "bail_usages": "18",
-        "scan_agent": "scan-maintenance",
-        "with_context_usages": "120+"
+        "with_context_usages": "120+",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4593,12 +4593,97 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "screen_files": "22",
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
         "file_count": "23",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
+        "screen_files": "22"
+      }
+    },
+    {
+      "id": "RQ-0364",
+      "status": "done",
+      "title": "Migrate TUI screens to ThemeExt trait for consistent styling",
+      "description": "26 TUI screen files use manual style construction (Pattern A) while ThemeExt trait exists (Pattern B). This causes inconsistent UI appearance and makes theme changes difficult. Pattern A manually constructs Style with Style::default().fg(theme.border), Style::default().fg(theme.highlight_fg), etc. Pattern B uses theme.border(), theme.highlight() which is cleaner and centralized.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "KISS",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/alerts.rs",
+        "crates/tui/src/ui/screens/apps.rs",
+        "crates/tui/src/ui/screens/audit.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/tui/src/ui/screens/configs.rs",
+        "crates/tui/src/ui/screens/dashboards.rs",
+        "crates/tui/src/ui/screens/datamodels.rs",
+        "crates/tui/src/ui/screens/forwarders.rs",
+        "crates/tui/src/ui/screens/health.rs",
+        "crates/tui/src/ui/screens/indexes.rs",
+        "crates/tui/src/ui/screens/inputs.rs",
+        "crates/tui/src/ui/screens/internal_logs.rs",
+        "crates/tui/src/ui/screens/job_details.rs",
+        "crates/tui/src/ui/screens/kvstore.rs",
+        "crates/tui/src/ui/screens/license.rs",
+        "crates/tui/src/ui/screens/lookups.rs",
+        "crates/tui/src/ui/screens/macros.rs",
+        "crates/tui/src/ui/screens/multi_instance.rs",
+        "crates/tui/src/ui/screens/overview.rs",
+        "crates/tui/src/ui/screens/roles.rs",
+        "crates/tui/src/ui/screens/saved_searches.rs",
+        "crates/tui/src/ui/screens/search.rs",
+        "crates/tui/src/ui/screens/search_peers.rs",
+        "crates/tui/src/ui/screens/shc.rs",
+        "crates/tui/src/ui/screens/users.rs",
+        "crates/tui/src/ui/screens/workload.rs",
+        "crates/tui/src/ui/theme.rs"
+      ],
+      "evidence": [
+        "Pattern A (26 files): Uses Style::default().fg(theme.border), Style::default().fg(theme.title), .fg(theme.highlight_fg), .bg(theme.highlight_bg)",
+        "Pattern B (2 files - correct): jobs.rs and settings.rs use theme.border(), theme.title(), theme.highlight(), theme.success(), theme.warning()",
+        "ThemeExt trait exists in crates/tui/src/ui/theme.rs with 18 methods: text(), text_dim(), title(), border(), border_focused(), highlight(), success(), warning(), error(), info(), disabled(), table_header(), syntax_command(), syntax_string(), syntax_number(), syntax_comment()",
+        "Helper functions exist in theme::helpers: selected_style(), focused_style(), muted_style(), primary_button_style(), secondary_button_style()"
+      ],
+      "plan": [
+        "Review jobs.rs and settings.rs as reference implementations for Pattern B",
+        "Migrate screen files in priority order: indexes.rs, users.rs, alerts.rs, apps.rs, cluster.rs",
+        "Migrate remaining screen files: dashboards.rs, health.rs, license.rs, audit.rs, configs.rs, etc.",
+        "For each file: add 'use crate::ui::theme::ThemeExt;', replace Style::default().fg(theme.xxx) with theme.xxx()",
+        "Replace .fg(theme.highlight_fg).bg(theme.highlight_bg) with theme.highlight()",
+        "Verify by running: 'cargo test -p splunk-tui' and 'make ci'"
+      ],
+      "notes": [
+        "CRATES/tui/src/ui/screens/theme.rs does not exist - removed from scope",
+        "CRATES/tui/src/ui/theme.rs contains the ThemeExt trait - added to scope for potential helper additions",
+        "All 8 originally scoped files confirmed to use Pattern A (manual style construction)",
+        "Total of 26 files need migration to ThemeExt trait",
+        "Reference implementations: jobs.rs and settings.rs demonstrate correct Pattern B usage",
+        "Migrated all 26 TUI screen files to ThemeExt trait (Pattern B)",
+        "Fixed Pattern A remnants in 7 files: audit.rs, internal_logs.rs, cluster.rs, shc.rs, job_details.rs, configs.rs, search.rs",
+        "Removed unused Style imports from 4 files",
+        "All 563 tests pass, CI clean",
+        "Net reduction: 178 lines (-518 → -340) through DRY principle"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T01:06:28.771311660Z",
+      "completed_at": "2026-02-07T01:06:28.771311660Z",
+      "started_at": "2026-02-07T00:37:26.381995484Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
+        "files_using_pattern_a": "26",
+        "files_using_pattern_b": "2",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi"
       }
     }
   ]

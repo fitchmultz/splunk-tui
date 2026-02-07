@@ -11,14 +11,13 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::SearchPeer;
 
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the search peers screen.
 pub struct SearchPeersRenderConfig<'a> {
@@ -77,22 +76,16 @@ pub fn render_search_peers(f: &mut Frame, area: Rect, config: SearchPeersRenderC
     // Build table rows
     let header_cells = ["Name", "Host", "Port", "Status", "Version"]
         .iter()
-        .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.accent)
-                    .add_modifier(Modifier::BOLD),
-            )
-        });
+        .map(|h| Cell::from(*h).style(theme.table_header()));
     let header = Row::new(header_cells).height(1);
 
     let rows: Vec<Row> = peers
         .iter()
         .map(|peer| {
             let status_style = match peer.status.as_str() {
-                "Up" => Style::default().fg(theme.success),
-                "Down" => Style::default().fg(theme.error),
-                _ => Style::default().fg(theme.warning),
+                "Up" => theme.success(),
+                "Down" => theme.error(),
+                _ => theme.warning(),
             };
 
             let cells = vec![
@@ -118,7 +111,7 @@ pub fn render_search_peers(f: &mut Frame, area: Rect, config: SearchPeersRenderC
     )
     .header(header)
     .block(Block::default().borders(Borders::ALL).title("Search Peers"))
-    .row_highlight_style(Style::default().bg(theme.accent).fg(theme.background))
+    .row_highlight_style(theme.highlight())
     .highlight_symbol("> ");
 
     f.render_stateful_widget(table, area, peers_state);

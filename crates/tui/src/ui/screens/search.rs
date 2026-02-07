@@ -6,7 +6,7 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::Style,
     text::Line,
     widgets::{Block, Borders, Gauge, Paragraph},
 };
@@ -15,6 +15,8 @@ use crate::app::SplValidationState;
 use crate::app::input::components::SingleLineInput;
 use splunk_client::SearchMode;
 use splunk_config::Theme;
+
+use crate::ui::theme::ThemeExt;
 
 /// Configuration for rendering the search screen.
 pub struct SearchRenderConfig<'a> {
@@ -180,12 +182,7 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
     if loading {
         let gauge = Gauge::default()
             .block(Block::default().borders(Borders::ALL).title("Status"))
-            .gauge_style(
-                Style::default()
-                    .fg(theme.info)
-                    .bg(theme.background)
-                    .add_modifier(Modifier::ITALIC),
-            )
+            .gauge_style(theme.info().add_modifier(ratatui::style::Modifier::ITALIC))
             .ratio(progress.clamp(0.0, 1.0) as f64)
             .label(format!("{} ({:.0}%)", search_status, progress * 100.0));
         f.render_widget(gauge, chunks[1]);
@@ -194,8 +191,8 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Status")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         );
         f.render_widget(status, chunks[1]);
     }
@@ -210,8 +207,8 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
                 Block::default()
                     .borders(Borders::ALL)
                     .title("Results")
-                    .border_style(Style::default().fg(theme.border))
-                    .title_style(Style::default().fg(theme.title)),
+                    .border_style(theme.border())
+                    .title_style(theme.title()),
             )
             .alignment(Alignment::Center);
         f.render_widget(placeholder, chunks[2]);
@@ -262,8 +259,8 @@ pub fn render_search(f: &mut Frame, area: Rect, config: SearchRenderConfig) {
             Block::default()
                 .borders(Borders::ALL)
                 .title(title)
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         );
         f.render_widget(results, chunks[2]);
     }

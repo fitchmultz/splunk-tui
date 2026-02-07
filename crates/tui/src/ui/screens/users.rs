@@ -5,13 +5,12 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::User;
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the users screen.
 pub struct UsersRenderConfig<'a> {
@@ -92,15 +91,10 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Users")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
-        .highlight_style(
-            Style::default()
-                .fg(theme.highlight_fg)
-                .bg(theme.highlight_bg)
-                .add_modifier(Modifier::BOLD),
-        );
+        .highlight_style(theme.highlight());
     f.render_stateful_widget(list, area, state);
 }
 

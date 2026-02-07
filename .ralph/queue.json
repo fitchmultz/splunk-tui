@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0364",
-      "status": "todo",
-      "title": "Migrate TUI screens to ThemeExt trait for consistent styling",
-      "description": "20+ TUI screen files use manual style construction (Pattern A) while ThemeExt trait exists (Pattern B). This causes inconsistent UI appearance and makes theme changes difficult. Pattern A manually constructs Style with theme.border, theme.highlight_fg, etc. Pattern B uses theme.border(), theme.highlight() which is cleaner and centralized.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "KISS",
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/indexes.rs",
-        "crates/tui/src/ui/screens/users.rs",
-        "crates/tui/src/ui/screens/alerts.rs",
-        "crates/tui/src/ui/screens/apps.rs",
-        "crates/tui/src/ui/screens/cluster.rs",
-        "crates/tui/src/ui/screens/dashboards.rs",
-        "crates/tui/src/ui/screens/health.rs",
-        "crates/tui/src/ui/screens/license.rs",
-        "crates/tui/src/ui/screens/theme.rs"
-      ],
-      "evidence": [
-        "Pattern A (20+ files): Block::default().borders(Borders::ALL).title('Indexes').border_style(Style::default().fg(theme.border))",
-        "Pattern B (2 files - correct): Block::default().borders(Borders::ALL).border_style(theme.border())",
-        "jobs.rs and settings.rs already use ThemeExt correctly"
-      ],
-      "plan": [
-        "Add styled_block(theme, title) helper to theme.rs for common block construction",
-        "Add highlight_style(theme) helper for consistent selection highlighting",
-        "Migrate indexes.rs, users.rs, alerts.rs, apps.rs, cluster.rs to ThemeExt",
-        "Migrate remaining screen files (dashboards, health, license, etc.)",
-        "Verify by running TUI snapshot tests: 'cargo test -p splunk-tui snapshot_'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
-      }
-    },
-    {
       "id": "RQ-0365",
       "status": "todo",
       "title": "Extract shared loading and empty state widgets to reduce 200+ lines of duplication",
@@ -167,8 +119,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -244,8 +196,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -283,8 +235,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     },
     {
@@ -510,8 +462,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "fail-fast"
+        "principle": "fail-fast",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -544,8 +496,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

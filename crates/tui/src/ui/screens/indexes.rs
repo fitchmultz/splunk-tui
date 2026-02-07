@@ -5,13 +5,12 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Index;
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the indexes screen.
 pub struct IndexesRenderConfig<'a> {
@@ -80,14 +79,9 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Indexes")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
-        .highlight_style(
-            Style::default()
-                .fg(theme.highlight_fg)
-                .bg(theme.highlight_bg)
-                .add_modifier(Modifier::BOLD),
-        );
+        .highlight_style(theme.highlight());
     f.render_stateful_widget(list, area, state);
 }

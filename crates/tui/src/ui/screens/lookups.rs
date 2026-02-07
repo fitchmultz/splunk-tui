@@ -11,14 +11,13 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::LookupTable;
 
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the lookups screen.
 pub struct LookupsRenderConfig<'a> {
@@ -77,13 +76,7 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
     // Build table rows
     let header_cells = ["Name", "Filename", "Owner", "App", "Sharing", "Size"]
         .iter()
-        .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.accent)
-                    .add_modifier(Modifier::BOLD),
-            )
-        });
+        .map(|h| Cell::from(*h).style(theme.table_header()));
     let header = Row::new(header_cells).height(1);
 
     let rows: Vec<Row> = lookups
@@ -115,7 +108,7 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
     )
     .header(header)
     .block(Block::default().borders(Borders::ALL).title("Lookups"))
-    .row_highlight_style(Style::default().bg(theme.accent).fg(theme.background))
+    .row_highlight_style(theme.highlight())
     .highlight_symbol("> ");
 
     f.render_stateful_widget(table, area, lookups_state);

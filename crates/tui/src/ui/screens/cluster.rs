@@ -15,14 +15,14 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
-    style::{Modifier, Style},
+    style::Style,
     widgets::{Block, Borders, Cell, List, ListItem, Row, Table, TableState},
 };
 use splunk_client::models::{ClusterInfo, ClusterPeer};
 use splunk_config::Theme;
 
 use crate::app::state::ClusterViewMode;
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the cluster screen.
 pub struct ClusterRenderConfig<'a> {
@@ -116,8 +116,8 @@ fn render_summary(f: &mut Frame, area: Rect, info: &ClusterInfo, theme: &Theme) 
         Block::default()
             .borders(Borders::ALL)
             .title("Cluster Information (Summary) - Press 'p' for peers")
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     );
     f.render_widget(list, area);
 }
@@ -141,8 +141,8 @@ fn render_peers(
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
-        .border_style(Style::default().fg(theme.border))
-        .title_style(Style::default().fg(theme.title));
+        .border_style(theme.border())
+        .title_style(theme.title());
 
     let peers = match peers {
         Some(p) => p,
@@ -182,14 +182,7 @@ fn render_peers(
     // Create header row with styling
     let header_cells: Vec<Cell> = headers
         .iter()
-        .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.table_header_fg)
-                    .bg(theme.table_header_bg)
-                    .add_modifier(Modifier::BOLD),
-            )
-        })
+        .map(|h| Cell::from(*h).style(theme.table_header()))
         .collect();
     let header = Row::new(header_cells).height(1);
 
@@ -236,7 +229,7 @@ fn render_peers(
     let table = Table::new(rows, constraints)
         .header(header)
         .block(block)
-        .row_highlight_style(Style::default().bg(theme.highlight_bg));
+        .row_highlight_style(theme.highlight());
 
     f.render_stateful_widget(table, area, state);
 }
@@ -244,10 +237,10 @@ fn render_peers(
 /// Get the style for a peer status.
 fn peer_status_style(status: &str, theme: &Theme) -> Style {
     match status.to_lowercase().as_str() {
-        "up" => Style::default().fg(theme.success),
-        "down" => Style::default().fg(theme.error),
-        "pending" => Style::default().fg(theme.warning),
-        _ => Style::default().fg(theme.text),
+        "up" => theme.success(),
+        "down" => theme.error(),
+        "pending" => theme.warning(),
+        _ => theme.text(),
     }
 }
 

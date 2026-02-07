@@ -11,14 +11,14 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::Modifier,
     text::{Line, Span, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
 
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Render the macros screen with a split view (list on top, preview on bottom).
 pub fn render_macros_screen(
@@ -66,13 +66,13 @@ fn render_macros_list(
     let block = Block::default()
         .title(" Search Macros ")
         .borders(Borders::ALL)
-        .border_style(theme.border);
+        .border_style(theme.border());
 
     if loading && macros.is_none() {
         let spinner = spinner_char(spinner_frame);
         let loading_text = Paragraph::new(format!("{} Loading macros...", spinner))
             .block(block)
-            .style(theme.text);
+            .style(theme.text());
         f.render_widget(loading_text, area);
         return;
     }
@@ -81,13 +81,13 @@ fn render_macros_list(
         None => {
             let empty_text = Paragraph::new("Press 'r' to load macros")
                 .block(block)
-                .style(theme.text);
+                .style(theme.text());
             f.render_widget(empty_text, area);
         }
         Some([]) => {
             let empty_text = Paragraph::new("No macros found")
                 .block(block)
-                .style(theme.text);
+                .style(theme.text());
             f.render_widget(empty_text, area);
         }
         Some(macros_list) => {
@@ -100,11 +100,9 @@ fn render_macros_list(
                     let content = format!("{}{}{}", name, eval_marker, disabled_marker);
 
                     let style = if m.disabled {
-                        Style::default()
-                            .fg(Color::DarkGray)
-                            .add_modifier(Modifier::ITALIC)
+                        theme.disabled().add_modifier(Modifier::ITALIC)
                     } else {
-                        Style::default()
+                        theme.text()
                     };
 
                     ListItem::new(content).style(style)
@@ -113,12 +111,7 @@ fn render_macros_list(
 
             let list = List::new(items)
                 .block(block)
-                .highlight_style(
-                    Style::default()
-                        .bg(theme.highlight_bg)
-                        .fg(theme.highlight_fg)
-                        .add_modifier(Modifier::BOLD),
-                )
+                .highlight_style(theme.highlight())
                 .highlight_symbol("> ");
 
             f.render_stateful_widget(list, area, list_state);
@@ -136,7 +129,7 @@ fn render_macro_preview(
     let block = Block::default()
         .title(" Macro Definition ")
         .borders(Borders::ALL)
-        .border_style(theme.border);
+        .border_style(theme.border());
 
     let content = match (macros, list_state.selected()) {
         (Some(macros_list), Some(selected)) if selected < macros_list.len() => {
@@ -145,14 +138,14 @@ fn render_macro_preview(
 
             // Name
             lines.push(Line::from(vec![
-                Span::styled("Name: ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Name: ", theme.title()),
                 Span::raw(&macro_item.name),
             ]));
 
             // Args if present
             if let Some(ref args) = macro_item.args {
                 lines.push(Line::from(vec![
-                    Span::styled("Arguments: ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled("Arguments: ", theme.title()),
                     Span::raw(args),
                 ]));
             }
@@ -160,10 +153,7 @@ fn render_macro_preview(
             // Description if present
             if let Some(ref desc) = macro_item.description {
                 lines.push(Line::from(vec![
-                    Span::styled(
-                        "Description: ",
-                        Style::default().add_modifier(Modifier::BOLD),
-                    ),
+                    Span::styled("Description: ", theme.title()),
                     Span::raw(desc),
                 ]));
             }
@@ -178,7 +168,7 @@ fn render_macro_preview(
             }
             if !flags.is_empty() {
                 lines.push(Line::from(vec![
-                    Span::styled("Flags: ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled("Flags: ", theme.title()),
                     Span::raw(flags.join(", ")),
                 ]));
             }
@@ -186,10 +176,7 @@ fn render_macro_preview(
             // Validation if present
             if let Some(ref validation) = macro_item.validation {
                 lines.push(Line::from(vec![
-                    Span::styled(
-                        "Validation: ",
-                        Style::default().add_modifier(Modifier::BOLD),
-                    ),
+                    Span::styled("Validation: ", theme.title()),
                     Span::raw(validation),
                 ]));
             }
@@ -197,20 +184,14 @@ fn render_macro_preview(
             // Error message if present
             if let Some(ref errormsg) = macro_item.errormsg {
                 lines.push(Line::from(vec![
-                    Span::styled(
-                        "Error Message: ",
-                        Style::default().add_modifier(Modifier::BOLD),
-                    ),
+                    Span::styled("Error Message: ", theme.title()),
                     Span::raw(errormsg),
                 ]));
             }
 
             // Separator
             lines.push(Line::from(""));
-            lines.push(Line::from(vec![Span::styled(
-                "Definition:",
-                Style::default().add_modifier(Modifier::BOLD),
-            )]));
+            lines.push(Line::from(vec![Span::styled("Definition:", theme.title())]));
 
             // Definition
             for line in macro_item.definition.lines() {
@@ -224,7 +205,7 @@ fn render_macro_preview(
 
     let paragraph = Paragraph::new(content)
         .block(block)
-        .style(theme.text)
+        .style(theme.text())
         .wrap(Wrap { trim: true });
 
     f.render_widget(paragraph, area);

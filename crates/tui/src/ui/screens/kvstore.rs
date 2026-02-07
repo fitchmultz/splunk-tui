@@ -3,7 +3,7 @@
 //! Renders KVStore status information including current member details
 //! and replication status.
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -90,8 +90,7 @@ fn render_member_section(f: &mut Frame, area: Rect, status: &KvStoreStatus, them
         ]),
         Row::new(vec![
             Cell::from("Status"),
-            Cell::from(member.status.clone())
-                .style(Style::default().fg(status_color(&member.status, theme))),
+            Cell::from(member.status.clone()).style(status_style(&member.status, theme)),
         ]),
     ];
 
@@ -102,8 +101,8 @@ fn render_member_section(f: &mut Frame, area: Rect, status: &KvStoreStatus, them
             Block::default()
                 .borders(Borders::ALL)
                 .title("Current Member")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .column_spacing(1);
 
@@ -121,14 +120,6 @@ fn render_replication_section(f: &mut Frame, area: Rect, status: &KvStoreStatus,
         0.0
     };
 
-    let usage_color = if usage_pct < 70.0 {
-        theme.success
-    } else if usage_pct < 90.0 {
-        theme.warning
-    } else {
-        theme.error
-    };
-
     let rows = vec![
         Row::new(vec![
             Cell::from("Oplog Size"),
@@ -136,7 +127,7 @@ fn render_replication_section(f: &mut Frame, area: Rect, status: &KvStoreStatus,
         ]),
         Row::new(vec![
             Cell::from("Oplog Used"),
-            Cell::from(format!("{:.2}%", usage_pct)).style(Style::default().fg(usage_color)),
+            Cell::from(format!("{:.2}%", usage_pct)).style(usage_style(usage_pct, theme)),
         ]),
         Row::new(vec![
             Cell::from("Oplog Used (bytes)"),
@@ -153,21 +144,32 @@ fn render_replication_section(f: &mut Frame, area: Rect, status: &KvStoreStatus,
             Block::default()
                 .borders(Borders::ALL)
                 .title("Replication Status")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .column_spacing(1);
 
     f.render_widget(table, area);
 }
 
-/// Get color based on status string.
-fn status_color(status: &str, theme: &Theme) -> ratatui::style::Color {
+/// Get style based on status string.
+fn status_style(status: &str, theme: &Theme) -> Style {
     match status.to_lowercase().as_str() {
-        "running" | "ok" | "healthy" | "ready" => theme.success,
-        "stopped" | "error" | "unhealthy" | "failed" => theme.error,
-        "starting" | "stopping" | "degraded" => theme.warning,
-        _ => theme.text,
+        "running" | "ok" | "healthy" | "ready" => theme.success(),
+        "stopped" | "error" | "unhealthy" | "failed" => theme.error(),
+        "starting" | "stopping" | "degraded" => theme.warning(),
+        _ => theme.text(),
+    }
+}
+
+/// Get style based on usage percentage.
+fn usage_style(usage_pct: f64, theme: &Theme) -> Style {
+    if usage_pct < 70.0 {
+        theme.success()
+    } else if usage_pct < 90.0 {
+        theme.warning()
+    } else {
+        theme.error()
     }
 }
 
@@ -206,13 +208,13 @@ mod tests {
     }
 
     #[test]
-    fn test_status_color() {
+    fn test_status_style() {
         let theme = Theme::default();
 
-        assert_eq!(status_color("running", &theme), theme.success);
-        assert_eq!(status_color("stopped", &theme), theme.error);
-        assert_eq!(status_color("starting", &theme), theme.warning);
-        assert_eq!(status_color("unknown", &theme), theme.text);
+        assert_eq!(status_style("running", &theme).fg, Some(theme.success));
+        assert_eq!(status_style("stopped", &theme).fg, Some(theme.error));
+        assert_eq!(status_style("starting", &theme).fg, Some(theme.warning));
+        assert_eq!(status_style("unknown", &theme).fg, Some(theme.text));
     }
 
     #[test]

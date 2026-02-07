@@ -6,14 +6,14 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
-    style::{Modifier, Style},
+    style::Style,
     text::Span,
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
 use splunk_config::Theme;
 
 use crate::action::OverviewData;
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the overview screen.
 pub struct OverviewRenderConfig<'a> {
@@ -63,9 +63,12 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
     };
 
     // Create table with resource data
-    let header = Row::new(vec!["Resource", "Count", "Status"])
-        .style(Style::default().add_modifier(Modifier::BOLD))
-        .height(1);
+    let header = Row::new(vec![
+        Cell::from("Resource").style(theme.table_header()),
+        Cell::from("Count").style(theme.table_header()),
+        Cell::from("Status").style(theme.table_header()),
+    ])
+    .height(1);
 
     let rows: Vec<Row> = data
         .resources
@@ -97,8 +100,8 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
         Block::default()
             .borders(Borders::ALL)
             .title("Overview - All Resources")
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     );
 
     f.render_widget(table, area);

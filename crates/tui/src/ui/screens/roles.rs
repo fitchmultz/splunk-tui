@@ -2,11 +2,10 @@
 //!
 //! Renders the list of Splunk roles with their capabilities and settings.
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Role;
@@ -92,14 +91,9 @@ pub fn render_roles(f: &mut Frame, area: Rect, config: RolesRenderConfig) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Roles")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
-        .highlight_style(
-            Style::default()
-                .fg(theme.highlight_fg)
-                .bg(theme.highlight_bg)
-                .add_modifier(Modifier::BOLD),
-        );
+        .highlight_style(theme.highlight());
     f.render_stateful_widget(list, area, state);
 }

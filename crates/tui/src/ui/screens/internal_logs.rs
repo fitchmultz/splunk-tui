@@ -3,13 +3,12 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::LogEntry;
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the internal logs screen.
 pub struct InternalLogsRenderConfig<'a> {
@@ -35,8 +34,8 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
-        .border_style(Style::default().fg(theme.border))
-        .title_style(Style::default().fg(theme.title));
+        .border_style(theme.border())
+        .title_style(theme.title());
 
     if config.loading && config.logs.is_none() {
         let spinner = spinner_char(config.spinner_frame);
@@ -60,30 +59,24 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
         }
     };
 
-    let header_cells = ["Time", "Level", "Component", "Message"].iter().map(|h| {
-        Cell::from(*h).style(
-            Style::default()
-                .fg(theme.table_header_fg)
-                .add_modifier(Modifier::BOLD),
-        )
-    });
-    let header = Row::new(header_cells)
-        .style(Style::default().bg(theme.table_header_bg))
-        .height(1);
+    let header_cells = ["Time", "Level", "Component", "Message"]
+        .iter()
+        .map(|h| Cell::from(*h).style(theme.table_header()));
+    let header = Row::new(header_cells).height(1);
 
     let rows = logs.iter().map(|log| {
-        let level_color = match log.level.to_uppercase().as_str() {
-            "ERROR" | "FATAL" => theme.log_error,
-            "WARN" | "WARNING" => theme.log_warn,
-            "INFO" => theme.log_info,
-            "DEBUG" => theme.log_debug,
-            _ => theme.text,
+        let level_style = match log.level.to_uppercase().as_str() {
+            "ERROR" | "FATAL" => theme.error(),
+            "WARN" | "WARNING" => theme.warning(),
+            "INFO" => theme.info(),
+            "DEBUG" => theme.text_dim(),
+            _ => theme.text(),
         };
 
         let cells = vec![
             Cell::from(log.time.as_str()),
-            Cell::from(log.level.as_str()).style(Style::default().fg(level_color)),
-            Cell::from(log.component.as_str()).style(Style::default().fg(theme.log_component)),
+            Cell::from(log.level.as_str()).style(level_style),
+            Cell::from(log.component.as_str()).style(theme.text_dim()),
             Cell::from(log.message.as_str()),
         ];
         Row::new(cells)
@@ -100,12 +93,7 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
     )
     .header(header)
     .block(block)
-    .row_highlight_style(
-        Style::default()
-            .fg(theme.highlight_fg)
-            .bg(theme.highlight_bg)
-            .add_modifier(Modifier::BOLD),
-    )
+    .row_highlight_style(theme.highlight())
     .highlight_symbol(">> ");
 
     f.render_stateful_widget(table, area, config.state);

@@ -2,11 +2,10 @@
 //!
 //! Renders the list of Splunk data inputs with their types and status.
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
@@ -75,12 +74,12 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
 
     // Header
     let header = Row::new(vec![
-        Cell::from("Name").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Type").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Host").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Source").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Sourcetype").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Status").style(Style::default().add_modifier(Modifier::BOLD)),
+        Cell::from("Name").style(theme.table_header()),
+        Cell::from("Type").style(theme.table_header()),
+        Cell::from("Host").style(theme.table_header()),
+        Cell::from("Source").style(theme.table_header()),
+        Cell::from("Sourcetype").style(theme.table_header()),
+        Cell::from("Status").style(theme.table_header()),
     ]);
 
     // Rows
@@ -88,9 +87,9 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
         .iter()
         .map(|input| {
             let status = if input.disabled {
-                Span::styled("Disabled", Style::default().fg(theme.error))
+                Span::styled("Disabled", theme.error())
             } else {
-                Span::styled("Enabled", Style::default().fg(theme.success))
+                Span::styled("Enabled", theme.success())
             };
 
             Row::new(vec![
@@ -120,15 +119,10 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
         Block::default()
             .borders(Borders::ALL)
             .title("Data Inputs")
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     )
-    .row_highlight_style(
-        Style::default()
-            .fg(theme.highlight_fg)
-            .bg(theme.highlight_bg)
-            .add_modifier(Modifier::BOLD),
-    );
+    .row_highlight_style(theme.highlight());
 
     f.render_stateful_widget(table, area, state);
 }

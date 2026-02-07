@@ -7,14 +7,13 @@ use crate::app::input::components::SingleLineInput;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
 };
 use splunk_client::models::{ConfigFile, ConfigStanza};
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// View mode for the configs screen.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -126,9 +125,9 @@ fn render_file_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
 
     // Header
     let header = Row::new(vec![
-        Cell::from("Name").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Title").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Description").style(Style::default().add_modifier(Modifier::BOLD)),
+        Cell::from("Name").style(theme.table_header()),
+        Cell::from("Title").style(theme.table_header()),
+        Cell::from("Description").style(theme.table_header()),
     ]);
 
     // Rows
@@ -156,15 +155,10 @@ fn render_file_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         Block::default()
             .borders(Borders::ALL)
             .title("Configuration Files (Enter to view stanzas)")
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     )
-    .row_highlight_style(
-        Style::default()
-            .fg(theme.highlight_fg)
-            .bg(theme.highlight_bg)
-            .add_modifier(Modifier::BOLD),
-    );
+    .row_highlight_style(theme.highlight());
 
     f.render_stateful_widget(table, area, files_state);
 }
@@ -231,8 +225,8 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
                 Block::default()
                     .borders(Borders::ALL)
                     .title("Search Stanzas")
-                    .border_style(Style::default().fg(theme.border))
-                    .title_style(Style::default().fg(theme.title)),
+                    .border_style(theme.border())
+                    .title_style(theme.title()),
             )
             .alignment(Alignment::Left);
         f.render_widget(search_paragraph, search_area);
@@ -263,8 +257,8 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
 
     // Header
     let header = Row::new(vec![
-        Cell::from("Stanza Name").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Settings Preview").style(Style::default().add_modifier(Modifier::BOLD)),
+        Cell::from("Stanza Name").style(theme.table_header()),
+        Cell::from("Settings Preview").style(theme.table_header()),
     ]);
 
     // Rows
@@ -306,15 +300,10 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         Block::default()
             .borders(Borders::ALL)
             .title(format!("{} (Enter for details, h to go back)", title))
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     )
-    .row_highlight_style(
-        Style::default()
-            .fg(theme.highlight_fg)
-            .bg(theme.highlight_bg)
-            .add_modifier(Modifier::BOLD),
-    );
+    .row_highlight_style(theme.highlight());
 
     f.render_stateful_widget(table, list_area, stanzas_state);
 
@@ -352,17 +341,11 @@ fn render_stanza_detail(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) 
     // Build content
     let mut lines = vec![
         Line::from(vec![
-            Span::styled(
-                "Config File: ",
-                Style::default().add_modifier(Modifier::BOLD),
-            ),
+            Span::styled("Config File: ", theme.title()),
             Span::raw(format!("{}.conf", stanza.config_file)),
         ]),
         Line::from(""),
-        Line::from(Span::styled(
-            "Settings:",
-            Style::default().add_modifier(Modifier::BOLD),
-        )),
+        Line::from(Span::styled("Settings:", theme.title())),
     ];
 
     if stanza.settings.is_empty() {
@@ -371,7 +354,7 @@ fn render_stanza_detail(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) 
         for (key, value) in &stanza.settings {
             lines.push(Line::from(vec![
                 Span::raw(format!("  {} = ", key)),
-                Span::styled(value.to_string(), Style::default().fg(theme.success)),
+                Span::styled(value.to_string(), theme.success()),
             ]));
         }
     }
@@ -381,8 +364,8 @@ fn render_stanza_detail(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) 
             Block::default()
                 .borders(Borders::ALL)
                 .title(title)
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .wrap(Wrap { trim: true });
 
@@ -392,10 +375,7 @@ fn render_stanza_detail(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) 
 /// Render a help popup for the configs screen.
 pub fn render_configs_help(f: &mut Frame, theme: &Theme) {
     let help_text = vec![
-        Line::from(Span::styled(
-            "Configuration Files Help",
-            Style::default().add_modifier(Modifier::BOLD),
-        )),
+        Line::from(Span::styled("Configuration Files Help", theme.title())),
         Line::from(""),
         Line::from("Navigation:"),
         Line::from("  ↑/↓ or k/j    Navigate up/down"),
@@ -416,7 +396,7 @@ pub fn render_configs_help(f: &mut Frame, theme: &Theme) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Help")
-                .border_style(Style::default().fg(theme.border)),
+                .border_style(theme.border()),
         )
         .alignment(Alignment::Left);
 
@@ -447,7 +427,7 @@ pub fn render_search_popup(f: &mut Frame, search_query: &str, theme: &Theme) {
         Block::default()
             .borders(Borders::ALL)
             .title("Search Stanzas")
-            .border_style(Style::default().fg(theme.border)),
+            .border_style(theme.border()),
     );
 
     f.render_widget(Clear, popup_area);

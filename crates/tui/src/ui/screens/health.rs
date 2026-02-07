@@ -13,7 +13,7 @@ use ratatui::{
 use splunk_client::models::HealthCheckOutput;
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the health screen.
 pub struct HealthRenderConfig<'a> {
@@ -68,8 +68,8 @@ pub fn render_health(f: &mut Frame, area: Rect, config: HealthRenderConfig) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Health Check")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .alignment(Alignment::Left);
     f.render_widget(health_widget, area);
@@ -197,12 +197,7 @@ fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'st
         )));
 
         if !log_parsing.errors.is_empty() {
-            lines.push(Line::from(Span::styled(
-                "Recent Errors:",
-                Style::default()
-                    .fg(theme.title)
-                    .add_modifier(Modifier::BOLD),
-            )));
+            lines.push(Line::from(Span::styled("Recent Errors:", theme.title())));
             for err in log_parsing.errors.iter().take(5) {
                 lines.push(Line::from(format!("  • {}: {}", err.source, err.message)));
             }
@@ -227,12 +222,7 @@ fn push_section_lines(lines: &mut Vec<Line<'static>>, title: &str, theme: &Theme
     if !lines.is_empty() {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled(
-        title.to_string(),
-        Style::default()
-            .fg(theme.title)
-            .add_modifier(Modifier::BOLD),
-    )));
+    lines.push(Line::from(Span::styled(title.to_string(), theme.title())));
 }
 
 /// Format license usage percentage and choose a semantic color.

@@ -5,15 +5,14 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
+
+use crate::ui::theme::{ThemeExt, spinner_char};
 use splunk_client::models::FiredAlert;
 
 use splunk_config::Theme;
-
-use crate::ui::theme::spinner_char;
 
 /// Configuration for rendering the fired alerts screen.
 pub struct FiredAlertsRenderConfig<'a> {
@@ -68,11 +67,10 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
     let items: Vec<ListItem> = alerts
         .iter()
         .map(|a| {
-            let style = Style::default().fg(theme.text);
             let name = &a.name;
             let savedsearch = a.savedsearch_name.as_deref().unwrap_or("-");
             let label = format!("{} ({})", name, savedsearch);
-            ListItem::new(label).style(style)
+            ListItem::new(label).style(theme.text())
         })
         .collect();
 
@@ -81,15 +79,10 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
             Block::default()
                 .borders(Borders::ALL)
                 .title("Fired Alerts")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
-        .highlight_style(
-            Style::default()
-                .fg(theme.highlight_fg)
-                .bg(theme.highlight_bg)
-                .add_modifier(Modifier::BOLD),
-        );
+        .highlight_style(theme.highlight());
     f.render_stateful_widget(list, chunks[0], state);
 
     // Preview area
@@ -97,29 +90,23 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
     let preview_content = if let Some(a) = selected_alert {
         let mut details = vec![
             Line::from(vec![
-                Span::styled("Name: ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Name: ", theme.title()),
                 Span::raw(&a.name),
             ]),
             Line::from(vec![
-                Span::styled(
-                    "Saved Search: ",
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
+                Span::styled("Saved Search: ", theme.title()),
                 Span::raw(a.savedsearch_name.as_deref().unwrap_or("-")),
             ]),
             Line::from(vec![
-                Span::styled("Severity: ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Severity: ", theme.title()),
                 Span::raw(a.severity.as_deref().unwrap_or("Medium")),
             ]),
             Line::from(vec![
-                Span::styled(
-                    "Trigger Time: ",
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
+                Span::styled("Trigger Time: ", theme.title()),
                 Span::raw(a.trigger_time_rendered.as_deref().unwrap_or("-")),
             ]),
             Line::from(vec![
-                Span::styled("SID: ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("SID: ", theme.title()),
                 Span::raw(a.sid.as_deref().unwrap_or("-")),
             ]),
         ];
@@ -127,7 +114,7 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
         if let Some(ref actions) = a.actions {
             details.push(Line::from(""));
             details.push(Line::from(vec![
-                Span::styled("Actions: ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Actions: ", theme.title()),
                 Span::raw(actions),
             ]));
         }
@@ -142,8 +129,8 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
             Block::default()
                 .borders(Borders::ALL)
                 .title("Details")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .wrap(ratatui::widgets::Wrap { trim: true });
     f.render_widget(preview, chunks[1]);

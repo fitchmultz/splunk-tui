@@ -13,14 +13,13 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState},
 };
 use splunk_client::models::{WorkloadPool, WorkloadRule};
 use splunk_config::Theme;
 
 use crate::app::state::WorkloadViewMode;
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the workload management screen.
 pub struct WorkloadRenderConfig<'a> {
@@ -96,8 +95,8 @@ fn render_pools(
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
-        .border_style(Style::default().fg(theme.border))
-        .title_style(Style::default().fg(theme.title));
+        .border_style(theme.border())
+        .title_style(theme.title());
 
     let pools = match pools {
         Some(p) => p,
@@ -135,14 +134,7 @@ fn render_pools(
     // Create header row with styling
     let header_cells: Vec<Cell> = headers
         .iter()
-        .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.table_header_fg)
-                    .bg(theme.table_header_bg)
-                    .add_modifier(Modifier::BOLD),
-            )
-        })
+        .map(|h| Cell::from(*h).style(theme.table_header()))
         .collect();
     let header = Row::new(header_cells).height(1);
 
@@ -187,7 +179,7 @@ fn render_pools(
     let table = Table::new(rows, constraints)
         .header(header)
         .block(block)
-        .row_highlight_style(Style::default().bg(theme.highlight_bg));
+        .row_highlight_style(theme.highlight());
 
     f.render_stateful_widget(table, area, state);
 }
@@ -210,8 +202,8 @@ fn render_rules(
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
-        .border_style(Style::default().fg(theme.border))
-        .title_style(Style::default().fg(theme.title));
+        .border_style(theme.border())
+        .title_style(theme.title());
 
     let rules = match rules {
         Some(r) => r,
@@ -242,14 +234,7 @@ fn render_rules(
     // Create header row with styling
     let header_cells: Vec<Cell> = headers
         .iter()
-        .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.table_header_fg)
-                    .bg(theme.table_header_bg)
-                    .add_modifier(Modifier::BOLD),
-            )
-        })
+        .map(|h| Cell::from(*h).style(theme.table_header()))
         .collect();
     let header = Row::new(header_cells).height(1);
 
@@ -288,7 +273,7 @@ fn render_rules(
     let table = Table::new(rows, constraints)
         .header(header)
         .block(block)
-        .row_highlight_style(Style::default().bg(theme.highlight_bg));
+        .row_highlight_style(theme.highlight());
 
     f.render_stateful_widget(table, area, state);
 }

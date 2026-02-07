@@ -5,13 +5,12 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    style::{Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Dashboard;
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the dashboards screen.
 pub struct DashboardsRenderConfig<'a> {
@@ -87,14 +86,9 @@ pub fn render_dashboards(f: &mut Frame, area: Rect, config: DashboardsRenderConf
             Block::default()
                 .borders(Borders::ALL)
                 .title("Dashboards")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
-        .highlight_style(
-            Style::default()
-                .fg(theme.highlight_fg)
-                .bg(theme.highlight_bg)
-                .add_modifier(Modifier::BOLD),
-        );
+        .highlight_style(theme.highlight());
     f.render_stateful_widget(list, area, state);
 }

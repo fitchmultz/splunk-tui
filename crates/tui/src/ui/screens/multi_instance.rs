@@ -9,7 +9,7 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::Style,
     text::{Line, Span, Text},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
@@ -17,7 +17,7 @@ use splunk_config::Theme;
 
 use crate::action::MultiInstanceOverviewData;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the multi-instance dashboard.
 pub struct MultiInstanceRenderConfig<'a> {
@@ -103,9 +103,12 @@ fn render_instance_list(
     selected_index: usize,
     theme: &Theme,
 ) {
-    let header = Row::new(vec!["Instance", "Health", "Jobs"])
-        .style(Style::default().add_modifier(Modifier::BOLD))
-        .height(1);
+    let header = Row::new(vec![
+        Cell::from("Instance").style(theme.table_header()),
+        Cell::from("Health").style(theme.table_header()),
+        Cell::from("Jobs").style(theme.table_header()),
+    ])
+    .height(1);
 
     let rows: Vec<Row> = data
         .instances
@@ -115,10 +118,7 @@ fn render_instance_list(
             let is_selected = idx == selected_index;
             let health_color = health_status_color(&instance.health_status, theme);
             let row_style = if is_selected {
-                Style::default()
-                    .bg(theme.highlight_bg)
-                    .fg(theme.highlight_fg)
-                    .add_modifier(Modifier::BOLD)
+                theme.highlight()
             } else {
                 Style::default()
             };
@@ -155,8 +155,8 @@ fn render_instance_list(
         Block::default()
             .borders(Borders::ALL)
             .title(format!("Instances ({})", data.instances.len()))
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     );
 
     f.render_widget(table, area);
@@ -185,25 +185,22 @@ fn render_instance_details(
     let mut text_lines: Vec<Line> = vec![
         // Instance header
         Line::from(vec![
-            Span::styled("Instance: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled("Instance: ", theme.title()),
             Span::raw(&instance.profile_name),
         ]),
         Line::from(vec![
-            Span::styled("URL: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled("URL: ", theme.title()),
             Span::raw(&instance.base_url),
         ]),
         Line::from(vec![
-            Span::styled("Health: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled("Health: ", theme.title()),
             Span::styled(
                 &instance.health_status,
                 Style::default().fg(health_status_color(&instance.health_status, theme)),
             ),
         ]),
         Line::from(vec![
-            Span::styled(
-                "Active Jobs: ",
-                Style::default().add_modifier(Modifier::BOLD),
-            ),
+            Span::styled("Active Jobs: ", theme.title()),
             Span::raw(instance.job_count.to_string()),
         ]),
         Line::from(""),
@@ -212,23 +209,15 @@ fn render_instance_details(
     // Show error if present
     if let Some(ref error) = instance.error {
         text_lines.push(Line::from(vec![
-            Span::styled(
-                "Error: ",
-                Style::default()
-                    .fg(theme.error)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(error, Style::default().fg(theme.error)),
+            Span::styled("Error: ", theme.error()),
+            Span::styled(error, theme.error()),
         ]));
         text_lines.push(Line::from(""));
     }
 
     // Resource table
     if !instance.resources.is_empty() {
-        text_lines.push(Line::from(vec![Span::styled(
-            "Resources:",
-            Style::default().add_modifier(Modifier::BOLD),
-        )]));
+        text_lines.push(Line::from(vec![Span::styled("Resources:", theme.title())]));
         text_lines.push(Line::from(""));
 
         for resource in &instance.resources {
@@ -237,10 +226,7 @@ fn render_instance_details(
 
             text_lines.push(Line::from(vec![
                 Span::raw(format!("  {:<20} ", resource.resource_type)),
-                Span::styled(
-                    format!("{:>6}", resource.count),
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
+                Span::styled(format!("{:>6}", resource.count), theme.title()),
                 Span::raw("  "),
                 Span::styled(
                     format!("{}{}", resource.status, error_indicator),
@@ -255,8 +241,8 @@ fn render_instance_details(
         Block::default()
             .borders(Borders::ALL)
             .title("Instance Details")
-            .border_style(Style::default().fg(theme.border))
-            .title_style(Style::default().fg(theme.title)),
+            .border_style(theme.border())
+            .title_style(theme.title()),
     );
 
     f.render_widget(paragraph, area);

@@ -7,13 +7,13 @@ use crate::action::LicenseData;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
 use splunk_config::Theme;
 
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 
 /// Configuration for rendering the license screen.
 pub struct LicenseRenderConfig<'a> {
@@ -99,12 +99,7 @@ fn render_usage_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &T
             let (pct_text, pct_color) = percentage_span(percentage, theme);
 
             lines.push(Line::from(vec![
-                Span::styled(
-                    format!("License {}: ", i + 1),
-                    Style::default()
-                        .fg(theme.title)
-                        .add_modifier(Modifier::BOLD),
-                ),
+                Span::styled(format!("License {}: ", i + 1), theme.title()),
                 Span::styled(pct_text, Style::default().fg(pct_color)),
             ]));
 
@@ -144,8 +139,8 @@ fn render_usage_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &T
             Block::default()
                 .borders(Borders::ALL)
                 .title("License Usage")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .alignment(Alignment::Left);
 
@@ -155,12 +150,11 @@ fn render_usage_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &T
 /// Render the license pools table.
 fn render_pools_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &Theme) {
     let header = Row::new(vec![
-        Cell::from("Name").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Quota").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Used").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Stack ID").style(Style::default().add_modifier(Modifier::BOLD)),
+        Cell::from("Name").style(theme.table_header()),
+        Cell::from("Quota").style(theme.table_header()),
+        Cell::from("Used").style(theme.table_header()),
+        Cell::from("Stack ID").style(theme.table_header()),
     ])
-    .style(Style::default().fg(theme.title))
     .height(1);
 
     let rows: Vec<Row> = if info.pools.is_empty() {
@@ -197,8 +191,8 @@ fn render_pools_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &T
             Block::default()
                 .borders(Borders::ALL)
                 .title("License Pools")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .column_spacing(1);
 
@@ -208,12 +202,11 @@ fn render_pools_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &T
 /// Render the license stacks table.
 fn render_stacks_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &Theme) {
     let header = Row::new(vec![
-        Cell::from("Name").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Type").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Label").style(Style::default().add_modifier(Modifier::BOLD)),
-        Cell::from("Quota").style(Style::default().add_modifier(Modifier::BOLD)),
+        Cell::from("Name").style(theme.table_header()),
+        Cell::from("Type").style(theme.table_header()),
+        Cell::from("Label").style(theme.table_header()),
+        Cell::from("Quota").style(theme.table_header()),
     ])
-    .style(Style::default().fg(theme.title))
     .height(1);
 
     let rows: Vec<Row> = if info.stacks.is_empty() {
@@ -250,8 +243,8 @@ fn render_stacks_section(f: &mut Frame, area: Rect, info: &LicenseData, theme: &
             Block::default()
                 .borders(Borders::ALL)
                 .title("License Stacks")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .column_spacing(1);
 

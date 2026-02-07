@@ -5,14 +5,13 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
 use splunk_client::models::SavedSearch;
 
 use crate::ui::syntax::highlight_spl;
-use crate::ui::theme::spinner_char;
+use crate::ui::theme::{ThemeExt, spinner_char};
 use splunk_config::Theme;
 
 /// Configuration for rendering the saved searches screen.
@@ -77,9 +76,9 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
         .iter()
         .map(|s| {
             let style = if s.disabled {
-                Style::default().fg(theme.disabled)
+                theme.disabled()
             } else {
-                Style::default().fg(theme.text)
+                theme.text()
             };
             ListItem::new(s.name.clone()).style(style)
         })
@@ -90,15 +89,10 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
             Block::default()
                 .borders(Borders::ALL)
                 .title("Saved Searches")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
-        .highlight_style(
-            Style::default()
-                .fg(theme.highlight_fg)
-                .bg(theme.highlight_bg)
-                .add_modifier(Modifier::BOLD),
-        );
+        .highlight_style(theme.highlight());
     f.render_stateful_widget(list, chunks[0], state);
 
     // Preview area
@@ -106,17 +100,14 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
     let preview_content = if let Some(s) = selected_search {
         let mut details = vec![Line::from(vec![Span::styled(
             "Search Query:",
-            Style::default().add_modifier(Modifier::BOLD),
+            theme.title(),
         )])];
         details.extend(highlight_spl(&s.search, theme).lines);
 
         if let Some(desc) = &s.description {
             details.push(Line::from(""));
             details.push(Line::from(vec![
-                Span::styled(
-                    "Description: ",
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
+                Span::styled("Description: ", theme.title()),
                 Span::raw(desc),
             ]));
         }
@@ -124,7 +115,7 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
         details.push(Line::from(""));
         details.push(Line::from(Span::styled(
             "Press Enter to run this search",
-            Style::default().fg(theme.accent),
+            theme.title(),
         )));
 
         details
@@ -137,8 +128,8 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
             Block::default()
                 .borders(Borders::ALL)
                 .title("Preview")
-                .border_style(Style::default().fg(theme.border))
-                .title_style(Style::default().fg(theme.title)),
+                .border_style(theme.border())
+                .title_style(theme.title()),
         )
         .wrap(ratatui::widgets::Wrap { trim: true });
     f.render_widget(preview, chunks[1]);

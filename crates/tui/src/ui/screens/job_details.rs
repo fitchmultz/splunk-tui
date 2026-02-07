@@ -3,7 +3,6 @@
 //! Renders a detailed view of a single search job, showing all available
 //! metadata including status, duration, counts, and other properties.
 
-use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::{
@@ -12,6 +11,8 @@ use ratatui::{
 };
 use splunk_client::models::SearchJobStatus;
 use splunk_config::Theme;
+
+use crate::ui::theme::ThemeExt;
 
 /// Render detailed information about a single search job.
 ///
@@ -33,8 +34,8 @@ pub fn render_details(f: &mut Frame, area: Rect, job: &SearchJobStatus, theme: &
             Block::default()
                 .borders(Borders::ALL)
                 .title("Job Details")
-                .title_style(Style::default().fg(theme.title))
-                .border_style(Style::default().fg(theme.border)),
+                .title_style(theme.title())
+                .border_style(theme.border()),
         )
         .alignment(Alignment::Center);
     f.render_widget(title, chunks[0]);
@@ -48,51 +49,51 @@ pub fn render_details(f: &mut Frame, area: Rect, job: &SearchJobStatus, theme: &
         "Running"
     };
 
-    let status_color = if job.is_done {
-        theme.success
+    let status_style = if job.is_done {
+        theme.success()
     } else {
-        theme.warning
+        theme.warning()
     };
 
     let details = vec![
         Line::from(vec![
-            Span::styled("Status: ", Style::default().fg(theme.title)),
-            Span::styled(status_text, Style::default().fg(status_color)),
+            Span::styled("Status: ", theme.title()),
+            Span::styled(status_text, status_style),
         ]),
         Line::from(vec![
-            Span::styled("Duration: ", Style::default().fg(theme.title)),
+            Span::styled("Duration: ", theme.title()),
             Span::raw(format!("{:.2} seconds", job.run_duration)),
         ]),
         Line::from(vec![
-            Span::styled("Event Count: ", Style::default().fg(theme.title)),
+            Span::styled("Event Count: ", theme.title()),
             Span::raw(job.event_count.to_string()),
         ]),
         Line::from(vec![
-            Span::styled("Scan Count: ", Style::default().fg(theme.title)),
+            Span::styled("Scan Count: ", theme.title()),
             Span::raw(job.scan_count.to_string()),
         ]),
         Line::from(vec![
-            Span::styled("Result Count: ", Style::default().fg(theme.title)),
+            Span::styled("Result Count: ", theme.title()),
             Span::raw(job.result_count.to_string()),
         ]),
         Line::from(vec![
-            Span::styled("Disk Usage: ", Style::default().fg(theme.title)),
+            Span::styled("Disk Usage: ", theme.title()),
             Span::raw(format!("{} MB", job.disk_usage)),
         ]),
         Line::from(vec![
-            Span::styled("Priority: ", Style::default().fg(theme.title)),
+            Span::styled("Priority: ", theme.title()),
             Span::raw(job.priority.map_or("N/A".to_string(), |p| p.to_string())),
         ]),
         Line::from(vec![
-            Span::styled("Label: ", Style::default().fg(theme.title)),
+            Span::styled("Label: ", theme.title()),
             Span::raw(job.label.as_deref().unwrap_or("N/A")),
         ]),
         Line::from(vec![
-            Span::styled("Cursor Time: ", Style::default().fg(theme.title)),
+            Span::styled("Cursor Time: ", theme.title()),
             Span::raw(job.cursor_time.as_deref().unwrap_or("N/A")),
         ]),
         Line::from(vec![
-            Span::styled("Finalized: ", Style::default().fg(theme.title)),
+            Span::styled("Finalized: ", theme.title()),
             Span::raw(if job.is_finalized { "Yes" } else { "No" }),
         ]),
     ];
