@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0397",
-      "status": "todo",
-      "title": "Add proper error context to file operations in doctor.rs bundle generation",
-      "description": "File operations in doctor.rs bundle generation use `?` without `.context()` to provide user-friendly error messages. When operations like create_dir_all, File::create, or zip operations fail, users get low-level error messages without context about what operation was being attempted.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "error-handling",
-        "operability",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/doctor.rs"
-      ],
-      "evidence": [
-        "Line 350: fs::create_dir_all(&bundle_dir)?;",
-        "Line 353: File::create(&bundle_path)?;",
-        "Line 359: zip.start_file(...)?;",
-        "Line 361: zip.write_all(...)?;",
-        "Line 365-366: File::create/read operations",
-        "Lines 433, 445: fs::metadata, fs::read_to_string without context"
-      ],
-      "plan": [
-        "Add .context() calls to all file operations in doctor.rs",
-        "Use patterns like: .context('Failed to create diagnostic bundle directory')",
-        "Ensure error messages follow AGENTS.md style guide",
-        "Verify by running `make ci` and testing doctor command"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0398",
       "status": "todo",
       "title": "Convert stringly-typed model fields to proper enums",

@@ -241,3 +241,83 @@ fn test_doctor_output_to_file() {
     assert!(output.get("cli_version").is_some());
     assert!(output.get("checks").is_some());
 }
+
+/// Test that bundle generation with a file as parent produces a context-aware error.
+#[test]
+fn test_doctor_bundle_dir_creation_error_has_context() {
+    let temp_dir = TempDir::new().unwrap();
+    let parent_file = temp_dir.path().join("bundle-parent");
+    std::fs::write(&parent_file, "not a dir").unwrap();
+
+    let bundle_path = parent_file.join("support-bundle.zip");
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .args(["doctor", "--bundle", bundle_path.to_str().unwrap()])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Failed to generate support bundle at",
+        ))
+        .stderr(predicate::str::contains(
+            "Failed to create support bundle directory at",
+        ))
+        .stderr(predicate::str::contains(
+            parent_file.to_string_lossy().as_ref(),
+        ));
+}
+
+/// Test that bundle generation with a directory as bundle path produces a context-aware error.
+#[test]
+fn test_doctor_bundle_file_creation_error_has_context() {
+    let temp_dir = TempDir::new().unwrap();
+    std::fs::create_dir_all(temp_dir.path().join("existing-dir")).unwrap();
+    let bundle_path = temp_dir.path().join("existing-dir");
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .args(["doctor", "--bundle", bundle_path.to_str().unwrap()])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Failed to generate support bundle at",
+        ))
+        .stderr(predicate::str::contains(
+            "Failed to create support bundle file at",
+        ))
+        .stderr(predicate::str::contains(
+            bundle_path.to_string_lossy().as_ref(),
+        ));
+}
+
+/// Test that TUI log collection with a file as log path produces a context-aware warning.
+#[test]
+fn test_doctor_bundle_logs_dir_error_has_context() {
+    let temp_dir = TempDir::new().unwrap();
+    let bundle_path = temp_dir.path().join("support-bundle.zip");
+
+    // Set HOME to a temp dir where we can control the log path
+    let log_path = temp_dir.path().join(".local/share/splunk-tui/logs");
+    std::fs::create_dir_all(log_path.parent().unwrap()).unwrap();
+    // Create a file instead of a directory at the logs path
+    std::fs::write(&log_path, "not a dir").unwrap();
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089")
+        .env("HOME", temp_dir.path().to_str().unwrap())
+        .env("USERPROFILE", temp_dir.path().to_str().unwrap())
+        .args([
+            "doctor",
+            "--bundle",
+            bundle_path.to_str().unwrap(),
+            "--include-logs",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Warning: Failed to collect TUI logs",
+        ))
+        .stderr(predicate::str::contains(
+            "Failed to read TUI log directory at",
+        ));
+}
