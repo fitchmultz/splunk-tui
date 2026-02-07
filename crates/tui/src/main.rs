@@ -39,7 +39,6 @@ use splunk_config::constants::{
 };
 use splunk_config::{
     AuthStrategy as ConfigAuthStrategy, ConfigManager, InternalLogsDefaults, SearchDefaults,
-    env_var_or_none,
 };
 
 use splunk_tui::runtime::{
@@ -73,7 +72,7 @@ async fn main() -> Result<()> {
 
     // Load config at startup with CLI overrides
     // Also get search defaults and internal logs defaults with env var overrides applied
-    let (search_default_config, internal_logs_default_config, config) =
+    let (search_default_config, internal_logs_default_config, config, resolved_profile_name) =
         load_config_with_defaults(&cli)?;
 
     // Warn if using default credentials (security check)
@@ -176,11 +175,14 @@ async fn main() -> Result<()> {
     });
 
     // Load persisted configuration
-    // CLI --config-path takes precedence over SPLUNK_CONFIG_PATH env var
+    // CLI --config-path takes precedence (if not blank); ConfigManager uses the same resolution logic
     let config_manager = if let Some(config_path) = &cli.config_path {
-        ConfigManager::new_with_path(config_path.clone())?
-    } else if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
-        ConfigManager::new_with_path(std::path::PathBuf::from(config_path))?
+        let path_str = config_path.to_string_lossy();
+        if !path_str.trim().is_empty() {
+            ConfigManager::new_with_path(config_path.clone())?
+        } else {
+            ConfigManager::new()?
+        }
     } else {
         ConfigManager::new()?
     };
@@ -221,10 +223,7 @@ async fn main() -> Result<()> {
 
     // Build connection context for TUI header display (RQ-0134)
     let connection_ctx = ConnectionContext {
-        profile_name: cli
-            .profile
-            .clone()
-            .or_else(|| env_var_or_none("SPLUNK_PROFILE")),
+        profile_name: resolved_profile_name,
         base_url: config.connection.base_url.clone(),
         auth_mode: match &config.auth.strategy {
             ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),

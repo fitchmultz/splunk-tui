@@ -3362,8 +3362,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
         "scan_agent": "scan-maintenance",
+        "unused_dependency": "tachyonfx@0.14",
         "lines_of_dead_code": "598"
       }
     },
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "dead_code_count": "25",
-        "production_files_affected": "8",
+        "test_files_affected": "4",
         "scan_agent": "scan-maintenance",
-        "test_files_affected": "4"
+        "production_files_affected": "8",
+        "dead_code_count": "25"
       }
     },
     {
@@ -4177,9 +4177,9 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "macro_already_adopted": "true",
         "current_line_count": "867",
         "scan_agent": "scan-maintenance",
+        "macro_already_adopted": "true",
         "target_line_count": "300"
       }
     },
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "remaining_duplicates": "3",
         "macro_solved_count": "9",
-        "scan_agent": "scan-maintenance",
-        "remaining_duplicates": "3"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4352,8 +4352,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_formatters": "4",
         "estimated_methods": "35+",
+        "affected_formatters": "4",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4407,9 +4407,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "target_line_count": "150",
         "current_line_count": "523",
         "action_variants": "94",
+        "target_line_count": "150",
         "scan_agent": "scan-maintenance",
         "submodule_count": "28"
       }
@@ -4471,9 +4471,9 @@
       "relates_to": [],
       "custom_fields": {
         "estimated_method_count": "45",
+        "formatter_count": "3",
         "existing_macro_coverage": "4 methods total across all formatters",
-        "scan_agent": "scan-maintenance",
-        "formatter_count": "3"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "bail_usages": "18",
-        "command_files": "27",
         "with_context_usages": "120+",
-        "scan_agent": "scan-maintenance"
+        "command_files": "27"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "screen_files": "22",
-        "file_count": "23",
         "scan_agent": "scan-maintenance",
+        "screen_files": "22",
         "runner_used": "kimi",
-        "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding"
+        "file_count": "23",
+        "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY"
       }
     },
     {
@@ -4678,11 +4678,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
+        "files_using_pattern_a": "26",
         "principle": "DRY",
         "files_using_pattern_b": "2",
-        "files_using_pattern_a": "26",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4744,13 +4744,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance",
         "widgets_dir_exists": "false",
-        "lines_duplicated": "~400",
         "affected_screens": "25",
+        "principle": "DRY",
         "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
+        "lines_duplicated": "~400",
         "runner_used": "kimi"
       }
     },
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "runner_used": "kimi",
+        "duplication_count": "6 functions across 5 files",
         "scan_agent": "scan-maintenance",
-        "files_with_duplicates": "5",
+        "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding",
-        "duplication_count": "6 functions across 5 files"
+        "runner_used": "kimi",
+        "files_with_duplicates": "5"
       }
     },
     {
@@ -4880,11 +4880,11 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
+        "affected_files": "4",
         "principle": "DRY",
-        "duplicate_count": "4",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "affected_files": "4"
+        "duplicate_count": "4"
       }
     },
     {
@@ -4941,10 +4941,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -5004,10 +5004,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "files_to_update": "5",
         "duplicate_count": "6",
         "scan_agent": "scan-maintenance",
+        "files_to_update": "5",
+        "principle": "DRY",
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding"
       }
@@ -5063,12 +5063,12 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
-        "principle": "KISS",
-        "env_example_line_count": "66",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
+        "env_line_count": "18",
         "missing_variable_count": "12",
-        "env_line_count": "18"
+        "env_example_line_count": "66",
+        "principle": "KISS",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5114,9 +5114,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
         "principle": "KISS",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -5169,9 +5169,9 @@
       "relates_to": [],
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -5225,8 +5225,8 @@
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5276,10 +5276,10 @@
       ],
       "custom_fields": {
         "principle": "DRY",
-        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5333,10 +5333,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -5391,8 +5391,8 @@
       "custom_fields": {
         "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps"
       }
     },
@@ -5564,9 +5564,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-innovation",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-innovation"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5639,9 +5639,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5708,9 +5708,75 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
+      }
+    },
+    {
+      "id": "RQ-0384",
+      "status": "done",
+      "title": "Centralize SPLUNK_CONFIG_PATH/SPLUNK_PROFILE handling in splunk_config",
+      "description": "Opportunity type: modernization / reliability\n\nEvidence:\n- The docs claim `SPLUNK_CONFIG_PATH` and `SPLUNK_PROFILE` work for both CLI and TUI (`docs/usage.md`).\n- CLI implements these via clap `env` attributes + manual `resolve_config_path()` in `crates/cli/src/args.rs` (lines 386-395).\n- TUI implements these manually using `env_var_or_none()` in `crates/tui/src/main.rs` (lines 179-186, 223-227).\n- The config env loader applies 15 env vars (SPLUNK_BASE_URL, SPLUNK_USERNAME, etc) but does NOT apply `SPLUNK_CONFIG_PATH` or `SPLUNK_PROFILE` (`crates/config/src/loader/env.rs` lines 27-127).\n- ConfigLoader already has `set_config_path()` and `set_profile_name()` methods but they are not called from `apply_env()`.\n\nWhy it matters:\n- Duplicated precedence logic tends to drift and causes hard-to-debug inconsistencies across UI surfaces.\n- Centralizing ensures consistent empty/whitespace handling via the existing `env_var_or_none()` helper.\n\nProposed approach:\n- Add first-class support in `ConfigLoader::apply_env()` for config-path + profile env vars (with empty/whitespace filtering), matching the documented precedence rules.\n- Update CLI to remove `resolve_config_path()` duplication and rely on centralized loader (keep clap arg parsing for CLI --config-path/--profile overrides).\n- Update TUI to remove manual `env_var_or_none()` calls and delegate to `splunk_config` for env resolution.\n\nRisks and mitigations:\n- Risk: subtle precedence changes. Mitigation: codify precedence in tests and update docs alongside code.\n\nAcceptance criteria:\n- New unit tests in `crates/config/src/loader/tests/env_tests.rs` covering env parsing and precedence (blank env var values ignored).\n- CLI/TUI code removes duplicated env-var logic and continues to behave as documented.\n- `make test` passes.\n\nPriority rationale:\n- Medium: reduces future bugs and keeps CLI/TUI consistent.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "config",
+        "modernization",
+        "consistency"
+      ],
+      "scope": [
+        "crates/config/src/loader/env.rs",
+        "crates/config/src/loader/tests/env_tests.rs",
+        "crates/config/src/loader/builder.rs",
+        "crates/cli/src/args.rs",
+        "crates/cli/src/main.rs",
+        "crates/tui/src/main.rs",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "docs/usage.md:86 documents SPLUNK_CONFIG_PATH as 'Path to a custom configuration file'",
+        "docs/usage.md:94 documents SPLUNK_PROFILE as 'Name of profile to load from the configuration file'",
+        "crates/config/src/loader/env.rs:27-127 apply_env() handles 15 env vars but NOT SPLUNK_CONFIG_PATH/SPLUNK_PROFILE",
+        "crates/config/src/loader/builder.rs has set_config_path() and set_profile_name() methods available",
+        "crates/cli/src/args.rs:386-395 resolve_config_path() duplicates env_var_or_none logic for SPLUNK_CONFIG_PATH",
+        "crates/cli/src/args.rs:59,73 uses clap env attributes for SPLUNK_PROFILE and SPLUNK_CONFIG_PATH",
+        "crates/tui/src/main.rs:179-186 manually checks SPLUNK_CONFIG_PATH env var via env_var_or_none()",
+        "crates/tui/src/main.rs:223-227 manually checks SPLUNK_PROFILE env var via env_var_or_none()"
+      ],
+      "plan": [
+        "Add env parsing for `SPLUNK_CONFIG_PATH` and `SPLUNK_PROFILE` inside `crates/config/src/loader/env.rs` `apply_env()` function.",
+        "Add setter calls in builder.rs if methods don't exist (set_config_path, set_profile_name).",
+        "Add unit tests in `crates/config/src/loader/tests/env_tests.rs` covering new env vars + blank value handling.",
+        "Refactor CLI: remove `resolve_config_path()` from args.rs and simplify main.rs to rely on ConfigLoader env handling.",
+        "Refactor TUI: remove manual env_var_or_none() calls for config path and profile in main.rs.",
+        "Verify docs/usage.md accuracy and update if needed.",
+        "Run `make test` to confirm all config loader and CLI/TUI tests pass."
+      ],
+      "notes": [
+        "Verified 2026-02-07: ConfigLoader already has infrastructure for config_path and profile_name - just needs env var wiring in apply_env()",
+        "Test infrastructure exists at crates/config/src/loader/tests/env_tests.rs for env var testing",
+        "Centralized SPLUNK_CONFIG_PATH/SPLUNK_PROFILE handling in splunk_config crate",
+        "Added comprehensive unit tests covering env parsing, blank value handling, and precedence",
+        "Refactored CLI and TUI to remove duplicated env-var logic",
+        "All CI checks pass (make ci)",
+        "Documentation remains accurate"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T07:37:57.127003950Z",
+      "completed_at": "2026-02-07T07:37:57.127003950Z",
+      "started_at": "2026-02-07T07:11:05.883424995Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-innovation"
+        "env_vars_count_in_apply_env": "15",
+        "scan_agent": "scan-innovation",
+        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE"
       }
     }
   ]

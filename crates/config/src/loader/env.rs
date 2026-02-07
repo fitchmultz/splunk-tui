@@ -129,6 +129,19 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
     if let Some(earliest) = env_var_or_none("SPLUNK_INTERNAL_LOGS_EARLIEST") {
         loader.set_internal_logs_earliest(Some(earliest));
     }
+
+    // Config path and profile name from environment (only if not already set via CLI)
+    if loader.config_path().is_none() {
+        if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
+            loader.set_config_path(Some(std::path::PathBuf::from(config_path)));
+        }
+    }
+    if loader.profile_name().is_none() {
+        if let Some(profile) = env_var_or_none("SPLUNK_PROFILE") {
+            loader.set_profile_name(Some(profile));
+        }
+    }
+
     Ok(())
 }
 

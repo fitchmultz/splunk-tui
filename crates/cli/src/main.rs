@@ -22,7 +22,7 @@ mod formatters;
 mod progress;
 
 use anyhow::Result;
-use args::{Cli, resolve_config_path};
+use args::Cli;
 use cancellation::{
     CancellationToken, SIGINT_EXIT_CODE, is_cancelled_error, print_cancelled_message,
 };
@@ -37,11 +37,7 @@ async fn main() -> Result<()> {
     // Load .env file BEFORE CLI parsing so clap env defaults can read .env values
     ConfigLoader::new().load_dotenv()?;
 
-    let mut cli = Cli::parse();
-
-    // Resolve config path immediately after parsing to ensure blank values are ignored.
-    // This handles both blank env vars and blank CLI flags consistently.
-    cli.config_path = resolve_config_path(cli.config_path.take());
+    let cli = Cli::parse();
 
     // Initialize logging
     tracing_subscriber::registry()
@@ -70,20 +66,28 @@ async fn main() -> Result<()> {
     let config = if needs_real_config {
         let mut loader = ConfigLoader::new();
 
-        // Apply custom config path if provided (highest priority for loader setup)
+        // Apply custom config path if provided via CLI (highest priority)
+        // Blank/whitespace-only values are ignored to allow fallback to env var
         if let Some(ref path) = cli.config_path {
-            loader = loader.with_config_path(path.clone());
+            let path_str = path.to_string_lossy();
+            if !path_str.trim().is_empty() {
+                loader = loader.with_config_path(path.clone());
+            }
         }
 
-        // Load from profile if specified (lowest priority)
+        // Apply profile from CLI if provided (highest priority)
         if let Some(ref profile_name) = cli.profile {
-            loader = loader
-                .with_profile_name(profile_name.clone())
-                .from_profile()?;
+            loader = loader.with_profile_name(profile_name.clone());
         }
 
-        // Apply environment variable overrides (medium priority)
+        // Apply environment variables (including SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
+        // if not already set via CLI args). Env vars override profile values.
         loader = loader.from_env()?;
+
+        // Load from profile if profile_name is now set (from CLI or env var)
+        if loader.profile_name().is_some() {
+            loader = loader.from_profile()?;
+        }
 
         // Apply CLI overrides (highest priority)
         if let Some(ref url) = cli.base_url {

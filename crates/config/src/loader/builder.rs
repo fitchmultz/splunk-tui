@@ -396,7 +396,7 @@ impl ConfigLoader {
 
     // Internal accessor methods for use by other loader modules
 
-    pub(crate) fn profile_name(&self) -> Option<&String> {
+    pub fn profile_name(&self) -> Option<&String> {
         self.profile_name.as_ref()
     }
 
@@ -466,6 +466,14 @@ impl ConfigLoader {
 
     pub(crate) fn set_internal_logs_earliest(&mut self, earliest: Option<String>) {
         self.internal_logs_earliest = earliest;
+    }
+
+    pub(crate) fn set_config_path(&mut self, path: Option<PathBuf>) {
+        self.config_path = path;
+    }
+
+    pub(crate) fn set_profile_name(&mut self, name: Option<String>) {
+        self.profile_name = name;
     }
 }
 

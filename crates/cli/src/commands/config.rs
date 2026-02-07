@@ -118,6 +118,9 @@ pub fn run(
     output_file: Option<PathBuf>,
     config_path: Option<PathBuf>,
 ) -> Result<()> {
+    // Filter out blank/whitespace-only config paths to allow fallback to env/default
+    let config_path = config_path.filter(|p| !p.to_string_lossy().trim().is_empty());
+
     let mut manager = if let Some(path) = config_path {
         ConfigManager::new_with_path(path)?
     } else {

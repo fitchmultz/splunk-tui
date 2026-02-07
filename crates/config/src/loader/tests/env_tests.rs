@@ -241,3 +241,201 @@ fn test_env_vars_trimmed_for_api_token_auth() {
         },
     );
 }
+
+#[test]
+#[serial]
+fn test_splunk_profile_env_var() {
+    let _lock = env_lock().lock().unwrap();
+    let temp_dir = TempDir::new().unwrap();
+    let config_path = create_test_config_file(temp_dir.path());
+
+    temp_env::with_vars(
+        [
+            ("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap())),
+            ("SPLUNK_PROFILE", Some("prod")),
+            ("SPLUNK_BASE_URL", None::<&str>),
+            ("SPLUNK_USERNAME", None::<&str>),
+            ("SPLUNK_PASSWORD", None::<&str>),
+            ("SPLUNK_API_TOKEN", None::<&str>),
+        ],
+        || {
+            let loader = ConfigLoader::new()
+                .from_env()
+                .unwrap()
+                .from_profile()
+                .unwrap();
+
+            let config = loader.build().unwrap();
+            // Should use the "prod" profile from the test config file
+            assert_eq!(config.connection.base_url, "https://prod.splunk.com:8089");
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_splunk_profile_env_var_blank_ignored() {
+    let _lock = env_lock().lock().unwrap();
+    let temp_dir = TempDir::new().unwrap();
+    let config_path = create_test_config_file(temp_dir.path());
+
+    // Empty profile env var should be ignored
+    temp_env::with_vars(
+        [
+            ("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap())),
+            ("SPLUNK_PROFILE", Some("")),
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_API_TOKEN", Some("token")),
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+
+            // Profile should not be set (env var filtered as empty)
+            assert!(loader.profile_name().is_none());
+            // But config should still build using env vars
+            let config = loader.build().unwrap();
+            assert_eq!(config.connection.base_url, "https://localhost:8089");
+        },
+    );
+
+    // Whitespace-only profile env var should also be ignored
+    temp_env::with_vars(
+        [
+            ("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap())),
+            ("SPLUNK_PROFILE", Some("   ")),
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_API_TOKEN", Some("token")),
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+
+            assert!(loader.profile_name().is_none());
+            let config = loader.build().unwrap();
+            assert_eq!(config.connection.base_url, "https://localhost:8089");
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_splunk_config_path_env_var_via_apply_env() {
+    let _lock = env_lock().lock().unwrap();
+    let temp_dir = TempDir::new().unwrap();
+    let config_path = create_test_config_file(temp_dir.path());
+
+    temp_env::with_vars(
+        [
+            ("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap())),
+            ("SPLUNK_PROFILE", Some("prod")),
+            ("SPLUNK_BASE_URL", None::<&str>),
+            ("SPLUNK_USERNAME", None::<&str>),
+            ("SPLUNK_PASSWORD", None::<&str>),
+            ("SPLUNK_API_TOKEN", None::<&str>),
+        ],
+        || {
+            // Test that apply_env() sets config_path from SPLUNK_CONFIG_PATH
+            let loader = ConfigLoader::new()
+                .from_env()
+                .unwrap()
+                .from_profile()
+                .unwrap();
+
+            let config = loader.build().unwrap();
+            assert_eq!(config.connection.base_url, "https://prod.splunk.com:8089");
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_cli_args_override_env_vars() {
+    let _lock = env_lock().lock().unwrap();
+    let temp_dir = TempDir::new().unwrap();
+    let config_path = create_test_config_file(temp_dir.path());
+
+    temp_env::with_vars(
+        [
+            ("SPLUNK_CONFIG_PATH", Some(config_path.to_str().unwrap())),
+            ("SPLUNK_PROFILE", Some("prod")), // env var says "prod"
+            ("SPLUNK_BASE_URL", None::<&str>),
+            ("SPLUNK_USERNAME", None::<&str>),
+            ("SPLUNK_PASSWORD", None::<&str>),
+            ("SPLUNK_API_TOKEN", None::<&str>),
+        ],
+        || {
+            // CLI arg overrides env var - set profile_name BEFORE from_env()
+            let loader = ConfigLoader::new()
+                .with_profile_name("dev".to_string()) // CLI says "dev"
+                .from_env()
+                .unwrap()
+                .from_profile()
+                .unwrap();
+
+            let config = loader.build().unwrap();
+            // Should use "dev" profile (CLI arg takes precedence)
+            assert_eq!(config.connection.base_url, "https://dev.splunk.com:8089");
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_cli_config_path_override_env_var() {
+    let _lock = env_lock().lock().unwrap();
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a config file with a prod profile
+    let config_path2 = temp_dir.path().join("config2.json");
+    std::fs::write(
+        &config_path2,
+        r#"{
+            "profiles": {
+                "prod": {
+                    "base_url": "https://prod-config2.splunk.com:8089",
+                    "auth": {
+                        "type": "api_token",
+                        "token": "prod_token_2"
+                    }
+                }
+            }
+        }"#,
+    )
+    .unwrap();
+
+    // Verify file exists
+    assert!(config_path2.exists(), "Config file should exist");
+
+    // Test: CLI arg for config_path takes precedence over env var
+    // Even if SPLUNK_CONFIG_PATH points elsewhere, CLI --config-path wins
+    temp_env::with_vars(
+        [
+            // Set a non-existent path in env var - this should be ignored
+            ("SPLUNK_CONFIG_PATH", Some("/nonexistent/path/config.json")),
+            ("SPLUNK_PROFILE", None::<&str>),
+        ],
+        || {
+            // CLI arg for config_path should be used, not the env var
+            let loader = ConfigLoader::new()
+                .with_config_path(config_path2.clone()) // CLI says config2.json
+                .with_profile_name("prod".to_string())  // CLI also sets profile
+                .from_env()  // This should NOT overwrite config_path since it's already set
+                .unwrap()
+                .from_profile()
+                .unwrap();
+
+            // Verify that the CLI config_path was preserved (not overwritten by env)
+            assert_eq!(
+                loader.config_path(),
+                Some(&config_path2),
+                "CLI config_path should take precedence over env var"
+            );
+
+            let config = loader.build().unwrap();
+            // Should use "prod" profile from config2.json (CLI path takes precedence)
+            assert_eq!(
+                config.connection.base_url,
+                "https://prod-config2.splunk.com:8089"
+            );
+        },
+    );
+}

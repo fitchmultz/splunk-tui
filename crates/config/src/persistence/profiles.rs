@@ -28,6 +28,7 @@ use super::create_corrupt_backup;
 use super::migration::migrate_config_file_if_needed;
 use super::path::{default_config_path, legacy_config_path};
 use super::state::{ConfigFile, ConfigFileError, PersistedState, read_config_file};
+use crate::env_var_or_none;
 
 /// Manages loading and saving user configuration to disk.
 pub struct ConfigManager {
@@ -40,19 +41,29 @@ pub struct ConfigManager {
 impl ConfigManager {
     /// Creates a new `ConfigManager` using platform-standard config directories.
     ///
+    /// If the `SPLUNK_CONFIG_PATH` environment variable is set (and not empty/whitespace),
+    /// it will be used instead of the default path.
+    ///
     /// On first run after upgrading from a legacy version, this will automatically migrate
     /// the config file from the legacy location to the documented location.
     ///
     /// # Errors
     /// Returns an error if `ProjectDirs::from` fails (should be rare).
     pub fn new() -> Result<Self> {
-        let config_path = default_config_path()?;
+        // Check SPLUNK_CONFIG_PATH env var first (centralized handling)
+        let config_path = if let Some(path_str) = env_var_or_none("SPLUNK_CONFIG_PATH") {
+            PathBuf::from(path_str)
+        } else {
+            let default_path = default_config_path()?;
 
-        // Safe, best-effort migration from legacy path to documented path.
-        // Must never prevent startup.
-        if let Ok(legacy_path) = legacy_config_path() {
-            migrate_config_file_if_needed(&legacy_path, &config_path);
-        }
+            // Safe, best-effort migration from legacy path to documented path.
+            // Must never prevent startup.
+            if let Ok(legacy_path) = legacy_config_path() {
+                migrate_config_file_if_needed(&legacy_path, &default_path);
+            }
+
+            default_path
+        };
 
         Self::new_with_path(config_path)
     }

@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0384",
-      "status": "todo",
-      "title": "Centralize SPLUNK_CONFIG_PATH/SPLUNK_PROFILE handling in splunk_config",
-      "description": "Opportunity type: modernization / reliability\n\nEvidence:\n- The docs claim `SPLUNK_CONFIG_PATH` and `SPLUNK_PROFILE` work for both CLI and TUI (`docs/usage.md`).\n- CLI and TUI implement these env vars manually (e.g., TUI checks `env_var_or_none(\"SPLUNK_CONFIG_PATH\")` in `crates/tui/src/main.rs`).\n- The config env loader applies many env vars but does not apply `SPLUNK_CONFIG_PATH` or `SPLUNK_PROFILE` (`crates/config/src/loader/env.rs`).\n\nWhy it matters:\n- Duplicated precedence logic tends to drift and causes hard-to-debug inconsistencies across UI surfaces.\n\nProposed approach:\n- Add first-class support in `ConfigLoader` for config-path + profile env vars (with empty/whitespace filtering), matching the documented precedence rules.\n- Update CLI/TUI to delegate to `splunk_config` for env resolution, leaving only CLI-arg override logic at the app edge.\n\nRisks and mitigations:\n- Risk: subtle precedence changes. Mitigation: codify precedence in tests and update docs alongside code.\n\nAcceptance criteria:\n- New unit tests in `crates/config` covering env parsing and precedence (blank env var values ignored).\n- CLI/TUI code removes duplicated env-var logic and continues to behave as documented.\n- `make test` passes.\n\nPriority rationale:\n- Medium: reduces future bugs and keeps CLI/TUI consistent.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "config",
-        "modernization",
-        "consistency"
-      ],
-      "scope": [
-        "crates/config/src/loader/",
-        "crates/cli/src/main.rs",
-        "crates/tui/src/main.rs",
-        "docs/usage.md",
-        "make test"
-      ],
-      "evidence": [
-        "docs/usage.md:84-96 documents SPLUNK_CONFIG_PATH and SPLUNK_PROFILE",
-        "crates/config/src/loader/env.rs applies SPLUNK_BASE_URL, SPLUNK_USERNAME, etc, but not SPLUNK_CONFIG_PATH/SPLUNK_PROFILE",
-        "crates/tui/src/main.rs:165-170 manually reads SPLUNK_CONFIG_PATH env var"
-      ],
-      "plan": [
-        "Add env parsing for `SPLUNK_CONFIG_PATH` and `SPLUNK_PROFILE` inside `splunk_config::ConfigLoader` (or a shared helper).",
-        "Update CLI and TUI startup to rely on the centralized loader behavior.",
-        "Add config crate tests proving precedence + blank-value behavior matches docs.",
-        "Update docs to reflect the single source of truth.",
-        "Verify by running `make test` and confirming config loader tests pass."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0385",
       "status": "todo",
       "title": "Fix config precedence docs + add Quick Verify onboarding",
@@ -362,8 +320,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "fail-fast",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "fail-fast"
       }
     },
     {
@@ -396,8 +354,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]

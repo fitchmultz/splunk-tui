@@ -14,8 +14,7 @@
 //! - Environment variable fallbacks are documented in --help
 
 use clap::{Parser, Subcommand};
-use splunk_config::env_var_or_none;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::commands;
 
@@ -373,23 +372,4 @@ pub enum Commands {
         #[arg(long = "page-size", hide = true, default_value = "50")]
         page_size: usize,
     },
-}
-
-/// Returns true if the path is empty or contains only whitespace.
-pub(crate) fn path_is_blank(path: &Path) -> bool {
-    path.to_string_lossy().trim().is_empty()
-}
-
-/// Normalizes the config path, ignoring empty or whitespace-only values.
-/// This prevents empty environment variables or blank CLI flags from clobbering other sources.
-/// If the resulting path is blank, it falls back to the environment variable (and normalizes that too).
-pub fn resolve_config_path(path: Option<PathBuf>) -> Option<PathBuf> {
-    let path = path.filter(|p| !path_is_blank(p));
-    if path.is_none() {
-        env_var_or_none("SPLUNK_CONFIG_PATH")
-            .map(PathBuf::from)
-            .filter(|p| !path_is_blank(p))
-    } else {
-        path
-    }
 }

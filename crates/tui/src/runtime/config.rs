@@ -18,9 +18,8 @@
 use crate::app::App;
 use anyhow::{Result, anyhow};
 use splunk_config::{
-    Config, ConfigLoader, ConfigManager, InternalLogsDefaults, SearchDefaultConfig, env_var_or_none,
+    Config, ConfigLoader, ConfigManager, InternalLogsDefaults, SearchDefaultConfig,
 };
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -45,32 +44,61 @@ use crate::cli::Cli;
 ///
 /// Returns an error if configuration loading fails (e.g., profile not found,
 /// missing required fields like base_url or auth credentials).
+/// Load configuration, search defaults, and internal logs defaults from CLI args, environment variables, and profile.
+///
+/// This function returns the main Config along with SearchDefaultConfig and InternalLogsDefaults so that
+/// defaults with environment variable overrides can be applied to the App state.
+///
+/// Configuration precedence (highest to lowest):
+/// 1. CLI arguments (e.g., --profile, --config-path)
+/// 2. Environment variables (e.g., SPLUNK_PROFILE, SPLUNK_BASE_URL)
+/// 3. Profile configuration (from config.json)
+/// 4. Default values
+///
+/// # Arguments
+///
+/// * `cli` - The parsed CLI arguments
+///
+/// # Returns
+///
+/// Returns a tuple of (SearchDefaultConfig, InternalLogsDefaults, Config, Option<String>)
+/// where the Option<String> is the resolved profile name (from CLI or env var).
+///
+/// # Errors
+///
+/// Returns an error if configuration loading fails (e.g., profile not found,
+/// missing required fields like base_url or auth credentials).
 pub fn load_config_with_defaults(
     cli: &Cli,
-) -> Result<(SearchDefaultConfig, InternalLogsDefaults, Config)> {
+) -> Result<(
+    SearchDefaultConfig,
+    InternalLogsDefaults,
+    Config,
+    Option<String>,
+)> {
     let mut loader = ConfigLoader::new().load_dotenv()?;
 
     // Apply config path from CLI if provided (highest precedence)
     if let Some(config_path) = &cli.config_path {
         loader = loader.with_config_path(config_path.clone());
-    } else if let Some(config_path) = env_var_or_none("SPLUNK_CONFIG_PATH") {
-        // Fall back to env var
-        loader = loader.with_config_path(PathBuf::from(config_path));
     }
 
-    // Load from profile if specified via CLI or env
-    // CLI --profile takes precedence over SPLUNK_PROFILE env var
-    let profile_name = cli
-        .profile
-        .clone()
-        .or_else(|| env_var_or_none("SPLUNK_PROFILE"));
-
-    if let Some(profile) = profile_name {
-        loader = loader.with_profile_name(profile).from_profile()?;
+    // Apply profile from CLI if provided (highest precedence)
+    if let Some(profile) = &cli.profile {
+        loader = loader.with_profile_name(profile.clone());
     }
 
-    // Environment variables are loaded last - they override profile values
-    let loader = loader.from_env()?;
+    // Apply environment variables (including SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
+    // if not already set via CLI args). Env vars override profile values.
+    let mut loader = loader.from_env()?;
+
+    // Load from profile if profile_name is now set (from CLI or env var)
+    if loader.profile_name().is_some() {
+        loader = loader.from_profile()?;
+    }
+
+    // Capture the resolved profile name before building
+    let resolved_profile_name = loader.profile_name().cloned();
 
     // Build search defaults and internal logs defaults with env var overrides
     // (pass None for now, will merge with persisted later)
@@ -81,7 +109,12 @@ pub fn load_config_with_defaults(
         .build()
         .map_err(|e| anyhow!("Failed to load config: {}", e))?;
 
-    Ok((search_defaults, internal_logs_defaults, config))
+    Ok((
+        search_defaults,
+        internal_logs_defaults,
+        config,
+        resolved_profile_name,
+    ))
 }
 
 /// Save persisted state and prepare to quit.
