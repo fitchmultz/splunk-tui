@@ -157,28 +157,36 @@ impl App {
                 }
             }
             CurrentScreen::Indexes => {
-                if let Some(indexes) = &self.indexes {
+                if let Some(indexes) = &self.indexes
+                    && !indexes.is_empty()
+                {
                     let i = self.indexes_state.selected().unwrap_or(0);
                     self.indexes_state
                         .select(Some((i.saturating_add(10)).min(indexes.len() - 1)));
                 }
             }
             CurrentScreen::SavedSearches => {
-                if let Some(searches) = &self.saved_searches {
+                if let Some(searches) = &self.saved_searches
+                    && !searches.is_empty()
+                {
                     let i = self.saved_searches_state.selected().unwrap_or(0);
                     self.saved_searches_state
                         .select(Some((i.saturating_add(10)).min(searches.len() - 1)));
                 }
             }
             CurrentScreen::InternalLogs => {
-                if let Some(logs) = &self.internal_logs {
+                if let Some(logs) = &self.internal_logs
+                    && !logs.is_empty()
+                {
                     let i = self.internal_logs_state.selected().unwrap_or(0);
                     self.internal_logs_state
                         .select(Some((i.saturating_add(10)).min(logs.len() - 1)));
                 }
             }
             CurrentScreen::Apps => {
-                if let Some(apps) = &self.apps {
+                if let Some(apps) = &self.apps
+                    && !apps.is_empty()
+                {
                     let i = self.apps_state.selected().unwrap_or(0);
                     self.apps_state
                         .select(Some((i.saturating_add(10)).min(apps.len() - 1)));
@@ -513,6 +521,54 @@ mod tests {
         app.go_to_bottom();
         app.next_page();
         app.previous_page();
+        // Test passes if no panic occurs
+    }
+
+    #[test]
+    fn test_indexes_next_page_empty() {
+        // Should not panic when indexes is empty
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Indexes;
+        app.indexes = Some(vec![]);
+        app.indexes_state.select(Some(0));
+
+        app.next_page();
+        // Test passes if no panic occurs - selection should remain unchanged
+    }
+
+    #[test]
+    fn test_saved_searches_next_page_empty() {
+        // Should not panic when saved_searches is empty
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::SavedSearches;
+        app.saved_searches = Some(vec![]);
+        app.saved_searches_state.select(Some(0));
+
+        app.next_page();
+        // Test passes if no panic occurs
+    }
+
+    #[test]
+    fn test_internal_logs_next_page_empty() {
+        // Should not panic when internal_logs is empty
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::InternalLogs;
+        app.internal_logs = Some(vec![]);
+        app.internal_logs_state.select(Some(0));
+
+        app.next_page();
+        // Test passes if no panic occurs
+    }
+
+    #[test]
+    fn test_apps_next_page_empty() {
+        // Should not panic when apps is empty
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = CurrentScreen::Apps;
+        app.apps = Some(vec![]);
+        app.apps_state.select(Some(0));
+
+        app.next_page();
         // Test passes if no panic occurs
     }
 }

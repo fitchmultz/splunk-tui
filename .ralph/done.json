@@ -3363,8 +3363,8 @@
       "relates_to": [],
       "custom_fields": {
         "unused_dependency": "tachyonfx@0.14",
-        "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,9 +4006,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "production_files_affected": "8",
         "test_files_affected": "4",
         "dead_code_count": "25",
-        "production_files_affected": "8",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4177,9 +4177,9 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "target_line_count": "300",
         "current_line_count": "867",
+        "scan_agent": "scan-maintenance",
         "macro_already_adopted": "true"
       }
     },
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "macro_solved_count": "9",
         "remaining_duplicates": "3",
-        "macro_solved_count": "9"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "estimated_methods": "35+",
-        "affected_formatters": "4",
-        "scan_agent": "scan-maintenance"
+        "affected_formatters": "4"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "submodule_count": "28",
-        "scan_agent": "scan-maintenance",
-        "current_line_count": "523",
         "action_variants": "94",
-        "target_line_count": "150"
+        "target_line_count": "150",
+        "current_line_count": "523",
+        "submodule_count": "28",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "estimated_method_count": "45",
         "existing_macro_coverage": "4 methods total across all formatters",
-        "formatter_count": "3",
-        "scan_agent": "scan-maintenance"
+        "formatter_count": "3"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "command_files": "27",
-        "bail_usages": "18",
         "with_context_usages": "120+",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "bail_usages": "18",
+        "command_files": "27"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "file_count": "23",
-        "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
-        "screen_files": "22"
+        "principle": "DRY",
+        "screen_files": "22",
+        "file_count": "23",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -4679,11 +4679,11 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
-        "files_using_pattern_a": "26",
+        "files_using_pattern_b": "2",
         "model_used": "kimi-code/kimi-for-coding",
+        "files_using_pattern_a": "26",
         "scan_agent": "scan-maintenance",
-        "principle": "DRY",
-        "files_using_pattern_b": "2"
+        "principle": "DRY"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
         "runner_used": "kimi",
-        "widgets_dir_exists": "false",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "lines_duplicated": "~400",
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "affected_screens": "25"
+        "widgets_dir_exists": "false",
+        "principle": "DRY",
+        "affected_screens": "25",
+        "model_used": "kimi-code/kimi-for-coding",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "lines_duplicated": "~400"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "duplication_count": "6 functions across 5 files",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "files_with_duplicates": "5",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding"
+        "files_with_duplicates": "5"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "principle": "DRY",
+        "duplicate_count": "4",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
         "affected_files": "4",
-        "duplicate_count": "4",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "principle": "DRY"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -4941,10 +4941,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "YAGNI",
-        "model_used": "kimi-code/kimi-for-coding"
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5004,9 +5004,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "duplicate_count": "6",
         "files_to_update": "5",
+        "duplicate_count": "6",
+        "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance"
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
+        "env_example_line_count": "66",
+        "env_line_count": "18",
+        "principle": "KISS",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
         "missing_variable_count": "12",
-        "env_example_line_count": "66",
-        "principle": "KISS",
-        "env_line_count": "18",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5114,10 +5114,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "KISS",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5169,9 +5169,9 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5224,9 +5224,9 @@
       "relates_to": [],
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "principle": "DRY"
       }
     },
     {
@@ -5275,11 +5275,11 @@
         "RQ-0375"
       ],
       "custom_fields": {
+        "runner_used": "kimi",
+        "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
-        "runner_used": "kimi",
-        "principle": "DRY"
+        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs"
       }
     },
     {
@@ -5333,10 +5333,67 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
         "principle": "YAGNI",
-        "model_used": "kimi-code/kimi-for-coding"
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0378",
+      "status": "done",
+      "title": "Fix TUI PageDown panic on empty lists",
+      "description": "Opportunity type: reliability\n\nEvidence:\n- `crates/tui/src/app/navigation.rs` uses `len() - 1` without an empty-list guard for multiple screens in `next_page()`, which panics when the loaded list is empty (e.g., `indexes.len() - 1`, `searches.len() - 1`, `logs.len() - 1`, `apps.len() - 1`).\n\nWhy it matters:\n- A single PageDown on an empty list can crash the TUI, potentially leaving the terminal in a bad state and breaking core navigation workflows.\n\nProposed approach:\n- Minimal slice: harden `next_page()` to handle `Some(vec![])` safely for all affected screens (Indexes, Saved Searches, Internal Logs, Apps) by short-circuiting on empty and/or using `saturating_sub(1)` with explicit empty handling.\n- Refactor: centralize the safe next-page index clamp into a small helper to avoid repeated edge-case bugs.\n\nRisks and mitigations:\n- Risk: behavior change for empty selections. Mitigation: define invariant: if list is empty, selection stays `None` and paging is a no-op.\n\nAcceptance criteria:\n- Unit/integration tests that exercise `next_page()` on each affected screen when the corresponding list is `Some(vec![])` and confirm no panic and stable selection semantics.\n- `make test` passes.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "reliability",
+        "bug"
+      ],
+      "scope": [
+        "crates/tui/src/app/navigation.rs",
+        "crates/tui/tests/app_pagination_stress_tests.rs",
+        "crates/tui/tests/app_navigation_tests.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/app/navigation.rs:163 uses indexes.len() - 1 without empty check in next_page() for Indexes screen",
+        "crates/tui/src/app/navigation.rs:170 uses searches.len() - 1 without empty check in next_page() for SavedSearches screen",
+        "crates/tui/src/app/navigation.rs:177 uses logs.len() - 1 without empty check in next_page() for InternalLogs screen",
+        "crates/tui/src/app/navigation.rs:184 uses apps.len() - 1 without empty check in next_page() for Apps screen",
+        "crates/tui/src/app/navigation.rs:190 guards cluster peers with !peers.is_empty(), showing the intended pattern exists",
+        "crates/tui/src/app/navigation.rs:503-517 contains test_cluster_peers_navigation_empty_peers() as a test pattern to replicate"
+      ],
+      "plan": [
+        "Add empty-list guards (&& !vec.is_empty()) to Indexes, SavedSearches, InternalLogs, and Apps screens in next_page() at lines 160, 167, 174, 181.",
+        "Add unit tests for empty-list next_page() behavior: test_indexes_next_page_empty, test_saved_searches_next_page_empty, test_internal_logs_next_page_empty, test_apps_next_page_empty following the pattern of test_cluster_peers_navigation_empty_peers().",
+        "Add integration tests in app_pagination_stress_tests.rs for empty-list paging on affected screens.",
+        "Verify by running `make test` and confirming all TUI tests pass."
+      ],
+      "notes": [
+        "The Search screen (line 147) already uses saturating_sub(1) which is safe.",
+        "The Jobs screen (line 153) already has if len > 0 guard.",
+        "The Cluster screen (line 190) has the correct pattern with !peers.is_empty().",
+        "Fixed TUI PageDown panic on empty lists",
+        "Added empty-list guards (&& !vec.is_empty()) to Indexes, SavedSearches, InternalLogs, and Apps screens in next_page()",
+        "Added 4 unit tests and 5 integration tests for empty-list pagination",
+        "All tests pass - no regressions detected"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T04:16:23.383911070Z",
+      "completed_at": "2026-02-07T04:16:23.383911070Z",
+      "started_at": "2026-02-07T04:01:44.077122197Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation",
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
+        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     }
   ]

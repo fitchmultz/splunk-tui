@@ -341,3 +341,79 @@ fn test_mixed_pagination_and_filter() {
     // Should be valid
     assert!(app.jobs.is_some());
 }
+
+#[test]
+fn test_page_down_empty_indexes() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Indexes;
+    app.indexes = Some(vec![]);
+    app.indexes_state.select(Some(0));
+
+    // Page down on empty list should not panic
+    app.update(Action::PageDown);
+
+    // Selection may be None or remain at 0, but should not crash
+}
+
+#[test]
+fn test_page_down_empty_saved_searches() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::SavedSearches;
+    app.saved_searches = Some(vec![]);
+    app.saved_searches_state.select(Some(0));
+
+    app.update(Action::PageDown);
+}
+
+#[test]
+fn test_page_down_empty_internal_logs() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::InternalLogs;
+    app.internal_logs = Some(vec![]);
+    app.internal_logs_state.select(Some(0));
+
+    app.update(Action::PageDown);
+}
+
+#[test]
+fn test_page_down_empty_apps() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Apps;
+    app.apps = Some(vec![]);
+    app.apps_state.select(Some(0));
+
+    app.update(Action::PageDown);
+}
+
+#[test]
+fn test_page_down_all_navigation_methods_empty_lists() {
+    // Test all navigation methods on empty lists for affected screens
+    let screens = [
+        CurrentScreen::Indexes,
+        CurrentScreen::SavedSearches,
+        CurrentScreen::InternalLogs,
+        CurrentScreen::Apps,
+    ];
+
+    for screen in screens {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = screen;
+
+        // Set empty lists based on screen
+        match screen {
+            CurrentScreen::Indexes => app.indexes = Some(vec![]),
+            CurrentScreen::SavedSearches => app.saved_searches = Some(vec![]),
+            CurrentScreen::InternalLogs => app.internal_logs = Some(vec![]),
+            CurrentScreen::Apps => app.apps = Some(vec![]),
+            _ => unreachable!(),
+        }
+
+        // All navigation operations should be no-ops, not panics
+        app.update(Action::PageDown);
+        app.update(Action::PageUp);
+        app.update(Action::NavigateDown);
+        app.update(Action::NavigateUp);
+        app.update(Action::GoToTop);
+        app.update(Action::GoToBottom);
+    }
+}
