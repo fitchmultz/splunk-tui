@@ -8,8 +8,10 @@
     "id_width": 4
   },
   "agent": {
-    "runner": "kimi",
-    "model": "kimi-code/kimi-for-coding",
+    "kimi_bin": "kimi",
+    "runner": "opencode",
+    "model": "zai-coding-plan/glm-4.7",
+    "reasoning_effort": "high",
     "phases": 3,
     "iterations": 1,
     "repoprompt_plan_required": false,
@@ -30,16 +32,17 @@
     },
     "phase_overrides": {
       "phase1": {
-        "runner": "kimi",
-        "model": "kimi-code/kimi-for-coding"
+        "runner": "codex",
+        "model": "gpt-5.3-codex",
+        "reasoning_effort": "medium"
       },
       "phase2": {
-        "runner": "kimi",
-        "model": "kimi-code/kimi-for-coding"
+        "runner": "opencode",
+        "model": "zai-coding-plan/glm-4.7"
       },
       "phase3": {
-        "runner": "kimi",
-        "model": "kimi-code/kimi-for-coding"
+        "runner": "opencode",
+        "model": "zai-coding-plan/glm-4.7"
       }
     }
   }
