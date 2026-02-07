@@ -19,6 +19,7 @@ mod edge_cases_tests;
 mod help_tests;
 mod keyring_tests;
 mod list_tests;
+mod secure_input_tests;
 mod set_tests;
 mod show_tests;
 

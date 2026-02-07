@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "lines_of_dead_code": "598",
         "scan_agent": "scan-maintenance",
-        "unused_dependency": "tachyonfx@0.14",
-        "lines_of_dead_code": "598"
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "production_files_affected": "8",
         "dead_code_count": "25",
         "scan_agent": "scan-maintenance",
-        "test_files_affected": "4"
+        "test_files_affected": "4",
+        "production_files_affected": "8"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "target_line_count": "300",
-        "current_line_count": "867",
         "macro_already_adopted": "true",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "target_line_count": "300",
+        "current_line_count": "867"
       }
     },
     {
@@ -4286,8 +4286,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "remaining_duplicates": "3",
         "macro_solved_count": "9",
+        "remaining_duplicates": "3",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "target_line_count": "150",
-        "current_line_count": "523",
         "action_variants": "94",
+        "current_line_count": "523",
         "scan_agent": "scan-maintenance",
-        "submodule_count": "28"
+        "submodule_count": "28",
+        "target_line_count": "150"
       }
     },
     {
@@ -4472,8 +4472,8 @@
       "custom_fields": {
         "estimated_method_count": "45",
         "existing_macro_coverage": "4 methods total across all formatters",
-        "formatter_count": "3",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "formatter_count": "3"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "command_files": "27",
         "bail_usages": "18",
         "with_context_usages": "120+",
-        "scan_agent": "scan-maintenance",
-        "command_files": "27"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance",
         "file_count": "23",
+        "principle": "DRY",
         "runner_used": "kimi",
-        "screen_files": "22"
+        "model_used": "kimi-code/kimi-for-coding",
+        "screen_files": "22",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "files_using_pattern_a": "26",
-        "files_using_pattern_b": "2",
         "runner_used": "kimi",
         "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding",
+        "files_using_pattern_a": "26",
+        "scan_agent": "scan-maintenance",
+        "files_using_pattern_b": "2"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "lines_duplicated": "~400",
-        "affected_screens": "25",
-        "scan_agent": "scan-maintenance",
         "widgets_dir_exists": "false",
-        "principle": "DRY"
+        "model_used": "kimi-code/kimi-for-coding",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "lines_duplicated": "~400",
+        "scan_agent": "scan-maintenance",
+        "affected_screens": "25",
+        "principle": "DRY",
+        "runner_used": "kimi"
       }
     },
     {
@@ -4816,11 +4816,11 @@
       "relates_to": [],
       "custom_fields": {
         "duplication_count": "6 functions across 5 files",
-        "principle": "DRY",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
         "files_with_duplicates": "5",
-        "model_used": "kimi-code/kimi-for-coding"
+        "principle": "DRY"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_files": "4",
-        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
         "duplicate_count": "4",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
+        "affected_files": "4"
       }
     },
     {
@@ -4941,10 +4941,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
         "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5004,11 +5004,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "duplicate_count": "6",
-        "files_to_update": "5",
         "principle": "DRY",
+        "files_to_update": "5",
+        "scan_agent": "scan-maintenance",
+        "duplicate_count": "6",
         "runner_used": "kimi"
       }
     },
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "env_line_count": "18",
-        "missing_variable_count": "12",
-        "runner_used": "kimi",
-        "env_example_line_count": "66",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
         "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "runner_used": "kimi",
+        "env_line_count": "18",
+        "missing_variable_count": "12",
+        "env_example_line_count": "66"
       }
     },
     {
@@ -5115,9 +5115,9 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5168,10 +5168,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "principle": "DRY",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5223,10 +5223,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
+        "principle": "DRY",
         "runner_used": "kimi",
-        "principle": "DRY"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5275,11 +5275,11 @@
         "RQ-0375"
       ],
       "custom_fields": {
-        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
         "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs"
       }
     },
     {
@@ -5333,10 +5333,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
         "principle": "YAGNI",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5389,11 +5389,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
         "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-innovation",
+        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
         "runner_used": "kimi",
-        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
-        "scan_agent": "scan-innovation"
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen"
       }
     },
     {
@@ -5438,9 +5438,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "runner_used": "kimi"
       }
     },
     {
@@ -5503,8 +5503,69 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
         "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0381",
+      "status": "done",
+      "title": "Add password/token stdin+file options to splunk-cli config",
+      "description": "Opportunity type: security / UX improvement\n\nEvidence:\n- `splunk-cli config set` accepts `--password` and `--api-token` as command-line flags (plain strings), which can leak via shell history and process listings.\n- There is no `--*-stdin`, `--*-file`, or `--no-prompt` mode for non-interactive automation.\n\nWhy it matters:\n- Secure automation should avoid placing secrets in argv. This reduces accidental leakage during setup and CI/CD usage.\n\nProposed approach:\n- Add mutually-exclusive options:\n  - `--password-stdin` and `--api-token-stdin` (read a single line from stdin, trim trailing newline).\n  - `--password-file <path>` and `--api-token-file <path>` (read file content, trim).\n  - `--no-prompt` to fail fast instead of prompting (useful for scripts/CI).\n- Keep current interactive prompts as default behavior when a tty is present and `--no-prompt` is not set.\n\nRisks and mitigations:\n- Risk: ambiguous precedence. Mitigation: document and enforce a single precedence order per secret (explicit flag > stdin/file > interactive prompt > existing profile).\n\nAcceptance criteria:\n- `splunk-cli config set --help` includes examples for stdin/file usage and notes that argv secrets are discouraged.\n- Integration tests cover: arg conflicts, stdin reading, file reading, and `--no-prompt` failure mode (no network required).\n- `make test` passes.\n\nPriority rationale:\n- High: directly reduces the chance of secret leakage in common workflows.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "security",
+        "ux",
+        "config"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs",
+        "crates/cli/src/args.rs",
+        "crates/cli/tests/config/",
+        "crates/cli/tests/common/",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/config.rs:42-47 defines `--password` and `--api-token` as plain Option<String> arguments (leaks to shell history)",
+        "crates/cli/src/commands/config.rs:315-324 uses prompt_for_secret() for interactive fallback, no --no-prompt flag exists",
+        "crates/cli/src/commands/config.rs:23-93 ConfigCommand::Set/Edit lack stdin/file input options and clap arg_group conflicts",
+        "No --password-stdin, --password-file, --api-token-stdin, --api-token-file options exist in ConfigCommand",
+        "docs/usage.md:84-96 documents SPLUNK_PASSWORD/SPLUNK_API_TOKEN env vars but not secure file/stdin patterns"
+      ],
+      "plan": [
+        "Add --password-stdin, --password-file, --api-token-stdin, --api-token-file options to ConfigCommand::Set in crates/cli/src/commands/config.rs",
+        "Add --no-prompt flag to ConfigCommand::Set to disable interactive prompts (fail fast for CI/automation)",
+        "Implement clap arg_group conflicts to enforce mutual exclusivity between --password, --password-stdin, --password-file (same for api-token)",
+        "Implement stdin reading (single line, trim newline) and file reading (content, trim) in run_set() handler",
+        "Add integration tests in crates/cli/tests/config/ for: arg conflicts, stdin reading, file reading, --no-prompt failure mode",
+        "Update docs/usage.md with secure automation examples showing stdin/file patterns and warnings about argv secrets",
+        "Verify by running `make test` and confirming all config tests pass"
+      ],
+      "notes": [
+        "ConfigCommand::Edit is interactive-only (no field args), so stdin/file options only apply to ConfigCommand::Set",
+        "crates/cli/tests/config/ directory exists with set_tests.rs, edge_cases_tests.rs - extend these for new test coverage",
+        "Secret flow already uses secrecy::SecretString internally - just need to hook up new input paths to existing SecureValue handling",
+        "Phase 3 review complete. All acceptance criteria met",
+        "Added secure credential input options: --password-stdin, --password-file, --api-token-stdin, --api-token-file, --no-prompt",
+        "16 integration tests covering arg conflicts, stdin/file reading, and --no-prompt failure mode",
+        "Documentation updated with CI/CD examples and security warnings",
+        "All 45 config tests pass; full CI pipeline passes"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T05:38:20.392902636Z",
+      "completed_at": "2026-02-07T05:38:20.392902636Z",
+      "started_at": "2026-02-07T05:22:10.939709166Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-innovation",
         "runner_used": "kimi"
       }
     }

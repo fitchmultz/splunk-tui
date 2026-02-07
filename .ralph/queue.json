@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0381",
-      "status": "todo",
-      "title": "Add password/token stdin+file options to splunk-cli config",
-      "description": "Opportunity type: security / UX improvement\n\nEvidence:\n- `splunk-cli config set` accepts `--password` and `--api-token` as command-line flags (plain strings), which can leak via shell history and process listings.\n- There is no `--*-stdin`, `--*-file`, or `--no-prompt` mode for non-interactive automation.\n\nWhy it matters:\n- Secure automation should avoid placing secrets in argv. This reduces accidental leakage during setup and CI/CD usage.\n\nProposed approach:\n- Add mutually-exclusive options:\n  - `--password-stdin` and `--api-token-stdin` (read a single line from stdin, trim trailing newline).\n  - `--password-file <path>` and `--api-token-file <path>` (read file content, trim).\n  - `--no-prompt` to fail fast instead of prompting (useful for scripts/CI).\n- Keep current interactive prompts as default behavior when a tty is present and `--no-prompt` is not set.\n\nRisks and mitigations:\n- Risk: ambiguous precedence. Mitigation: document and enforce a single precedence order per secret (explicit flag > stdin/file > interactive prompt > existing profile).\n\nAcceptance criteria:\n- `splunk-cli config set --help` includes examples for stdin/file usage and notes that argv secrets are discouraged.\n- Integration tests cover: arg conflicts, stdin reading, file reading, and `--no-prompt` failure mode (no network required).\n- `make test` passes.\n\nPriority rationale:\n- High: directly reduces the chance of secret leakage in common workflows.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "cli",
-        "security",
-        "ux",
-        "config"
-      ],
-      "scope": [
-        "crates/cli/src/commands/config.rs",
-        "crates/cli/src/args.rs",
-        "crates/cli/tests/",
-        "docs/usage.md",
-        "make test"
-      ],
-      "evidence": [
-        "crates/cli/src/commands/config.rs defines `--password` and `--api-token` as plain String options for ConfigCommand::Set",
-        "crates/cli/src/commands/config.rs uses dialoguer prompts for missing secrets, but offers no stdin/file or no-prompt automation mode"
-      ],
-      "plan": [
-        "Extend `ConfigCommand::Set`/`Edit` options in `crates/cli/src/commands/config.rs` to support stdin/file/no-prompt inputs.",
-        "Implement strict precedence + clap arg-group conflicts to prevent ambiguous secret sources.",
-        "Add integration tests using `assert_cmd` to validate stdin/file behavior and `--no-prompt` failures.",
-        "Update docs (`docs/usage.md`) with secure automation examples.",
-        "Verify by running `make test` and confirming the new tests pass."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0382",
       "status": "todo",
       "title": "Implement saved-searches create/delete/enable/disable (CLI + TUI)",
@@ -496,8 +454,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "fail-fast",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "fail-fast"
       }
     },
     {

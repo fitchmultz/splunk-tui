@@ -915,18 +915,57 @@ splunk-cli config delete my-profile
 - `set <profile-name>`: Create or update a profile
   - `-b, --base-url <URL>`: Base URL of Splunk server
   - `-u, --username <NAME>`: Username for session authentication
-  - `-p, --password <PASS>`: Password for session authentication (will prompt if not provided)
-  - `-a, --api-token <TOKEN>`: API token for bearer authentication (will prompt if not provided)
+  - `-p, --password <PASS>`: Password for session authentication (⚠️ **discouraged**: visible in shell history)
+  - `--password-stdin`: Read password from stdin (single line, trailing newline trimmed)
+  - `--password-file <PATH>`: Read password from file (content trimmed)
+  - `-a, --api-token <TOKEN>`: API token for bearer authentication (⚠️ **discouraged**: visible in shell history)
+  - `--api-token-stdin`: Read API token from stdin (single line, trailing newline trimmed)
+  - `--api-token-file <PATH>`: Read API token from file (content trimmed)
   - `-s, --skip-verify`: Skip TLS certificate verification
   - `-t, --timeout <SECONDS>`: Connection timeout (updates the profile's stored timeout, not a one-off runtime override)
   - `-m, --max-retries <NUMBER>`: Maximum number of retries
   - `--plaintext`: Store credentials as plaintext instead of using system keyring
+  - `--no-prompt`: Fail fast instead of prompting for missing values (useful for CI/automation)
 - `show <profile-name>`: Display a profile's configuration
 - `edit <profile-name>`: Edit a profile interactively
   - `--plaintext`: Store credentials as plaintext instead of using system keyring
   - Prompts for each field with current values as defaults
   - Press Enter when prompted for password/token to keep existing values
 - `delete <profile-name>`: Delete a profile
+
+**Secure Credential Input (Recommended for CI/CD):**
+
+For automation and CI/CD pipelines, avoid passing secrets via command-line arguments. Use one of these secure alternatives:
+
+```bash
+# Option 1: Read from file (e.g., Docker secrets, Kubernetes secrets)
+echo "$SPLUNK_PASSWORD" > /run/secrets/splunk-password
+splunk-cli config set my-profile \
+  --base-url https://splunk.example.com:8089 \
+  --username admin \
+  --password-file /run/secrets/splunk-password \
+  --no-prompt
+
+# Option 2: Pipe from environment variable or command
+printf '%s' "$SPLUNK_PASSWORD" | splunk-cli config set my-profile \
+  --base-url https://splunk.example.com:8089 \
+  --username admin \
+  --password-stdin \
+  --no-prompt
+
+# Option 3: Use API token from file
+splunk-cli config set my-profile \
+  --base-url https://splunk.example.com:8089 \
+  --api-token-file /run/secrets/splunk-token \
+  --no-prompt
+```
+
+**Security Notes:**
+- `--password` and `--api-token` flags are convenient for interactive use but expose secrets in shell history and process listings
+- Use `--no-prompt` in automation to ensure the command fails fast if credentials are missing (prevents hanging on interactive prompts)
+- The `--password-*` and `--api-token-*` options are mutually exclusive - use only one method per secret
+- File contents are trimmed (leading/trailing whitespace removed) when reading secrets
+- Stdin input reads a single line and trims the trailing newline
 
 ##### Credential Storage Security
 

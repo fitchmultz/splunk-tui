@@ -38,13 +38,29 @@ pub enum ConfigCommand {
         #[arg(short, long)]
         username: Option<String>,
 
-        /// Password for session authentication
-        #[arg(short, long)]
+        /// Password for session authentication (discouraged: use --password-stdin or --password-file)
+        #[arg(short, long, group = "password_input")]
         password: Option<String>,
 
-        /// API token for bearer authentication
-        #[arg(short, long)]
+        /// Read password from stdin (single line, trailing newline trimmed)
+        #[arg(long, group = "password_input")]
+        password_stdin: bool,
+
+        /// Read password from file (content trimmed)
+        #[arg(long, group = "password_input", value_name = "PATH")]
+        password_file: Option<PathBuf>,
+
+        /// API token for bearer authentication (discouraged: use --api-token-stdin or --api-token-file)
+        #[arg(short, long, group = "token_input")]
         api_token: Option<String>,
+
+        /// Read API token from stdin (single line, trailing newline trimmed)
+        #[arg(long, group = "token_input")]
+        api_token_stdin: bool,
+
+        /// Read API token from file (content trimmed)
+        #[arg(long, group = "token_input", value_name = "PATH")]
+        api_token_file: Option<PathBuf>,
 
         /// Skip TLS certificate verification
         #[arg(short, long)]
@@ -64,6 +80,10 @@ pub enum ConfigCommand {
             help = "Store credentials as plaintext instead of using system keyring"
         )]
         plaintext: bool,
+
+        /// Fail fast instead of prompting for missing values (useful for CI/automation)
+        #[arg(long)]
+        no_prompt: bool,
     },
 
     /// Show a profile's configuration
@@ -113,11 +133,16 @@ pub fn run(
             base_url,
             username,
             password,
+            password_stdin,
+            password_file,
             api_token,
+            api_token_stdin,
+            api_token_file,
             skip_verify,
             timeout,
             max_retries,
             plaintext,
+            no_prompt,
         } => {
             run_set(
                 &mut manager,
@@ -125,11 +150,16 @@ pub fn run(
                 base_url,
                 username,
                 password,
+                password_stdin,
+                password_file,
                 api_token,
+                api_token_stdin,
+                api_token_file,
                 skip_verify,
                 timeout,
                 max_retries,
                 plaintext,
+                no_prompt,
             )?;
         }
         ConfigCommand::Show { profile_name } => {
@@ -195,6 +225,45 @@ fn prompt_for_secret(
     } else {
         None
     }
+}
+
+/// Read a secret from stdin (single line, trailing newline trimmed).
+/// Returns None if stdin is not available or empty.
+fn read_secret_from_stdin() -> Option<SecureValue> {
+    use std::io::{self, BufRead};
+
+    let stdin = io::stdin();
+    let mut lock = stdin.lock();
+    let mut line = String::new();
+
+    lock.read_line(&mut line).ok().and_then(|_| {
+        let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(SecureValue::Plain(secrecy::SecretString::new(
+                trimmed.into(),
+            )))
+        }
+    })
+}
+
+/// Read a secret from a file (content trimmed).
+/// Returns error if file cannot be read.
+fn read_secret_from_file(path: &PathBuf) -> Result<SecureValue> {
+    use std::fs;
+
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read secret from file: {}", path.display()))?;
+    let trimmed = content.trim();
+
+    if trimmed.is_empty() {
+        anyhow::bail!("Secret file is empty: {}", path.display());
+    }
+
+    Ok(SecureValue::Plain(secrecy::SecretString::new(
+        trimmed.into(),
+    )))
 }
 
 /// Store password with optional keyring fallback.
@@ -279,11 +348,16 @@ fn run_set(
     base_url: Option<String>,
     username: Option<String>,
     password: Option<String>,
+    password_stdin: bool,
+    password_file: Option<PathBuf>,
     api_token: Option<String>,
+    api_token_stdin: bool,
+    api_token_file: Option<PathBuf>,
     skip_verify: Option<bool>,
     timeout: Option<u64>,
     max_retries: Option<usize>,
     plaintext: bool,
+    no_prompt: bool,
 ) -> Result<()> {
     // Load existing profile if it exists
     let existing_profile = manager.list_profiles().get(profile_name).cloned();
@@ -293,16 +367,34 @@ fn run_set(
     let password = password.filter(|s| !s.is_empty());
     let api_token = api_token.filter(|s| !s.is_empty());
 
-    // Validate required fields
+    // Resolve password from new input methods (CLI arg → stdin → file)
+    let password_from_input = if let Some(pw) = password {
+        Some(SecureValue::Plain(secrecy::SecretString::new(pw.into())))
+    } else if password_stdin {
+        read_secret_from_stdin()
+    } else if let Some(path) = password_file {
+        Some(read_secret_from_file(&path)?)
+    } else {
+        None
+    };
+
+    // Resolve API token from new input methods (CLI arg → stdin → file)
+    let api_token_from_input = if let Some(token) = api_token {
+        Some(SecureValue::Plain(secrecy::SecretString::new(token.into())))
+    } else if api_token_stdin {
+        read_secret_from_stdin()
+    } else if let Some(path) = api_token_file {
+        Some(read_secret_from_file(&path)?)
+    } else {
+        None
+    };
+
+    // Validate required fields before prompting
     validate_profile_requirements(
         &base_url,
         &username,
-        &password
-            .as_ref()
-            .map(|p| SecureValue::Plain(secrecy::SecretString::new(p.clone().into()))),
-        &api_token
-            .as_ref()
-            .map(|t| SecureValue::Plain(secrecy::SecretString::new(t.clone().into()))),
+        &password_from_input,
+        &api_token_from_input,
         &profile.username,
         &profile.password,
         &profile.api_token,
@@ -311,17 +403,37 @@ fn run_set(
     let resolved_base_url = base_url.or(profile.base_url.clone());
     let resolved_username = username.or(profile.username.clone());
 
-    // Resolve password: CLI arg → existing profile → interactive prompt
-    let password = password
-        .map(|pw| SecureValue::Plain(secrecy::SecretString::new(pw.into())))
-        .or_else(|| profile.password.clone())
-        .or_else(|| prompt_for_secret("Password", &None));
+    // Merge with existing profile values
+    let password = password_from_input.or_else(|| profile.password.clone());
+    let api_token = api_token_from_input.or_else(|| profile.api_token.clone());
 
-    // Resolve API token: CLI arg → existing profile → interactive prompt
-    let api_token = api_token
-        .map(|token| SecureValue::Plain(secrecy::SecretString::new(token.into())))
-        .or_else(|| profile.api_token.clone())
-        .or_else(|| prompt_for_secret("API Token", &None));
+    // Check if --no-prompt would fail (missing credentials when auth is needed)
+    if no_prompt {
+        let has_password_auth = password.is_some();
+        let has_token_auth = api_token.is_some();
+        let needs_auth = resolved_username.is_some();
+
+        if needs_auth && !has_password_auth && !has_token_auth {
+            anyhow::bail!(
+                "Authentication required but no credentials provided. Use --password, --password-stdin, \
+                 --password-file, --api-token, --api-token-stdin, or --api-token-file"
+            );
+        }
+    }
+
+    // Resolve password: input → existing profile → interactive prompt (unless --no-prompt)
+    let password = if no_prompt {
+        password
+    } else {
+        password.or_else(|| prompt_for_secret("Password", &None))
+    };
+
+    // Resolve API token: input → existing profile → interactive prompt (unless --no-prompt)
+    let api_token = if no_prompt {
+        api_token
+    } else {
+        api_token.or_else(|| prompt_for_secret("API Token", &None))
+    };
 
     let mut profile_config = ProfileConfig {
         base_url: resolved_base_url,
