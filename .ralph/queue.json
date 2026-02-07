@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0368",
-      "status": "todo",
-      "title": "Remove dead code: placeholder/empty resource_impls and xml files",
-      "description": "Several files exist as placeholders after migration but contain no actual implementation, cluttering the codebase. resource_impls/users.rs has only a comment explaining why it wasn't implemented. xml/apps.rs is marked as placeholder after macro migration.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "YAGNI",
-        "cli",
-        "cleanup"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/resource_impls/users.rs",
-        "crates/cli/src/formatters/xml/apps.rs"
-      ],
-      "evidence": [
-        "resource_impls/users.rs: Only contains comment '// User doesn't implement ResourceDisplay because...'",
-        "xml/apps.rs: Comment states 'This file is kept as a placeholder for any future app-specific XML formatting'"
-      ],
-      "plan": [
-        "Verify resource_impls/users.rs has no actual implementation",
-        "Verify xml/apps.rs has no actual implementation (only tests)",
-        "Delete confirmed placeholder files",
-        "Update any imports if needed",
-        "Verify by running: 'cargo check -p splunk-cli' and 'cargo test -p splunk-cli'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0369",
       "status": "todo",
       "title": "Deduplicate escape_xml function between common.rs and xml/mod.rs",
@@ -227,8 +188,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -264,8 +225,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -303,8 +264,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "YAGNI"
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -374,8 +335,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]

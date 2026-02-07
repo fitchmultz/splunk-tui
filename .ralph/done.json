@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "dead_code_count": "25",
         "scan_agent": "scan-maintenance",
-        "production_files_affected": "8",
-        "test_files_affected": "4"
+        "test_files_affected": "4",
+        "dead_code_count": "25",
+        "production_files_affected": "8"
       }
     },
     {
@@ -4178,9 +4178,9 @@
       ],
       "custom_fields": {
         "macro_already_adopted": "true",
+        "current_line_count": "867",
         "target_line_count": "300",
-        "scan_agent": "scan-maintenance",
-        "current_line_count": "867"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_formatters": "4",
+        "estimated_methods": "35+",
         "scan_agent": "scan-maintenance",
-        "estimated_methods": "35+"
+        "affected_formatters": "4"
       }
     },
     {
@@ -4408,10 +4408,10 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "target_line_count": "150",
-        "current_line_count": "523",
+        "action_variants": "94",
         "submodule_count": "28",
-        "action_variants": "94"
+        "current_line_count": "523",
+        "target_line_count": "150"
       }
     },
     {
@@ -4471,9 +4471,9 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "estimated_method_count": "45",
+        "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
-        "existing_macro_coverage": "4 methods total across all formatters"
+        "estimated_method_count": "45"
       }
     },
     {
@@ -4539,8 +4539,8 @@
       "relates_to": [],
       "custom_fields": {
         "command_files": "27",
-        "scan_agent": "scan-maintenance",
         "bail_usages": "18",
+        "scan_agent": "scan-maintenance",
         "with_context_usages": "120+"
       }
     },
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "file_count": "23",
         "principle": "DRY",
+        "file_count": "23",
+        "screen_files": "22",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
-        "screen_files": "22"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_using_pattern_a": "26",
-        "model_used": "kimi-code/kimi-for-coding",
+        "files_using_pattern_b": "2",
         "runner_used": "kimi",
-        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "files_using_pattern_b": "2"
+        "principle": "DRY",
+        "files_using_pattern_a": "26"
       }
     },
     {
@@ -4745,13 +4745,13 @@
       "relates_to": [],
       "custom_fields": {
         "affected_screens": "25",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "widgets_dir_exists": "false",
         "scan_agent": "scan-maintenance",
-        "principle": "DRY",
-        "lines_duplicated": "~400",
+        "widgets_dir_exists": "false",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "runner_used": "kimi",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "lines_duplicated": "~400",
+        "principle": "DRY"
       }
     },
     {
@@ -4815,11 +4815,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "files_with_duplicates": "5",
+        "duplication_count": "6 functions across 5 files",
+        "principle": "DRY",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "principle": "DRY",
-        "duplication_count": "6 functions across 5 files",
-        "files_with_duplicates": "5",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -4880,10 +4880,70 @@
       "relates_to": [],
       "custom_fields": {
         "affected_files": "4",
-        "duplicate_count": "4",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
+        "duplicate_count": "4",
         "principle": "DRY",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
+      }
+    },
+    {
+      "id": "RQ-0368",
+      "status": "done",
+      "title": "Remove dead code: placeholder/empty resource_impls and xml files",
+      "description": "Several files exist as placeholders after migration but contain no actual implementation, cluttering the codebase. resource_impls/users.rs has only comments explaining why it wasn't implemented plus a basic struct test. xml/apps.rs is a placeholder after macro migration with only a basic struct test.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "YAGNI",
+        "cli",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/resource_impls/users.rs",
+        "crates/cli/src/formatters/resource_impls/mod.rs",
+        "crates/cli/src/formatters/xml/apps.rs",
+        "crates/cli/src/formatters/xml/mod.rs"
+      ],
+      "evidence": [
+        "resource_impls/users.rs (33 lines): Contains only module-level comment explaining User doesn't implement ResourceDisplay because formatters have different requirements (CSV/table/XML). Contains single test_user_structure test that creates an empty User struct.",
+        "xml/apps.rs (32 lines): Contains only module-level comment stating this is a placeholder after macro migration. Contains single test_app_struct_accessible test that creates an empty App struct.",
+        "resource_impls/mod.rs (line 28): Declares 'pub mod users;' which will need removal.",
+        "xml/mod.rs (line 33): Declares 'mod apps;' which will need removal.",
+        "The actual User formatting implementations are in csv/users.rs, table/users.rs, and xml/users.rs.",
+        "The actual App XML formatting is handled by macros (impl_xml_list_formatter!, impl_xml_detail_formatter!) using ResourceDisplay from resource_impls/apps.rs."
+      ],
+      "plan": [
+        "Verify resource_impls/users.rs has no actual implementation (only comments + placeholder test)",
+        "Verify xml/apps.rs has no actual implementation (only comments + placeholder test)",
+        "Delete resource_impls/users.rs",
+        "Delete xml/apps.rs",
+        "Update resource_impls/mod.rs: Remove 'pub mod users;' declaration (line 28)",
+        "Update xml/mod.rs: Remove 'mod apps;' declaration (line 33)",
+        "Verify build passes: 'cargo check -p splunk-cli'",
+        "Verify tests pass: 'cargo test -p splunk-cli'"
+      ],
+      "notes": [
+        "The placeholder tests in these files are redundant - User struct is tested in actual formatter test files (csv_tests.rs, table_tests.rs, xml_tests.rs, json_tests.rs).",
+        "App struct is tested via resource_impls/apps.rs which has real ResourceDisplay implementation.",
+        "No other files import from these placeholder modules directly.",
+        "Removed placeholder files: resource_impls/users.rs and xml/apps.rs",
+        "Updated parent mod.rs files to remove module declarations",
+        "Verified build and all 418 tests pass",
+        "Confirmed no functional code was removed - only dead placeholder code"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T02:16:03.514394988Z",
+      "completed_at": "2026-02-07T02:16:03.514394988Z",
+      "started_at": "2026-02-07T02:09:04.683131578Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi"
       }
     }

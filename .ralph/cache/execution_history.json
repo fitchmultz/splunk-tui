@@ -33,10 +33,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 93,
-          "nanos": 421521569
-        },
         "review": {
           "secs": 450,
           "nanos": 648252613
@@ -44,6 +40,10 @@
         "implementation": {
           "secs": 1079,
           "nanos": 952061759
+        },
+        "planning": {
+          "secs": 93,
+          "nanos": 421521569
         }
       },
       "total_duration": {
@@ -58,10 +58,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 726,
-          "nanos": 143676331
-        },
         "planning": {
           "secs": 97,
           "nanos": 499287716
@@ -69,6 +65,10 @@
         "review": {
           "secs": 329,
           "nanos": 837648089
+        },
+        "implementation": {
+          "secs": 726,
+          "nanos": 143676331
         }
       },
       "total_duration": {
@@ -83,6 +83,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "review": {
+          "secs": 267,
+          "nanos": 471278388
+        },
         "implementation": {
           "secs": 396,
           "nanos": 57862488
@@ -90,15 +94,36 @@
         "planning": {
           "secs": 59,
           "nanos": 698704943
-        },
-        "review": {
-          "secs": 267,
-          "nanos": 471278388
         }
       },
       "total_duration": {
         "secs": 723,
         "nanos": 227845819
+      }
+    },
+    {
+      "timestamp": "2026-02-07T02:07:34.679353567Z",
+      "task_id": "RQ-0367",
+      "runner": "kimi",
+      "model": "kimi-code/kimi-for-coding",
+      "phase_count": 3,
+      "phase_durations": {
+        "review": {
+          "secs": 108,
+          "nanos": 931710232
+        },
+        "implementation": {
+          "secs": 417,
+          "nanos": 9918973
+        },
+        "planning": {
+          "secs": 47,
+          "nanos": 277075957
+        }
+      },
+      "total_duration": {
+        "secs": 573,
+        "nanos": 218705162
       }
     }
   ]

@@ -30,7 +30,6 @@ use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
 
 mod alerts;
-mod apps;
 mod cluster;
 mod configs;
 mod forwarders;
