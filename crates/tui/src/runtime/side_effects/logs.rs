@@ -17,7 +17,7 @@ use super::SharedClient;
 pub async fn handle_load_internal_logs(
     client: SharedClient,
     tx: Sender<Action>,
-    count: u64,
+    count: usize,
     earliest: String,
 ) {
     let _ = tx.send(Action::Loading(true)).await;

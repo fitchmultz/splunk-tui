@@ -21,6 +21,7 @@ use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
+use splunk_config::constants::*;
 
 #[derive(Subcommand)]
 pub enum DashboardsCommand {
@@ -30,7 +31,7 @@ pub enum DashboardsCommand {
         #[arg(short, long)]
         detailed: bool,
         /// Maximum number of dashboards to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
         /// Offset into the dashboard list (zero-based)
         #[arg(long, default_value = "0")]
@@ -86,15 +87,10 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let count_u64 =
-        u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
-    let offset_u64 =
-        u64::try_from(offset).context("Invalid --offset (value too large for this platform)")?;
-
-    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+    let offset_param = if offset == 0 { None } else { Some(offset) };
 
     let dashboards = tokio::select! {
-        res = client.list_dashboards(Some(count_u64), offset_param) => res?,
+        res = client.list_dashboards(Some(count), offset_param) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

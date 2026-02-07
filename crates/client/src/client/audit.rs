@@ -34,7 +34,7 @@ impl SplunkClient {
     }
 
     /// Get recent audit events from the last 24 hours.
-    pub async fn get_recent_audit_events(&self, count: u64) -> Result<Vec<AuditEvent>> {
+    pub async fn get_recent_audit_events(&self, count: usize) -> Result<Vec<AuditEvent>> {
         crate::retry_call!(
             self,
             __token,

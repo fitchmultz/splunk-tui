@@ -31,8 +31,8 @@ use crate::formatters::{Formatter, OutputFormat, get_formatter, write_to_file};
 struct LogCursor {
     time: String,
     index_time: String,
-    serial: Option<u64>,
-    content_hash: Option<u64>, // For entries without serial
+    serial: Option<usize>,
+    content_hash: Option<usize>, // For entries without serial
 }
 
 impl LogCursor {
@@ -155,7 +155,7 @@ async fn fetch_logs_batch(
     let time_filter = cursor.as_ref().map(|c| c.time.as_str()).unwrap_or(earliest);
 
     tokio::select! {
-        res = client.get_internal_logs(count as u64, Some(time_filter)) => res.map_err(|e| e.into()),
+        res = client.get_internal_logs(count, Some(time_filter)) => res.map_err(|e| e.into()),
         _ = cancel.cancelled() => Err(Cancelled.into()),
     }
 }
@@ -215,7 +215,7 @@ async fn run_normal_mode(
 ) -> Result<()> {
     info!("Fetching internal logs...");
     let logs: Vec<LogEntry> = tokio::select! {
-        res = client.get_internal_logs(count as u64, Some(earliest)) => res?,
+        res = client.get_internal_logs(count, Some(earliest)) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
@@ -239,7 +239,7 @@ async fn run_normal_mode(
 mod tests {
     use super::*;
 
-    fn make_log_entry(time: &str, index_time: &str, serial: Option<u64>) -> LogEntry {
+    fn make_log_entry(time: &str, index_time: &str, serial: Option<usize>) -> LogEntry {
         LogEntry {
             time: time.to_string(),
             index_time: index_time.to_string(),

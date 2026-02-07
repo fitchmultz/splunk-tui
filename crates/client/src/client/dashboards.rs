@@ -16,8 +16,8 @@ impl SplunkClient {
     /// List all dashboards.
     pub async fn list_dashboards(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<Dashboard>> {
         crate::retry_call!(
             self,

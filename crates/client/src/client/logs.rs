@@ -37,7 +37,7 @@ impl SplunkClient {
     /// Get internal logs from Splunk.
     pub async fn get_internal_logs(
         &self,
-        count: u64,
+        count: usize,
         earliest: Option<&str>,
     ) -> Result<Vec<LogEntry>> {
         crate::retry_call!(

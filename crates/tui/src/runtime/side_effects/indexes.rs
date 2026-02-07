@@ -24,8 +24,8 @@ use super::SharedClient;
 pub async fn handle_load_indexes(
     client: SharedClient,
     tx: Sender<Action>,
-    count: u64,
-    offset: u64,
+    count: usize,
+    offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {

@@ -25,15 +25,12 @@ use crate::runtime::side_effects::SharedClient;
 pub async fn handle_load_lookups(
     client: SharedClient,
     tx: Sender<Action>,
-    count: u64,
-    offset: u64,
+    count: usize,
+    offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        match client
-            .list_lookup_tables(Some(count as u32), Some(offset as u32))
-            .await
-        {
+        match client.list_lookup_tables(Some(count), Some(offset)).await {
             Ok(lookups) => {
                 if offset == 0 {
                     let _ = tx.send(Action::LookupsLoaded(Ok(lookups))).await;

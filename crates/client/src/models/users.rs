@@ -21,9 +21,9 @@ pub struct User {
     #[serde(
         rename = "lastSuccessfulLogin",
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub last_successful_login: Option<u64>, // Unix timestamp
+    pub last_successful_login: Option<usize>, // Unix timestamp
 }
 
 /// User entry wrapper.

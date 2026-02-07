@@ -45,8 +45,8 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
         .unwrap_or("N/A");
 
     let (used, quota) = if let Some(usage) = &health.license_usage {
-        let used: u64 = usage.iter().map(|u| u.effective_used_bytes()).sum();
-        let quota: u64 = usage.iter().map(|u| u.quota).sum();
+        let used: usize = usage.iter().map(|u| u.effective_used_bytes()).sum();
+        let quota: usize = usage.iter().map(|u| u.quota).sum();
         (
             (used / 1024 / 1024).to_string(),
             (quota / 1024 / 1024).to_string(),

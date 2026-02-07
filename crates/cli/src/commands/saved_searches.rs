@@ -21,6 +21,7 @@
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use splunk_client::SearchRequest;
+use splunk_config::constants::*;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
@@ -31,7 +32,7 @@ pub enum SavedSearchesCommand {
     /// List saved searches
     List {
         /// Maximum number of saved searches to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
     },
     /// Show detailed information about a saved search
@@ -55,7 +56,7 @@ pub enum SavedSearchesCommand {
         #[arg(short, long, allow_hyphen_values = true)]
         latest: Option<String>,
         /// Maximum number of results to return
-        #[arg(short, long, default_value = "100")]
+        #[arg(short, long, default_value_t = DEFAULT_MAX_RESULTS)]
         count: usize,
     },
     /// Edit a saved search
@@ -201,7 +202,7 @@ async fn run_list(
     let client = crate::commands::build_client_from_config(&config)?;
 
     let searches = tokio::select! {
-        res = client.list_saved_searches(Some(count as u64), None) => res?,
+        res = client.list_saved_searches(Some(count), None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
@@ -281,7 +282,7 @@ async fn run_run(
     info!("Executing search query: {}", search.search);
     let request = SearchRequest::new(&search.search, wait)
         .time_bounds(earliest.unwrap_or("-24h"), latest.unwrap_or("now"))
-        .max_results(max_results as u64);
+        .max_results(max_results);
     let results = tokio::select! {
         res = client.search(request) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),

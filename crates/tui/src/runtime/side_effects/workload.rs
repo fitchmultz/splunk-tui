@@ -25,7 +25,7 @@ use crate::runtime::side_effects::SharedClient;
 /// When `offset > 0`, returns `MoreWorkloadPoolsLoaded` (append mode).
 fn build_workload_pools_action(
     result: Result<Vec<splunk_client::models::WorkloadPool>, splunk_client::ClientError>,
-    offset: u64,
+    offset: usize,
 ) -> Action {
     match offset {
         0 => match result {
@@ -45,7 +45,7 @@ fn build_workload_pools_action(
 /// When `offset > 0`, returns `MoreWorkloadRulesLoaded` (append mode).
 fn build_workload_rules_action(
     result: Result<Vec<splunk_client::models::WorkloadRule>, splunk_client::ClientError>,
-    offset: u64,
+    offset: usize,
 ) -> Action {
     match offset {
         0 => match result {
@@ -66,8 +66,8 @@ fn build_workload_rules_action(
 pub async fn handle_load_workload_pools(
     client: SharedClient,
     tx: Sender<Action>,
-    count: u64,
-    offset: u64,
+    count: usize,
+    offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
@@ -84,8 +84,8 @@ pub async fn handle_load_workload_pools(
 pub async fn handle_load_workload_rules(
     client: SharedClient,
     tx: Sender<Action>,
-    count: u64,
-    offset: u64,
+    count: usize,
+    offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {

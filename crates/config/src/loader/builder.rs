@@ -49,8 +49,8 @@ pub struct ConfigLoader {
     config_path: Option<PathBuf>,
     earliest_time: Option<String>,
     latest_time: Option<String>,
-    max_results: Option<u64>,
-    internal_logs_count: Option<u64>,
+    max_results: Option<usize>,
+    internal_logs_count: Option<usize>,
     internal_logs_earliest: Option<String>,
 }
 
@@ -380,12 +380,12 @@ impl ConfigLoader {
     }
 
     /// Get the max results if set via environment variable.
-    pub fn max_results(&self) -> Option<u64> {
+    pub fn max_results(&self) -> Option<usize> {
         self.max_results
     }
 
     /// Get the internal logs count if set via environment variable.
-    pub fn internal_logs_count(&self) -> Option<u64> {
+    pub fn internal_logs_count(&self) -> Option<usize> {
         self.internal_logs_count
     }
 
@@ -456,11 +456,11 @@ impl ConfigLoader {
         self.latest_time = latest;
     }
 
-    pub(crate) fn set_max_results(&mut self, max_results: Option<u64>) {
+    pub(crate) fn set_max_results(&mut self, max_results: Option<usize>) {
         self.max_results = max_results;
     }
 
-    pub(crate) fn set_internal_logs_count(&mut self, count: Option<u64>) {
+    pub(crate) fn set_internal_logs_count(&mut self, count: Option<usize>) {
         self.internal_logs_count = count;
     }
 

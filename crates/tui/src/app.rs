@@ -68,7 +68,7 @@ impl App {
     /// Set search results (virtualization: formatting is deferred to render time).
     pub fn set_search_results(&mut self, results: Vec<serde_json::Value>) {
         self.search_results = results;
-        self.search_results_total_count = Some(self.search_results.len() as u64);
+        self.search_results_total_count = Some(self.search_results.len());
         self.search_has_more_results = false;
         // Reset scroll offset when new results arrive
         self.search_scroll_offset = 0;
@@ -78,16 +78,16 @@ impl App {
     pub fn append_search_results(
         &mut self,
         mut results: Vec<serde_json::Value>,
-        total: Option<u64>,
+        total: Option<usize>,
     ) {
-        let results_count = results.len() as u64;
+        let results_count = results.len();
         self.search_results.append(&mut results);
         self.search_results_total_count = total;
 
         // Determine if more results may exist
         self.search_has_more_results = if let Some(t) = total {
             // When total is known, use it directly
-            (self.search_results.len() as u64) < t
+            self.search_results.len() < t
         } else {
             // When total is None, infer from page fullness:
             // If we got exactly page_size results, there might be more.
@@ -433,7 +433,7 @@ impl App {
         if visible_end >= loaded_count {
             Some(Action::LoadMoreSearchResults {
                 sid: self.search_sid.clone()?,
-                offset: loaded_count as u64,
+                offset: loaded_count,
                 count: self.search_results_page_size,
             })
         } else {

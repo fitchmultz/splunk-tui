@@ -10,13 +10,13 @@ pub struct CreateIndexParams {
     /// The name of the index to create (required).
     pub name: String,
     /// Maximum data size in MB.
-    pub max_data_size_mb: Option<u64>,
+    pub max_data_size_mb: Option<usize>,
     /// Maximum number of hot buckets.
-    pub max_hot_buckets: Option<u64>,
+    pub max_hot_buckets: Option<usize>,
     /// Maximum number of warm DBs.
-    pub max_warm_db_count: Option<u64>,
+    pub max_warm_db_count: Option<usize>,
     /// Frozen time period in seconds.
-    pub frozen_time_period_in_secs: Option<u64>,
+    pub frozen_time_period_in_secs: Option<usize>,
     /// Home path for the index.
     pub home_path: Option<String>,
     /// Cold DB path for the index.
@@ -31,13 +31,13 @@ pub struct CreateIndexParams {
 #[derive(Debug, Clone, Default)]
 pub struct ModifyIndexParams {
     /// Maximum data size in MB.
-    pub max_data_size_mb: Option<u64>,
+    pub max_data_size_mb: Option<usize>,
     /// Maximum number of hot buckets.
-    pub max_hot_buckets: Option<u64>,
+    pub max_hot_buckets: Option<usize>,
     /// Maximum number of warm DBs.
-    pub max_warm_db_count: Option<u64>,
+    pub max_warm_db_count: Option<usize>,
     /// Frozen time period in seconds.
-    pub frozen_time_period_in_secs: Option<u64>,
+    pub frozen_time_period_in_secs: Option<usize>,
     /// Home path for the index.
     pub home_path: Option<String>,
     /// Cold DB path for the index.
@@ -56,25 +56,25 @@ pub struct Index {
     #[serde(
         rename = "maxTotalDataSizeMB",
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub max_total_data_size_mb: Option<u64>,
+    pub max_total_data_size_mb: Option<usize>,
     #[serde(
         rename = "currentDBSizeMB",
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub current_db_size_mb: u64,
+    pub current_db_size_mb: usize,
     #[serde(
         rename = "totalEventCount",
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub total_event_count: u64,
+    pub total_event_count: usize,
     #[serde(
         rename = "maxWarmDBCount",
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub max_warm_db_count: Option<u64>,
+    pub max_warm_db_count: Option<usize>,
     #[serde(
         rename = "maxHotBuckets",
         default,
@@ -84,9 +84,9 @@ pub struct Index {
     #[serde(
         rename = "frozenTimePeriodInSecs",
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub frozen_time_period_in_secs: Option<u64>,
+    pub frozen_time_period_in_secs: Option<usize>,
     #[serde(rename = "coldDBPath")]
     pub cold_db_path: Option<String>,
     #[serde(rename = "homePath")]

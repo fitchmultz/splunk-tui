@@ -25,6 +25,7 @@ use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
+use splunk_config::constants::*;
 
 #[derive(Subcommand)]
 pub enum KvstoreCommand {
@@ -39,7 +40,7 @@ pub enum KvstoreCommand {
         #[arg(long)]
         owner: Option<String>,
         /// Maximum number of collections to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
         /// Offset into the collection list
         #[arg(long, default_value = "0")]
@@ -90,7 +91,7 @@ pub enum KvstoreCommand {
         #[arg(short, long)]
         query: Option<String>,
         /// Maximum number of records
-        #[arg(short, long, default_value = "100")]
+        #[arg(short, long, default_value_t = DEFAULT_MAX_RESULTS)]
         count: usize,
         /// Offset into results
         #[arg(long, default_value = "0")]
@@ -216,12 +217,10 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let count_u64 = u64::try_from(count).context("Invalid --count (value too large)")?;
-    let offset_u64 = u64::try_from(offset).context("Invalid --offset (value too large)")?;
-    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+    let offset_param = if offset == 0 { None } else { Some(offset) };
 
     let collections = tokio::select! {
-        res = client.list_collections(app.as_deref(), owner.as_deref(), Some(count_u64), offset_param) => res?,
+        res = client.list_collections(app.as_deref(), owner.as_deref(), Some(count), offset_param) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 
@@ -342,13 +341,11 @@ async fn run_data(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let count_u64 = u64::try_from(count).context("Invalid --count (value too large)")?;
-    let offset_u64 = u64::try_from(offset).context("Invalid --offset (value too large)")?;
-    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+    let offset_param = if offset == 0 { None } else { Some(offset) };
 
     let records = tokio::select! {
         res = client.list_collection_records(
-            &name, &app, &owner, query.as_deref(), Some(count_u64), offset_param
+            &name, &app, &owner, query.as_deref(), Some(count), offset_param
         ) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };

@@ -30,7 +30,7 @@ pub struct CreateJobOptions {
     pub latest_time: Option<String>,
     /// Maximum number of results to return.
     #[serde(rename = "maxCount", skip_serializing_if = "Option::is_none")]
-    pub max_count: Option<u64>,
+    pub max_count: Option<usize>,
     /// Output format for results.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_mode: Option<OutputMode>,

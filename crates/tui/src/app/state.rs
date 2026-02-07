@@ -316,22 +316,22 @@ impl SearchInputMode {
 #[derive(Debug, Clone, Copy)]
 pub struct ListPaginationState {
     /// Number of items per page.
-    pub page_size: u64,
+    pub page_size: usize,
     /// Current offset (number of items already loaded).
-    pub current_offset: u64,
+    pub current_offset: usize,
     /// Whether more items may be available.
     pub has_more: bool,
     /// Total number of items loaded so far.
     pub total_loaded: usize,
     /// Maximum number of items to load (safety cap).
-    pub max_items: u64,
+    pub max_items: usize,
     /// Whether a load operation is currently in progress (prevents duplicate requests).
     pub is_loading: bool,
 }
 
 impl ListPaginationState {
     /// Create new pagination state with the given page size and max items cap.
-    pub fn new(page_size: u64, max_items: u64) -> Self {
+    pub fn new(page_size: usize, max_items: usize) -> Self {
         Self {
             page_size,
             current_offset: 0,
@@ -345,7 +345,7 @@ impl ListPaginationState {
     /// Check if more items can be loaded without exceeding max_items cap.
     /// Returns false if a load is already in progress (prevents race conditions).
     pub fn can_load_more(&self) -> bool {
-        !self.is_loading && self.has_more && (self.total_loaded as u64) < self.max_items
+        !self.is_loading && self.has_more && self.total_loaded < self.max_items
     }
 
     /// Reset pagination state (e.g., on refresh).
@@ -369,9 +369,9 @@ impl ListPaginationState {
     /// Update state after loading items.
     pub fn update_loaded(&mut self, count: usize) {
         self.total_loaded += count;
-        self.current_offset = self.total_loaded as u64;
+        self.current_offset = self.total_loaded;
         // If we got a full page, there might be more
-        self.has_more = count >= self.page_size as usize;
+        self.has_more = count >= self.page_size;
         self.is_loading = false;
     }
 
@@ -721,7 +721,7 @@ mod tests {
         let mut state = ListPaginationState::new(100, 1000);
         state.update_loaded(100); // Full page, has_more = true
         assert!(state.has_more);
-        assert!((state.total_loaded as u64) < state.max_items);
+        assert!((state.total_loaded) < state.max_items);
         assert!(
             state.can_load_more(),
             "Should be able to load when both has_more is true and under cap"

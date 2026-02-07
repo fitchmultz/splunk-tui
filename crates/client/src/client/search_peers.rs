@@ -32,8 +32,8 @@ impl SplunkClient {
     /// Returns a `ClientError` if the request fails or the response cannot be parsed.
     pub async fn list_search_peers(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<SearchPeer>> {
         crate::retry_call!(
             self,

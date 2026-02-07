@@ -37,8 +37,8 @@ impl SplunkClient {
         &self,
         app: Option<&str>,
         owner: Option<&str>,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<KvStoreCollection>> {
         crate::retry_call!(
             self,
@@ -130,8 +130,8 @@ impl SplunkClient {
         app: &str,
         owner: &str,
         query: Option<&str>,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<KvStoreRecord>> {
         crate::retry_call!(
             self,

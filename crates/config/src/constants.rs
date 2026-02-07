@@ -53,7 +53,7 @@ pub const DEFAULT_POLL_INTERVAL_MS: u64 = 500;
 pub const DEFAULT_MAX_WAIT_SECS: u64 = 300;
 
 /// Default maximum number of search results to return.
-pub const DEFAULT_MAX_RESULTS: u64 = 1000;
+pub const DEFAULT_MAX_RESULTS: usize = 1000;
 
 // =============================================================================
 // TUI/UI Defaults
@@ -76,10 +76,10 @@ pub const DEFAULT_SCROLL_THRESHOLD: usize = 10;
 // =============================================================================
 
 /// Default page size for list screens (indexes, jobs, apps, users).
-pub const DEFAULT_LIST_PAGE_SIZE: u64 = 100;
+pub const DEFAULT_LIST_PAGE_SIZE: usize = 100;
 
 /// Default maximum items to load for list screens (safety limit).
-pub const DEFAULT_LIST_MAX_ITEMS: u64 = 1000;
+pub const DEFAULT_LIST_MAX_ITEMS: usize = 1000;
 
 /// Default maximum number of search history items to retain.
 pub const DEFAULT_HISTORY_MAX_ITEMS: usize = 50;
@@ -99,7 +99,7 @@ pub const DEFAULT_LICENSE_ALERT_PCT: f64 = 90.0;
 // =============================================================================
 
 /// Default number of internal log entries to fetch per query.
-pub const DEFAULT_INTERNAL_LOGS_COUNT: u64 = 100;
+pub const DEFAULT_INTERNAL_LOGS_COUNT: usize = 100;
 
 /// Default earliest time for internal logs queries (last 15 minutes).
 pub const DEFAULT_INTERNAL_LOGS_EARLIEST_TIME: &str = "-15m";

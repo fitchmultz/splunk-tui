@@ -19,8 +19,8 @@ use super::SharedClient;
 pub async fn handle_load_audit_events(
     client: SharedClient,
     tx: Sender<Action>,
-    count: u64,
-    offset: u64,
+    count: usize,
+    offset: usize,
     earliest: String,
     latest: String,
 ) {
@@ -46,7 +46,11 @@ pub async fn handle_load_audit_events(
 }
 
 /// Handle loading recent audit events.
-pub async fn handle_load_recent_audit_events(client: SharedClient, tx: Sender<Action>, count: u64) {
+pub async fn handle_load_recent_audit_events(
+    client: SharedClient,
+    tx: Sender<Action>,
+    count: usize,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         match client.get_recent_audit_events(count).await {

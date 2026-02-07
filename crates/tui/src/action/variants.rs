@@ -69,7 +69,7 @@ pub struct OverviewResource {
     /// The resource type name (e.g., "indexes", "jobs", "apps")
     pub resource_type: String,
     /// Count of items for this resource type
-    pub count: u64,
+    pub count: usize,
     /// Status string (e.g., "ok", "error", "timeout")
     pub status: String,
     /// Optional error message if the fetch failed
@@ -105,7 +105,7 @@ pub struct InstanceOverview {
     /// Health status (green/yellow/red)
     pub health_status: String,
     /// Job count (for quick reference)
-    pub job_count: u64,
+    pub job_count: usize,
 }
 
 /// Aggregated multi-instance overview data.
@@ -193,16 +193,16 @@ pub enum Action {
     /// Load the list of indexes with pagination
     LoadIndexes {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load the list of search jobs with pagination
     LoadJobs {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load cluster information
     LoadClusterInfo,
@@ -219,23 +219,23 @@ pub enum Action {
     /// Load internal logs from index=_internal
     LoadInternalLogs {
         /// Number of log entries to fetch
-        count: u64,
+        count: usize,
         /// Earliest time for the query (e.g., "-15m")
         earliest: String,
     },
     /// Load the list of apps with pagination
     LoadApps {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load the list of users with pagination
     LoadUsers {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load overview information (all resources)
     LoadOverview,
@@ -256,36 +256,36 @@ pub enum Action {
     /// Load the list of search peers with pagination
     LoadSearchPeers {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more search peers (pagination)
     LoadMoreSearchPeers,
     /// Load the list of forwarders with pagination
     LoadForwarders {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more forwarders (pagination)
     LoadMoreForwarders,
     /// Load the list of lookup tables with pagination
     LoadLookups {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more lookup tables (pagination)
     LoadMoreLookups,
     /// Load the list of data inputs with pagination
     LoadInputs {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more inputs (pagination)
     LoadMoreInputs,
@@ -298,25 +298,25 @@ pub enum Action {
         /// The config file name (e.g., "props", "transforms")
         config_file: String,
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load the list of fired alerts with pagination
     LoadFiredAlerts {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more fired alerts (pagination)
     LoadMoreFiredAlerts,
     /// Load audit events with time range
     LoadAuditEvents {
         /// Number of events to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
         /// Earliest time for events
         earliest: String,
         /// Latest time for events
@@ -325,23 +325,23 @@ pub enum Action {
     /// Load recent audit events (last 24 hours)
     LoadRecentAuditEvents {
         /// Number of events to load
-        count: u64,
+        count: usize,
     },
     /// Load the list of dashboards with pagination
     LoadDashboards {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more dashboards (pagination)
     LoadMoreDashboards,
     /// Load the list of data models with pagination
     LoadDataModels {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more data models (pagination)
     LoadMoreDataModels,
@@ -368,18 +368,18 @@ pub enum Action {
     /// Load the list of workload pools with pagination
     LoadWorkloadPools {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more workload pools (pagination)
     LoadMoreWorkloadPools,
     /// Load the list of workload rules with pagination
     LoadWorkloadRules {
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Load more workload rules (pagination)
     LoadMoreWorkloadRules,
@@ -656,16 +656,16 @@ pub enum Action {
     /// Result of a search completion (results, sid, total_count) or (error_msg, error_details)
     #[allow(clippy::type_complexity)]
     SearchComplete(
-        Result<(Vec<Value>, String, Option<u64>), (String, crate::error_details::ErrorDetails)>,
+        Result<(Vec<Value>, String, Option<usize>), (String, crate::error_details::ErrorDetails)>,
     ),
     /// Load more results for the current search (pagination)
     LoadMoreSearchResults {
         sid: String,
-        offset: u64,
-        count: u64,
+        offset: usize,
+        count: usize,
     },
     /// Result of loading more results
-    MoreSearchResultsLoaded(Result<(Vec<Value>, u64, Option<u64>), Arc<ClientError>>),
+    MoreSearchResultsLoaded(Result<(Vec<Value>, usize, Option<usize>), Arc<ClientError>>),
 
     // Job Operations
     /// Cancel a job by SID
@@ -747,7 +747,7 @@ pub enum Action {
 
     // Role Operations
     /// Load roles list
-    LoadRoles { count: u64, offset: u64 },
+    LoadRoles { count: usize, offset: usize },
     /// Create a new role
     CreateRole {
         params: splunk_client::CreateRoleParams,
@@ -825,9 +825,9 @@ pub enum Action {
         /// Owner context (None for nobody)
         owner: Option<String>,
         /// Number of items to load
-        count: u64,
+        count: usize,
         /// Offset for pagination
-        offset: u64,
+        offset: usize,
     },
     /// Create a new KVStore collection
     CreateCollection {
@@ -845,8 +845,8 @@ pub enum Action {
         app: String,
         owner: String,
         query: Option<String>,
-        count: u64,
-        offset: u64,
+        count: usize,
+        offset: usize,
     },
     /// Open collection creation dialog
     OpenCreateCollectionDialog,

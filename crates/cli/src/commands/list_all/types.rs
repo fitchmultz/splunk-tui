@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceSummary {
     pub resource_type: String,
-    pub count: u64,
+    pub count: usize,
     pub status: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,

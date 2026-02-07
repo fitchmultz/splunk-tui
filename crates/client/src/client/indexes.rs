@@ -18,8 +18,8 @@ impl SplunkClient {
     /// List all indexes.
     pub async fn list_indexes(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<Index>> {
         crate::retry_call!(
             self,

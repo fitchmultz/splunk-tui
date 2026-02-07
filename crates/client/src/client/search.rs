@@ -49,7 +49,7 @@ pub struct SearchRequest<'a> {
     /// Optional latest time bound (e.g., "now").
     pub latest_time: Option<&'a str>,
     /// Maximum number of results to return.
-    pub max_results: Option<u64>,
+    pub max_results: Option<usize>,
     /// Optional search mode (Normal or Realtime).
     pub search_mode: Option<SearchMode>,
     /// Optional real-time window in seconds (only for Realtime mode).
@@ -80,7 +80,7 @@ impl<'a> SearchRequest<'a> {
     }
 
     /// Set the maximum number of results to return.
-    pub fn max_results(mut self, max: u64) -> Self {
+    pub fn max_results(mut self, max: usize) -> Self {
         self.max_results = Some(max);
         self
     }
@@ -98,7 +98,7 @@ impl<'a> SearchRequest<'a> {
     }
 
     /// Get the effective max results count, using the default if not set.
-    fn effective_max_results(&self) -> u64 {
+    fn effective_max_results(&self) -> usize {
         self.max_results.unwrap_or(DEFAULT_MAX_RESULTS)
     }
 }
@@ -183,7 +183,7 @@ impl SplunkClient {
         &self,
         request: SearchRequest<'_>,
         progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
-    ) -> Result<(Vec<serde_json::Value>, String, Option<u64>)> {
+    ) -> Result<(Vec<serde_json::Value>, String, Option<usize>)> {
         let options = build_create_job_options(&request, true);
         let sid = self.create_search_job(request.query, &options).await?;
 
@@ -236,8 +236,8 @@ impl SplunkClient {
     pub async fn get_search_results(
         &self,
         sid: &str,
-        count: u64,
-        offset: u64,
+        count: usize,
+        offset: usize,
     ) -> Result<SearchJobResults> {
         crate::retry_call!(
             self,
@@ -277,8 +277,8 @@ impl SplunkClient {
     /// List all saved searches.
     pub async fn list_saved_searches(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<SavedSearch>> {
         crate::retry_call!(
             self,

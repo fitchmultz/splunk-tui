@@ -23,8 +23,8 @@ impl SplunkClient {
     /// List of fired alerts
     pub async fn list_fired_alerts(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<FiredAlert>> {
         crate::retry_call!(
             self,

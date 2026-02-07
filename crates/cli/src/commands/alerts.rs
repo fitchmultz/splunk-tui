@@ -18,6 +18,8 @@ use anyhow::{Context, Result};
 use clap::Subcommand;
 use tracing::info;
 
+use splunk_config::constants::*;
+
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 
@@ -26,7 +28,7 @@ pub enum AlertsCommand {
     /// List fired alerts (triggered alert instances)
     List {
         /// Maximum number of fired alerts to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
     },
     /// Show detailed information about a fired alert
@@ -66,7 +68,7 @@ async fn run_list(
     let client = crate::commands::build_client_from_config(&config)?;
 
     let alerts = tokio::select! {
-        res = client.list_fired_alerts(Some(count as u64), None) => res?,
+        res = client.list_fired_alerts(Some(count), None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

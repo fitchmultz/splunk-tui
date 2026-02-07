@@ -39,8 +39,8 @@ impl App {
         }
     }
 
-    fn handle_search_complete(&mut self, results: Vec<Value>, sid: String, total: Option<u64>) {
-        let results_count = results.len() as u64;
+    fn handle_search_complete(&mut self, results: Vec<Value>, sid: String, total: Option<usize>) {
+        let results_count = results.len();
         self.set_search_results(results);
         self.search_sid = Some(sid);
 

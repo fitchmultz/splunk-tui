@@ -33,6 +33,7 @@ enum StringOrNumber {
     F64(f64),
 }
 
+#[allow(dead_code)]
 pub fn u64_from_string_or_number<'de, D>(deserializer: D) -> Result<u64, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -45,6 +46,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 pub fn opt_u64_from_string_or_number<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -55,6 +57,31 @@ where
         Some(U64OrString::U64(v)) => Ok(Some(v)),
         Some(U64OrString::I64(v)) => Ok(Some(u64::try_from(v).map_err(D::Error::custom)?)),
         Some(U64OrString::String(s)) => Ok(Some(s.parse::<u64>().map_err(D::Error::custom)?)),
+    }
+}
+
+pub fn usize_from_string_or_number<'de, D>(deserializer: D) -> Result<usize, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = U64OrString::deserialize(deserializer)?;
+    match value {
+        U64OrString::U64(v) => Ok(v as usize),
+        U64OrString::I64(v) => usize::try_from(v).map_err(D::Error::custom),
+        U64OrString::String(s) => s.parse::<usize>().map_err(D::Error::custom),
+    }
+}
+
+pub fn opt_usize_from_string_or_number<'de, D>(deserializer: D) -> Result<Option<usize>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<U64OrString>::deserialize(deserializer)?;
+    match value {
+        None => Ok(None),
+        Some(U64OrString::U64(v)) => Ok(Some(v as usize)),
+        Some(U64OrString::I64(v)) => Ok(Some(usize::try_from(v).map_err(D::Error::custom)?)),
+        Some(U64OrString::String(s)) => Ok(Some(s.parse::<usize>().map_err(D::Error::custom)?)),
     }
 }
 
@@ -99,6 +126,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 pub fn map_string_to_u64_from_string_or_number<'de, D>(
     deserializer: D,
 ) -> Result<HashMap<String, u64>, D::Error>
@@ -113,6 +141,26 @@ where
             .or_else(|| v.as_i64().and_then(|i| u64::try_from(i).ok()))
             .or_else(|| v.as_str().and_then(|s| s.parse::<u64>().ok()))
             .ok_or_else(|| D::Error::custom("invalid map value for u64"))?;
+        out.insert(k, parsed);
+    }
+    Ok(out)
+}
+
+pub fn map_string_to_usize_from_string_or_number<'de, D>(
+    deserializer: D,
+) -> Result<HashMap<String, usize>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = HashMap::<String, serde_json::Value>::deserialize(deserializer)?;
+    let mut out = HashMap::with_capacity(raw.len());
+    for (k, v) in raw {
+        let parsed = v
+            .as_u64()
+            .or_else(|| v.as_i64().and_then(|i| u64::try_from(i).ok()))
+            .or_else(|| v.as_str().and_then(|s| s.parse::<u64>().ok()))
+            .map(|n| n as usize)
+            .ok_or_else(|| D::Error::custom("invalid map value for usize"))?;
         out.insert(k, parsed);
     }
     Ok(out)

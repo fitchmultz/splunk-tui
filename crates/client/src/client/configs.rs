@@ -61,8 +61,8 @@ impl SplunkClient {
     pub async fn list_config_stanzas(
         &self,
         config_file: &str,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<ConfigStanza>> {
         crate::retry_call!(
             self,
@@ -135,7 +135,7 @@ impl SplunkClient {
     /// Returns a `ClientError` if any request fails. Partial results are not returned.
     pub async fn list_all_config_stanzas(
         &self,
-        count_per_file: Option<u64>,
+        count_per_file: Option<usize>,
     ) -> Result<HashMap<String, Vec<ConfigStanza>>> {
         let config_files = self.list_config_files().await?;
         let mut result = HashMap::new();

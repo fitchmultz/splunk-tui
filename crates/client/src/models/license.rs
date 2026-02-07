@@ -23,13 +23,13 @@ use std::collections::HashMap;
 pub struct LicenseUsage {
     #[serde(default)]
     pub name: String,
-    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
-    pub quota: u64,
+    #[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")]
+    pub quota: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub used_bytes: Option<u64>,
+    pub used_bytes: Option<usize>,
     #[serde(default)]
     pub slaves_usage_bytes: Option<SlavesUsageBytes>,
     pub stack_id: Option<String>,
@@ -39,12 +39,12 @@ pub struct LicenseUsage {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum SlavesUsageBytes {
-    Total(#[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")] u64),
+    Total(#[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")] usize),
     PerSlave(
         #[serde(
-            deserialize_with = "crate::serde_helpers::map_string_to_u64_from_string_or_number"
+            deserialize_with = "crate::serde_helpers::map_string_to_usize_from_string_or_number"
         )]
-        HashMap<String, u64>,
+        HashMap<String, usize>,
     ),
 }
 
@@ -52,7 +52,7 @@ impl LicenseUsage {
     /// Returns the best-effort used bytes for display:
     /// - Prefer `used_bytes` when present
     /// - Otherwise use `slaves_usage_bytes` (total or sum of per-slave values)
-    pub fn effective_used_bytes(&self) -> u64 {
+    pub fn effective_used_bytes(&self) -> usize {
         if let Some(used) = self.used_bytes {
             return used;
         }
@@ -64,7 +64,7 @@ impl LicenseUsage {
     }
 
     /// Returns per-slave usage when Splunk provides a breakdown.
-    pub fn slaves_breakdown(&self) -> Option<&HashMap<String, u64>> {
+    pub fn slaves_breakdown(&self) -> Option<&HashMap<String, usize>> {
         match &self.slaves_usage_bytes {
             Some(SlavesUsageBytes::PerSlave(map)) => Some(map),
             _ => None,
@@ -79,8 +79,8 @@ pub struct LicensePool {
     pub name: String,
     #[serde(deserialize_with = "crate::serde_helpers::string_from_number_or_string")]
     pub quota: String,
-    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
-    pub used_bytes: u64,
+    #[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")]
+    pub used_bytes: usize,
     pub stack_id: String,
     pub description: Option<String>,
 }
@@ -90,8 +90,8 @@ pub struct LicensePool {
 pub struct LicenseStack {
     #[serde(default)]
     pub name: String,
-    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
-    pub quota: u64,
+    #[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")]
+    pub quota: usize,
     #[serde(rename = "type")]
     pub type_name: String,
     pub label: String,
@@ -110,8 +110,8 @@ pub struct InstalledLicense {
     #[serde(default)]
     pub status: String,
     /// License quota in bytes
-    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
-    pub quota_bytes: u64,
+    #[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")]
+    pub quota_bytes: usize,
     /// License expiration time (ISO 8601 format)
     pub expiration_time: Option<String>,
     /// Features enabled by this license
@@ -134,7 +134,7 @@ pub struct CreatePoolParams {
     /// Stack ID to associate with (required)
     pub stack_id: String,
     /// Quota in bytes (optional, defaults to stack quota)
-    pub quota_bytes: Option<u64>,
+    pub quota_bytes: Option<usize>,
     /// Pool description (optional)
     pub description: Option<String>,
 }
@@ -143,7 +143,7 @@ pub struct CreatePoolParams {
 #[derive(Debug, Clone, Default)]
 pub struct ModifyPoolParams {
     /// New quota in bytes (optional)
-    pub quota_bytes: Option<u64>,
+    pub quota_bytes: Option<usize>,
     /// New description (optional)
     pub description: Option<String>,
 }

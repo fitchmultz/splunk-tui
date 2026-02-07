@@ -38,7 +38,7 @@ pub fn format_indexes(indexes: &[Index], detailed: bool) -> Result<String> {
     for index in indexes {
         let max_size = index
             .max_total_data_size_mb
-            .map(|v: u64| v.to_string())
+            .map(|v: usize| v.to_string())
             .unwrap_or_else(|| "N/A".to_string());
 
         if detailed {

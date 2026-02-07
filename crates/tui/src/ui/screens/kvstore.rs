@@ -134,7 +134,7 @@ fn render_replication_section(f: &mut Frame, area: Rect, status: &KvStoreStatus,
         Row::new(vec![
             Cell::from("Oplog Used (bytes)"),
             Cell::from(format_bytes(
-                (replication.oplog_used * replication.oplog_size as f64 / 100.0) as u64,
+                (replication.oplog_used * replication.oplog_size as f64 / 100.0) as usize,
             )),
         ]),
     ];

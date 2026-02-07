@@ -17,7 +17,11 @@ use crate::models::{CreateRoleParams, ModifyRoleParams, Role};
 
 impl SplunkClient {
     /// List all roles.
-    pub async fn list_roles(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<Role>> {
+    pub async fn list_roles(
+        &self,
+        count: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<Vec<Role>> {
         crate::retry_call!(
             self,
             __token,

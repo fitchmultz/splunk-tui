@@ -22,8 +22,8 @@ impl SplunkClient {
     /// KV store lookups are managed via a different endpoint.
     pub async fn list_lookup_tables(
         &self,
-        count: Option<u32>,
-        offset: Option<u32>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<LookupTable>> {
         crate::retry_call!(
             self,

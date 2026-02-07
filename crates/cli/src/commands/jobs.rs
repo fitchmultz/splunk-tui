@@ -49,11 +49,11 @@ pub async fn run(
     // Handle results action
     if let Some(sid) = results {
         info!("Fetching results for job: {}", sid);
-        let count = result_count.unwrap_or(100) as u64;
+        let count = result_count.unwrap_or(100);
         let spinner =
             crate::progress::Spinner::new(!quiet, format!("Fetching results for job {}", sid));
         let search_results = tokio::select! {
-            res = client.get_search_results(&sid, count, result_offset as u64) => res?,
+            res = client.get_search_results(&sid, count, result_offset) => res?,
             _ = cancel_token.cancelled() => return Err(Cancelled.into()),
         };
         spinner.finish();
@@ -133,7 +133,7 @@ pub async fn run(
     if list {
         info!("Listing search jobs");
         let jobs = tokio::select! {
-            res = client.list_jobs(Some(count as u64), None) => res?,
+            res = client.list_jobs(Some(count), None) => res?,
             _ = cancel_token.cancelled() => return Err(Cancelled.into()),
         };
 

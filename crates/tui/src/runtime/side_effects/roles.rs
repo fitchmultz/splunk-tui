@@ -18,7 +18,12 @@ use tokio::sync::mpsc::Sender;
 use super::SharedClient;
 
 /// Handle loading roles.
-pub async fn handle_load_roles(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
+pub async fn handle_load_roles(
+    client: SharedClient,
+    tx: Sender<Action>,
+    count: usize,
+    offset: usize,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         match client.list_roles(Some(count), Some(offset)).await {

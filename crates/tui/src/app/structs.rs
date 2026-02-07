@@ -44,11 +44,11 @@ pub struct App {
     pub search_sid: Option<String>,
 
     // Pagination state for search results
-    pub search_results_total_count: Option<u64>,
+    pub search_results_total_count: Option<usize>,
     /// Page size for search result pagination.
     /// Initialized from `search_defaults.max_results` to stay in sync with the API request.
     /// This ensures the UI's pagination assumptions match the actual request page size.
-    pub search_results_page_size: u64,
+    pub search_results_page_size: usize,
     pub search_has_more_results: bool,
 
     // Real data (Option for loading state)

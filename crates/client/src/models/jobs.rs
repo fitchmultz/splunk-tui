@@ -28,29 +28,29 @@ pub struct SearchJob {
     pub cursorTime: Option<String>,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub scanCount: u64,
+    pub scanCount: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub eventCount: u64,
+    pub eventCount: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub resultCount: u64,
+    pub resultCount: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub statusBuckets: Option<u64>,
+    pub statusBuckets: Option<usize>,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub diskUsage: u64,
+    pub diskUsage: usize,
 }
 
 /// Search job list response.
@@ -79,24 +79,24 @@ pub struct JobContent {
     pub runDuration: f64,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub scanCount: u64,
+    pub scanCount: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub eventCount: u64,
+    pub eventCount: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub resultCount: u64,
+    pub resultCount: usize,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub diskUsage: u64,
+    pub diskUsage: usize,
     #[serde(default)]
     pub priority: Option<i32>,
     #[serde(default)]
@@ -120,27 +120,27 @@ pub struct SearchJobStatus {
     #[serde(
         rename = "scanCount",
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub scan_count: u64,
+    pub scan_count: usize,
     #[serde(
         rename = "eventCount",
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub event_count: u64,
+    pub event_count: usize,
     #[serde(
         rename = "resultCount",
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub result_count: u64,
+    pub result_count: usize,
     #[serde(
         rename = "diskUsage",
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub disk_usage: u64,
+    pub disk_usage: usize,
     #[serde(rename = "priority")]
     pub priority: Option<i32>,
     pub label: Option<String>,
@@ -154,14 +154,14 @@ pub struct SearchJobResults {
     pub preview: bool,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub offset: Option<u64>,
+    pub offset: Option<usize>,
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub total: Option<u64>,
+    pub total: Option<usize>,
 }
 
 /// SPL validation request.

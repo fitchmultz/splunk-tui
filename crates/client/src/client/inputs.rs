@@ -31,7 +31,11 @@ impl SplunkClient {
     /// # Errors
     ///
     /// Returns a `ClientError` if any request fails or the response cannot be parsed.
-    pub async fn list_inputs(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<Input>> {
+    pub async fn list_inputs(
+        &self,
+        count: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<Vec<Input>> {
         let input_types = ["tcp/raw", "tcp/cooked", "udp", "monitor", "script"];
         let mut all_inputs = Vec::new();
 
@@ -61,8 +65,8 @@ impl SplunkClient {
     pub async fn list_inputs_by_type(
         &self,
         input_type: &str,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<Input>> {
         crate::retry_call!(
             self,

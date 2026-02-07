@@ -25,13 +25,14 @@ use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use splunk_config::constants::*;
 
 #[derive(Debug, Subcommand)]
 pub enum RolesCommand {
     /// List all roles (default)
     List {
         /// Maximum number of roles to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
     },
     /// List all available capabilities
@@ -156,7 +157,7 @@ async fn run_list(
     let client = crate::commands::build_client_from_config(&config)?;
 
     let roles = tokio::select! {
-        res = client.list_roles(Some(count as u64), None) => res?,
+        res = client.list_roles(Some(count), None) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

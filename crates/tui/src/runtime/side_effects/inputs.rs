@@ -18,7 +18,12 @@ use tokio::sync::mpsc::Sender;
 ///
 /// Emits `InputsLoaded` when offset == 0 (initial load/refresh).
 /// Emits `MoreInputsLoaded` when offset > 0 (pagination).
-pub async fn handle_load_inputs(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
+pub async fn handle_load_inputs(
+    client: SharedClient,
+    tx: Sender<Action>,
+    count: usize,
+    offset: usize,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         match client.list_inputs(Some(count), Some(offset)).await {

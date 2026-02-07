@@ -34,8 +34,8 @@ pub async fn handle_load_config_stanzas(
     client: SharedClient,
     tx: Sender<Action>,
     config_file: String,
-    count: u64,
-    offset: u64,
+    count: usize,
+    offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {

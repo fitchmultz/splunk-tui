@@ -98,7 +98,7 @@ async fn fetch_with_timeout<T, F, E>(
     resource_type: &str,
     status_error: &str,
     fetch_fn: impl FnOnce() -> F,
-    extract_count: impl FnOnce(&T) -> u64,
+    extract_count: impl FnOnce(&T) -> usize,
     extract_status: impl FnOnce(&T) -> String,
 ) -> ResourceSummary
 where
@@ -138,7 +138,7 @@ async fn fetch_indexes(client: &SplunkClient) -> ResourceSummary {
         "indexes",
         "error",
         || client.list_indexes(Some(1000), None),
-        |indexes| indexes.len() as u64,
+        |indexes| indexes.len(),
         |_| "ok".to_string(),
     )
     .await
@@ -149,7 +149,7 @@ async fn fetch_jobs(client: &SplunkClient) -> ResourceSummary {
         "jobs",
         "error",
         || client.list_jobs(Some(100), None),
-        |jobs| jobs.len() as u64,
+        |jobs| jobs.len(),
         |_| "active".to_string(),
     )
     .await
@@ -160,7 +160,7 @@ async fn fetch_apps(client: &SplunkClient) -> ResourceSummary {
         "apps",
         "error",
         || client.list_apps(Some(1000), None),
-        |apps| apps.len() as u64,
+        |apps| apps.len(),
         |_| "installed".to_string(),
     )
     .await
@@ -171,7 +171,7 @@ async fn fetch_users(client: &SplunkClient) -> ResourceSummary {
         "users",
         "error",
         || client.list_users(Some(1000), None),
-        |users| users.len() as u64,
+        |users| users.len(),
         |_| "active".to_string(),
     )
     .await
@@ -256,9 +256,12 @@ async fn fetch_kvstore(client: &SplunkClient) -> ResourceSummary {
 async fn fetch_license(client: &SplunkClient) -> ResourceSummary {
     match time::timeout(TIMEOUT_DURATION, client.get_license_usage()).await {
         Ok(Ok(usage)) => {
-            let total_usage: u64 =
-                usage.iter().map(|u| u.effective_used_bytes()).sum::<u64>() / 1024;
-            let total_quota: u64 = usage.iter().map(|u| u.quota).sum::<u64>() / 1024;
+            let total_usage: usize = usage
+                .iter()
+                .map(|u| u.effective_used_bytes())
+                .sum::<usize>()
+                / 1024;
+            let total_quota: usize = usage.iter().map(|u| u.quota).sum::<usize>() / 1024;
             let pct = if total_quota > 0 && total_usage > total_quota * 9 / 10 {
                 "warning"
             } else if total_quota > 0 {
@@ -269,7 +272,7 @@ async fn fetch_license(client: &SplunkClient) -> ResourceSummary {
 
             ResourceSummary {
                 resource_type: "license".to_string(),
-                count: usage.len() as u64,
+                count: usage.len(),
                 status: pct.to_string(),
                 error: None,
             }
@@ -300,7 +303,7 @@ async fn fetch_saved_searches(client: &SplunkClient) -> ResourceSummary {
         "saved-searches",
         "error",
         || client.list_saved_searches(None, None),
-        |saved_searches| saved_searches.len() as u64,
+        |saved_searches| saved_searches.len(),
         |_| "available".to_string(),
     )
     .await

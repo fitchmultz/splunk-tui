@@ -20,6 +20,8 @@ use anyhow::{Context, Result};
 use clap::Subcommand;
 use tracing::{info, warn};
 
+use splunk_config::constants::*;
+
 use crate::cancellation::Cancelled;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, OutputFormat, Pagination,
@@ -39,7 +41,7 @@ pub enum ClusterCommand {
         #[arg(long, default_value = "0")]
         offset: usize,
         /// Number of peers per page. Only applies with --detailed.
-        #[arg(short, long, default_value = "50", visible_alias = "page-size")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE, visible_alias = "page-size")]
         count: usize,
     },
 
@@ -49,7 +51,7 @@ pub enum ClusterCommand {
         #[arg(long, default_value = "0")]
         offset: usize,
         /// Number of peers per page
-        #[arg(short, long, default_value = "50", visible_alias = "page-size")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE, visible_alias = "page-size")]
         count: usize,
     },
 

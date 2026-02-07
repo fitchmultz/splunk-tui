@@ -16,8 +16,8 @@ pub async fn list_lookup_tables(
     client: &Client,
     base_url: &str,
     auth_token: &str,
-    count: Option<u32>,
-    offset: Option<u32>,
+    count: Option<usize>,
+    offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<LookupTable>> {

@@ -63,7 +63,7 @@ pub async fn get_recent_audit_events(
     client: &Client,
     base_url: &str,
     auth_token: &str,
-    count: u64,
+    count: usize,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<AuditEvent>> {

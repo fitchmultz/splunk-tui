@@ -17,7 +17,7 @@ use crate::models::App;
 
 impl SplunkClient {
     /// List all installed apps.
-    pub async fn list_apps(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
+    pub async fn list_apps(&self, count: Option<usize>, offset: Option<usize>) -> Result<Vec<App>> {
         crate::retry_call!(
             self,
             __token,

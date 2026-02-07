@@ -123,7 +123,7 @@ pub struct HecResponse {
 
     /// Acknowledgment ID (when acknowledgments are enabled).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub ack_id: Option<u64>,
+    pub ack_id: Option<usize>,
 }
 
 impl HecResponse {

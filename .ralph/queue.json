@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0396",
-      "status": "todo",
-      "title": "Unify default values between CLI args and config constants",
-      "description": "Default values for similar settings are inconsistent between CLI arguments and the centralized constants in crates/config/src/constants.rs. For example, CLI list commands default to 30-50 items while the TUI uses DEFAULT_LIST_PAGE_SIZE=100. This creates confusion and maintenance burden. All defaults should flow from the centralized constants.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "dry",
-        "configuration",
-        "consistency"
-      ],
-      "scope": [
-        "crates/cli/src/args.rs",
-        "crates/cli/src/commands/*.rs",
-        "crates/config/src/constants.rs"
-      ],
-      "evidence": [
-        "DEFAULT_LIST_PAGE_SIZE = 100 in constants.rs, but CLI uses 30",
-        "DEFAULT_INTERNAL_LOGS_COUNT = 100 in constants.rs, but CLI args use 50",
-        "DEFAULT_MAX_RESULTS = 1000 in constants.rs, but saved-searches run uses 100",
-        "16+ files have hardcoded default_value = '30' or '50' instead of using constants"
-      ],
-      "plan": [
-        "Export constants from config crate for use in CLI",
-        "Update all CLI arg definitions to use constant references",
-        "Ensure TUI and CLI use identical defaults",
-        "Add architecture test to prevent hardcoded defaults",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0397",
       "status": "todo",
       "title": "Add proper error context to file operations in doctor.rs bundle generation",

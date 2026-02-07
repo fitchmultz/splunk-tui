@@ -35,7 +35,7 @@ pub struct SearchRenderConfig<'a> {
     /// The scroll offset for displaying results
     pub search_scroll_offset: usize,
     /// Total number of results available (if known)
-    pub search_results_total_count: Option<u64>,
+    pub search_results_total_count: Option<usize>,
     /// Whether more results can be loaded
     pub search_has_more_results: bool,
     /// Theme for consistent styling.

@@ -32,8 +32,8 @@ impl SplunkClient {
     /// Returns a `ClientError` if the request fails or the response cannot be parsed.
     pub async fn list_workload_pools(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<WorkloadPool>> {
         crate::retry_call!(
             self,
@@ -70,8 +70,8 @@ impl SplunkClient {
     /// Returns a `ClientError` if the request fails or the response cannot be parsed.
     pub async fn list_workload_rules(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<WorkloadRule>> {
         crate::retry_call!(
             self,

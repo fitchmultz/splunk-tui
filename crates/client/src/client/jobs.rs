@@ -19,8 +19,8 @@ impl SplunkClient {
     /// List all search jobs.
     pub async fn list_jobs(
         &self,
-        count: Option<u64>,
-        offset: Option<u64>,
+        count: Option<usize>,
+        offset: Option<usize>,
     ) -> Result<Vec<SearchJobStatus>> {
         crate::retry_call!(
             self,

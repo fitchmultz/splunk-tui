@@ -20,7 +20,12 @@ use super::SharedClient;
 ///
 /// Emits `AppsLoaded` when offset == 0 (initial load/refresh).
 /// Emits `MoreAppsLoaded` when offset > 0 (pagination).
-pub async fn handle_load_apps(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
+pub async fn handle_load_apps(
+    client: SharedClient,
+    tx: Sender<Action>,
+    count: usize,
+    offset: usize,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
         match client.list_apps(Some(count), Some(offset)).await {

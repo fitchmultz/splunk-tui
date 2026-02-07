@@ -68,10 +68,10 @@ async fn test_create_index() {
     let client = Client::new();
     let params = CreateIndexParams {
         name: "test_index".to_string(),
-        max_data_size_mb: Some(1000u64),
-        max_hot_buckets: Some(10u64),
-        max_warm_db_count: Some(300u64),
-        frozen_time_period_in_secs: Some(15552000u64),
+        max_data_size_mb: Some(1000usize),
+        max_hot_buckets: Some(10usize),
+        max_warm_db_count: Some(300usize),
+        frozen_time_period_in_secs: Some(15552000usize),
         home_path: None,
         cold_db_path: None,
         thawed_path: None,
@@ -104,10 +104,10 @@ async fn test_modify_index() {
 
     let client = Client::new();
     let params = ModifyIndexParams {
-        max_data_size_mb: Some(2000u64),
-        max_hot_buckets: Some(15u64),
-        max_warm_db_count: Some(400u64),
-        frozen_time_period_in_secs: Some(2592000u64),
+        max_data_size_mb: Some(2000usize),
+        max_hot_buckets: Some(15usize),
+        max_warm_db_count: Some(400usize),
+        frozen_time_period_in_secs: Some(2592000usize),
         home_path: None,
         cold_db_path: None,
         thawed_path: None,

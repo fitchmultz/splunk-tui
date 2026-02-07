@@ -20,8 +20,8 @@ pub struct KvStoreMember {
 #[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct KvStoreReplicationStatus {
     #[serde(rename = "oplogSize")]
-    #[serde(deserialize_with = "crate::serde_helpers::u64_from_string_or_number")]
-    pub oplog_size: u64,
+    #[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")]
+    pub oplog_size: usize,
     #[serde(rename = "oplogUsed")]
     pub oplog_used: f64,
 }

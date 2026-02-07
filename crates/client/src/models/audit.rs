@@ -13,9 +13,9 @@ pub struct ListAuditEventsParams {
     /// Latest time for events (e.g., "now", "2024-01-02T00:00:00")
     pub latest: Option<String>,
     /// Maximum number of events to return
-    pub count: Option<u64>,
+    pub count: Option<usize>,
     /// Offset for pagination
-    pub offset: Option<u64>,
+    pub offset: Option<usize>,
     /// Filter by user
     pub user: Option<String>,
     /// Filter by action

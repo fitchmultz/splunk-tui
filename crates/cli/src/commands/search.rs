@@ -47,7 +47,7 @@ pub async fn run(
     // Apply search defaults when CLI flags are not provided
     let earliest = earliest.unwrap_or(&search_defaults.earliest_time);
     let latest = latest.unwrap_or(&search_defaults.latest_time);
-    let max_results = max_results.unwrap_or(search_defaults.max_results as usize);
+    let max_results = max_results.unwrap_or(search_defaults.max_results);
 
     // Determine search mode based on realtime flag
     let search_mode = if realtime {
@@ -63,7 +63,7 @@ pub async fn run(
     // Build the search request with common parameters
     let mut request = SearchRequest::new(&query, wait)
         .time_bounds(earliest, latest)
-        .max_results(max_results as u64)
+        .max_results(max_results)
         .search_mode(search_mode.unwrap_or(SearchMode::Normal));
     if let Some(window) = realtime_window {
         request = request.realtime_window(window);

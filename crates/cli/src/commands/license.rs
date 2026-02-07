@@ -75,7 +75,7 @@ pub enum PoolCommands {
         stack_id: String,
         /// Quota in bytes
         #[arg(short, long)]
-        quota: Option<u64>,
+        quota: Option<usize>,
         /// Pool description
         #[arg(short, long)]
         description: Option<String>,
@@ -99,7 +99,7 @@ pub enum PoolCommands {
         name: String,
         /// New quota in bytes
         #[arg(short, long)]
-        quota: Option<u64>,
+        quota: Option<usize>,
         /// New description
         #[arg(short, long)]
         description: Option<String>,
@@ -355,7 +355,7 @@ async fn run_pool_create(
     config: splunk_config::Config,
     name: &str,
     stack_id: &str,
-    quota: Option<u64>,
+    quota: Option<usize>,
     description: Option<String>,
     output_format: &str,
     output_file: Option<PathBuf>,
@@ -430,7 +430,7 @@ async fn run_pool_delete(
 async fn run_pool_modify(
     config: splunk_config::Config,
     name: &str,
-    quota: Option<u64>,
+    quota: Option<usize>,
     description: Option<String>,
     output_format: &str,
     output_file: Option<PathBuf>,

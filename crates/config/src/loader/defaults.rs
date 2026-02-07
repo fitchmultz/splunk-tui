@@ -23,7 +23,7 @@ pub struct SearchDefaultConfig {
     /// Latest time for searches (e.g., "now").
     pub latest_time: String,
     /// Maximum number of results to return per search.
-    pub max_results: u64,
+    pub max_results: usize,
 }
 
 impl Default for SearchDefaultConfig {

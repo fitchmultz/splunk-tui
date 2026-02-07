@@ -17,6 +17,7 @@
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
+use splunk_config::constants::*;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
@@ -30,7 +31,7 @@ pub enum AuditCommand {
         #[arg(short, long)]
         detailed: bool,
         /// Maximum number of events to list
-        #[arg(short, long, default_value = "50")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
         /// Offset into the event list (zero-based)
         #[arg(long, default_value = "0")]
@@ -118,8 +119,8 @@ async fn run_list(
     let params = splunk_client::models::ListAuditEventsParams {
         earliest: Some(earliest),
         latest: Some(latest),
-        count: Some(count as u64),
-        offset: Some(offset as u64),
+        count: Some(count),
+        offset: Some(offset),
         user,
         action,
     };
@@ -182,7 +183,7 @@ async fn run_recent(
     let client = crate::commands::build_client_from_config(&config)?;
 
     let events = tokio::select! {
-        res = client.get_recent_audit_events(count as u64) => res?,
+        res = client.get_recent_audit_events(count) => res?,
         _ = cancel.cancelled() => return Err(Cancelled.into()),
     };
 

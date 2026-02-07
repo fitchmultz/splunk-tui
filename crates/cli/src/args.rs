@@ -14,6 +14,7 @@
 //! - Environment variable fallbacks are documented in --help
 
 use clap::{Parser, Subcommand};
+use splunk_config::constants::*;
 use std::path::PathBuf;
 
 use crate::commands;
@@ -133,7 +134,7 @@ pub enum Commands {
         detailed: bool,
 
         /// Maximum number of forwarders to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
 
         /// Offset into the forwarder list (zero-based)
@@ -148,7 +149,7 @@ pub enum Commands {
         detailed: bool,
 
         /// Maximum number of search peers to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
 
         /// Offset into the search peer list (zero-based)
@@ -170,7 +171,7 @@ pub enum Commands {
         offset: usize,
 
         /// Number of peers per page (deprecated: use 'cluster show')
-        #[arg(long, hide = true, default_value = "50")]
+        #[arg(long, hide = true, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
     },
 
@@ -205,7 +206,7 @@ pub enum Commands {
         result_offset: usize,
 
         /// Maximum number of jobs to list
-        #[arg(short, long, default_value = "50", visible_alias = "job-count")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE, visible_alias = "job-count")]
         count: usize,
     },
 
@@ -238,7 +239,7 @@ pub enum Commands {
     /// Show internal logs (index=_internal)
     Logs {
         /// Maximum number of log entries to show
-        #[arg(short, long, default_value = "50")]
+        #[arg(short, long, default_value_t = DEFAULT_INTERNAL_LOGS_COUNT)]
         count: usize,
 
         /// Earliest time for logs (e.g., '-24h', '2024-01-01T00:00:00')
@@ -338,7 +339,7 @@ pub enum Commands {
         command: Option<commands::lookups::LookupsCommand>,
 
         /// Maximum number of lookup tables to list (deprecated: use 'lookups list')
-        #[arg(short, long, hide = true, default_value = "30")]
+        #[arg(short, long, hide = true, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
 
         /// Offset into the lookup table list (zero-based) (deprecated: use 'lookups list')
@@ -353,7 +354,7 @@ pub enum Commands {
         detailed: bool,
 
         /// Maximum number of items to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
 
         /// Offset into the list (zero-based)
@@ -381,7 +382,7 @@ pub enum Commands {
         offset: usize,
 
         /// Number of members per page (deprecated: use 'shc show')
-        #[arg(long, hide = true, default_value = "50")]
+        #[arg(long, hide = true, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
     },
 

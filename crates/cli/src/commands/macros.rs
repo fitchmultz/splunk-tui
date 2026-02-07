@@ -26,13 +26,14 @@ use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use splunk_config::constants::*;
 
 #[derive(Subcommand)]
 pub enum MacrosCommand {
     /// List all search macros
     List {
         /// Maximum number of macros to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
     },
     /// Show detailed information about a macro

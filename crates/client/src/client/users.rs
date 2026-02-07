@@ -17,7 +17,11 @@ use crate::models::{CreateUserParams, ModifyUserParams, User};
 
 impl SplunkClient {
     /// List all users.
-    pub async fn list_users(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<User>> {
+    pub async fn list_users(
+        &self,
+        count: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<Vec<User>> {
         crate::retry_call!(
             self,
             __token,

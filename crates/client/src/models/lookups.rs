@@ -31,9 +31,9 @@ pub struct LookupTable {
     /// File size in bytes
     #[serde(
         default,
-        deserialize_with = "crate::serde_helpers::u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::usize_from_string_or_number"
     )]
-    pub size: u64,
+    pub size: usize,
 }
 
 /// Entry wrapper for lookup table responses.

@@ -36,7 +36,7 @@ pub fn format_lookups(lookups: &[LookupTable]) -> Result<String> {
 }
 
 /// Format byte size to human-readable string.
-fn format_size(size: u64) -> String {
+fn format_size(size: usize) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = size as f64;
     let mut unit_index = 0;

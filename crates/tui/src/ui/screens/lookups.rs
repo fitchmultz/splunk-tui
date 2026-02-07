@@ -114,7 +114,7 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
 }
 
 /// Convert size in bytes to human-readable string.
-fn humanize_size(size: u64) -> String {
+fn humanize_size(size: usize) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     if size == 0 {
         return "0 B".to_string();

@@ -21,6 +21,7 @@ use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
+use splunk_config::constants::*;
 
 /// Inputs subcommands.
 #[derive(Subcommand)]
@@ -36,7 +37,7 @@ pub enum InputsCommand {
         input_type: Option<String>,
 
         /// Maximum number of inputs to list
-        #[arg(short, long, default_value = "100")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
 
         /// Offset into the input list (zero-based)
@@ -104,22 +105,17 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let count_u64 =
-        u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
-    let offset_u64 =
-        u64::try_from(offset).context("Invalid --offset (value too large for this platform)")?;
-
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
-    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+    let offset_param = if offset == 0 { None } else { Some(offset) };
 
     let inputs = if let Some(input_type) = input_type {
         tokio::select! {
-            res = client.list_inputs_by_type(&input_type, Some(count_u64), offset_param) => res?,
+            res = client.list_inputs_by_type(&input_type, Some(count), offset_param) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         }
     } else {
         tokio::select! {
-            res = client.list_inputs(Some(count_u64), offset_param) => res?,
+            res = client.list_inputs(Some(count), offset_param) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         }
     };

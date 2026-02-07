@@ -225,8 +225,8 @@ pub async fn get_results(
     base_url: &str,
     auth_token: &str,
     sid: &str,
-    count: Option<u64>,
-    offset: Option<u64>,
+    count: Option<usize>,
+    offset: Option<usize>,
     output_mode: OutputMode,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
@@ -290,6 +290,7 @@ pub async fn get_results(
         offset,
         total: json["total"]
             .as_u64()
-            .or_else(|| json["total"].as_str().and_then(|s| s.parse::<u64>().ok())),
+            .map(|n| n as usize)
+            .or_else(|| json["total"].as_str().and_then(|s| s.parse::<usize>().ok())),
     })
 }

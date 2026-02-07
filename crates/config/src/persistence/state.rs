@@ -51,7 +51,7 @@ pub struct SearchDefaults {
     /// Latest time for searches (e.g., "now", "2024-01-02T00:00:00").
     pub latest_time: String,
     /// Maximum number of results to return per search.
-    pub max_results: u64,
+    pub max_results: usize,
 }
 
 impl Default for SearchDefaults {
@@ -108,19 +108,19 @@ impl SearchDefaults {
 #[serde(default)]
 pub struct ListDefaults {
     /// Default page size for list screens.
-    pub page_size: u64,
+    pub page_size: usize,
     /// Maximum number of items to load (safety limit).
-    pub max_items: u64,
+    pub max_items: usize,
     /// Per-list override: indexes page size (None = use page_size).
-    pub indexes_page_size: Option<u64>,
+    pub indexes_page_size: Option<usize>,
     /// Per-list override: jobs page size (None = use page_size).
-    pub jobs_page_size: Option<u64>,
+    pub jobs_page_size: Option<usize>,
     /// Per-list override: apps page size (None = use page_size).
-    pub apps_page_size: Option<u64>,
+    pub apps_page_size: Option<usize>,
     /// Per-list override: users page size (None = use page_size).
-    pub users_page_size: Option<u64>,
+    pub users_page_size: Option<usize>,
     /// Per-list override: roles page size (None = use page_size).
-    pub roles_page_size: Option<u64>,
+    pub roles_page_size: Option<usize>,
 }
 
 impl Default for ListDefaults {
@@ -139,7 +139,7 @@ impl Default for ListDefaults {
 
 impl ListDefaults {
     /// Get the effective page size for a specific list type.
-    pub fn page_size_for(&self, list_type: ListType) -> u64 {
+    pub fn page_size_for(&self, list_type: ListType) -> usize {
         let override_size = match list_type {
             ListType::Indexes => self.indexes_page_size,
             ListType::Jobs => self.jobs_page_size,
@@ -169,7 +169,7 @@ pub enum ListType {
 #[serde(default)]
 pub struct InternalLogsDefaults {
     /// Number of log entries to fetch per query.
-    pub count: u64,
+    pub count: usize,
     /// Earliest time for log queries (e.g., "-15m", "-1h", "2024-01-01T00:00:00").
     pub earliest_time: String,
 }

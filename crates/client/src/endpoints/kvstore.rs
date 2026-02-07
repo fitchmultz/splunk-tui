@@ -131,8 +131,8 @@ pub async fn list_collections(
     auth_token: &str,
     app: Option<&str>,
     owner: Option<&str>,
-    count: Option<u64>,
-    offset: Option<u64>,
+    count: Option<usize>,
+    offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<KvStoreCollection>> {
@@ -371,8 +371,8 @@ pub async fn list_collection_records(
     app: &str,
     owner: &str,
     query: Option<&str>,
-    count: Option<u64>,
-    offset: Option<u64>,
+    count: Option<usize>,
+    offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<KvStoreRecord>> {

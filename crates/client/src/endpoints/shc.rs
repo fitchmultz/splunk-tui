@@ -97,7 +97,7 @@ pub async fn get_shc_captain(
         guid: content["guid"].as_str().unwrap_or("unknown").to_string(),
         site: content["site"].as_str().map(|s| s.to_string()),
         is_dynamic_captain: content["is_dynamic_captain"].as_bool().unwrap_or(false),
-        election_epoch: content["election_epoch"].as_u64(),
+        election_epoch: content["election_epoch"].as_u64().map(|v| v as usize),
     })
 }
 

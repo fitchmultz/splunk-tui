@@ -35,9 +35,9 @@ pub struct LogEntry {
     #[serde(
         rename = "_serial",
         default,
-        deserialize_with = "crate::serde_helpers::opt_u64_from_string_or_number"
+        deserialize_with = "crate::serde_helpers::opt_usize_from_string_or_number"
     )]
-    pub serial: Option<u64>,
+    pub serial: Option<usize>,
     #[serde(rename = "log_level", default)]
     pub level: String,
     #[serde(default)]
@@ -48,7 +48,7 @@ pub struct LogEntry {
 
 impl LogEntry {
     /// Returns a cursor key combining time, index_time, and serial for uniqueness.
-    pub fn cursor_key(&self) -> (&str, &str, Option<u64>) {
+    pub fn cursor_key(&self) -> (&str, &str, Option<usize>) {
         (&self.time, &self.index_time, self.serial)
     }
 
@@ -78,7 +78,7 @@ impl LogEntry {
 
     /// Returns a content-based hash for cursor comparison when serial is missing.
     /// Uses time + index_time + message to create a stable identifier.
-    pub fn content_hash(&self) -> u64 {
+    pub fn content_hash(&self) -> usize {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -86,7 +86,7 @@ impl LogEntry {
         self.time.hash(&mut hasher);
         self.index_time.hash(&mut hasher);
         self.message.hash(&mut hasher);
-        hasher.finish()
+        hasher.finish() as usize
     }
 }
 

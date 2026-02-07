@@ -33,9 +33,9 @@ pub struct SettingsRenderConfig<'a> {
     /// Default latest time for searches (e.g., "now").
     pub latest_time: &'a str,
     /// Default maximum number of results per search.
-    pub max_results: u64,
+    pub max_results: usize,
     /// Default count for internal logs queries.
-    pub internal_logs_count: u64,
+    pub internal_logs_count: usize,
     /// Default earliest time for internal logs queries.
     pub internal_logs_earliest: &'a str,
 }

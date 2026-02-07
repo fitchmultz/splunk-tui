@@ -50,8 +50,8 @@ pub async fn list_inputs_by_type(
     base_url: &str,
     auth_token: &str,
     input_type: &str,
-    count: Option<u64>,
-    offset: Option<u64>,
+    count: Option<usize>,
+    offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<Vec<Input>> {

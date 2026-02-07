@@ -90,7 +90,7 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
     f.render_stateful_widget(list, area, state);
 }
 
-fn format_last_login(timestamp: u64) -> String {
+fn format_last_login(timestamp: usize) -> String {
     // Format timestamp as seconds since Unix epoch
     // This is more readable than the raw timestamp while not requiring chrono
     format!("{}s", timestamp)

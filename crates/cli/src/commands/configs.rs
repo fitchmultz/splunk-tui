@@ -24,6 +24,7 @@ use crate::cancellation::Cancelled;
 use crate::formatters::{
     Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file,
 };
+use splunk_config::constants::*;
 
 /// Configs subcommands.
 #[derive(Subcommand)]
@@ -35,7 +36,7 @@ pub enum ConfigsCommand {
         config_file: Option<String>,
 
         /// Maximum number of items to return
-        #[arg(long, default_value = "30")]
+        #[arg(long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
 
         /// Offset for pagination
@@ -121,13 +122,8 @@ async fn run_list(
 ) -> Result<()> {
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let count_u64 =
-        u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
-    let offset_u64 =
-        u64::try_from(offset).context("Invalid --offset (value too large for this platform)")?;
-
     // Avoid sending offset=0 unless user explicitly paginates
-    let offset_param = if offset == 0 { None } else { Some(offset_u64) };
+    let offset_param = if offset == 0 { None } else { Some(offset) };
 
     if let Some(config_file) = config_file {
         info!(
@@ -136,7 +132,7 @@ async fn run_list(
         );
 
         let stanzas = tokio::select! {
-            res = client.list_config_stanzas(&config_file, Some(count_u64), offset_param) => res?,
+            res = client.list_config_stanzas(&config_file, Some(count), offset_param) => res?,
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         };
 

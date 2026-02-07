@@ -21,10 +21,10 @@ pub fn resource_error(resource_type: &str, error: ClientError) -> OverviewResour
 pub const FETCH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(DEFAULT_TIMEOUT_SECS);
 
 /// List limit for indexes, apps, and users.
-pub const LIST_LIMIT_1000: u64 = 1000;
+pub const LIST_LIMIT_1000: usize = 1000;
 
 /// List limit for jobs.
-pub const LIST_LIMIT_100: u64 = 100;
+pub const LIST_LIMIT_100: usize = 100;
 
 /// Fetch indexes with timeout.
 pub async fn fetch_indexes(
@@ -38,7 +38,7 @@ pub async fn fetch_indexes(
     {
         Ok(Ok(indexes)) => Ok(OverviewResource {
             resource_type: "indexes".to_string(),
-            count: indexes.len() as u64,
+            count: indexes.len(),
             status: "ok".to_string(),
             error: None,
         }),
@@ -54,7 +54,7 @@ pub async fn fetch_jobs(
     match tokio::time::timeout(FETCH_TIMEOUT, client.list_jobs(Some(LIST_LIMIT_100), None)).await {
         Ok(Ok(jobs)) => Ok(OverviewResource {
             resource_type: "jobs".to_string(),
-            count: jobs.len() as u64,
+            count: jobs.len(),
             status: "active".to_string(),
             error: None,
         }),
@@ -70,7 +70,7 @@ pub async fn fetch_apps(
     match tokio::time::timeout(FETCH_TIMEOUT, client.list_apps(Some(LIST_LIMIT_1000), None)).await {
         Ok(Ok(apps)) => Ok(OverviewResource {
             resource_type: "apps".to_string(),
-            count: apps.len() as u64,
+            count: apps.len(),
             status: "installed".to_string(),
             error: None,
         }),
@@ -91,7 +91,7 @@ pub async fn fetch_users(
     {
         Ok(Ok(users)) => Ok(OverviewResource {
             resource_type: "users".to_string(),
-            count: users.len() as u64,
+            count: users.len(),
             status: "active".to_string(),
             error: None,
         }),
@@ -174,9 +174,12 @@ pub async fn fetch_license(
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.get_license_usage()).await {
         Ok(Ok(usage)) => {
-            let total_usage: u64 =
-                usage.iter().map(|u| u.effective_used_bytes()).sum::<u64>() / 1024;
-            let total_quota: u64 = usage.iter().map(|u| u.quota).sum::<u64>() / 1024;
+            let total_usage: usize = usage
+                .iter()
+                .map(|u| u.effective_used_bytes())
+                .sum::<usize>()
+                / 1024;
+            let total_quota: usize = usage.iter().map(|u| u.quota).sum::<usize>() / 1024;
             let pct = if total_quota > 0 && total_usage > total_quota * 9 / 10 {
                 "warning"
             } else if total_quota > 0 {
@@ -187,7 +190,7 @@ pub async fn fetch_license(
 
             Ok(OverviewResource {
                 resource_type: "license".to_string(),
-                count: usage.len() as u64,
+                count: usage.len(),
                 status: pct.to_string(),
                 error: None,
             })
@@ -204,7 +207,7 @@ pub async fn fetch_saved_searches(
     match tokio::time::timeout(FETCH_TIMEOUT, client.list_saved_searches(None, None)).await {
         Ok(Ok(saved_searches)) => Ok(OverviewResource {
             resource_type: "saved-searches".to_string(),
-            count: saved_searches.len() as u64,
+            count: saved_searches.len(),
             status: "available".to_string(),
             error: None,
         }),

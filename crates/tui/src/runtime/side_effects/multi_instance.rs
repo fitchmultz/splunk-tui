@@ -114,10 +114,10 @@ async fn build_client_from_profile(
 /// Returns (resources, health_status, job_count).
 async fn fetch_all_resources(
     client: &mut splunk_client::SplunkClient,
-) -> (Vec<OverviewResource>, String, u64) {
+) -> (Vec<OverviewResource>, String, usize) {
     let mut resources = Vec::new();
     let mut health_status = "unknown".to_string();
-    let mut job_count = 0u64;
+    let mut job_count = 0usize;
 
     // Fetch health
     match overview_fetch::fetch_health(client).await {

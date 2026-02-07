@@ -29,7 +29,7 @@ pub struct ShcCaptain {
     pub guid: String,
     pub site: Option<String>,
     pub is_dynamic_captain: bool,
-    pub election_epoch: Option<u64>,
+    pub election_epoch: Option<usize>,
 }
 
 /// SHC cluster status.

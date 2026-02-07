@@ -22,13 +22,14 @@ use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use splunk_config::constants::*;
 
 #[derive(Subcommand)]
 pub enum LookupsCommand {
     /// List all lookup tables (default)
     List {
         /// Maximum number of lookup tables to list
-        #[arg(short, long, default_value = "30")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
         count: usize,
         /// Offset into the lookup table list (zero-based)
         #[arg(long, default_value = "0")]
@@ -142,7 +143,7 @@ async fn run_list(
 
     info!("Listing lookup tables");
     let lookups = tokio::select! {
-        res = client.list_lookup_tables(Some(count as u32), Some(offset as u32)) => res?,
+        res = client.list_lookup_tables(Some(count), Some(offset)) => res?,
         _ = cancel_token.cancelled() => return Err(Cancelled.into()),
     };
 

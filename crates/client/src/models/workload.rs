@@ -48,7 +48,7 @@ pub struct WorkloadPool {
     pub cpu_cores: Option<f64>,
     /// Memory limit in MB.
     #[serde(rename = "memLimit")]
-    pub mem_limit: Option<u64>,
+    pub mem_limit: Option<usize>,
 }
 
 /// Workload Rule information.

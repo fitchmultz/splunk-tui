@@ -13,7 +13,7 @@ pub async fn get_internal_logs(
     client: &Client,
     base_url: &str,
     auth_token: &str,
-    count: u64,
+    count: usize,
     earliest: Option<&str>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,

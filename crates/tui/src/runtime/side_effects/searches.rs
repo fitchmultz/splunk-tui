@@ -133,8 +133,8 @@ pub async fn handle_load_more_search_results(
     client: SharedClient,
     tx: Sender<Action>,
     sid: String,
-    offset: u64,
-    count: u64,
+    offset: usize,
+    count: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {

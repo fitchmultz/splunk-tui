@@ -25,6 +25,7 @@ use crate::formatters::{
     OutputFormat, Pagination, ShcCaptainOutput, ShcConfigOutput, ShcManagementOutput,
     ShcMemberOutput, ShcStatusOutput, TableFormatter, get_formatter, write_to_file,
 };
+use splunk_config::constants::*;
 
 /// SHC management subcommands.
 #[derive(Debug, Subcommand)]
@@ -39,7 +40,7 @@ pub enum ShcCommand {
         #[arg(long, default_value = "0")]
         offset: usize,
         /// Number of members per page. Only applies with --detailed.
-        #[arg(short, long, default_value = "50", visible_alias = "page-size")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE, visible_alias = "page-size")]
         count: usize,
     },
 
@@ -49,7 +50,7 @@ pub enum ShcCommand {
         #[arg(long, default_value = "0")]
         offset: usize,
         /// Number of members per page
-        #[arg(short, long, default_value = "50", visible_alias = "page-size")]
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE, visible_alias = "page-size")]
         count: usize,
     },
 
