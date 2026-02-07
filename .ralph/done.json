@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "lines_of_dead_code": "598",
         "scan_agent": "scan-maintenance",
-        "unused_dependency": "tachyonfx@0.14"
+        "unused_dependency": "tachyonfx@0.14",
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "oversized_function_count": "6",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "oversized_function_count": "6"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "test_files_affected": "4",
         "dead_code_count": "25",
-        "production_files_affected": "8"
+        "production_files_affected": "8",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4177,9 +4177,9 @@
         "RQ-0361"
       ],
       "custom_fields": {
+        "target_line_count": "300",
         "macro_already_adopted": "true",
         "current_line_count": "867",
-        "target_line_count": "300",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_methods": "35+",
         "scan_agent": "scan-maintenance",
-        "affected_formatters": "4"
+        "affected_formatters": "4",
+        "estimated_methods": "35+"
       }
     },
     {
@@ -4408,10 +4408,10 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "action_variants": "94",
-        "submodule_count": "28",
         "current_line_count": "523",
-        "target_line_count": "150"
+        "target_line_count": "150",
+        "action_variants": "94",
+        "submodule_count": "28"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "estimated_method_count": "45",
         "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
-        "estimated_method_count": "45"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "command_files": "27",
-        "bail_usages": "18",
         "scan_agent": "scan-maintenance",
-        "with_context_usages": "120+"
+        "command_files": "27",
+        "with_context_usages": "120+",
+        "bail_usages": "18"
       }
     },
     {
@@ -4594,11 +4594,11 @@
       "relates_to": [],
       "custom_fields": {
         "principle": "DRY",
-        "file_count": "23",
         "screen_files": "22",
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "file_count": "23",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_using_pattern_b": "2",
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance",
         "principle": "DRY",
-        "files_using_pattern_a": "26"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "files_using_pattern_a": "26",
+        "files_using_pattern_b": "2",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_screens": "25",
         "scan_agent": "scan-maintenance",
-        "widgets_dir_exists": "false",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
         "spinner_helper_location": "crates/tui/src/ui/theme.rs",
         "lines_duplicated": "~400",
-        "principle": "DRY"
+        "affected_screens": "25",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "widgets_dir_exists": "false"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_with_duplicates": "5",
         "duplication_count": "6 functions across 5 files",
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding"
+        "files_with_duplicates": "5"
       }
     },
     {
@@ -4879,11 +4879,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_files": "4",
-        "scan_agent": "scan-maintenance",
-        "duplicate_count": "4",
         "principle": "DRY",
+        "duplicate_count": "4",
+        "affected_files": "4",
         "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -4941,10 +4941,75 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "YAGNI",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "runner_used": "kimi",
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0369",
+      "status": "done",
+      "title": "Deduplicate escape_xml function across CLI crate",
+      "description": "The escape_xml function for XML character escaping is defined identically in 6 locations across the CLI crate. The public version in common.rs should be the canonical implementation, and all 5 private duplicates should be removed and updated to use the shared version.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "cli",
+        "cleanup",
+        "refactor"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/common.rs:134-141",
+        "crates/cli/src/formatters/xml/mod.rs:628-634",
+        "crates/cli/src/formatters/xml/hec.rs:80-86",
+        "crates/cli/src/formatters/xml/kvstore.rs:89-95",
+        "crates/cli/src/formatters/xml/configs.rs:87-93",
+        "crates/cli/src/commands/list_all/output.rs:301-307"
+      ],
+      "evidence": [
+        "common.rs:134-141: pub fn escape_xml(s: &str) -> String - canonical public implementation",
+        "xml/mod.rs:628-634: private fn escape_xml(s: &str) -> String - ~50+ calls throughout file",
+        "xml/hec.rs:80-86: private fn escape_xml(s: &str) -> String",
+        "xml/kvstore.rs:89-95: private fn escape_xml(s: &str) -> String",
+        "xml/configs.rs:87-93: private fn escape_xml(s: &str) -> String",
+        "commands/list_all/output.rs:301-307: private fn escape_xml(s: &str) -> String",
+        "16 files already import from common.rs and use common::escape_xml correctly"
+      ],
+      "plan": [
+        "Remove private escape_xml from xml/mod.rs and add 'use crate::formatters::common::escape_xml;'",
+        "Remove private escape_xml from xml/hec.rs and add import from common module",
+        "Remove private escape_xml from xml/kvstore.rs and add import from common module",
+        "Remove private escape_xml from xml/configs.rs and add import from common module",
+        "Remove private escape_xml from commands/list_all/output.rs and add import from common module",
+        "Verify all files compile: 'cargo check -p splunk-cli'",
+        "Run tests: 'cargo test -p splunk-cli'"
+      ],
+      "notes": [
+        "SCOPE EXPANDED: Found 4 additional duplicates beyond original 2 (was xml/mod.rs + common.rs, now 6 total files)",
+        "All 6 implementations have identical logic: replace &, <, >, \", ' with XML entities",
+        "Successfully deduplicated escape_xml function across CLI crate",
+        "Reduced from 6 identical implementations to 1 canonical public implementation in common.rs",
+        "5 files updated to import from shared location",
+        "All tests pass (153+)",
+        "Zero functional changes - pure DRY refactoring"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T02:28:04.526247538Z",
+      "completed_at": "2026-02-07T02:28:04.526247538Z",
+      "started_at": "2026-02-07T02:19:17.549495302Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "files_to_update": "5",
+        "model_used": "kimi-code/kimi-for-coding",
+        "duplicate_count": "6",
+        "runner_used": "kimi",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

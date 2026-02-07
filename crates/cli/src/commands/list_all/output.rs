@@ -17,6 +17,7 @@
 
 use crate::cancellation::CancellationToken;
 use crate::formatters::OutputFormat;
+use crate::formatters::escape_xml;
 use anyhow::Result;
 
 use super::auth::build_auth_strategy_from_profile;
@@ -295,13 +296,4 @@ fn escape_csv(s: &str) -> String {
     } else {
         s.to_string()
     }
-}
-
-/// Escape special XML characters.
-fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
 }

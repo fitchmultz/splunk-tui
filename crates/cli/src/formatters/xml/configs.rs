@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::common::escape_xml;
 use anyhow::Result;
 use splunk_client::models::{ConfigFile, ConfigStanza};
 
@@ -81,13 +82,4 @@ pub fn format_config_stanza(stanza: &ConfigStanza) -> Result<String> {
 
     output.push_str("</config_stanza>\n");
     Ok(output)
-}
-
-/// Escape special XML characters.
-fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
 }

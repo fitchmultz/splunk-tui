@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0369",
-      "status": "todo",
-      "title": "Deduplicate escape_xml function between common.rs and xml/mod.rs",
-      "description": "The escape_xml function for XML character escaping is defined identically in two locations: common.rs (public) and xml/mod.rs (private). The private version in xml/mod.rs should be removed and the public version from common.rs should be used instead.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "cli",
-        "cleanup"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/common.rs:134-141",
-        "crates/cli/src/formatters/xml/mod.rs:629-635"
-      ],
-      "evidence": [
-        "common.rs:134-141: pub fn escape_xml(s: &str) -> String with &amp; &lt; &gt; &quot; &apos; replacements",
-        "xml/mod.rs:629-635: Identical private fn escape_xml(s: &str) -> String"
-      ],
-      "plan": [
-        "Remove private escape_xml from xml/mod.rs",
-        "Update xml/mod.rs to use common::escape_xml",
-        "Verify no other file has a third copy",
-        "Verify by running: 'cargo check -p splunk-cli' and 'cargo test -p splunk-cli'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0370",
       "status": "todo",
       "title": "Synchronize .env and .env.example configuration drift",
@@ -188,8 +150,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -225,8 +187,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -335,8 +297,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

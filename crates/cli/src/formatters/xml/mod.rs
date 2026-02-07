@@ -15,7 +15,7 @@
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
-    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
+    ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput, common::escape_xml,
 };
 use anyhow::Result;
 use splunk_client::models::DataModel;
@@ -623,12 +623,4 @@ impl Formatter for XmlFormatter {
         result.push_str("</shc_management>\n");
         Ok(result)
     }
-}
-
-fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
 }

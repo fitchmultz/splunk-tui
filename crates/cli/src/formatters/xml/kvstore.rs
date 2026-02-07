@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::common::escape_xml;
 use anyhow::Result;
 use splunk_client::models::{KvStoreCollection, KvStoreRecord};
 
@@ -84,12 +85,4 @@ pub fn format_kvstore_records(records: &[KvStoreRecord]) -> Result<String> {
 
     output.push_str("</records>\n");
     Ok(output)
-}
-
-fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
 }

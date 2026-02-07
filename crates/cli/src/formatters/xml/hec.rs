@@ -2,6 +2,7 @@
 //!
 //! This module provides XML formatting for HEC responses.
 
+use crate::formatters::common::escape_xml;
 use anyhow::Result;
 
 /// Format a single HEC response as XML.
@@ -75,14 +76,6 @@ pub fn format_hec_ack_status(status: &splunk_client::HecAckStatus) -> Result<Str
     output.push_str("  </acks>\n");
     output.push_str("</hec_ack_status>\n");
     Ok(output)
-}
-
-fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
 }
 
 #[cfg(test)]

@@ -54,7 +54,7 @@ mod xml;
 
 // Macros are exported at crate root via #[macro_export]
 
-pub use common::write_to_file;
+pub use common::{escape_xml, write_to_file};
 pub use csv::CsvFormatter;
 pub use json::JsonFormatter;
 pub use table::{Pagination, TableFormatter};
