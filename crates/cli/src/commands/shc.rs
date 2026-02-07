@@ -457,14 +457,8 @@ async fn run_manage(
             .await?;
         }
         ManageCommand::Remove { member_guid, force } => {
-            if !force {
-                eprint!("Remove member '{}' from SHC? [y/N] ", member_guid);
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input)?;
-                if !input.trim().eq_ignore_ascii_case("y") {
-                    println!("Cancelled.");
-                    return Ok(());
-                }
+            if !force && !crate::interactive::confirm_delete(&member_guid, "SHC member")? {
+                return Ok(());
             }
 
             info!("Removing SHC member: {}", member_guid);

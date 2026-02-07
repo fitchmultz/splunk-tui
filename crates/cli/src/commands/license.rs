@@ -409,15 +409,8 @@ async fn run_pool_delete(
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    // Prompt for confirmation unless --force is used
-    if !force {
-        eprint!("Delete license pool '{}' ? [y/N] ", name);
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if !input.trim().eq_ignore_ascii_case("y") {
-            println!("Cancelled.");
-            return Ok(());
-        }
+    if !force && !crate::interactive::confirm_delete(name, "license pool")? {
+        return Ok(());
     }
 
     info!("Deleting license pool: {}", name);

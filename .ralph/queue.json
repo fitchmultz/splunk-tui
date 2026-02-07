@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0393",
-      "status": "todo",
-      "title": "Extract duplicated delete confirmation prompt into shared helper",
-      "description": "The delete confirmation prompt pattern is duplicated across 7 CLI command files with nearly identical code. This violates DRY and creates maintenance burden when changing the confirmation UX. Create a shared helper function like `confirm_delete(resource_name: &str) -> Result<bool>` in a utility module.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "dry",
-        "refactoring",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/indexes.rs",
-        "crates/cli/src/commands/users.rs",
-        "crates/cli/src/commands/roles.rs",
-        "crates/cli/src/commands/lookups.rs",
-        "crates/cli/src/commands/kvstore.rs",
-        "crates/cli/src/commands/saved_searches.rs",
-        "crates/cli/src/commands/macros.rs"
-      ],
-      "evidence": [
-        "Pattern repeated in 7 files with slight variations:",
-        "crates/cli/src/commands/indexes.rs:346-356",
-        "crates/cli/src/commands/users.rs:263-273",
-        "crates/cli/src/commands/roles.rs:290-300",
-        "crates/cli/src/commands/lookups.rs:264-274",
-        "crates/cli/src/commands/kvstore.rs:312-322",
-        "crates/cli/src/commands/saved_searches.rs:386-396",
-        "crates/cli/src/commands/macros.rs:386-396"
-      ],
-      "plan": [
-        "Create a new utility module or use existing formatters/common.rs",
-        "Implement confirm_delete(resource_name: &str) -> Result<bool> helper",
-        "Replace all 7 occurrences with calls to the helper",
-        "Verify by running `make test-unit` and `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0394",
       "status": "todo",
       "title": "Unify CLI pagination flag names (--count vs --page-size vs --job-count)",

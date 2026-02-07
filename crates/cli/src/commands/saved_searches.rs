@@ -380,18 +380,8 @@ async fn run_delete(
 ) -> Result<()> {
     info!("Deleting saved search: {}", name);
 
-    if !force {
-        // Prompt for confirmation
-        eprint!(
-            "Are you sure you want to delete saved search '{}'? [y/N] ",
-            name
-        );
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if !input.trim().eq_ignore_ascii_case("y") {
-            println!("Cancelled.");
-            return Ok(());
-        }
+    if !force && !crate::interactive::confirm_delete(name, "saved search")? {
+        return Ok(());
     }
 
     let client = crate::commands::build_client_from_config(&config)?;

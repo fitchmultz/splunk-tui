@@ -342,18 +342,8 @@ async fn run_delete(
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    if !force {
-        print!("Are you sure you want to delete index '{}'? [y/N] ", name);
-        use std::io::Write;
-        std::io::stdout().flush()?;
-
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-
-        if !input.trim().eq_ignore_ascii_case("y") {
-            println!("Delete cancelled.");
-            return Ok(());
-        }
+    if !force && !crate::interactive::confirm_delete(name, "index")? {
+        return Ok(());
     }
 
     info!("Deleting index: {}", name);

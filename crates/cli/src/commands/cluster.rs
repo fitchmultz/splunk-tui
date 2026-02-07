@@ -453,14 +453,8 @@ async fn run_peers_manage(
             handle_management_output(result, output_format, output_file).await?;
         }
         PeersCommand::Remove { peer_guid, force } => {
-            if !force {
-                eprint!("Remove peer '{}' from cluster? [y/N] ", peer_guid);
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input)?;
-                if !input.trim().eq_ignore_ascii_case("y") {
-                    println!("Cancelled.");
-                    return Ok(());
-                }
+            if !force && !crate::interactive::confirm_delete(&peer_guid, "cluster peer")? {
+                return Ok(());
             }
 
             info!("Removing peer: {}", peer_guid);

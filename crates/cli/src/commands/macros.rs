@@ -381,15 +381,8 @@ async fn run_delete(
 ) -> Result<()> {
     info!("Deleting macro: {}", name);
 
-    if !force {
-        // Interactive confirmation
-        eprint!("Are you sure you want to delete macro '{}'? [y/N] ", name);
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if !input.trim().eq_ignore_ascii_case("y") {
-            eprintln!("Deletion cancelled");
-            return Ok(());
-        }
+    if !force && !crate::interactive::confirm_delete(name, "macro")? {
+        return Ok(());
     }
 
     let client = crate::commands::build_client_from_config(&config)?;

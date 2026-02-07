@@ -19,6 +19,7 @@ mod commands;
 mod config_context;
 mod dispatch;
 mod formatters;
+mod interactive;
 mod progress;
 
 use anyhow::Result;

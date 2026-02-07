@@ -267,15 +267,8 @@ async fn run_remove(
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    // Prompt for confirmation unless --force is used
-    if !force {
-        eprint!("Remove app '{}' ? [y/N] ", app_name);
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if !input.trim().eq_ignore_ascii_case("y") {
-            println!("Cancelled.");
-            return Ok(());
-        }
+    if !force && !crate::interactive::confirm_delete(app_name, "app")? {
+        return Ok(());
     }
 
     info!("Removing app: {}", app_name);
