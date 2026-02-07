@@ -641,3 +641,129 @@ async fn test_client_with_trailing_slash_base_url() {
     // wiremock would see //services/auth/login instead of /services/auth/login
     assert!(result.is_ok());
 }
+
+// Error response parsing tests
+
+/// Test that Splunk error messages are properly parsed from JSON error responses.
+///
+/// This test verifies that when Splunk returns an error with the standard
+/// message format, the client extracts and formats the type and text correctly.
+#[tokio::test]
+async fn test_splunk_error_message_parsing() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/indexes"))
+        .respond_with(ResponseTemplate::new(400).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Invalid search query"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_indexes(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(0),
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    if let ClientError::ApiError { message, .. } = err {
+        assert!(
+            message.contains("ERROR"),
+            "Message should contain error type"
+        );
+        assert!(
+            message.contains("Invalid search query"),
+            "Message should contain error text"
+        );
+    } else {
+        panic!("Expected ApiError, got {:?}", err);
+    }
+}
+
+/// Test that multiple Splunk error messages are joined correctly.
+#[tokio::test]
+async fn test_multiple_splunk_error_messages() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(400).set_body_json(serde_json::json!({
+            "messages": [
+                {"type": "ERROR", "text": "First problem"},
+                {"type": "WARN", "text": "Second issue"}
+            ]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::create_job(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "bad search",
+        &Default::default(),
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    if let ClientError::ApiError { message, .. } = err {
+        assert!(
+            message.contains("ERROR: First problem"),
+            "Message should contain first error"
+        );
+        assert!(
+            message.contains("WARN: Second issue"),
+            "Message should contain second warning"
+        );
+        assert!(
+            message.contains("; "),
+            "Multiple messages should be joined with semicolon"
+        );
+    } else {
+        panic!("Expected ApiError, got {:?}", err);
+    }
+}
+
+/// Test that non-JSON error responses fall back to raw body.
+#[tokio::test]
+async fn test_non_json_error_response_fallback() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/indexes"))
+        .respond_with(ResponseTemplate::new(500).set_body_string("Internal Server Error (HTML)"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_indexes(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        Some(10),
+        Some(0),
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    if let ClientError::ApiError { message, .. } = err {
+        assert_eq!(message, "Internal Server Error (HTML)");
+    } else {
+        panic!("Expected ApiError, got {:?}", err);
+    }
+}

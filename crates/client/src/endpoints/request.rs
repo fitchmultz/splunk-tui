@@ -109,6 +109,32 @@ fn is_retryable_transport_error(error: &reqwest::Error) -> bool {
         || error_string.contains("dns")
 }
 
+/// Parses a Splunk error response body into a displayable message string.
+///
+/// Attempts to parse the body as JSON containing Splunk's standard error message
+/// format (`SplunkMessages`). If successful, formats each message as "{type}: {text}"
+/// and joins them with "; ". If parsing fails, returns the raw body as a fallback.
+///
+/// # Arguments
+///
+/// * `body` - The raw response body string
+///
+/// # Returns
+///
+/// A formatted error message string suitable for display
+fn parse_splunk_error_response(body: &str) -> String {
+    if let Ok(messages) = serde_json::from_str::<SplunkMessages>(body) {
+        messages
+            .messages
+            .iter()
+            .map(|msg| format!("{}: {}", msg.message_type, msg.text))
+            .collect::<Vec<_>>()
+            .join("; ")
+    } else {
+        body.to_string()
+    }
+}
+
 /// Sends an HTTP request with automatic retry logic for transient errors.
 ///
 /// This function wraps a `reqwest::RequestBuilder` with retry logic that:
@@ -299,15 +325,7 @@ pub async fn send_request_with_retry(
                             .await
                             .unwrap_or_else(|_| "Could not read error response body".to_string());
 
-                        let message = if let Ok(m) = serde_json::from_str::<SplunkMessages>(&body) {
-                            m.messages
-                                .iter()
-                                .map(|msg| format!("{}: {}", msg.message_type, msg.text))
-                                .collect::<Vec<_>>()
-                                .join("; ")
-                        } else {
-                            body
-                        };
+                        let message = parse_splunk_error_response(&body);
 
                         let err = ClientError::MaxRetriesExceeded(
                             max_retries + 1,
@@ -338,16 +356,7 @@ pub async fn send_request_with_retry(
                         .await
                         .unwrap_or_else(|_| "Could not read error response body".to_string());
 
-                    // Try to parse Splunk error messages for a cleaner display
-                    let message = if let Ok(m) = serde_json::from_str::<SplunkMessages>(&body) {
-                        m.messages
-                            .iter()
-                            .map(|msg| format!("{}: {}", msg.message_type, msg.text))
-                            .collect::<Vec<_>>()
-                            .join("; ")
-                    } else {
-                        body
-                    };
+                    let message = parse_splunk_error_response(&body);
 
                     let err = ClientError::ApiError {
                         status: status_u16,
@@ -409,4 +418,47 @@ pub async fn send_request_with_retry(
         m.record_client_error(endpoint, method, &err);
     }
     Err(err)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_splunk_error_response_with_valid_json() {
+        let json = r#"{"messages": [{"type": "ERROR", "text": "Invalid credentials"}]}"#;
+        let result = parse_splunk_error_response(json);
+        assert_eq!(result, "ERROR: Invalid credentials");
+    }
+
+    #[test]
+    fn test_parse_splunk_error_response_with_multiple_messages() {
+        let json = r#"{"messages": [
+            {"type": "ERROR", "text": "First error"},
+            {"type": "WARN", "text": "Second warning"}
+        ]}"#;
+        let result = parse_splunk_error_response(json);
+        assert_eq!(result, "ERROR: First error; WARN: Second warning");
+    }
+
+    #[test]
+    fn test_parse_splunk_error_response_with_empty_messages() {
+        let json = r#"{"messages": []}"#;
+        let result = parse_splunk_error_response(json);
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn test_parse_splunk_error_response_with_invalid_json() {
+        let body = "Raw error message without JSON structure";
+        let result = parse_splunk_error_response(body);
+        assert_eq!(result, "Raw error message without JSON structure");
+    }
+
+    #[test]
+    fn test_parse_splunk_error_response_with_non_object_json() {
+        let json = r#"["not", "an", "object"]"#;
+        let result = parse_splunk_error_response(json);
+        assert_eq!(result, r#"["not", "an", "object"]"#);
+    }
 }

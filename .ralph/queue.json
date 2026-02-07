@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0373",
-      "status": "todo",
-      "title": "Extract duplicate error response parsing in endpoints/request.rs",
-      "description": "Identical error response parsing code appears twice in request.rs (lines 301-310 and 341-350). This JSON parsing logic for Splunk error messages should be extracted to a shared helper function to ensure consistent error handling.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "client",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/request.rs:301-310,341-350"
-      ],
-      "evidence": [
-        "Lines 301-310: let message = if let Ok(m) = serde_json::from_str::<SplunkMessages>(&body) { ... } else { body }",
-        "Lines 341-350: Identical 9-line block with same logic"
-      ],
-      "plan": [
-        "Create fn parse_splunk_error_response(body: &str) -> String near the error handling code",
-        "Replace both duplicate blocks with calls to the new function",
-        "Add unit test for the extracted function",
-        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
-      }
-    },
-    {
       "id": "RQ-0374",
       "status": "todo",
       "title": "Consolidate duplicate session expiry check methods in auth.rs",
@@ -71,8 +34,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -181,8 +144,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]
