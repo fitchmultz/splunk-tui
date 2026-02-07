@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "lines_of_dead_code": "598",
         "unused_dependency": "tachyonfx@0.14",
-        "lines_of_dead_code": "598"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "test_files_affected": "4",
         "dead_code_count": "25",
-        "production_files_affected": "8",
-        "scan_agent": "scan-maintenance"
+        "production_files_affected": "8"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "target_line_count": "300",
-        "macro_already_adopted": "true",
         "current_line_count": "867",
-        "scan_agent": "scan-maintenance"
+        "macro_already_adopted": "true",
+        "scan_agent": "scan-maintenance",
+        "target_line_count": "300"
       }
     },
     {
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "remaining_duplicates": "3",
         "scan_agent": "scan-maintenance",
-        "macro_solved_count": "9"
+        "macro_solved_count": "9",
+        "remaining_duplicates": "3"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "estimated_methods": "35+",
         "affected_formatters": "4",
-        "estimated_methods": "35+"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "current_line_count": "523",
-        "target_line_count": "150",
         "action_variants": "94",
-        "submodule_count": "28"
+        "current_line_count": "523",
+        "scan_agent": "scan-maintenance",
+        "submodule_count": "28",
+        "target_line_count": "150"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_method_count": "45",
         "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "estimated_method_count": "45"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "command_files": "27",
+        "bail_usages": "18",
         "with_context_usages": "120+",
-        "bail_usages": "18"
+        "scan_agent": "scan-maintenance",
+        "command_files": "27"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "screen_files": "22",
-        "model_used": "kimi-code/kimi-for-coding",
-        "file_count": "23",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "file_count": "23",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
+        "screen_files": "22"
       }
     },
     {
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "files_using_pattern_a": "26",
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY",
         "files_using_pattern_b": "2",
-        "scan_agent": "scan-maintenance"
+        "files_using_pattern_a": "26"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "lines_duplicated": "~400",
         "affected_screens": "25",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
+        "widgets_dir_exists": "false",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "lines_duplicated": "~400",
         "runner_used": "kimi",
-        "widgets_dir_exists": "false"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "duplication_count": "6 functions across 5 files",
-        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "files_with_duplicates": "5"
+        "duplication_count": "6 functions across 5 files",
+        "files_with_duplicates": "5",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "duplicate_count": "4",
-        "affected_files": "4",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding"
+        "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY",
+        "affected_files": "4",
+        "duplicate_count": "4"
       }
     },
     {
@@ -5005,11 +5005,70 @@
       "relates_to": [],
       "custom_fields": {
         "files_to_update": "5",
-        "model_used": "kimi-code/kimi-for-coding",
-        "duplicate_count": "6",
-        "runner_used": "kimi",
         "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "duplicate_count": "6",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
+      }
+    },
+    {
+      "id": "RQ-0370",
+      "status": "done",
+      "title": "Synchronize .env and .env.example configuration drift",
+      "description": "The .env file is severely out of sync with .env.example. .env has only 18 lines while .env.example has 66 lines with comprehensive documentation. Many options documented in .env.example are missing from .env.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "configuration",
+        "documentation",
+        "cleanup"
+      ],
+      "scope": [
+        ".env",
+        ".env.example",
+        ".gitignore"
+      ],
+      "evidence": [
+        ".env: 18 lines with 7 active SPLUNK_* variables (BASE_URL, USERNAME, PASSWORD, API_TOKEN, SKIP_VERIFY, EARLIEST_TIME, LATEST_TIME)",
+        ".env: Also contains SKIP_LIVE_TESTS=1 (non-SPLUNK variable)",
+        ".env.example: 66 lines with 19 SPLUNK_* variables (7 active, 12 commented)",
+        "Missing from .env: SPLUNK_HEC_URL, SPLUNK_HEC_TOKEN, SPLUNK_PROFILE, SPLUNK_CONFIG_PATH, SPLUNK_TIMEOUT, SPLUNK_MAX_RETRIES, SPLUNK_SESSION_EXPIRY_BUFFER, SPLUNK_SESSION_TTL, SPLUNK_HEALTH_CHECK_INTERVAL, SPLUNK_MAX_RESULTS, SPLUNK_INTERNAL_LOGS_COUNT, SPLUNK_INTERNAL_LOGS_EARLIEST",
+        ".gitignore: Both .env and .env.test are properly listed (lines 16-17)",
+        ".env.example structure: Grouped by functional category with section headers and inline documentation"
+      ],
+      "plan": [
+        "Audit .env.example to confirm it has all documented variables",
+        "Update .env to match .env.example structure with all variables present (active or commented)",
+        "Verify .env remains in .gitignore",
+        "Ensure SKIP_LIVE_TESTS is preserved in .env if needed",
+        "Verify by comparing line counts and key variables"
+      ],
+      "notes": [
+        "Updated 2026-02-06: Task refreshed with current file state",
+        ".env currently has active credentials; ensure they are preserved during sync",
+        ".env.example has excellent documentation structure that .env should mirror",
+        "Synchronized .env with .env.example structure",
+        "Added 9 active SPLUNK_* variables and 8 commented optional variables",
+        "Preserved all local credentials and SKIP_LIVE_TESTS setting",
+        "CI passes (870+ tests)"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T02:40:40.878249649Z",
+      "completed_at": "2026-02-07T02:40:40.878249649Z",
+      "started_at": "2026-02-07T02:31:10.529010732Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "env_example_line_count": "66",
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
+        "missing_variable_count": "12",
+        "env_line_count": "18"
       }
     }
   ]

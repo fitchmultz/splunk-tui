@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0370",
-      "status": "todo",
-      "title": "Synchronize .env and .env.example configuration drift",
-      "description": "The .env file is severely out of sync with .env.example. .env has only 18 lines while .env.example has 66 lines with comprehensive documentation. Many options documented in .env.example are missing from .env. ",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "configuration",
-        "documentation",
-        "cleanup"
-      ],
-      "scope": [
-        ".env",
-        ".env.example"
-      ],
-      "evidence": [
-        ".env: Only 18 lines,",
-        ".env.example: 66 lines with comprehensive docs for all SPLUNK_* variables",
-        "Missing from .env: SPLUNK_HEC_URL, SPLUNK_HEC_TOKEN, SPLUNK_PROFILE, SPLUNK_CONFIG_PATH, SPLUNK_TIMEOUT, SPLUNK_MAX_RETRIES, SPLUNK_SESSION_*, etc."
-      ],
-      "plan": [
-        "Audit .env.example to confirm it has all documented variables",
-        "Update .env to match .env.example structure with all variables commented out",
-        "Ensure .env remains in .gitignore",
-        "Verify by comparing line counts and key variables"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
-      }
-    },
-    {
       "id": "RQ-0371",
       "status": "todo",
       "title": "Fix error message style: 'Could not' to 'Failed to' in migration.rs",
@@ -75,8 +36,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     },
     {
@@ -150,8 +111,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -187,8 +148,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -226,8 +187,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -297,8 +258,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]
