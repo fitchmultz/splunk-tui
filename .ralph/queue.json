@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0379",
-      "status": "todo",
-      "title": "Stop dropping TUI keyboard input under backpressure",
-      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- The TUI input task uses `try_send()` and explicitly drops input events when the action channel is full (`Input channel full, dropping input event`). This can drop keypresses and make user actions non-deterministic under load.\n\nWhy it matters:\n- Missed key events can lead to repeated commands, accidental operations, or the perception that the UI is frozen. This is especially harmful during incident response where operators hammer keys while the app is busy.\n\nProposed approach:\n- Minimal slice: never drop `Key` events. If the channel is full, apply backpressure by awaiting `send()` for keys while continuing to drop high-frequency mouse move events when full.\n- If necessary, split channels: `tx_user` (keys) and `tx_bg` (background updates), with the main loop prioritizing draining user input first.\n\nRisks and mitigations:\n- Risk: blocking the input stream could slow event ingestion. Mitigation: bounded channel + prioritization ensures the app drains keys first; mouse events remain droppable to avoid floods.\n\nAcceptance criteria:\n- New stress/regression test that fills the action channel and confirms a keypress is still delivered/processed.\n- No measurable regressions in existing TUI performance tests.\n- `make test` passes.\n\nPriority rationale:\n- High: protects core UX correctness (user intent should not be lost).",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "tui",
-        "reliability",
-        "ux"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/tests/",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs:141-148 drops input events on TrySendError::Full (including Key events)",
-        "crates/tui/src/main.rs:109-113 uses a bounded action channel (DEFAULT_CHANNEL_CAPACITY), making backpressure behavior user-visible"
-      ],
-      "plan": [
-        "Decide on input pipeline strategy (recommended: await-send for Key events, drop-only for Mouse when full).",
-        "Implement the strategy in the input stream task in `crates/tui/src/main.rs`.",
-        "Add a regression test that simulates a full channel and asserts key input is not dropped.",
-        "Verify by running `make test` and confirming `cargo test -p splunk-tui` passes."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0380",
       "status": "todo",
       "title": "Add splunk-cli doctor + redacted support bundle",
@@ -579,8 +541,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "fail-fast",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "fail-fast"
       }
     },
     {
@@ -613,8 +575,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

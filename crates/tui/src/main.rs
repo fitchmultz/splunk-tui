@@ -138,17 +138,31 @@ async fn main() -> Result<()> {
                     };
 
                     if let Some(action) = action {
-                        match tx_input.try_send(action) {
-                            Ok(()) => {}
-                            Err(TrySendError::Full(_)) => {
-                                // Channel full - drop input event (backpressure)
-                                // This is acceptable for input events as they're
-                                // time-sensitive; old input is less valuable than new
-                                tracing::debug!("Input channel full, dropping input event");
-                            }
-                            Err(TrySendError::Closed(_)) => {
+                        // Different backpressure strategy based on event type:
+                        // - Key/Resize: Use blocking send to ensure user intent is never lost
+                        // - Mouse: Use try_send and drop if full (prevents mouse move flooding)
+                        let is_critical = matches!(
+                            event,
+                            crossterm::event::Event::Key(_) | crossterm::event::Event::Resize(_, _)
+                        );
+
+                        if is_critical {
+                            // Critical user intent events - await until space available
+                            if tx_input.send(action).await.is_err() {
                                 // Channel closed, exit task
                                 break;
+                            }
+                        } else {
+                            // Mouse events are droppable (especially mouse move floods)
+                            match tx_input.try_send(action) {
+                                Ok(()) => {}
+                                Err(TrySendError::Full(_)) => {
+                                    tracing::debug!("Input channel full, dropping mouse event");
+                                }
+                                Err(TrySendError::Closed(_)) => {
+                                    // Channel closed, exit task
+                                    break;
+                                }
                             }
                         }
                     }
