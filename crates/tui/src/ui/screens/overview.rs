@@ -75,7 +75,7 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
         .resources
         .iter()
         .map(|r| {
-            let status_color = status_color(&r.status, theme);
+            let status_color = theme.status_color(&r.status);
             Row::new(vec![
                 Cell::from(r.resource_type.clone()),
                 Cell::from(r.count.to_string()),
@@ -106,15 +106,6 @@ pub fn render_overview(f: &mut Frame, area: Rect, config: OverviewRenderConfig) 
     );
 
     f.render_widget(table, area);
-}
-
-fn status_color(status: &str, theme: &Theme) -> ratatui::style::Color {
-    match status.to_lowercase().as_str() {
-        "ok" | "healthy" | "green" | "active" | "installed" | "available" => theme.success,
-        "warning" | "yellow" | "degraded" => theme.warning,
-        "error" | "unhealthy" | "red" | "timeout" => theme.error,
-        _ => theme.text,
-    }
 }
 
 #[cfg(test)]
@@ -248,23 +239,23 @@ mod tests {
         let theme = Theme::default();
 
         // Success statuses
-        assert_eq!(status_color("ok", &theme), theme.success);
-        assert_eq!(status_color("healthy", &theme), theme.success);
-        assert_eq!(status_color("green", &theme), theme.success);
-        assert_eq!(status_color("active", &theme), theme.success);
-        assert_eq!(status_color("installed", &theme), theme.success);
+        assert_eq!(theme.status_color("ok"), theme.success);
+        assert_eq!(theme.status_color("healthy"), theme.success);
+        assert_eq!(theme.status_color("green"), theme.success);
+        assert_eq!(theme.status_color("active"), theme.success);
+        assert_eq!(theme.status_color("installed"), theme.success);
 
         // Warning statuses
-        assert_eq!(status_color("warning", &theme), theme.warning);
-        assert_eq!(status_color("yellow", &theme), theme.warning);
+        assert_eq!(theme.status_color("warning"), theme.warning);
+        assert_eq!(theme.status_color("yellow"), theme.warning);
 
         // Error statuses
-        assert_eq!(status_color("error", &theme), theme.error);
-        assert_eq!(status_color("unhealthy", &theme), theme.error);
-        assert_eq!(status_color("red", &theme), theme.error);
-        assert_eq!(status_color("timeout", &theme), theme.error);
+        assert_eq!(theme.status_color("error"), theme.error);
+        assert_eq!(theme.status_color("unhealthy"), theme.error);
+        assert_eq!(theme.status_color("red"), theme.error);
+        assert_eq!(theme.status_color("timeout"), theme.error);
 
         // Unknown status defaults to text color
-        assert_eq!(status_color("unknown", &theme), theme.text);
+        assert_eq!(theme.status_color("unknown"), theme.text);
     }
 }

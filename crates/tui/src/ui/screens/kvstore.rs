@@ -91,7 +91,7 @@ fn render_member_section(f: &mut Frame, area: Rect, status: &KvStoreStatus, them
         ]),
         Row::new(vec![
             Cell::from("Status"),
-            Cell::from(member.status.clone()).style(status_style(&member.status, theme)),
+            Cell::from(member.status.clone()).style(theme.status_style(&member.status)),
         ]),
     ];
 
@@ -153,16 +153,6 @@ fn render_replication_section(f: &mut Frame, area: Rect, status: &KvStoreStatus,
     f.render_widget(table, area);
 }
 
-/// Get style based on status string.
-fn status_style(status: &str, theme: &Theme) -> Style {
-    match status.to_lowercase().as_str() {
-        "running" | "ok" | "healthy" | "ready" => theme.success(),
-        "stopped" | "error" | "unhealthy" | "failed" => theme.error(),
-        "starting" | "stopping" | "degraded" => theme.warning(),
-        _ => theme.text(),
-    }
-}
-
 /// Get style based on usage percentage.
 fn usage_style(usage_pct: f64, theme: &Theme) -> Style {
     if usage_pct < 70.0 {
@@ -212,10 +202,10 @@ mod tests {
     fn test_status_style() {
         let theme = Theme::default();
 
-        assert_eq!(status_style("running", &theme).fg, Some(theme.success));
-        assert_eq!(status_style("stopped", &theme).fg, Some(theme.error));
-        assert_eq!(status_style("starting", &theme).fg, Some(theme.warning));
-        assert_eq!(status_style("unknown", &theme).fg, Some(theme.text));
+        assert_eq!(theme.status_style("running").fg, Some(theme.success));
+        assert_eq!(theme.status_style("stopped").fg, Some(theme.error));
+        assert_eq!(theme.status_style("starting").fg, Some(theme.warning));
+        assert_eq!(theme.status_style("unknown").fg, Some(theme.text));
     }
 
     #[test]

@@ -107,7 +107,7 @@ fn render_instance_list(
         .enumerate()
         .map(|(idx, instance)| {
             let is_selected = idx == selected_index;
-            let health_color = health_status_color(&instance.health_status, theme);
+            let health_color = theme.status_color(&instance.health_status);
             let row_style = if is_selected {
                 theme.highlight()
             } else {
@@ -187,7 +187,7 @@ fn render_instance_details(
             Span::styled("Health: ", theme.title()),
             Span::styled(
                 &instance.health_status,
-                Style::default().fg(health_status_color(&instance.health_status, theme)),
+                Style::default().fg(theme.status_color(&instance.health_status)),
             ),
         ]),
         Line::from(vec![
@@ -212,7 +212,7 @@ fn render_instance_details(
         text_lines.push(Line::from(""));
 
         for resource in &instance.resources {
-            let status_color = resource_status_color(&resource.status, theme);
+            let status_color = theme.status_color(&resource.status);
             let error_indicator = resource.error.as_ref().map(|_| " (error)").unwrap_or("");
 
             text_lines.push(Line::from(vec![
@@ -237,26 +237,6 @@ fn render_instance_details(
     );
 
     f.render_widget(paragraph, area);
-}
-
-/// Get color for health status.
-fn health_status_color(status: &str, theme: &Theme) -> ratatui::style::Color {
-    match status.to_lowercase().as_str() {
-        "green" | "healthy" | "ok" => theme.success,
-        "yellow" | "degraded" | "warning" => theme.warning,
-        "red" | "unhealthy" | "error" | "critical" => theme.error,
-        _ => theme.text,
-    }
-}
-
-/// Get color for resource status.
-fn resource_status_color(status: &str, theme: &Theme) -> ratatui::style::Color {
-    match status.to_lowercase().as_str() {
-        "ok" | "healthy" | "green" | "active" | "installed" | "available" => theme.success,
-        "warning" | "yellow" | "degraded" => theme.warning,
-        "error" | "unhealthy" | "red" | "timeout" => theme.error,
-        _ => theme.text,
-    }
 }
 
 #[cfg(test)]
@@ -408,20 +388,20 @@ mod tests {
     fn test_health_status_color() {
         let theme = Theme::default();
 
-        assert_eq!(health_status_color("green", &theme), theme.success);
-        assert_eq!(health_status_color("healthy", &theme), theme.success);
-        assert_eq!(health_status_color("yellow", &theme), theme.warning);
-        assert_eq!(health_status_color("red", &theme), theme.error);
-        assert_eq!(health_status_color("error", &theme), theme.error);
-        assert_eq!(health_status_color("unknown", &theme), theme.text);
+        assert_eq!(theme.status_color("green"), theme.success);
+        assert_eq!(theme.status_color("healthy"), theme.success);
+        assert_eq!(theme.status_color("yellow"), theme.warning);
+        assert_eq!(theme.status_color("red"), theme.error);
+        assert_eq!(theme.status_color("error"), theme.error);
+        assert_eq!(theme.status_color("unknown"), theme.text);
     }
 
     #[test]
     fn test_resource_status_color() {
         let theme = Theme::default();
 
-        assert_eq!(resource_status_color("ok", &theme), theme.success);
-        assert_eq!(resource_status_color("warning", &theme), theme.warning);
-        assert_eq!(resource_status_color("error", &theme), theme.error);
+        assert_eq!(theme.status_color("ok"), theme.success);
+        assert_eq!(theme.status_color("warning"), theme.warning);
+        assert_eq!(theme.status_color("error"), theme.error);
     }
 }

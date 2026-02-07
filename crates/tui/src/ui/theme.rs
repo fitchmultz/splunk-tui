@@ -3,7 +3,7 @@
 //! This module extends `splunk_config::Theme` with ergonomic helpers
 //! for building ratatui `Style` objects consistently across the TUI.
 
-use ratatui::style::{Modifier, Style};
+use ratatui::style::{Color, Modifier, Style};
 use splunk_config::Theme;
 
 /// Spinner characters for animated loading indicator.
@@ -65,6 +65,14 @@ pub trait ThemeExt {
     fn syntax_string(&self) -> Style;
     fn syntax_number(&self) -> Style;
     fn syntax_comment(&self) -> Style;
+
+    /// Get color for a status string.
+    /// Maps common status strings to semantic colors.
+    fn status_color(&self, status: &str) -> Color;
+
+    /// Get style for a status string.
+    /// Returns a complete Style for the given status.
+    fn status_style(&self, status: &str) -> Style;
 }
 
 impl ThemeExt for Theme {
@@ -139,6 +147,25 @@ impl ThemeExt for Theme {
 
     fn syntax_comment(&self) -> Style {
         Style::default().fg(self.syntax_comment)
+    }
+
+    fn status_color(&self, status: &str) -> Color {
+        match status.to_lowercase().as_str() {
+            // Success states
+            "ok" | "healthy" | "green" | "active" | "installed" | "available" | "up"
+            | "running" | "ready" => self.success,
+            // Warning states
+            "warning" | "yellow" | "degraded" | "pending" | "starting" | "stopping" => self.warning,
+            // Error states
+            "error" | "unhealthy" | "red" | "timeout" | "down" | "critical" | "failed"
+            | "stopped" => self.error,
+            // Unknown/default
+            _ => self.text,
+        }
+    }
+
+    fn status_style(&self, status: &str) -> Style {
+        Style::default().fg(self.status_color(status))
     }
 }
 
@@ -320,5 +347,86 @@ mod tests {
             let _ = theme.syntax_number();
             let _ = theme.syntax_comment();
         }
+    }
+
+    #[test]
+    fn test_status_color_success_states() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        // Success statuses
+        assert_eq!(theme.status_color("ok"), theme.success);
+        assert_eq!(theme.status_color("healthy"), theme.success);
+        assert_eq!(theme.status_color("green"), theme.success);
+        assert_eq!(theme.status_color("active"), theme.success);
+        assert_eq!(theme.status_color("installed"), theme.success);
+        assert_eq!(theme.status_color("available"), theme.success);
+        assert_eq!(theme.status_color("up"), theme.success);
+        assert_eq!(theme.status_color("running"), theme.success);
+        assert_eq!(theme.status_color("ready"), theme.success);
+
+        // Case insensitivity
+        assert_eq!(theme.status_color("OK"), theme.success);
+        assert_eq!(theme.status_color("Healthy"), theme.success);
+        assert_eq!(theme.status_color("UP"), theme.success);
+    }
+
+    #[test]
+    fn test_status_color_warning_states() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_color("warning"), theme.warning);
+        assert_eq!(theme.status_color("yellow"), theme.warning);
+        assert_eq!(theme.status_color("degraded"), theme.warning);
+        assert_eq!(theme.status_color("pending"), theme.warning);
+        assert_eq!(theme.status_color("starting"), theme.warning);
+        assert_eq!(theme.status_color("stopping"), theme.warning);
+
+        // Case insensitivity
+        assert_eq!(theme.status_color("WARNING"), theme.warning);
+        assert_eq!(theme.status_color("Pending"), theme.warning);
+    }
+
+    #[test]
+    fn test_status_color_error_states() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_color("error"), theme.error);
+        assert_eq!(theme.status_color("unhealthy"), theme.error);
+        assert_eq!(theme.status_color("red"), theme.error);
+        assert_eq!(theme.status_color("timeout"), theme.error);
+        assert_eq!(theme.status_color("down"), theme.error);
+        assert_eq!(theme.status_color("critical"), theme.error);
+        assert_eq!(theme.status_color("failed"), theme.error);
+        assert_eq!(theme.status_color("stopped"), theme.error);
+
+        // Case insensitivity
+        assert_eq!(theme.status_color("ERROR"), theme.error);
+        assert_eq!(theme.status_color("Down"), theme.error);
+    }
+
+    #[test]
+    fn test_status_color_unknown_defaults_to_text() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_color("unknown"), theme.text);
+        assert_eq!(theme.status_color(""), theme.text);
+        assert_eq!(theme.status_color("foobar"), theme.text);
+    }
+
+    #[test]
+    fn test_status_style() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        let success_style = theme.status_style("ok");
+        assert_eq!(success_style.fg, Some(theme.success));
+
+        let warning_style = theme.status_style("warning");
+        assert_eq!(warning_style.fg, Some(theme.warning));
+
+        let error_style = theme.status_style("error");
+        assert_eq!(error_style.fg, Some(theme.error));
+
+        let unknown_style = theme.status_style("unknown");
+        assert_eq!(unknown_style.fg, Some(theme.text));
     }
 }

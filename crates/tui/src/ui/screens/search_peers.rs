@@ -81,11 +81,7 @@ pub fn render_search_peers(f: &mut Frame, area: Rect, config: SearchPeersRenderC
     let rows: Vec<Row> = peers
         .iter()
         .map(|peer| {
-            let status_style = match peer.status.as_str() {
-                "Up" => theme.success(),
-                "Down" => theme.error(),
-                _ => theme.warning(),
-            };
+            let status_style = theme.status_style(&peer.status);
 
             let cells = vec![
                 Cell::from(peer.name.clone()),

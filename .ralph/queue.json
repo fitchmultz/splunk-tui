@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0366",
-      "status": "todo",
-      "title": "Centralize status color mapping in ThemeExt to eliminate duplication",
-      "description": "Status-to-color mapping logic is duplicated across 4+ files (overview.rs, multi_instance.rs, cluster.rs) with slight variations. Some map 'ok'/'healthy'/'green' to success, others handle 'up'/'down'/'pending'. This should be centralized in ThemeExt for consistent semantic color usage across the TUI.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/overview.rs",
-        "crates/tui/src/ui/screens/multi_instance.rs",
-        "crates/tui/src/ui/screens/cluster.rs",
-        "crates/tui/src/ui/theme.rs"
-      ],
-      "evidence": [
-        "overview.rs:109-116: matches status.to_lowercase() against 'ok'|'healthy'|'green'|'active'|'installed'|'available'",
-        "multi_instance.rs:267-283: Similar but different set of status strings",
-        "cluster.rs:247-253: Only handles 'up'/'down'/'pending'"
-      ],
-      "plan": [
-        "Add ThemeExt::status_color(&self, status: &str) -> Color method",
-        "Consolidate all known status strings: ok/healthy/green/active/installed/available/up → success",
-        "warning/yellow/degraded/pending → warning",
-        "error/unhealthy/red/timeout/down/critical → error",
-        "Update overview.rs, multi_instance.rs, cluster.rs to use the centralized method",
-        "Verify by running TUI tests: 'cargo test -p splunk-tui'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0367",
       "status": "todo",
       "title": "Extract duplicate format_bytes function to shared utility",
@@ -79,8 +36,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -118,8 +75,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "YAGNI"
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -234,8 +191,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     },
     {
@@ -309,8 +266,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -385,8 +342,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "YAGNI"
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -456,8 +413,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]

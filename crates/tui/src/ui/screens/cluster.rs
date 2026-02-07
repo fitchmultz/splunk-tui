@@ -15,7 +15,6 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
-    style::Style,
     widgets::{Block, Borders, Cell, List, ListItem, Row, Table, TableState},
 };
 use splunk_client::models::{ClusterInfo, ClusterPeer};
@@ -184,7 +183,7 @@ fn render_peers(
                 peer.host.clone()
             };
 
-            let status_style = peer_status_style(&peer.status, theme);
+            let status_style = theme.status_style(&peer.status);
 
             let cells = vec![
                 Cell::from(host_text),
@@ -222,16 +221,6 @@ fn render_peers(
     f.render_stateful_widget(table, area, state);
 }
 
-/// Get the style for a peer status.
-fn peer_status_style(status: &str, theme: &Theme) -> Style {
-    match status.to_lowercase().as_str() {
-        "up" => theme.success(),
-        "down" => theme.error(),
-        "pending" => theme.warning(),
-        _ => theme.text(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,7 +228,7 @@ mod tests {
     #[test]
     fn test_peer_status_style_up() {
         let theme = Theme::default();
-        let style = peer_status_style("Up", &theme);
+        let style = theme.status_style("Up");
         // Should return success color
         assert_eq!(style.fg, Some(theme.success));
     }
@@ -247,7 +236,7 @@ mod tests {
     #[test]
     fn test_peer_status_style_down() {
         let theme = Theme::default();
-        let style = peer_status_style("Down", &theme);
+        let style = theme.status_style("Down");
         // Should return error color
         assert_eq!(style.fg, Some(theme.error));
     }
@@ -255,7 +244,7 @@ mod tests {
     #[test]
     fn test_peer_status_style_pending() {
         let theme = Theme::default();
-        let style = peer_status_style("Pending", &theme);
+        let style = theme.status_style("Pending");
         // Should return warning color
         assert_eq!(style.fg, Some(theme.warning));
     }
@@ -263,7 +252,7 @@ mod tests {
     #[test]
     fn test_peer_status_style_unknown() {
         let theme = Theme::default();
-        let style = peer_status_style("Unknown", &theme);
+        let style = theme.status_style("Unknown");
         // Should return default text color
         assert_eq!(style.fg, Some(theme.text));
     }

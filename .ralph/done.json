@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "oversized_function_count": "6",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "oversized_function_count": "6"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "test_files_affected": "4",
         "production_files_affected": "8",
-        "dead_code_count": "25",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "test_files_affected": "4",
+        "dead_code_count": "25"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "target_line_count": "300",
-        "scan_agent": "scan-maintenance",
+        "current_line_count": "867",
         "macro_already_adopted": "true",
-        "current_line_count": "867"
+        "scan_agent": "scan-maintenance",
+        "target_line_count": "300"
       }
     },
     {
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "macro_solved_count": "9",
+        "remaining_duplicates": "3",
         "scan_agent": "scan-maintenance",
-        "remaining_duplicates": "3"
+        "macro_solved_count": "9"
       }
     },
     {
@@ -4353,8 +4353,8 @@
       "relates_to": [],
       "custom_fields": {
         "estimated_methods": "35+",
-        "affected_formatters": "4",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "affected_formatters": "4"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "action_variants": "94",
         "current_line_count": "523",
         "scan_agent": "scan-maintenance",
-        "action_variants": "94",
-        "target_line_count": "150",
-        "submodule_count": "28"
+        "submodule_count": "28",
+        "target_line_count": "150"
       }
     },
     {
@@ -4470,8 +4470,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "existing_macro_coverage": "4 methods total across all formatters",
         "estimated_method_count": "45",
+        "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
         "scan_agent": "scan-maintenance"
       }
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "bail_usages": "18",
         "command_files": "27",
-        "with_context_usages": "120+",
-        "scan_agent": "scan-maintenance"
+        "bail_usages": "18",
+        "scan_agent": "scan-maintenance",
+        "with_context_usages": "120+"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
-        "screen_files": "22",
         "file_count": "23",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "screen_files": "22",
         "principle": "DRY",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "files_using_pattern_a": "26",
-        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "files_using_pattern_b": "2"
+        "files_using_pattern_b": "2",
+        "principle": "DRY"
       }
     },
     {
@@ -4744,14 +4744,83 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "model_used": "kimi-code/kimi-for-coding",
         "affected_screens": "25",
         "scan_agent": "scan-maintenance",
-        "widgets_dir_exists": "false",
         "principle": "DRY",
+        "widgets_dir_exists": "false",
+        "runner_used": "kimi",
         "lines_duplicated": "~400",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs"
+      }
+    },
+    {
+      "id": "RQ-0366",
+      "status": "done",
+      "title": "Centralize status color mapping in ThemeExt to eliminate duplication",
+      "description": "Status-to-color mapping logic is duplicated across 5+ files (overview.rs, multi_instance.rs, cluster.rs, kvstore.rs, shc.rs) with slight variations. Some map 'ok'/'healthy'/'green' to success, others handle 'up'/'down'/'pending'/'running'/'ready'. This should be centralized in ThemeExt for consistent semantic color usage across the TUI.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/overview.rs",
+        "crates/tui/src/ui/screens/multi_instance.rs",
+        "crates/tui/src/ui/screens/cluster.rs",
+        "crates/tui/src/ui/screens/kvstore.rs",
+        "crates/tui/src/ui/screens/shc.rs",
+        "crates/tui/src/ui/theme.rs"
+      ],
+      "evidence": [
+        "overview.rs:111-118: fn status_color() matches 'ok'|'healthy'|'green'|'active'|'installed'|'available' → success",
+        "multi_instance.rs:243-260: Two functions - health_status_color() and resource_status_color() with overlapping status strings",
+        "cluster.rs:226-233: fn peer_status_style() handles 'up'|'down'|'pending'",
+        "kvstore.rs:157-164: fn status_style() handles 'running'|'ready'|'starting'|'stopping'|'failed' (returns Style)",
+        "shc.rs:218-225: fn member_status_style() handles 'up'|'down'|'pending' (identical to cluster.rs)",
+        "theme.rs:38-68: ThemeExt trait lacks status_color method - needs to be added"
+      ],
+      "plan": [
+        "Add ThemeExt::status_color(&self, status: &str) -> ratatui::style::Color method to theme.rs",
+        "Consolidate all known status strings to semantic colors:",
+        "  - Success: ok/healthy/green/active/installed/available/up/running/ready",
+        "  - Warning: warning/yellow/degraded/pending/starting/stopping",
+        "  - Error: error/unhealthy/red/timeout/down/critical/failed/stopped",
+        "  - Default: text color for unknown statuses",
+        "Update overview.rs status_color() calls to use theme.status_color()",
+        "Update multi_instance.rs both health_status_color() and resource_status_color() to use centralized method",
+        "Update cluster.rs peer_status_style() to use centralized method",
+        "Update kvstore.rs status_style() to use centralized method",
+        "Update shc.rs member_status_style() to use centralized method",
+        "Remove duplicate private functions after migration",
+        "Verify by running: 'cargo test -p splunk-tui' and 'cargo check -p splunk-tui'"
+      ],
+      "notes": [
+        "Expanded scope: Found 2 additional files with duplicate status color logic (kvstore.rs, shc.rs)",
+        "Note: kvstore.rs status_style() returns Style (not Color) - may need status_style() helper too",
+        "Centralized status-to-color mapping in ThemeExt trait",
+        "Added status_color() and status_style() methods to theme.rs",
+        "Updated 6 screen files to use centralized methods",
+        "Removed 7 duplicate functions (was 6, found 1 more in search_peers.rs)",
+        "All tests pass, clippy clean"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T01:48:46.696840114Z",
+      "completed_at": "2026-02-07T01:48:46.696840114Z",
+      "started_at": "2026-02-07T01:34:50.249297630Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "files_with_duplicates": "5",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "runner_used": "kimi",
+        "duplication_count": "6 functions across 5 files",
+        "principle": "DRY"
       }
     }
   ]
