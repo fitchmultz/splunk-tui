@@ -145,6 +145,7 @@ fn test_load_more_action_respects_max_items_cap() {
                 jobs_page_size: None,
                 apps_page_size: None,
                 users_page_size: None,
+                roles_page_size: None,
             },
             ..PersistedState::default()
         }),
@@ -195,4 +196,105 @@ fn test_load_more_action_works_normally_under_cap() {
         }
         _ => panic!("Expected LoadJobs action"),
     }
+}
+
+#[test]
+fn test_translate_refresh_action_produces_offset_zero() {
+    let app = App::new(None, ConnectionContext::default());
+
+    // Test RefreshIndexes produces LoadIndexes with offset=0
+    let action = app.translate_refresh_action(Action::RefreshIndexes);
+    match action {
+        Action::LoadIndexes { count, offset } => {
+            assert_eq!(offset, 0, "RefreshIndexes should produce offset=0");
+            assert_eq!(count, app.indexes_pagination.page_size);
+        }
+        _ => panic!("Expected LoadIndexes action, got {:?}", action),
+    }
+
+    // Test RefreshJobs produces LoadJobs with offset=0
+    let action = app.translate_refresh_action(Action::RefreshJobs);
+    match action {
+        Action::LoadJobs { count, offset } => {
+            assert_eq!(offset, 0, "RefreshJobs should produce offset=0");
+            assert_eq!(count, app.jobs_pagination.page_size);
+        }
+        _ => panic!("Expected LoadJobs action, got {:?}", action),
+    }
+
+    // Test RefreshApps produces LoadApps with offset=0
+    let action = app.translate_refresh_action(Action::RefreshApps);
+    match action {
+        Action::LoadApps { count, offset } => {
+            assert_eq!(offset, 0, "RefreshApps should produce offset=0");
+            assert_eq!(count, app.apps_pagination.page_size);
+        }
+        _ => panic!("Expected LoadApps action, got {:?}", action),
+    }
+
+    // Test RefreshUsers produces LoadUsers with offset=0
+    let action = app.translate_refresh_action(Action::RefreshUsers);
+    match action {
+        Action::LoadUsers { count, offset } => {
+            assert_eq!(offset, 0, "RefreshUsers should produce offset=0");
+            assert_eq!(count, app.users_pagination.page_size);
+        }
+        _ => panic!("Expected LoadUsers action, got {:?}", action),
+    }
+
+    // Test RefreshDashboards produces LoadDashboards with offset=0
+    let action = app.translate_refresh_action(Action::RefreshDashboards);
+    match action {
+        Action::LoadDashboards { count, offset } => {
+            assert_eq!(offset, 0, "RefreshDashboards should produce offset=0");
+            assert_eq!(count, app.dashboards_pagination.page_size);
+        }
+        _ => panic!("Expected LoadDashboards action, got {:?}", action),
+    }
+
+    // Test RefreshDataModels produces LoadDataModels with offset=0
+    let action = app.translate_refresh_action(Action::RefreshDataModels);
+    match action {
+        Action::LoadDataModels { count, offset } => {
+            assert_eq!(offset, 0, "RefreshDataModels should produce offset=0");
+            assert_eq!(count, app.data_models_pagination.page_size);
+        }
+        _ => panic!("Expected LoadDataModels action, got {:?}", action),
+    }
+
+    // Test RefreshInputs produces LoadInputs with offset=0
+    let action = app.translate_refresh_action(Action::RefreshInputs);
+    match action {
+        Action::LoadInputs { count, offset } => {
+            assert_eq!(offset, 0, "RefreshInputs should produce offset=0");
+            assert_eq!(count, app.inputs_pagination.page_size);
+        }
+        _ => panic!("Expected LoadInputs action, got {:?}", action),
+    }
+
+    // Test RefreshInternalLogs produces LoadInternalLogs with default params
+    let action = app.translate_refresh_action(Action::RefreshInternalLogs);
+    match action {
+        Action::LoadInternalLogs { count, earliest } => {
+            assert_eq!(count, app.internal_logs_defaults.count);
+            assert_eq!(earliest, app.internal_logs_defaults.earliest_time);
+        }
+        _ => panic!("Expected LoadInternalLogs action, got {:?}", action),
+    }
+}
+
+#[test]
+fn test_translate_refresh_action_passes_through_unrecognized() {
+    let app = App::new(None, ConnectionContext::default());
+
+    // Non-refresh actions should pass through unchanged
+    let action = app.translate_refresh_action(Action::Quit);
+    assert!(matches!(action, Action::Quit));
+
+    let action = app.translate_refresh_action(Action::NavigateDown);
+    assert!(matches!(action, Action::NavigateDown));
+
+    // LoadMore actions should pass through unchanged
+    let action = app.translate_refresh_action(Action::LoadMoreJobs);
+    assert!(matches!(action, Action::LoadMoreJobs));
 }

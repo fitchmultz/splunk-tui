@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "oversized_function_count": "6",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "oversized_function_count": "6"
       }
     },
     {
@@ -4008,8 +4008,8 @@
       "custom_fields": {
         "dead_code_count": "25",
         "test_files_affected": "4",
-        "scan_agent": "scan-maintenance",
-        "production_files_affected": "8"
+        "production_files_affected": "8",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4178,8 +4178,8 @@
       ],
       "custom_fields": {
         "target_line_count": "300",
-        "current_line_count": "867",
         "scan_agent": "scan-maintenance",
+        "current_line_count": "867",
         "macro_already_adopted": "true"
       }
     },
@@ -4287,8 +4287,8 @@
       "relates_to": [],
       "custom_fields": {
         "macro_solved_count": "9",
-        "scan_agent": "scan-maintenance",
-        "remaining_duplicates": "3"
+        "remaining_duplicates": "3",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4408,8 +4408,8 @@
       "relates_to": [],
       "custom_fields": {
         "action_variants": "94",
-        "submodule_count": "28",
         "current_line_count": "523",
+        "submodule_count": "28",
         "scan_agent": "scan-maintenance",
         "target_line_count": "150"
       }
@@ -4538,9 +4538,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "bail_usages": "18",
         "with_context_usages": "120+",
+        "scan_agent": "scan-maintenance",
         "command_files": "27"
       }
     },
@@ -4594,10 +4594,10 @@
       "relates_to": [],
       "custom_fields": {
         "principle": "DRY",
-        "runner_used": "kimi",
         "file_count": "23",
         "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "screen_files": "22"
       }
     },
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
-        "files_using_pattern_a": "26",
         "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY",
         "files_using_pattern_b": "2",
-        "principle": "DRY"
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "files_using_pattern_a": "26"
       }
     },
     {
@@ -4745,13 +4745,13 @@
       "relates_to": [],
       "custom_fields": {
         "widgets_dir_exists": "false",
-        "model_used": "kimi-code/kimi-for-coding",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "lines_duplicated": "~400",
         "runner_used": "kimi",
-        "principle": "DRY",
+        "lines_duplicated": "~400",
+        "affected_screens": "25",
         "scan_agent": "scan-maintenance",
-        "affected_screens": "25"
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_with_duplicates": "5",
-        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "duplication_count": "6 functions across 5 files"
+        "duplication_count": "6 functions across 5 files",
+        "files_with_duplicates": "5",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -4879,11 +4879,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_files": "4",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
         "principle": "DRY",
         "scan_agent": "scan-maintenance",
+        "affected_files": "4",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "duplicate_count": "4"
       }
     },
@@ -4942,9 +4942,9 @@
       "relates_to": [],
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
         "principle": "YAGNI",
-        "scan_agent": "scan-maintenance",
-        "runner_used": "kimi"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
         "principle": "DRY",
-        "scan_agent": "scan-maintenance",
+        "files_to_update": "5",
         "duplicate_count": "6",
-        "files_to_update": "5"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5063,12 +5063,12 @@
       "relates_to": [],
       "custom_fields": {
         "env_line_count": "18",
-        "missing_variable_count": "12",
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "principle": "KISS",
+        "env_example_line_count": "66",
+        "runner_used": "kimi",
+        "missing_variable_count": "12",
         "model_used": "kimi-code/kimi-for-coding",
-        "env_example_line_count": "66"
+        "principle": "KISS"
       }
     },
     {
@@ -5114,9 +5114,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "KISS"
       }
     },
@@ -5168,10 +5168,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
-        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5223,9 +5223,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY"
       }
     },
@@ -5275,11 +5275,11 @@
         "RQ-0375"
       ],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
         "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
         "runner_used": "kimi",
-        "principle": "DRY"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5333,10 +5333,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
         "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "principle": "YAGNI"
       }
     },
     {
@@ -5390,9 +5390,9 @@
       "relates_to": [],
       "custom_fields": {
         "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
         "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -5503,8 +5503,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
         "runner_used": "kimi",
+        "scan_agent": "scan-innovation",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -5564,8 +5564,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -5640,8 +5640,8 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-innovation",
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5708,9 +5708,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5773,10 +5773,10 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-innovation",
+        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE",
         "env_vars_count_in_apply_env": "15",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE"
+        "runner_used": "kimi"
       }
     },
     {
@@ -5829,9 +5829,90 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0386",
+      "status": "done",
+      "title": "Make TUI 'r' key a true refresh (not pagination)",
+      "description": "Opportunity type: UX improvement\n\nEvidence:\n- Eight TUI keybindings label `r` as \"Refresh ...\" but bind to `LoadMore*` actions, which is pagination rather than refresh.\n\nAffected screens:\n1. Jobs - `r` maps to `LoadMoreJobs` (described as \"Refresh jobs\")\n2. Indexes - `r` maps to `LoadMoreIndexes` (described as \"Refresh indexes\")\n3. Apps - `r` maps to `LoadMoreApps` (described as \"Refresh apps\")\n4. Users - `r` maps to `LoadMoreUsers` (described as \"Refresh users\")\n5. Internal Logs - `r` maps to `LoadMoreInternalLogs` (described as \"Refresh logs\")\n6. Dashboards - `r` maps to `LoadMoreDashboards` (described as \"Refresh dashboards\")\n7. Data Models - `r` maps to `LoadMoreDataModels` (described as \"Refresh data models\")\n8. Inputs - `r` maps to `LoadMoreInputs` (described as \"Refresh inputs\")\n\nWhy it matters:\n- Users expect refresh to reload current data from the beginning. Pagination on `r` makes the UI feel unpredictable and can hide failures (you think you refreshed; you actually appended).\n\nProposed approach:\n- Minimal slice: redefine `r` to reset pagination state and trigger a load at `offset=0` (true refresh) on affected screens.\n- Add an explicit \"Load more\" key (e.g., `L`) for pagination to keep the capability discoverable.\n- Regenerate keybinding docs to match behavior.\n\nRisks and mitigations:\n- Risk: users accustomed to current behavior. Mitigation: include release note in docs; add a toast the first time the new load-more key is used.\n\nAcceptance criteria:\n- Keybindings and help text match behavior; `r` reliably reloads from offset 0 and clears selection/pagination as specified.\n- TUI tests cover pagination reset semantics.\n- `make test` passes.\n\nPriority rationale:\n- Medium: removes a repeated UX papercut across many screens.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "consistency",
+        "keybindings"
+      ],
+      "scope": [
+        "crates/tui/src/input/keymap/bindings/jobs.rs",
+        "crates/tui/src/input/keymap/bindings/screens/indexes.rs",
+        "crates/tui/src/input/keymap/bindings/screens/apps.rs",
+        "crates/tui/src/input/keymap/bindings/screens/users.rs",
+        "crates/tui/src/input/keymap/bindings/screens/internal_logs.rs",
+        "crates/tui/src/input/keymap/bindings/screens/dashboards.rs",
+        "crates/tui/src/input/keymap/bindings/screens/datamodels.rs",
+        "crates/tui/src/input/keymap/bindings/screens/inputs.rs",
+        "crates/tui/src/action/variants.rs",
+        "crates/tui/src/app/actions/navigation.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/runtime/side_effects/",
+        "crates/tui/src/input/docs.rs",
+        "crates/tui/tests/",
+        "make generate",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/input/keymap/bindings/jobs.rs:24-35 describes 'Refresh jobs' but action is Action::LoadMoreJobs",
+        "crates/tui/src/input/keymap/bindings/screens/indexes.rs:22-33 describes 'Refresh indexes' but action is Action::LoadMoreIndexes",
+        "crates/tui/src/input/keymap/bindings/screens/apps.rs:22-33 describes 'Refresh apps' but action is Action::LoadMoreApps",
+        "crates/tui/src/input/keymap/bindings/screens/users.rs:23-34 describes 'Refresh users' but action is Action::LoadMoreUsers",
+        "crates/tui/src/input/keymap/bindings/screens/internal_logs.rs:22-33 describes 'Refresh logs' but action is Action::LoadMoreInternalLogs",
+        "crates/tui/src/input/keymap/bindings/screens/dashboards.rs:22-33 describes 'Refresh dashboards' but action is Action::LoadMoreDashboards",
+        "crates/tui/src/input/keymap/bindings/screens/datamodels.rs:22-33 describes 'Refresh data models' but action is Action::LoadMoreDataModels",
+        "crates/tui/src/input/keymap/bindings/screens/inputs.rs:22-33 describes 'Refresh inputs' but action is Action::LoadMoreInputs",
+        "crates/tui/src/app/state.rs:316-382 defines ListPaginationState with reset() method for offset=0 refresh",
+        "crates/tui/src/app/actions/navigation.rs handles LoadMore* action translation with offset tracking",
+        "crates/tui/src/runtime/side_effects/dispatcher.rs:144-180 dispatches LoadMore actions to API calls"
+      ],
+      "plan": [
+        "Update all 8 keybinding files to change `r` from LoadMore* to new Refresh* actions (reset pagination, offset=0).",
+        "Add new Refresh* action variants to action/variants.rs (RefreshJobs, RefreshIndexes, etc.) or reuse Load* actions with offset=0.",
+        "Add 'L' key binding for LoadMore* actions on each affected screen (preserve pagination capability).",
+        "Update navigation.rs handler to process Refresh* actions with pagination reset.",
+        "Update side_effects dispatcher to handle new Refresh* actions.",
+        "Add TUI tests validating refresh resets pagination and load-more advances offset.",
+        "Run `make generate` to regenerate keybinding documentation.",
+        "Verify by running `make test` and confirming all tests pass."
+      ],
+      "notes": [
+        "2026-02-07: Task updated with complete list of 8 affected screens.",
+        "All scope paths verified to exist in current repository state.",
+        "ListPaginationState already has reset() method - can be leveraged for refresh behavior.",
+        "Keybinding doc generation is handled via `make generate` (crates/tui/src/bin/generate_tui_docs.rs).",
+        "Implemented true refresh behavior for 'r' key across 8 TUI screens (Jobs, Indexes, Apps, Users, InternalLogs, Dashboards, DataModels, Inputs)",
+        "Added 9 new Refresh* action variants (including Roles for consistency) with offset=0 reset behavior",
+        "Added 'L' key binding for LoadMore* actions on all affected screens",
+        "Updated translate_refresh_action method to convert Refresh* → Load* with offset=0",
+        "All tests pass (700+), documentation regenerated and up to date"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T08:35:07.757290458Z",
+      "completed_at": "2026-02-07T08:35:07.757290458Z",
+      "started_at": "2026-02-07T07:57:31.559449635Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "affected_screens_count": "8",
+        "has_docs_generator": "true"
       }
     }
   ]

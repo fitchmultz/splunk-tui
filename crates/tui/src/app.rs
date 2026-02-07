@@ -130,7 +130,7 @@ impl App {
                 offset: 0,
             }),
             CurrentScreen::Roles => Some(Action::LoadRoles {
-                count: 100,
+                count: self.roles_pagination.page_size,
                 offset: 0,
             }),
             CurrentScreen::SearchPeers => Some(Action::LoadSearchPeers {
@@ -217,6 +217,16 @@ impl App {
                     Some(Action::LoadUsers {
                         count: self.users_pagination.page_size,
                         offset: self.users_pagination.current_offset,
+                    })
+                } else {
+                    None
+                }
+            }
+            CurrentScreen::Roles => {
+                if self.roles_pagination.can_load_more() {
+                    Some(Action::LoadRoles {
+                        count: self.roles_pagination.page_size,
+                        offset: self.roles_pagination.current_offset,
                     })
                 } else {
                     None
@@ -337,6 +347,7 @@ impl App {
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
             | Action::LoadMoreUsers
+            | Action::LoadMoreRoles
             | Action::LoadMoreSearchPeers
             | Action::LoadMoreForwarders
             | Action::LoadMoreLookups
@@ -351,6 +362,58 @@ impl App {
             Action::LoadMoreInternalLogs => Action::LoadInternalLogs {
                 count: self.internal_logs_defaults.count,
                 earliest: self.internal_logs_defaults.earliest_time.clone(),
+            },
+            _ => action,
+        }
+    }
+
+    /// Translate a Refresh* action into a concrete Load* action with offset=0.
+    ///
+    /// Refresh actions reset pagination state and reload data from the beginning.
+    /// This is used by the 'r' keybinding to provide true refresh behavior.
+    ///
+    /// # Arguments
+    /// * `action` - The action to translate
+    ///
+    /// # Returns
+    /// The translated action with offset=0, or the original action if no translation is needed
+    pub fn translate_refresh_action(&self, action: Action) -> Action {
+        match action {
+            Action::RefreshIndexes => Action::LoadIndexes {
+                count: self.indexes_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshJobs => Action::LoadJobs {
+                count: self.jobs_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshApps => Action::LoadApps {
+                count: self.apps_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshUsers => Action::LoadUsers {
+                count: self.users_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshRoles => Action::LoadRoles {
+                count: self.roles_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshInternalLogs => Action::LoadInternalLogs {
+                count: self.internal_logs_defaults.count,
+                earliest: self.internal_logs_defaults.earliest_time.clone(),
+            },
+            Action::RefreshDashboards => Action::LoadDashboards {
+                count: self.dashboards_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshDataModels => Action::LoadDataModels {
+                count: self.data_models_pagination.page_size,
+                offset: 0,
+            },
+            Action::RefreshInputs => Action::LoadInputs {
+                count: self.inputs_pagination.page_size,
+                offset: 0,
             },
             _ => action,
         }

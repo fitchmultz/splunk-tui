@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0386",
-      "status": "todo",
-      "title": "Make TUI 'r' key a true refresh (not pagination)",
-      "description": "Opportunity type: UX improvement\n\nEvidence:\n- Several TUI keybindings label `r` as \"Refresh ...\" but bind to `LoadMore*` actions, which is pagination rather than refresh.\n\nWhy it matters:\n- Users expect refresh to reload current data from the beginning. Pagination on `r` makes the UI feel unpredictable and can hide failures (you think you refreshed; you actually appended).\n\nProposed approach:\n- Minimal slice: redefine `r` to reset pagination state and trigger a load at `offset=0` (true refresh) on affected screens (Jobs, Indexes, Apps, Users, etc.).\n- Add an explicit \"Load more\" key (e.g., `L`) for pagination to keep the capability discoverable.\n- Regenerate keybinding docs to match behavior.\n\nRisks and mitigations:\n- Risk: users accustomed to current behavior. Mitigation: include release note in docs; add a toast the first time the new load-more key is used.\n\nAcceptance criteria:\n- Keybindings and help text match behavior; `r` reliably reloads from offset 0 and clears selection/pagination as specified.\n- TUI tests cover pagination reset semantics.\n- `make test` passes.\n\nPriority rationale:\n- Medium: removes a repeated UX papercut across many screens.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "tui",
-        "ux",
-        "consistency"
-      ],
-      "scope": [
-        "crates/tui/src/input/keymap/bindings/",
-        "crates/tui/src/app/state.rs",
-        "crates/tui/src/app/actions/",
-        "make generate",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/input/keymap/bindings/jobs.rs:25-35 describes 'Refresh jobs' but action is Action::LoadMoreJobs",
-        "crates/tui/src/input/keymap/bindings/screens/indexes.rs:22-33 describes 'Refresh indexes' but action is Action::LoadMoreIndexes"
-      ],
-      "plan": [
-        "Identify all screens where `r` is described as refresh but mapped to `LoadMore*`.",
-        "Introduce (or reuse) explicit refresh actions that load with offset=0 and reset pagination state.",
-        "Add a dedicated 'Load more' binding and update the keymap docs generator output.",
-        "Add TUI tests validating refresh resets pagination and load-more advances offset.",
-        "Verify by running `make generate` and `make test` and confirming docs + tests pass."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0387",
       "status": "todo",
       "title": "Make TUI footer/help hints mode- and override-aware",
@@ -314,8 +273,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

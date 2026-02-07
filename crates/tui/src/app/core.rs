@@ -261,6 +261,10 @@ impl App {
                 list_defaults.page_size_for(ListType::Users),
                 list_defaults.max_items,
             ),
+            roles_pagination: ListPaginationState::new(
+                list_defaults.page_size_for(ListType::Roles),
+                list_defaults.max_items,
+            ),
             export_input: SingleLineInput::new(),
             export_format: crate::action::ExportFormat::Json,
             export_target: None,

@@ -166,11 +166,16 @@ impl App {
 
             // Roles
             Action::RolesLoaded(Ok(roles)) => {
-                self.roles = Some(roles);
-                self.loading = false;
+                self.handle_roles_loaded(roles);
             }
             Action::RolesLoaded(Err(e)) => {
                 self.handle_data_load_error("roles", e);
+            }
+            Action::MoreRolesLoaded(Ok(roles)) => {
+                self.handle_more_roles_loaded(roles);
+            }
+            Action::MoreRolesLoaded(Err(e)) => {
+                self.handle_data_load_error("more roles", e);
             }
             Action::RoleCreated(Ok(role)) => {
                 self.toasts
@@ -546,6 +551,25 @@ impl App {
             self.users = Some(users);
         }
         self.users_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    // Roles handlers
+    fn handle_roles_loaded(&mut self, roles: Vec<splunk_client::models::Role>) {
+        let count = roles.len();
+        self.roles = Some(roles);
+        self.roles_pagination.update_loaded(count);
+        self.loading = false;
+    }
+
+    fn handle_more_roles_loaded(&mut self, roles: Vec<splunk_client::models::Role>) {
+        let count = roles.len();
+        if let Some(ref mut existing) = self.roles {
+            existing.extend(roles);
+        } else {
+            self.roles = Some(roles);
+        }
+        self.roles_pagination.update_loaded(count);
         self.loading = false;
     }
 

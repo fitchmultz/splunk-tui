@@ -206,6 +206,7 @@ pub struct App {
     pub jobs_pagination: ListPaginationState,
     pub apps_pagination: ListPaginationState,
     pub users_pagination: ListPaginationState,
+    pub roles_pagination: ListPaginationState,
 
     // Export state
     /// Single-line input for export filename.

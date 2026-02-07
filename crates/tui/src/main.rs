@@ -306,6 +306,8 @@ async fn main() -> Result<()> {
 
                 // Handle LoadMore* actions by converting to Load* with pagination params
                 let action = app.translate_load_more_action(action);
+                // Handle Refresh* actions by converting to Load* with offset=0
+                let action = app.translate_refresh_action(action);
 
                 // Handle input -> Action
                 if let Action::Input(key) = action {

@@ -29,6 +29,18 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
+            action: Some(Action::RefreshUsers),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Users,
+            keys: "L",
+            description: "Load more users",
+            scope: BindingScope::Screen(Users),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('L'),
+                modifiers: KeyModifiers::SHIFT,
+            }),
             action: Some(Action::LoadMoreUsers),
             handles_input: true,
         },
@@ -108,10 +120,19 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::LoadRoles {
-                count: 100,
-                offset: 0,
+            action: Some(Action::RefreshRoles),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Roles,
+            keys: "L",
+            description: "Load more roles",
+            scope: BindingScope::Screen(Roles),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('L'),
+                modifiers: KeyModifiers::SHIFT,
             }),
+            action: Some(Action::LoadMoreRoles),
             handles_input: true,
         },
         Keybinding {

@@ -127,8 +127,21 @@ fn test_refresh_jobs_action() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Jobs;
 
-    // Press 'r' to refresh (now returns LoadMoreJobs which gets converted)
+    // Press 'r' to refresh (returns RefreshJobs which gets translated to LoadJobs with offset=0)
     let action = app.handle_input(key('r'));
+    assert!(
+        matches!(action, Some(Action::RefreshJobs)),
+        "Should return RefreshJobs action"
+    );
+}
+
+#[test]
+fn test_load_more_jobs_action() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+
+    // Press 'L' (Shift+L) to load more jobs
+    let action = app.handle_input(shift_key('L'));
     assert!(
         matches!(action, Some(Action::LoadMoreJobs)),
         "Should return LoadMoreJobs action"

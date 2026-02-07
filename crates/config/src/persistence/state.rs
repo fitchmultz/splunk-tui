@@ -119,6 +119,8 @@ pub struct ListDefaults {
     pub apps_page_size: Option<u64>,
     /// Per-list override: users page size (None = use page_size).
     pub users_page_size: Option<u64>,
+    /// Per-list override: roles page size (None = use page_size).
+    pub roles_page_size: Option<u64>,
 }
 
 impl Default for ListDefaults {
@@ -130,6 +132,7 @@ impl Default for ListDefaults {
             jobs_page_size: None,
             apps_page_size: None,
             users_page_size: None,
+            roles_page_size: None,
         }
     }
 }
@@ -142,6 +145,7 @@ impl ListDefaults {
             ListType::Jobs => self.jobs_page_size,
             ListType::Apps => self.apps_page_size,
             ListType::Users => self.users_page_size,
+            ListType::Roles => self.roles_page_size,
         };
         override_size.unwrap_or(self.page_size)
     }
@@ -154,6 +158,7 @@ pub enum ListType {
     Jobs,
     Apps,
     Users,
+    Roles,
 }
 
 /// Default parameters for internal logs queries.
@@ -663,6 +668,7 @@ mod tests {
         assert!(defaults.jobs_page_size.is_none());
         assert!(defaults.apps_page_size.is_none());
         assert!(defaults.users_page_size.is_none());
+        assert!(defaults.roles_page_size.is_none());
     }
 
     #[test]
@@ -674,6 +680,7 @@ mod tests {
             jobs_page_size: Some(200),
             apps_page_size: None,
             users_page_size: Some(75),
+            roles_page_size: None,
         };
 
         assert_eq!(defaults.page_size_for(ListType::Indexes), 50);
@@ -691,12 +698,14 @@ mod tests {
             jobs_page_size: None,
             apps_page_size: None,
             users_page_size: None,
+            roles_page_size: None,
         };
 
         assert_eq!(defaults.page_size_for(ListType::Indexes), 100);
         assert_eq!(defaults.page_size_for(ListType::Jobs), 100);
         assert_eq!(defaults.page_size_for(ListType::Apps), 100);
         assert_eq!(defaults.page_size_for(ListType::Users), 100);
+        assert_eq!(defaults.page_size_for(ListType::Roles), 100);
     }
 
     #[test]
@@ -708,6 +717,7 @@ mod tests {
             jobs_page_size: Some(100),
             apps_page_size: None,
             users_page_size: None,
+            roles_page_size: Some(30),
         };
 
         let json = serde_json::to_string(&defaults).unwrap();
@@ -776,6 +786,7 @@ mod tests {
                 jobs_page_size: Some(100),
                 apps_page_size: None,
                 users_page_size: Some(25),
+                roles_page_size: None,
             },
             internal_logs_defaults: InternalLogsDefaults::default(),
         };

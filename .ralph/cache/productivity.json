@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-07T07:54:50.295005393Z",
+  "last_updated_at": "2026-02-07T08:37:38.663698491Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -405,7 +405,7 @@
     },
     "2026-02-07": {
       "date": "2026-02-07",
-      "completed_count": 21,
+      "completed_count": 22,
       "tasks": [
         {
           "id": "RQ-0363",
@@ -511,6 +511,11 @@
           "id": "RQ-0385",
           "title": "Fix config precedence docs + add Quick Verify onboarding",
           "completed_at": "2026-02-07T07:54:50.295004804Z"
+        },
+        {
+          "id": "RQ-0386",
+          "title": "Make TUI 'r' key a true refresh (not pagination)",
+          "completed_at": "2026-02-07T08:37:38.663697233Z"
         }
       ]
     }
@@ -520,7 +525,7 @@
     "longest_streak": 6,
     "last_completed_date": "2026-02-07"
   },
-  "total_completed": 95,
+  "total_completed": 96,
   "milestones": [
     {
       "threshold": 10,

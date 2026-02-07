@@ -398,6 +398,17 @@ pub async fn handle_side_effects(
             // This action is handled by the main loop which has access to state
             // It reads data_models_pagination and sends LoadDataModels with updated offset
         }
+        // Refresh actions - these are translated to Load* actions with offset=0 by the main loop
+        Action::RefreshIndexes
+        | Action::RefreshJobs
+        | Action::RefreshApps
+        | Action::RefreshUsers
+        | Action::RefreshInternalLogs
+        | Action::RefreshDashboards
+        | Action::RefreshDataModels
+        | Action::RefreshInputs => {
+            // These are handled by the main loop which translates them to Load* actions
+        }
         Action::LoadWorkloadPools { count, offset } => {
             workload::handle_load_workload_pools(client, tx, count, offset).await;
         }

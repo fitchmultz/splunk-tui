@@ -205,6 +205,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Jobs Screen
 - `r`: Refresh jobs
+- `L`: Load more jobs
 - `Ctrl+e`: Export jobs
 - `Ctrl+c`: Copy selected SID
 - `a`: Toggle auto-refresh
@@ -222,6 +223,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Indexes Screen
 - `r`: Refresh indexes
+- `L`: Load more indexes
 - `Enter`: View index details
 - `Ctrl+e`: Export indexes
 - `Ctrl+c`: Copy selected index name
@@ -279,6 +281,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Internal Logs Screen
 - `r`: Refresh logs
+- `L`: Load more logs
 - `Ctrl+e`: Export logs
 - `a`: Toggle auto-refresh
 - `Ctrl+c`: Copy selected log message
@@ -286,6 +289,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Apps Screen
 - `r`: Refresh apps
+- `L`: Load more apps
 - `Ctrl+e`: Export apps
 - `Ctrl+c`: Copy selected app name
 - `j/k or Up/Down`: Navigate list
@@ -296,12 +300,14 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Users Screen
 - `r`: Refresh users
+- `L`: Load more users
 - `Ctrl+e`: Export users
 - `Ctrl+c`: Copy selected username
 - `j/k or Up/Down`: Navigate list
 
 #### Roles Screen
 - `r`: Refresh roles
+- `L`: Load more roles
 - `c`: Create new role
 - `m`: Modify selected role
 - `d`: Delete selected role
@@ -317,6 +323,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Data Inputs Screen
 - `r`: Refresh inputs
+- `L`: Load more inputs
 - `e`: Enable input
 - `d`: Disable input
 - `Ctrl+c`: Copy selected input name
@@ -357,10 +364,12 @@ The Search screen has two input modes that affect how keys are handled:
 
 #### Dashboards Screen
 - `r`: Refresh dashboards
+- `L`: Load more dashboards
 - `j/k or Up/Down`: Navigate list
 
 #### Data Models Screen
 - `r`: Refresh data models
+- `L`: Load more data models
 - `j/k or Up/Down`: Navigate list
 
 #### Workload Management Screen

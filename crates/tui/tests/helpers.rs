@@ -239,6 +239,11 @@ pub fn ctrl_key(c: char) -> KeyEvent {
     KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
 }
 
+/// Create a Shift+char key event.
+pub fn shift_key(c: char) -> KeyEvent {
+    KeyEvent::new(KeyCode::Char(c), KeyModifiers::SHIFT)
+}
+
 /// Create a key event with explicit KeyEventKind.
 pub fn key_with_kind(code: KeyCode, kind: crossterm::event::KeyEventKind) -> KeyEvent {
     KeyEvent {

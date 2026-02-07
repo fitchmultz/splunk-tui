@@ -289,6 +289,8 @@ pub enum Action {
     },
     /// Load more inputs (pagination)
     LoadMoreInputs,
+    /// Load more roles (pagination)
+    LoadMoreRoles,
     /// Load the list of config files
     LoadConfigFiles,
     /// Load the list of config stanzas for a specific config file
@@ -343,6 +345,26 @@ pub enum Action {
     },
     /// Load more data models (pagination)
     LoadMoreDataModels,
+
+    // Refresh actions (reset pagination, load from offset=0)
+    /// Refresh indexes - reset pagination and reload from offset 0
+    RefreshIndexes,
+    /// Refresh jobs - reset pagination and reload from offset 0
+    RefreshJobs,
+    /// Refresh apps - reset pagination and reload from offset 0
+    RefreshApps,
+    /// Refresh users - reset pagination and reload from offset 0
+    RefreshUsers,
+    /// Refresh roles - reset pagination and reload from offset 0
+    RefreshRoles,
+    /// Refresh internal logs - reload with default parameters
+    RefreshInternalLogs,
+    /// Refresh dashboards - reset pagination and reload from offset 0
+    RefreshDashboards,
+    /// Refresh data models - reset pagination and reload from offset 0
+    RefreshDataModels,
+    /// Refresh inputs - reset pagination and reload from offset 0
+    RefreshInputs,
     /// Load the list of workload pools with pagination
     LoadWorkloadPools {
         /// Number of items to load
@@ -556,6 +578,8 @@ pub enum Action {
     InputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
     /// Result of loading more inputs (pagination)
     MoreInputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
+    /// Result of loading more roles (pagination)
+    MoreRolesLoaded(Result<Vec<Role>, Arc<ClientError>>),
     /// Result of loading config files
     ConfigFilesLoaded(Result<Vec<ConfigFile>, Arc<ClientError>>),
     /// Result of loading config stanzas

@@ -28,6 +28,18 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
+            action: Some(Action::RefreshInternalLogs),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::InternalLogs,
+            keys: "L",
+            description: "Load more logs",
+            scope: BindingScope::Screen(InternalLogs),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('L'),
+                modifiers: KeyModifiers::SHIFT,
+            }),
             action: Some(Action::LoadMoreInternalLogs),
             handles_input: true,
         },

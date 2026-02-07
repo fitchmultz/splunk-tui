@@ -30,6 +30,18 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('r'),
                 modifiers: KeyModifiers::NONE,
             }),
+            action: Some(Action::RefreshJobs),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Jobs,
+            keys: "L",
+            description: "Load more jobs",
+            scope: BindingScope::Screen(Jobs),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('L'),
+                modifiers: KeyModifiers::SHIFT,
+            }),
             action: Some(Action::LoadMoreJobs),
             handles_input: true,
         },
