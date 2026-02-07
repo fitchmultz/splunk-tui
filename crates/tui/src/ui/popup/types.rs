@@ -179,6 +179,8 @@ pub enum PopupType {
     },
     /// Delete saved search confirmation
     DeleteSavedSearchConfirm { search_name: String },
+    /// Delete lookup table confirmation
+    DeleteLookupConfirm { lookup_name: String },
     /// Create macro dialog
     CreateMacro {
         /// Name input

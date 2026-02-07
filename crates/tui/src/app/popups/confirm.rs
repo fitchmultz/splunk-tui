@@ -112,6 +112,19 @@ impl App {
                 self.popup = None;
                 Some(Action::DeleteUser { name })
             }
+            // DeleteLookupConfirm
+            (
+                Some(PopupType::DeleteLookupConfirm { lookup_name }),
+                KeyCode::Char('y') | KeyCode::Enter,
+            ) => {
+                let name = lookup_name.clone();
+                self.popup = None;
+                Some(Action::DeleteLookup {
+                    name,
+                    app: None,
+                    owner: None,
+                })
+            }
             // Reject confirmations with 'n' or Esc
             (
                 Some(
@@ -133,6 +146,10 @@ impl App {
                 None
             }
             (Some(PopupType::DeleteUserConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
+                self.popup = None;
+                None
+            }
+            (Some(PopupType::DeleteLookupConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
                 self.popup = None;
                 None
             }

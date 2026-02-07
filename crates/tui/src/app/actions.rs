@@ -167,7 +167,10 @@ impl App {
             | Action::MaintenanceModeSet { .. }
             | Action::ClusterRebalanced { .. }
             | Action::PeerDecommissioned { .. }
-            | Action::PeerRemoved { .. } => {
+            | Action::PeerRemoved { .. }
+            | Action::OpenDeleteLookupConfirm { .. }
+            | Action::LookupDownloaded(_)
+            | Action::LookupDeleted(_) => {
                 self.handle_system_action(action);
             }
 

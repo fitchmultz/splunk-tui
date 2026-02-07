@@ -7,9 +7,9 @@
 //! - Lookup table file metadata (name, filename, size, etc.)
 //! - ACL information for lookup tables
 //! - API response structures for lookup table listings
+//! - Lookup file upload parameters
 //!
 //! # What this module does NOT handle:
-//! - Lookup file content management (upload/download)
 //! - KV store lookups (different endpoint)
 //! - Lookup transformations
 
@@ -47,6 +47,23 @@ pub struct LookupTableEntry {
 #[derive(Debug, Deserialize, Clone)]
 pub struct LookupTableListResponse {
     pub entry: Vec<LookupTableEntry>,
+}
+
+/// Parameters for uploading a lookup table file.
+#[derive(Debug, Clone)]
+pub struct UploadLookupParams {
+    /// The lookup name (identifier in Splunk)
+    pub name: String,
+    /// The CSV filename (e.g., "my_lookup.csv")
+    pub filename: String,
+    /// The file content as bytes
+    pub content: Vec<u8>,
+    /// App context (namespace) - defaults to "search"
+    pub app: Option<String>,
+    /// Owner context (namespace) - defaults to "-" (all users)
+    pub owner: Option<String>,
+    /// Sharing level (user, app, global)
+    pub sharing: Option<String>,
 }
 
 #[cfg(test)]

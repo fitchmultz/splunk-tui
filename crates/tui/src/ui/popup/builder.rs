@@ -285,6 +285,13 @@ impl PopupBuilder {
                     search_name
                 ),
             ),
+            PopupType::DeleteLookupConfirm { lookup_name } => (
+                "Confirm Delete".to_string(),
+                format!(
+                    "Delete lookup '{}' ?\n\nThis action cannot be undone.\n\nPress 'y' to confirm, 'n' or Esc to cancel",
+                    lookup_name
+                ),
+            ),
             PopupType::CreateMacro {
                 name_input,
                 definition_input,

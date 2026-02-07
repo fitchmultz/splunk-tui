@@ -79,6 +79,62 @@ impl App {
                 None
             }
 
+            // Download selected lookup (Ctrl+D or 'd')
+            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if let Some(index) = self.lookups_state.selected()
+                    && let Some(lookups) = &self.lookups
+                    && let Some(lookup) = lookups.get(index)
+                {
+                    let output_path = std::path::PathBuf::from(format!("{}.csv", lookup.name));
+                    return Some(Action::DownloadLookup {
+                        name: lookup.name.clone(),
+                        app: None,
+                        owner: None,
+                        output_path,
+                    });
+                }
+                None
+            }
+            KeyCode::Char('d') if key.modifiers.is_empty() => {
+                if let Some(index) = self.lookups_state.selected()
+                    && let Some(lookups) = &self.lookups
+                    && let Some(lookup) = lookups.get(index)
+                {
+                    let output_path = std::path::PathBuf::from(format!("{}.csv", lookup.name));
+                    return Some(Action::DownloadLookup {
+                        name: lookup.name.clone(),
+                        app: None,
+                        owner: None,
+                        output_path,
+                    });
+                }
+                None
+            }
+
+            // Delete selected lookup (Ctrl+X or 'x')
+            KeyCode::Char('x') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if let Some(index) = self.lookups_state.selected()
+                    && let Some(lookups) = &self.lookups
+                    && let Some(lookup) = lookups.get(index)
+                {
+                    return Some(Action::OpenDeleteLookupConfirm {
+                        name: lookup.name.clone(),
+                    });
+                }
+                None
+            }
+            KeyCode::Char('x') if key.modifiers.is_empty() => {
+                if let Some(index) = self.lookups_state.selected()
+                    && let Some(lookups) = &self.lookups
+                    && let Some(lookup) = lookups.get(index)
+                {
+                    return Some(Action::OpenDeleteLookupConfirm {
+                        name: lookup.name.clone(),
+                    });
+                }
+                None
+            }
+
             // Load more (if available)
             KeyCode::Char('n') if self.lookups_pagination.can_load_more() => {
                 Some(Action::LoadMoreLookups)

@@ -314,26 +314,60 @@ Long-running commands can be interrupted with `Ctrl+C`:
 ### Commands
 
 #### `lookups`
-List lookup tables (CSV-based lookups).
+List and manage lookup tables (CSV-based lookups).
+
+**Subcommands:**
+
+- `list`: List all lookup tables (default)
+  - `-c, --count <NUMBER>`: Maximum number of lookup tables to list [default: 30]
+  - `--offset <NUMBER>`: Offset into the lookup table list [default: 0]
+
+- `download <NAME>`: Download a lookup table as CSV
+  - `-o, --output <FILE>`: Output file path (defaults to `<NAME>.csv`)
+  - `--app <APP>`: App namespace [default: search]
+  - `--owner <OWNER>`: Owner namespace [default: -]
+
+- `upload <FILE>`: Upload or replace a lookup table file
+  - `-n, --name <NAME>`: Lookup name (defaults to filename without extension)
+  - `--app <APP>`: App namespace [default: search]
+  - `--owner <OWNER>`: Owner namespace [default: -]
+  - `--sharing <LEVEL>`: Sharing level (user, app, global)
+
+- `delete <NAME>`: Delete a lookup table file
+  - `--app <APP>`: App namespace [default: search]
+  - `--owner <OWNER>`: Owner namespace [default: -]
+  - `-f, --force`: Skip confirmation prompt
 
 ```bash
 # List all lookup tables
-splunk-cli lookups
+splunk-cli lookups list
 
 # List with count limit
-splunk-cli lookups --count 50
+splunk-cli lookups list --count 50
 
 # List with offset (pagination)
-splunk-cli lookups --count 30 --offset 30
+splunk-cli lookups list --count 30 --offset 30
 
 # List in different formats
-splunk-cli lookups --output json
-splunk-cli lookups --output csv
-splunk-cli lookups --output xml
-```
+splunk-cli lookups list --output json
+splunk-cli lookups list --output csv
+splunk-cli lookups list --output xml
 
-- `-c, --count <NUMBER>`: Maximum number of lookup tables to list [default: 30]
-- `--offset <NUMBER>`: Offset into the lookup table list (zero-based) [default: 0]
+# Download a lookup to current directory
+splunk-cli lookups download my_lookup
+
+# Download to specific path
+splunk-cli lookups download my_lookup -o /path/to/output.csv
+
+# Upload a new lookup
+splunk-cli lookups upload /path/to/data.csv --name my_lookup
+
+# Delete a lookup (with confirmation)
+splunk-cli lookups delete my_lookup
+
+# Delete without confirmation
+splunk-cli lookups delete my_lookup --force
+```
 
 **Output Fields:**
 - **Name**: The lookup table name
@@ -346,6 +380,7 @@ splunk-cli lookups --output xml
 **Notes:**
 - Only CSV-based lookup files are listed (KV store lookups use a different endpoint)
 - File sizes are shown in human-readable format (B, KB, MB, GB) in table output
+- For backward compatibility, `splunk-cli lookups` without subcommand defaults to `list`
 
 #### `hec`
 
@@ -1219,6 +1254,8 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export lookup tables
 - `Ctrl+c`: Copy selected lookup name
 - `j/k or Up/Down`: Navigate list
+- `d or Ctrl+d`: Download selected lookup as CSV
+- `x or Ctrl+x`: Delete selected lookup (with confirmation)
 
 #### Audit Events Screen
 - `r`: Refresh audit events

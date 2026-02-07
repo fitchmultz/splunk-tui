@@ -34,8 +34,8 @@ pub use models::{
     ModifyRoleParams, ModifyUserParams, RemovePeersParams, RemoveShcMemberParams, Role,
     RoleListResponse, RollingRestartParams, SavedSearch, SearchJob, SearchJobListResponse,
     SearchJobResults, SearchJobStatus, SendBatchParams, ServerInfo, SetCaptainParams, ShcCaptain,
-    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus, SplunkHealth, SplunkResponse, User,
-    UserListResponse, WorkloadPool, WorkloadRule,
+    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus, SplunkHealth, SplunkResponse,
+    UploadLookupParams, User, UserListResponse, WorkloadPool, WorkloadRule,
 };
 
 // Re-export search types for CLI/TUI use

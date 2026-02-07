@@ -531,6 +531,27 @@ pub enum Action {
     LookupsLoaded(Result<Vec<LookupTable>, Arc<ClientError>>),
     /// Result of loading more lookup tables (pagination)
     MoreLookupsLoaded(Result<Vec<LookupTable>, Arc<ClientError>>),
+
+    // Lookup Operations
+    /// Download a lookup table file
+    DownloadLookup {
+        name: String,
+        app: Option<String>,
+        owner: Option<String>,
+        output_path: PathBuf,
+    },
+    /// Delete a lookup table file
+    DeleteLookup {
+        name: String,
+        app: Option<String>,
+        owner: Option<String>,
+    },
+    /// Open delete lookup confirmation dialog
+    OpenDeleteLookupConfirm { name: String },
+    /// Result of downloading a lookup
+    LookupDownloaded(Result<String, Arc<ClientError>>),
+    /// Result of deleting a lookup
+    LookupDeleted(Result<String, Arc<ClientError>>),
     /// Result of loading inputs
     InputsLoaded(Result<Vec<Input>, Arc<ClientError>>),
     /// Result of loading more inputs (pagination)

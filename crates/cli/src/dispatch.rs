@@ -391,10 +391,15 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
-        Commands::Lookups { count, offset } => {
+        Commands::Lookups {
+            command,
+            count,
+            offset,
+        } => {
             let config = config.into_real_config()?;
             commands::lookups::run(
                 config,
+                command,
                 count,
                 offset,
                 &cli.output,

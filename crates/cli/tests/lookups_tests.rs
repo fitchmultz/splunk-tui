@@ -15,16 +15,16 @@ use predicates::prelude::*;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-/// Test that `splunk-cli lookups --help` shows correct flags.
+/// Test that `splunk-cli lookups --help` shows correct subcommands.
 #[test]
 fn test_lookups_help() {
     let mut cmd = splunk_cmd();
 
     cmd.args(["lookups", "--help"]).assert().success().stdout(
-        predicate::str::contains("--count")
-            .and(predicate::str::contains("--offset"))
-            .and(predicate::str::contains("--output"))
-            .and(predicate::str::contains("--output-file")),
+        predicate::str::contains("list")
+            .and(predicate::str::contains("download"))
+            .and(predicate::str::contains("upload"))
+            .and(predicate::str::contains("delete")),
     );
 }
 

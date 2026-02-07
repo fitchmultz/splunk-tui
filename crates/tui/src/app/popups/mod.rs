@@ -54,7 +54,8 @@ impl App {
                 | PopupType::ConfirmDisableApp(_)
                 | PopupType::ConfirmRemoveApp(_)
                 | PopupType::DeleteIndexConfirm { .. }
-                | PopupType::DeleteUserConfirm { .. },
+                | PopupType::DeleteUserConfirm { .. }
+                | PopupType::DeleteLookupConfirm { .. },
             ) => self.handle_confirm_popup(key),
 
             // Profile management

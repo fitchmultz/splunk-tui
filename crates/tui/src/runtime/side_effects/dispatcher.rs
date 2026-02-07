@@ -180,6 +180,17 @@ pub async fn handle_side_effects(
             // This action is handled by the main loop which has access to state
             // It reads lookups_pagination and sends LoadLookups with updated offset
         }
+        Action::DownloadLookup {
+            name,
+            app,
+            owner,
+            output_path,
+        } => {
+            lookups::handle_download_lookup(client, tx, name, app, owner, output_path).await;
+        }
+        Action::DeleteLookup { name, app, owner } => {
+            lookups::handle_delete_lookup(client, tx, name, app, owner).await;
+        }
         Action::LoadInputs { count, offset } => {
             inputs::handle_load_inputs(client, tx, count, offset).await;
         }

@@ -60,6 +60,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::DeleteUserConfirm { .. }
         | PopupType::DeleteRoleConfirm { .. }
         | PopupType::DeleteSavedSearchConfirm { .. }
+        | PopupType::DeleteLookupConfirm { .. }
         | PopupType::ConfirmRemoveApp(_)
         | PopupType::DeleteProfileConfirm { .. } => theme.error,
     };
@@ -95,7 +96,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::ConfirmEnableApp(_)
         | PopupType::ConfirmDisableApp(_)
         | PopupType::ConfirmRemoveApp(_)
-        | PopupType::DeleteSavedSearchConfirm { .. } => Wrap { trim: true },
+        | PopupType::DeleteSavedSearchConfirm { .. }
+        | PopupType::DeleteLookupConfirm { .. } => Wrap { trim: true },
     };
 
     // Determine alignment based on popup type

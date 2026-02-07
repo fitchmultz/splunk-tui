@@ -69,7 +69,7 @@ pub use license::{
     LicenseStack, LicenseUsage, ModifyPoolParams, SlavesUsageBytes,
 };
 pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
-pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse};
+pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse, UploadLookupParams};
 pub use macros::{Macro, MacroEntry, MacroListResponse};
 pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListResponse};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};

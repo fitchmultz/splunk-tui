@@ -53,7 +53,9 @@ pub use license::{
     list_license_stacks, modify_license_pool,
 };
 pub use logs::get_internal_logs;
-pub use lookups::list_lookup_tables;
+pub use lookups::{
+    delete_lookup_table, download_lookup_table, list_lookup_tables, upload_lookup_table,
+};
 pub use macros::{
     CreateMacroRequest, UpdateMacroRequest, create_macro, delete_macro, get_macro, list_macros,
     update_macro,

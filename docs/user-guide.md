@@ -337,6 +337,8 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+e`: Export lookup tables
 - `Ctrl+c`: Copy selected lookup name
 - `j/k or Up/Down`: Navigate list
+- `d or Ctrl+d`: Download selected lookup as CSV
+- `x or Ctrl+x`: Delete selected lookup (with confirmation)
 
 #### Audit Events Screen
 - `r`: Refresh audit events

@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "unused_dependency": "tachyonfx@0.14",
         "scan_agent": "scan-maintenance",
-        "lines_of_dead_code": "598",
-        "unused_dependency": "tachyonfx@0.14"
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,9 +4006,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "production_files_affected": "8",
         "dead_code_count": "25",
+        "production_files_affected": "8",
+        "scan_agent": "scan-maintenance",
         "test_files_affected": "4"
       }
     },
@@ -4179,8 +4179,8 @@
       "custom_fields": {
         "macro_already_adopted": "true",
         "current_line_count": "867",
-        "target_line_count": "300",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "target_line_count": "300"
       }
     },
     {
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "remaining_duplicates": "3",
         "macro_solved_count": "9",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "remaining_duplicates": "3"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "affected_formatters": "4",
-        "estimated_methods": "35+"
+        "estimated_methods": "35+",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "action_variants": "94",
-        "submodule_count": "28",
-        "current_line_count": "523",
         "target_line_count": "150",
-        "scan_agent": "scan-maintenance"
+        "current_line_count": "523",
+        "action_variants": "94",
+        "scan_agent": "scan-maintenance",
+        "submodule_count": "28"
       }
     },
     {
@@ -4471,9 +4471,9 @@
       "relates_to": [],
       "custom_fields": {
         "estimated_method_count": "45",
+        "existing_macro_coverage": "4 methods total across all formatters",
         "scan_agent": "scan-maintenance",
-        "formatter_count": "3",
-        "existing_macro_coverage": "4 methods total across all formatters"
+        "formatter_count": "3"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "bail_usages": "18",
         "command_files": "27",
         "with_context_usages": "120+",
-        "bail_usages": "18"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4593,11 +4593,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "file_count": "23",
         "screen_files": "22",
-        "principle": "DRY",
+        "file_count": "23",
         "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
+        "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "files_using_pattern_a": "26",
-        "scan_agent": "scan-maintenance",
-        "files_using_pattern_b": "2",
         "principle": "DRY",
-        "runner_used": "kimi"
+        "files_using_pattern_b": "2",
+        "files_using_pattern_a": "26",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
+        "widgets_dir_exists": "false",
+        "lines_duplicated": "~400",
         "affected_screens": "25",
         "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "widgets_dir_exists": "false",
         "model_used": "kimi-code/kimi-for-coding",
-        "lines_duplicated": "~400",
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "runner_used": "kimi"
       }
     },
     {
@@ -4816,11 +4816,11 @@
       "relates_to": [],
       "custom_fields": {
         "principle": "DRY",
-        "duplication_count": "6 functions across 5 files",
-        "files_with_duplicates": "5",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
+        "files_with_duplicates": "5",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "duplication_count": "6 functions across 5 files"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_files": "4",
         "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "duplicate_count": "4",
         "principle": "DRY",
-        "runner_used": "kimi"
+        "duplicate_count": "4",
+        "runner_used": "kimi",
+        "affected_files": "4"
       }
     },
     {
@@ -4941,10 +4941,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "principle": "YAGNI",
-        "scan_agent": "scan-maintenance",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "principle": "DRY",
+        "files_to_update": "5",
         "duplicate_count": "6",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
         "runner_used": "kimi",
-        "files_to_update": "5"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
         "principle": "KISS",
-        "missing_variable_count": "12",
-        "scan_agent": "scan-maintenance",
         "env_example_line_count": "66",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "env_line_count": "18",
-        "runner_used": "kimi"
+        "missing_variable_count": "12",
+        "env_line_count": "18"
       }
     },
     {
@@ -5115,9 +5115,9 @@
       "relates_to": [],
       "custom_fields": {
         "principle": "KISS",
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi"
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5168,10 +5168,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "principle": "DRY",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5223,10 +5223,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -5275,11 +5275,11 @@
         "RQ-0375"
       ],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "principle": "DRY",
         "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5389,11 +5389,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-innovation",
         "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
-        "runner_used": "kimi"
+        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps"
       }
     },
     {
@@ -5439,8 +5439,8 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5503,9 +5503,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-innovation",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "scan_agent": "scan-innovation"
+        "runner_used": "kimi"
       }
     },
     {
@@ -5564,8 +5564,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-innovation"
       }
     },
@@ -5635,6 +5635,75 @@
       "updated_at": "2026-02-07T06:21:59.752682299Z",
       "completed_at": "2026-02-07T06:21:59.752682299Z",
       "started_at": "2026-02-07T05:43:01.409996683Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
+      }
+    },
+    {
+      "id": "RQ-0383",
+      "status": "done",
+      "title": "Add lookup download/upload/delete (client + CLI + TUI)",
+      "description": "Opportunity type: feature gap / integration\n\nEvidence:\n- The client lookup module only lists lookup tables and explicitly does not handle upload/download (`crates/client/src/client/lookups.rs`).\n- CLI and TUI expose lookup listing but not content management (docs show `splunk-cli lookups` list; TUI Lookups screen focuses on list/export).\n\nWhy it matters:\n- Lookup tables are a core Splunk workflow for enrichment. Without download/upload/delete, users must leave the terminal for everyday maintenance.\n\nProposed approach:\n- Minimal slice:\n  - Client: add endpoints for downloading a lookup file (CSV) and uploading/replacing a lookup file, plus deleting a lookup.\n  - CLI: add `lookups download/upload/delete` subcommands with safe defaults and `--force` for delete.\n  - TUI: add at least download (export) and delete, with a preview modal as a follow-up.\n- Expansion: namespace support (`app`, `owner`) and KV store lookup workflows.\n\nRisks and mitigations:\n- Risk: endpoint shape differences across Splunk versions. Mitigation: implement with explicit integration tests under `#[ignore]` and robust error reporting; document supported versions (v9+).\n\nAcceptance criteria:\n- New client methods with unit tests for request building/parsing where possible; live tests validate end-to-end.\n- CLI help includes examples for download/upload and piping-friendly output.\n- TUI keybindings updated + docs regenerated.\n- `make test` passes.\n\nPriority rationale:\n- High: enables a common Splunk admin workflow end-to-end from the terminal.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "feature",
+        "client",
+        "cli",
+        "tui"
+      ],
+      "scope": [
+        "crates/client/src/client/lookups.rs",
+        "crates/client/src/endpoints/lookups.rs",
+        "crates/client/src/models/lookups.rs",
+        "crates/cli/src/args.rs",
+        "crates/cli/src/dispatch.rs",
+        "crates/cli/src/commands/lookups.rs",
+        "crates/tui/src/runtime/side_effects/lookups.rs",
+        "crates/tui/src/ui/screens/lookups.rs",
+        "crates/tui/src/app/input/lookups.rs",
+        "crates/client/tests/lookups_tests.rs",
+        "crates/cli/tests/lookups_tests.rs",
+        "crates/tui/tests/side_effects_lookups_tests.rs",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "crates/client/src/client/lookups.rs:6-8 states it does NOT handle lookup file content upload/download",
+        "crates/client/src/models/lookups.rs:11-13 states it does NOT handle lookup file content management (upload/download)",
+        "crates/cli/src/commands/lookups.rs currently only implements list functionality (run function), no download/upload/delete subcommands",
+        "docs/usage.md:316-342 documents `splunk-cli lookups` listing but no download/upload/delete workflows",
+        "crates/tui/src/ui/screens/lookups.rs has no download/upload/delete actions (only list/export/copy in keybindings)",
+        "crates/tui/src/runtime/side_effects/lookups.rs only handles LoadLookups/LoadMoreLookups actions"
+      ],
+      "plan": [
+        "Confirm the Splunk REST endpoints for lookup file download/upload/delete (document links in docs as needed).",
+        "Implement client endpoints and models in crates/client/src/endpoints/lookups.rs and update crates/client/src/client/lookups.rs, keeping public API minimal (`pub(crate)` where possible).",
+        "Add CLI subcommands for download/upload/delete in crates/cli/src/args.rs with safe confirmations and dispatch in crates/cli/src/dispatch.rs.",
+        "Add TUI actions for at least download/export and delete (confirmation modal) in crates/tui/src/runtime/side_effects/lookups.rs and update screen handling.",
+        "Add hermetic tests for parsing/formatting and ignored live tests for server behavior.",
+        "Verify by running `make test` and confirming `make ci` passes."
+      ],
+      "notes": [
+        "Scope expanded to include model file (lookups.rs), test files, and CLI args/dispatch which will need modification for new subcommands",
+        "All scope files verified to exist as of 2026-02-07",
+        "Added lookup download/upload/delete across client, CLI, and TUI",
+        "Client: download_lookup_table(), upload_lookup_table(), delete_lookup_table() endpoints",
+        "CLI: lookups list/download/upload/delete subcommands with backward compatibility",
+        "TUI: 'd' to download, 'x' to delete with confirmation modal",
+        "Fixed: Added missing TUI keybinding documentation for new actions",
+        "Verified: make ci passes, all tests pass, docs regenerated"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T07:06:33.341803506Z",
+      "completed_at": "2026-02-07T07:06:33.341803506Z",
+      "started_at": "2026-02-07T06:25:52.029103100Z",
       "depends_on": [],
       "blocks": [],
       "relates_to": [],

@@ -247,6 +247,45 @@ impl App {
                     }
                 }
             }
+            // Lookup operations
+            Action::OpenDeleteLookupConfirm { name } => {
+                self.popup = Some(
+                    crate::ui::popup::Popup::builder(
+                        crate::ui::popup::PopupType::DeleteLookupConfirm { lookup_name: name },
+                    )
+                    .build(),
+                );
+            }
+            Action::LookupDownloaded(result) => {
+                self.loading = false;
+                match result {
+                    Ok(name) => {
+                        self.toasts
+                            .push(Toast::success(format!("Lookup '{}' downloaded", name)));
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to download lookup: {}", e)));
+                    }
+                }
+            }
+            Action::LookupDeleted(result) => {
+                self.loading = false;
+                match result {
+                    Ok(name) => {
+                        self.toasts
+                            .push(Toast::success(format!("Lookup '{}' deleted", name)));
+                        // Remove from local list if present
+                        if let Some(lookups) = &mut self.lookups {
+                            lookups.retain(|l| l.name != name);
+                        }
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to delete lookup: {}", e)));
+                    }
+                }
+            }
             _ => {}
         }
     }

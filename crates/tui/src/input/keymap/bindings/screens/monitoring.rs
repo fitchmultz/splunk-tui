@@ -344,5 +344,24 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: Some(Action::NavigateUp),
             handles_input: true,
         },
+        // Lookup Operations
+        Keybinding {
+            section: Section::Lookups,
+            keys: "d or Ctrl+d",
+            description: "Download selected lookup as CSV",
+            scope: BindingScope::Screen(Lookups),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Lookups,
+            keys: "x or Ctrl+x",
+            description: "Delete selected lookup (with confirmation)",
+            scope: BindingScope::Screen(Lookups),
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
     ]
 }

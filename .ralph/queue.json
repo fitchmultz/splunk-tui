@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0383",
-      "status": "todo",
-      "title": "Add lookup download/upload/delete (client + CLI + TUI)",
-      "description": "Opportunity type: feature gap / integration\n\nEvidence:\n- The client lookup module only lists lookup tables and explicitly does not handle upload/download (`crates/client/src/client/lookups.rs`).\n- CLI and TUI expose lookup listing but not content management (docs show `splunk-cli lookups` list; TUI Lookups screen focuses on list/export).\n\nWhy it matters:\n- Lookup tables are a core Splunk workflow for enrichment. Without download/upload/delete, users must leave the terminal for everyday maintenance.\n\nProposed approach:\n- Minimal slice:\n  - Client: add endpoints for downloading a lookup file (CSV) and uploading/replacing a lookup file, plus deleting a lookup.\n  - CLI: add `lookups download/upload/delete` subcommands with safe defaults and `--force` for delete.\n  - TUI: add at least download (export) and delete, with a preview modal as a follow-up.\n- Expansion: namespace support (`app`, `owner`) and KV store lookup workflows.\n\nRisks and mitigations:\n- Risk: endpoint shape differences across Splunk versions. Mitigation: implement with explicit integration tests under `#[ignore]` and robust error reporting; document supported versions (v9+).\n\nAcceptance criteria:\n- New client methods with unit tests for request building/parsing where possible; live tests validate end-to-end.\n- CLI help includes examples for download/upload and piping-friendly output.\n- TUI keybindings updated + docs regenerated.\n- `make test` passes.\n\nPriority rationale:\n- High: enables a common Splunk admin workflow end-to-end from the terminal.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "feature",
-        "client",
-        "cli",
-        "tui"
-      ],
-      "scope": [
-        "crates/client/src/client/lookups.rs",
-        "crates/client/src/endpoints/lookups.rs",
-        "crates/cli/src/commands/lookups.rs",
-        "crates/tui/src/runtime/side_effects/lookups.rs",
-        "docs/usage.md",
-        "make test"
-      ],
-      "evidence": [
-        "crates/client/src/client/lookups.rs states it does NOT handle lookup file content upload/download",
-        "docs/usage.md documents `splunk-cli lookups` listing and output formats but not download/upload/delete workflows",
-        "README.md keybindings include Lookups screen with refresh/export/copy but no view/download/upload/delete actions"
-      ],
-      "plan": [
-        "Confirm the Splunk REST endpoints for lookup file download/upload/delete (document links in docs as needed).",
-        "Implement client endpoints and models, keeping public API minimal (`pub(crate)` where possible).",
-        "Add CLI subcommands for download/upload/delete with safe confirmations.",
-        "Add TUI actions for at least download/export and delete (confirmation modal).",
-        "Add hermetic tests for parsing/formatting and ignored live tests for server behavior.",
-        "Verify by running `make test` and confirming `make ci` passes."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0384",
       "status": "todo",
       "title": "Centralize SPLUNK_CONFIG_PATH/SPLUNK_PROFILE handling in splunk_config",
@@ -441,8 +396,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

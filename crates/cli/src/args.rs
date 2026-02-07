@@ -321,14 +321,17 @@ pub enum Commands {
         command: commands::datamodels::DatamodelsCommand,
     },
 
-    /// List lookup tables (CSV-based lookups)
+    /// List and manage lookup tables (CSV-based lookups)
     Lookups {
-        /// Maximum number of lookup tables to list
-        #[arg(short, long, default_value = "30")]
+        #[command(subcommand)]
+        command: Option<commands::lookups::LookupsCommand>,
+
+        /// Maximum number of lookup tables to list (deprecated: use 'lookups list')
+        #[arg(short, long, hide = true, default_value = "30")]
         count: usize,
 
-        /// Offset into the lookup table list (zero-based)
-        #[arg(long, default_value = "0")]
+        /// Offset into the lookup table list (zero-based) (deprecated: use 'lookups list')
+        #[arg(long, hide = true, default_value = "0")]
         offset: usize,
     },
 
