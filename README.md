@@ -30,6 +30,26 @@ Two binaries are installed:
 - `splunk-cli` - Command-line interface
 - `splunk-tui` - Interactive terminal interface
 
+## Quick Verification
+
+After installation, verify your configuration and connectivity:
+
+```bash
+# Run diagnostics to validate config and connectivity
+splunk-cli doctor
+
+# Generate a support bundle for troubleshooting
+splunk-cli doctor --bundle ./support-bundle.zip
+```
+
+The doctor command checks:
+- Configuration loading and authentication setup
+- Connectivity to your Splunk server
+- Server info, health status, and license information
+- KVStore status
+
+If any required checks fail, the command exits with a non-zero status code.
+
 ## Configuration
 
 Configuration is loaded from environment variables or a `.env` file:

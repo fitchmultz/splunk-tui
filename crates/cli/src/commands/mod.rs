@@ -23,6 +23,7 @@ pub mod config;
 pub mod configs;
 pub mod dashboards;
 pub mod datamodels;
+pub mod doctor;
 pub mod forwarders;
 pub mod health;
 pub mod hec;

@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::DiagnosticReport;
 use crate::formatters::common::{build_csv_header, build_csv_row, escape_csv};
 use anyhow::Result;
 use splunk_client::{HealthCheckOutput, KvStoreStatus};
@@ -109,6 +110,76 @@ pub fn format_kvstore_status(status: &KvStoreStatus) -> Result<String> {
         escape_csv(&status.replication_status.oplog_used.to_string()),
     ];
     output.push_str(&build_csv_row(&row));
+
+    Ok(output)
+}
+
+/// Format diagnostic report as CSV.
+pub fn format_health_check_report(report: &DiagnosticReport) -> Result<String> {
+    let mut output = String::new();
+
+    // Metadata section
+    output.push_str(&build_csv_header(&["property", "value"]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("cli_version"),
+        escape_csv(&report.cli_version),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("os_arch"),
+        escape_csv(&report.os_arch),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("timestamp"),
+        escape_csv(&report.timestamp),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("base_url"),
+        escape_csv(&report.config_summary.base_url),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("auth_strategy"),
+        escape_csv(&report.config_summary.auth_strategy),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("skip_verify"),
+        escape_csv(&report.config_summary.skip_verify.to_string()),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("timeout_secs"),
+        escape_csv(&report.config_summary.timeout_secs.to_string()),
+    ]));
+    output.push_str(&build_csv_row(&[
+        escape_csv("max_retries"),
+        escape_csv(&report.config_summary.max_retries.to_string()),
+    ]));
+
+    // Blank line and checks header
+    output.push('\n');
+    output.push_str(&build_csv_header(&["check_name", "status", "message"]));
+
+    // Check results
+    for check in &report.checks {
+        let status_str = match check.status {
+            crate::formatters::CheckStatus::Pass => "pass",
+            crate::formatters::CheckStatus::Fail => "fail",
+            crate::formatters::CheckStatus::Warning => "warning",
+            crate::formatters::CheckStatus::Skipped => "skipped",
+        };
+        output.push_str(&build_csv_row(&[
+            escape_csv(&check.name),
+            escape_csv(status_str),
+            escape_csv(&check.message),
+        ]));
+    }
+
+    // Partial errors (if any)
+    if !report.partial_errors.is_empty() {
+        output.push('\n');
+        output.push_str(&build_csv_header(&["endpoint", "error"]));
+        for (endpoint, error) in &report.partial_errors {
+            output.push_str(&build_csv_row(&[escape_csv(endpoint), escape_csv(error)]));
+        }
+    }
 
     Ok(output)
 }

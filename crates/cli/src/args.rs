@@ -24,7 +24,7 @@ use crate::commands;
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
 #[command(version)]
 #[command(
-    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli -a $SPLUNK_API_TOKEN search 'index=_internal' --wait\n"
+    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli doctor\n  splunk-cli doctor --bundle ./support-bundle.zip\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli -a $SPLUNK_API_TOKEN search 'index=_internal' --wait\n"
 )]
 pub struct Cli {
     /// Base URL of the Splunk server (e.g., https://localhost:8089)
@@ -200,6 +200,17 @@ pub enum Commands {
 
     /// Perform a comprehensive system health check
     Health,
+
+    /// Run comprehensive diagnostics and validate configuration
+    Doctor {
+        /// Write a redacted support bundle to the specified path
+        #[arg(long, value_name = "PATH")]
+        bundle: Option<PathBuf>,
+
+        /// Include recent splunk-tui logs in the bundle
+        #[arg(long, requires = "bundle")]
+        include_logs: bool,
+    },
 
     /// Show KVStore status and manage collections
     Kvstore {

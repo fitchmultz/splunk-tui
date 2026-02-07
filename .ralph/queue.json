@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0380",
-      "status": "todo",
-      "title": "Add splunk-cli doctor + redacted support bundle",
-      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- There is no dedicated diagnostics command (`rg -n \"doctor\"` finds none in CLI/TUI code).\n- README onboarding doesn't provide a single \"first successful call\" verification flow, and live verification is currently a separate script (`scripts/test-live-server.sh`).\n- The client already supports multiple health endpoints and an aggregate health check (`SplunkClient::check_health_aggregate`).\n\nWhy it matters:\n- Operators need a fast, repeatable way to validate config/auth/connectivity and produce actionable diagnostics during setup and incidents.\n- A support bundle (with redaction) reduces time-to-triage for bug reports without leaking secrets.\n\nProposed approach:\n- Minimal slice (CLI-only): add `splunk-cli doctor` that runs a curated checklist:\n  - Config load + precedence summary (profile/config-path/env)\n  - Auth strategy detection (token vs session)\n  - Server info fetch\n  - Health aggregate + partial error reporting\n  - Optional: license + kvstore status\n  - Exit non-zero if any required checks fail\n- Add `--bundle <path>` to write a JSON report plus a zip/tar containing:\n  - redacted config summary\n  - redacted environment keys (names only)\n  - recent `splunk-tui` logs (if present)\n  - command version + OS/arch\n\nRisks and mitigations:\n- Risk: tests needing a live Splunk. Mitigation: cover failure modes hermetically (missing config, invalid URL) and add live tests under `#[ignore]` for success path.\n\nAcceptance criteria:\n- `splunk-cli doctor --help` includes examples and documents bundle behavior and redaction guarantees.\n- Hermetic tests cover failure modes and output shape; ignored live test covers success path.\n- Docs updated to recommend `splunk-cli doctor` as the first verification step.\n- `make test` passes.\n\nPriority rationale:\n- High: unlocks faster onboarding and reliable troubleshooting for every user.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "cli",
-        "reliability",
-        "ux",
-        "supportability"
-      ],
-      "scope": [
-        "crates/cli/src/args.rs",
-        "crates/cli/src/dispatch.rs",
-        "crates/cli/src/commands/",
-        "scripts/test-live-server.sh",
-        "README.md",
-        "docs/user-guide.md",
-        "make test"
-      ],
-      "evidence": [
-        "scripts/test-live-server.sh provides manual live verification outside the CLI command surface",
-        "crates/client/src/client/health.rs implements AggregatedHealth via check_health_aggregate() (reusable for doctor)",
-        "rg -n 'doctor' crates/cli crates/tui returns no command/surface for diagnostics"
-      ],
-      "plan": [
-        "Add a `Doctor` top-level subcommand to `crates/cli/src/args.rs` with `--bundle` and output-format flags.",
-        "Implement `crates/cli/src/commands/doctor.rs` using existing client health/server endpoints and strict redaction rules.",
-        "Add hermetic CLI tests for missing/invalid config and bundle redaction; add `#[ignore]` live test for a real server.",
-        "Update README/docs to include a Quick Verify section using `splunk-cli doctor`.",
-        "Verify by running `make test` and (optionally) `make test-live SKIP_LIVE_TESTS=0` against a configured Splunk server."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0381",
       "status": "todo",
       "title": "Add password/token stdin+file options to splunk-cli config",
@@ -541,8 +496,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "fail-fast"
+        "principle": "fail-fast",
+        "scan_agent": "scan-maintenance"
       }
     },
     {

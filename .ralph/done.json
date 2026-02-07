@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "lines_of_dead_code": "598",
         "scan_agent": "scan-maintenance",
-        "unused_dependency": "tachyonfx@0.14"
+        "unused_dependency": "tachyonfx@0.14",
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "production_files_affected": "8",
         "dead_code_count": "25",
         "scan_agent": "scan-maintenance",
-        "test_files_affected": "4",
-        "production_files_affected": "8"
+        "test_files_affected": "4"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "target_line_count": "300",
+        "current_line_count": "867",
         "macro_already_adopted": "true",
-        "current_line_count": "867"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "remaining_duplicates": "3",
         "macro_solved_count": "9",
-        "remaining_duplicates": "3"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_formatters": "4",
+        "scan_agent": "scan-maintenance",
         "estimated_methods": "35+",
-        "scan_agent": "scan-maintenance"
+        "affected_formatters": "4"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "action_variants": "94",
-        "submodule_count": "28",
         "target_line_count": "150",
-        "current_line_count": "523"
+        "current_line_count": "523",
+        "action_variants": "94",
+        "scan_agent": "scan-maintenance",
+        "submodule_count": "28"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "formatter_count": "3",
-        "scan_agent": "scan-maintenance",
         "estimated_method_count": "45",
-        "existing_macro_coverage": "4 methods total across all formatters"
+        "existing_macro_coverage": "4 methods total across all formatters",
+        "formatter_count": "3",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4538,10 +4538,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "bail_usages": "18",
         "with_context_usages": "120+",
         "scan_agent": "scan-maintenance",
-        "command_files": "27",
-        "bail_usages": "18"
+        "command_files": "27"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "screen_files": "22",
+        "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
         "file_count": "23",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "screen_files": "22"
       }
     },
     {
@@ -4678,11 +4678,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "files_using_pattern_a": "26",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
+        "files_using_pattern_a": "26",
         "files_using_pattern_b": "2",
+        "runner_used": "kimi",
+        "principle": "DRY",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "widgets_dir_exists": "false",
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance",
         "spinner_helper_location": "crates/tui/src/ui/theme.rs",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
+        "lines_duplicated": "~400",
         "affected_screens": "25",
-        "lines_duplicated": "~400"
+        "scan_agent": "scan-maintenance",
+        "widgets_dir_exists": "false",
+        "principle": "DRY"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "duplication_count": "6 functions across 5 files",
+        "principle": "DRY",
         "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
-        "duplication_count": "6 functions across 5 files",
         "files_with_duplicates": "5",
-        "principle": "DRY"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "affected_files": "4",
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
-        "duplicate_count": "4"
+        "duplicate_count": "4",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4941,9 +4941,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
+        "principle": "YAGNI",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
         "duplicate_count": "6",
-        "runner_used": "kimi",
-        "principle": "DRY",
         "files_to_update": "5",
-        "scan_agent": "scan-maintenance"
+        "principle": "DRY",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "missing_variable_count": "12",
         "env_line_count": "18",
-        "principle": "KISS",
-        "env_example_line_count": "66",
+        "missing_variable_count": "12",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "env_example_line_count": "66",
+        "model_used": "kimi-code/kimi-for-coding",
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5114,8 +5114,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
         "principle": "KISS"
       }
@@ -5168,8 +5168,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY"
       }
@@ -5223,10 +5223,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
+        "principle": "DRY"
       }
     },
     {
@@ -5275,11 +5275,11 @@
         "RQ-0375"
       ],
       "custom_fields": {
+        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance",
         "principle": "DRY",
-        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5333,10 +5333,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
+        "principle": "YAGNI",
         "runner_used": "kimi",
-        "principle": "YAGNI"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5390,9 +5390,9 @@
       "relates_to": [],
       "custom_fields": {
         "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
-        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
         "scan_agent": "scan-innovation"
       }
     },
@@ -5438,9 +5438,74 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
         "runner_used": "kimi",
+        "scan_agent": "scan-innovation",
         "model_used": "kimi-code/kimi-for-coding"
+      }
+    },
+    {
+      "id": "RQ-0380",
+      "status": "done",
+      "title": "Add splunk-cli doctor + redacted support bundle",
+      "description": "Opportunity type: reliability / UX improvement\n\nEvidence:\n- There is no dedicated diagnostics command (`rg -n \"doctor\"` finds none in CLI/TUI code).\n- README onboarding doesn't provide a single \"first successful call\" verification flow, and live verification is currently a separate script (`scripts/test-live-server.sh`).\n- The client already supports multiple health endpoints and an aggregate health check (`SplunkClient::check_health_aggregate`).\n\nWhy it matters:\n- Operators need a fast, repeatable way to validate config/auth/connectivity and produce actionable diagnostics during setup and incidents.\n- A support bundle (with redaction) reduces time-to-triage for bug reports without leaking secrets.\n\nProposed approach:\n- Minimal slice (CLI-only): add `splunk-cli doctor` that runs a curated checklist:\n  - Config load + precedence summary (profile/config-path/env)\n  - Auth strategy detection (token vs session)\n  - Server info fetch\n  - Health aggregate + partial error reporting\n  - Optional: license + kvstore status\n  - Exit non-zero if any required checks fail\n- Add `--bundle <path>` to write a JSON report plus a zip/tar containing:\n  - redacted config summary\n  - redacted environment keys (names only)\n  - recent `splunk-tui` logs (if present)\n  - command version + OS/arch\n\nRisks and mitigations:\n- Risk: tests needing a live Splunk. Mitigation: cover failure modes hermetically (missing config, invalid URL) and add live tests under `#[ignore]` for success path.\n\nAcceptance criteria:\n- `splunk-cli doctor --help` includes examples and documents bundle behavior and redaction guarantees.\n- Hermetic tests cover failure modes and output shape; ignored live test covers success path.\n- Docs updated to recommend `splunk-cli doctor` as the first verification step.\n- `make test` passes.\n\nPriority rationale:\n- High: unlocks faster onboarding and reliable troubleshooting for every user.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "reliability",
+        "ux",
+        "supportability"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/dispatch.rs",
+        "crates/cli/src/commands/doctor.rs",
+        "crates/cli/src/commands/mod.rs",
+        "crates/cli/tests/",
+        "scripts/test-live-server.sh",
+        "README.md",
+        "docs/user-guide.md",
+        "docs/usage.md",
+        "make test"
+      ],
+      "evidence": [
+        "scripts/test-live-server.sh provides manual live verification outside the CLI command surface",
+        "crates/client/src/client/health.rs implements AggregatedHealth via check_health_aggregate() (reusable for doctor)",
+        "crates/client/src/client/health.rs provides additional health endpoints: get_server_info, get_health, get_license_usage, get_kvstore_status, check_log_parsing_health",
+        "rg -n 'doctor' crates/cli crates/tui returns no command/surface for diagnostics - doctor.rs does not exist",
+        "crates/cli/src/commands/ contains 27 command files but no doctor.rs",
+        "Existing 'health' command exists but provides only health checking, not full diagnostics with config validation and support bundle generation"
+      ],
+      "plan": [
+        "Add a `Doctor` top-level subcommand to `crates/cli/src/args.rs` with `--bundle` and output-format flags.",
+        "Create `crates/cli/src/commands/doctor.rs` implementing the doctor command using existing client health/server endpoints and strict redaction rules.",
+        "Update `crates/cli/src/commands/mod.rs` to include the new doctor module.",
+        "Update `crates/cli/src/dispatch.rs` to route doctor commands to the handler.",
+        "Add hermetic CLI tests for missing/invalid config and bundle redaction; add `#[ignore]` live test for a real server.",
+        "Update README/docs to include a Quick Verify section using `splunk-cli doctor`.",
+        "Verify by running `make test` and (optionally) `make test-live SKIP_LIVE_TESTS=0` against a configured Splunk server."
+      ],
+      "notes": [
+        "Updated 2026-02-06: Verified doctor command does not yet exist; health aggregate endpoint confirmed available in client; scope expanded to include new doctor.rs file and commands/mod.rs",
+        "Phase 3 review completed with security and robustness fixes",
+        "Fixed: health_output/partial_errors redacted from bundles",
+        "Fixed: zip crate upgraded from 0.6 to 2.x, removed duplicate",
+        "Fixed: Parent dir creation, proper exit handling, log size limits",
+        "Fixed: Added missing fields to XML/CSV formatters",
+        "Fixed: Strengthened tests with redaction verification"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T05:18:24.490519446Z",
+      "completed_at": "2026-02-07T05:18:24.490519446Z",
+      "started_at": "2026-02-07T04:48:18.656617432Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     }
   ]

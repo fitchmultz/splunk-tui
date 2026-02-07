@@ -22,9 +22,11 @@
 
 use predicates::prelude::*;
 use splunk_config::env_var_or_none;
+use std::fs;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
+use tempfile::TempDir;
 
 fn env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -370,6 +372,59 @@ fn test_live_cli_license_json() {
         .assert()
         .success()
         .stdout(predicate::str::contains("\"usage\""));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_doctor() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+    let mut cmd = splunk_cli_cmd();
+
+    cmd.args(["--output", "json", "doctor"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("cli_version"))
+        .stdout(predicate::str::contains("config_load"))
+        .stdout(predicate::str::contains("server_connectivity"));
+}
+
+#[test]
+#[ignore = "requires live Splunk server"]
+fn test_live_cli_doctor_bundle() {
+    let Some(_env) = LiveEnvGuard::new_or_skip() else {
+        return;
+    };
+
+    let temp_dir = TempDir::new().unwrap();
+    let bundle_path = temp_dir.path().join("support-bundle.zip");
+
+    let mut cmd = splunk_cli_cmd();
+    cmd.args([
+        "doctor",
+        "--bundle",
+        bundle_path.to_str().unwrap(),
+        "--include-logs",
+    ])
+    .assert()
+    .success()
+    .stderr(predicate::str::contains("Support bundle written to"));
+
+    // Verify bundle was created
+    assert!(bundle_path.exists(), "Support bundle should be created");
+
+    // Verify bundle is a valid zip
+    let file = fs::File::open(&bundle_path).unwrap();
+    let archive = zip::ZipArchive::new(file).unwrap();
+
+    // Should contain at least diagnostic_report.json
+    let has_report = archive.file_names().any(|n| n == "diagnostic_report.json");
+    assert!(has_report, "Bundle should contain diagnostic_report.json");
+
+    // Should contain environment.txt
+    let has_env = archive.file_names().any(|n| n == "environment.txt");
+    assert!(has_env, "Bundle should contain environment.txt");
 }
 
 #[test]

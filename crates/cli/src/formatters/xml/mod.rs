@@ -79,6 +79,7 @@ impl Formatter for XmlFormatter {
     crate::impl_delegated_formatter_single! {
         format_job_details: &SearchJobStatus => jobs::format_job_details,
         format_health: &HealthCheckOutput => health::format_health,
+        format_health_check_report: &crate::formatters::DiagnosticReport => health::format_health_check_report,
         format_kvstore_status: &KvStoreStatus => health::format_kvstore_status,
         format_license: &LicenseInfoOutput => license::format_license,
         format_license_install: &LicenseInstallOutput => license::format_license_install,

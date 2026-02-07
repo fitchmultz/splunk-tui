@@ -65,6 +65,13 @@ impl Formatter for JsonFormatter {
         Ok(serde_json::to_string_pretty(health)?)
     }
 
+    fn format_health_check_report(
+        &self,
+        report: &crate::formatters::DiagnosticReport,
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(report)?)
+    }
+
     fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String> {
         Ok(serde_json::to_string_pretty(status)?)
     }

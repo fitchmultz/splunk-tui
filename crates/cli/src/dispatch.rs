@@ -173,6 +173,21 @@ pub(crate) async fn run_command(
             commands::health::run(config, &cli.output, cli.output_file.clone(), cancel_token)
                 .await?;
         }
+        Commands::Doctor {
+            bundle,
+            include_logs,
+        } => {
+            let config = config.into_real_config()?;
+            commands::doctor::run(
+                config,
+                bundle,
+                include_logs,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+            )
+            .await?;
+        }
         Commands::Kvstore { command } => {
             let config = config.into_real_config()?;
             commands::kvstore::run(

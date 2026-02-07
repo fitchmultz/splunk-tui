@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::DiagnosticReport;
 use crate::formatters::common::escape_xml;
 use anyhow::Result;
 use splunk_client::{HealthCheckOutput, KvStoreStatus};
@@ -197,5 +198,107 @@ pub fn format_kvstore_status(status: &KvStoreStatus) -> Result<String> {
     ));
     xml.push_str("  </replicationStatus>\n");
     xml.push_str("</kvstoreStatus>");
+    Ok(xml)
+}
+
+/// Format diagnostic report as XML.
+pub fn format_health_check_report(report: &DiagnosticReport) -> Result<String> {
+    let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<diagnosticReport>\n");
+
+    // Metadata
+    xml.push_str("  <metadata>\n");
+    xml.push_str(&format!(
+        "    <cliVersion>{}</cliVersion>\n",
+        escape_xml(&report.cli_version)
+    ));
+    xml.push_str(&format!(
+        "    <osArch>{}</osArch>\n",
+        escape_xml(&report.os_arch)
+    ));
+    xml.push_str(&format!(
+        "    <timestamp>{}</timestamp>\n",
+        escape_xml(&report.timestamp)
+    ));
+    xml.push_str("  </metadata>\n");
+
+    // Configuration summary
+    xml.push_str("  <configSummary>\n");
+    xml.push_str(&format!(
+        "    <configSource>{}</configSource>\n",
+        escape_xml(&report.config_summary.config_source)
+    ));
+    if let Some(ref profile) = report.config_summary.profile_name {
+        xml.push_str(&format!(
+            "    <profileName>{}</profileName>\n",
+            escape_xml(profile)
+        ));
+    }
+    if let Some(ref path) = report.config_summary.config_path {
+        xml.push_str(&format!(
+            "    <configPath>{}</configPath>\n",
+            escape_xml(&path.display().to_string())
+        ));
+    }
+    xml.push_str(&format!(
+        "    <baseUrl>{}</baseUrl>\n",
+        escape_xml(&report.config_summary.base_url)
+    ));
+    xml.push_str(&format!(
+        "    <authStrategy>{}</authStrategy>\n",
+        escape_xml(&report.config_summary.auth_strategy)
+    ));
+    xml.push_str(&format!(
+        "    <skipVerify>{}</skipVerify>\n",
+        report.config_summary.skip_verify
+    ));
+    xml.push_str(&format!(
+        "    <timeoutSecs>{}</timeoutSecs>\n",
+        report.config_summary.timeout_secs
+    ));
+    xml.push_str(&format!(
+        "    <maxRetries>{}</maxRetries>\n",
+        report.config_summary.max_retries
+    ));
+    xml.push_str("  </configSummary>\n");
+
+    // Diagnostic checks
+    xml.push_str("  <checks>\n");
+    for check in &report.checks {
+        let status_str = match check.status {
+            crate::formatters::CheckStatus::Pass => "pass",
+            crate::formatters::CheckStatus::Fail => "fail",
+            crate::formatters::CheckStatus::Warning => "warning",
+            crate::formatters::CheckStatus::Skipped => "skipped",
+        };
+        xml.push_str("    <check>\n");
+        xml.push_str(&format!("      <name>{}</name>\n", escape_xml(&check.name)));
+        xml.push_str(&format!(
+            "      <status>{}</status>\n",
+            escape_xml(status_str)
+        ));
+        xml.push_str(&format!(
+            "      <message>{}</message>\n",
+            escape_xml(&check.message)
+        ));
+        xml.push_str("    </check>\n");
+    }
+    xml.push_str("  </checks>\n");
+
+    // Partial errors
+    if !report.partial_errors.is_empty() {
+        xml.push_str("  <partialErrors>\n");
+        for (endpoint, error) in &report.partial_errors {
+            xml.push_str("    <error>\n");
+            xml.push_str(&format!(
+                "      <endpoint>{}</endpoint>\n",
+                escape_xml(endpoint)
+            ));
+            xml.push_str(&format!("      <message>{}</message>\n", escape_xml(error)));
+            xml.push_str("    </error>\n");
+        }
+        xml.push_str("  </partialErrors>\n");
+    }
+
+    xml.push_str("</diagnosticReport>");
     Ok(xml)
 }

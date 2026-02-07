@@ -500,6 +500,45 @@ Splunk TUI uses standard SPL (Search Processing Language). Here are a few tips f
 
 ## Troubleshooting
 
+### Using the Doctor Command
+
+If you're experiencing issues with splunk-cli or splunk-tui, the `doctor` command is your first diagnostic tool:
+
+```bash
+splunk-cli doctor
+```
+
+This will validate your configuration, test connectivity, and report any issues found.
+
+### Common Issues
+
+**"Failed to build client"**
+- Check that SPLUNK_BASE_URL is set correctly (e.g., `https://localhost:8089`)
+- Verify the URL includes the scheme (http:// or https://)
+
+**"Failed to connect"**
+- Verify the Splunk server is running and accessible
+- Check that SPLUNK_SKIP_VERIFY is set if using self-signed certificates
+- Test network connectivity: `curl $SPLUNK_BASE_URL`
+
+**Authentication failures**
+- For API tokens: Ensure the token has not expired
+- For username/password: Verify credentials work in the Splunk web UI
+
+### Generating Support Bundles
+
+When reporting issues, include a support bundle:
+
+```bash
+splunk-cli doctor --bundle ./support-bundle.zip
+```
+
+The bundle contains redacted diagnostic information safe to share:
+- Configuration summary (secrets removed)
+- Environment variable names (values redacted)
+- Diagnostic check results
+- Health endpoint responses
+
 ### Common Errors
 
 - **`AuthFailed`**: Verify your username/password or API token. If using session auth, ensure your password hasn't expired.

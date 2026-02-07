@@ -45,6 +45,9 @@ tempfile = "3"
 # Date/time
 chrono = { workspace = true }
 
+# Bundle compression
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
 [dev-dependencies]
 assert_cmd = { workspace = true }
 predicates = "3"
@@ -53,6 +56,7 @@ keyring = { workspace = true }
 wiremock = { workspace = true }
 serde_json = { workspace = true }
 dotenvy = { workspace = true }
+zip = { version = "2", default-features = false, features = ["deflate"] }
 
 # Unix-only tests send SIGINT to child processes.
 [target.'cfg(unix)'.dev-dependencies]

@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::DiagnosticReport;
 use anyhow::Result;
 use splunk_client::{HealthCheckOutput, KvStoreStatus};
 
@@ -140,6 +141,75 @@ pub fn format_kvstore_status(status: &KvStoreStatus) -> Result<String> {
         "  Oplog Used: {:.2}%\n",
         status.replication_status.oplog_used
     ));
+
+    Ok(output)
+}
+
+/// Format diagnostic report as formatted text.
+pub fn format_health_check_report(report: &DiagnosticReport) -> Result<String> {
+    let mut output = String::new();
+
+    // Header
+    output.push_str("========================================\n");
+    output.push_str("      Splunk CLI Doctor Report\n");
+    output.push_str("========================================\n\n");
+
+    // Version and platform info
+    output.push_str(&format!("CLI Version: {}\n", report.cli_version));
+    output.push_str(&format!("Platform:    {}\n", report.os_arch));
+    output.push_str(&format!("Timestamp:   {}\n\n", report.timestamp));
+
+    // Configuration summary
+    output.push_str("--- Configuration Summary ---\n");
+    output.push_str(&format!(
+        "Base URL:        {}\n",
+        report.config_summary.base_url
+    ));
+    output.push_str(&format!(
+        "Auth Strategy:   {}\n",
+        report.config_summary.auth_strategy
+    ));
+    output.push_str(&format!(
+        "Skip TLS Verify: {}\n",
+        report.config_summary.skip_verify
+    ));
+    output.push_str(&format!(
+        "Timeout:         {}s\n",
+        report.config_summary.timeout_secs
+    ));
+    output.push_str(&format!(
+        "Max Retries:     {}\n\n",
+        report.config_summary.max_retries
+    ));
+
+    // Diagnostic checks
+    output.push_str("--- Diagnostic Checks ---\n");
+    for check in &report.checks {
+        let status_icon = match check.status {
+            crate::formatters::CheckStatus::Pass => "[PASS]",
+            crate::formatters::CheckStatus::Fail => "[FAIL]",
+            crate::formatters::CheckStatus::Warning => "[WARN]",
+            crate::formatters::CheckStatus::Skipped => "[SKIP]",
+        };
+        output.push_str(&format!(
+            "{} {}: {}\n",
+            status_icon, check.name, check.message
+        ));
+    }
+
+    // Partial errors (if any)
+    if !report.partial_errors.is_empty() {
+        output.push_str("\n--- Partial Errors ---\n");
+        for (endpoint, error) in &report.partial_errors {
+            output.push_str(&format!("  {}: {}\n", endpoint, error));
+        }
+    }
+
+    // Server health details (if available)
+    if let Some(health) = &report.health_output {
+        output.push('\n');
+        output.push_str(&format_health(health)?);
+    }
 
     Ok(output)
 }

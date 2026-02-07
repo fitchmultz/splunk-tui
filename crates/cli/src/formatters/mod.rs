@@ -44,6 +44,9 @@ use splunk_config::types::ProfileConfig;
 
 pub use splunk_client::HealthCheckOutput;
 
+// Re-export doctor types for formatters
+pub use crate::commands::doctor::{CheckStatus, DiagnosticReport};
+
 mod common;
 mod csv;
 mod json;
@@ -149,6 +152,9 @@ pub trait Formatter {
 
     /// Format health check results.
     fn format_health(&self, health: &HealthCheckOutput) -> Result<String>;
+
+    /// Format diagnostic report from doctor command.
+    fn format_health_check_report(&self, report: &DiagnosticReport) -> Result<String>;
 
     /// Format KVStore status.
     fn format_kvstore_status(&self, status: &KvStoreStatus) -> Result<String>;
