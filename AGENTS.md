@@ -6,45 +6,58 @@ Splunk TUI is a Rust workspace providing two frontends over a shared Splunk REST
 
 The project optimizes for security, type safety, and testability. Keep behavior consistent between CLI and TUI by implementing core logic in the client library and reusing it from both UIs.
 
+## Quick Start
+
+```bash
+# Install dependencies and build
+make install
+
+# Run the full CI pipeline (do this before every PR)
+make ci
+
+# Copy environment template for local development
+cp .env.example .env
+```
+
 ## Repository Layout
 
 ```
 splunk-tui/
 ├── crates/
-│   ├── architecture-tests/  # Architecture constraint validation (e.g., dependency rules)
+│   ├── architecture-tests/  # Architecture constraint validation
 │   ├── client/              # Splunk REST API client (shared business logic)
 │   ├── cli/                 # CLI presentation layer (splunk-cli binary)
 │   ├── config/              # Configuration loading and validation
 │   └── tui/                 # TUI presentation layer (splunk-tui binary)
 ├── docs/                    # User + development docs
-│   ├── usage.md             # Usage guide for CLI and TUI
-│   └── user-guide.md        # Detailed user documentation
-├── scripts/                 # Utility scripts (live/manual workflows)
-├── Makefile                 # Local dev + CI contract (use this)
+├── scripts/                 # Utility scripts
+├── Makefile                 # Local dev + CI contract
 ├── Cargo.toml               # Workspace configuration
-├── rust-toolchain.toml      # Rust toolchain pin (1.84)
 └── .cargo/config.toml       # Build optimizations
 ```
 
 ### Module Relationships
 
-- **`crates/client`**: Core business logic. All API calls, data models, and shared utilities live here.
-- **`crates/config`**: Configuration management. Used by both CLI and TUI for consistent config loading.
-- **`crates/cli`**: Thin presentation layer. Parses CLI arguments and calls into `client`.
-- **`crates/tui`**: Interactive UI layer. Handles terminal rendering and user input; delegates to `client`.
-- **`crates/architecture-tests`**: Enforces architectural constraints (e.g., ensuring CLI/TUI don't bypass client).
+| Crate | Responsibility |
+|-------|----------------|
+| `crates/client` | Core business logic. All API calls, data models, and shared utilities. |
+| `crates/config` | Configuration management. Used by both CLI and TUI. |
+| `crates/cli` | Thin presentation layer. Parses CLI arguments and calls into `client`. |
+| `crates/tui` | Interactive UI layer. Handles terminal rendering and user input. |
+| `crates/architecture-tests` | Enforces architectural constraints (e.g., ensuring CLI/TUI don't bypass client). |
 
 ## Non-Negotiables
 
-- **Treat `make ci` as the local gate before merging.** The CI pipeline is the source of truth; don't rely on remote CI to catch issues.
-- **Never log or print secrets** (passwords, session tokens, API tokens). Use `secrecy` types and avoid `Debug`/`Display` on sensitive values.
-- **Maintain CLI/TUI feature parity**: If a feature ships in one UI, it must ship in the other (via shared `crates/client` code) unless there's a documented constraint.
-- **Prefer shared abstractions in `crates/client`** over duplicated CLI/TUI logic.
-- **Hermetic tests**: Tests must not depend on local `.env` files. `make test` and `make ci` run with `DOTENV_DISABLED=1`.
+These rules are critical to project integrity:
+
+1. **`make ci` is the local gate before merging.** The CI pipeline is the source of truth; don't rely on remote CI to catch issues.
+2. **Never log or print secrets** (passwords, session tokens, API tokens). Use `secrecy` types and avoid `Debug`/`Display` on sensitive values.
+3. **Maintain CLI/TUI feature parity**: If a feature ships in one UI, it must ship in the other (via shared `crates/client` code) unless there's a documented constraint.
+4. **Hermetic tests**: Tests must not depend on local `.env` files. `make test` and `make ci` run with `DOTENV_DISABLED=1`.
 
 ## Build, Test, and Development Commands
 
-The `Makefile` is the primary interface for development tasks. Always use `make` commands rather than running `cargo` directly to ensure consistent behavior.
+The `Makefile` is the primary interface for development. Always use `make` commands rather than running `cargo` directly.
 
 ### Core Commands
 
@@ -61,14 +74,23 @@ The `Makefile` is the primary interface for development tasks. Always use `make`
 | `make release` | Build release binaries and install to `~/.local/bin` |
 | `make generate` | Regenerate TUI keybinding documentation |
 | `make lint-docs` | Verify documentation is up to date |
-| `make ci` | Full CI pipeline (local gate before merging) |
+| `make ci` | **Full CI pipeline (local gate before merging)** |
 
-### Notes
+### Important Notes
 
 - `make ci` uses `PROFILE=ci` for faster builds (still produces working binaries).
-- `make clean` does NOT delete `Cargo.lock` (kept for reproducible builds and speed).
+- `make clean` does NOT delete `Cargo.lock` (kept for reproducible builds).
 - Set `SKIP_LIVE_TESTS=1` to skip live server tests: `make ci SKIP_LIVE_TESTS=1`.
-- Integration tests are discovered automatically; adding `crates/*/tests/*.rs` requires no Makefile updates.
+
+## Feature Parity & Reuse
+
+When adding any feature, follow this workflow:
+
+1. **Implement API and business logic in `crates/client` first.**
+2. **Call that shared code from both `crates/cli` and `crates/tui`.**
+3. **Keep UI crates limited to** parsing/formatting/rendering/event handling.
+
+This ensures consistency and reduces duplication.
 
 ## Coding Standards
 
@@ -82,24 +104,19 @@ The `Makefile` is the primary interface for development tasks. Always use `make`
 
 ### Naming Conventions
 
-- **Modules**: Use `snake_case` (e.g., `job_manager.rs`).
-- **Types/Traits**: Use `PascalCase` (e.g., `JobManager`).
-- **Functions/Variables**: Use `snake_case` (e.g., `fetch_jobs()`).
-- **Constants**: Use `SCREAMING_SNAKE_CASE` (e.g., `DEFAULT_TIMEOUT`).
-- **Test files**: Place in `tests/` directory or use `#[cfg(test)]` modules with suffix `_tests.rs`.
-
-### Feature Parity & Reuse (Critical)
-
-When adding a feature:
-1. Implement API and business logic in `crates/client` first.
-2. Call that shared code from both `crates/cli` and `crates/tui`.
-3. Keep UI crates limited to parsing/formatting/rendering/event handling.
+| Element | Convention | Example |
+|---------|------------|---------|
+| Modules | `snake_case` | `job_manager.rs` |
+| Types/Traits | `PascalCase` | `JobManager` |
+| Functions/Variables | `snake_case` | `fetch_jobs()` |
+| Constants | `SCREAMING_SNAKE_CASE` | `DEFAULT_TIMEOUT` |
+| Test files | `tests/*.rs` or `#[cfg(test)]` with `_tests.rs` suffix | `jobs_tests.rs` |
 
 ### Error Message Style
 
-CLI error messages must follow these conventions for consistency:
+CLI error messages must follow these conventions:
 
-1. **Title Case**: All error messages must start with a capital letter.
+1. **Title Case**: Start with a capital letter.
 2. **Action-Oriented**: Use "Failed to...", "Unable to...", "Invalid..." patterns.
 3. **No lowercase starts**: Avoid starting error messages with lowercase words.
 
@@ -118,11 +135,13 @@ For `warn!` messages, always use `"Failed to {action}"` pattern:
 
 ### Test Organization
 
-- **Unit tests**: Use `#[cfg(test)]` modules near the code they test.
-- **Integration tests**: Place in `crates/*/tests/*.rs` (prefer one concept per file, e.g., `jobs_tests.rs`).
-- **Live tests**: Mark with `#[ignore]`; run via `make test-live`. Configure via `.env.test` or environment variables.
-- **Fixtures**: Store in `crates/client/fixtures/` (organized by endpoint/resource).
-- **TUI regression**: Use snapshots in `crates/tui/tests/snapshots/`.
+| Type | Location | Notes |
+|------|----------|-------|
+| Unit tests | `#[cfg(test)]` modules near the code they test | Keep tests close to implementation |
+| Integration tests | `crates/*/tests/*.rs` | One concept per file (e.g., `jobs_tests.rs`) |
+| Live tests | Marked with `#[ignore]` | Run via `make test-live`; configure via `.env.test` |
+| Fixtures | `crates/client/fixtures/` | Organized by endpoint/resource |
+| TUI regression | `crates/tui/tests/snapshots/` | Snapshot tests for UI consistency |
 
 ### Running Targeted Tests
 
@@ -137,7 +156,7 @@ cargo test -p splunk-tui --test snapshot_tests
 `make test` and `make ci` run with `DOTENV_DISABLED=1`, so workspace/root `.env` files are **not** loaded during tests.
 
 - If a test needs to validate dotenv behavior, it must explicitly unset `DOTENV_DISABLED` for the spawned process.
-- Live tests should use `.env.test` (copy from `.env.test.example`) or environment variables; avoid hardcoding server addresses in code or docs.
+- Live tests should use `.env.test` (copy from `.env.test.example`) or environment variables.
 
 ## Configuration & Secrets
 
@@ -162,7 +181,7 @@ cargo test -p splunk-tui --test snapshot_tests
 
 - Credentials flow through `secrecy` types; never use raw `String` for secrets.
 - Avoid implementing `Debug` or `Display` on types containing secrets.
-- Use `scripts/check-secrets.sh` (or `make lint-secrets`) to prevent accidental commits of secrets.
+- Use `scripts/check-secrets.sh` (or `make lint-secrets`) to prevent accidental commits.
 
 ## Documentation
 
@@ -207,9 +226,11 @@ Common scopes: `cli`, `client`, `config`, `tui`, `arch` (architecture-tests), `d
 
 ### Pull Request Guidelines
 
-- Run `make ci` before submitting and include a short testing note in the PR description.
-- Link related issues using `Fixes #123` or `Relates to #456`.
-- Keep changes focused; prefer multiple small PRs over one large PR.
+**Before submitting:**
+- [ ] Run `make ci` and ensure all checks pass
+- [ ] Include a short testing note in the PR description
+- [ ] Link related issues using `Fixes #123` or `Relates to #456`
+- [ ] Keep changes focused; prefer multiple small PRs over one large PR
 
 ## Tooling & Build Configuration
 
@@ -232,9 +253,11 @@ If these tools are unavailable, the configuration gracefully degrades to default
 
 ### Build Profiles
 
-- **dev** (`.cargo/config.toml`): Fast builds with `opt-level = 0`, `codegen-units = 256`
-- **release** (`Cargo.toml`): Optimized builds with `opt-level = 3`, `lto = true`, `strip = true`, `panic = "abort"`
-- **ci** (`Cargo.toml`): CI-optimized with `opt-level = 2`, `lto = false`, `codegen-units = 16`
+| Profile | Config Location | Settings |
+|---------|-----------------|----------|
+| dev | `.cargo/config.toml` | `opt-level = 0`, `codegen-units = 256` (fast builds) |
+| release | `Cargo.toml` | `opt-level = 3`, `lto = true`, `strip = true`, `panic = "abort"` |
+| ci | `Cargo.toml` | `opt-level = 2`, `lto = false`, `codegen-units = 16` |
 
 ## Constraints & Defaults
 
