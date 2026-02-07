@@ -125,7 +125,7 @@ pub(crate) async fn run_command(
             command,
             detailed,
             offset,
-            page_size,
+            count,
         } => {
             let config = config.into_real_config()?;
             // Handle backward compatibility: if no subcommand but old flags are used, use Show
@@ -134,7 +134,7 @@ pub(crate) async fn run_command(
                 None => commands::cluster::ClusterCommand::Show {
                     detailed,
                     offset,
-                    page_size,
+                    count,
                 },
             };
             commands::cluster::run(
@@ -154,7 +154,7 @@ pub(crate) async fn run_command(
             results,
             result_count,
             result_offset,
-            job_count,
+            count,
         } => {
             let config = config.into_real_config()?;
             commands::jobs::run(
@@ -166,7 +166,7 @@ pub(crate) async fn run_command(
                 results,
                 result_count,
                 result_offset,
-                job_count,
+                count,
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),
@@ -439,7 +439,7 @@ pub(crate) async fn run_command(
             command,
             detailed,
             offset,
-            page_size,
+            count,
         } => {
             let config = config.into_real_config()?;
             // Handle backward compatibility: if no subcommand but old flags are used, use Show
@@ -448,7 +448,7 @@ pub(crate) async fn run_command(
                 None => commands::shc::ShcCommand::Show {
                     detailed,
                     offset,
-                    page_size,
+                    count,
                 },
             };
             commands::shc::run(

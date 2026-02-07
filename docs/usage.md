@@ -576,15 +576,68 @@ In detailed mode, additional fields are shown:
 Show cluster status and configuration.
 
 ```bash
-splunk-cli cluster --detailed
-splunk-cli cluster --detailed --offset 50 --page-size 50
+splunk-cli cluster show --detailed
+splunk-cli cluster show --detailed --offset 50 --count 50
+splunk-cli cluster peers --offset 50 --count 50
 ```
 
-- `-d, --detailed`: Show detailed cluster information
-- `--offset <NUMBER>`: Offset into the cluster peer list (zero-based) [default: 0] (only applies with `--detailed`)
-- `--page-size <NUMBER>`: Number of peers per page [default: 50] (only applies with `--detailed`)
+**Subcommands:**
+- `show` [options]: Show cluster status and information (default)
+  - `-d, --detailed`: Show detailed cluster information with peers
+  - `--offset <NUMBER>`: Offset into the cluster peer list (zero-based) [default: 0] (only applies with `--detailed`)
+  - `-c, --count <NUMBER>`: Number of peers per page [default: 50] (only applies with `--detailed`)
+  - `--page-size <NUMBER>`: Deprecated alias for `--count`
+
+- `peers` [options]: Show cluster peers
+  - `--offset <NUMBER>`: Offset into the cluster peer list (zero-based) [default: 0]
+  - `-c, --count <NUMBER>`: Number of peers per page [default: 50]
+  - `--page-size <NUMBER>`: Deprecated alias for `--count`
+
+- `maintenance`: Manage cluster maintenance mode
+  - `enable`: Enable maintenance mode
+  - `disable`: Disable maintenance mode
+  - `status`: Show maintenance mode status
+
+- `rebalance`: Rebalance primary buckets across peers
+
+- `peers-manage`: Manage cluster peers
+  - `decommission <PEER>`: Gracefully decommission a peer
+  - `remove <PEER_GUID>`: Remove a peer from the cluster
 
 **Note (table output):** table output includes a pagination footer (e.g., `Showing 1-50 of 120 (page 1 of 3)`).
+
+#### `shc`
+Show search head cluster status and configuration.
+
+```bash
+splunk-cli shc show --detailed
+splunk-cli shc show --detailed --offset 50 --count 50
+splunk-cli shc members --offset 50 --count 50
+splunk-cli shc captain
+splunk-cli shc config
+```
+
+**Subcommands:**
+- `show` [options]: Show SHC status and information (default)
+  - `-d, --detailed`: Show detailed SHC information with members
+  - `--offset <NUMBER>`: Offset into the SHC member list (zero-based) [default: 0] (only applies with `--detailed`)
+  - `-c, --count <NUMBER>`: Number of members per page [default: 50] (only applies with `--detailed`)
+  - `--page-size <NUMBER>`: Deprecated alias for `--count`
+
+- `members` [options]: Show SHC members
+  - `--offset <NUMBER>`: Offset into the member list (zero-based) [default: 0]
+  - `-c, --count <NUMBER>`: Number of members per page [default: 50]
+  - `--page-size <NUMBER>`: Deprecated alias for `--count`
+
+- `captain`: Show SHC captain information
+
+- `config`: Show SHC configuration
+
+- `manage`: Manage SHC members
+  - `add <TARGET_URI>`: Add a member to the SHC
+  - `remove <MEMBER_GUID>`: Remove a member from the SHC
+  - `rolling-restart`: Trigger a rolling restart of all SHC members
+  - `set-captain <MEMBER_GUID>`: Set a specific member as captain
 
 #### `jobs`
 Manage search jobs.
@@ -608,6 +661,7 @@ splunk-cli jobs --delete "1705852800.123"
 - `--cancel <SID>`: Cancel a specific job by SID
 - `--delete <SID>`: Delete a specific job by SID
 - `-c, --count <NUMBER>`: Maximum number of jobs to list [default: 50]
+- `--job-count <NUMBER>`: Deprecated alias for `--count`
 
 **Output formats for `--inspect`**: Supports `--output table` (default), `--output json`, `--output csv`, `--output xml`
 

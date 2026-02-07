@@ -33,7 +33,7 @@ pub async fn run(
     results: Option<String>,
     result_count: Option<usize>,
     result_offset: usize,
-    job_count: usize,
+    count: usize,
     output_format: &str,
     quiet: bool,
     output_file: Option<std::path::PathBuf>,
@@ -133,7 +133,7 @@ pub async fn run(
     if list {
         info!("Listing search jobs");
         let jobs = tokio::select! {
-            res = client.list_jobs(Some(job_count as u64), None) => res?,
+            res = client.list_jobs(Some(count as u64), None) => res?,
             _ = cancel_token.cancelled() => return Err(Cancelled.into()),
         };
 

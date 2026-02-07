@@ -170,8 +170,8 @@ pub enum Commands {
         offset: usize,
 
         /// Number of peers per page (deprecated: use 'cluster show')
-        #[arg(long = "page-size", hide = true, default_value = "50")]
-        page_size: usize,
+        #[arg(long, hide = true, default_value = "50")]
+        count: usize,
     },
 
     /// Manage search jobs
@@ -205,8 +205,8 @@ pub enum Commands {
         result_offset: usize,
 
         /// Maximum number of jobs to list
-        #[arg(short, long, default_value = "50")]
-        job_count: usize,
+        #[arg(short, long, default_value = "50", visible_alias = "job-count")]
+        count: usize,
     },
 
     /// Perform a comprehensive system health check
@@ -381,8 +381,8 @@ pub enum Commands {
         offset: usize,
 
         /// Number of members per page (deprecated: use 'shc show')
-        #[arg(long = "page-size", hide = true, default_value = "50")]
-        page_size: usize,
+        #[arg(long, hide = true, default_value = "50")]
+        count: usize,
     },
 
     /// Generate shell completion scripts

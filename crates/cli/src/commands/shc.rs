@@ -39,8 +39,8 @@ pub enum ShcCommand {
         #[arg(long, default_value = "0")]
         offset: usize,
         /// Number of members per page. Only applies with --detailed.
-        #[arg(long = "page-size", default_value = "50")]
-        page_size: usize,
+        #[arg(short, long, default_value = "50", visible_alias = "page-size")]
+        count: usize,
     },
 
     /// Show SHC members
@@ -49,8 +49,8 @@ pub enum ShcCommand {
         #[arg(long, default_value = "0")]
         offset: usize,
         /// Number of members per page
-        #[arg(long = "page-size", default_value = "50")]
-        page_size: usize,
+        #[arg(short, long, default_value = "50", visible_alias = "page-size")]
+        count: usize,
     },
 
     /// Show SHC captain information
@@ -108,29 +108,21 @@ pub async fn run(
         ShcCommand::Show {
             detailed,
             offset,
-            page_size,
+            count,
         } => {
             run_show(
                 config,
                 detailed,
                 offset,
-                page_size,
+                count,
                 output_format,
                 output_file,
                 cancel,
             )
             .await
         }
-        ShcCommand::Members { offset, page_size } => {
-            run_members(
-                config,
-                offset,
-                page_size,
-                output_format,
-                output_file,
-                cancel,
-            )
-            .await
+        ShcCommand::Members { offset, count } => {
+            run_members(config, offset, count, output_format, output_file, cancel).await
         }
         ShcCommand::Captain => run_captain(config, output_format, output_file, cancel).await,
         ShcCommand::Config => run_config(config, output_format, output_file, cancel).await,
@@ -144,7 +136,7 @@ pub async fn run(
 async fn fetch_shc_members_page(
     client: &mut splunk_client::SplunkClient,
     offset: usize,
-    page_size: usize,
+    count: usize,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<(Option<Vec<ShcMemberOutput>>, Option<Pagination>)> {
     let members_result = tokio::select! {
@@ -158,7 +150,7 @@ async fn fetch_shc_members_page(
             let page: Vec<_> = members
                 .into_iter()
                 .skip(offset)
-                .take(page_size)
+                .take(count)
                 .map(ShcMemberOutput::from)
                 .collect();
 
@@ -166,7 +158,7 @@ async fn fetch_shc_members_page(
                 Some(page),
                 Some(Pagination {
                     offset,
-                    page_size,
+                    page_size: count,
                     total: Some(total),
                 }),
             ))
@@ -214,19 +206,19 @@ async fn run_show(
     config: splunk_config::Config,
     detailed: bool,
     offset: usize,
-    page_size: usize,
+    count: usize,
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!(
-        "Fetching SHC status (detailed: {}, offset: {}, page_size: {})",
-        detailed, offset, page_size
+        "Fetching SHC status (detailed: {}, offset: {}, count: {})",
+        detailed, offset, count
     );
 
     // Validate pagination inputs (client-side pagination must be safe)
-    if page_size == 0 {
-        anyhow::bail!("The --page-size value must be greater than 0");
+    if count == 0 {
+        anyhow::bail!("The --count value must be greater than 0");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -240,7 +232,7 @@ async fn run_show(
         Ok(shc_status) => {
             // Fetch members if detailed (fetch ALL once, then paginate locally)
             let (members_output, members_pagination) = if detailed {
-                fetch_shc_members_page(&mut client, offset, page_size, cancel).await?
+                fetch_shc_members_page(&mut client, offset, count, cancel).await?
             } else {
                 (None, None)
             };
@@ -279,18 +271,18 @@ async fn run_show(
 async fn run_members(
     config: splunk_config::Config,
     offset: usize,
-    page_size: usize,
+    count: usize,
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
     info!(
-        "Fetching SHC members (offset: {}, page_size: {})",
-        offset, page_size
+        "Fetching SHC members (offset: {}, count: {})",
+        offset, count
     );
 
-    if page_size == 0 {
-        anyhow::bail!("The --page-size value must be greater than 0");
+    if count == 0 {
+        anyhow::bail!("The --count value must be greater than 0");
     }
 
     let client = crate::commands::build_client_from_config(&config)?;
@@ -308,13 +300,13 @@ async fn run_members(
             let page: Vec<_> = members
                 .into_iter()
                 .skip(offset)
-                .take(page_size)
+                .take(count)
                 .map(ShcMemberOutput::from)
                 .collect();
 
             let pagination = Pagination {
                 offset,
-                page_size,
+                page_size: count,
                 total: Some(total),
             };
 

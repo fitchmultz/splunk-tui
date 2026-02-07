@@ -2,53 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0394",
-      "status": "todo",
-      "title": "Unify CLI pagination flag names (--count vs --page-size vs --job-count)",
-      "description": "Similar commands use inconsistent flag names for pagination limits. Most commands use `--count`, but cluster and SHC commands use `--page-size`, and jobs uses `--job-count`. This inconsistency violates the principle of least astonishment and makes the CLI harder to learn. Standardize on `--count` with `--limit` as an alias where appropriate.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "consistency",
-        "ux",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/args.rs",
-        "crates/cli/src/commands/cluster.rs",
-        "crates/cli/src/commands/shc.rs",
-        "crates/cli/src/commands/jobs.rs"
-      ],
-      "evidence": [
-        "indexes list uses: --count (default 30)",
-        "forwarders uses: --count (default 30)",
-        "search-peers uses: --count (default 30)",
-        "jobs uses: --job-count (default 50)",
-        "logs uses: --count (default 50)",
-        "cluster show uses: --page-size (default 50)",
-        "shc show uses: --page-size (default 50)",
-        "workload uses: --count (default 30)"
-      ],
-      "plan": [
-        "Decide on standard flag name (--count with --limit alias recommended)",
-        "Update cluster.rs and shc.rs to use --count instead of --page-size",
-        "Update jobs.rs to use --count instead of --job-count",
-        "Add hidden aliases for backward compatibility",
-        "Update documentation in docs/usage.md",
-        "Verify by running `make ci` and checking --help output"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0395",
       "status": "todo",
       "title": "Fix error messages starting with flags in cluster.rs, shc.rs, and logs.rs",
