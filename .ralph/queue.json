@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0374",
-      "status": "todo",
-      "title": "Consolidate duplicate session expiry check methods in auth.rs",
-      "description": "Two nearly identical methods in auth.rs (is_session_expired and session_expires_soon) share the same structure but call different underlying checks. They can be consolidated using a helper method with a closure to reduce duplication.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "client",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/auth.rs:128-149"
-      ],
-      "evidence": [
-        "Lines 128-136: is_session_expired() with if self.is_api_token() { return false } then checks is_expired()",
-        "Lines 141-149: session_expires_soon() with identical structure but checks will_expire_soon()"
-      ],
-      "plan": [
-        "Add private helper: fn check_session<F>(&self, check: F) -> bool where F: FnOnce(&SessionToken) -> bool",
-        "Implement is_session_expired as: self.check_session(|t| t.is_expired())",
-        "Implement session_expires_soon as: self.check_session(|t| t.will_expire_soon())",
-        "Verify by running: 'cargo test -p splunk-client auth_tests'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0375",
       "status": "todo",
       "title": "Remove per-session expiry_buffer_seconds from SessionToken",
@@ -73,8 +36,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -110,8 +73,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "fail-fast"
+        "principle": "fail-fast",
+        "scan_agent": "scan-maintenance"
       }
     },
     {

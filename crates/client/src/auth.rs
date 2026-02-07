@@ -124,28 +124,28 @@ impl SessionManager {
         ));
     }
 
-    /// Check if the current session token is expired or will expire soon.
-    pub fn is_session_expired(&self) -> bool {
+    /// Generic helper to check session token state.
+    /// Returns false for API token auth, true if no session token exists.
+    fn check_session<F>(&self, check: F) -> bool
+    where
+        F: FnOnce(&SessionToken) -> bool,
+    {
         if self.is_api_token() {
             return false;
         }
-        self.session_token
-            .as_ref()
-            .map(|t| t.is_expired())
-            .unwrap_or(true)
+        self.session_token.as_ref().map(check).unwrap_or(true)
+    }
+
+    /// Check if the current session token is expired or will expire soon.
+    pub fn is_session_expired(&self) -> bool {
+        self.check_session(|t| t.is_expired())
     }
 
     /// Check if the current session token will expire soon (within buffer).
     ///
     /// Returns false for API token auth (no expiry concerns).
     pub fn session_expires_soon(&self) -> bool {
-        if self.is_api_token() {
-            return false;
-        }
-        self.session_token
-            .as_ref()
-            .map(|t| t.will_expire_soon())
-            .unwrap_or(true)
+        self.check_session(|t| t.will_expire_soon())
     }
 
     /// Clear the current session token (force re-authentication).
