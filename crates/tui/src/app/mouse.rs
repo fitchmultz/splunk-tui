@@ -48,11 +48,13 @@ impl App {
     /// Currently only handles quit button clicks since navigation is now keyboard-only (Tab/Shift+Tab).
     fn handle_footer_click(&mut self, col: u16) -> Option<Action> {
         // Use the shared layout helper to ensure consistency with rendering
-        let layout = FooterLayout::calculate(
+        // Pass search_input_mode for context-aware navigation width in Search screen
+        let layout = FooterLayout::calculate_with_mode(
             self.loading,
             f64::from(self.progress),
             self.current_screen,
             self.last_area.width,
+            Some(self.search_input_mode),
         );
 
         if layout.is_quit_clicked(col) {

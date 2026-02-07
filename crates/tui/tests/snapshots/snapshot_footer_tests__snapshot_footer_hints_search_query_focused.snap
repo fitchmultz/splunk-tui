@@ -1,6 +1,6 @@
 ---
-source: crates/tui/tests/snapshot_search_tests.rs
-assertion_line: 53
+source: crates/tui/tests/snapshot_footer_tests.rs
+assertion_line: 104
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -8,7 +8,7 @@ expression: harness.render()
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Query──────────────────────────────────────────────────────────────────┐
-│                                                                              │
+│index=main                                                                    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Status────────────────────────────────────────────────────────────────────────┐
 │Press Enter to execute search                                                 │

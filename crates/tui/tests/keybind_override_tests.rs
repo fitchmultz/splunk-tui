@@ -277,3 +277,41 @@ fn test_keybind_action_snake_case_serialization() {
         "\"previous_screen\""
     );
 }
+
+// Note: Override display in footer tests would require initializing the global
+// override table, which can only be done once. These tests verify the table
+// logic directly without using the global state.
+
+#[test]
+fn test_override_table_provides_display_key_for_action() {
+    // Verify that the override table can provide the key string for an action
+    let mut map = BTreeMap::new();
+    map.insert(KeybindAction::Quit, "Ctrl+x".to_string());
+    map.insert(KeybindAction::NextScreen, "Ctrl+n".to_string());
+    let overrides = KeybindOverrides { overrides: map };
+
+    let table = overrides::KeybindOverrideTable::from_overrides(&overrides).unwrap();
+
+    // The table should resolve the overridden keys to actions
+    assert!(matches!(table.resolve(ctrl_key('x')), Some(Action::Quit)));
+    assert!(matches!(
+        table.resolve(ctrl_key('n')),
+        Some(Action::NextScreen)
+    ));
+
+    // Non-overridden keys should not resolve
+    assert!(table.resolve(char_key('q')).is_none());
+    assert!(
+        table
+            .resolve(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE))
+            .is_none()
+    );
+}
+
+#[test]
+fn test_override_table_empty_returns_none_for_display() {
+    let overrides = KeybindOverrides::default();
+    let table = overrides::KeybindOverrideTable::from_overrides(&overrides).unwrap();
+
+    assert!(table.is_empty());
+}

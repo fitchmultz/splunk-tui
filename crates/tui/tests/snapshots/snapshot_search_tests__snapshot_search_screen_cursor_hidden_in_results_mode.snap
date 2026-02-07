@@ -1,5 +1,6 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_search_tests.rs
+assertion_line: 97
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐

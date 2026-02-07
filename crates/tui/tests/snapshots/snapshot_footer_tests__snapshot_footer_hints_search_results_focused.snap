@@ -1,28 +1,29 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_footer_tests.rs
+assertion_line: 121
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown                                             │
+│ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Query──────────────────────────────────────────────────────────────────┐
 │index=main                                                                    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Status────────────────────────────────────────────────────────────────────────┐
-│Search complete: index=main                                                   │
+│Press Enter to execute search                                                 │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Results───────────────────────────────────────────────────────────────────────┐
-│{  "_time": "2024-01-15T10:10:00.000Z",  "level": "ERROR",  "message": "Event │
-│{  "_time": "2024-01-15T10:11:00.000Z",  "level": "WARN",  "message": "Event m│
-│{  "_time": "2024-01-15T10:12:00.000Z",  "level": "ERROR",  "message": "Event │
-│{  "_time": "2024-01-15T10:13:00.000Z",  "level": "WARN",  "message": "Event m│
-│{  "_time": "2024-01-15T10:14:00.000Z",  "level": "ERROR",  "message": "Event │
-│{  "_time": "2024-01-15T10:15:00.000Z",  "level": "WARN",  "message": "Event m│
-│{  "_time": "2024-01-15T10:16:00.000Z",  "level": "ERROR",  "message": "Event │
-│{  "_time": "2024-01-15T10:17:00.000Z",  "level": "WARN",  "message": "Event m│
-│{  "_time": "2024-01-15T10:18:00.000Z",  "level": "ERROR",  "message": "Event │
-│{  "_time": "2024-01-15T10:19:00.000Z",  "level": "WARN",  "message": "Event m│
+┌Results (2 loaded)────────────────────────────────────────────────────────────┐
+│{                                                                             │
+│  "_raw": "test event 1"                                                      │
+│}                                                                             │
+│{                                                                             │
+│  "_raw": "test event 2"                                                      │
+│}                                                                             │
+│                                                                              │
+│                                                                              │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ 1:Search 2:Indexes 3:Cluster 4:Jobs 5:Health 6:Saved | q:Quit                │
+│ Tab:Next Screen | Shift+Tab:Previous Screen | Enter:Run ...| ?:Help | q:Quit │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -12,6 +12,7 @@
 use crate::app::App;
 use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState};
 use crate::input::keymap::footer_hints;
+use crate::input::keymap::overrides;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
     apps, audit, cluster, configs, dashboards, datamodels, forwarders, health, indexes, inputs,
@@ -696,9 +697,15 @@ impl App {
     ///
     /// Layout: [Loading] | Tab:Next | Shift+Tab:Prev | [Screen Hints] | ?:Help | q:Quit
     /// Handles narrow terminals by truncating screen hints with ellipsis.
+    ///
+    /// Note: Navigation hints are context-aware. In Search screen with QueryFocused mode,
+    /// Tab toggles focus instead of navigating to the next screen.
     fn build_footer_text(&self, theme: splunk_config::Theme) -> Vec<Line<'_>> {
         let hints = footer_hints(self.current_screen);
         let available_width = self.last_area.width as usize;
+
+        // Determine navigation text based on current screen and mode
+        let (nav_text, nav_width) = self.get_navigation_hint();
 
         // Calculate minimum required width for fixed elements
         // Loading format: " {spinner} Loading... {:.0}% " = original + 2 chars for spinner
@@ -707,7 +714,6 @@ impl App {
         } else {
             0
         };
-        let nav_width = " Tab:Next Screen | Shift+Tab:Previous Screen ".len();
         let help_quit_width = " ?:Help | q:Quit ".len();
 
         let fixed_width = loading_width + nav_width + help_quit_width;
@@ -744,8 +750,8 @@ impl App {
             spans.push(Span::raw("|"));
         }
 
-        // Navigation hints
-        spans.push(Span::raw(" Tab:Next Screen | Shift+Tab:Previous Screen "));
+        // Navigation hints (context-aware)
+        spans.push(Span::raw(nav_text));
 
         // Screen-specific hints
         if !hints_text.is_empty() {
@@ -760,5 +766,36 @@ impl App {
         spans.push(Span::styled(" q:Quit ", Style::default().fg(theme.error)));
 
         vec![Line::from(spans)]
+    }
+
+    /// Get the navigation hint text and width based on current screen and mode.
+    ///
+    /// Returns a tuple of (navigation_text, navigation_width).
+    /// - In Search screen with QueryFocused mode: "Tab:Toggle Focus | Shift+Tab:Previous Screen"
+    /// - All other cases: "Tab:Next Screen | Shift+Tab:Previous Screen"
+    ///
+    /// Also checks for keybinding overrides and updates the displayed keys accordingly.
+    fn get_navigation_hint(&self) -> (String, usize) {
+        use crate::action::Action;
+        use crate::app::state::SearchInputMode;
+
+        // Get effective keys (considering overrides)
+        let next_key = overrides::get_effective_key_display(Action::NextScreen, "Tab");
+        let prev_key = overrides::get_effective_key_display(Action::PreviousScreen, "Shift+Tab");
+
+        if self.current_screen == CurrentScreen::Search
+            && matches!(self.search_input_mode, SearchInputMode::QueryFocused)
+        {
+            // In Search QueryFocused mode, Tab toggles focus instead of navigating
+            // Still show the actual keys that are bound
+            let text = format!(" {}:Toggle Focus | {}:Previous Screen ", next_key, prev_key);
+            let width = text.len();
+            (text, width)
+        } else {
+            // Default navigation hint with potentially overridden keys
+            let text = format!(" {}:Next Screen | {}:Previous Screen ", next_key, prev_key);
+            let width = text.len();
+            (text, width)
+        }
     }
 }

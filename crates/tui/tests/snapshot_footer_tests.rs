@@ -3,6 +3,7 @@
 mod helpers;
 
 use helpers::{TuiHarness, create_mock_index, create_mock_jobs};
+use splunk_tui::app::state::SearchInputMode;
 
 #[test]
 fn snapshot_footer_hints_search_screen() {
@@ -87,6 +88,35 @@ fn snapshot_footer_hints_with_loading() {
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
     harness.app.loading = true;
     harness.app.progress = 0.65;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_search_query_focused() {
+    // Test footer in Search screen with QueryFocused mode
+    // Footer should show "Tab:Toggle Focus" instead of "Tab:Next Screen"
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.search_input.set_value("index=main");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_search_results_focused() {
+    // Test footer in Search screen with ResultsFocused mode
+    // Footer should show "Tab:Next Screen" (normal navigation)
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::ResultsFocused;
+    harness.app.search_input.set_value("index=main");
+    // Add some mock results so the screen makes sense
+    harness.app.search_results = vec![
+        serde_json::json!({"_raw": "test event 1"}),
+        serde_json::json!({"_raw": "test event 2"}),
+    ];
 
     insta::assert_snapshot!(harness.render());
 }

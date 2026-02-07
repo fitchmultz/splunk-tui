@@ -12,8 +12,9 @@
 //! - Layout calculations must match the actual rendering in build_footer_text() exactly.
 //! - Column positions are 0-indexed from the start of the content area (inside the border).
 
-use crate::app::state::CurrentScreen;
+use crate::app::state::{CurrentScreen, SearchInputMode};
 use crate::input::keymap::footer_hints;
+use crate::input::keymap::overrides;
 
 /// Represents the layout of the footer for both rendering and hit-testing.
 ///
@@ -54,6 +55,7 @@ impl FooterLayout {
     /// - `progress`: Loading progress (0.0-1.0), affects text width
     /// - `screen`: Current screen (affects hints)
     /// - `terminal_width`: Total terminal width
+    /// - `search_input_mode`: Current search input mode (affects navigation width in Search screen)
     ///
     /// # Returns
     /// Layout information for hit-testing
@@ -62,6 +64,30 @@ impl FooterLayout {
         progress: f64,
         screen: CurrentScreen,
         terminal_width: u16,
+    ) -> Self {
+        Self::calculate_with_mode(loading, progress, screen, terminal_width, None)
+    }
+
+    /// Calculate footer layout with search mode context.
+    ///
+    /// This variant allows specifying the search input mode for context-aware
+    /// navigation width calculation.
+    ///
+    /// # Arguments
+    /// - `loading`: Whether loading indicator is shown
+    /// - `progress`: Loading progress (0.0-1.0), affects text width
+    /// - `screen`: Current screen (affects hints)
+    /// - `terminal_width`: Total terminal width
+    /// - `search_input_mode`: Current search input mode, if in Search screen
+    ///
+    /// # Returns
+    /// Layout information for hit-testing
+    pub fn calculate_with_mode(
+        loading: bool,
+        progress: f64,
+        screen: CurrentScreen,
+        terminal_width: u16,
+        search_input_mode: Option<SearchInputMode>,
     ) -> Self {
         // Calculate loading width based on progress
         // Format: " Loading... {:.0}% "
@@ -82,8 +108,8 @@ impl FooterLayout {
             0
         };
 
-        // Navigation section: " Tab:Next Screen | Shift+Tab:Previous Screen "
-        let nav_width: u16 = 45;
+        // Navigation section width is context-aware based on screen and mode
+        let nav_width = Self::navigation_width(screen, search_input_mode);
 
         // Calculate fixed width (loading + nav + help + quit + separators)
         let fixed_width = loading_width
@@ -176,6 +202,33 @@ impl FooterLayout {
         // Content in the footer block starts at column 1 (due to border)
         let content_col = col.saturating_sub(1);
         content_col >= self.quit_start && content_col < self.quit_end
+    }
+
+    /// Get the navigation width based on current screen and input mode.
+    ///
+    /// In Search screen with QueryFocused mode, the navigation text shows
+    /// "Tab:Toggle Focus" instead of "Tab:Next Screen", which has a different width.
+    ///
+    /// Also considers keybinding overrides which can change the navigation key display.
+    fn navigation_width(screen: CurrentScreen, search_input_mode: Option<SearchInputMode>) -> u16 {
+        use crate::action::Action;
+
+        // Get effective keys (considering overrides)
+        let next_key = overrides::get_effective_key_display(Action::NextScreen, "Tab");
+        let prev_key = overrides::get_effective_key_display(Action::PreviousScreen, "Shift+Tab");
+
+        // Calculate the actual width based on the current context
+        let text = if screen == CurrentScreen::Search
+            && matches!(search_input_mode, Some(SearchInputMode::QueryFocused))
+        {
+            // In Search QueryFocused mode: " {next}:Toggle Focus | {prev}:Previous Screen "
+            format!(" {}:Toggle Focus | {}:Previous Screen ", next_key, prev_key)
+        } else {
+            // Default: " {next}:Next Screen | {prev}:Previous Screen "
+            format!(" {}:Next Screen | {}:Previous Screen ", next_key, prev_key)
+        };
+
+        text.len() as u16
     }
 }
 

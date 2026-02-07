@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0387",
-      "status": "todo",
-      "title": "Make TUI footer/help hints mode- and override-aware",
-      "description": "Opportunity type: UX improvement / reliability\n\nEvidence:\n- The footer always prints \"Tab:Next Screen | Shift+Tab:Previous Screen\" (`crates/tui/src/app/render.rs`), but Search QueryFocused mode consumes `Tab` for focus toggling and explicitly bypasses global bindings (`crates/tui/src/app.rs`).\n- Footer hints are cached from the default keybinding catalog and do not reflect user keybind overrides (`crates/tui/src/input/keymap/mod.rs` builds FOOTER_HINTS_CACHE from `keybindings()` without overlays).\n- The footer hints cache relies on a manually maintained screen list (`all_screens()`), which can drift when new screens are added.\n\nWhy it matters:\n- Incorrect hints teach the wrong mental model and slow users down. Overrides that don't show up in help make customization feel broken.\n- Drift in screen lists causes missing hints and hard-to-spot UX regressions.\n\nProposed approach:\n- Minimal slice:\n  - Make footer navigation hints context-aware for Search (QueryFocused: show \"Tab:Toggle Focus\", keep screen navigation on `Shift+Tab` and/or `Ctrl+Tab`).\n  - Build help/footer hints from an effective keymap (defaults + overrides) after overrides are initialized.\n  - Add tests asserting `all_screens()` matches `CurrentScreen` variants and that Search footer hints differ by input mode.\n\nRisks and mitigations:\n- Risk: increased runtime work. Mitigation: keep caching, but regenerate cache after applying overrides (one-time).\n\nAcceptance criteria:\n- Help/footer hints match actual behavior for Search mode and overridden bindings.\n- Regression tests prevent screen list drift.\n- `make test` passes.\n\nPriority rationale:\n- Medium: improves ergonomics across every session and reduces confusion.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "tui",
-        "ux",
-        "documentation",
-        "reliability"
-      ],
-      "scope": [
-        "crates/tui/src/app/render.rs",
-        "crates/tui/src/input/keymap/mod.rs",
-        "crates/tui/src/app.rs",
-        "crates/tui/tests/",
-        "make test"
-      ],
-      "evidence": [
-        "crates/tui/src/app/render.rs:695-712 hardcodes footer nav width for 'Tab:Next Screen' and renders it unconditionally",
-        "crates/tui/src/app.rs:453-461 skips global bindings for Tab/BackTab in Search QueryFocused mode",
-        "crates/tui/src/input/keymap/mod.rs:111-148 precomputes FOOTER_HINTS_CACHE from default keybindings and does not incorporate overrides"
-      ],
-      "plan": [
-        "Update footer rendering to select navigation hints based on current screen + input mode (Search QueryFocused vs ResultsFocused).",
-        "Introduce an 'effective keybindings' view that merges overrides into the help/footer catalog, and regenerate cache after overrides init.",
-        "Add tests for screen list drift and for override-aware hint rendering.",
-        "Verify by running `make test` and confirming snapshot/help tests still pass."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0388",
       "status": "todo",
       "title": "Ignore stale SPL validation results in TUI",

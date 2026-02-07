@@ -30,6 +30,9 @@ use crate::action::Action;
 pub struct KeybindOverrideTable {
     /// Maps (KeyCode, KeyModifiers) -> Action for overridden bindings
     overrides: HashMap<(KeyCode, KeyModifiers), Action>,
+    /// Stores (Action, key_string) pairs for reverse lookup in footer hints
+    /// Uses Vec because Action doesn't implement Hash/Eq
+    display_keys: Vec<(Action, String)>,
 }
 
 impl KeybindOverrideTable {
@@ -40,13 +43,16 @@ impl KeybindOverrideTable {
     /// Returns an error if any keybinding cannot be parsed.
     pub fn from_overrides(overrides: &KeybindOverrides) -> Result<Self, String> {
         let mut table = HashMap::new();
+        let mut display_keys = Vec::new();
 
         for (action, key_str) in &overrides.overrides {
             match parse_key(key_str) {
                 Ok(parsed) => {
                     let key_event = parsed_key_to_crossterm(&parsed);
                     let tui_action = action_for_keybind(*action);
-                    table.insert((key_event.code, key_event.modifiers), tui_action);
+                    table.insert((key_event.code, key_event.modifiers), tui_action.clone());
+                    // Store the original key string for display purposes
+                    display_keys.push((tui_action, key_str.clone()));
                 }
                 Err(e) => {
                     return Err(format!(
@@ -57,7 +63,10 @@ impl KeybindOverrideTable {
             }
         }
 
-        Ok(Self { overrides: table })
+        Ok(Self {
+            overrides: table,
+            display_keys,
+        })
     }
 
     /// Check if a key event matches an override.
@@ -75,6 +84,17 @@ impl KeybindOverrideTable {
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.overrides.len()
+    }
+
+    /// Get the key string for an overridden action, if any.
+    ///
+    /// Returns the original key string from the config (e.g., "Ctrl+n", "F1")
+    /// that was used to override the given action.
+    fn get_key_for_action(&self, action: Action) -> Option<String> {
+        self.display_keys
+            .iter()
+            .find(|(a, _)| std::mem::discriminant(a) == std::mem::discriminant(&action))
+            .map(|(_, key)| key.clone())
     }
 }
 
@@ -192,6 +212,35 @@ pub fn init_overrides(overrides: &KeybindOverrides) -> Result<(), String> {
 /// This should be called by `resolve_action` before checking default bindings.
 pub(crate) fn resolve_override(key: KeyEvent) -> Option<Action> {
     KEYBIND_OVERRIDES.get().and_then(|table| table.resolve(key))
+}
+
+/// Get the key string for an overridden action, if any.
+///
+/// Returns the override key string (e.g., "Ctrl+n", "F1") for the given action,
+/// or None if the action has not been overridden.
+///
+/// Used for displaying the actual keybinding in the footer/help.
+pub fn get_override_key_display(action: crate::action::Action) -> Option<String> {
+    let table = KEYBIND_OVERRIDES.get()?;
+    table.get_key_for_action(action)
+}
+
+/// Get effective key display for global navigation actions.
+///
+/// Returns the override key string if an override exists, otherwise returns the default key.
+/// This is used for building context-aware footer hints.
+///
+/// # Arguments
+/// * `action` - The action to look up
+/// * `default_key` - The default key string to return if no override exists
+///
+/// # Returns
+/// The override key if set, otherwise the default key.
+pub fn get_effective_key_display(
+    action: crate::action::Action,
+    default_key: &'static str,
+) -> String {
+    get_override_key_display(action).unwrap_or_else(|| default_key.to_string())
 }
 
 #[cfg(test)]

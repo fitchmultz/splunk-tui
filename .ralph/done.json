@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "dead_code_count": "25",
         "test_files_affected": "4",
-        "production_files_affected": "8",
-        "scan_agent": "scan-maintenance"
+        "production_files_affected": "8"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "target_line_count": "300",
         "scan_agent": "scan-maintenance",
         "current_line_count": "867",
-        "macro_already_adopted": "true"
+        "macro_already_adopted": "true",
+        "target_line_count": "300"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "affected_formatters": "4",
-        "estimated_methods": "35+",
-        "scan_agent": "scan-maintenance"
+        "estimated_methods": "35+"
       }
     },
     {
@@ -4407,9 +4407,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "action_variants": "94",
         "current_line_count": "523",
         "submodule_count": "28",
+        "action_variants": "94",
         "scan_agent": "scan-maintenance",
         "target_line_count": "150"
       }
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "formatter_count": "3",
         "existing_macro_coverage": "4 methods total across all formatters",
-        "estimated_method_count": "45",
-        "scan_agent": "scan-maintenance"
+        "estimated_method_count": "45"
       }
     },
     {
@@ -4539,9 +4539,9 @@
       "relates_to": [],
       "custom_fields": {
         "bail_usages": "18",
+        "command_files": "27",
         "with_context_usages": "120+",
-        "scan_agent": "scan-maintenance",
-        "command_files": "27"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4593,10 +4593,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "file_count": "23",
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
+        "file_count": "23",
         "runner_used": "kimi",
         "screen_files": "22"
       }
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
+        "files_using_pattern_a": "26",
         "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
-        "files_using_pattern_b": "2",
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "files_using_pattern_a": "26"
+        "files_using_pattern_b": "2"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "widgets_dir_exists": "false",
-        "runner_used": "kimi",
-        "lines_duplicated": "~400",
         "affected_screens": "25",
         "scan_agent": "scan-maintenance",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "lines_duplicated": "~400",
+        "widgets_dir_exists": "false",
+        "principle": "DRY",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY"
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
-        "duplication_count": "6 functions across 5 files",
         "files_with_duplicates": "5",
-        "model_used": "kimi-code/kimi-for-coding"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
+        "duplication_count": "6 functions across 5 files"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
         "scan_agent": "scan-maintenance",
+        "principle": "DRY",
         "affected_files": "4",
-        "runner_used": "kimi",
+        "duplicate_count": "4",
         "model_used": "kimi-code/kimi-for-coding",
-        "duplicate_count": "4"
+        "runner_used": "kimi"
       }
     },
     {
@@ -4942,9 +4942,9 @@
       "relates_to": [],
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "runner_used": "kimi"
       }
     },
     {
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "files_to_update": "5",
-        "duplicate_count": "6",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "duplicate_count": "6",
+        "files_to_update": "5",
+        "principle": "DRY"
       }
     },
     {
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "env_line_count": "18",
-        "scan_agent": "scan-maintenance",
-        "env_example_line_count": "66",
+        "principle": "KISS",
         "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "missing_variable_count": "12",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "KISS"
+        "env_line_count": "18",
+        "env_example_line_count": "66"
       }
     },
     {
@@ -5114,10 +5114,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "principle": "KISS",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "KISS"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5168,10 +5168,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5223,8 +5223,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY"
       }
@@ -5276,10 +5276,10 @@
       ],
       "custom_fields": {
         "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5333,10 +5333,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "principle": "YAGNI",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "YAGNI"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5389,11 +5389,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
-        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
+        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5438,9 +5438,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5503,9 +5503,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "runner_used": "kimi"
       }
     },
     {
@@ -5564,9 +5564,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5639,9 +5639,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "runner_used": "kimi",
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5772,11 +5772,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
         "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE",
-        "env_vars_count_in_apply_env": "15",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "scan_agent": "scan-innovation",
+        "runner_used": "kimi",
+        "env_vars_count_in_apply_env": "15"
       }
     },
     {
@@ -5908,11 +5908,81 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "has_docs_generator": "true",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "scan_agent": "scan-innovation",
         "affected_screens_count": "8",
-        "has_docs_generator": "true"
+        "runner_used": "kimi",
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0387",
+      "status": "done",
+      "title": "Make TUI footer/help hints mode- and override-aware",
+      "description": "Opportunity type: UX improvement / reliability\n\nEvidence:\n- The footer always prints \"Tab:Next Screen | Shift+Tab:Previous Screen\" (`crates/tui/src/app/render.rs:710,748`), but Search QueryFocused mode consumes `Tab` for focus toggling and explicitly bypasses global bindings (`crates/tui/src/app.rs:516-521`).\n- Footer hints are cached from the default keybinding catalog and do not reflect user keybind overrides (`crates/tui/src/input/keymap/mod.rs:116-148` builds FOOTER_HINTS_CACHE from `keybindings()` without overlays).\n- The footer hints cache relies on a manually maintained screen list (`all_screens()` at line 151), which can drift when new screens are added.\n- Overrides are loaded in `main.rs` via `init_overrides()` but never incorporated into footer hint generation.\n\nWhy it matters:\n- Incorrect hints teach the wrong mental model and slow users down. Overrides that don't show up in help make customization feel broken.\n- Drift in screen lists causes missing hints and hard-to-spot UX regressions.\n\nProposed approach:\n- Minimal slice:\n  - Make footer navigation hints context-aware for Search (QueryFocused: show \"Tab:Toggle Focus\", keep screen navigation on `Shift+Tab` and/or `Ctrl+Tab`).\n  - Build help/footer hints from an effective keymap (defaults + overrides) after overrides are initialized.\n  - Add tests asserting `all_screens()` matches `CurrentScreen` variants and that Search footer hints differ by input mode.\n\nRisks and mitigations:\n- Risk: increased runtime work. Mitigation: keep caching, but regenerate cache after applying overrides (one-time).\n\nAcceptance criteria:\n- Help/footer hints match actual behavior for Search mode and overridden bindings.\n- Regression tests prevent screen list drift.\n- `make test` passes.\n\nPriority rationale:\n- Medium: improves ergonomics across every session and reduces confusion.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "documentation",
+        "reliability"
+      ],
+      "scope": [
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/input/keymap/overrides.rs",
+        "crates/tui/src/app.rs",
+        "crates/tui/src/app/footer_layout.rs",
+        "crates/tui/src/app/input/search.rs",
+        "crates/tui/tests/snapshot_footer_tests.rs",
+        "crates/tui/tests/keybind_override_tests.rs",
+        "make test"
+      ],
+      "evidence": [
+        "crates/tui/src/app/render.rs:710 hardcodes nav width ' Tab:Next Screen | Shift+Tab:Previous Screen ' (45 chars)",
+        "crates/tui/src/app/render.rs:748 renders navigation hints unconditionally regardless of screen/mode",
+        "crates/tui/src/app.rs:516-521 skips global bindings for Tab/BackTab/printable chars in Search QueryFocused mode",
+        "crates/tui/src/input/keymap/mod.rs:116-148 precomputes FOOTER_HINTS_CACHE from default keybindings without overrides",
+        "crates/tui/src/input/keymap/mod.rs:151 defines all_screens() with 28 screen variants - must stay in sync with CurrentScreen enum",
+        "crates/tui/src/input/keymap/overrides.rs:151 init_overrides() loads user overrides but footer cache does not regenerate",
+        "crates/tui/src/app/footer_layout.rs:16 imports footer_hints and uses fixed 45-char nav_width (line 56)"
+      ],
+      "plan": [
+        "Modify footer rendering to accept SearchInputMode context and show mode-appropriate hints (Tab:Toggle Focus vs Tab:Next Screen).",
+        "Extend footer_hints() signature to accept optional mode context or create footer_hints_for_mode() variant.",
+        "Build effective keybindings view that merges overrides into footer catalog; regenerate cache after overrides::init_overrides() completes.",
+        "Add drift detection test: assert all_screens() count matches CurrentScreen enum variant count using strum or similar.",
+        "Add tests asserting Search footer hints differ between QueryFocused and ResultsFocused modes.",
+        "Update snapshot_footer_tests.rs if footer output changes; ensure keybind_override_tests.rs covers hint rendering.",
+        "Verify by running `make test` and confirming all TUI tests pass."
+      ],
+      "notes": [
+        "Updated 2026-02-07: Refined evidence line numbers to match current codebase (render.rs lines shifted from 695-712 to 710,748)",
+        "Added footer_layout.rs and overrides.rs to scope - both are critical for complete fix",
+        "Added search.rs input handler to scope - contains QueryFocused mode logic that footer must reflect",
+        "CurrentScreen enum has 28 variants; all_screens() must maintain this count - drift test is essential",
+        "Phase 3 review complete: All acceptance criteria met",
+        "Context-aware footer hints: Search QueryFocused shows 'Tab:Toggle Focus', ResultsFocused shows 'Tab:Next Screen'",
+        "Override-aware hints implemented via get_effective_key_display() with reverse lookup table",
+        "Drift detection tests added (keymap_drift_tests.rs) verifying screen count, uniqueness, and mappings",
+        "Mode-specific snapshot tests added for QueryFocused and ResultsFocused modes",
+        "All 35 TUI tests pass including new drift detection and footer tests"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T09:10:49.708338449Z",
+      "completed_at": "2026-02-07T09:10:49.708338449Z",
+      "started_at": "2026-02-07T08:39:17.477290909Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-innovation",
+        "footer_nav_width": "45",
+        "runner_used": "kimi",
+        "screen_count": "28"
       }
     }
   ]

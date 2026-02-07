@@ -148,7 +148,14 @@ static FOOTER_HINTS_CACHE: LazyLock<FooterHintsCache> = LazyLock::new(|| {
 });
 
 /// Returns all screen variants for cache initialization.
-fn all_screens() -> [CurrentScreen; 28] {
+///
+/// This function is the source of truth for all screens in the application.
+/// When adding a new screen, you MUST add it to this array.
+///
+/// The count of screens in this array should match the number of variants
+/// in the `CurrentScreen` enum. This is verified by drift detection tests.
+#[doc(hidden)]
+pub fn all_screens() -> [CurrentScreen; 28] {
     [
         CurrentScreen::Search,
         CurrentScreen::Indexes,
@@ -314,7 +321,7 @@ pub fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Action> {
 /// distinguish between them; mode-specific behavior is handled at input time.
 ///
 /// This function uses a pre-computed cache to avoid per-frame allocations.
-pub(crate) fn footer_hints(screen: CurrentScreen) -> ScreenHints {
+pub fn footer_hints(screen: CurrentScreen) -> ScreenHints {
     get_cached_hints(screen).unwrap_or_default()
 }
 
