@@ -50,6 +50,8 @@ The doctor command checks:
 
 If any required checks fail, the command exits with a non-zero status code.
 
+For troubleshooting common issues, see the [Troubleshooting Guide](docs/user-guide.md#troubleshooting).
+
 ## Configuration
 
 Configuration is loaded from environment variables or a `.env` file:
@@ -150,11 +152,18 @@ Run `splunk-tui --help` for all available options.
 
 #### Configuration Precedence
 
-Configuration values are loaded in the following order (highest to lowest):
-1. CLI arguments (e.g., `--profile`, `--config-path`)
-2. Environment variables (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
-3. Profile configuration (from config.json)
-4. Default values
+Configuration values are resolved in the following override precedence (highest to lowest):
+
+1. **CLI arguments** (e.g., `--profile`, `--config-path`)
+2. **Environment variables** (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
+3. **Profile configuration** (from `config.json`)
+4. **Default values**
+
+**`.env` File Loading:**
+The `.env` file is loaded early (before CLI parsing) to populate environment variables. This means:
+- Values in `.env` become environment variable defaults
+- CLI arguments still override `.env` values
+- Set `DOTENV_DISABLED=1` to skip `.env` loading (useful for hermetic testing)
 
 ### Keybindings
 

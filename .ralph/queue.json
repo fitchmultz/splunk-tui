@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0385",
-      "status": "todo",
-      "title": "Fix config precedence docs + add Quick Verify onboarding",
-      "description": "Opportunity type: UX improvement (docs)\n\nEvidence:\n- README lists precedence as CLI args -> env vars -> profile -> defaults, but `docs/usage.md` states `.env` is loaded first before CLI parsing, and documents a different loading order that includes `.env`.\n- README onboarding lacks a single quick verification command; the user guide contains troubleshooting, but new users reading only README don't get a fast sanity check.\n\nWhy it matters:\n- Misunderstood precedence leads to misconfiguration and wasted debugging time.\n- A quick \"first successful call\" reduces setup friction and improves adoption.\n\nProposed approach:\n- Unify precedence wording across `README.md`, `docs/usage.md`, and `docs/user-guide.md` by explicitly separating:\n  - dotenv load timing (before clap parsing)\n  - override precedence (CLI flags override env/profile/defaults)\n- Add a \"Quick Verify\" section in `README.md` (recommended: `splunk-cli health` and expected output patterns), plus a pointer to `splunk-cli doctor` once implemented.\n\nRisks and mitigations:\n- Risk: docs drift again. Mitigation: keep generated keybindings isolated and add a docs-lint note for precedence sections.\n\nAcceptance criteria:\n- Updated docs show a single, consistent precedence order and explicitly mention `.env` load behavior.\n- README includes at least one fast verification flow and a troubleshooting link.\n- `make lint-docs` passes.\n\nPriority rationale:\n- Medium: reduces onboarding friction and support load.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "docs",
-        "ux",
-        "onboarding"
-      ],
-      "scope": [
-        "README.md",
-        "docs/usage.md",
-        "docs/user-guide.md",
-        "make lint-docs"
-      ],
-      "evidence": [
-        "README.md:131-137 documents precedence without mentioning `.env` layer",
-        "docs/usage.md:68-78 documents loading order starting with `.env` before CLI parsing",
-        "README.md lacks a single 'run X and expect Y' verification step"
-      ],
-      "plan": [
-        "Update README/docs to converge on a single configuration precedence explanation (include `.env` load timing and override semantics).",
-        "Add a Quick Verify section to README using existing CLI commands (health/search/indexes) with expected outcomes.",
-        "Run `make lint-docs` to ensure generated sections remain consistent.",
-        "Verify by running `make lint-docs` and confirming no docs drift is reported."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0386",
       "status": "todo",
       "title": "Make TUI 'r' key a true refresh (not pagination)",
@@ -320,8 +280,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "fail-fast"
+        "principle": "fail-fast",
+        "scan_agent": "scan-maintenance"
       }
     },
     {

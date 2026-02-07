@@ -67,15 +67,18 @@ Environment variables take precedence over the configuration file.
 
 **Configuration Loading Order:**
 
-Configuration is loaded in the following order (each level can override the previous):
+Configuration is resolved in the following override precedence (highest to lowest):
 
-1. **`.env` file** (if present and `DOTENV_DISABLED` is not set)
-2. **CLI arguments** (highest priority)
-3. **Environment variables**
-4. **Profile configuration** (from `config.json`)
-5. **Default values** (lowest priority)
+1. **CLI arguments** (highest priority, e.g., `--profile`, `--base-url`)
+2. **Environment variables** (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
+3. **Profile configuration** (from `config.json`)
+4. **Default values** (lowest priority)
 
-The `.env` file is loaded before CLI parsing to allow environment variable defaults to be available during configuration loading. Set `DOTENV_DISABLED=1` to skip `.env` loading (useful for hermetic testing).
+**`.env` File Behavior:**
+The `.env` file is loaded before CLI parsing to populate environment variable defaults. This means:
+- `.env` values are treated as environment variables (layer #2 above)
+- CLI arguments still override `.env` values
+- Set `DOTENV_DISABLED=1` to skip `.env` loading (useful for hermetic testing)
 
 **Note**: 
 - Empty environment variable values (e.g., `SPLUNK_API_TOKEN=""`) or whitespace-only values (e.g., `SPLUNK_TIMEOUT="  "`) are treated as unset and will not override values from the configuration file or other sources. This allows you to leave placeholder variables empty in `.env` files.
@@ -1033,14 +1036,18 @@ The TUI (`splunk-tui`) supports the following command-line options:
 
 #### Configuration Precedence
 
-Configuration values are loaded in the following precedence (highest to lowest):
+Configuration values are resolved in the following override precedence (highest to lowest):
 
 1. **CLI arguments** (e.g., `--profile`, `--config-path`)
 2. **Environment variables** (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
-3. **Profile configuration** (from config.json)
+3. **Profile configuration** (from `config.json`)
 4. **Default values**
 
-**Note:** The `.env` file is loaded before CLI parsing (if present and `DOTENV_DISABLED` is not set). Set `DOTENV_DISABLED=1` to skip `.env` loading for hermetic testing.
+**`.env` File Behavior:**
+The `.env` file is loaded before CLI parsing to populate environment variable defaults. This means:
+- `.env` values are treated as environment variables (layer #2 above)
+- CLI arguments still override `.env` values
+- Set `DOTENV_DISABLED=1` to skip `.env` loading (useful for hermetic testing)
 
 Examples:
 

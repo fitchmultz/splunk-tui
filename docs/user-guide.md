@@ -150,6 +150,27 @@ Switch profiles using the `--profile` flag:
 splunk-cli --profile prod search "index=security | head 1"
 ```
 
+### Configuration Precedence
+
+When multiple configuration sources define the same value, the following override precedence applies (highest to lowest):
+
+1. **CLI arguments** (e.g., `--profile`, `--base-url`)
+2. **Environment variables** (e.g., `SPLUNK_PROFILE`, `SPLUNK_BASE_URL`)
+3. **Profile configuration** (from `config.json`)
+4. **Default values**
+
+**`.env` File Behavior:**
+The `.env` file is loaded before CLI parsing to populate environment variable defaults. This means:
+- `.env` values are treated as environment variables (layer #2 above)
+- CLI arguments still override `.env` values
+- Set `DOTENV_DISABLED=1` to skip `.env` loading (useful for hermetic testing)
+
+For example, if you have `SPLUNK_BASE_URL=https://localhost:8089` in your `.env` file but run:
+```bash
+splunk-cli --base-url https://prod.example.com:8089 health
+```
+The CLI argument (`https://prod.example.com:8089`) wins.
+
 ---
 
 ## TUI Master Class

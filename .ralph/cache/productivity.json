@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-07T07:40:38.808475848Z",
+  "last_updated_at": "2026-02-07T07:54:50.295005393Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -405,7 +405,7 @@
     },
     "2026-02-07": {
       "date": "2026-02-07",
-      "completed_count": 20,
+      "completed_count": 21,
       "tasks": [
         {
           "id": "RQ-0363",
@@ -506,6 +506,11 @@
           "id": "RQ-0384",
           "title": "Centralize SPLUNK_CONFIG_PATH/SPLUNK_PROFILE handling in splunk_config",
           "completed_at": "2026-02-07T07:40:38.808474730Z"
+        },
+        {
+          "id": "RQ-0385",
+          "title": "Fix config precedence docs + add Quick Verify onboarding",
+          "completed_at": "2026-02-07T07:54:50.295004804Z"
         }
       ]
     }
@@ -515,7 +520,7 @@
     "longest_streak": 6,
     "last_completed_date": "2026-02-07"
   },
-  "total_completed": 94,
+  "total_completed": 95,
   "milestones": [
     {
       "threshold": 10,
