@@ -36,7 +36,7 @@ pub(crate) fn migrate_config_file_if_needed(legacy_path: &Path, new_path: &Path)
             tracing::warn!(
                 legacy_path = %legacy_path.display(),
                 error = %e,
-                "Could not stat legacy config file; skipping migration"
+                "Failed to stat legacy config file; skipping migration"
             );
             return false;
         }
@@ -56,7 +56,7 @@ pub(crate) fn migrate_config_file_if_needed(legacy_path: &Path, new_path: &Path)
         tracing::warn!(
             new_parent = %parent.display(),
             error = %e,
-            "Could not create config directory for migrated config"
+            "Failed to create config directory for migrated config"
         );
         return false;
     }
@@ -75,7 +75,7 @@ pub(crate) fn migrate_config_file_if_needed(legacy_path: &Path, new_path: &Path)
                 legacy_path = %legacy_path.display(),
                 new_path = %new_path.display(),
                 error = %e,
-                "Could not migrate legacy config file"
+                "Failed to migrate legacy config file"
             );
             false
         }
@@ -272,7 +272,7 @@ mod tests {
         assert!(
             messages
                 .iter()
-                .any(|m| m.contains("Could not create config directory for migrated config")),
+                .any(|m| m.contains("Failed to create config directory for migrated config")),
             "expected a warning log on migration failure; got: {messages:?}"
         );
     }

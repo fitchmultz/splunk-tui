@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0371",
-      "status": "todo",
-      "title": "Fix error message style: 'Could not' to 'Failed to' in migration.rs",
-      "description": "AGENTS.md error message style guide requires 'Failed to...' pattern for warn! messages. Three violations found in migration.rs using 'Could not...' instead. This is a minor style inconsistency that should be fixed for compliance.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "style",
-        "config",
-        "cleanup"
-      ],
-      "scope": [
-        "crates/config/src/persistence/migration.rs:39,59,78"
-      ],
-      "evidence": [
-        "Line 39: 'Could not stat legacy config file; skipping migration'",
-        "Line 59: 'Could not create config directory for migrated config'",
-        "Line 78: 'Could not migrate legacy config file'",
-        "AGENTS.md: 'For warn! messages, always use \"Failed to {action}\" pattern'"
-      ],
-      "plan": [
-        "Change line 39: 'Could not stat' → 'Failed to stat'",
-        "Change line 59: 'Could not create' → 'Failed to create'",
-        "Change line 78: 'Could not migrate' → 'Failed to migrate'",
-        "Verify by running: 'cargo clippy -p splunk-config' and 'cargo test -p splunk-config'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
-      }
-    },
-    {
       "id": "RQ-0372",
       "status": "todo",
       "title": "Extract duplicate build_create_job_options functions in search.rs",
@@ -148,8 +109,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -258,8 +219,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]
