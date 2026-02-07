@@ -611,6 +611,34 @@ splunk-cli jobs --delete "1705852800.123"
 
 **Output formats for `--inspect`**: Supports `--output table` (default), `--output json`, `--output csv`, `--output xml`
 
+**Retrieve job results by SID:**
+
+```bash
+# Get first 100 results from a job
+splunk-cli jobs --results "1705852800.123"
+
+# Get results with custom count
+splunk-cli jobs --results "1705852800.123" --result-count 500
+
+# Paginate through large result sets
+splunk-cli jobs --results "1705852800.123" --result-offset 0 --result-count 100
+splunk-cli jobs --results "1705852800.123" --result-offset 100 --result-count 100
+
+# Export results to file
+splunk-cli jobs --results "1705852800.123" --result-count 1000 --output-file results.json
+
+# Get results in different formats
+splunk-cli jobs --results "1705852800.123" -o csv > results.csv
+splunk-cli jobs --results "1705852800.123" -o json > results.json
+splunk-cli jobs --results "1705852800.123" -o xml > results.xml
+```
+
+- `--results <SID>`: Retrieve results for a specific job by SID
+- `--result-count <N>`: Maximum number of results to retrieve [default: 100]
+- `--result-offset <N>`: Offset into results for pagination [default: 0]
+
+**Note:** The default count of 100 is a safety measure. Use `--result-count` to retrieve more results or `--output-file` for large exports.
+
 #### `health`
 Perform a comprehensive system health check.
 

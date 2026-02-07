@@ -151,7 +151,10 @@ pub(crate) async fn run_command(
             inspect,
             cancel,
             delete,
-            count,
+            results,
+            result_count,
+            result_offset,
+            job_count,
         } => {
             let config = config.into_real_config()?;
             commands::jobs::run(
@@ -160,7 +163,10 @@ pub(crate) async fn run_command(
                 inspect,
                 cancel,
                 delete,
-                count,
+                results,
+                result_count,
+                result_offset,
+                job_count,
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),

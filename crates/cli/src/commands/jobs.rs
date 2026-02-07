@@ -30,7 +30,10 @@ pub async fn run(
     inspect: Option<String>,
     cancel: Option<String>,
     delete: Option<String>,
-    count: usize,
+    results: Option<String>,
+    result_count: Option<usize>,
+    result_offset: usize,
+    job_count: usize,
     output_format: &str,
     quiet: bool,
     output_file: Option<std::path::PathBuf>,
@@ -38,9 +41,41 @@ pub async fn run(
 ) -> Result<()> {
     let mut client = crate::commands::build_client_from_config(&config)?;
 
-    // If inspect, cancel, or delete action is specified, don't list jobs
-    if inspect.is_some() || cancel.is_some() || delete.is_some() {
+    // If inspect, cancel, delete, or results action is specified, don't list jobs
+    if inspect.is_some() || cancel.is_some() || delete.is_some() || results.is_some() {
         list = false;
+    }
+
+    // Handle results action
+    if let Some(sid) = results {
+        info!("Fetching results for job: {}", sid);
+        let count = result_count.unwrap_or(100) as u64;
+        let spinner =
+            crate::progress::Spinner::new(!quiet, format!("Fetching results for job {}", sid));
+        let search_results = tokio::select! {
+            res = client.get_search_results(&sid, count, result_offset as u64) => res?,
+            _ = cancel_token.cancelled() => return Err(Cancelled.into()),
+        };
+        spinner.finish();
+
+        // Parse output format
+        let format = OutputFormat::from_str(output_format)?;
+        let formatter = get_formatter(format);
+
+        // Format and print results
+        let output = formatter.format_search_results(&search_results.results)?;
+        if let Some(ref path) = output_file {
+            write_to_file(&output, path)
+                .with_context(|| format!("Failed to write output to {}", path.display()))?;
+            eprintln!(
+                "Results written to {} ({:?} format)",
+                path.display(),
+                format
+            );
+        } else {
+            print!("{}", output);
+        }
+        return Ok(());
     }
 
     // Handle inspect action (NEW)
@@ -98,7 +133,7 @@ pub async fn run(
     if list {
         info!("Listing search jobs");
         let jobs = tokio::select! {
-            res = client.list_jobs(Some(count as u64), None) => res?,
+            res = client.list_jobs(Some(job_count as u64), None) => res?,
             _ = cancel_token.cancelled() => return Err(Cancelled.into()),
         };
 

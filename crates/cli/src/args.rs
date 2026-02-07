@@ -23,7 +23,7 @@ use crate::commands;
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
 #[command(version)]
 #[command(
-    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli doctor\n  splunk-cli doctor --bundle ./support-bundle.zip\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli --api-token $SPLUNK_API_TOKEN search 'index=_internal' --wait\n\nShell Completions:\n  splunk-cli completions bash > /etc/bash_completion.d/splunk-cli\n  splunk-cli completions zsh > /usr/local/share/zsh/site-functions/_splunk-cli\n  splunk-cli completions fish > ~/.config/fish/completions/splunk-cli.fish\n\nManpage:\n  splunk-cli man > /usr/local/share/man/man1/splunk-cli.1\n"
+    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli doctor\n  splunk-cli doctor --bundle ./support-bundle.zip\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli --api-token $SPLUNK_API_TOKEN search 'index=_internal' --wait\n  splunk-cli jobs --results 1705852800.123 --result-count 100\n  splunk-cli jobs --results 1705852800.123 --result-offset 100 --result-count 50 -o json\n  splunk-cli jobs --results 1705852800.123 --output-file results.json\n\nShell Completions:\n  splunk-cli completions bash > /etc/bash_completion.d/splunk-cli\n  splunk-cli completions zsh > /usr/local/share/zsh/site-functions/_splunk-cli\n  splunk-cli completions fish > ~/.config/fish/completions/splunk-cli.fish\n\nManpage:\n  splunk-cli man > /usr/local/share/man/man1/splunk-cli.1\n"
 )]
 pub struct Cli {
     /// Base URL of the Splunk server (e.g., https://localhost:8089)
@@ -192,9 +192,21 @@ pub enum Commands {
         #[arg(long, value_name = "SID", group = "action")]
         delete: Option<String>,
 
+        /// Retrieve results for a specific job by SID
+        #[arg(long, value_name = "SID", group = "action")]
+        results: Option<String>,
+
+        /// Maximum number of results to retrieve (for --results)
+        #[arg(long, value_name = "N")]
+        result_count: Option<usize>,
+
+        /// Offset into results for pagination (for --results)
+        #[arg(long, value_name = "N", default_value = "0")]
+        result_offset: usize,
+
         /// Maximum number of jobs to list
         #[arg(short, long, default_value = "50")]
-        count: usize,
+        job_count: usize,
     },
 
     /// Perform a comprehensive system health check

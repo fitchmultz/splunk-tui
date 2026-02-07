@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0390",
-      "status": "todo",
-      "title": "Add splunk-cli jobs results subcommand (paginate/export)",
-      "description": "Opportunity type: feature gap / workflow coverage\n\nEvidence:\n- `splunk-cli jobs` supports list/inspect/cancel/delete, but cannot retrieve search job results by SID.\n- The client already supports fetching results for a SID with pagination (`SplunkClient::get_search_results(sid, count, offset)`).\n\nWhy it matters:\n- Job-centric workflows often start with a SID (from TUI, logs, Splunk Web). Being able to fetch results without re-running the search improves incident response and automation.\n\nProposed approach:\n- Minimal slice: add `splunk-cli jobs results <SID> [--count N] [--offset N] [-o json|table|csv|xml] [--output-file PATH]` that calls `get_search_results` and formats results via existing search result formatter.\n- Expansion: add `--all` to iterate pages until completion and stream to stdout/file; add `jobs events` later if needed.\n\nRisks and mitigations:\n- Risk: large outputs. Mitigation: default to a safe count; document `--output-file`; consider NDJSON streaming as a follow-up.\n\nAcceptance criteria:\n- CLI help includes examples and documents pagination flags.\n- Hermetic tests cover arg parsing and formatting glue; ignored live tests validate server behavior.\n- `make test` passes.\n\nPriority rationale:\n- Medium: meaningful workflow unlock with moderate effort.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "cli",
-        "feature",
-        "jobs"
-      ],
-      "scope": [
-        "crates/cli/src/commands/jobs.rs",
-        "crates/cli/src/args.rs",
-        "crates/client/src/client/search.rs",
-        "crates/cli/tests/",
-        "make test"
-      ],
-      "evidence": [
-        "crates/client/src/client/search.rs exposes get_search_results(sid, count, offset)",
-        "docs/usage.md lists jobs list/inspect/cancel/delete examples but no results retrieval"
-      ],
-      "plan": [
-        "Extend the CLI jobs command surface to include a `results` subcommand with count/offset/output flags.",
-        "Implement handler that calls `SplunkClient::get_search_results` and formats via existing formatter.",
-        "Add hermetic CLI tests for parsing + formatting integration; add `#[ignore]` live test for end-to-end.",
-        "Verify by running `make test` and ensuring CLI tests pass."
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-07T03:33:55Z",
-      "updated_at": "2026-02-07T03:33:55Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0391",
       "status": "todo",
       "title": "Refactor SplunkClient to allow concurrent API calls (remove TUI mutex bottleneck)",
@@ -116,8 +76,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "fail-fast"
+        "principle": "fail-fast",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
