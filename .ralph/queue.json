@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0367",
-      "status": "todo",
-      "title": "Extract duplicate format_bytes function to shared utility",
-      "description": "The format_bytes() function for human-readable byte formatting is duplicated in health.rs and license.rs with identical implementation. This utility should be extracted to a shared location for use across the TUI and potentially CLI.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "tui",
-        "refactor"
-      ],
-      "scope": [
-        "crates/tui/src/ui/screens/health.rs:252-269",
-        "crates/tui/src/ui/screens/license.rs:275-292"
-      ],
-      "evidence": [
-        "health.rs:252-269: fn format_bytes(bytes: u64) -> String with KB/MB/GB/TB logic",
-        "license.rs:275-292: Identical function with same constants and logic"
-      ],
-      "plan": [
-        "Create crates/tui/src/utils/format.rs or add to existing utils module",
-        "Extract format_bytes() with proper documentation",
-        "Remove duplicate from health.rs and license.rs",
-        "Add unit tests for the extracted function",
-        "Verify by running: 'cargo check -p splunk-tui' and 'cargo test -p splunk-tui'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
-      }
-    },
-    {
       "id": "RQ-0368",
       "status": "todo",
       "title": "Remove dead code: placeholder/empty resource_impls and xml files",
@@ -113,8 +74,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -152,8 +113,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     },
     {
@@ -191,8 +152,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -342,8 +303,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "YAGNI",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -413,8 +374,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "KISS"
+        "principle": "KISS",
+        "scan_agent": "scan-maintenance"
       }
     }
   ]

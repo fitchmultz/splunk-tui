@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
         "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "production_files_affected": "8",
+        "dead_code_count": "25",
         "scan_agent": "scan-maintenance",
-        "test_files_affected": "4",
-        "dead_code_count": "25"
+        "production_files_affected": "8",
+        "test_files_affected": "4"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "current_line_count": "867",
         "macro_already_adopted": "true",
+        "target_line_count": "300",
         "scan_agent": "scan-maintenance",
-        "target_line_count": "300"
+        "current_line_count": "867"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_methods": "35+",
+        "affected_formatters": "4",
         "scan_agent": "scan-maintenance",
-        "affected_formatters": "4"
+        "estimated_methods": "35+"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "action_variants": "94",
-        "current_line_count": "523",
         "scan_agent": "scan-maintenance",
+        "target_line_count": "150",
+        "current_line_count": "523",
         "submodule_count": "28",
-        "target_line_count": "150"
+        "action_variants": "94"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "estimated_method_count": "45",
-        "existing_macro_coverage": "4 methods total across all formatters",
         "formatter_count": "3",
-        "scan_agent": "scan-maintenance"
+        "existing_macro_coverage": "4 methods total across all formatters"
       }
     },
     {
@@ -4539,8 +4539,8 @@
       "relates_to": [],
       "custom_fields": {
         "command_files": "27",
-        "bail_usages": "18",
         "scan_agent": "scan-maintenance",
+        "bail_usages": "18",
         "with_context_usages": "120+"
       }
     },
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "file_count": "23",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
-        "screen_files": "22",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
+        "screen_files": "22"
       }
     },
     {
@@ -4681,9 +4681,9 @@
         "files_using_pattern_a": "26",
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "principle": "DRY",
         "scan_agent": "scan-maintenance",
-        "files_using_pattern_b": "2",
-        "principle": "DRY"
+        "files_using_pattern_b": "2"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "affected_screens": "25",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "widgets_dir_exists": "false",
         "scan_agent": "scan-maintenance",
         "principle": "DRY",
-        "widgets_dir_exists": "false",
-        "runner_used": "kimi",
         "lines_duplicated": "~400",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -4815,12 +4815,76 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY",
+        "duplication_count": "6 functions across 5 files",
         "files_with_duplicates": "5",
+        "model_used": "kimi-code/kimi-for-coding"
+      }
+    },
+    {
+      "id": "RQ-0367",
+      "status": "done",
+      "title": "Extract duplicate format_bytes function to shared utility",
+      "description": "The format_bytes() function for human-readable byte formatting is duplicated in FOUR locations across the TUI crate with identical implementation. This utility should be extracted to a shared location to eliminate code duplication and ensure consistent formatting across the codebase.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "tui",
+        "refactor"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/health.rs:241-259",
+        "crates/tui/src/ui/screens/license.rs:267-285",
+        "crates/tui/src/ui/screens/kvstore.rs:167-185",
+        "crates/tui/src/app/input/license.rs:71-89",
+        "crates/tui/src/lib.rs (add utils module)"
+      ],
+      "evidence": [
+        "health.rs:241-259: fn format_bytes(bytes: u64) -> String with KB/MB/GB/TB logic and tests",
+        "license.rs:267-285: Identical function with same constants and logic and tests",
+        "kvstore.rs:167-185: Identical function with same constants and logic and tests",
+        "app/input/license.rs:71-89: Fourth identical duplicate - this module is separate from ui/screens/license.rs",
+        "All 4 implementations use identical KB=1024, MB=KB*1024, GB=MB*1024, TB=GB*1024 constants",
+        "All 4 implementations use identical if-else chain with same formatting pattern",
+        "No existing utils module in crates/tui/src - needs to be created"
+      ],
+      "plan": [
+        "Create crates/tui/src/utils.rs with pub mod format submodule or add pub fn format_bytes directly",
+        "Add #[derive(Clone, Copy)] if needed and pub fn format_bytes(bytes: u64) -> String with documentation",
+        "Include comprehensive unit tests in the new module",
+        "Add pub mod utils to crates/tui/src/lib.rs",
+        "Remove duplicate format_bytes() from health.rs and update to use crate::utils::format::format_bytes",
+        "Remove duplicate format_bytes() from ui/screens/license.rs and update imports",
+        "Remove duplicate format_bytes() from kvstore.rs and update imports",
+        "Remove duplicate format_bytes() from app/input/license.rs and update imports",
+        "Verify by running: 'cargo check -p splunk-tui' and 'cargo test -p splunk-tui'"
+      ],
+      "notes": [
+        "Updated 2026-02-06: Found 2 additional duplicates not in original scope (kvstore.rs and app/input/license.rs)",
+        "Updated 2026-02-06: Original scope only listed 2 files but there are 4 total duplicates",
+        "Note: app/input/license.rs is distinct from ui/screens/license.rs - different modules serving different purposes",
+        "Extracted format_bytes() from 4 duplicate locations into new crates/tui/src/utils.rs module",
+        "All imports updated to use crate::utils::format_bytes",
+        "All 571 tests pass, doctests pass, cargo check passes"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T02:05:26.339024352Z",
+      "completed_at": "2026-02-07T02:05:26.339024352Z",
+      "started_at": "2026-02-07T01:53:49.707953364Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "affected_files": "4",
+        "duplicate_count": "4",
         "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "duplication_count": "6 functions across 5 files",
-        "principle": "DRY"
+        "principle": "DRY",
+        "runner_used": "kimi"
       }
     }
   ]
