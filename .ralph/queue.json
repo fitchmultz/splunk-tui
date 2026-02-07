@@ -1,4 +1,828 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0392",
+      "status": "todo",
+      "title": "Fix unused session_expiry_buffer_seconds field in SplunkClient",
+      "description": "The `session_expiry_buffer_seconds` field in `SplunkClient` struct (crates/client/src/client/mod.rs:137-138) is marked with `#[allow(dead_code)]` and never actually used. The session expiry logic in auth.rs uses the hardcoded `DEFAULT_EXPIRY_BUFFER_SECS` constant instead. This is misleading because users may think they're configuring a custom expiry buffer when it's actually not being used. Either remove the field if the hardcoded default is sufficient, or actually use the field value in the session expiry logic.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "dead-code",
+        "yagni",
+        "configuration"
+      ],
+      "scope": [
+        "crates/client/src/client/mod.rs",
+        "crates/client/src/auth.rs",
+        "crates/client/src/client/builder.rs"
+      ],
+      "evidence": [
+        "File: crates/client/src/client/mod.rs, lines 137-138: #[allow(dead_code)] pub(crate) session_expiry_buffer_seconds: u64",
+        "The field flows through config -> builder -> client but client never references it for actual logic",
+        "auth.rs uses hardcoded DEFAULT_EXPIRY_BUFFER_SECS constant instead"
+      ],
+      "plan": [
+        "Investigate how session_expiry_buffer_seconds is intended to be used",
+        "Either remove the field and #[allow(dead_code)] from SplunkClient, OR",
+        "Update auth.rs to use self.session_expiry_buffer_seconds instead of the constant",
+        "Verify by running `make ci` and ensuring no dead_code warnings"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0393",
+      "status": "todo",
+      "title": "Extract duplicated delete confirmation prompt into shared helper",
+      "description": "The delete confirmation prompt pattern is duplicated across 7 CLI command files with nearly identical code. This violates DRY and creates maintenance burden when changing the confirmation UX. Create a shared helper function like `confirm_delete(resource_name: &str) -> Result<bool>` in a utility module.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "dry",
+        "refactoring",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/indexes.rs",
+        "crates/cli/src/commands/users.rs",
+        "crates/cli/src/commands/roles.rs",
+        "crates/cli/src/commands/lookups.rs",
+        "crates/cli/src/commands/kvstore.rs",
+        "crates/cli/src/commands/saved_searches.rs",
+        "crates/cli/src/commands/macros.rs"
+      ],
+      "evidence": [
+        "Pattern repeated in 7 files with slight variations:",
+        "crates/cli/src/commands/indexes.rs:346-356",
+        "crates/cli/src/commands/users.rs:263-273",
+        "crates/cli/src/commands/roles.rs:290-300",
+        "crates/cli/src/commands/lookups.rs:264-274",
+        "crates/cli/src/commands/kvstore.rs:312-322",
+        "crates/cli/src/commands/saved_searches.rs:386-396",
+        "crates/cli/src/commands/macros.rs:386-396"
+      ],
+      "plan": [
+        "Create a new utility module or use existing formatters/common.rs",
+        "Implement confirm_delete(resource_name: &str) -> Result<bool> helper",
+        "Replace all 7 occurrences with calls to the helper",
+        "Verify by running `make test-unit` and `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0394",
+      "status": "todo",
+      "title": "Unify CLI pagination flag names (--count vs --page-size vs --job-count)",
+      "description": "Similar commands use inconsistent flag names for pagination limits. Most commands use `--count`, but cluster and SHC commands use `--page-size`, and jobs uses `--job-count`. This inconsistency violates the principle of least astonishment and makes the CLI harder to learn. Standardize on `--count` with `--limit` as an alias where appropriate.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/commands/shc.rs",
+        "crates/cli/src/commands/jobs.rs"
+      ],
+      "evidence": [
+        "indexes list uses: --count (default 30)",
+        "forwarders uses: --count (default 30)",
+        "search-peers uses: --count (default 30)",
+        "jobs uses: --job-count (default 50)",
+        "logs uses: --count (default 50)",
+        "cluster show uses: --page-size (default 50)",
+        "shc show uses: --page-size (default 50)",
+        "workload uses: --count (default 30)"
+      ],
+      "plan": [
+        "Decide on standard flag name (--count with --limit alias recommended)",
+        "Update cluster.rs and shc.rs to use --count instead of --page-size",
+        "Update jobs.rs to use --count instead of --job-count",
+        "Add hidden aliases for backward compatibility",
+        "Update documentation in docs/usage.md",
+        "Verify by running `make ci` and checking --help output"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0395",
+      "status": "todo",
+      "title": "Fix error messages starting with flags in cluster.rs, shc.rs, and logs.rs",
+      "description": "Error messages in several CLI command files violate the AGENTS.md style guide by starting with flag names. According to the guide: 'Start with capital letter' and avoid patterns like '--page-size must be greater than 0'. The messages use 'The --page-size value...' which still starts with a flag reference. Rewrite to follow the 'Action-Oriented' pattern like 'The value for --page-size must be greater than 0'.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "error-messages",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/commands/shc.rs",
+        "crates/cli/src/commands/logs.rs"
+      ],
+      "evidence": [
+        "crates/cli/src/commands/shc.rs:229 - 'The --page-size value must be greater than 0'",
+        "crates/cli/src/commands/shc.rs:293 - 'The --page-size value must be greater than 0'",
+        "crates/cli/src/commands/cluster.rs:232 - 'The --page-size value must be greater than 0'",
+        "crates/cli/src/commands/cluster.rs:297 - 'The --page-size value must be greater than 0'",
+        "crates/cli/src/commands/logs.rs:93 - 'The --output-file option cannot be used with --tail mode'"
+      ],
+      "plan": [
+        "Rewrite error messages to follow AGENTS.md guidelines",
+        "Use patterns like: 'The value for --page-size must be greater than 0'",
+        "Use patterns like: 'The --output-file option cannot be used with --tail mode' -> 'Cannot use output file in tail mode'",
+        "Verify by running `make lint` and checking for style consistency"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0396",
+      "status": "todo",
+      "title": "Unify default values between CLI args and config constants",
+      "description": "Default values for similar settings are inconsistent between CLI arguments and the centralized constants in crates/config/src/constants.rs. For example, CLI list commands default to 30-50 items while the TUI uses DEFAULT_LIST_PAGE_SIZE=100. This creates confusion and maintenance burden. All defaults should flow from the centralized constants.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "dry",
+        "configuration",
+        "consistency"
+      ],
+      "scope": [
+        "crates/cli/src/args.rs",
+        "crates/cli/src/commands/*.rs",
+        "crates/config/src/constants.rs"
+      ],
+      "evidence": [
+        "DEFAULT_LIST_PAGE_SIZE = 100 in constants.rs, but CLI uses 30",
+        "DEFAULT_INTERNAL_LOGS_COUNT = 100 in constants.rs, but CLI args use 50",
+        "DEFAULT_MAX_RESULTS = 1000 in constants.rs, but saved-searches run uses 100",
+        "16+ files have hardcoded default_value = '30' or '50' instead of using constants"
+      ],
+      "plan": [
+        "Export constants from config crate for use in CLI",
+        "Update all CLI arg definitions to use constant references",
+        "Ensure TUI and CLI use identical defaults",
+        "Add architecture test to prevent hardcoded defaults",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0397",
+      "status": "todo",
+      "title": "Add proper error context to file operations in doctor.rs bundle generation",
+      "description": "File operations in doctor.rs bundle generation use `?` without `.context()` to provide user-friendly error messages. When operations like create_dir_all, File::create, or zip operations fail, users get low-level error messages without context about what operation was being attempted.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "error-handling",
+        "operability",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/doctor.rs"
+      ],
+      "evidence": [
+        "Line 350: fs::create_dir_all(&bundle_dir)?;",
+        "Line 353: File::create(&bundle_path)?;",
+        "Line 359: zip.start_file(...)?;",
+        "Line 361: zip.write_all(...)?;",
+        "Line 365-366: File::create/read operations",
+        "Lines 433, 445: fs::metadata, fs::read_to_string without context"
+      ],
+      "plan": [
+        "Add .context() calls to all file operations in doctor.rs",
+        "Use patterns like: .context('Failed to create diagnostic bundle directory')",
+        "Ensure error messages follow AGENTS.md style guide",
+        "Verify by running `make ci` and testing doctor command"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0398",
+      "status": "todo",
+      "title": "Convert stringly-typed model fields to proper enums",
+      "description": "Multiple model files use String types for fields that have a fixed set of valid values. This makes bugs harder to prevent and reduces type safety. Create proper enums for status fields, severity levels, log levels, and other categorical data.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "type-safety",
+        "refactoring",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/models/alerts.rs",
+        "crates/client/src/models/cluster.rs",
+        "crates/client/src/models/inputs.rs",
+        "crates/client/src/models/server.rs",
+        "crates/client/src/models/logs.rs",
+        "crates/client/src/models/license.rs"
+      ],
+      "evidence": [
+        "alerts.rs: severity: Option<String> - should be Severity enum",
+        "cluster.rs: mode: String, status: String - should be ClusterMode, PeerStatus enums",
+        "inputs.rs: input_type: String - should be InputType enum",
+        "server.rs: health: String, status: String - should be HealthStatus enum",
+        "logs.rs: log_level: String - should be LogLevel enum",
+        "license.rs: license_type: String - should be LicenseType enum"
+      ],
+      "plan": [
+        "Define enums for each categorical field type",
+        "Implement Serialize/Deserialize for each enum",
+        "Update model structs to use new enum types",
+        "Update formatters and UI code to handle enums",
+        "Add tests for serialization/deserialization",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0399",
+      "status": "todo",
+      "title": "Fix inconsistent empty/null value rendering across formatters",
+      "description": "Empty optional values are rendered inconsistently across output formats. Table formatters use 'N/A' for missing values, while XML formatters use empty strings. This inconsistency could confuse users parsing output programmatically. Standardize on a single representation for missing values across all formatters.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "formatters",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/table/*.rs",
+        "crates/cli/src/formatters/xml/*.rs",
+        "crates/cli/src/formatters/csv/*.rs"
+      ],
+      "evidence": [
+        "Table formatters use 'N/A': indexes.rs:32,38-41, forwarders.rs:32-35, jobs.rs:68-77",
+        "XML formatter uses empty strings: xml/mod.rs:536,580 (unwrap_or(''))",
+        "Same data renders differently depending on output format",
+        "No documented standard for representing missing values"
+      ],
+      "plan": [
+        "Decide on standard representation for missing values (recommend 'N/A' or empty string consistently)",
+        "Update all formatters to use the same representation",
+        "Document the standard in formatter module documentation",
+        "Update tests to verify consistent behavior",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0400",
+      "status": "todo",
+      "title": "Update documentation to match actual CLI implementation",
+      "description": "README.md and docs/usage.md contain outdated command syntax that doesn't match the actual implementation. The docs show deprecated flat-flag syntax (e.g., 'indexes --detailed') but the actual CLI uses subcommands ('indexes list --detailed'). Additionally, many subcommands like 'indexes create/delete', 'cluster peers', and 'saved-searches create/delete' are not documented at all.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "documentation",
+        "consistency",
+        "ux"
+      ],
+      "scope": [
+        "README.md",
+        "docs/usage.md",
+        "docs/user-guide.md"
+      ],
+      "evidence": [
+        "README.md lines 96-99: 'splunk-cli indexes --detailed' should be 'splunk-cli indexes list --detailed'",
+        "docs/usage.md lines 536-543: Same deprecated syntax",
+        "Missing docs for: indexes create/modify/delete",
+        "Missing docs for: cluster peers/maintenance/rebalance",
+        "Missing docs for: saved-searches create/delete/enable/disable",
+        "Missing env var: SPLUNK_HEALTH_CHECK_INTERVAL in docs table"
+      ],
+      "plan": [
+        "Update README.md with correct command syntax",
+        "Update docs/usage.md with all supported subcommands",
+        "Add missing environment variable documentation",
+        "Run `make generate` to regenerate keybinding docs",
+        "Run `make lint-docs` to verify docs are in sync",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0401",
+      "status": "todo",
+      "title": "Replace hardcoded page size values in TUI side effects with constants",
+      "description": "TUI side effect handlers use hardcoded page size values of 100 instead of referencing DEFAULT_LIST_PAGE_SIZE from the constants module. This creates inconsistency between TUI and the centralized configuration and makes it harder to change the default globally.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "dry",
+        "configuration",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/jobs.rs",
+        "crates/tui/src/runtime/side_effects/indexes.rs",
+        "crates/tui/src/runtime/side_effects/apps.rs",
+        "crates/tui/src/runtime/side_effects/*.rs"
+      ],
+      "evidence": [
+        "jobs.rs:59,92,148,192 - count: 100 (hardcoded)",
+        "indexes.rs:71,111,146 - count: 100 (hardcoded)",
+        "apps.rs:60,93,126,159 - count: 100 (hardcoded)",
+        "DEFAULT_LIST_PAGE_SIZE = 100 exists in crates/config/src/constants.rs:79"
+      ],
+      "plan": [
+        "Import DEFAULT_LIST_PAGE_SIZE from config crate in side effect modules",
+        "Replace all hardcoded 'count: 100' with 'count: DEFAULT_LIST_PAGE_SIZE'",
+        "Check for other hardcoded pagination values in side effects",
+        "Verify by running `make ci` and `make test-unit`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0402",
+      "status": "todo",
+      "title": "Fix dangerous as i32 cast in serde_helpers.rs that truncates floats",
+      "description": "The StringOrNumber deserialization helper uses `as i32` to convert f64 to i32, which silently truncates decimal values. This can lead to data loss and unexpected behavior. Replace with proper error handling using try_from or explicit rounding.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "type-safety",
+        "correctness",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/serde_helpers.rs"
+      ],
+      "evidence": [
+        "Line 71: Some(StringOrNumber::F64(v)) => Ok(Some(v as i32))",
+        "Silent truncation of floating-point values",
+        "Should use try_from or proper error handling"
+      ],
+      "plan": [
+        "Replace 'v as i32' with i32::try_from(v as i64)",
+        "Add proper error handling for out-of-range values",
+        "Add test cases for float truncation edge cases",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0403",
+      "status": "todo",
+      "title": "Add debug logging to CLI dispatch module",
+      "description": "The dispatch module (crates/cli/src/dispatch.rs) routes all CLI commands but has zero logging. This makes it difficult to debug command routing issues and understand execution flow. Add appropriate trace/debug logging for command routing decisions.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "operability",
+        "logging",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/dispatch.rs"
+      ],
+      "evidence": [
+        "dispatch.rs has no info!, debug!, or trace! statements",
+        "Command routing decisions are invisible in logs",
+        "Makes debugging routing issues difficult"
+      ],
+      "plan": [
+        "Add trace! logging for each command dispatch path",
+        "Add debug! logging for command execution start/completion",
+        "Follow existing logging patterns from other modules",
+        "Verify by running CLI with RUST_LOG=debug and checking output"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0404",
+      "status": "todo",
+      "title": "Unify serde naming convention (camelCase vs snake_case)",
+      "description": "Model files use inconsistent naming conventions in serde rename attributes. Some fields use camelCase (isDone, maxTotalDataSizeMB) while others use snake_case (is_configured, is_captain). This inconsistency should be standardized, preferably using the Splunk API's native naming (camelCase) consistently.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "serialization",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/models/*.rs"
+      ],
+      "evidence": [
+        "jobs.rs: isDone (camelCase)",
+        "apps.rs: is_configured (snake_case)",
+        "cluster.rs: is_captain (snake_case)",
+        "indexes.rs: maxTotalDataSizeMB (camelCase)",
+        "Mixed conventions within same model files"
+      ],
+      "plan": [
+        "Document the naming convention standard (match Splunk API)",
+        "Audit all model files for naming consistency",
+        "Update inconsistent rename attributes",
+        "Verify serialization tests still pass",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0405",
+      "status": "todo",
+      "title": "Add user feedback for silent parse failures in popup handlers",
+      "description": "Profile popup handlers silently ignore parse failures when users enter invalid values. For example, when parsing timeout values, if parse fails, the code does nothing (empty match arm). Users get no feedback that their input was invalid. Add error feedback or validation.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "ux",
+        "error-handling",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/app/popups/profile.rs",
+        "crates/tui/src/app/popups/*.rs"
+      ],
+      "evidence": [
+        "profile.rs: Err(_) => {} // Silent parse failure",
+        "Multiple field update handlers ignore parse errors",
+        "User enters invalid value, sees no feedback",
+        "Fields may appear to accept input but don't change"
+      ],
+      "plan": [
+        "Add toast notifications for parse failures",
+        "Show inline validation errors in popup fields",
+        "Consider preventing invalid input at input handling level",
+        "Verify by running TUI and testing invalid input"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0406",
+      "status": "todo",
+      "title": "Create shared output writing helper for CLI commands",
+      "description": "The output writing pattern is duplicated across 40+ locations in CLI command files. Each command repeats the same logic for writing to file vs stdout with error handling. Create a unified helper function like `output_result(formatter, format, output_file)` to eliminate this duplication.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "refactoring",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/*.rs",
+        "crates/cli/src/formatters/mod.rs"
+      ],
+      "evidence": [
+        "Pattern repeated 40+ times across command files:",
+        "if let Some(ref path) = output_file {",
+        "    write_to_file(&output, path)",
+        "        .with_context(|| format!(\"Failed to write output to {}\", path.display()))?;",
+        "    eprintln!(\"Results written to {} ({:?} format)\", path.display(), format);",
+        "} else { print!(\"{}\", output); }"
+      ],
+      "plan": [
+        "Add output_result() helper to formatters module",
+        "Helper should handle both file and stdout output",
+        "Include proper error context and user feedback",
+        "Refactor all command files to use the helper",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0407",
+      "status": "todo",
+      "title": "Fix hardcoded timeout in overview_fetch.rs to use FETCH_TIMEOUT constant",
+      "description": "The overview_fetch.rs file has a hardcoded 30-second timeout in an error message instead of using the FETCH_TIMEOUT constant defined at the top of the file. This creates inconsistency if the constant is changed but the error message isn't updated.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "configuration",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/overview_fetch.rs"
+      ],
+      "evidence": [
+        "Line 21: const FETCH_TIMEOUT: Duration = Duration::from_secs(30);",
+        "Line 222: let error = ClientError::Timeout(std::time::Duration::from_secs(30));",
+        "Hardcoded value should reference FETCH_TIMEOUT constant"
+      ],
+      "plan": [
+        "Replace Duration::from_secs(30) with FETCH_TIMEOUT",
+        "Check for other hardcoded timeouts in side effects",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0408",
+      "status": "todo",
+      "title": "Standardize warn! message patterns across CLI commands",
+      "description": "Some warn! calls in CLI commands don't follow the AGENTS.md specified pattern of 'Failed to {action}'. While many commands use the correct pattern, some variations exist. Standardize all warning messages to follow the documented pattern.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "logging",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/commands/shc.rs",
+        "crates/cli/src/commands/health.rs"
+      ],
+      "evidence": [
+        "cluster.rs:179 - warn!(\"Failed to fetch cluster peers: {}\", e) - correct",
+        "shc.rs:175 - warn!(\"Failed to fetch SHC members: {}\", e) - correct",
+        "health.rs:43 - warn!(\"Failed to fetch {}: {}\", endpoint, err) - correct",
+        "Most warnings actually follow the pattern - this is a verification/audit task"
+      ],
+      "plan": [
+        "Audit all warn! calls in CLI command files",
+        "Update any that don't follow 'Failed to {action}' pattern",
+        "Add comment in AGENTS.md if additional patterns are acceptable",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0409",
+      "status": "todo",
+      "title": "Create macro or wrapper for tokio::select! cancellation pattern",
+      "description": "The tokio::select! cancellation pattern is repeated 60+ times across CLI command files with nearly identical code. This pattern combines an API call with a cancellation token check. Create a macro or wrapper function to handle this consistently and reduce code duplication.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "refactoring",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/src/commands/cluster.rs",
+        "crates/cli/src/commands/license.rs",
+        "crates/cli/src/commands/*.rs"
+      ],
+      "evidence": [
+        "Pattern repeated 60+ times:",
+        "let result = tokio::select! {",
+        "    res = client.some_api_call() => res?,",
+        "    _ = cancel.cancelled() => return Err(Cancelled.into()),",
+        "};"
+      ],
+      "plan": [
+        "Create a macro like retry_call! for cancellation handling",
+        "Or create a wrapper function that takes a future and cancellation token",
+        "Refactor all 60+ occurrences to use the new abstraction",
+        "Ensure the abstraction preserves error types correctly",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0410",
+      "status": "todo",
+      "title": "Create shared form parameter builder for endpoint modules",
+      "description": "Endpoint modules repeat the same pattern for building form parameters with repetitive if let Some() blocks. This pattern appears 20+ times across endpoint files with slight variations. Create a macro or builder pattern to reduce this duplication.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "refactoring",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/indexes.rs",
+        "crates/client/src/endpoints/users.rs",
+        "crates/client/src/endpoints/roles.rs"
+      ],
+      "evidence": [
+        "Pattern repeated with slight variations:",
+        "if let Some(max_data_size) = params.max_data_size_mb {",
+        "    form_params.push(('maxTotalDataSizeMB'.to_string(), max_data_size.to_string()));",
+        "}",
+        "Duplicated within indexes.rs at lines 70-96 and 153-179"
+      ],
+      "plan": [
+        "Create a macro or helper for form parameter construction",
+        "Helper should handle Option<T> to form param conversion",
+        "Handle serde rename attribute lookup automatically if possible",
+        "Refactor endpoint files to use the helper",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0411",
+      "status": "todo",
+      "title": "Fix timestamp formatting in error_details.rs to use proper time formatting",
+      "description": "The error_details.rs file uses format!(\"{:?}\", std::time::SystemTime::now()) for timestamp serialization, which produces a Debug representation instead of a properly formatted timestamp. Replace with chrono for consistent, readable timestamps.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "type-safety",
+        "operability",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/error_details.rs"
+      ],
+      "evidence": [
+        "Line 45: timestamp: format!(\"{:?}\", std::time::SystemTime::now())",
+        "Uses Debug format instead of proper time formatting",
+        "Produces timestamps like 'SystemTime { tv_sec: 1234567890, tv_nsec: 123456789 }'",
+        "Should use ISO 8601 or RFC 3339 format"
+      ],
+      "plan": [
+        "Replace SystemTime::now() with chrono::Local::now() or chrono::Utc::now()",
+        "Use to_rfc3339() or custom format string for readable timestamps",
+        "Update any tests that depend on timestamp format",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-07T14:43:17Z",
+      "updated_at": "2026-02-07T14:43:17Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    }
+  ]
 }
