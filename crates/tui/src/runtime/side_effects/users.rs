@@ -24,8 +24,7 @@ use super::SharedClient;
 pub async fn handle_load_users(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_users(Some(count), Some(offset)).await {
+        match client.list_users(Some(count), Some(offset)).await {
             Ok(users) => {
                 if offset == 0 {
                     let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
@@ -52,8 +51,7 @@ pub async fn handle_create_user(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.create_user(&params).await {
+        match client.create_user(&params).await {
             Ok(user) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -93,8 +91,7 @@ pub async fn handle_modify_user(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.modify_user(&name, &params).await {
+        match client.modify_user(&name, &params).await {
             Ok(user) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -129,8 +126,7 @@ pub async fn handle_modify_user(
 pub async fn handle_delete_user(client: SharedClient, tx: Sender<Action>, name: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.delete_user(&name).await {
+        match client.delete_user(&name).await {
             Ok(()) => {
                 let _ = tx
                     .send(Action::Notify(

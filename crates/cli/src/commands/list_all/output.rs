@@ -98,7 +98,7 @@ async fn fetch_single_profile_resources(
     };
 
     // Build Splunk client
-    let mut client = match splunk_client::SplunkClient::builder()
+    let client = match splunk_client::SplunkClient::builder()
         .base_url(base_url.clone())
         .auth_strategy(auth_strategy)
         .skip_verify(profile_config.skip_verify.unwrap_or(false))
@@ -121,7 +121,7 @@ async fn fetch_single_profile_resources(
     };
 
     // Fetch resources
-    match fetch_all_resources(&mut client, resource_types, cancel).await {
+    match fetch_all_resources(&client, resource_types, cancel).await {
         Ok(resources) => ProfileResult {
             profile_name,
             base_url,

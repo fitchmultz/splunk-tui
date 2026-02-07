@@ -84,7 +84,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing dashboards (count: {}, offset: {})", count, offset);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 =
         u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
@@ -148,7 +148,7 @@ async fn run_view(
 ) -> Result<()> {
     info!("Viewing dashboard: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let dashboard = tokio::select! {
         res = client.get_dashboard(name) => res?,

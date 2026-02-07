@@ -138,7 +138,7 @@ async fn run_list(
     output_file: Option<std::path::PathBuf>,
     cancel_token: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Listing lookup tables");
     let lookups = tokio::select! {
@@ -175,7 +175,7 @@ async fn run_download(
     owner: Option<String>,
     cancel_token: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Downloading lookup table: {}", name);
     let content = tokio::select! {
@@ -230,7 +230,7 @@ async fn run_upload(
         .context("Failed to determine filename from path")?
         .to_string();
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::UploadLookupParams {
         name: lookup_name.clone(),
@@ -276,7 +276,7 @@ async fn run_delete(
 
     info!("Deleting lookup table: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_lookup_table(name, app.as_deref(), owner.as_deref()) => {

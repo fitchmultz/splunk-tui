@@ -22,8 +22,7 @@ pub async fn handle_load_internal_logs(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_internal_logs(count, Some(&earliest)).await {
+        match client.get_internal_logs(count, Some(&earliest)).await {
             Ok(logs) => {
                 let _ = tx.send(Action::InternalLogsLoaded(Ok(logs))).await;
             }

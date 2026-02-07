@@ -33,8 +33,7 @@ fn redact_query_for_log(query: &str) -> String {
 pub async fn handle_load_saved_searches(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_saved_searches(None, None).await {
+        match client.list_saved_searches(None, None).await {
             Ok(searches) => {
                 let _ = tx.send(Action::SavedSearchesLoaded(Ok(searches))).await;
             }
@@ -86,8 +85,6 @@ pub async fn handle_run_search(
     let tx_clone = tx.clone();
     let query_clone = query.clone();
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-
         // Create progress callback that sends Action::Progress via channel
         let progress_tx = tx_clone.clone();
         let mut progress_callback = progress_callback_to_action_sender(progress_tx);
@@ -104,7 +101,7 @@ pub async fn handle_run_search(
         };
 
         // Use search_with_progress for unified timeout and progress handling
-        match c
+        match client
             .search_with_progress(request, Some(&mut progress_callback))
             .await
         {
@@ -141,8 +138,7 @@ pub async fn handle_load_more_search_results(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_search_results(&sid, count, offset).await {
+        match client.get_search_results(&sid, count, offset).await {
             Ok(results) => {
                 let _ = tx
                     .send(Action::MoreSearchResultsLoaded(Ok((
@@ -186,9 +182,7 @@ pub async fn handle_validate_spl(
     }
 
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-
-        match c.validate_spl(&search).await {
+        match client.validate_spl(&search).await {
             Ok(result) => {
                 let _ = tx
                     .send(Action::SplValidationResult {
@@ -229,8 +223,7 @@ pub async fn handle_update_saved_search(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c
+        match client
             .update_saved_search(&name, search.as_deref(), description.as_deref(), disabled)
             .await
         {
@@ -255,14 +248,12 @@ pub async fn handle_create_saved_search(
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-
         // First create the saved search
-        match guard.create_saved_search(&name, &search).await {
+        match client.create_saved_search(&name, &search).await {
             Ok(()) => {
                 // If description or disabled provided, update the saved search
                 if description.is_some() || disabled {
-                    match guard
+                    match client
                         .update_saved_search(&name, None, description.as_deref(), Some(disabled))
                         .await
                     {
@@ -303,8 +294,7 @@ pub async fn handle_delete_saved_search(
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard.delete_saved_search(&name).await {
+        match client.delete_saved_search(&name).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::SavedSearchDeleted(Ok(name))).await;
                 // Refresh saved searches list on success
@@ -328,8 +318,7 @@ pub async fn handle_toggle_saved_search(
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard
+        match client
             .update_saved_search(&name, None, None, Some(disabled))
             .await
         {

@@ -21,7 +21,7 @@ impl SplunkClient {
     /// Returns CSV-based lookup files stored in Splunk.
     /// KV store lookups are managed via a different endpoint.
     pub async fn list_lookup_tables(
-        &mut self,
+        &self,
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<LookupTable>> {
@@ -51,7 +51,7 @@ impl SplunkClient {
     /// # Returns
     /// The raw CSV content as a string
     pub async fn download_lookup_table(
-        &mut self,
+        &self,
         name: &str,
         app: Option<&str>,
         owner: Option<&str>,
@@ -83,10 +83,7 @@ impl SplunkClient {
     ///
     /// # Returns
     /// The created/updated lookup table metadata
-    pub async fn upload_lookup_table(
-        &mut self,
-        params: &UploadLookupParams,
-    ) -> Result<LookupTable> {
+    pub async fn upload_lookup_table(&self, params: &UploadLookupParams) -> Result<LookupTable> {
         // Get auth token (no retry for upload due to body consumption)
         let token = self.get_auth_token().await?;
         endpoints::upload_lookup_table(
@@ -107,7 +104,7 @@ impl SplunkClient {
     /// * `app` - Optional app namespace (defaults to "search")
     /// * `owner` - Optional owner namespace (defaults to "-" for all users)
     pub async fn delete_lookup_table(
-        &mut self,
+        &self,
         name: &str,
         app: Option<&str>,
         owner: Option<&str>,

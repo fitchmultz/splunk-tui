@@ -23,8 +23,7 @@ use super::SharedClient;
 pub async fn handle_load_apps(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_apps(Some(count), Some(offset)).await {
+        match client.list_apps(Some(count), Some(offset)).await {
             Ok(apps) => {
                 if offset == 0 {
                     let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
@@ -47,8 +46,7 @@ pub async fn handle_load_apps(client: SharedClient, tx: Sender<Action>, count: u
 pub async fn handle_enable_app(client: SharedClient, tx: Sender<Action>, name: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.enable_app(&name).await {
+        match client.enable_app(&name).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -81,8 +79,7 @@ pub async fn handle_enable_app(client: SharedClient, tx: Sender<Action>, name: S
 pub async fn handle_disable_app(client: SharedClient, tx: Sender<Action>, name: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.disable_app(&name).await {
+        match client.disable_app(&name).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -115,8 +112,7 @@ pub async fn handle_disable_app(client: SharedClient, tx: Sender<Action>, name: 
 pub async fn handle_install_app(client: SharedClient, tx: Sender<Action>, file_path: PathBuf) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.install_app(&file_path).await {
+        match client.install_app(&file_path).await {
             Ok(app) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -149,8 +145,7 @@ pub async fn handle_install_app(client: SharedClient, tx: Sender<Action>, file_p
 pub async fn handle_remove_app(client: SharedClient, tx: Sender<Action>, name: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.remove_app(&name).await {
+        match client.remove_app(&name).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::Notify(

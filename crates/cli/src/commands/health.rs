@@ -28,7 +28,7 @@ pub async fn run(
 ) -> Result<()> {
     info!("Performing health check...");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Connecting to {}", client.base_url());
 

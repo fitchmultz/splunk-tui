@@ -101,8 +101,8 @@ pub async fn run_single_profile(
     let resources_to_fetch = normalize_and_validate_resources(resources_filter)?;
 
     // Build client and fetch resources
-    let mut client = build_client_from_config(&config)?;
-    let resources = fetchers::fetch_all_resources(&mut client, resources_to_fetch, cancel).await?;
+    let client = build_client_from_config(&config)?;
+    let resources = fetchers::fetch_all_resources(&client, resources_to_fetch, cancel).await?;
 
     // Build output structure
     let results = ListAllMultiOutput {

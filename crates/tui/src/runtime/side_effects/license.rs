@@ -23,8 +23,6 @@ use super::SharedClient;
 pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-
         // Collect license data from all three endpoints
         let mut license_data = LicenseData {
             usage: Vec::new(),
@@ -35,7 +33,7 @@ pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
         let mut first_error: Option<ClientError> = None;
 
         // Fetch license usage
-        match c.get_license_usage().await {
+        match client.get_license_usage().await {
             Ok(usage) => license_data.usage = usage,
             Err(e) => {
                 if first_error.is_none() {
@@ -45,7 +43,7 @@ pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
         }
 
         // Fetch license pools
-        match c.list_license_pools().await {
+        match client.list_license_pools().await {
             Ok(pools) => license_data.pools = pools,
             Err(e) => {
                 if first_error.is_none() {
@@ -55,7 +53,7 @@ pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
         }
 
         // Fetch license stacks
-        match c.list_license_stacks().await {
+        match client.list_license_stacks().await {
             Ok(stacks) => license_data.stacks = stacks,
             Err(e) => {
                 if first_error.is_none() {
@@ -79,8 +77,7 @@ pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
 /// Handle installing a license file.
 pub async fn handle_install_license(client: SharedClient, file_path: PathBuf, tx: Sender<Action>) {
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        let result = c.install_license(&file_path).await;
+        let result = client.install_license(&file_path).await;
         let _ = tx
             .send(Action::LicenseInstalled(result.map_err(Arc::new)))
             .await;
@@ -94,8 +91,7 @@ pub async fn handle_create_license_pool(
     tx: Sender<Action>,
 ) {
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        let result = c.create_license_pool(&params).await;
+        let result = client.create_license_pool(&params).await;
         let _ = tx
             .send(Action::LicensePoolCreated(result.map_err(Arc::new)))
             .await;
@@ -110,8 +106,7 @@ pub async fn handle_modify_license_pool(
     tx: Sender<Action>,
 ) {
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        let result = c.modify_license_pool(&name, &params).await;
+        let result = client.modify_license_pool(&name, &params).await;
         let _ = tx
             .send(Action::LicensePoolModified(result.map_err(Arc::new)))
             .await;
@@ -121,8 +116,7 @@ pub async fn handle_modify_license_pool(
 /// Handle deleting a license pool.
 pub async fn handle_delete_license_pool(client: SharedClient, name: String, tx: Sender<Action>) {
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        let result = c.delete_license_pool(&name).await;
+        let result = client.delete_license_pool(&name).await;
         let _ = tx
             .send(Action::LicensePoolDeleted(
                 result.map(|_| name).map_err(Arc::new),
@@ -134,8 +128,7 @@ pub async fn handle_delete_license_pool(client: SharedClient, name: String, tx: 
 /// Handle activating a license.
 pub async fn handle_activate_license(client: SharedClient, name: String, tx: Sender<Action>) {
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        let result = c.activate_license(&name).await;
+        let result = client.activate_license(&name).await;
         let _ = tx
             .send(Action::LicenseActivated(result.map_err(Arc::new)))
             .await;
@@ -145,8 +138,7 @@ pub async fn handle_activate_license(client: SharedClient, name: String, tx: Sen
 /// Handle deactivating a license.
 pub async fn handle_deactivate_license(client: SharedClient, name: String, tx: Sender<Action>) {
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        let result = c.deactivate_license(&name).await;
+        let result = client.deactivate_license(&name).await;
         let _ = tx
             .send(Action::LicenseDeactivated(result.map_err(Arc::new)))
             .await;

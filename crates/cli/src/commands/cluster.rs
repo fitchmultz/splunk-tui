@@ -297,7 +297,7 @@ async fn run_peers(
         anyhow::bail!("The --page-size value must be greater than 0");
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let peers_result = tokio::select! {
         res = client.get_cluster_peers() => res,
@@ -354,7 +354,7 @@ async fn run_maintenance(
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     match command {
         MaintenanceCommand::Enable => {
@@ -411,7 +411,7 @@ async fn run_rebalance(
 ) -> Result<()> {
     info!("Rebalancing cluster primaries");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let result = tokio::select! {
         res = client.rebalance_cluster() => res,
@@ -430,7 +430,7 @@ async fn run_peers_manage(
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     match command {
         PeersCommand::Decommission { peer } => {

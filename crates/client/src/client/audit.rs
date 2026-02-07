@@ -15,7 +15,7 @@ use crate::models::audit::{AuditEvent, ListAuditEventsParams};
 impl SplunkClient {
     /// List audit events with optional filters.
     pub async fn list_audit_events(
-        &mut self,
+        &self,
         params: &ListAuditEventsParams,
     ) -> Result<Vec<AuditEvent>> {
         crate::retry_call!(
@@ -34,7 +34,7 @@ impl SplunkClient {
     }
 
     /// Get recent audit events from the last 24 hours.
-    pub async fn get_recent_audit_events(&mut self, count: u64) -> Result<Vec<AuditEvent>> {
+    pub async fn get_recent_audit_events(&self, count: u64) -> Result<Vec<AuditEvent>> {
         crate::retry_call!(
             self,
             __token,

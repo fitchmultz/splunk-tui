@@ -30,8 +30,7 @@ pub async fn handle_load_lookups(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard
+        match client
             .list_lookup_tables(Some(count as u32), Some(offset as u32))
             .await
         {
@@ -68,8 +67,7 @@ pub async fn handle_download_lookup(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard
+        match client
             .download_lookup_table(&name, app.as_deref(), owner.as_deref())
             .await
         {
@@ -109,8 +107,7 @@ pub async fn handle_delete_lookup(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard
+        match client
             .delete_lookup_table(&name, app.as_deref(), owner.as_deref())
             .await
         {

@@ -40,7 +40,7 @@ async fn test_error_chain_no_secret_exposure() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -125,7 +125,7 @@ async fn test_session_rotation_no_token_exposure() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -163,7 +163,7 @@ async fn test_connection_refused_no_secret_exposure() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url("http://localhost:1".to_string()) // Connection refused
         .auth_strategy(strategy)
         .timeout(std::time::Duration::from_millis(100))
@@ -203,7 +203,7 @@ async fn test_tls_error_no_secret_exposure() {
     };
 
     // Build client with TLS verification enabled
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url("https://localhost:1".to_string()) // Will fail TLS/connect
         .auth_strategy(strategy)
         .skip_verify(false)
@@ -253,7 +253,7 @@ async fn test_not_found_no_secret_exposure() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -344,7 +344,7 @@ async fn test_all_error_paths_no_secret_exposure() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)

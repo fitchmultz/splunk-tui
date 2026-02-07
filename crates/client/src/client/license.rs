@@ -23,7 +23,7 @@ use crate::models::{
 
 impl SplunkClient {
     /// Get license usage information.
-    pub async fn get_license_usage(&mut self) -> Result<Vec<LicenseUsage>> {
+    pub async fn get_license_usage(&self) -> Result<Vec<LicenseUsage>> {
         crate::retry_call!(
             self,
             __token,
@@ -39,7 +39,7 @@ impl SplunkClient {
     }
 
     /// List all license pools.
-    pub async fn list_license_pools(&mut self) -> Result<Vec<LicensePool>> {
+    pub async fn list_license_pools(&self) -> Result<Vec<LicensePool>> {
         crate::retry_call!(
             self,
             __token,
@@ -55,7 +55,7 @@ impl SplunkClient {
     }
 
     /// List all license stacks.
-    pub async fn list_license_stacks(&mut self) -> Result<Vec<LicenseStack>> {
+    pub async fn list_license_stacks(&self) -> Result<Vec<LicenseStack>> {
         crate::retry_call!(
             self,
             __token,
@@ -71,7 +71,7 @@ impl SplunkClient {
     }
 
     /// List all installed licenses.
-    pub async fn list_installed_licenses(&mut self) -> Result<Vec<InstalledLicense>> {
+    pub async fn list_installed_licenses(&self) -> Result<Vec<InstalledLicense>> {
         crate::retry_call!(
             self,
             __token,
@@ -96,7 +96,7 @@ impl SplunkClient {
     ///
     /// Returns `ClientError::InvalidRequest` if the file cannot be read.
     /// Returns other errors if the upload fails.
-    pub async fn install_license(&mut self, file_path: &Path) -> Result<LicenseInstallResult> {
+    pub async fn install_license(&self, file_path: &Path) -> Result<LicenseInstallResult> {
         // Read the file content
         let file_content = tokio::fs::read(file_path).await.map_err(|e| {
             ClientError::InvalidRequest(format!(
@@ -134,7 +134,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `params` - Parameters for the new pool including name, stack_id, and optional quota/description
-    pub async fn create_license_pool(&mut self, params: &CreatePoolParams) -> Result<LicensePool> {
+    pub async fn create_license_pool(&self, params: &CreatePoolParams) -> Result<LicensePool> {
         crate::retry_call!(
             self,
             __token,
@@ -155,7 +155,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `pool_name` - Name of the pool to delete
-    pub async fn delete_license_pool(&mut self, pool_name: &str) -> Result<()> {
+    pub async fn delete_license_pool(&self, pool_name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -178,7 +178,7 @@ impl SplunkClient {
     /// * `pool_name` - Name of the pool to modify
     /// * `params` - Parameters to update (quota and/or description)
     pub async fn modify_license_pool(
-        &mut self,
+        &self,
         pool_name: &str,
         params: &ModifyPoolParams,
     ) -> Result<LicensePool> {
@@ -203,10 +203,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `license_name` - Name of the license to activate
-    pub async fn activate_license(
-        &mut self,
-        license_name: &str,
-    ) -> Result<LicenseActivationResult> {
+    pub async fn activate_license(&self, license_name: &str) -> Result<LicenseActivationResult> {
         crate::retry_call!(
             self,
             __token,
@@ -227,10 +224,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `license_name` - Name of the license to deactivate
-    pub async fn deactivate_license(
-        &mut self,
-        license_name: &str,
-    ) -> Result<LicenseActivationResult> {
+    pub async fn deactivate_license(&self, license_name: &str) -> Result<LicenseActivationResult> {
         crate::retry_call!(
             self,
             __token,

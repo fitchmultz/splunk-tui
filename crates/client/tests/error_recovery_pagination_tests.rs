@@ -262,7 +262,7 @@ async fn test_pagination_session_expiry_mid_operation() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)

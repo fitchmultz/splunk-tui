@@ -84,7 +84,7 @@ async fn main() -> Result<()> {
     }
 
     // Build and authenticate client
-    let client: SharedClient = Arc::new(Mutex::new(create_client(&config).await?));
+    let client: SharedClient = Arc::new(create_client(&config).await?);
 
     // Setup terminal
     enable_raw_mode()?;
@@ -247,8 +247,7 @@ async fn main() -> Result<()> {
             tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
         loop {
             interval.tick().await;
-            let mut c = client_health.lock().await;
-            match c.get_health().await {
+            match client_health.get_health().await {
                 Ok(health) => {
                     match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
                         Ok(()) => {}

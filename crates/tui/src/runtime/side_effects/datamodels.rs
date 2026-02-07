@@ -26,8 +26,7 @@ pub async fn handle_load_datamodels(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_datamodels(Some(count), Some(offset)).await {
+        match client.list_datamodels(Some(count), Some(offset)).await {
             Ok(datamodels) => {
                 if offset == 0 {
                     let _ = tx.send(Action::DataModelsLoaded(Ok(datamodels))).await;

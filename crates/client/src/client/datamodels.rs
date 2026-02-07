@@ -15,7 +15,7 @@ use crate::models::DataModel;
 impl SplunkClient {
     /// List all data models.
     pub async fn list_datamodels(
-        &mut self,
+        &self,
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<DataModel>> {
@@ -36,7 +36,7 @@ impl SplunkClient {
     }
 
     /// Get a data model by name, including its JSON definition.
-    pub async fn get_datamodel(&mut self, name: &str) -> Result<DataModel> {
+    pub async fn get_datamodel(&self, name: &str) -> Result<DataModel> {
         crate::retry_call!(
             self,
             __token,

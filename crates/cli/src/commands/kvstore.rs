@@ -171,7 +171,7 @@ async fn run_status(
 ) -> Result<()> {
     info!("Fetching KVStore status...");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Connecting to {}", client.base_url());
 
@@ -214,7 +214,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing KVStore collections...");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 = u64::try_from(count).context("Invalid --count (value too large)")?;
     let offset_u64 = u64::try_from(offset).context("Invalid --offset (value too large)")?;
@@ -279,7 +279,7 @@ async fn run_create(
 ) -> Result<()> {
     info!("Creating KVStore collection: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::models::CreateCollectionParams {
         name: name.clone(),
@@ -326,7 +326,7 @@ async fn run_delete(
 
     info!("Deleting KVStore collection: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_collection(&name, &app, &owner) => {
@@ -353,7 +353,7 @@ async fn run_data(
 ) -> Result<()> {
     info!("Querying KVStore collection data: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 = u64::try_from(count).context("Invalid --count (value too large)")?;
     let offset_u64 = u64::try_from(offset).context("Invalid --offset (value too large)")?;

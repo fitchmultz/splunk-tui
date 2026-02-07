@@ -17,7 +17,7 @@ use crate::models::{
 
 impl SplunkClient {
     /// Get KVStore status information.
-    pub async fn get_kvstore_status(&mut self) -> Result<KvStoreStatus> {
+    pub async fn get_kvstore_status(&self) -> Result<KvStoreStatus> {
         crate::retry_call!(
             self,
             __token,
@@ -34,7 +34,7 @@ impl SplunkClient {
 
     /// List all KVStore collections.
     pub async fn list_collections(
-        &mut self,
+        &self,
         app: Option<&str>,
         owner: Option<&str>,
         count: Option<u64>,
@@ -60,7 +60,7 @@ impl SplunkClient {
 
     /// Create a new KVStore collection.
     pub async fn create_collection(
-        &mut self,
+        &self,
         params: &CreateCollectionParams,
     ) -> Result<KvStoreCollection> {
         crate::retry_call!(
@@ -80,7 +80,7 @@ impl SplunkClient {
 
     /// Modify an existing KVStore collection.
     pub async fn modify_collection(
-        &mut self,
+        &self,
         name: &str,
         app: &str,
         owner: &str,
@@ -105,7 +105,7 @@ impl SplunkClient {
     }
 
     /// Delete a KVStore collection.
-    pub async fn delete_collection(&mut self, name: &str, app: &str, owner: &str) -> Result<()> {
+    pub async fn delete_collection(&self, name: &str, app: &str, owner: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -125,7 +125,7 @@ impl SplunkClient {
 
     /// List records in a collection.
     pub async fn list_collection_records(
-        &mut self,
+        &self,
         collection_name: &str,
         app: &str,
         owner: &str,
@@ -155,7 +155,7 @@ impl SplunkClient {
 
     /// Insert a record into a collection.
     pub async fn insert_collection_record(
-        &mut self,
+        &self,
         collection_name: &str,
         app: &str,
         owner: &str,
@@ -181,7 +181,7 @@ impl SplunkClient {
 
     /// Delete a record from a collection.
     pub async fn delete_collection_record(
-        &mut self,
+        &self,
         collection_name: &str,
         app: &str,
         owner: &str,

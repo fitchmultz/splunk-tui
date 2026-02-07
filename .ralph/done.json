@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "unused_dependency": "tachyonfx@0.14",
-        "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance"
+        "lines_of_dead_code": "598"
       }
     },
     {
@@ -4006,10 +4006,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "production_files_affected": "8",
         "test_files_affected": "4",
         "scan_agent": "scan-maintenance",
-        "dead_code_count": "25"
+        "dead_code_count": "25",
+        "production_files_affected": "8"
       }
     },
     {
@@ -4179,8 +4179,8 @@
       "custom_fields": {
         "scan_agent": "scan-maintenance",
         "current_line_count": "867",
-        "macro_already_adopted": "true",
-        "target_line_count": "300"
+        "target_line_count": "300",
+        "macro_already_adopted": "true"
       }
     },
     {
@@ -4286,9 +4286,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-maintenance",
         "remaining_duplicates": "3",
-        "macro_solved_count": "9",
-        "scan_agent": "scan-maintenance"
+        "macro_solved_count": "9"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_formatters": "4",
         "estimated_methods": "35+",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "affected_formatters": "4"
       }
     },
     {
@@ -4408,9 +4408,9 @@
       "relates_to": [],
       "custom_fields": {
         "submodule_count": "28",
-        "scan_agent": "scan-maintenance",
         "target_line_count": "150",
         "action_variants": "94",
+        "scan_agent": "scan-maintenance",
         "current_line_count": "523"
       }
     },
@@ -4471,9 +4471,9 @@
       "relates_to": [],
       "custom_fields": {
         "estimated_method_count": "45",
+        "existing_macro_coverage": "4 methods total across all formatters",
         "scan_agent": "scan-maintenance",
-        "formatter_count": "3",
-        "existing_macro_coverage": "4 methods total across all formatters"
+        "formatter_count": "3"
       }
     },
     {
@@ -4539,8 +4539,8 @@
       "relates_to": [],
       "custom_fields": {
         "command_files": "27",
-        "scan_agent": "scan-maintenance",
         "bail_usages": "18",
+        "scan_agent": "scan-maintenance",
         "with_context_usages": "120+"
       }
     },
@@ -4594,11 +4594,11 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
-        "principle": "DRY",
-        "file_count": "23",
+        "screen_files": "22",
         "scan_agent": "scan-maintenance",
+        "file_count": "23",
         "model_used": "kimi-code/kimi-for-coding",
-        "screen_files": "22"
+        "principle": "DRY"
       }
     },
     {
@@ -4678,12 +4678,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "files_using_pattern_b": "2",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance",
         "files_using_pattern_a": "26",
-        "principle": "DRY"
+        "model_used": "kimi-code/kimi-for-coding",
+        "files_using_pattern_b": "2",
+        "runner_used": "kimi",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4744,14 +4744,14 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "lines_duplicated": "~400",
-        "affected_screens": "25",
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "widgets_dir_exists": "false",
+        "spinner_helper_location": "crates/tui/src/ui/theme.rs",
+        "affected_screens": "25",
+        "lines_duplicated": "~400",
         "scan_agent": "scan-maintenance",
-        "spinner_helper_location": "crates/tui/src/ui/theme.rs"
+        "principle": "DRY",
+        "runner_used": "kimi",
+        "widgets_dir_exists": "false"
       }
     },
     {
@@ -4816,11 +4816,11 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding",
         "duplication_count": "6 functions across 5 files",
         "files_with_duplicates": "5",
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "DRY"
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY",
-        "duplicate_count": "4",
         "runner_used": "kimi",
+        "duplicate_count": "4",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "affected_files": "4"
+        "affected_files": "4",
+        "principle": "DRY"
       }
     },
     {
@@ -4941,10 +4941,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
+        "principle": "YAGNI",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
-        "principle": "YAGNI"
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_to_update": "5",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
-        "duplicate_count": "6",
+        "files_to_update": "5",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding",
+        "duplicate_count": "6"
       }
     },
     {
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
         "missing_variable_count": "12",
         "env_line_count": "18",
-        "runner_used": "kimi",
-        "principle": "KISS",
+        "model_used": "kimi-code/kimi-for-coding",
         "env_example_line_count": "66",
-        "model_used": "kimi-code/kimi-for-coding"
+        "principle": "KISS"
       }
     },
     {
@@ -5115,9 +5115,9 @@
       "relates_to": [],
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "principle": "KISS",
-        "runner_used": "kimi"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5168,9 +5168,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
         "runner_used": "kimi"
       }
     },
@@ -5224,9 +5224,9 @@
       "relates_to": [],
       "custom_fields": {
         "principle": "DRY",
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5275,10 +5275,10 @@
         "RQ-0375"
       ],
       "custom_fields": {
-        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
         "principle": "DRY",
+        "runner_used": "kimi",
+        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -5334,9 +5334,9 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
         "principle": "YAGNI",
-        "model_used": "kimi-code/kimi-for-coding"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5389,10 +5389,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
-        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
-        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
+        "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -5438,8 +5438,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-innovation"
       }
     },
@@ -5639,8 +5639,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
         "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-innovation",
         "runner_used": "kimi"
       }
     },
@@ -5772,11 +5772,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "env_vars_count_in_apply_env": "15",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE"
+        "env_vars_count_in_apply_env": "15",
+        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5829,9 +5829,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5908,11 +5908,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-innovation",
-        "runner_used": "kimi",
+        "affected_screens_count": "8",
         "has_docs_generator": "true",
-        "affected_screens_count": "8"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5979,10 +5979,10 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "screen_count": "28",
         "footer_nav_width": "45",
-        "model_used": "kimi-code/kimi-for-coding"
+        "screen_count": "28"
       }
     },
     {
@@ -6043,9 +6043,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-innovation",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -6106,10 +6106,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "scan_agent": "scan-innovation",
+        "runner_used": "kimi",
         "cli_subcommand_count": "28",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "scan_agent": "scan-innovation",
         "tui_arg_count": "4"
       }
     },
@@ -6172,6 +6172,89 @@
       "custom_fields": {
         "scan_agent": "scan-innovation",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
+      }
+    },
+    {
+      "id": "RQ-0391",
+      "status": "done",
+      "title": "Refactor SplunkClient to allow concurrent API calls (remove TUI mutex bottleneck)",
+      "description": "Opportunity type: performance / strategic refactor\n\nEvidence:\n- The TUI side-effects layer documents that all API calls are serialized behind a single `Arc<Mutex<SplunkClient>>` because client methods require `&mut self` for session refresh (`crates/tui/src/runtime/side_effects/mod.rs`).\n- CLI `list-all` explicitly fetches resources sequentially for the same reason (`crates/cli/src/commands/list_all/fetchers.rs`).\n\nWhy it matters:\n- Serialized calls increase perceived latency (slow screen loads, slow multi-resource commands) and increase the chance that background refreshes starve user-triggered actions.\n- Making the client concurrency-friendly unlocks parallel health aggregation, faster list-all, and smoother TUI refresh behavior.\n\nProposed approach:\n- Minimal viable slice:\n  - Refactor auth/session token refresh to use interior mutability so request methods can be `&self` (e.g., session manager behind an async lock with a singleflight refresh path).\n  - Update the client API surface accordingly and remove the global mutex in TUI (`Arc<SplunkClient>` instead of `Arc<Mutex<...>>`).\n  - Introduce a concurrency limit (semaphore) at the UI edge to prevent flooding Splunk.\n- Expansion:\n  - Parallelize multi-call aggregations (health aggregate, list-all resources) using `join!` with bounded concurrency.\n\nRisks and mitigations:\n- Risk: race conditions around token refresh. Mitigation: singleflight refresh with strict invariants and tests for concurrent callers.\n- Risk: wide blast radius (signature changes). Mitigation: staged refactor with clear compilation gates and workspace-wide updates.\n\nAcceptance criteria:\n- New tests covering concurrent token refresh behavior and ensuring correctness for both API-token and session-token auth.\n- Demonstrable latency reduction for health aggregation and list-all (documented benchmark or measured in a test/bench).\n- `make test` and `make ci` pass.\n\nPriority rationale:\n- Medium: hig...",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "client",
+        "tui",
+        "performance",
+        "refactor",
+        "concurrency"
+      ],
+      "scope": [
+        "crates/client/src/",
+        "crates/client/src/auth.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/client/src/client/session.rs",
+        "crates/tui/src/runtime/side_effects/",
+        "crates/tui/src/runtime/side_effects/types.rs",
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/cli/src/commands/list_all/",
+        "crates/cli/src/commands/list_all/fetchers.rs",
+        "make ci"
+      ],
+      "evidence": [
+        "crates/tui/src/runtime/side_effects/types.rs:15 defines SharedClient = Arc<Mutex<SplunkClient>>",
+        "crates/tui/src/runtime/side_effects/mod.rs:35-44 documents The Mutex Bottleneck - API calls serialized due to &mut self requirement",
+        "crates/tui/src/runtime/side_effects/mod.rs:42-44: SplunkClient requires &mut self for session token refresh",
+        "crates/cli/src/commands/list_all/fetchers.rs:16-19 documents sequential fetch due to &mut self for session management",
+        "crates/cli/src/commands/list_all/fetchers.rs:33-36 repeats documentation about &mut self requirement",
+        "crates/cli/src/commands/list_all/fetchers.rs:38: fetch_all_resources takes &mut SplunkClient",
+        "crates/client/src/client/mod.rs:131-140: SplunkClient struct with session_manager field requiring &mut self",
+        "crates/client/src/client/session.rs:37: get_auth_token(&mut self) may trigger login",
+        "crates/client/src/auth.rs:22-26: SessionManager uses plain Option<SessionToken> (no interior mutability)",
+        "All ~70+ public API methods in crates/client/src/client/*.rs require &mut self"
+      ],
+      "plan": [
+        "Design the new auth/session management interior-mutability model (singleflight refresh, clear invariants).",
+        "Refactor SessionManager in auth.rs to use interior mutability (RwLock/Mutex for session_token).",
+        "Update get_auth_token() in session.rs to use &self with internal locking.",
+        "Refactor all SplunkClient methods in client/*.rs to take &self instead of &mut self.",
+        "Update retry_call! macro in client/mod.rs for &self compatibility.",
+        "Remove the TUI shared client mutex (change SharedClient to Arc<SplunkClient>) and add bounded concurrency controls.",
+        "Parallelize health aggregation and list-all resource fetching with bounded concurrency.",
+        "Add concurrency-focused tests (token refresh races, concurrent API calls) and update public API docs.",
+        "Verify by running `make ci` and confirming latency improvements via benchmarks/logs."
+      ],
+      "notes": [
+        "VERIFIED 2026-02-07: All evidence still accurate - Arc<Mutex<SplunkClient>> bottleneck confirmed in TUI side_effects",
+        "VERIFIED: CLI list_all fetchers.rs still documents sequential fetching due to &mut self requirement",
+        "Root cause: SessionManager.session_token is Option<SessionToken> requiring &mut self for updates",
+        "No existing interior mutability patterns found in client crate - this is a greenfield refactor",
+        "All API methods (~70+) need signature change from &mut self to &self - wide blast radius confirmed",
+        "Token refresh race condition is the key challenge - singleflight pattern recommended",
+        "Even with &self methods, some synchronization needed for token refresh to prevent thundering herd",
+        "Implemented interior mutability in SessionManager with RwLock<Option<SessionToken>>",
+        "Added singleflight refresh pattern using Mutex<Option<Arc<Notify>>> to prevent thundering herd",
+        "Refactored all ~70+ SplunkClient API methods from &mut self to &self",
+        "Removed TUI SharedClient Mutex bottleneck (Arc<Mutex<SplunkClient>> → Arc<SplunkClient>)",
+        "Parallelized health aggregation using tokio::join! for 4 endpoints",
+        "Parallelized CLI list-all with bounded concurrency (buffer_unordered(5))",
+        "Added comprehensive concurrent token refresh tests in auth.rs",
+        "Updated documentation to remove Mutex Bottleneck section, add Concurrent API Access section",
+        "All tests pass (make ci verified): 40+ client tests, 150+ CLI tests, 100+ TUI tests"
+      ],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-07T03:33:55Z",
+      "updated_at": "2026-02-07T11:10:56.844140172Z",
+      "completed_at": "2026-02-07T11:10:56.844140172Z",
+      "started_at": "2026-02-07T10:30:03.603064795Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation",
+        "runner_used": "kimi",
+        "blast_radius": "high",
+        "affected_api_methods": "~70+",
         "model_used": "kimi-code/kimi-for-coding"
       }
     }

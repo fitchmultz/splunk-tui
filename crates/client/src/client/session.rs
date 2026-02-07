@@ -34,22 +34,24 @@ impl SplunkClient {
     ///
     /// Returns [`ClientError::AuthFailed`] if login fails.
     /// Returns [`ClientError::SessionExpired`] if no valid token is available.
-    pub(crate) async fn get_auth_token(&mut self) -> Result<String> {
+    pub(crate) async fn get_auth_token(&self) -> Result<String> {
         // For API token auth, just return the token
         if self.session_manager.is_api_token()
-            && let Some(token) = self.session_manager.get_bearer_token()
+            && let Some(token) = self.session_manager.get_bearer_token().await
         {
             return Ok(token.to_string());
         }
 
         // For session auth, check if we need to login (expired OR will expire soon)
-        if self.session_manager.is_session_expired() || self.session_manager.session_expires_soon()
+        if self.session_manager.is_session_expired().await
+            || self.session_manager.session_expires_soon().await
         {
             self.login().await?;
         }
 
         self.session_manager
             .get_bearer_token()
+            .await
             .map(|s| s.to_string())
             .ok_or_else(|| {
                 let username = match self.session_manager.strategy() {
@@ -77,7 +79,7 @@ impl SplunkClient {
     ///
     /// Returns [`ClientError::AuthFailed`] if the auth strategy is not session-based.
     /// Returns [`ClientError::ApiError`] if the login request fails.
-    pub async fn login(&mut self) -> Result<String> {
+    pub async fn login(&self) -> Result<String> {
         if let AuthStrategy::SessionToken { username, password } = self.session_manager.strategy() {
             let token = endpoints::login(
                 &self.http,
@@ -92,7 +94,8 @@ impl SplunkClient {
             // Use configured session TTL for proactive refresh
             let token_clone = token.clone();
             self.session_manager
-                .set_session_token(token_clone, Some(self.session_ttl_seconds));
+                .set_session_token(token_clone, Some(self.session_ttl_seconds))
+                .await;
 
             Ok(token)
         } else {

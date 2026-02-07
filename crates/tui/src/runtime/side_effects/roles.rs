@@ -21,8 +21,7 @@ use super::SharedClient;
 pub async fn handle_load_roles(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_roles(Some(count), Some(offset)).await {
+        match client.list_roles(Some(count), Some(offset)).await {
             Ok(roles) => {
                 let _ = tx.send(Action::RolesLoaded(Ok(roles))).await;
             }
@@ -37,8 +36,7 @@ pub async fn handle_load_roles(client: SharedClient, tx: Sender<Action>, count: 
 pub async fn handle_load_capabilities(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_capabilities().await {
+        match client.list_capabilities().await {
             Ok(capabilities) => {
                 let _ = tx.send(Action::CapabilitiesLoaded(Ok(capabilities))).await;
             }
@@ -57,8 +55,7 @@ pub async fn handle_create_role(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.create_role(&params).await {
+        match client.create_role(&params).await {
             Ok(role) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -98,8 +95,7 @@ pub async fn handle_modify_role(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.modify_role(&name, &params).await {
+        match client.modify_role(&name, &params).await {
             Ok(role) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -134,8 +130,7 @@ pub async fn handle_modify_role(
 pub async fn handle_delete_role(client: SharedClient, tx: Sender<Action>, name: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.delete_role(&name).await {
+        match client.delete_role(&name).await {
             Ok(()) => {
                 let _ = tx
                     .send(Action::Notify(

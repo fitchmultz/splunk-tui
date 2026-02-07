@@ -26,8 +26,7 @@ pub async fn handle_load_fired_alerts(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_fired_alerts(Some(count), Some(offset)).await {
+        match client.list_fired_alerts(Some(count), Some(offset)).await {
             Ok(alerts) => {
                 if offset == 0 {
                     let _ = tx.send(Action::FiredAlertsLoaded(Ok(alerts))).await;

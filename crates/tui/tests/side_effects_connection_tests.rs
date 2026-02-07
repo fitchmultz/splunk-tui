@@ -17,7 +17,7 @@ mod common;
 use common::*;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::mpsc;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, ResponseTemplate};
 
@@ -48,7 +48,7 @@ async fn test_connection_timeout_handling() {
         .build()
         .expect("Failed to build test client");
 
-    harness.client = Arc::new(Mutex::new(client));
+    harness.client = Arc::new(client);
 
     // Handle the action with a longer collection timeout
     let actions = harness
@@ -90,7 +90,7 @@ async fn test_connection_refused_error_handling() {
         .expect("Failed to build test client");
 
     let (action_tx, mut action_rx) = mpsc::channel::<Action>(100);
-    let client = Arc::new(Mutex::new(client));
+    let client = Arc::new(client);
     let config_manager = create_test_config_manager().await;
 
     // Try to load indexes - should fail with connection error
@@ -207,7 +207,7 @@ async fn test_dns_resolution_failure() {
         .expect("Failed to build test client");
 
     let (action_tx, mut action_rx) = mpsc::channel::<Action>(100);
-    let client = Arc::new(Mutex::new(client));
+    let client = Arc::new(client);
     let config_manager = create_test_config_manager().await;
 
     let action = Action::LoadIndexes {

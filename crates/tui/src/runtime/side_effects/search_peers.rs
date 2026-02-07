@@ -26,8 +26,7 @@ pub async fn handle_load_search_peers(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard.list_search_peers(Some(count), Some(offset)).await {
+        match client.list_search_peers(Some(count), Some(offset)).await {
             Ok(peers) => {
                 if offset == 0 {
                     let _ = tx.send(Action::SearchPeersLoaded(Ok(peers))).await;

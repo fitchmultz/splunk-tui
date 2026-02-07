@@ -49,7 +49,7 @@ pub async fn run(
 ) -> Result<()> {
     info!("Listing forwarders (count: {}, offset: {})", count, offset);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 =
         u64::try_from(count).context("Invalid --count (value too large for this platform)")?;

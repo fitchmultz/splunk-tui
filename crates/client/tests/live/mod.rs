@@ -254,7 +254,7 @@ impl Drop for SavedSearchCleanup {
         let skip_verify = self.skip_verify;
 
         handle.spawn(async move {
-            let mut client = match SplunkClient::builder()
+            let client = match SplunkClient::builder()
                 .base_url(base_url)
                 .auth_strategy(auth_strategy)
                 .skip_verify(skip_verify)

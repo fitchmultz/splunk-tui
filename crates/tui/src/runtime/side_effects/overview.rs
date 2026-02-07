@@ -17,62 +17,61 @@ use super::{SharedClient, overview_fetch};
 pub async fn handle_load_overview(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
         let mut resources = Vec::new();
 
         // Fetch each resource type with timeout
         // Individual failures are converted to error entries rather than failing the entire overview
 
         // indexes
-        match overview_fetch::fetch_indexes(&mut c).await {
+        match overview_fetch::fetch_indexes(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("indexes", e)),
         }
 
         // jobs
-        match overview_fetch::fetch_jobs(&mut c).await {
+        match overview_fetch::fetch_jobs(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("jobs", e)),
         }
 
         // apps
-        match overview_fetch::fetch_apps(&mut c).await {
+        match overview_fetch::fetch_apps(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("apps", e)),
         }
 
         // users
-        match overview_fetch::fetch_users(&mut c).await {
+        match overview_fetch::fetch_users(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("users", e)),
         }
 
         // cluster
-        match overview_fetch::fetch_cluster(&mut c).await {
+        match overview_fetch::fetch_cluster(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("cluster", e)),
         }
 
         // health
-        match overview_fetch::fetch_health(&mut c).await {
+        match overview_fetch::fetch_health(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("health", e)),
         }
 
         // kvstore
-        match overview_fetch::fetch_kvstore(&mut c).await {
+        match overview_fetch::fetch_kvstore(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("kvstore", e)),
         }
 
         // license
-        match overview_fetch::fetch_license(&mut c).await {
+        match overview_fetch::fetch_license(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("license", e)),
         }
 
         // saved-searches
-        match overview_fetch::fetch_saved_searches(&mut c).await {
+        match overview_fetch::fetch_saved_searches(&client).await {
             Ok(r) => resources.push(r),
             Err(e) => resources.push(overview_fetch::resource_error("saved-searches", e)),
         }

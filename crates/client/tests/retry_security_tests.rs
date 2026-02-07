@@ -68,7 +68,7 @@ async fn test_retry_call_no_token_logging_on_auth_error() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -121,7 +121,7 @@ async fn test_api_token_no_session_retry_on_401() {
         token: SecretString::new("invalid-token".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)

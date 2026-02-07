@@ -54,7 +54,7 @@ pub struct MacroUpdateParams<'a> {
 
 impl SplunkClient {
     /// List all search macros.
-    pub async fn list_macros(&mut self) -> Result<Vec<Macro>> {
+    pub async fn list_macros(&self) -> Result<Vec<Macro>> {
         crate::retry_call!(
             self,
             __token,
@@ -76,7 +76,7 @@ impl SplunkClient {
     ///
     /// # Returns
     /// The `Macro` if found, or `ClientError::NotFound` if it doesn't exist.
-    pub async fn get_macro(&mut self, name: &str) -> Result<Macro> {
+    pub async fn get_macro(&self, name: &str) -> Result<Macro> {
         crate::retry_call!(
             self,
             __token,
@@ -96,7 +96,7 @@ impl SplunkClient {
     ///
     /// # Arguments
     /// * `params` - Parameters for creating the macro
-    pub async fn create_macro(&mut self, params: MacroCreateParams<'_>) -> Result<()> {
+    pub async fn create_macro(&self, params: MacroCreateParams<'_>) -> Result<()> {
         let request = CreateMacroRequest {
             name: params.name,
             definition: params.definition,
@@ -132,7 +132,7 @@ impl SplunkClient {
     ///
     /// # Returns
     /// Ok(()) on success, or `ClientError::NotFound` if the macro doesn't exist.
-    pub async fn update_macro(&mut self, params: MacroUpdateParams<'_>) -> Result<()> {
+    pub async fn update_macro(&self, params: MacroUpdateParams<'_>) -> Result<()> {
         let request = UpdateMacroRequest {
             name: params.name,
             definition: params.definition,
@@ -166,7 +166,7 @@ impl SplunkClient {
     ///
     /// # Returns
     /// Ok(()) on success, or `ClientError::NotFound` if the macro doesn't exist.
-    pub async fn delete_macro(&mut self, name: &str) -> Result<()> {
+    pub async fn delete_macro(&self, name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,

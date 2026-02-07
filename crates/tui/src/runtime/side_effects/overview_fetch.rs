@@ -28,7 +28,7 @@ pub const LIST_LIMIT_100: u64 = 100;
 
 /// Fetch indexes with timeout.
 pub async fn fetch_indexes(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(
         FETCH_TIMEOUT,
@@ -49,7 +49,7 @@ pub async fn fetch_indexes(
 
 /// Fetch jobs with timeout.
 pub async fn fetch_jobs(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.list_jobs(Some(LIST_LIMIT_100), None)).await {
         Ok(Ok(jobs)) => Ok(OverviewResource {
@@ -65,7 +65,7 @@ pub async fn fetch_jobs(
 
 /// Fetch apps with timeout.
 pub async fn fetch_apps(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.list_apps(Some(LIST_LIMIT_1000), None)).await {
         Ok(Ok(apps)) => Ok(OverviewResource {
@@ -81,7 +81,7 @@ pub async fn fetch_apps(
 
 /// Fetch users with timeout.
 pub async fn fetch_users(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(
         FETCH_TIMEOUT,
@@ -102,7 +102,7 @@ pub async fn fetch_users(
 
 /// Fetch cluster info with timeout.
 pub async fn fetch_cluster(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.get_cluster_info()).await {
         Ok(Ok(cluster)) => Ok(OverviewResource {
@@ -138,7 +138,7 @@ pub async fn fetch_cluster(
 
 /// Fetch health with timeout.
 pub async fn fetch_health(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.get_health()).await {
         Ok(Ok(health)) => Ok(OverviewResource {
@@ -154,7 +154,7 @@ pub async fn fetch_health(
 
 /// Fetch KVStore status with timeout.
 pub async fn fetch_kvstore(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.get_kvstore_status()).await {
         Ok(Ok(status)) => Ok(OverviewResource {
@@ -170,7 +170,7 @@ pub async fn fetch_kvstore(
 
 /// Fetch license usage with timeout.
 pub async fn fetch_license(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.get_license_usage()).await {
         Ok(Ok(usage)) => {
@@ -199,7 +199,7 @@ pub async fn fetch_license(
 
 /// Fetch saved searches with timeout.
 pub async fn fetch_saved_searches(
-    client: &mut splunk_client::SplunkClient,
+    client: &splunk_client::SplunkClient,
 ) -> Result<OverviewResource, ClientError> {
     match tokio::time::timeout(FETCH_TIMEOUT, client.list_saved_searches(None, None)).await {
         Ok(Ok(saved_searches)) => Ok(OverviewResource {

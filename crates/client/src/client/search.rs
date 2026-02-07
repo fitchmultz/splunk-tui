@@ -132,7 +132,7 @@ impl SplunkClient {
     ///
     /// # Arguments
     /// * `request` - The search request containing query, time bounds, and options
-    pub async fn search(&mut self, request: SearchRequest<'_>) -> Result<Vec<serde_json::Value>> {
+    pub async fn search(&self, request: SearchRequest<'_>) -> Result<Vec<serde_json::Value>> {
         let options = build_create_job_options(&request, false);
         let sid = self.create_search_job(request.query, &options).await?;
 
@@ -180,7 +180,7 @@ impl SplunkClient {
     /// regardless of `request.wait`, so that polling/progress remains a client concern.
     /// `request.wait` only controls whether the client polls before fetching results.
     pub async fn search_with_progress(
-        &mut self,
+        &self,
         request: SearchRequest<'_>,
         progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
     ) -> Result<(Vec<serde_json::Value>, String, Option<u64>)> {
@@ -212,7 +212,7 @@ impl SplunkClient {
 
     /// Create a search job without waiting for completion.
     pub async fn create_search_job(
-        &mut self,
+        &self,
         query: &str,
         options: &endpoints::search::CreateJobOptions,
     ) -> Result<String> {
@@ -234,7 +234,7 @@ impl SplunkClient {
 
     /// Get results from a search job.
     pub async fn get_search_results(
-        &mut self,
+        &self,
         sid: &str,
         count: u64,
         offset: u64,
@@ -258,7 +258,7 @@ impl SplunkClient {
     }
 
     /// Get the status of a search job.
-    pub async fn get_job_status(&mut self, sid: &str) -> Result<SearchJobStatus> {
+    pub async fn get_job_status(&self, sid: &str) -> Result<SearchJobStatus> {
         crate::retry_call!(
             self,
             __token,
@@ -276,7 +276,7 @@ impl SplunkClient {
 
     /// List all saved searches.
     pub async fn list_saved_searches(
-        &mut self,
+        &self,
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<SavedSearch>> {
@@ -297,7 +297,7 @@ impl SplunkClient {
     }
 
     /// Create a saved search.
-    pub async fn create_saved_search(&mut self, name: &str, search: &str) -> Result<()> {
+    pub async fn create_saved_search(&self, name: &str, search: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -315,7 +315,7 @@ impl SplunkClient {
     }
 
     /// Delete a saved search by name.
-    pub async fn delete_saved_search(&mut self, name: &str) -> Result<()> {
+    pub async fn delete_saved_search(&self, name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -338,7 +338,7 @@ impl SplunkClient {
     ///
     /// # Returns
     /// The `SavedSearch` if found, or `ClientError::NotFound` if it doesn't exist.
-    pub async fn get_saved_search(&mut self, name: &str) -> Result<SavedSearch> {
+    pub async fn get_saved_search(&self, name: &str) -> Result<SavedSearch> {
         crate::retry_call!(
             self,
             __token,
@@ -367,7 +367,7 @@ impl SplunkClient {
     /// # Returns
     /// Ok(()) on success, or `ClientError::NotFound` if the saved search doesn't exist.
     pub async fn update_saved_search(
-        &mut self,
+        &self,
         name: &str,
         search: Option<&str>,
         description: Option<&str>,
@@ -421,7 +421,7 @@ impl SplunkClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn validate_spl(&mut self, search: &str) -> Result<ValidateSplResponse> {
+    pub async fn validate_spl(&self, search: &str) -> Result<ValidateSplResponse> {
         crate::retry_call!(
             self,
             __token,

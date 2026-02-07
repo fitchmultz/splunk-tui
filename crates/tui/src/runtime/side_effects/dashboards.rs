@@ -26,8 +26,7 @@ pub async fn handle_load_dashboards(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_dashboards(Some(count), Some(offset)).await {
+        match client.list_dashboards(Some(count), Some(offset)).await {
             Ok(dashboards) => {
                 if offset == 0 {
                     let _ = tx.send(Action::DashboardsLoaded(Ok(dashboards))).await;

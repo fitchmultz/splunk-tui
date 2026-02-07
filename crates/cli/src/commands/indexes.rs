@@ -199,7 +199,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing indexes (count: {}, offset: {})", count, offset);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 =
         u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
@@ -273,7 +273,7 @@ async fn run_create(
 ) -> Result<()> {
     info!("Creating index: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::CreateIndexParams {
         name: name.to_string(),
@@ -313,7 +313,7 @@ async fn run_modify(
 ) -> Result<()> {
     info!("Modifying index: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::ModifyIndexParams {
         max_data_size_mb,
@@ -358,7 +358,7 @@ async fn run_delete(
 
     info!("Deleting index: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_index(name) => {

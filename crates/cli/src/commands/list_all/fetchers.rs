@@ -4,6 +4,7 @@
 //! - Fetch resource summaries from Splunk for all supported resource types.
 //! - Handle per-resource timeouts (30-second default).
 //! - Convert API errors into ResourceSummary error states gracefully.
+//! - Fetch resources concurrently with bounded concurrency (5 concurrent by default).
 //!
 //! Does NOT handle:
 //! - Multi-profile orchestration (see `output.rs`).
@@ -13,12 +14,11 @@
 //! Invariants:
 //! - Each resource fetch has a 30-second timeout.
 //! - Errors are captured in ResourceSummary, not propagated as Err.
-//! - Resources are fetched sequentially because SplunkClient requires &mut self
-//!   for session management (token refresh). True parallelization would require
-//!   either interior mutability in SplunkClient or multiple client instances.
+//! - Resources are fetched concurrently with bounded concurrency to avoid overwhelming Splunk.
 
 use crate::cancellation::{CancellationToken, Cancelled};
 use anyhow::Result;
+use futures::stream::{self, StreamExt};
 use splunk_client::{ClientError, SplunkClient};
 use std::time::Duration;
 use tokio::time;
@@ -27,15 +27,15 @@ use tracing::warn;
 use super::types::ResourceSummary;
 
 const TIMEOUT_DURATION: Duration = Duration::from_secs(30);
+const MAX_CONCURRENT_FETCHES: usize = 5;
 
 /// Fetch all requested resources from a single client.
 ///
-/// Note: Resources are fetched sequentially because `SplunkClient` requires
-/// `&mut self` for session management (authentication token refresh). Each
-/// fetch has its own 30-second timeout, so slow endpoints don't block others
-/// indefinitely, but they do run serially.
+/// Resources are fetched concurrently with bounded concurrency (5 by default)
+/// to improve performance while avoiding overwhelming the Splunk server.
+/// Each fetch has its own 30-second timeout.
 pub async fn fetch_all_resources(
-    client: &mut SplunkClient,
+    client: &SplunkClient,
     resource_types: Vec<String>,
     cancel: &CancellationToken,
 ) -> Result<Vec<ResourceSummary>> {
@@ -44,29 +44,39 @@ pub async fn fetch_all_resources(
         return Err(Cancelled.into());
     }
 
-    let mut resources = Vec::with_capacity(resource_types.len());
+    // Create a stream of futures for each resource type
+    let fetch_futures = resource_types.into_iter().map(|resource_type| {
+        async move {
+            // Check cancellation before each fetch
+            if cancel.is_cancelled() {
+                return ResourceSummary {
+                    resource_type: resource_type.clone(),
+                    count: 0,
+                    status: "cancelled".to_string(),
+                    error: Some("Request was cancelled".to_string()),
+                };
+            }
 
-    for resource_type in resource_types {
-        // Check cancellation before each fetch
-        if cancel.is_cancelled() {
-            return Err(Cancelled.into());
+            match resource_type.as_str() {
+                "indexes" => fetch_indexes(client).await,
+                "jobs" => fetch_jobs(client).await,
+                "apps" => fetch_apps(client).await,
+                "users" => fetch_users(client).await,
+                "cluster" => fetch_cluster(client).await,
+                "health" => fetch_health(client).await,
+                "kvstore" => fetch_kvstore(client).await,
+                "license" => fetch_license(client).await,
+                "saved-searches" => fetch_saved_searches(client).await,
+                _ => unreachable!(),
+            }
         }
+    });
 
-        let summary = match resource_type.as_str() {
-            "indexes" => fetch_indexes(client).await,
-            "jobs" => fetch_jobs(client).await,
-            "apps" => fetch_apps(client).await,
-            "users" => fetch_users(client).await,
-            "cluster" => fetch_cluster(client).await,
-            "health" => fetch_health(client).await,
-            "kvstore" => fetch_kvstore(client).await,
-            "license" => fetch_license(client).await,
-            "saved-searches" => fetch_saved_searches(client).await,
-            _ => unreachable!(),
-        };
-
-        resources.push(summary);
-    }
+    // Execute fetches with bounded concurrency using buffer_unordered
+    let resources: Vec<ResourceSummary> = stream::iter(fetch_futures)
+        .buffer_unordered(MAX_CONCURRENT_FETCHES)
+        .collect()
+        .await;
 
     Ok(resources)
 }
@@ -123,7 +133,7 @@ where
     }
 }
 
-async fn fetch_indexes(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_indexes(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "indexes",
         "error",
@@ -134,7 +144,7 @@ async fn fetch_indexes(client: &mut SplunkClient) -> ResourceSummary {
     .await
 }
 
-async fn fetch_jobs(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_jobs(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "jobs",
         "error",
@@ -145,7 +155,7 @@ async fn fetch_jobs(client: &mut SplunkClient) -> ResourceSummary {
     .await
 }
 
-async fn fetch_apps(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_apps(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "apps",
         "error",
@@ -156,7 +166,7 @@ async fn fetch_apps(client: &mut SplunkClient) -> ResourceSummary {
     .await
 }
 
-async fn fetch_users(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_users(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "users",
         "error",
@@ -167,7 +177,7 @@ async fn fetch_users(client: &mut SplunkClient) -> ResourceSummary {
     .await
 }
 
-async fn fetch_cluster(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_cluster(client: &SplunkClient) -> ResourceSummary {
     match time::timeout(TIMEOUT_DURATION, client.get_cluster_info()).await {
         Ok(Ok(cluster)) => ResourceSummary {
             resource_type: "cluster".to_string(),
@@ -221,7 +231,7 @@ async fn fetch_cluster(client: &mut SplunkClient) -> ResourceSummary {
     }
 }
 
-async fn fetch_health(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_health(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "health",
         "error",
@@ -232,7 +242,7 @@ async fn fetch_health(client: &mut SplunkClient) -> ResourceSummary {
     .await
 }
 
-async fn fetch_kvstore(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_kvstore(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "kvstore",
         "error",
@@ -243,7 +253,7 @@ async fn fetch_kvstore(client: &mut SplunkClient) -> ResourceSummary {
     .await
 }
 
-async fn fetch_license(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_license(client: &SplunkClient) -> ResourceSummary {
     match time::timeout(TIMEOUT_DURATION, client.get_license_usage()).await {
         Ok(Ok(usage)) => {
             let total_usage: u64 =
@@ -285,7 +295,7 @@ async fn fetch_license(client: &mut SplunkClient) -> ResourceSummary {
     }
 }
 
-async fn fetch_saved_searches(client: &mut SplunkClient) -> ResourceSummary {
+async fn fetch_saved_searches(client: &SplunkClient) -> ResourceSummary {
     fetch_with_timeout(
         "saved-searches",
         "error",

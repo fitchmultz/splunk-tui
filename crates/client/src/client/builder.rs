@@ -268,7 +268,7 @@ impl SplunkClientBuilder {
         Ok(SplunkClient {
             http,
             base_url,
-            session_manager: SessionManager::new(auth_strategy),
+            session_manager: SessionManager::new(auth_strategy, self.session_ttl_seconds),
             max_retries: self.max_retries,
             session_ttl_seconds: self.session_ttl_seconds,
             session_expiry_buffer_seconds: self.session_expiry_buffer_seconds,

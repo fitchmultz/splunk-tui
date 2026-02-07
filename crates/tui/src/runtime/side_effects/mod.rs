@@ -6,7 +6,7 @@
 //! - Send results back via the action channel for state updates.
 //!
 //! Does NOT handle:
-//! - Direct application state modification (sends actions to do that).
+//! - Direct application state modification (sends actions for that).
 //! - UI rendering or terminal management.
 //! - Configuration loading or persistence.
 //!
@@ -23,34 +23,30 @@
 //! ## Why Spawn Tasks?
 //!
 //! 1. **UI Responsiveness**: The TUI event loop must never block. Even brief
-//!    async operations (like acquiring a mutex) can cause frame drops if they
-//!    contend with the render thread.
+//!    async operations can cause frame drops if they contend with the render thread.
 //!
 //! 2. **Consistent Error Boundaries**: Each spawned task is an isolated failure
 //!    domain. A panic in one API call handler won't crash the entire application.
 //!
 //! 3. **Cancellation Safety**: Tasks can be dropped without cleanup concerns
-//!    (the client mutex is released on drop, and API calls are stateless).
+//!    (API calls are stateless and SplunkClient uses interior mutability for
+//!    session management).
 //!
-//! ## The Mutex Bottleneck
+//! ## Concurrent API Access
 //!
-//! All API calls share a single `Arc<Mutex<SplunkClient>>`. This means:
-//! - **API calls are serialized** regardless of how many tasks are spawned
-//! - Multiple concurrent tasks simply queue for the client lock
-//! - Task spawn overhead is negligible compared to network I/O latency
+//! API calls share a single `Arc<SplunkClient>`. The client uses interior
+//! mutability (via `RwLock` and singleflight pattern) for session token refresh,
+//! allowing multiple concurrent API calls without requiring `&mut self`.
 //!
-//! This is a deliberate trade-off: the SplunkClient requires `&mut self` for
-//! session token refresh, so true parallel API calls would require significant
-//! architectural changes (e.g., connection pooling or token refresh decoupling).
+//! Benefits:
+//! - **True parallelism**: Multiple API calls can execute simultaneously
+//! - **Singleflight refresh**: Only one login request is made even with concurrent
+//!   callers that need token refresh
+//! - **Better performance**: Health checks and list-all operations run concurrently
 //!
 //! ## Sequential Operations
 //!
-//! Some operations intentionally sequential:
-//!
-//! - **Health checks** (`LoadHealth`): 5 API calls run sequentially within one
-//!   spawned task due to the `&mut self` requirement. Parallelizing would require
-//!   either spawning 5 separate tasks (each waiting for the lock) or refactoring
-//!   the client to support concurrent access.
+//! Some operations are intentionally sequential:
 //!
 //! - **Batch operations** (`CancelJobsBatch`, `DeleteJobsBatch`): Jobs are
 //!   processed sequentially to avoid overwhelming the Splunk API and to provide
@@ -60,11 +56,11 @@
 //!
 //! Tokio task spawning has minimal overhead (~microseconds). Given that:
 //! - Network I/O dominates latency (milliseconds to seconds)
-//! - The client mutex serializes actual API calls
+//! - The client supports concurrent API calls via `&self` methods
 //! - No measured bottleneck exists in task scheduling
 //!
-//! The current pattern is not a performance concern. Optimization would only be
-//! warranted if profiling shows significant time in task scheduling overhead.
+//! The current pattern is not a performance concern. The concurrent client
+//! access enables faster health aggregation and list-all operations.
 //!
 //! ## Future Optimization Paths
 //!
@@ -76,10 +72,7 @@
 //! 2. **Non-API operations**: `SwitchToSettings`, `ExportData`, and
 //!    `OpenProfileSwitcher` don't make API calls and could run without spawn.
 //!
-//! 3. **Parallel health checks**: Spawn separate tasks per health endpoint
-//!    (each would still serialize on the client lock, but they'd pipeline better).
-//!
-//! 4. **Parallel batch operations**: Use `futures::future::join_all` for batch
+//! 3. **Parallel batch operations**: Use `futures::future::join_all` for batch
 //!    job operations (with rate limiting to avoid API throttling).
 
 // Core types

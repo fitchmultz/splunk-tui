@@ -71,8 +71,7 @@ pub async fn handle_load_workload_pools(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        let result = guard.list_workload_pools(Some(count), Some(offset)).await;
+        let result = client.list_workload_pools(Some(count), Some(offset)).await;
         let action = build_workload_pools_action(result, offset);
         let _ = tx.send(action).await;
     });
@@ -90,8 +89,7 @@ pub async fn handle_load_workload_rules(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        let result = guard.list_workload_rules(Some(count), Some(offset)).await;
+        let result = client.list_workload_rules(Some(count), Some(offset)).await;
         let action = build_workload_rules_action(result, offset);
         let _ = tx.send(action).await;
     });

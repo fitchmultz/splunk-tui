@@ -17,7 +17,7 @@ use crate::models::App;
 
 impl SplunkClient {
     /// List all installed apps.
-    pub async fn list_apps(&mut self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
+    pub async fn list_apps(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<App>> {
         crate::retry_call!(
             self,
             __token,
@@ -35,7 +35,7 @@ impl SplunkClient {
     }
 
     /// Get specific app details by name.
-    pub async fn get_app(&mut self, app_name: &str) -> Result<App> {
+    pub async fn get_app(&self, app_name: &str) -> Result<App> {
         crate::retry_call!(
             self,
             __token,
@@ -52,7 +52,7 @@ impl SplunkClient {
     }
 
     /// Enable an app by name.
-    pub async fn enable_app(&mut self, app_name: &str) -> Result<()> {
+    pub async fn enable_app(&self, app_name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -69,7 +69,7 @@ impl SplunkClient {
     }
 
     /// Disable an app by name.
-    pub async fn disable_app(&mut self, app_name: &str) -> Result<()> {
+    pub async fn disable_app(&self, app_name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -94,7 +94,7 @@ impl SplunkClient {
     /// # Returns
     ///
     /// The installed `App` on success.
-    pub async fn install_app(&mut self, file_path: &std::path::Path) -> Result<App> {
+    pub async fn install_app(&self, file_path: &std::path::Path) -> Result<App> {
         crate::retry_call!(
             self,
             __token,
@@ -115,7 +115,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `app_name` - Name of the app to remove
-    pub async fn remove_app(&mut self, app_name: &str) -> Result<()> {
+    pub async fn remove_app(&self, app_name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,

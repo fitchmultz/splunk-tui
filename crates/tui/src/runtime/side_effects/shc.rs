@@ -19,8 +19,7 @@ use super::SharedClient;
 pub async fn handle_load_shc_status(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_shc_status().await {
+        match client.get_shc_status().await {
             Ok(status) => {
                 let _ = tx.send(Action::ShcStatusLoaded(Ok(status))).await;
             }
@@ -35,8 +34,7 @@ pub async fn handle_load_shc_status(client: SharedClient, tx: Sender<Action>) {
 pub async fn handle_load_shc_members(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_shc_members().await {
+        match client.get_shc_members().await {
             Ok(members) => {
                 let _ = tx.send(Action::ShcMembersLoaded(Ok(members))).await;
             }
@@ -51,8 +49,7 @@ pub async fn handle_load_shc_members(client: SharedClient, tx: Sender<Action>) {
 pub async fn handle_load_shc_captain(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_shc_captain().await {
+        match client.get_shc_captain().await {
             Ok(captain) => {
                 let _ = tx.send(Action::ShcCaptainLoaded(Ok(captain))).await;
             }
@@ -67,8 +64,7 @@ pub async fn handle_load_shc_captain(client: SharedClient, tx: Sender<Action>) {
 pub async fn handle_load_shc_config(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_shc_config().await {
+        match client.get_shc_config().await {
             Ok(config) => {
                 let _ = tx.send(Action::ShcConfigLoaded(Ok(config))).await;
             }
@@ -83,8 +79,7 @@ pub async fn handle_load_shc_config(client: SharedClient, tx: Sender<Action>) {
 pub async fn handle_add_shc_member(client: SharedClient, tx: Sender<Action>, target_uri: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.add_shc_member(&target_uri).await {
+        match client.add_shc_member(&target_uri).await {
             Ok(_) => {
                 let _ = tx.send(Action::ShcMemberAdded { result: Ok(()) }).await;
             }
@@ -107,8 +102,7 @@ pub async fn handle_remove_shc_member(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.remove_shc_member(&member_guid).await {
+        match client.remove_shc_member(&member_guid).await {
             Ok(_) => {
                 let _ = tx.send(Action::ShcMemberRemoved { result: Ok(()) }).await;
             }
@@ -127,8 +121,7 @@ pub async fn handle_remove_shc_member(
 pub async fn handle_rolling_restart_shc(client: SharedClient, tx: Sender<Action>, force: bool) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.rolling_restart_shc(force).await {
+        match client.rolling_restart_shc(force).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::ShcRollingRestarted { result: Ok(()) })
@@ -149,8 +142,7 @@ pub async fn handle_rolling_restart_shc(client: SharedClient, tx: Sender<Action>
 pub async fn handle_set_shc_captain(client: SharedClient, tx: Sender<Action>, member_guid: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.set_shc_captain(&member_guid).await {
+        match client.set_shc_captain(&member_guid).await {
             Ok(_) => {
                 let _ = tx.send(Action::ShcCaptainSet { result: Ok(()) }).await;
             }

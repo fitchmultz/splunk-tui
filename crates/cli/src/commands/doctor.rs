@@ -156,7 +156,7 @@ pub async fn run(
     let (health_output, partial_errors): (
         Option<splunk_client::HealthCheckOutput>,
         Vec<(String, String)>,
-    ) = if let Some(mut client) = client {
+    ) = if let Some(client) = client {
         let health_result = tokio::select! {
             res = client.check_health_aggregate() => res,
             _ = cancel.cancelled() => return Err(crate::cancellation::Cancelled.into()),

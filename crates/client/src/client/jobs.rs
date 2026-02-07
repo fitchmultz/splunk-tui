@@ -18,7 +18,7 @@ use crate::models::SearchJobStatus;
 impl SplunkClient {
     /// List all search jobs.
     pub async fn list_jobs(
-        &mut self,
+        &self,
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<SearchJobStatus>> {
@@ -39,7 +39,7 @@ impl SplunkClient {
     }
 
     /// Cancel a search job.
-    pub async fn cancel_job(&mut self, sid: &str) -> Result<()> {
+    pub async fn cancel_job(&self, sid: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -56,7 +56,7 @@ impl SplunkClient {
     }
 
     /// Delete a search job.
-    pub async fn delete_job(&mut self, sid: &str) -> Result<()> {
+    pub async fn delete_job(&self, sid: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,

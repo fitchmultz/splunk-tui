@@ -58,7 +58,7 @@ async fn test_splunk_client_get_kvstore_status() {
         token: SecretString::new("test-token".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .build()

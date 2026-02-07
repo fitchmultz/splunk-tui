@@ -15,7 +15,7 @@ use crate::models::Dashboard;
 impl SplunkClient {
     /// List all dashboards.
     pub async fn list_dashboards(
-        &mut self,
+        &self,
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<Dashboard>> {
@@ -36,7 +36,7 @@ impl SplunkClient {
     }
 
     /// Get a dashboard by name, including its XML definition.
-    pub async fn get_dashboard(&mut self, name: &str) -> Result<Dashboard> {
+    pub async fn get_dashboard(&self, name: &str) -> Result<Dashboard> {
         crate::retry_call!(
             self,
             __token,

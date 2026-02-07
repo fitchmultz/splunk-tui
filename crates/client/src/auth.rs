@@ -2,7 +2,9 @@
 
 use secrecy::{ExposeSecret, SecretString};
 use splunk_config::constants::DEFAULT_EXPIRY_BUFFER_SECS;
+use std::sync::Arc;
 use std::time::Instant;
+use tokio::sync::{Mutex, RwLock};
 
 /// Strategy for authenticating with Splunk.
 #[derive(Debug, Clone)]
@@ -19,10 +21,28 @@ pub enum AuthStrategy {
 }
 
 /// Manages Splunk session tokens with automatic renewal.
-#[derive(Debug)]
+///
+/// Uses interior mutability to allow concurrent access to the session token
+/// while ensuring only one refresh operation occurs at a time via singleflight pattern.
 pub struct SessionManager {
     auth_strategy: AuthStrategy,
-    session_token: Option<SessionToken>,
+    /// Session token storage with interior mutability for concurrent access.
+    /// Uses RwLock to allow multiple concurrent readers when token is valid.
+    session_token: RwLock<Option<SessionToken>>,
+    /// Singleflight refresh: ensures only one login call at a time.
+    /// The Mutex guards an optional Arc<Notify> that waiting tasks can subscribe to.
+    refresh_notify: Mutex<Option<Arc<tokio::sync::Notify>>>,
+    /// Session TTL in seconds for newly created tokens.
+    session_ttl_seconds: u64,
+}
+
+impl std::fmt::Debug for SessionManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SessionManager")
+            .field("auth_strategy", &self.auth_strategy)
+            .field("session_ttl_seconds", &self.session_ttl_seconds)
+            .finish_non_exhaustive()
+    }
 }
 
 /// Session token with expiry information.
@@ -66,10 +86,12 @@ impl SessionToken {
 
 impl SessionManager {
     /// Create a new session manager with the given auth strategy.
-    pub fn new(strategy: AuthStrategy) -> Self {
+    pub fn new(strategy: AuthStrategy, session_ttl_seconds: u64) -> Self {
         Self {
             auth_strategy: strategy,
-            session_token: None,
+            session_token: RwLock::new(None),
+            refresh_notify: Mutex::new(None),
+            session_ttl_seconds,
         }
     }
 
@@ -86,11 +108,17 @@ impl SessionManager {
     /// Get the bearer token for API requests.
     /// For API token auth, returns the token directly.
     /// For session auth, returns the session token if valid.
-    pub fn get_bearer_token(&self) -> Option<&str> {
+    ///
+    /// Note: This method does not trigger a refresh. Use [`get_or_refresh_token`]
+    /// for automatic token refresh.
+    pub async fn get_bearer_token(&self) -> Option<String> {
         match &self.auth_strategy {
-            AuthStrategy::ApiToken { token } => Some(token.expose_secret()),
+            AuthStrategy::ApiToken { token } => Some(token.expose_secret().to_string()),
             AuthStrategy::SessionToken { .. } => {
-                self.session_token.as_ref().map(|t| t.value.expose_secret())
+                let token_guard = self.session_token.read().await;
+                token_guard
+                    .as_ref()
+                    .map(|t| t.value.expose_secret().to_string())
             }
         }
     }
@@ -100,40 +128,133 @@ impl SessionManager {
     /// # Arguments
     /// * `token` - The session token string
     /// * `ttl_seconds` - Time-to-live in seconds (None means no expiry)
-    pub fn set_session_token(&mut self, token: String, ttl_seconds: Option<u64>) {
-        self.session_token = Some(SessionToken::new(
+    pub async fn set_session_token(&self, token: String, ttl_seconds: Option<u64>) {
+        let mut token_guard = self.session_token.write().await;
+        *token_guard = Some(SessionToken::new(
             SecretString::new(token.into()),
             ttl_seconds,
         ));
     }
 
-    /// Generic helper to check session token state.
-    /// Returns false for API token auth, true if no session token exists.
-    fn check_session<F>(&self, check: F) -> bool
-    where
-        F: FnOnce(&SessionToken) -> bool,
-    {
+    /// Check if the current session token is expired or will expire soon (read-only).
+    ///
+    /// For API token auth, always returns false (no expiry concerns).
+    pub async fn is_session_expired(&self) -> bool {
         if self.is_api_token() {
             return false;
         }
-        self.session_token.as_ref().map(check).unwrap_or(true)
-    }
-
-    /// Check if the current session token is expired or will expire soon.
-    pub fn is_session_expired(&self) -> bool {
-        self.check_session(|t| t.is_expired())
+        let token_guard = self.session_token.read().await;
+        token_guard.as_ref().map(|t| t.is_expired()).unwrap_or(true)
     }
 
     /// Check if the current session token will expire soon (within buffer).
     ///
     /// Returns false for API token auth (no expiry concerns).
-    pub fn session_expires_soon(&self) -> bool {
-        self.check_session(|t| t.will_expire_soon())
+    /// Returns true if no session token is set.
+    pub async fn session_expires_soon(&self) -> bool {
+        if self.is_api_token() {
+            return false;
+        }
+        let token_guard = self.session_token.read().await;
+        token_guard
+            .as_ref()
+            .map(|t| t.will_expire_soon())
+            .unwrap_or(true)
     }
 
     /// Clear the current session token (force re-authentication).
-    pub fn clear_session(&mut self) {
-        self.session_token = None;
+    pub async fn clear_session(&self) {
+        let mut token_guard = self.session_token.write().await;
+        *token_guard = None;
+    }
+
+    /// Get a valid bearer token, refreshing if necessary using singleflight pattern.
+    ///
+    /// This method ensures that even with concurrent callers, only one login request
+    /// is made to the Splunk server. All concurrent callers will await the same
+    /// refresh result.
+    ///
+    /// # Arguments
+    /// * `login_fn` - Async function that performs the actual login
+    ///
+    /// # Returns
+    /// A valid bearer token string, or an error if refresh fails.
+    pub async fn get_or_refresh_token<F, Fut>(
+        &self,
+        login_fn: F,
+    ) -> Result<String, crate::error::ClientError>
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<String, crate::error::ClientError>> + Send,
+    {
+        // Fast path: API token auth (lock-free)
+        if let AuthStrategy::ApiToken { token } = &self.auth_strategy {
+            return Ok(token.expose_secret().to_string());
+        }
+
+        // Fast path: Check if existing token is still valid (read lock only)
+        {
+            let token_guard = self.session_token.read().await;
+            if let Some(token) = token_guard.as_ref() {
+                if !token.is_expired() && !token.will_expire_soon() {
+                    return Ok(token.value.expose_secret().to_string());
+                }
+            }
+        } // Release read lock
+
+        // Slow path: Need to refresh - use singleflight pattern with Notify
+        // First, try to become the "leader" that will perform the refresh
+        let notify = {
+            let mut notify_guard = self.refresh_notify.lock().await;
+            match notify_guard.as_ref() {
+                Some(n) => {
+                    // Another task is already refreshing, clone the Arc and wait
+                    n.clone()
+                }
+                None => {
+                    // We are the leader - create a new Notify
+                    let new_notify = Arc::new(tokio::sync::Notify::new());
+                    *notify_guard = Some(new_notify.clone());
+                    drop(notify_guard);
+
+                    // Perform the actual login
+                    let result = login_fn().await;
+
+                    // Store the token if successful
+                    if let Ok(ref token) = result {
+                        self.set_session_token(token.clone(), Some(self.session_ttl_seconds))
+                            .await;
+                    }
+
+                    // Notify all waiting tasks
+                    let mut notify_guard = self.refresh_notify.lock().await;
+                    *notify_guard = None;
+                    drop(notify_guard);
+                    new_notify.notify_waiters();
+
+                    return result;
+                }
+            }
+        };
+
+        // We are not the leader - wait for the leader to complete
+        notify.notified().await;
+
+        // After being notified, check if we now have a valid token
+        // If the refresh succeeded, we'll have a token. If it failed, we return error.
+        let token_guard = self.session_token.read().await;
+        if let Some(token) = token_guard.as_ref() {
+            if !token.is_expired() {
+                return Ok(token.value.expose_secret().to_string());
+            }
+        }
+        drop(token_guard);
+
+        // Token still not valid - the leader's refresh must have failed
+        // Return a generic auth error since we don't have access to the original error
+        Err(crate::error::ClientError::AuthFailed(
+            "Token refresh failed".to_string(),
+        ))
     }
 }
 
@@ -142,44 +263,60 @@ mod tests {
     use super::*;
     use splunk_config::constants::DEFAULT_SESSION_TTL_SECS;
 
-    #[test]
-    fn test_api_token_bypasses_session() {
+    #[tokio::test]
+    async fn test_api_token_bypasses_session() {
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new("test-token".to_string().into()),
         };
-        let manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
         assert!(manager.is_api_token());
-        assert_eq!(manager.get_bearer_token(), Some("test-token"));
-        assert!(!manager.is_session_expired());
+        assert!(!manager.is_session_expired().await);
     }
 
-    #[test]
-    fn test_session_token_without_ttl() {
+    #[tokio::test]
+    async fn test_api_token_get_bearer_token() {
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("test-token".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        let token = manager.get_bearer_token().await;
+        assert_eq!(token, Some("test-token".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_session_token_without_ttl() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let mut manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
         assert!(!manager.is_api_token());
-        assert!(manager.get_bearer_token().is_none());
-        assert!(manager.is_session_expired());
+        assert!(manager.get_bearer_token().await.is_none());
+        assert!(manager.is_session_expired().await);
 
-        manager.set_session_token("session-key".to_string(), None);
-        assert_eq!(manager.get_bearer_token(), Some("session-key"));
+        manager
+            .set_session_token("session-key".to_string(), None)
+            .await;
+        assert_eq!(
+            manager.get_bearer_token().await,
+            Some("session-key".to_string())
+        );
         // Without TTL, session never expires
-        assert!(!manager.is_session_expired());
+        assert!(!manager.is_session_expired().await);
     }
 
-    #[test]
-    fn test_session_token_with_ttl() {
+    #[tokio::test]
+    async fn test_session_token_with_ttl() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let mut manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
 
-        manager.set_session_token("session-key".to_string(), Some(1));
-        assert!(!manager.is_session_expired());
+        manager
+            .set_session_token("session-key".to_string(), Some(1))
+            .await;
+        assert!(!manager.is_session_expired().await);
 
         // Note: Can't easily test actual expiry in unit test without time manipulation
     }
@@ -239,7 +376,7 @@ mod tests {
             token: SecretString::new(secret_token.to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
         let debug_output = format!("{:?}", manager);
 
         // The secret token should NOT appear in debug output
@@ -250,16 +387,18 @@ mod tests {
     }
 
     /// Test that session tokens set after login are not exposed in Debug output.
-    #[test]
-    fn test_set_session_token_not_exposed_in_debug() {
+    #[tokio::test]
+    async fn test_set_session_token_not_exposed_in_debug() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("password".to_string().into()),
         };
 
-        let mut manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
         let session_token = "new-session-token-after-login-123";
-        manager.set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS));
+        manager
+            .set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS))
+            .await;
 
         let debug_output = format!("{:?}", manager);
 
@@ -271,19 +410,21 @@ mod tests {
     }
 
     /// Test that clearing a session doesn't expose the token in Debug output.
-    #[test]
-    fn test_clear_session_not_exposed_in_debug() {
+    #[tokio::test]
+    async fn test_clear_session_not_exposed_in_debug() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("password".to_string().into()),
         };
 
-        let mut manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
         let session_token = "session-to-be-cleared-456";
-        manager.set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS));
+        manager
+            .set_session_token(session_token.to_string(), Some(DEFAULT_SESSION_TTL_SECS))
+            .await;
 
         // Clear the session
-        manager.clear_session();
+        manager.clear_session().await;
 
         let debug_output = format!("{:?}", manager);
 
@@ -295,14 +436,14 @@ mod tests {
     }
 
     /// Test that API token auth never expires while session auth does.
-    #[test]
-    fn test_api_token_vs_session_expiration() {
+    #[tokio::test]
+    async fn test_api_token_vs_session_expiration() {
         // API token auth - should never expire
         let api_strategy = AuthStrategy::ApiToken {
             token: SecretString::new("api-token".to_string().into()),
         };
-        let api_manager = SessionManager::new(api_strategy);
-        assert!(!api_manager.is_session_expired());
+        let api_manager = SessionManager::new(api_strategy, DEFAULT_SESSION_TTL_SECS);
+        assert!(!api_manager.is_session_expired().await);
         assert!(api_manager.is_api_token());
 
         // Session token auth without setting token - should be expired
@@ -310,39 +451,41 @@ mod tests {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let session_manager = SessionManager::new(session_strategy);
-        assert!(session_manager.is_session_expired());
+        let session_manager = SessionManager::new(session_strategy, DEFAULT_SESSION_TTL_SECS);
+        assert!(session_manager.is_session_expired().await);
         assert!(!session_manager.is_api_token());
     }
 
     /// Test that bearer token can be accessed programmatically via ExposeSecret.
-    #[test]
-    fn test_bearer_token_accessible_via_expose_secret() {
+    #[tokio::test]
+    async fn test_bearer_token_accessible_via_expose_secret() {
         let secret_token = "bearer-token-secret-789";
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new(secret_token.to_string().into()),
         };
 
-        let manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
 
         // Token should be accessible via get_bearer_token (for API calls)
-        let bearer = manager.get_bearer_token();
-        assert_eq!(bearer, Some(secret_token));
+        let bearer = manager.get_bearer_token().await;
+        assert_eq!(bearer, Some(secret_token.to_string()));
     }
 
     /// Test that multiple secrets in SessionManager are all protected.
-    #[test]
-    fn test_multiple_secrets_protected() {
+    #[tokio::test]
+    async fn test_multiple_secrets_protected() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("password1".to_string().into()),
         };
 
-        let mut manager = SessionManager::new(strategy);
-        manager.set_session_token(
-            "session-token-123".to_string(),
-            Some(DEFAULT_SESSION_TTL_SECS),
-        );
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+        manager
+            .set_session_token(
+                "session-token-123".to_string(),
+                Some(DEFAULT_SESSION_TTL_SECS),
+            )
+            .await;
 
         let debug_output = format!("{:?}", manager);
 
@@ -356,64 +499,68 @@ mod tests {
     // ============================================================================
 
     /// Test that will_expire_soon() returns false when outside buffer window.
-    #[test]
-    fn test_will_expire_soon_returns_false_outside_buffer() {
+    #[tokio::test]
+    async fn test_will_expire_soon_returns_false_outside_buffer() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let mut manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
 
         // Set token with 120s TTL and 60s buffer - expires in 120s, buffer ends at 60s
-        manager.set_session_token("session-key".to_string(), Some(120));
+        manager
+            .set_session_token("session-key".to_string(), Some(120))
+            .await;
 
         // Should not expire soon immediately after setting
-        assert!(!manager.session_expires_soon());
-        assert!(!manager.is_session_expired());
+        assert!(!manager.session_expires_soon().await);
+        assert!(!manager.is_session_expired().await);
     }
 
     /// Test that session_expires_soon() returns false for API token auth.
-    #[test]
-    fn test_session_expires_soon_returns_false_for_api_token() {
+    #[tokio::test]
+    async fn test_session_expires_soon_returns_false_for_api_token() {
         let strategy = AuthStrategy::ApiToken {
             token: SecretString::new("api-token".to_string().into()),
         };
-        let manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
 
         // API tokens never expire
-        assert!(!manager.session_expires_soon());
-        assert!(!manager.is_session_expired());
+        assert!(!manager.session_expires_soon().await);
+        assert!(!manager.is_session_expired().await);
     }
 
     /// Test that session_expires_soon() returns true when no session token is set.
-    #[test]
-    fn test_session_expires_soon_returns_true_when_no_token() {
+    #[tokio::test]
+    async fn test_session_expires_soon_returns_true_when_no_token() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
 
         // No token set - should be considered expiring soon
-        assert!(manager.session_expires_soon());
-        assert!(manager.is_session_expired());
+        assert!(manager.session_expires_soon().await);
+        assert!(manager.is_session_expired().await);
     }
 
     /// Test that buffer of 0 seconds behaves like original is_expired().
-    #[test]
-    fn test_zero_buffer_behaves_like_is_expired() {
+    #[tokio::test]
+    async fn test_zero_buffer_behaves_like_is_expired() {
         let strategy = AuthStrategy::SessionToken {
             username: "admin".to_string(),
             password: SecretString::new("pass".to_string().into()),
         };
-        let mut manager = SessionManager::new(strategy);
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
 
         // Set token with 120s TTL (buffer is DEFAULT_EXPIRY_BUFFER_SECS = 60)
-        manager.set_session_token("session-key".to_string(), Some(120));
+        manager
+            .set_session_token("session-key".to_string(), Some(120))
+            .await;
 
         // With 0 buffer, will_expire_soon should behave like is_expired
-        assert!(!manager.session_expires_soon());
-        assert!(!manager.is_session_expired());
+        assert!(!manager.session_expires_soon().await);
+        assert!(!manager.is_session_expired().await);
     }
 
     /// Test that will_expire_soon returns true when within buffer window.
@@ -442,5 +589,185 @@ mod tests {
         // Should have the default buffer (60 seconds)
         assert!(!token.is_expired());
         assert!(!token.will_expire_soon());
+    }
+
+    // ============================================================================
+    // Singleflight Refresh Tests
+    // ============================================================================
+
+    /// Test that get_or_refresh_token returns API token directly without calling login.
+    #[tokio::test]
+    async fn test_get_or_refresh_token_api_token_no_login() {
+        let strategy = AuthStrategy::ApiToken {
+            token: SecretString::new("api-token".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+
+        let login_called = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let login_called_clone = login_called.clone();
+
+        let token = manager
+            .get_or_refresh_token(|| async move {
+                login_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok("new-token".to_string())
+            })
+            .await;
+
+        assert_eq!(token.unwrap(), "api-token");
+        assert!(!login_called.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    /// Test that get_or_refresh_token returns cached token when valid.
+    #[tokio::test]
+    async fn test_get_or_refresh_token_returns_cached_when_valid() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+
+        // Set a valid token
+        manager
+            .set_session_token("cached-token".to_string(), Some(3600))
+            .await;
+
+        let login_called = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let login_called_clone = login_called.clone();
+
+        let token = manager
+            .get_or_refresh_token(|| async move {
+                login_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok("new-token".to_string())
+            })
+            .await;
+
+        assert_eq!(token.unwrap(), "cached-token");
+        assert!(!login_called.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    /// Test that get_or_refresh_token calls login when no token exists.
+    #[tokio::test]
+    async fn test_get_or_refresh_token_calls_login_when_no_token() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+
+        let token = manager
+            .get_or_refresh_token(|| async { Ok("new-token".to_string()) })
+            .await;
+
+        assert_eq!(token.unwrap(), "new-token");
+
+        // Verify the token was stored
+        let cached = manager.get_bearer_token().await;
+        assert_eq!(cached, Some("new-token".to_string()));
+    }
+
+    /// Test that get_or_refresh_token calls login when token is expired.
+    #[tokio::test]
+    async fn test_get_or_refresh_token_calls_login_when_expired() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let manager = SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS);
+
+        // Set an expired token (0 seconds TTL = already expired)
+        manager
+            .set_session_token("expired-token".to_string(), Some(0))
+            .await;
+
+        // Small delay to ensure expiry
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+        let token = manager
+            .get_or_refresh_token(|| async { Ok("refreshed-token".to_string()) })
+            .await;
+
+        assert_eq!(token.unwrap(), "refreshed-token");
+    }
+
+    /// Test concurrent calls to get_or_refresh_token only trigger one login.
+    /// This is the key singleflight pattern test.
+    #[tokio::test]
+    async fn test_concurrent_calls_singleflight() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("pass".to_string().into()),
+        };
+        let manager = Arc::new(SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS));
+
+        let login_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+        // Spawn 10 concurrent tasks
+        let mut handles = vec![];
+        for _ in 0..10 {
+            let manager = manager.clone();
+            let login_count = login_count.clone();
+            handles.push(tokio::spawn(async move {
+                manager
+                    .get_or_refresh_token(move || async move {
+                        // Simulate login delay
+                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                        login_count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        Ok("shared-token".to_string())
+                    })
+                    .await
+            }));
+        }
+
+        // All should succeed
+        for handle in handles {
+            let result = handle.await.unwrap();
+            assert!(result.is_ok());
+            assert_eq!(result.unwrap(), "shared-token");
+        }
+
+        // Login should only have been called once
+        assert_eq!(login_count.load(std::sync::atomic::Ordering::SeqCst), 1);
+
+        // All should have the same token
+        let cached = manager.get_bearer_token().await;
+        assert_eq!(cached, Some("shared-token".to_string()));
+    }
+
+    /// Test that singleflight properly handles login failures.
+    #[tokio::test]
+    async fn test_singleflight_login_failure() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "admin".to_string(),
+            password: SecretString::new("wrong-pass".to_string().into()),
+        };
+        let manager = Arc::new(SessionManager::new(strategy, DEFAULT_SESSION_TTL_SECS));
+
+        // Spawn 5 concurrent tasks
+        let mut handles = vec![];
+        for _ in 0..5 {
+            let manager = manager.clone();
+            handles.push(tokio::spawn(async move {
+                manager
+                    .get_or_refresh_token(|| async {
+                        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                        Err(crate::error::ClientError::AuthFailed(
+                            "Invalid credentials".to_string(),
+                        ))
+                    })
+                    .await
+            }));
+        }
+
+        // All should fail with the same error
+        for handle in handles {
+            let result = handle.await.unwrap();
+            assert!(matches!(
+                result,
+                Err(crate::error::ClientError::AuthFailed(_))
+            ));
+        }
+
+        // Token should not be set
+        assert!(manager.get_bearer_token().await.is_none());
     }
 }

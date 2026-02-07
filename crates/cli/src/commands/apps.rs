@@ -117,7 +117,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing installed apps (count: {})", count);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let apps = tokio::select! {
         res = client.list_apps(Some(count as u64), None) => res?,
@@ -151,7 +151,7 @@ async fn run_info(
 ) -> Result<()> {
     info!("Getting app info for: {}", app_name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let app = tokio::select! {
         res = client.get_app(app_name) => res,
@@ -184,7 +184,7 @@ async fn run_enable(
 ) -> Result<()> {
     info!("Enabling app: {}", app_name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.enable_app(app_name) => res,
@@ -204,7 +204,7 @@ async fn run_disable(
 ) -> Result<()> {
     info!("Disabling app: {}", app_name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.disable_app(app_name) => res,
@@ -234,7 +234,7 @@ async fn run_install(
 
     info!("Installing app from: {}", file_path.display());
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let app = tokio::select! {
         res = client.install_app(file_path) => res,
@@ -280,7 +280,7 @@ async fn run_remove(
 
     info!("Removing app: {}", app_name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.remove_app(app_name) => res,

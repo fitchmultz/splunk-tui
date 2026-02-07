@@ -17,11 +17,7 @@ use crate::models::{CreateRoleParams, ModifyRoleParams, Role};
 
 impl SplunkClient {
     /// List all roles.
-    pub async fn list_roles(
-        &mut self,
-        count: Option<u64>,
-        offset: Option<u64>,
-    ) -> Result<Vec<Role>> {
+    pub async fn list_roles(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<Role>> {
         crate::retry_call!(
             self,
             __token,
@@ -39,7 +35,7 @@ impl SplunkClient {
     }
 
     /// Create a new role with the specified parameters.
-    pub async fn create_role(&mut self, params: &CreateRoleParams) -> Result<Role> {
+    pub async fn create_role(&self, params: &CreateRoleParams) -> Result<Role> {
         crate::retry_call!(
             self,
             __token,
@@ -56,7 +52,7 @@ impl SplunkClient {
     }
 
     /// Modify an existing role.
-    pub async fn modify_role(&mut self, name: &str, params: &ModifyRoleParams) -> Result<Role> {
+    pub async fn modify_role(&self, name: &str, params: &ModifyRoleParams) -> Result<Role> {
         crate::retry_call!(
             self,
             __token,
@@ -74,7 +70,7 @@ impl SplunkClient {
     }
 
     /// Delete a role by name.
-    pub async fn delete_role(&mut self, name: &str) -> Result<()> {
+    pub async fn delete_role(&self, name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,

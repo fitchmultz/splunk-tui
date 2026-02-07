@@ -18,7 +18,7 @@ use crate::models::{
 
 impl SplunkClient {
     /// Get SHC members.
-    pub async fn get_shc_members(&mut self) -> Result<Vec<ShcMember>> {
+    pub async fn get_shc_members(&self) -> Result<Vec<ShcMember>> {
         crate::retry_call!(
             self,
             __token,
@@ -34,7 +34,7 @@ impl SplunkClient {
     }
 
     /// Get SHC captain information.
-    pub async fn get_shc_captain(&mut self) -> Result<ShcCaptain> {
+    pub async fn get_shc_captain(&self) -> Result<ShcCaptain> {
         crate::retry_call!(
             self,
             __token,
@@ -50,7 +50,7 @@ impl SplunkClient {
     }
 
     /// Get SHC status.
-    pub async fn get_shc_status(&mut self) -> Result<ShcStatus> {
+    pub async fn get_shc_status(&self) -> Result<ShcStatus> {
         crate::retry_call!(
             self,
             __token,
@@ -66,7 +66,7 @@ impl SplunkClient {
     }
 
     /// Get SHC configuration.
-    pub async fn get_shc_config(&mut self) -> Result<ShcConfig> {
+    pub async fn get_shc_config(&self) -> Result<ShcConfig> {
         crate::retry_call!(
             self,
             __token,
@@ -82,7 +82,7 @@ impl SplunkClient {
     }
 
     /// Add a member to the SHC.
-    pub async fn add_shc_member(&mut self, target_uri: &str) -> Result<ShcManagementResponse> {
+    pub async fn add_shc_member(&self, target_uri: &str) -> Result<ShcManagementResponse> {
         let params = AddShcMemberParams {
             target_uri: target_uri.to_string(),
         };
@@ -102,7 +102,7 @@ impl SplunkClient {
     }
 
     /// Remove a member from the SHC.
-    pub async fn remove_shc_member(&mut self, member_guid: &str) -> Result<ShcManagementResponse> {
+    pub async fn remove_shc_member(&self, member_guid: &str) -> Result<ShcManagementResponse> {
         let params = RemoveShcMemberParams {
             member: member_guid.to_string(),
         };
@@ -122,7 +122,7 @@ impl SplunkClient {
     }
 
     /// Trigger a rolling restart of the SHC.
-    pub async fn rolling_restart_shc(&mut self, force: bool) -> Result<ShcManagementResponse> {
+    pub async fn rolling_restart_shc(&self, force: bool) -> Result<ShcManagementResponse> {
         let params = RollingRestartParams { force };
         crate::retry_call!(
             self,
@@ -140,7 +140,7 @@ impl SplunkClient {
     }
 
     /// Set a specific member as captain.
-    pub async fn set_shc_captain(&mut self, target_guid: &str) -> Result<ShcManagementResponse> {
+    pub async fn set_shc_captain(&self, target_guid: &str) -> Result<ShcManagementResponse> {
         let params = SetCaptainParams {
             target_guid: target_guid.to_string(),
         };

@@ -438,7 +438,7 @@ fn test_live_cli_saved_searches_info_and_run_json() {
     let search = r#"| makeresults | eval foo="saved-search-cli" | table foo"#;
 
     // Setup via client library, validate via CLI.
-    let mut client = create_test_client_from_env();
+    let client = create_test_client_from_env();
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

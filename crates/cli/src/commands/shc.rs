@@ -293,7 +293,7 @@ async fn run_members(
         anyhow::bail!("The --page-size value must be greater than 0");
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let members_result = tokio::select! {
         res = client.get_shc_members() => res,
@@ -351,7 +351,7 @@ async fn run_captain(
 ) -> Result<()> {
     info!("Fetching SHC captain information");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let captain_result = tokio::select! {
         res = client.get_shc_captain() => res,
@@ -395,7 +395,7 @@ async fn run_config(
 ) -> Result<()> {
     info!("Fetching SHC configuration");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let config_result = tokio::select! {
         res = client.get_shc_config() => res,
@@ -438,7 +438,7 @@ async fn run_manage(
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     match command {
         ManageCommand::Add { target_uri } => {

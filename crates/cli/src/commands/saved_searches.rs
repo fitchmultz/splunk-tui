@@ -198,7 +198,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing saved searches (count: {})", count);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let searches = tokio::select! {
         res = client.list_saved_searches(Some(count as u64), None) => res?,
@@ -232,7 +232,7 @@ async fn run_info(
 ) -> Result<()> {
     info!("Getting saved search info for: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let search = tokio::select! {
         res = client.get_saved_search(name) => res?,
@@ -271,7 +271,7 @@ async fn run_run(
 ) -> Result<()> {
     info!("Running saved search: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let search = tokio::select! {
         res = client.get_saved_search(name) => res?,
@@ -322,7 +322,7 @@ async fn run_edit(
         ));
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.update_saved_search(name, search, description, disabled) => {
@@ -345,7 +345,7 @@ async fn run_create(
 ) -> Result<()> {
     info!("Creating saved search: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     // First create the saved search
     tokio::select! {
@@ -394,7 +394,7 @@ async fn run_delete(
         }
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_saved_search(name) => res,
@@ -416,7 +416,7 @@ async fn run_enable_disable(
     let action = if disabled { "Disabling" } else { "Enabling" };
     info!("{} saved search: {}", action, name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let status = if disabled { "disabled" } else { "enabled" };
 

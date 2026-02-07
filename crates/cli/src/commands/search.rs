@@ -56,7 +56,7 @@ pub async fn run(
         Some(SearchMode::Normal)
     };
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Connecting to {}", client.base_url());
 

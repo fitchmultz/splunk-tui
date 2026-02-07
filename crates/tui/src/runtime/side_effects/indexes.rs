@@ -29,8 +29,7 @@ pub async fn handle_load_indexes(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_indexes(Some(count), Some(offset)).await {
+        match client.list_indexes(Some(count), Some(offset)).await {
             Ok(indexes) => {
                 if offset == 0 {
                     let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
@@ -57,8 +56,7 @@ pub async fn handle_create_index(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.create_index(&params).await {
+        match client.create_index(&params).await {
             Ok(index) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -98,8 +96,7 @@ pub async fn handle_modify_index(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.modify_index(&name, &params).await {
+        match client.modify_index(&name, &params).await {
             Ok(index) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -134,8 +131,7 @@ pub async fn handle_modify_index(
 pub async fn handle_delete_index(client: SharedClient, tx: Sender<Action>, name: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.delete_index(&name).await {
+        match client.delete_index(&name).await {
             Ok(()) => {
                 let _ = tx
                     .send(Action::Notify(

@@ -27,7 +27,7 @@ async fn test_network_error_does_not_expose_token() {
         token: SecretString::new("secret-api-token-xyz789".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url("http://localhost:1".to_string()) // Invalid port
         .auth_strategy(strategy)
         .timeout(std::time::Duration::from_millis(100))
@@ -71,7 +71,7 @@ async fn test_auth_failure_does_not_expose_password() {
         password: SecretString::new(wrong_password.to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -113,7 +113,7 @@ async fn test_api_error_does_not_expose_token() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)

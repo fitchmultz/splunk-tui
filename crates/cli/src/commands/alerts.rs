@@ -63,7 +63,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing fired alerts (count: {})", count);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let alerts = tokio::select! {
         res = client.list_fired_alerts(Some(count as u64), None) => res?,
@@ -97,7 +97,7 @@ async fn run_info(
 ) -> Result<()> {
     info!("Getting fired alert info for: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let alert = tokio::select! {
         res = client.get_fired_alert(name) => res?,

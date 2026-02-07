@@ -19,7 +19,7 @@ mod auth_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_login() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         // Login by calling any authenticated method
@@ -37,7 +37,7 @@ mod indexes_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_list_indexes() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let indexes = client
@@ -55,7 +55,7 @@ mod indexes_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_list_indexes_pagination() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -95,7 +95,7 @@ mod search_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_search_and_get_results() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -141,7 +141,7 @@ mod search_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_create_status_and_delete_job() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -168,7 +168,7 @@ mod search_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_list_jobs() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         // Just verify we can list jobs successfully
@@ -181,7 +181,7 @@ mod search_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_create_and_cancel_job() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -208,7 +208,7 @@ mod cluster_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_cluster_info() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -219,7 +219,7 @@ mod cluster_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_cluster_peers() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -234,7 +234,7 @@ mod server_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_server_info() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let info = client
@@ -253,7 +253,7 @@ mod server_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_health() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let health = client.get_health().await.expect("Failed to get health");
@@ -268,7 +268,7 @@ mod license_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_license_usage() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let usage = client
@@ -286,7 +286,7 @@ mod license_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_list_license_pools_and_stacks() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -307,7 +307,7 @@ mod kvstore_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_kvstore_status() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let status = client
@@ -332,7 +332,7 @@ mod diagnostics_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_check_log_parsing_health() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let parsing = client
@@ -359,7 +359,7 @@ mod diagnostics_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_internal_logs() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
         let logs = client
@@ -387,7 +387,7 @@ mod apps_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_list_apps_and_users_and_saved_searches() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -416,7 +416,7 @@ mod apps_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_app() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -429,7 +429,7 @@ mod apps_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_enable_disable_app() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -497,7 +497,7 @@ mod apps_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_create_list_and_delete_saved_search() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 
@@ -540,7 +540,7 @@ mod apps_live_tests {
     #[tokio::test]
     #[ignore = "requires live Splunk server"]
     async fn test_live_get_saved_search() {
-        let Some(mut client) = create_test_client_or_skip() else {
+        let Some(client) = create_test_client_or_skip() else {
             return;
         };
 

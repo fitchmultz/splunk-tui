@@ -153,7 +153,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing roles");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let roles = tokio::select! {
         res = client.list_roles(Some(count as u64), None) => res?,
@@ -187,7 +187,7 @@ async fn run_capabilities(
 ) -> Result<()> {
     info!("Listing capabilities");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let capabilities = tokio::select! {
         res = client.list_capabilities() => res?,
@@ -226,7 +226,7 @@ async fn run_create(
 ) -> Result<()> {
     info!("Creating role: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::CreateRoleParams {
         name: name.to_string(),
@@ -260,7 +260,7 @@ async fn run_update(
 ) -> Result<()> {
     info!("Modifying role: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::ModifyRoleParams {
         capabilities,
@@ -302,7 +302,7 @@ async fn run_delete(
 
     info!("Deleting role: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_role(name) => {

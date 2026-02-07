@@ -147,7 +147,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing users");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let users = tokio::select! {
         res = client.list_users(Some(count as u64), None) => res?,
@@ -199,7 +199,7 @@ async fn run_create(
         }
     };
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::CreateUserParams {
         name: name.to_string(),
@@ -233,7 +233,7 @@ async fn run_modify(
 ) -> Result<()> {
     info!("Modifying user: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::ModifyUserParams {
         password: password.map(|p| SecretString::new(p.into())),
@@ -275,7 +275,7 @@ async fn run_delete(
 
     info!("Deleting user: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_user(name) => {

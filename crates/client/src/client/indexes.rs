@@ -17,7 +17,7 @@ use crate::models::{CreateIndexParams, Index, ModifyIndexParams};
 impl SplunkClient {
     /// List all indexes.
     pub async fn list_indexes(
-        &mut self,
+        &self,
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<Index>> {
@@ -38,7 +38,7 @@ impl SplunkClient {
     }
 
     /// Create a new index with the specified parameters.
-    pub async fn create_index(&mut self, params: &CreateIndexParams) -> Result<Index> {
+    pub async fn create_index(&self, params: &CreateIndexParams) -> Result<Index> {
         crate::retry_call!(
             self,
             __token,
@@ -55,7 +55,7 @@ impl SplunkClient {
     }
 
     /// Modify an existing index.
-    pub async fn modify_index(&mut self, name: &str, params: &ModifyIndexParams) -> Result<Index> {
+    pub async fn modify_index(&self, name: &str, params: &ModifyIndexParams) -> Result<Index> {
         crate::retry_call!(
             self,
             __token,
@@ -73,7 +73,7 @@ impl SplunkClient {
     }
 
     /// Delete an index by name.
-    pub async fn delete_index(&mut self, name: &str) -> Result<()> {
+    pub async fn delete_index(&self, name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,

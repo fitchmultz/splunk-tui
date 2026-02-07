@@ -52,8 +52,7 @@ pub struct UpdateMacroEffectParams {
 pub async fn handle_load_macros(client: SharedClient, action_tx: Sender<Action>) {
     let _ = action_tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard.list_macros().await {
+        match client.list_macros().await {
             Ok(macros) => {
                 let _ = action_tx.send(Action::MacrosLoaded(Ok(macros))).await;
             }
@@ -83,8 +82,7 @@ pub async fn handle_create_macro(
             errormsg: None,
         };
 
-        let mut guard = client.lock().await;
-        match guard.create_macro(macro_params).await {
+        match client.create_macro(macro_params).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::MacroCreated(Ok(()))).await;
                 // Refresh macros list on success
@@ -116,8 +114,7 @@ pub async fn handle_update_macro(
             errormsg: None,
         };
 
-        let mut guard = client.lock().await;
-        match guard.update_macro(macro_params).await {
+        match client.update_macro(macro_params).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::MacroUpdated(Ok(()))).await;
                 // Refresh macros list on success
@@ -134,8 +131,7 @@ pub async fn handle_update_macro(
 pub async fn handle_delete_macro(client: SharedClient, action_tx: Sender<Action>, name: String) {
     let _ = action_tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard.delete_macro(&name).await {
+        match client.delete_macro(&name).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::MacroDeleted(Ok(name))).await;
                 // Refresh macros list on success

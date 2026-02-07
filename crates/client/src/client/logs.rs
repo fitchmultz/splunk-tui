@@ -19,7 +19,7 @@ impl SplunkClient {
     /// This method searches the `_internal` index for parsing-related errors
     /// from specific components (TuningParser, DateParserVerbose, Parser) and
     /// returns structured results about any issues found.
-    pub async fn check_log_parsing_health(&mut self) -> Result<LogParsingHealth> {
+    pub async fn check_log_parsing_health(&self) -> Result<LogParsingHealth> {
         crate::retry_call!(
             self,
             __token,
@@ -36,7 +36,7 @@ impl SplunkClient {
 
     /// Get internal logs from Splunk.
     pub async fn get_internal_logs(
-        &mut self,
+        &self,
         count: u64,
         earliest: Option<&str>,
     ) -> Result<Vec<LogEntry>> {

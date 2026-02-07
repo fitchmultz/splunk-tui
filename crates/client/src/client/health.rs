@@ -30,6 +30,8 @@ impl SplunkClient {
     /// - KVStore status
     /// - Log parsing health
     ///
+    /// The optional health checks are performed concurrently for improved performance.
+    ///
     /// # Returns
     ///
     /// Returns `Ok(AggregatedHealth)` if server_info can be fetched.
@@ -45,9 +47,18 @@ impl SplunkClient {
     ///     eprintln!("Warning: {} check failed: {}", endpoint, err);
     /// }
     /// ```
-    pub async fn check_health_aggregate(&mut self) -> Result<AggregatedHealth> {
+    pub async fn check_health_aggregate(&self) -> Result<AggregatedHealth> {
         // Server info is required - if this fails, the whole check fails
         let server_info = self.get_server_info().await?;
+
+        // Fetch optional health data concurrently for improved performance
+        // Using tokio::join! to run all checks in parallel
+        let (splunkd_health, license_usage, kvstore_status, log_parsing_health) = tokio::join!(
+            self.get_health(),
+            self.get_license_usage(),
+            self.get_kvstore_status(),
+            self.check_log_parsing_health(),
+        );
 
         let mut output = HealthCheckOutput {
             server_info: Some(server_info),
@@ -59,22 +70,22 @@ impl SplunkClient {
         let mut partial_errors = Vec::new();
 
         // Collect optional health data - failures don't abort the aggregation
-        match self.get_health().await {
+        match splunkd_health {
             Ok(health) => output.splunkd_health = Some(health),
             Err(e) => partial_errors.push(("splunkd_health".to_string(), e)),
         }
 
-        match self.get_license_usage().await {
+        match license_usage {
             Ok(usage) => output.license_usage = Some(usage),
             Err(e) => partial_errors.push(("license_usage".to_string(), e)),
         }
 
-        match self.get_kvstore_status().await {
+        match kvstore_status {
             Ok(status) => output.kvstore_status = Some(status),
             Err(e) => partial_errors.push(("kvstore_status".to_string(), e)),
         }
 
-        match self.check_log_parsing_health().await {
+        match log_parsing_health {
             Ok(log_health) => output.log_parsing_health = Some(log_health),
             Err(e) => partial_errors.push(("log_parsing_health".to_string(), e)),
         }

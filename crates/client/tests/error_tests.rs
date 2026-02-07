@@ -397,7 +397,7 @@ async fn test_tls_error_handling() {
         .build();
 
     assert!(client_result.is_ok());
-    let mut client = client_result.unwrap();
+    let client = client_result.unwrap();
 
     // Attempt to connect to a non-existent HTTPS server
     // This should fail with a connection-related error
@@ -627,7 +627,7 @@ async fn test_client_with_trailing_slash_base_url() {
     };
 
     // Build client with trailing slash in base_url
-    let mut client = splunk_client::SplunkClient::builder()
+    let client = splunk_client::SplunkClient::builder()
         .base_url(format!("{}/", mock_server.uri())) // Add trailing slash
         .auth_strategy(strategy)
         .skip_verify(true)

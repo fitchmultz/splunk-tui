@@ -22,8 +22,7 @@ use super::SharedClient;
 pub async fn handle_load_jobs(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_jobs(Some(count), Some(offset)).await {
+        match client.list_jobs(Some(count), Some(offset)).await {
             Ok(jobs) => {
                 if offset == 0 {
                     let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
@@ -46,8 +45,7 @@ pub async fn handle_load_jobs(client: SharedClient, tx: Sender<Action>, count: u
 pub async fn handle_cancel_job(client: SharedClient, tx: Sender<Action>, sid: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.cancel_job(&sid).await {
+        match client.cancel_job(&sid).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::JobOperationComplete(format!(
@@ -80,8 +78,7 @@ pub async fn handle_cancel_job(client: SharedClient, tx: Sender<Action>, sid: St
 pub async fn handle_delete_job(client: SharedClient, tx: Sender<Action>, sid: String) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.delete_job(&sid).await {
+        match client.delete_job(&sid).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::JobOperationComplete(format!(
@@ -115,7 +112,6 @@ pub async fn handle_cancel_jobs_batch(client: SharedClient, tx: Sender<Action>, 
     let _ = tx.send(Action::Loading(true)).await;
     let tx_clone = tx.clone();
     tokio::spawn(async move {
-        let mut c = client.lock().await;
         let mut success_count = 0;
         let mut error_messages = Vec::new();
 
@@ -124,7 +120,7 @@ pub async fn handle_cancel_jobs_batch(client: SharedClient, tx: Sender<Action>, 
         // Parallelizing with join_all would require careful rate limiting
         // to avoid triggering Splunk's API throttling.
         for sid in sids {
-            match c.cancel_job(&sid).await {
+            match client.cancel_job(&sid).await {
                 Ok(_) => {
                     success_count += 1;
                 }
@@ -161,7 +157,6 @@ pub async fn handle_delete_jobs_batch(client: SharedClient, tx: Sender<Action>, 
     let _ = tx.send(Action::Loading(true)).await;
     let tx_clone = tx.clone();
     tokio::spawn(async move {
-        let mut c = client.lock().await;
         let mut success_count = 0;
         let mut error_messages = Vec::new();
 
@@ -169,7 +164,7 @@ pub async fn handle_delete_jobs_batch(client: SharedClient, tx: Sender<Action>, 
         // and to provide clear per-job error reporting.
         // See CancelJobsBatch for parallelization considerations.
         for sid in sids {
-            match c.delete_job(&sid).await {
+            match client.delete_job(&sid).await {
                 Ok(_) => {
                     success_count += 1;
                 }

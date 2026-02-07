@@ -26,8 +26,7 @@ pub async fn handle_load_forwarders(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut guard = client.lock().await;
-        match guard.list_forwarders(Some(count), Some(offset)).await {
+        match client.list_forwarders(Some(count), Some(offset)).await {
             Ok(forwarders) => {
                 if offset == 0 {
                     let _ = tx.send(Action::ForwardersLoaded(Ok(forwarders))).await;

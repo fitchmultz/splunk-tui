@@ -15,7 +15,7 @@ use crate::models::{ServerInfo, SplunkHealth};
 
 impl SplunkClient {
     /// Get server information.
-    pub async fn get_server_info(&mut self) -> Result<ServerInfo> {
+    pub async fn get_server_info(&self) -> Result<ServerInfo> {
         crate::retry_call!(
             self,
             __token,
@@ -31,7 +31,7 @@ impl SplunkClient {
     }
 
     /// Get system-wide health information.
-    pub async fn get_health(&mut self) -> Result<SplunkHealth> {
+    pub async fn get_health(&self) -> Result<SplunkHealth> {
         crate::retry_call!(
             self,
             __token,

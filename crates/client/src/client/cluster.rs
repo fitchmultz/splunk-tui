@@ -18,7 +18,7 @@ use crate::models::{
 
 impl SplunkClient {
     /// Get cluster information.
-    pub async fn get_cluster_info(&mut self) -> Result<ClusterInfo> {
+    pub async fn get_cluster_info(&self) -> Result<ClusterInfo> {
         crate::retry_call!(
             self,
             __token,
@@ -34,7 +34,7 @@ impl SplunkClient {
     }
 
     /// Get cluster peer information.
-    pub async fn get_cluster_peers(&mut self) -> Result<Vec<ClusterPeer>> {
+    pub async fn get_cluster_peers(&self) -> Result<Vec<ClusterPeer>> {
         crate::retry_call!(
             self,
             __token,
@@ -54,10 +54,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `enable` - true to enable maintenance mode, false to disable
-    pub async fn set_maintenance_mode(
-        &mut self,
-        enable: bool,
-    ) -> Result<ClusterManagementResponse> {
+    pub async fn set_maintenance_mode(&self, enable: bool) -> Result<ClusterManagementResponse> {
         let params = MaintenanceModeParams { mode: enable };
         crate::retry_call!(
             self,
@@ -75,17 +72,17 @@ impl SplunkClient {
     }
 
     /// Enable maintenance mode on the cluster manager.
-    pub async fn enable_maintenance_mode(&mut self) -> Result<ClusterManagementResponse> {
+    pub async fn enable_maintenance_mode(&self) -> Result<ClusterManagementResponse> {
         self.set_maintenance_mode(true).await
     }
 
     /// Disable maintenance mode on the cluster manager.
-    pub async fn disable_maintenance_mode(&mut self) -> Result<ClusterManagementResponse> {
+    pub async fn disable_maintenance_mode(&self) -> Result<ClusterManagementResponse> {
         self.set_maintenance_mode(false).await
     }
 
     /// Rebalance primary buckets across all peers.
-    pub async fn rebalance_cluster(&mut self) -> Result<ClusterManagementResponse> {
+    pub async fn rebalance_cluster(&self) -> Result<ClusterManagementResponse> {
         crate::retry_call!(
             self,
             __token,
@@ -105,10 +102,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `peer_guids` - Slice of peer GUIDs to remove
-    pub async fn remove_peers(
-        &mut self,
-        peer_guids: &[String],
-    ) -> Result<ClusterManagementResponse> {
+    pub async fn remove_peers(&self, peer_guids: &[String]) -> Result<ClusterManagementResponse> {
         let params = RemovePeersParams {
             peers: peer_guids.join(","),
         };
@@ -132,7 +126,7 @@ impl SplunkClient {
     /// # Arguments
     ///
     /// * `peer_name` - The peer name or GUID to decommission
-    pub async fn decommission_peer(&mut self, peer_name: &str) -> Result<ClusterPeer> {
+    pub async fn decommission_peer(&self, peer_name: &str) -> Result<ClusterPeer> {
         let params = DecommissionPeerParams { decommission: true };
         crate::retry_call!(
             self,

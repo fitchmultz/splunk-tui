@@ -64,7 +64,7 @@ async fn test_retry_on_401_session_auth() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -129,7 +129,7 @@ async fn test_retry_on_403_session_auth() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -184,7 +184,7 @@ async fn test_no_retry_on_401_api_token() {
         token: SecretString::new("invalid-token".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
@@ -227,7 +227,7 @@ async fn test_retry_fails_on_second_401() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)

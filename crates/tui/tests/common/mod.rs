@@ -197,7 +197,7 @@ pub async fn create_test_client(mock_uri: &str) -> SharedClient {
         .build()
         .expect("Failed to build test client");
 
-    Arc::new(Mutex::new(client))
+    Arc::new(client)
 }
 
 /// Create a test configuration manager.

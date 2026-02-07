@@ -28,7 +28,7 @@ impl SplunkClient {
     /// # Errors
     ///
     /// Returns a `ClientError` if the request fails.
-    pub async fn list_config_files(&mut self) -> Result<Vec<ConfigFile>> {
+    pub async fn list_config_files(&self) -> Result<Vec<ConfigFile>> {
         crate::retry_call!(
             self,
             __token,
@@ -59,7 +59,7 @@ impl SplunkClient {
     ///
     /// Returns a `ClientError` if the request fails or the response cannot be parsed.
     pub async fn list_config_stanzas(
-        &mut self,
+        &self,
         config_file: &str,
         count: Option<u64>,
         offset: Option<u64>,
@@ -96,7 +96,7 @@ impl SplunkClient {
     ///
     /// Returns a `ClientError` if the request fails or the stanza is not found.
     pub async fn get_config_stanza(
-        &mut self,
+        &self,
         config_file: &str,
         stanza_name: &str,
     ) -> Result<ConfigStanza> {
@@ -134,7 +134,7 @@ impl SplunkClient {
     ///
     /// Returns a `ClientError` if any request fails. Partial results are not returned.
     pub async fn list_all_config_stanzas(
-        &mut self,
+        &self,
         count_per_file: Option<u64>,
     ) -> Result<HashMap<String, Vec<ConfigStanza>>> {
         let config_files = self.list_config_files().await?;

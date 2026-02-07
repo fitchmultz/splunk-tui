@@ -17,11 +17,7 @@ use crate::models::{CreateUserParams, ModifyUserParams, User};
 
 impl SplunkClient {
     /// List all users.
-    pub async fn list_users(
-        &mut self,
-        count: Option<u64>,
-        offset: Option<u64>,
-    ) -> Result<Vec<User>> {
+    pub async fn list_users(&self, count: Option<u64>, offset: Option<u64>) -> Result<Vec<User>> {
         crate::retry_call!(
             self,
             __token,
@@ -39,7 +35,7 @@ impl SplunkClient {
     }
 
     /// Create a new user with the specified parameters.
-    pub async fn create_user(&mut self, params: &CreateUserParams) -> Result<User> {
+    pub async fn create_user(&self, params: &CreateUserParams) -> Result<User> {
         crate::retry_call!(
             self,
             __token,
@@ -56,7 +52,7 @@ impl SplunkClient {
     }
 
     /// Modify an existing user.
-    pub async fn modify_user(&mut self, name: &str, params: &ModifyUserParams) -> Result<User> {
+    pub async fn modify_user(&self, name: &str, params: &ModifyUserParams) -> Result<User> {
         crate::retry_call!(
             self,
             __token,
@@ -74,7 +70,7 @@ impl SplunkClient {
     }
 
     /// Delete a user by name.
-    pub async fn delete_user(&mut self, name: &str) -> Result<()> {
+    pub async fn delete_user(&self, name: &str) -> Result<()> {
         crate::retry_call!(
             self,
             __token,

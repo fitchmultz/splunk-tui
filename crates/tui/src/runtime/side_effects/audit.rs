@@ -26,7 +26,6 @@ pub async fn handle_load_audit_events(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
         let params = ListAuditEventsParams {
             earliest: Some(earliest),
             latest: Some(latest),
@@ -35,7 +34,7 @@ pub async fn handle_load_audit_events(
             user: None,
             action: None,
         };
-        match c.list_audit_events(&params).await {
+        match client.list_audit_events(&params).await {
             Ok(events) => {
                 let _ = tx.send(Action::AuditEventsLoaded(Ok(events))).await;
             }
@@ -50,8 +49,7 @@ pub async fn handle_load_audit_events(
 pub async fn handle_load_recent_audit_events(client: SharedClient, tx: Sender<Action>, count: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.get_recent_audit_events(count).await {
+        match client.get_recent_audit_events(count).await {
             Ok(events) => {
                 let _ = tx.send(Action::AuditEventsLoaded(Ok(events))).await;
             }

@@ -119,7 +119,7 @@ async fn run_list(
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let count_u64 =
         u64::try_from(count).context("Invalid --count (value too large for this platform)")?;
@@ -239,7 +239,7 @@ async fn run_view(
         stanza_name, config_file
     );
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let stanza = tokio::select! {
         res = client.get_config_stanza(&config_file, &stanza_name) => res?,

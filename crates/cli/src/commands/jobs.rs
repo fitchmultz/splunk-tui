@@ -39,7 +39,7 @@ pub async fn run(
     output_file: Option<std::path::PathBuf>,
     cancel_token: &crate::cancellation::CancellationToken,
 ) -> Result<()> {
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     // If inspect, cancel, delete, or results action is specified, don't list jobs
     if inspect.is_some() || cancel.is_some() || delete.is_some() || results.is_some() {

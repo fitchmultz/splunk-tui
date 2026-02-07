@@ -197,7 +197,7 @@ async fn run_create(
 ) -> Result<()> {
     info!("Creating macro: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = MacroCreateParams {
         name: &name,
@@ -281,7 +281,7 @@ async fn run_update(
         ));
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = MacroUpdateParams {
         name: &name,
@@ -314,7 +314,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing macros (count: {})", count);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let macros = tokio::select! {
         res = client.list_macros() => res?,
@@ -348,7 +348,7 @@ async fn run_info(
 ) -> Result<()> {
     info!("Getting macro info for: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let macro_info = tokio::select! {
         res = client.get_macro(name) => res?,
@@ -392,7 +392,7 @@ async fn run_delete(
         }
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_macro(name) => {

@@ -113,7 +113,7 @@ async fn run_list(
         count, offset, earliest, latest
     );
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::models::ListAuditEventsParams {
         earliest: Some(earliest),
@@ -179,7 +179,7 @@ async fn run_recent(
 ) -> Result<()> {
     info!("Getting recent audit events (count: {})", count);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let events = tokio::select! {
         res = client.get_recent_audit_events(count as u64) => res?,

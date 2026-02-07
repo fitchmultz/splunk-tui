@@ -24,10 +24,8 @@ use super::SharedClient;
 pub async fn handle_load_health(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-
         // Use shared health check aggregation from client crate
-        match c.check_health_aggregate().await {
+        match client.check_health_aggregate().await {
             Ok(health_result) => {
                 // Check if there were any partial errors
                 // TUI behavior: if any endpoint failed, return the first error

@@ -18,8 +18,7 @@ use tokio::sync::mpsc::Sender;
 pub async fn handle_load_config_files(client: SharedClient, tx: Sender<Action>) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_config_files().await {
+        match client.list_config_files().await {
             Ok(files) => {
                 let _ = tx.send(Action::ConfigFilesLoaded(Ok(files))).await;
             }
@@ -40,8 +39,7 @@ pub async fn handle_load_config_stanzas(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c
+        match client
             .list_config_stanzas(&config_file, Some(count), Some(offset))
             .await
         {

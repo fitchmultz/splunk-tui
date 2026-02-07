@@ -146,7 +146,7 @@ async fn run_show(
 ) -> Result<()> {
     info!("Fetching license information...");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let usage = tokio::select! {
         res = client.get_license_usage() => res?,
@@ -194,7 +194,7 @@ async fn run_list(
 ) -> Result<()> {
     info!("Listing installed licenses...");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let licenses = tokio::select! {
         res = client.list_installed_licenses() => res?,
@@ -237,7 +237,7 @@ async fn run_install(
 
     info!("Installing license from: {}", file_path.display());
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let result = tokio::select! {
         res = client.install_license(file_path) => res?,
@@ -324,7 +324,7 @@ async fn run_pool_list(
 ) -> Result<()> {
     info!("Listing license pools...");
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let pools = tokio::select! {
         res = client.list_license_pools() => res?,
@@ -363,7 +363,7 @@ async fn run_pool_create(
 ) -> Result<()> {
     info!("Creating license pool: {} (stack: {})", name, stack_id);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::CreatePoolParams {
         name: name.to_string(),
@@ -422,7 +422,7 @@ async fn run_pool_delete(
 
     info!("Deleting license pool: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     tokio::select! {
         res = client.delete_license_pool(name) => res?,
@@ -445,7 +445,7 @@ async fn run_pool_modify(
 ) -> Result<()> {
     info!("Modifying license pool: {}", name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let params = splunk_client::ModifyPoolParams {
         quota_bytes: quota,
@@ -490,7 +490,7 @@ async fn run_activate(
 ) -> Result<()> {
     info!("Activating license: {}", license_name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let result = tokio::select! {
         res = client.activate_license(license_name) => res?,
@@ -516,7 +516,7 @@ async fn run_deactivate(
 ) -> Result<()> {
     info!("Deactivating license: {}", license_name);
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config)?;
 
     let result = tokio::select! {
         res = client.deactivate_license(license_name) => res?,

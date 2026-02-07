@@ -104,7 +104,7 @@ fn test_session_manager_token_not_in_debug_output() {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy);
+    let manager = SessionManager::new(strategy, 3600);
     let debug_output = format!("{:?}", manager);
 
     // The secret token should NOT appear in debug output
@@ -116,16 +116,18 @@ fn test_session_manager_token_not_in_debug_output() {
 }
 
 /// Test that session tokens set after login are not exposed in Debug output.
-#[test]
-fn test_session_manager_set_token_not_in_debug_output() {
+#[tokio::test]
+async fn test_session_manager_set_token_not_in_debug_output() {
     let strategy = AuthStrategy::SessionToken {
         username: "admin".to_string(),
         password: SecretString::new("password".to_string().into()),
     };
 
-    let mut manager = SessionManager::new(strategy);
+    let manager = SessionManager::new(strategy, 3600);
     let session_token = "new-session-token-after-login-123";
-    manager.set_session_token(session_token.to_string(), Some(3600));
+    manager
+        .set_session_token(session_token.to_string(), Some(3600))
+        .await;
 
     let debug_output = format!("{:?}", manager);
 
@@ -138,19 +140,21 @@ fn test_session_manager_set_token_not_in_debug_output() {
 }
 
 /// Test that clearing a session doesn't expose the token.
-#[test]
-fn test_session_clear_not_logged() {
+#[tokio::test]
+async fn test_session_clear_not_logged() {
     let strategy = AuthStrategy::SessionToken {
         username: "admin".to_string(),
         password: SecretString::new("password".to_string().into()),
     };
 
-    let mut manager = SessionManager::new(strategy);
+    let manager = SessionManager::new(strategy, 3600);
     let session_token = "session-to-be-cleared-456";
-    manager.set_session_token(session_token.to_string(), Some(3600));
+    manager
+        .set_session_token(session_token.to_string(), Some(3600))
+        .await;
 
     // Clear the session
-    manager.clear_session();
+    manager.clear_session().await;
 
     let debug_output = format!("{:?}", manager);
 
@@ -163,7 +167,7 @@ fn test_session_clear_not_logged() {
 
     // Session should be expired after clearing
     assert!(
-        manager.is_session_expired(),
+        manager.is_session_expired().await,
         "Session should be expired after clearing"
     );
 }
@@ -177,15 +181,15 @@ fn test_session_clear_not_logged() {
 /// This test documents the security difference between API tokens and session tokens:
 /// - API tokens are long-lived (don't expire)
 /// - Session tokens expire after a TTL (default 1 hour)
-#[test]
-fn test_session_token_expires_api_token_does_not() {
+#[tokio::test]
+async fn test_session_token_expires_api_token_does_not() {
     // API token auth - should never expire
     let api_strategy = AuthStrategy::ApiToken {
         token: SecretString::new("api-token".to_string().into()),
     };
-    let api_manager = SessionManager::new(api_strategy);
+    let api_manager = SessionManager::new(api_strategy, 3600);
     assert!(
-        !api_manager.is_session_expired(),
+        !api_manager.is_session_expired().await,
         "API token auth should never be expired"
     );
     assert!(api_manager.is_api_token(), "Should be API token auth");
@@ -195,9 +199,9 @@ fn test_session_token_expires_api_token_does_not() {
         username: "admin".to_string(),
         password: SecretString::new("pass".to_string().into()),
     };
-    let session_manager = SessionManager::new(session_strategy);
+    let session_manager = SessionManager::new(session_strategy, 3600);
     assert!(
-        session_manager.is_session_expired(),
+        session_manager.is_session_expired().await,
         "Session auth without token should be expired"
     );
     assert!(
@@ -210,20 +214,20 @@ fn test_session_token_expires_api_token_does_not() {
 ///
 /// The get_bearer_token method returns the token for use in API calls,
 /// but the SecretString protects it from accidental exposure.
-#[test]
-fn test_bearer_token_accessible_via_expose_secret() {
+#[tokio::test]
+async fn test_bearer_token_accessible_via_expose_secret() {
     let secret_token = "bearer-token-secret-789";
     let strategy = AuthStrategy::ApiToken {
         token: SecretString::new(secret_token.to_string().into()),
     };
 
-    let manager = SessionManager::new(strategy);
+    let manager = SessionManager::new(strategy, 3600);
 
     // Token should be accessible via get_bearer_token (for API calls)
-    let bearer = manager.get_bearer_token();
+    let bearer = manager.get_bearer_token().await;
     assert_eq!(
         bearer,
-        Some(secret_token),
+        Some(secret_token.to_string()),
         "Bearer token should be accessible for API calls"
     );
 
@@ -263,15 +267,17 @@ fn test_secret_string_debug_redaction() {
 }
 
 /// Test that multiple SecretStrings in a structure are all redacted.
-#[test]
-fn test_multiple_secrets_redacted() {
+#[tokio::test]
+async fn test_multiple_secrets_redacted() {
     let strategy = AuthStrategy::SessionToken {
         username: "admin".to_string(),
         password: SecretString::new("password1".to_string().into()),
     };
 
-    let mut manager = SessionManager::new(strategy);
-    manager.set_session_token("session-token-123".to_string(), Some(3600));
+    let manager = SessionManager::new(strategy, 3600);
+    manager
+        .set_session_token("session-token-123".to_string(), Some(3600))
+        .await;
 
     let debug_output = format!("{:?}", manager);
 

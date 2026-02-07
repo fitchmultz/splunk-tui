@@ -21,8 +21,7 @@ use tokio::sync::mpsc::Sender;
 pub async fn handle_load_inputs(client: SharedClient, tx: Sender<Action>, count: u64, offset: u64) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.list_inputs(Some(count), Some(offset)).await {
+        match client.list_inputs(Some(count), Some(offset)).await {
             Ok(inputs) => {
                 if offset == 0 {
                     let _ = tx.send(Action::InputsLoaded(Ok(inputs))).await;
@@ -50,8 +49,7 @@ pub async fn handle_enable_input(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.enable_input(&input_type, &name).await {
+        match client.enable_input(&input_type, &name).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::Notify(
@@ -89,8 +87,7 @@ pub async fn handle_disable_input(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     tokio::spawn(async move {
-        let mut c = client.lock().await;
-        match c.disable_input(&input_type, &name).await {
+        match client.disable_input(&input_type, &name).await {
             Ok(_) => {
                 let _ = tx
                     .send(Action::Notify(

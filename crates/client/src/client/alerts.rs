@@ -22,7 +22,7 @@ impl SplunkClient {
     /// # Returns
     /// List of fired alerts
     pub async fn list_fired_alerts(
-        &mut self,
+        &self,
         count: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<FiredAlert>> {
@@ -49,7 +49,7 @@ impl SplunkClient {
     ///
     /// # Returns
     /// The `FiredAlert` if found, or `ClientError::NotFound` if it doesn't exist.
-    pub async fn get_fired_alert(&mut self, name: &str) -> Result<FiredAlert> {
+    pub async fn get_fired_alert(&self, name: &str) -> Result<FiredAlert> {
         crate::retry_call!(
             self,
             __token,

@@ -18,7 +18,7 @@ impl SplunkClient {
     ///
     /// Capabilities are read-only in Splunk. They represent the set of
     /// permissions that can be assigned to roles.
-    pub async fn list_capabilities(&mut self) -> Result<Vec<Capability>> {
+    pub async fn list_capabilities(&self) -> Result<Vec<Capability>> {
         crate::retry_call!(
             self,
             __token,

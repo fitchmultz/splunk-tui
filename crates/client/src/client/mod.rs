@@ -92,7 +92,7 @@ macro_rules! retry_call {
                     "Session expired (status {}), clearing and re-authenticating...",
                     status
                 );
-                $self.session_manager.clear_session();
+                $self.session_manager.clear_session().await;
                 let $token = $self.get_auth_token().await?;
                 $call
             }
@@ -183,7 +183,7 @@ impl SplunkClient {
     /// let client = SplunkClient::from_config(&config).await?;
     /// ```
     pub async fn from_config(config: &splunk_config::Config) -> crate::error::Result<Self> {
-        let mut client = Self::builder().from_config(config).build()?;
+        let client = Self::builder().from_config(config).build()?;
 
         if !client.is_api_token_auth() {
             client.login().await?;

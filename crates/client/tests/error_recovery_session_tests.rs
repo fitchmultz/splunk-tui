@@ -89,7 +89,7 @@ async fn test_session_expiry_during_job_polling() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)

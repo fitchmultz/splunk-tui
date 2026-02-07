@@ -217,7 +217,7 @@ async fn test_splunk_client_check_log_parsing_health() {
         token: SecretString::new("test-token".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .build()
@@ -326,7 +326,7 @@ async fn test_splunk_client_check_log_parsing_health_session_retry() {
         password: SecretString::new("testpassword".to_string().into()),
     };
 
-    let mut client = SplunkClient::builder()
+    let client = SplunkClient::builder()
         .base_url(mock_server.uri())
         .auth_strategy(strategy)
         .skip_verify(true)
