@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "unused_dependency": "tachyonfx@0.14",
         "lines_of_dead_code": "598",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -3938,8 +3938,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "oversized_function_count": "6"
+        "oversized_function_count": "6",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4007,9 +4007,9 @@
       "relates_to": [],
       "custom_fields": {
         "dead_code_count": "25",
-        "production_files_affected": "8",
+        "test_files_affected": "4",
         "scan_agent": "scan-maintenance",
-        "test_files_affected": "4"
+        "production_files_affected": "8"
       }
     },
     {
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "macro_already_adopted": "true",
+        "target_line_count": "300",
         "scan_agent": "scan-maintenance",
         "current_line_count": "867",
-        "target_line_count": "300"
+        "macro_already_adopted": "true"
       }
     },
     {
@@ -4352,9 +4352,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_formatters": "4",
         "estimated_methods": "35+",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "affected_formatters": "4"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "target_line_count": "150",
-        "current_line_count": "523",
         "action_variants": "94",
+        "submodule_count": "28",
+        "target_line_count": "150",
         "scan_agent": "scan-maintenance",
-        "submodule_count": "28"
+        "current_line_count": "523"
       }
     },
     {
@@ -4471,8 +4471,8 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "estimated_method_count": "45",
         "existing_macro_coverage": "4 methods total across all formatters",
+        "estimated_method_count": "45",
         "formatter_count": "3"
       }
     },
@@ -4538,9 +4538,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "command_files": "27",
         "bail_usages": "18",
+        "scan_agent": "scan-maintenance",
         "with_context_usages": "120+"
       }
     },
@@ -4678,11 +4678,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "files_using_pattern_a": "26",
         "model_used": "kimi-code/kimi-for-coding",
         "files_using_pattern_b": "2",
+        "files_using_pattern_a": "26",
         "principle": "DRY",
+        "runner_used": "kimi",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -4745,13 +4745,13 @@
       "relates_to": [],
       "custom_fields": {
         "lines_duplicated": "~400",
-        "affected_screens": "25",
         "spinner_helper_location": "crates/tui/src/ui/theme.rs",
         "principle": "DRY",
-        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "widgets_dir_exists": "false",
-        "model_used": "kimi-code/kimi-for-coding"
+        "affected_screens": "25",
+        "runner_used": "kimi",
+        "widgets_dir_exists": "false"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_with_duplicates": "5",
-        "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
         "duplication_count": "6 functions across 5 files",
-        "runner_used": "kimi"
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "files_with_duplicates": "5"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY",
-        "affected_files": "4",
-        "model_used": "kimi-code/kimi-for-coding",
         "duplicate_count": "4",
-        "runner_used": "kimi"
+        "affected_files": "4",
+        "runner_used": "kimi",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -4941,10 +4941,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "principle": "YAGNI"
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
-        "duplicate_count": "6",
         "model_used": "kimi-code/kimi-for-coding",
-        "files_to_update": "5"
+        "duplicate_count": "6",
+        "files_to_update": "5",
+        "principle": "DRY",
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5063,12 +5063,12 @@
       "relates_to": [],
       "custom_fields": {
         "scan_agent": "scan-maintenance",
-        "env_line_count": "18",
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "missing_variable_count": "12",
         "env_example_line_count": "66",
-        "principle": "KISS"
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
+        "env_line_count": "18",
+        "principle": "KISS",
+        "missing_variable_count": "12"
       }
     },
     {
@@ -5114,10 +5114,64 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
+      }
+    },
+    {
+      "id": "RQ-0372",
+      "status": "done",
+      "title": "Extract duplicate build_create_job_options functions in search.rs",
+      "description": "Two nearly identical functions exist in client/src/client/search.rs: build_create_job_options_for_search and build_create_job_options_for_search_with_progress. They differ only in the 'wait' field value. These should be consolidated into a single function with a parameter.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "DRY",
+        "client",
+        "refactor"
+      ],
+      "scope": [
+        "crates/client/src/client/search.rs:106-139",
+        "crates/client/src/client/search.rs:147",
+        "crates/client/src/client/search.rs:198",
+        "crates/client/src/client/search.rs:502-569"
+      ],
+      "evidence": [
+        "Lines 106-121: fn build_create_job_options_for_search with 'wait: Some(request.wait)'",
+        "Lines 127-139: fn build_create_job_options_for_search_with_progress with 'wait: Some(false)'",
+        "All other fields (earliest_time, latest_time, max_count, search_mode, realtime_window) are identical",
+        "Line 147: Call site in search() method",
+        "Line 198: Call site in search_with_progress() method",
+        "Lines 502-569: Unit tests for both functions that need updating"
+      ],
+      "plan": [
+        "Create single fn build_create_job_options(request: &SearchRequest<'_>, force_wait_false: bool)",
+        "Use conditional: wait: Some(if force_wait_false { false } else { request.wait })",
+        "Update line 147 call site to pass false (preserve request.wait)",
+        "Update line 198 call site to pass true (force wait=false)",
+        "Update unit tests at lines 502-569 to test the consolidated function",
+        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
+      ],
+      "notes": [
+        "Consolidated build_create_job_options_for_search and build_create_job_options_for_search_with_progress into single function with force_wait_false parameter",
+        "All 308 tests pass, cargo check clean, no remaining references to old functions",
+        "File reduced by 36 lines (570→534), tests consolidated from 7 to 4 focused tests"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-06T22:50:42Z",
+      "updated_at": "2026-02-07T03:01:54.825870322Z",
+      "completed_at": "2026-02-07T03:01:54.825870322Z",
+      "started_at": "2026-02-07T02:51:54.029724408Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
         "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "KISS"
+        "principle": "DRY"
       }
     }
   ]

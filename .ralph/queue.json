@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0372",
-      "status": "todo",
-      "title": "Extract duplicate build_create_job_options functions in search.rs",
-      "description": "Two nearly identical functions exist in client/src/client/search.rs: build_create_job_options_for_search and build_create_job_options_for_search_with_progress. They differ only in the 'wait' field value. These should be consolidated into a single function with a parameter.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "DRY",
-        "client",
-        "refactor"
-      ],
-      "scope": [
-        "crates/client/src/client/search.rs:106-139"
-      ],
-      "evidence": [
-        "Lines 106-121: fn build_create_job_options_for_search with 'wait: Some(request.wait)'",
-        "Lines 127-139: fn build_create_job_options_for_search_with_progress with 'wait: Some(false)'",
-        "All other fields are identical between both functions"
-      ],
-      "plan": [
-        "Replace both functions with single fn build_create_job_options(request: &SearchRequest<'_>, force_wait_false: bool)",
-        "Use conditional: wait: Some(if force_wait_false { false } else { request.wait })",
-        "Update call sites to pass appropriate flag",
-        "Verify by running: 'cargo check -p splunk-client' and 'cargo test -p splunk-client'"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-06T22:50:42Z",
-      "updated_at": "2026-02-06T22:50:42Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "DRY"
-      }
-    },
-    {
       "id": "RQ-0373",
       "status": "todo",
       "title": "Extract duplicate error response parsing in endpoints/request.rs",
@@ -72,8 +34,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -109,8 +71,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "DRY",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "DRY"
       }
     },
     {
@@ -148,8 +110,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "principle": "YAGNI"
+        "principle": "YAGNI",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -185,8 +147,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "fail-fast",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "fail-fast"
       }
     },
     {
@@ -219,8 +181,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS"
       }
     }
   ]
