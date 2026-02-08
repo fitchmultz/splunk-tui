@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0432",
-      "status": "todo",
-      "title": "Add performance benchmarks for critical paths",
-      "description": "Implement Criterion-based benchmarks for critical performance paths to prevent regressions and establish baselines. Current codebase has only one benchmark file (crates/tui/benches/spawn_overhead.rs).\n\nBenchmark targets:\n- JSON parsing: 1k/10k/100k result sets\n- CSV/table formatting: wide datasets (1000x50)\n- XML parsing for health responses\n- SPL syntax highlighting\n- Search screen rendering\n- Memory usage during pagination\n\nBenchmarks run in CI to detect performance regressions. Establish baselines for:\n- Parsing: <10ms for 10MB JSON\n- Formatting: <5ms for 1000-row CSV\n- Rendering: <1ms for virtual scrolling",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "testing",
-        "performance",
-        "benchmarks"
-      ],
-      "scope": [
-        "crates/client/benches/",
-        "crates/cli/benches/",
-        "crates/tui/benches/"
-      ],
-      "evidence": [
-        "Only one benchmark exists: spawn_overhead.rs (crates/tui/benches/)",
-        "No performance baselines established for parsing, formatting, or rendering",
-        "Large search results could cause performance issues without measurement",
-        "Criterion configured but underutilized in workspace"
-      ],
-      "plan": [
-        "Create parsing_benchmarks.rs for JSON/XML parsing with varying sizes",
-        "Create formatter_benchmarks.rs for CSV, table, and JSON formatting",
-        "Create rendering_benchmarks.rs for TUI screen rendering",
-        "Add memory usage benchmarks for pagination scenarios",
-        "Configure benchmark CI job to run on PRs with performance comparison",
-        "Add benches to Makefile targets (make bench)",
-        "Document performance baselines in docs/performance.md",
-        "Verify by running: cargo bench -p splunk-client"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0433",
       "status": "todo",
       "title": "Add first-run tutorial and onboarding wizard to TUI",

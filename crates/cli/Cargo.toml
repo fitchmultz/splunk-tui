@@ -62,7 +62,13 @@ wiremock = { workspace = true }
 serde_json = { workspace = true }
 dotenvy = { workspace = true }
 zip = { version = "2", default-features = false, features = ["deflate"] }
+criterion = { workspace = true }
+splunk-client = { path = "../client", features = ["test-utils"] }
 
 # Unix-only tests send SIGINT to child processes.
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2"
+
+[[bench]]
+name = "formatter_benchmarks"
+harness = false

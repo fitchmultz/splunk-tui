@@ -88,3 +88,11 @@ splunk-client = { path = "../client", features = ["test-utils"] }
 [[bench]]
 name = "spawn_overhead"
 harness = false
+
+[[bench]]
+name = "syntax_highlighting_benchmarks"
+harness = false
+
+[[bench]]
+name = "export_benchmarks"
+harness = false

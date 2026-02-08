@@ -9,6 +9,7 @@ repository.workspace = true
 [features]
 default = []
 test-utils = ["proptest"]
+benchmark-utils = []
 
 [dependencies]
 splunk-config = { path = "../config" }
@@ -51,5 +52,18 @@ proptest = { workspace = true }
 mockito = { workspace = true }
 wiremock = { workspace = true }
 tokio-test = "0.4"
+criterion = { workspace = true }
 # Enable test-utils feature for integration tests to access testing module
 splunk-client = { path = ".", features = ["test-utils"] }
+
+[[bench]]
+name = "serde_helpers_benchmarks"
+harness = false
+
+[[bench]]
+name = "model_parsing_benchmarks"
+harness = false
+
+[[bench]]
+name = "entry_extraction_benchmarks"
+harness = false

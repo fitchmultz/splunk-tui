@@ -55,6 +55,7 @@ proptest = "1.6"
 wiremock = "0.6"
 assert_cmd = "2.1"
 serial_test = "3.2"
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 # Workspace crates
 splunk-client = { path = "crates/client" }

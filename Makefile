@@ -1,5 +1,6 @@
 .PHONY: install update lint format clean type-check \
 	test test-all test-unit test-integration test-live test-live-manual \
+	bench bench-client bench-cli bench-tui \
 	build release generate lint-docs ci help lint-secrets install-hooks \
 	_generate-docs _lint-docs-check
 
@@ -100,6 +101,27 @@ test-live:
 test-live-manual:
 	@bash scripts/test-live-server.sh
 
+# Benchmark targets
+# Run all benchmarks
+bench:
+	@echo "→ Running all benchmarks..."
+	@cargo bench --workspace
+
+# Run client crate benchmarks
+bench-client:
+	@echo "→ Running client benchmarks..."
+	@cargo bench -p splunk-client
+
+# Run CLI crate benchmarks  
+bench-cli:
+	@echo "→ Running CLI benchmarks..."
+	@cargo bench -p splunk-cli
+
+# Run TUI crate benchmarks
+bench-tui:
+	@echo "→ Running TUI benchmarks..."
+	@cargo bench -p splunk-tui
+
 # Release build and install binaries (required every time)
 # Usage: make release [PROFILE=ci] (PROFILE defaults to 'release')
 release:
@@ -173,6 +195,10 @@ help:
 	@echo "  make test-integration - Run integration tests"
 	@echo "  make test-live        - Run live tests (set SKIP_LIVE_TESTS=1 to skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
+	@echo "  make bench            - Run all benchmarks"
+	@echo "  make bench-client     - Run client crate benchmarks"
+	@echo "  make bench-cli        - Run CLI crate benchmarks"
+	@echo "  make bench-tui        - Run TUI crate benchmarks"
 	@echo "  make release          - Release build (bins) and install to $(INSTALL_DIR)"
 	@echo "  make build            - Alias for release"
 	@echo "  make generate         - Regenerate derived docs (via installed release binary)"
