@@ -15,6 +15,36 @@
 //! - /services/alerts/fired_alerts/{name}
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
+
+/// Alert severity levels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+#[derive(Default)]
+pub enum AlertSeverity {
+    Info,
+    Low,
+    Medium,
+    High,
+    Critical,
+    /// Unknown or unrecognized severity value.
+    #[serde(other)]
+    #[default]
+    Unknown,
+}
+
+impl fmt::Display for AlertSeverity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Info => write!(f, "Info"),
+            Self::Low => write!(f, "Low"),
+            Self::Medium => write!(f, "Medium"),
+            Self::High => write!(f, "High"),
+            Self::Critical => write!(f, "Critical"),
+            Self::Unknown => write!(f, "Unknown"),
+        }
+    }
+}
 
 /// Fired alert information.
 ///
@@ -38,8 +68,8 @@ pub struct FiredAlert {
     /// Name of the saved search that triggered the alert.
     #[serde(rename = "savedsearch_name")]
     pub savedsearch_name: Option<String>,
-    /// Severity level: Info, Low, Medium, High, Critical. Default is Medium.
-    pub severity: Option<String>,
+    /// Severity level: Info, Low, Medium, High, Critical.
+    pub severity: Option<AlertSeverity>,
     /// The search ID of the search that triggered the alert.
     pub sid: Option<String>,
     /// The time the alert was triggered.
@@ -85,7 +115,7 @@ pub struct AlertConfig {
     pub alert_condition: Option<String>,
     /// Alert severity: Info, Low, Medium, High, Critical.
     #[serde(rename = "alert_severity")]
-    pub alert_severity: Option<String>,
+    pub alert_severity: Option<AlertSeverity>,
     /// Alert expiration in seconds.
     #[serde(rename = "alert_expires")]
     pub alert_expires: Option<String>,
@@ -108,4 +138,82 @@ pub struct AlertConfig {
     pub action_webhook: Option<bool>,
     #[serde(rename = "action.webhook.param.url")]
     pub action_webhook_url: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_alert_severity_deserialization() {
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"Info\"").unwrap(),
+            AlertSeverity::Info
+        );
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"Low\"").unwrap(),
+            AlertSeverity::Low
+        );
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"Medium\"").unwrap(),
+            AlertSeverity::Medium
+        );
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"High\"").unwrap(),
+            AlertSeverity::High
+        );
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"Critical\"").unwrap(),
+            AlertSeverity::Critical
+        );
+    }
+
+    #[test]
+    fn test_alert_severity_unknown_fallback() {
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"UnknownValue\"").unwrap(),
+            AlertSeverity::Unknown
+        );
+        assert_eq!(
+            serde_json::from_str::<AlertSeverity>("\"invalid\"").unwrap(),
+            AlertSeverity::Unknown
+        );
+    }
+
+    #[test]
+    fn test_alert_severity_display() {
+        assert_eq!(AlertSeverity::Info.to_string(), "Info");
+        assert_eq!(AlertSeverity::Low.to_string(), "Low");
+        assert_eq!(AlertSeverity::Medium.to_string(), "Medium");
+        assert_eq!(AlertSeverity::High.to_string(), "High");
+        assert_eq!(AlertSeverity::Critical.to_string(), "Critical");
+        assert_eq!(AlertSeverity::Unknown.to_string(), "Unknown");
+    }
+
+    #[test]
+    fn test_alert_severity_default() {
+        assert_eq!(AlertSeverity::default(), AlertSeverity::Unknown);
+    }
+
+    #[test]
+    fn test_fired_alert_with_severity() {
+        let json = r#"{
+            "name": "TestAlert",
+            "severity": "High"
+        }"#;
+        let alert: FiredAlert = serde_json::from_str(json).unwrap();
+        assert_eq!(alert.name, "TestAlert");
+        assert_eq!(alert.severity, Some(AlertSeverity::High));
+    }
+
+    #[test]
+    fn test_alert_config_with_severity() {
+        let json = r#"{
+            "is_scheduled": true,
+            "alert_severity": "Critical"
+        }"#;
+        let config: AlertConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.is_scheduled, Some(true));
+        assert_eq!(config.alert_severity, Some(AlertSeverity::Critical));
+    }
 }

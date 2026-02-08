@@ -183,12 +183,12 @@ fn render_peers(
                 peer.host.clone()
             };
 
-            let status_style = theme.status_style(&peer.status);
+            let status_style = theme.status_style(&peer.status.to_string());
 
             let cells = vec![
                 Cell::from(host_text),
-                Cell::from(peer.status.clone()).style(status_style),
-                Cell::from(peer.peer_state.clone()),
+                Cell::from(peer.status.to_string()).style(status_style),
+                Cell::from(peer.peer_state.to_string()),
                 Cell::from(peer.site.clone().unwrap_or_default()),
                 Cell::from(peer.port.to_string()),
                 Cell::from(
@@ -196,7 +196,12 @@ fn render_peers(
                         .map(|c| c.to_string())
                         .unwrap_or_default(),
                 ),
-                Cell::from(peer.replication_status.clone().unwrap_or_default()),
+                Cell::from(
+                    peer.replication_status
+                        .clone()
+                        .map(|s| s.to_string())
+                        .unwrap_or_default(),
+                ),
             ];
             Row::new(cells).height(1)
         })

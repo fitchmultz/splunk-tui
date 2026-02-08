@@ -25,7 +25,7 @@ pub fn format_logs(logs: &[LogEntry]) -> Result<String> {
     for log in logs {
         output.push_str(&build_csv_row(&[
             escape_csv(&log.time),
-            escape_csv(&log.level),
+            escape_csv(&log.level.to_string()),
             escape_csv(&log.component),
             escape_csv(&log.message),
         ]));
@@ -54,7 +54,7 @@ pub fn format_logs_streaming(logs: &[LogEntry], is_first: bool) -> Result<String
     for log in logs {
         output.push_str(&build_csv_row(&[
             escape_csv(&log.time),
-            escape_csv(&log.level),
+            escape_csv(&log.level.to_string()),
             escape_csv(&log.component),
             escape_csv(&log.message),
         ]));

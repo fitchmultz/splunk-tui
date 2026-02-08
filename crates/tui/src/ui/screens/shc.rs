@@ -181,11 +181,11 @@ fn render_members(
                 member.host.clone()
             };
 
-            let status_style = theme.status_style(&member.status);
+            let status_style = theme.status_style(&member.status.to_string());
 
             let cells = vec![
                 Cell::from(host_text),
-                Cell::from(member.status.clone()).style(status_style),
+                Cell::from(member.status.to_string()).style(status_style),
                 Cell::from(if member.is_captain { "Yes" } else { "" }),
                 Cell::from(member.port.to_string()),
                 Cell::from(member.site.clone().unwrap_or_default()),

@@ -93,7 +93,7 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
 
             Row::new(vec![
                 Cell::from(input.name.as_str()),
-                Cell::from(input.input_type.as_str()),
+                Cell::from(input.input_type.to_string()),
                 Cell::from(input.host.as_deref().unwrap_or("-")),
                 Cell::from(input.source.as_deref().unwrap_or("-")),
                 Cell::from(input.sourcetype.as_deref().unwrap_or("-")),

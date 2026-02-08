@@ -114,7 +114,10 @@ pub fn format_workload_rules(rules: &[WorkloadRule], detailed: bool) -> Result<S
             values.extend(vec![
                 format_opt_str(rule.user.as_deref(), ""),
                 format_opt_str(rule.app.as_deref(), ""),
-                format_opt_str(rule.search_type.as_deref(), ""),
+                format_opt_str(
+                    rule.search_type.as_ref().map(|t| t.to_string()).as_deref(),
+                    "",
+                ),
                 format_opt_str(rule.search_time_range.as_deref(), ""),
                 escape_csv(&order),
             ]);

@@ -358,21 +358,21 @@ mod tests {
     use super::*;
     use crate::ConnectionContext;
     use crate::app::state::ClusterViewMode;
-    use splunk_client::models::ClusterPeer;
+    use splunk_client::models::{ClusterPeer, PeerState, PeerStatus, ReplicationStatus};
 
     fn create_mock_peers(count: usize) -> Vec<ClusterPeer> {
         (0..count)
             .map(|i| ClusterPeer {
                 id: format!("peer-{}", i),
                 label: Some(format!("Peer {}", i)),
-                status: "Up".to_string(),
-                peer_state: "Active".to_string(),
+                status: PeerStatus::Up,
+                peer_state: PeerState::Searchable,
                 site: Some("site1".to_string()),
                 guid: format!("guid-{}", i),
                 host: format!("host-{}", i),
                 port: 8080 + i as u32,
                 replication_count: Some(i as u32),
-                replication_status: Some("Complete".to_string()),
+                replication_status: Some(ReplicationStatus::Complete),
                 bundle_replication_count: None,
                 is_captain: Some(i == 0),
             })

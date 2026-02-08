@@ -336,7 +336,7 @@ impl Formatter for XmlFormatter {
             output.push_str(&format!("    <user>{}</user>\n", escape_xml(&event.user)));
             output.push_str(&format!(
                 "    <action>{}</action>\n",
-                escape_xml(&event.action)
+                escape_xml(&event.action.to_string())
             ));
             output.push_str(&format!(
                 "    <target>{}</target>\n",
@@ -344,7 +344,7 @@ impl Formatter for XmlFormatter {
             ));
             output.push_str(&format!(
                 "    <result>{}</result>\n",
-                escape_xml(&event.result)
+                escape_xml(&event.result.to_string())
             ));
             output.push_str(&format!(
                 "    <client_ip>{}</client_ip>\n",

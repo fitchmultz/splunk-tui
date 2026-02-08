@@ -26,7 +26,7 @@ pub fn format_fired_alerts(alerts: &[FiredAlert]) -> Result<String> {
         if let Some(ref severity) = alert.severity {
             xml.push_str(&format!(
                 "    <severity>{}</severity>\n",
-                escape_xml(severity)
+                escape_xml(&severity.to_string())
             ));
         }
         if let Some(ref trigger_time) = alert.trigger_time_rendered {
@@ -65,10 +65,10 @@ pub fn format_fired_alert_info(alert: &FiredAlert) -> Result<String> {
             escape_xml(savedsearch)
         ));
     }
-    if let Some(ref severity) = alert.severity {
+    if let Some(severity) = alert.severity {
         xml.push_str(&format!(
             "  <severity>{}</severity>\n",
-            escape_xml(severity)
+            escape_xml(&severity.to_string())
         ));
     }
     if let Some(ref trigger_time) = alert.trigger_time_rendered {

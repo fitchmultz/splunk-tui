@@ -17,6 +17,68 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
+
+/// License type enumeration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum LicenseType {
+    /// Enterprise license type.
+    Enterprise,
+    /// Forwarder license type.
+    Forwarder,
+    /// Free license type.
+    Free,
+    /// Trial license type.
+    Trial,
+    /// Unknown license type (fallback for unrecognized values).
+    #[serde(other)]
+    #[default]
+    Unknown,
+}
+
+impl fmt::Display for LicenseType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Self::Enterprise => "enterprise",
+            Self::Forwarder => "forwarder",
+            Self::Free => "free",
+            Self::Trial => "trial",
+            Self::Unknown => "unknown",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+/// License status enumeration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum LicenseStatus {
+    /// License is active and valid.
+    Active,
+    /// License is inactive.
+    Inactive,
+    /// License has expired.
+    Expired,
+    /// Unknown license status (fallback for unrecognized values).
+    #[serde(other)]
+    #[default]
+    Unknown,
+}
+
+impl fmt::Display for LicenseStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Self::Active => "active",
+            Self::Inactive => "inactive",
+            Self::Expired => "expired",
+            Self::Unknown => "unknown",
+        };
+        write!(f, "{}", s)
+    }
+}
 
 /// License usage information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -105,10 +167,10 @@ pub struct InstalledLicense {
     pub name: String,
     /// License type (e.g., "enterprise", "forwarder")
     #[serde(rename = "type")]
-    pub license_type: String,
+    pub license_type: LicenseType,
     /// License status (e.g., "active", "inactive")
     #[serde(default)]
-    pub status: String,
+    pub status: LicenseStatus,
     /// License quota in bytes
     #[serde(deserialize_with = "crate::serde_helpers::usize_from_string_or_number")]
     pub quota_bytes: usize,
@@ -122,7 +184,7 @@ pub struct InstalledLicense {
 impl InstalledLicense {
     /// Check if the license is currently active.
     pub fn is_active(&self) -> bool {
-        self.status.eq_ignore_ascii_case("active")
+        self.status == LicenseStatus::Active
     }
 }
 
@@ -166,4 +228,263 @@ pub struct LicenseActivationResult {
     pub success: bool,
     /// Human-readable message
     pub message: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // LicenseType tests
+
+    #[test]
+    fn test_license_type_default_is_unknown() {
+        assert_eq!(LicenseType::default(), LicenseType::Unknown);
+    }
+
+    #[test]
+    fn test_license_type_deserialize_known_values() {
+        assert_eq!(
+            serde_json::from_str::<LicenseType>("\"enterprise\"").unwrap(),
+            LicenseType::Enterprise
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseType>("\"forwarder\"").unwrap(),
+            LicenseType::Forwarder
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseType>("\"free\"").unwrap(),
+            LicenseType::Free
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseType>("\"trial\"").unwrap(),
+            LicenseType::Trial
+        );
+    }
+
+    #[test]
+    fn test_license_type_deserialize_unknown_value() {
+        // Unknown values should deserialize to Unknown variant
+        assert_eq!(
+            serde_json::from_str::<LicenseType>("\"custom\"").unwrap(),
+            LicenseType::Unknown
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseType>("\"unknown\"").unwrap(),
+            LicenseType::Unknown
+        );
+    }
+
+    #[test]
+    fn test_license_type_serialize() {
+        assert_eq!(
+            serde_json::to_string(&LicenseType::Enterprise).unwrap(),
+            "\"enterprise\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseType::Forwarder).unwrap(),
+            "\"forwarder\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseType::Free).unwrap(),
+            "\"free\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseType::Trial).unwrap(),
+            "\"trial\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseType::Unknown).unwrap(),
+            "\"unknown\""
+        );
+    }
+
+    #[test]
+    fn test_license_type_display() {
+        assert_eq!(format!("{}", LicenseType::Enterprise), "enterprise");
+        assert_eq!(format!("{}", LicenseType::Forwarder), "forwarder");
+        assert_eq!(format!("{}", LicenseType::Free), "free");
+        assert_eq!(format!("{}", LicenseType::Trial), "trial");
+        assert_eq!(format!("{}", LicenseType::Unknown), "unknown");
+    }
+
+    // LicenseStatus tests
+
+    #[test]
+    fn test_license_status_default_is_unknown() {
+        assert_eq!(LicenseStatus::default(), LicenseStatus::Unknown);
+    }
+
+    #[test]
+    fn test_license_status_deserialize_known_values() {
+        assert_eq!(
+            serde_json::from_str::<LicenseStatus>("\"active\"").unwrap(),
+            LicenseStatus::Active
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseStatus>("\"inactive\"").unwrap(),
+            LicenseStatus::Inactive
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseStatus>("\"expired\"").unwrap(),
+            LicenseStatus::Expired
+        );
+    }
+
+    #[test]
+    fn test_license_status_deserialize_unknown_value() {
+        // Unknown values should deserialize to Unknown variant
+        assert_eq!(
+            serde_json::from_str::<LicenseStatus>("\"pending\"").unwrap(),
+            LicenseStatus::Unknown
+        );
+        assert_eq!(
+            serde_json::from_str::<LicenseStatus>("\"unknown\"").unwrap(),
+            LicenseStatus::Unknown
+        );
+    }
+
+    #[test]
+    fn test_license_status_serialize() {
+        assert_eq!(
+            serde_json::to_string(&LicenseStatus::Active).unwrap(),
+            "\"active\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseStatus::Inactive).unwrap(),
+            "\"inactive\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseStatus::Expired).unwrap(),
+            "\"expired\""
+        );
+        assert_eq!(
+            serde_json::to_string(&LicenseStatus::Unknown).unwrap(),
+            "\"unknown\""
+        );
+    }
+
+    #[test]
+    fn test_license_status_display() {
+        assert_eq!(format!("{}", LicenseStatus::Active), "active");
+        assert_eq!(format!("{}", LicenseStatus::Inactive), "inactive");
+        assert_eq!(format!("{}", LicenseStatus::Expired), "expired");
+        assert_eq!(format!("{}", LicenseStatus::Unknown), "unknown");
+    }
+
+    #[test]
+    fn test_license_status_is_copy() {
+        // Verify Copy trait works
+        let status = LicenseStatus::Active;
+        let copied = status;
+        assert_eq!(status, copied); // status should still be usable
+    }
+
+    // InstalledLicense tests
+
+    #[test]
+    fn test_installed_license_deserialize_with_enums() {
+        let json = r#"{
+            "name": "test-license",
+            "type": "enterprise",
+            "status": "active",
+            "quota_bytes": "1073741824",
+            "expiration_time": "2025-12-31T00:00:00Z",
+            "features": ["feature1", "feature2"]
+        }"#;
+
+        let license: InstalledLicense = serde_json::from_str(json).unwrap();
+        assert_eq!(license.name, "test-license");
+        assert_eq!(license.license_type, LicenseType::Enterprise);
+        assert_eq!(license.status, LicenseStatus::Active);
+        assert_eq!(license.quota_bytes, 1073741824);
+        assert_eq!(
+            license.expiration_time,
+            Some("2025-12-31T00:00:00Z".to_string())
+        );
+        assert_eq!(license.features, vec!["feature1", "feature2"]);
+    }
+
+    #[test]
+    fn test_installed_license_deserialize_default_status() {
+        let json = r#"{
+            "name": "test-license",
+            "type": "forwarder",
+            "quota_bytes": "536870912"
+        }"#;
+
+        let license: InstalledLicense = serde_json::from_str(json).unwrap();
+        assert_eq!(license.license_type, LicenseType::Forwarder);
+        assert_eq!(license.status, LicenseStatus::Unknown); // default
+    }
+
+    #[test]
+    fn test_installed_license_is_active() {
+        let active = InstalledLicense {
+            name: "active-license".to_string(),
+            license_type: LicenseType::Enterprise,
+            status: LicenseStatus::Active,
+            quota_bytes: 1073741824,
+            expiration_time: None,
+            features: vec![],
+        };
+        assert!(active.is_active());
+
+        let inactive = InstalledLicense {
+            name: "inactive-license".to_string(),
+            license_type: LicenseType::Enterprise,
+            status: LicenseStatus::Inactive,
+            quota_bytes: 1073741824,
+            expiration_time: None,
+            features: vec![],
+        };
+        assert!(!inactive.is_active());
+
+        let expired = InstalledLicense {
+            name: "expired-license".to_string(),
+            license_type: LicenseType::Trial,
+            status: LicenseStatus::Expired,
+            quota_bytes: 536870912,
+            expiration_time: None,
+            features: vec![],
+        };
+        assert!(!expired.is_active());
+
+        let unknown = InstalledLicense {
+            name: "unknown-license".to_string(),
+            license_type: LicenseType::Unknown,
+            status: LicenseStatus::Unknown,
+            quota_bytes: 0,
+            expiration_time: None,
+            features: vec![],
+        };
+        assert!(!unknown.is_active());
+    }
+
+    #[test]
+    fn test_installed_license_deserialize_unknown_license_type() {
+        let json = r#"{
+            "name": "custom-license",
+            "type": "custom_type",
+            "status": "active",
+            "quota_bytes": "1073741824"
+        }"#;
+
+        let license: InstalledLicense = serde_json::from_str(json).unwrap();
+        assert_eq!(license.license_type, LicenseType::Unknown);
+        assert_eq!(license.status, LicenseStatus::Active);
+    }
+
+    #[test]
+    fn test_installed_license_deserialize_unknown_status() {
+        let json = r#"{
+            "name": "custom-license",
+            "type": "enterprise",
+            "status": "pending_validation",
+            "quota_bytes": "1073741824"
+        }"#;
+
+        let license: InstalledLicense = serde_json::from_str(json).unwrap();
+        assert_eq!(license.license_type, LicenseType::Enterprise);
+        assert_eq!(license.status, LicenseStatus::Unknown);
+    }
 }

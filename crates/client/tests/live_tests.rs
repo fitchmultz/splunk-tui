@@ -258,7 +258,12 @@ mod server_live_tests {
         };
         let health = client.get_health().await.expect("Failed to get health");
 
-        assert!(!health.health.is_empty(), "health should not be empty");
+        // HealthStatus is an enum and always has a value, verify it's not Unknown if health check passed
+        assert_ne!(
+            health.health.to_string(),
+            "unknown",
+            "health should be a known status"
+        );
     }
 }
 

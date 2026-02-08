@@ -110,7 +110,7 @@ pub fn format_workload_rules(rules: &[WorkloadRule], detailed: bool) -> Result<S
             if let Some(ref search_type) = rule.search_type {
                 xml.push_str(&format!(
                     "    <searchType>{}</searchType>\n",
-                    escape_xml(search_type)
+                    escape_xml(&search_type.to_string())
                 ));
             }
 

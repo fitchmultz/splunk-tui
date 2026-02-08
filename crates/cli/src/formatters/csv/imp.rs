@@ -185,9 +185,9 @@ impl Formatter for CsvFormatter {
             output.push_str(&build_csv_row(&[
                 escape_csv(&event.time),
                 escape_csv(&event.user),
-                escape_csv(&event.action),
+                escape_csv(&event.action.to_string()),
                 escape_csv(&event.target),
-                escape_csv(&event.result),
+                escape_csv(&event.result.to_string()),
                 escape_csv(&event.client_ip),
                 escape_csv(&event.details),
             ]));

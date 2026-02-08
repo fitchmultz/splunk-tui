@@ -2,53 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0398",
-      "status": "todo",
-      "title": "Convert stringly-typed model fields to proper enums",
-      "description": "Multiple model files use String types for fields that have a fixed set of valid values. This makes bugs harder to prevent and reduces type safety. Create proper enums for status fields, severity levels, log levels, and other categorical data.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "type-safety",
-        "refactoring",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/models/alerts.rs",
-        "crates/client/src/models/cluster.rs",
-        "crates/client/src/models/inputs.rs",
-        "crates/client/src/models/server.rs",
-        "crates/client/src/models/logs.rs",
-        "crates/client/src/models/license.rs"
-      ],
-      "evidence": [
-        "alerts.rs: severity: Option<String> - should be Severity enum",
-        "cluster.rs: mode: String, status: String - should be ClusterMode, PeerStatus enums",
-        "inputs.rs: input_type: String - should be InputType enum",
-        "server.rs: health: String, status: String - should be HealthStatus enum",
-        "logs.rs: log_level: String - should be LogLevel enum",
-        "license.rs: license_type: String - should be LicenseType enum"
-      ],
-      "plan": [
-        "Define enums for each categorical field type",
-        "Implement Serialize/Deserialize for each enum",
-        "Update model structs to use new enum types",
-        "Update formatters and UI code to handle enums",
-        "Add tests for serialization/deserialization",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0399",
       "status": "todo",
       "title": "Fix inconsistent empty/null value rendering across formatters",

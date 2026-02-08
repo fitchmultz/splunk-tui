@@ -126,10 +126,10 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App, them
         )));
 
         for msg in &error.messages {
-            let color = match msg.message_type.as_str() {
-                "ERROR" => theme.error,
-                "WARN" => theme.warning,
-                "INFO" => theme.info,
+            let color = match msg.message_type {
+                splunk_client::models::MessageType::Error => theme.error,
+                splunk_client::models::MessageType::Warn => theme.warning,
+                splunk_client::models::MessageType::Info => theme.info,
                 _ => theme.text_dim,
             };
             lines.push(Line::from(vec![

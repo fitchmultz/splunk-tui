@@ -49,7 +49,10 @@ pub async fn get_shc_members(
                 label: content["label"].as_str().map(|s| s.to_string()),
                 host: content["host"].as_str().unwrap_or("unknown").to_string(),
                 port: content["port"].as_u64().map(|v| v as u32).unwrap_or(8089),
-                status: content["status"].as_str().unwrap_or("unknown").to_string(),
+                status: content["status"]
+                    .as_str()
+                    .and_then(|s| serde_json::from_str(&format!("\"{}\"", s)).ok())
+                    .unwrap_or_default(),
                 is_captain: content["is_captain"].as_bool().unwrap_or(false),
                 is_dynamic_captain: content["is_dynamic_captain"].as_bool(),
                 guid: content["guid"].as_str().unwrap_or("unknown").to_string(),

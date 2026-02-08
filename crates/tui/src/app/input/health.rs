@@ -26,7 +26,7 @@ impl App {
             let content = self.health_info.as_ref().and_then(|h| {
                 h.splunkd_health
                     .as_ref()
-                    .map(|sh| sh.health.clone())
+                    .map(|sh| sh.health.to_string())
                     .or_else(|| h.server_info.as_ref().map(|s| s.server_name.clone()))
             });
 

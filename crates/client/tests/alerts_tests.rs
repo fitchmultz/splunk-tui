@@ -38,7 +38,10 @@ async fn test_list_fired_alerts() {
         "scheduler__admin__search__MyAlert_at_1351181001_5.31_1351181987"
     );
     assert_eq!(alerts[0].savedsearch_name, Some("MyAlert".to_string()));
-    assert_eq!(alerts[0].severity, Some("High".to_string()));
+    assert_eq!(
+        alerts[0].severity,
+        Some(splunk_client::models::alerts::AlertSeverity::High)
+    );
     assert_eq!(alerts[0].actions, Some("email".to_string()));
 }
 
@@ -106,7 +109,10 @@ async fn test_get_fired_alert() {
     let alert = result.unwrap();
     assert_eq!(alert.name, alert_name);
     assert_eq!(alert.savedsearch_name, Some("MyAlert".to_string()));
-    assert_eq!(alert.severity, Some("High".to_string()));
+    assert_eq!(
+        alert.severity,
+        Some(splunk_client::models::alerts::AlertSeverity::High)
+    );
 }
 
 #[tokio::test]

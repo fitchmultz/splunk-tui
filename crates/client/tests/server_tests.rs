@@ -15,6 +15,7 @@
 mod common;
 
 use common::*;
+use splunk_client::models::{FeatureStatus, HealthStatus, ServerMode};
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -37,7 +38,7 @@ async fn test_get_server_info() {
     let info = result.unwrap();
     assert_eq!(info.server_name, "splunk-local");
     assert_eq!(info.version, "9.1.2");
-    assert_eq!(info.mode.as_deref(), Some("standalone"));
+    assert_eq!(info.mode, Some(ServerMode::Standalone));
     assert!(info.server_roles.contains(&"search_head".to_string()));
     assert!(info.server_roles.contains(&"indexer".to_string()));
 }
@@ -59,9 +60,12 @@ async fn test_get_health() {
 
     assert!(result.is_ok());
     let health = result.unwrap();
-    assert_eq!(health.health, "green");
+    assert_eq!(health.health, HealthStatus::Green);
     assert!(health.features.contains_key("KVStore"));
-    assert_eq!(health.features["KVStore"].health, "green");
-    assert_eq!(health.features["KVStore"].status, "enabled");
-    assert_eq!(health.features["SearchScheduler"].health, "green");
+    assert_eq!(health.features["KVStore"].health, HealthStatus::Green);
+    assert_eq!(health.features["KVStore"].status, FeatureStatus::Enabled);
+    assert_eq!(
+        health.features["SearchScheduler"].health,
+        HealthStatus::Green
+    );
 }

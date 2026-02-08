@@ -41,7 +41,7 @@ pub fn format_inputs(inputs: &[Input], detailed: bool) -> Result<String> {
         let disabled = if input.disabled { "true" } else { "false" };
         let mut values = vec![
             escape_csv(&input.name),
-            escape_csv(&input.input_type),
+            escape_csv(&input.input_type.to_string()),
             format_opt_str(input.host.as_deref(), ""),
             format_opt_str(input.source.as_deref(), ""),
             format_opt_str(input.sourcetype.as_deref(), ""),

@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use splunk_client::models::{App as SplunkApp, Index, LogEntry, SavedSearch, User};
+use splunk_client::models::{App as SplunkApp, Index, LogEntry, LogLevel, SavedSearch, User};
 
 use crate::action::tests::redacted_debug;
 use crate::action::variants::Action;
@@ -107,7 +107,7 @@ fn test_redact_internal_logs_loaded() {
             time: "2025-01-20T10:30:00.000Z".to_string(),
             index_time: "2025-01-20T10:30:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Auth".to_string(),
             message: "User admin logged in".to_string(),
         },
@@ -115,7 +115,7 @@ fn test_redact_internal_logs_loaded() {
             time: "2025-01-20T10:31:00.000Z".to_string(),
             index_time: "2025-01-20T10:31:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Token".to_string(),
             message: "Token abc123 generated".to_string(),
         },

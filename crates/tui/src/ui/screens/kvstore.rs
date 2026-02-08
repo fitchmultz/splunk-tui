@@ -92,7 +92,8 @@ fn render_member_section(f: &mut Frame, area: Rect, status: &KvStoreStatus, them
         ]),
         Row::new(vec![
             Cell::from("Status"),
-            Cell::from(member.status.clone()).style(theme.status_style(&member.status)),
+            Cell::from(member.status.to_string())
+                .style(theme.status_style(&member.status.to_string())),
         ]),
     ];
 
@@ -203,7 +204,7 @@ mod tests {
                 host: "localhost".to_string(),
                 port: 8191,
                 replica_set: "rs0".to_string(),
-                status: "running".to_string(),
+                status: splunk_client::models::KvStoreMemberStatus::Ready,
             },
             replication_status: KvStoreReplicationStatus {
                 oplog_size: 1024 * 1024 * 1024,

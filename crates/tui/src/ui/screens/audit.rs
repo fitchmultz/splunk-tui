@@ -71,7 +71,7 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
     let header = Row::new(header_cells).height(1);
 
     let rows = events.iter().map(|event| {
-        let result_style = match event.result.to_lowercase().as_str() {
+        let result_style = match event.result.to_string().as_str() {
             "success" => theme.success(),
             "failure" | "error" => theme.error(),
             _ => theme.text(),
@@ -80,9 +80,9 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
         let cells = vec![
             Cell::from(event.time.as_str()),
             Cell::from(event.user.as_str()),
-            Cell::from(event.action.as_str()),
+            Cell::from(event.action.to_string()),
             Cell::from(event.target.as_str()),
-            Cell::from(event.result.as_str()).style(result_style),
+            Cell::from(event.result.to_string()).style(result_style),
         ];
         Row::new(cells)
     });

@@ -31,7 +31,10 @@ pub fn format_users(users: &[User]) -> Result<String> {
         output.push_str(&build_csv_row(&[
             escape_csv(&user.name),
             format_opt_str(user.realname.as_deref(), ""),
-            format_opt_str(user.user_type.as_deref(), ""),
+            format_opt_str(
+                user.user_type.as_ref().map(|t| t.to_string()).as_deref(),
+                "",
+            ),
             format_opt_str(user.default_app.as_deref(), ""),
             escape_csv(&roles),
             escape_csv(&last_login.to_string()),

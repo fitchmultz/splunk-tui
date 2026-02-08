@@ -26,7 +26,10 @@ pub fn format_users(users: &[User]) -> Result<String> {
         }
 
         if let Some(ref user_type) = user.user_type {
-            xml.push_str(&format!("    <type>{}</type>\n", escape_xml(user_type)));
+            xml.push_str(&format!(
+                "    <type>{}</type>\n",
+                escape_xml(&user_type.to_string())
+            ));
         }
 
         if let Some(ref default_app) = user.default_app {

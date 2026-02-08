@@ -108,7 +108,7 @@ pub async fn fetch_cluster(
         Ok(Ok(cluster)) => Ok(OverviewResource {
             resource_type: "cluster".to_string(),
             count: 1,
-            status: cluster.mode,
+            status: cluster.mode.to_string(),
             error: None,
         }),
         Ok(Err(e)) => match e {
@@ -144,7 +144,7 @@ pub async fn fetch_health(
         Ok(Ok(health)) => Ok(OverviewResource {
             resource_type: "health".to_string(),
             count: 1,
-            status: health.health.clone(),
+            status: health.health.to_string(),
             error: None,
         }),
         Ok(Err(e)) => Err(e),
@@ -160,7 +160,7 @@ pub async fn fetch_kvstore(
         Ok(Ok(status)) => Ok(OverviewResource {
             resource_type: "kvstore".to_string(),
             count: 1,
-            status: status.current_member.status.clone(),
+            status: status.current_member.status.to_string(),
             error: None,
         }),
         Ok(Err(e)) => Err(e),

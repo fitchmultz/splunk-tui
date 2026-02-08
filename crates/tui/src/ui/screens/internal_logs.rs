@@ -5,7 +5,7 @@ use ratatui::{
     layout::Rect,
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
-use splunk_client::models::LogEntry;
+use splunk_client::models::{LogEntry, LogLevel};
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
@@ -64,17 +64,17 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
     let header = Row::new(header_cells).height(1);
 
     let rows = logs.iter().map(|log| {
-        let level_style = match log.level.to_uppercase().as_str() {
-            "ERROR" | "FATAL" => theme.error(),
-            "WARN" | "WARNING" => theme.warning(),
-            "INFO" => theme.info(),
-            "DEBUG" => theme.text_dim(),
-            _ => theme.text(),
+        let level_style = match log.level {
+            LogLevel::Error | LogLevel::Fatal => theme.error(),
+            LogLevel::Warn => theme.warning(),
+            LogLevel::Info => theme.info(),
+            LogLevel::Debug => theme.text_dim(),
+            LogLevel::Unknown => theme.text(),
         };
 
         let cells = vec![
             Cell::from(log.time.as_str()),
-            Cell::from(log.level.as_str()).style(level_style),
+            Cell::from(log.level.to_string()).style(level_style),
             Cell::from(log.component.as_str()).style(theme.text_dim()),
             Cell::from(log.message.as_str()),
         ];

@@ -241,13 +241,14 @@ async fn run_normal_mode(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use splunk_client::models::LogLevel;
 
     fn make_log_entry(time: &str, index_time: &str, serial: Option<usize>) -> LogEntry {
         LogEntry {
             time: time.to_string(),
             index_time: index_time.to_string(),
             serial,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "test".to_string(),
             message: "test message".to_string(),
         }
@@ -442,7 +443,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "test".to_string(),
             message: "first message".to_string(),
         };
@@ -452,7 +453,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "test".to_string(),
             message: "different message".to_string(),
         };
@@ -487,7 +488,7 @@ mod tests {
             time: "2025-01-24T12:00:00.000Z".to_string(),
             index_time: "2025-01-24T12:00:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "test".to_string(),
             message: "test message".to_string(),
         };

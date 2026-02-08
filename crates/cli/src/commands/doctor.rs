@@ -13,6 +13,7 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use splunk_client::models::kvstore::KvStoreMemberStatus;
 use std::io::Write;
 use std::path::PathBuf;
 use tracing::info;
@@ -198,7 +199,7 @@ pub async fn run(
 
                 // Check 5: KVStore status
                 if let Some(ref kvstore) = health.output.kvstore_status {
-                    let status = if kvstore.current_member.status == "ready" {
+                    let status = if kvstore.current_member.status == KvStoreMemberStatus::Ready {
                         CheckStatus::Pass
                     } else {
                         CheckStatus::Warning

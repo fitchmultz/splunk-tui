@@ -84,18 +84,8 @@ pub async fn get_kvstore_status(
     let status = current
         .get("status")
         .and_then(|v| v.as_str())
-        .unwrap_or("unknown");
-
-    let replication_status = current
-        .get("replicationStatus")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-
-    let status = if replication_status.is_empty() {
-        status.to_string()
-    } else {
-        format!("{status} ({replication_status})")
-    };
+        .and_then(|s| serde_json::from_str(&format!("\"{}\"", s)).ok())
+        .unwrap_or_default();
 
     let host = content
         .get("members")

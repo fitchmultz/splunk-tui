@@ -16,6 +16,7 @@
 mod common;
 
 use common::*;
+use splunk_client::models::LogLevel;
 use wiremock::matchers::{method, path, query_param};
 
 #[tokio::test]
@@ -82,11 +83,11 @@ async fn test_get_internal_logs() {
     let logs = result.unwrap();
     assert_eq!(logs.len(), 2);
     assert_eq!(logs[0].time, "2025-01-20T10:30:00.000+00:00");
-    assert_eq!(logs[0].level, "INFO");
+    assert_eq!(logs[0].level, LogLevel::Info);
     assert_eq!(logs[0].component, "Metrics");
     assert_eq!(logs[0].serial, Some(42));
     assert_eq!(logs[1].time, "2025-01-20T10:29:00.000+00:00");
-    assert_eq!(logs[1].level, "WARN");
+    assert_eq!(logs[1].level, LogLevel::Warn);
     assert_eq!(logs[1].component, "Indexer");
     assert_eq!(logs[1].serial, Some(41));
 }
@@ -293,6 +294,6 @@ async fn test_splunk_client_get_internal_logs() {
     assert!(result.is_ok());
     let logs = result.unwrap();
     assert_eq!(logs.len(), 2);
-    assert_eq!(logs[0].level, "INFO");
-    assert_eq!(logs[1].level, "WARN");
+    assert_eq!(logs[0].level, LogLevel::Info);
+    assert_eq!(logs[1].level, LogLevel::Warn);
 }

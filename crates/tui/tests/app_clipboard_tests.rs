@@ -190,7 +190,7 @@ fn test_ctrl_c_copies_selected_log_message() {
         time: "2024-01-01 12:00:00".to_string(),
         index_time: String::new(),
         serial: None,
-        level: "ERROR".to_string(),
+        level: splunk_client::models::LogLevel::Error,
         component: "Test".to_string(),
         message: "Something went wrong".to_string(),
     }]);
@@ -210,7 +210,7 @@ fn test_ctrl_c_copies_cluster_id() {
     app.cluster_info = Some(splunk_client::models::ClusterInfo {
         id: "cluster-123".to_string(),
         label: None,
-        mode: "master".to_string(),
+        mode: splunk_client::models::ClusterMode::Manager,
         manager_uri: None,
         replication_factor: None,
         search_factor: None,
@@ -232,7 +232,7 @@ fn test_ctrl_c_copies_health_status() {
     app.health_info = Some(splunk_client::models::HealthCheckOutput {
         server_info: None,
         splunkd_health: Some(splunk_client::models::SplunkHealth {
-            health: "green".to_string(),
+            health: splunk_client::models::HealthStatus::Green,
             features: HashMap::new(),
         }),
         license_usage: None,

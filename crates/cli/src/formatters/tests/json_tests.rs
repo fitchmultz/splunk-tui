@@ -2,6 +2,7 @@
 
 use crate::formatters::{ClusterInfoOutput, ClusterPeerOutput, Formatter, JsonFormatter};
 use serde_json::json;
+use splunk_client::models::{KvStoreMemberStatus, PeerState, PeerStatus, UserType};
 use splunk_client::{Index, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, User};
 
 #[test]
@@ -58,8 +59,8 @@ fn test_cluster_peers_json_formatting() {
                 host: "peer1".to_string(),
                 port: 8089,
                 id: "peer-1".to_string(),
-                status: "Up".to_string(),
-                peer_state: "Ready".to_string(),
+                status: PeerStatus::Up.to_string(),
+                peer_state: PeerState::Searchable.to_string(),
                 label: Some("Peer 1".to_string()),
                 site: Some("site1".to_string()),
                 is_captain: true,
@@ -68,8 +69,8 @@ fn test_cluster_peers_json_formatting() {
                 host: "peer2".to_string(),
                 port: 8089,
                 id: "peer-2".to_string(),
-                status: "Up".to_string(),
-                peer_state: "Ready".to_string(),
+                status: PeerStatus::Up.to_string(),
+                peer_state: PeerState::Searchable.to_string(),
                 label: None,
                 site: None,
                 is_captain: false,
@@ -95,7 +96,7 @@ fn test_kvstore_peers_json_formatting() {
             host: "localhost".to_string(),
             port: 8089,
             replica_set: "rs0".to_string(),
-            status: "Ready".to_string(),
+            status: KvStoreMemberStatus::Ready,
         },
         replication_status: KvStoreReplicationStatus {
             oplog_size: 100,
@@ -116,7 +117,7 @@ fn test_users_json_formatting() {
         name: "admin".to_string(),
         realname: Some("Administrator".to_string()),
         email: Some("admin@example.com".to_string()),
-        user_type: Some("Splunk".to_string()),
+        user_type: Some(UserType::Splunk),
         default_app: Some("launcher".to_string()),
         roles: vec!["admin".to_string(), "power".to_string()],
         last_successful_login: Some(1704067200),

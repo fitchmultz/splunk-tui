@@ -29,7 +29,7 @@ pub fn format_search_peers(peers: &[SearchPeer], detailed: bool) -> Result<Strin
         let name = peer.name.clone();
         let host = peer.host.clone();
         let port = peer.port.to_string();
-        let status = peer.status.clone();
+        let status = peer.status;
         let version = peer.version.as_deref().unwrap_or("N/A");
 
         if detailed {

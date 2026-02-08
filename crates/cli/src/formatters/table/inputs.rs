@@ -27,7 +27,7 @@ pub fn format_inputs(inputs: &[Input], detailed: bool) -> Result<String> {
 
     for input in inputs {
         let name = input.name.clone();
-        let input_type = input.input_type.clone();
+        let input_type = input.input_type.to_string();
         let host = input.host.as_deref().unwrap_or("N/A");
         let source = input.source.as_deref().unwrap_or("N/A");
         let sourcetype = input.sourcetype.as_deref().unwrap_or("N/A");

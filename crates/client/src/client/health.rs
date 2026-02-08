@@ -100,7 +100,7 @@ impl SplunkClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ServerInfo, SplunkHealth};
+    use crate::models::{HealthStatus, ServerInfo, ServerMode, SplunkHealth};
 
     #[test]
     fn test_aggregated_health_structure() {
@@ -109,7 +109,7 @@ mod tests {
                 server_name: "test".to_string(),
                 version: "9.0.0".to_string(),
                 build: "abc123".to_string(),
-                mode: Some("standalone".to_string()),
+                mode: Some(ServerMode::Standalone),
                 server_roles: vec!["search_head".to_string()],
                 os_name: Some("Linux".to_string()),
             }),
@@ -136,12 +136,12 @@ mod tests {
                 server_name: "test".to_string(),
                 version: "9.0.0".to_string(),
                 build: "abc123".to_string(),
-                mode: Some("standalone".to_string()),
+                mode: Some(ServerMode::Standalone),
                 server_roles: vec!["search_head".to_string()],
                 os_name: Some("Linux".to_string()),
             }),
             splunkd_health: Some(SplunkHealth {
-                health: "green".to_string(),
+                health: HealthStatus::Green,
                 features: std::collections::HashMap::new(),
             }),
             license_usage: None,

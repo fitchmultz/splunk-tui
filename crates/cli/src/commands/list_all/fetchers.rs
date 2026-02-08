@@ -182,7 +182,7 @@ async fn fetch_cluster(client: &SplunkClient) -> ResourceSummary {
         Ok(Ok(cluster)) => ResourceSummary {
             resource_type: "cluster".to_string(),
             count: 1,
-            status: cluster.mode,
+            status: cluster.mode.to_string(),
             error: None,
         },
         Ok(Err(e)) => match e {
@@ -237,7 +237,7 @@ async fn fetch_health(client: &SplunkClient) -> ResourceSummary {
         "error",
         || client.get_health(),
         |_| 1,
-        |health| health.health.clone(),
+        |health| health.health.to_string(),
     )
     .await
 }
@@ -248,7 +248,7 @@ async fn fetch_kvstore(client: &SplunkClient) -> ResourceSummary {
         "error",
         || client.get_kvstore_status(),
         |_| 1,
-        |status| status.current_member.status.clone(),
+        |status| status.current_member.status.to_string(),
     )
     .await
 }

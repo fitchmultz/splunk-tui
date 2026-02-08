@@ -100,7 +100,11 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
             ]),
             Line::from(vec![
                 Span::styled("Severity: ", theme.title()),
-                Span::raw(a.severity.as_deref().unwrap_or("Medium")),
+                Span::raw(
+                    a.severity
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| "Medium".to_string()),
+                ),
             ]),
             Line::from(vec![
                 Span::styled("Trigger Time: ", theme.title()),

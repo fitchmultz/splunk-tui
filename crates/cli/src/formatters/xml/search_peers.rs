@@ -21,7 +21,7 @@ pub fn format_search_peers(peers: &[SearchPeer], detailed: bool) -> Result<Strin
         xml.push_str(&format!("    <port>{}</port>\n", peer.port));
         xml.push_str(&format!(
             "    <status>{}</status>\n",
-            escape_xml(&peer.status)
+            escape_xml(&peer.status.to_string())
         ));
 
         if let Some(version) = &peer.version {

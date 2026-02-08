@@ -117,7 +117,11 @@ pub fn format_workload_rules(rules: &[WorkloadRule], detailed: bool) -> Result<S
         if detailed {
             let user = rule.user.as_deref().unwrap_or("N/A");
             let app = rule.app.as_deref().unwrap_or("N/A");
-            let search_type = rule.search_type.as_deref().unwrap_or("N/A");
+            let search_type = rule
+                .search_type
+                .as_ref()
+                .map(|t| t.to_string())
+                .unwrap_or_else(|| "N/A".to_string());
             let time_range = rule.search_time_range.as_deref().unwrap_or("N/A");
             let order = rule
                 .order

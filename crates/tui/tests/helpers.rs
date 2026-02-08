@@ -7,7 +7,7 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{Terminal, backend::TestBackend};
-use splunk_client::models::{Index, LogEntry, SearchJobStatus, User};
+use splunk_client::models::{Index, LogEntry, LogLevel, SearchJobStatus, User, UserType};
 use splunk_tui::{App, ConnectionContext};
 
 /// Test harness for TUI rendering with a mock terminal.
@@ -59,7 +59,7 @@ pub fn create_mock_users() -> Vec<User> {
             name: "admin".to_string(),
             realname: Some("System Administrator".to_string()),
             email: Some("admin@example.com".to_string()),
-            user_type: Some("Splunk".to_string()),
+            user_type: Some(UserType::Splunk),
             default_app: Some("launcher".to_string()),
             roles: vec!["admin".to_string(), "can_delete".to_string()],
             last_successful_login: Some(1736956200), // 2024-01-15 10:30:00 UTC
@@ -68,7 +68,7 @@ pub fn create_mock_users() -> Vec<User> {
             name: "power_user".to_string(),
             realname: Some("Power User".to_string()),
             email: Some("power@example.com".to_string()),
-            user_type: Some("Splunk".to_string()),
+            user_type: Some(UserType::Splunk),
             default_app: Some("search".to_string()),
             roles: vec!["power".to_string()],
             last_successful_login: Some(1736870400), // 2024-01-14 10:00:00 UTC
@@ -144,7 +144,7 @@ pub fn create_mock_logs() -> Vec<LogEntry> {
             time: "2024-01-15T10:30:00.000Z".to_string(),
             index_time: "2024-01-15T10:30:01.000Z".to_string(),
             serial: Some(1),
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Metrics".to_string(),
             message: "some metrics log message".to_string(),
         },
@@ -152,7 +152,7 @@ pub fn create_mock_logs() -> Vec<LogEntry> {
             time: "2024-01-15T10:29:00.000Z".to_string(),
             index_time: "2024-01-15T10:29:01.000Z".to_string(),
             serial: Some(2),
-            level: "ERROR".to_string(),
+            level: LogLevel::Error,
             component: "DateParser".to_string(),
             message: "failed to parse date".to_string(),
         },

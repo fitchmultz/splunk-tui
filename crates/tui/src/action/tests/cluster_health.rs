@@ -2,7 +2,10 @@
 
 use std::collections::HashMap;
 
-use splunk_client::models::{ClusterInfo, ClusterPeer, HealthCheckOutput, SplunkHealth};
+use splunk_client::models::{
+    ClusterInfo, ClusterMode, ClusterPeer, HealthCheckOutput, HealthStatus, PeerState, PeerStatus,
+    SplunkHealth,
+};
 
 use crate::action::tests::redacted_debug;
 use crate::action::variants::Action;
@@ -13,8 +16,8 @@ fn test_redact_cluster_peers_loaded() {
         ClusterPeer {
             id: "peer1-id".to_string(),
             label: Some("peer1".to_string()),
-            status: "Up".to_string(),
-            peer_state: "Active".to_string(),
+            status: PeerStatus::Up,
+            peer_state: PeerState::Searchable,
             site: None,
             guid: "guid1".to_string(),
             host: "internal-host1".to_string(),
@@ -27,8 +30,8 @@ fn test_redact_cluster_peers_loaded() {
         ClusterPeer {
             id: "peer2-id".to_string(),
             label: Some("peer2".to_string()),
-            status: "Up".to_string(),
-            peer_state: "Active".to_string(),
+            status: PeerStatus::Up,
+            peer_state: PeerState::Searchable,
             site: None,
             guid: "guid2".to_string(),
             host: "internal-host2".to_string(),
@@ -59,7 +62,7 @@ fn test_redact_cluster_info_loaded() {
     let info = ClusterInfo {
         id: "cluster1-id".to_string(),
         label: Some("cluster1".to_string()),
-        mode: "master".to_string(),
+        mode: ClusterMode::Manager,
         manager_uri: None,
         replication_factor: None,
         search_factor: None,
@@ -102,7 +105,7 @@ fn test_redact_health_loaded() {
 #[test]
 fn test_redact_health_status_loaded() {
     let health = SplunkHealth {
-        health: "yellow".to_string(),
+        health: HealthStatus::Yellow,
         features: HashMap::new(),
     };
     let action = Action::HealthStatusLoaded(Ok(health));

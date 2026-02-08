@@ -19,7 +19,7 @@ mod common;
 
 use common::*;
 use secrecy::SecretString;
-use splunk_client::{CreateUserParams, ModifyUserParams};
+use splunk_client::models::users::{CreateUserParams, ModifyUserParams, UserType};
 use wiremock::matchers::{body_string_contains, method, path};
 
 #[tokio::test]
@@ -55,7 +55,7 @@ async fn test_list_users() {
     assert_eq!(users[0].name, "admin");
     assert_eq!(users[0].realname, Some("Administrator".to_string()));
     assert_eq!(users[0].email, Some("admin@example.com".to_string()));
-    assert_eq!(users[0].user_type, Some("Splunk".to_string()));
+    assert_eq!(users[0].user_type, Some(UserType::Splunk));
     assert_eq!(users[0].default_app, Some("search".to_string()));
     assert_eq!(users[0].roles, vec!["admin", "power"]);
     assert_eq!(users[0].last_successful_login, Some(1737712345));
@@ -132,7 +132,7 @@ async fn test_create_user() {
     assert_eq!(user.name, "newuser");
     assert_eq!(user.realname, Some("New User".to_string()));
     assert_eq!(user.email, Some("newuser@example.com".to_string()));
-    assert_eq!(user.user_type, Some("Splunk".to_string()));
+    assert_eq!(user.user_type, Some(UserType::Splunk));
     assert_eq!(user.default_app, Some("search".to_string()));
     assert_eq!(user.roles, vec!["user"]);
 }

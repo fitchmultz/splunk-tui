@@ -41,8 +41,8 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
     let health_status = health
         .splunkd_health
         .as_ref()
-        .map(|h| h.health.as_str())
-        .unwrap_or("N/A");
+        .map(|h| h.health.to_string())
+        .unwrap_or_else(|| "N/A".to_string());
 
     let (used, quota) = if let Some(usage) = &health.license_usage {
         let used: usize = usage.iter().map(|u| u.effective_used_bytes()).sum();
@@ -58,8 +58,8 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
     let kv_status = health
         .kvstore_status
         .as_ref()
-        .map(|kv| kv.current_member.status.as_str())
-        .unwrap_or("N/A");
+        .map(|kv| kv.current_member.status.to_string())
+        .unwrap_or_else(|| "N/A".to_string());
     let parsing_healthy = health
         .log_parsing_health
         .as_ref()
@@ -74,10 +74,10 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
     let row = vec![
         escape_csv(server_name),
         escape_csv(version),
-        escape_csv(health_status),
+        escape_csv(&health_status),
         escape_csv(&used),
         escape_csv(&quota),
-        escape_csv(kv_status),
+        escape_csv(&kv_status),
         escape_csv(parsing_healthy),
         escape_csv(&parsing_errors),
     ];
@@ -104,7 +104,7 @@ pub fn format_kvstore_status(status: &KvStoreStatus) -> Result<String> {
     let row = vec![
         escape_csv(&status.current_member.host),
         escape_csv(&status.current_member.port.to_string()),
-        escape_csv(&status.current_member.status),
+        escape_csv(&status.current_member.status.to_string()),
         escape_csv(&status.current_member.replica_set),
         escape_csv(&status.replication_status.oplog_size.to_string()),
         escape_csv(&status.replication_status.oplog_used.to_string()),

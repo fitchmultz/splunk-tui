@@ -65,7 +65,11 @@ async fn test_load_cluster_peers_success() {
                 "content": {
                     "id": "peer-01",
                     "label": "Peer 1",
-                    "status": "Up"
+                    "status": "Up",
+                    "peer_state": "searchable",
+                    "guid": "guid-01",
+                    "host": "peer1.example.com",
+                    "port": 8089
                 }
             }
         ]

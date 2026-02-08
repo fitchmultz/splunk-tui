@@ -4,7 +4,7 @@ use crate::formatters::{
     CsvFormatter, Formatter, JsonFormatter, TableFormatter, XmlFormatter,
     tests::make_test_log_entry,
 };
-use splunk_client::models::LogEntry;
+use splunk_client::models::{LogEntry, LogLevel};
 
 // === Table Streaming Tests ===
 
@@ -213,7 +213,7 @@ fn test_xml_streaming_special_chars_escaped() {
         time: "2024-01-15T10:30:00Z".to_string(),
         index_time: "2025-01-24T12:00:01.000Z".to_string(),
         serial: Some(1),
-        level: "ERROR".to_string(),
+        level: LogLevel::Error,
         component: "Test".to_string(),
         message: "Error: <script>alert('xss')</script>".to_string(),
     }];

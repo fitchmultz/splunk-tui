@@ -83,11 +83,11 @@ pub fn format_installed_licenses(licenses: &[splunk_client::InstalledLicense]) -
         xml.push_str(&format!("    <name>{}</name>\n", escape_xml(&license.name)));
         xml.push_str(&format!(
             "    <type>{}</type>\n",
-            escape_xml(&license.license_type)
+            escape_xml(&license.license_type.to_string())
         ));
         xml.push_str(&format!(
             "    <status>{}</status>\n",
-            escape_xml(&license.status)
+            escape_xml(&license.status.to_string())
         ));
         xml.push_str(&format!(
             "    <quotaBytes>{}</quotaBytes>\n",

@@ -21,7 +21,7 @@ pub fn format_inputs(inputs: &[Input], _detailed: bool) -> Result<String> {
         output.push_str(&format!("    <name>{}</name>\n", escape_xml(&input.name)));
         output.push_str(&format!(
             "    <type>{}</type>\n",
-            escape_xml(&input.input_type)
+            escape_xml(&input.input_type.to_string())
         ));
         output.push_str(&format!("    <disabled>{}</disabled>\n", input.disabled));
 

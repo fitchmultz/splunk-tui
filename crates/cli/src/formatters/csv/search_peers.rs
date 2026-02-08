@@ -26,7 +26,7 @@ pub fn format_search_peers(peers: &[SearchPeer], detailed: bool) -> Result<Strin
             escape_csv(&peer.name),
             escape_csv(&peer.host),
             escape_csv(&peer.port.to_string()),
-            escape_csv(&peer.status),
+            escape_csv(&peer.status.to_string()),
             format_opt_str(peer.version.as_deref(), ""),
         ];
 

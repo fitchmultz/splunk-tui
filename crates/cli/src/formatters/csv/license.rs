@@ -103,8 +103,8 @@ pub fn format_installed_licenses(licenses: &[splunk_client::InstalledLicense]) -
     for license in licenses {
         output.push_str(&build_csv_row(&[
             escape_csv(&license.name),
-            escape_csv(&license.license_type),
-            escape_csv(&license.status),
+            escape_csv(&license.license_type.to_string()),
+            escape_csv(&license.status.to_string()),
             escape_csv(&format!("{}", license.quota_bytes / 1024 / 1024)),
             format_opt_str(license.expiration_time.as_deref(), "N/A"),
         ]));

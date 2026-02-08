@@ -28,7 +28,10 @@ pub fn format_fired_alerts(alerts: &[FiredAlert]) -> Result<String> {
         output.push_str(&build_csv_row(&[
             escape_csv(&alert.name),
             format_opt_str(alert.savedsearch_name.as_deref(), ""),
-            format_opt_str(alert.severity.as_deref(), "Medium"),
+            alert
+                .severity
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "Medium".to_string()),
             format_opt_str(alert.trigger_time_rendered.as_deref(), ""),
             format_opt_str(alert.sid.as_deref(), ""),
             format_opt_str(alert.actions.as_deref(), ""),
@@ -56,7 +59,7 @@ pub fn format_fired_alert_info(alert: &FiredAlert) -> Result<String> {
             "Severity",
             alert
                 .severity
-                .clone()
+                .map(|s| s.to_string())
                 .unwrap_or_else(|| "Medium".to_string()),
         ),
         (

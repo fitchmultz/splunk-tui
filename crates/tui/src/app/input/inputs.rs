@@ -37,7 +37,7 @@ impl App {
                     && let Some(input) = inputs.get(selected)
                 {
                     return Some(Action::EnableInput {
-                        input_type: input.input_type.clone(),
+                        input_type: input.input_type.to_string(),
                         name: input.name.clone(),
                     });
                 }
@@ -50,7 +50,7 @@ impl App {
                     && let Some(input) = inputs.get(selected)
                 {
                     return Some(Action::DisableInput {
-                        input_type: input.input_type.clone(),
+                        input_type: input.input_type.to_string(),
                         name: input.name.clone(),
                     });
                 }

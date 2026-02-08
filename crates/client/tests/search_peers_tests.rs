@@ -14,6 +14,7 @@
 mod common;
 
 use common::*;
+use splunk_client::models::SearchPeerStatus;
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -49,13 +50,13 @@ async fn test_list_search_peers() {
     assert_eq!(peers[0].name, "peer1");
     assert_eq!(peers[0].host, "192.168.1.10");
     assert_eq!(peers[0].port, 8089);
-    assert_eq!(peers[0].status, "Up");
+    assert_eq!(peers[0].status, SearchPeerStatus::Up);
     assert_eq!(peers[0].version.as_deref(), Some("9.1.0"));
     assert_eq!(peers[0].guid.as_deref(), Some("abc-123-def-456"));
     assert_eq!(peers[0].disabled, Some(false));
     assert_eq!(peers[1].name, "peer2");
     assert_eq!(peers[1].host, "192.168.1.11");
-    assert_eq!(peers[1].status, "Down");
+    assert_eq!(peers[1].status, SearchPeerStatus::Down);
     assert_eq!(peers[1].disabled, Some(true));
 }
 

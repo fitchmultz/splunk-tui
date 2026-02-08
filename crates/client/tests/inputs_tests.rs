@@ -17,6 +17,7 @@ mod common;
 
 use common::*;
 use splunk_client::error::ClientError;
+use splunk_client::models::InputType;
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -51,7 +52,7 @@ async fn test_list_inputs_by_type_tcp() {
     let inputs = result.unwrap();
     assert_eq!(inputs.len(), 2);
     assert_eq!(inputs[0].name, "9997");
-    assert_eq!(inputs[0].input_type, "tcp/raw");
+    assert_eq!(inputs[0].input_type, InputType::TcpRaw);
     assert!(!inputs[0].disabled);
     assert_eq!(inputs[0].port, Some("9997".to_string()));
     assert_eq!(inputs[0].sourcetype, Some("tcp".to_string()));
@@ -88,7 +89,7 @@ async fn test_list_inputs_by_type_monitor() {
     let inputs = result.unwrap();
     assert_eq!(inputs.len(), 1);
     assert_eq!(inputs[0].name, "/var/log");
-    assert_eq!(inputs[0].input_type, "monitor");
+    assert_eq!(inputs[0].input_type, InputType::Monitor);
     assert!(!inputs[0].disabled);
     assert_eq!(inputs[0].path, Some("/var/log".to_string()));
     assert_eq!(inputs[0].recursive, Some(true));
@@ -283,7 +284,7 @@ async fn test_list_inputs_by_type_with_special_characters_in_name() {
     let inputs = result.unwrap();
     assert_eq!(inputs.len(), 1);
     assert_eq!(inputs[0].name, "script://./bin/my_script.sh");
-    assert_eq!(inputs[0].input_type, "script");
+    assert_eq!(inputs[0].input_type, InputType::Script);
 }
 
 #[tokio::test]

@@ -92,23 +92,26 @@ fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'st
         )));
         lines.push(Line::from(format!(
             "Mode: {}",
-            server_info.mode.as_deref().unwrap_or("unknown")
+            server_info
+                .mode
+                .map(|m| m.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
         )));
     }
 
     if let Some(splunkd_health) = &health.splunkd_health {
         push_section_lines(&mut lines, "Splunkd Health", theme);
 
-        let overall_color = match splunkd_health.health.to_lowercase().as_str() {
-            "green" => theme.success,
-            "red" => theme.error,
+        let overall_color = match splunkd_health.health {
+            splunk_client::models::HealthStatus::Green => theme.success,
+            splunk_client::models::HealthStatus::Red => theme.error,
             _ => theme.warning,
         };
 
         lines.push(Line::from(vec![
             Span::raw("Overall: "),
             Span::styled(
-                splunkd_health.health.clone(),
+                splunkd_health.health.to_string(),
                 Style::default()
                     .fg(overall_color)
                     .add_modifier(Modifier::BOLD),
@@ -293,7 +296,7 @@ mod tests {
                 server_name: "splunk01".to_string(),
                 version: "9.0.0".to_string(),
                 build: "abc123".to_string(),
-                mode: Some("standalone".to_string()),
+                mode: Some(splunk_client::models::ServerMode::Standalone),
                 server_roles: vec![],
                 os_name: Some("Linux".to_string()),
             }),
@@ -346,7 +349,7 @@ mod tests {
                         source: "/var/log/splunk/metrics.log".to_string(),
                         sourcetype: "splunkd".to_string(),
                         message: "Failed to parse timestamp".to_string(),
-                        log_level: "ERROR".to_string(),
+                        log_level: splunk_client::models::LogLevel::Error,
                         component: "DateParser".to_string(),
                     },
                     LogParsingError {
@@ -354,7 +357,7 @@ mod tests {
                         source: "/var/log/splunk/metrics.log".to_string(),
                         sourcetype: "splunkd".to_string(),
                         message: "Invalid timestamp format".to_string(),
-                        log_level: "ERROR".to_string(),
+                        log_level: splunk_client::models::LogLevel::Error,
                         component: "DateParser".to_string(),
                     },
                     LogParsingError {
@@ -362,7 +365,7 @@ mod tests {
                         source: "/var/log/splunk/metrics.log".to_string(),
                         sourcetype: "splunkd".to_string(),
                         message: "Timestamp out of range".to_string(),
-                        log_level: "ERROR".to_string(),
+                        log_level: splunk_client::models::LogLevel::Error,
                         component: "DateParser".to_string(),
                     },
                 ],

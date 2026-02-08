@@ -243,7 +243,12 @@ fn render_rules(
                 Cell::from(rule.workload_pool.clone().unwrap_or_default()),
                 Cell::from(rule.user.clone().unwrap_or_default()),
                 Cell::from(rule.app.clone().unwrap_or_default()),
-                Cell::from(rule.search_type.clone().unwrap_or_default()),
+                Cell::from(
+                    rule.search_type
+                        .clone()
+                        .map(|s| s.to_string())
+                        .unwrap_or_default(),
+                ),
                 Cell::from(
                     rule.enabled
                         .map(|e| if e { "Yes" } else { "No" })

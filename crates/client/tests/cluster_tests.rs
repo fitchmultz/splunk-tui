@@ -15,6 +15,7 @@
 mod common;
 
 use common::*;
+use splunk_client::models::ClusterMode;
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -37,7 +38,7 @@ async fn test_get_cluster_info() {
     let info = result.unwrap();
     assert_eq!(info.id, "cluster-01");
     assert_eq!(info.label.as_deref(), Some("Production Cluster"));
-    assert_eq!(info.mode, "peer");
+    assert_eq!(info.mode, ClusterMode::Peer);
     assert_eq!(info.replication_factor, Some(3));
     assert_eq!(info.search_factor, Some(2));
 }

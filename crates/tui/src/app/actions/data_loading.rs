@@ -466,7 +466,7 @@ impl App {
                 self.health_info = Some(info.clone());
                 // Update health state from splunkd_health if available
                 if let Some(ref health) = info.splunkd_health {
-                    let new_state = HealthState::from_health_str(&health.health);
+                    let new_state = HealthState::from_health_str(&health.health.to_string());
                     self.set_health_state(new_state);
                 }
                 // Store server info for header display
@@ -490,7 +490,7 @@ impl App {
     ) {
         match result {
             Ok(health) => {
-                let new_state = HealthState::from_health_str(&health.health);
+                let new_state = HealthState::from_health_str(&health.health.to_string());
                 self.set_health_state(new_state);
             }
             Err(_) => {
@@ -792,7 +792,7 @@ mod tests {
     use super::*;
     use crate::ConnectionContext;
     use crate::app::state::HealthState;
-    use splunk_client::models::{HealthCheckOutput, SplunkHealth};
+    use splunk_client::models::{HealthCheckOutput, HealthStatus, SplunkHealth};
     use std::collections::HashMap;
     use std::sync::Arc;
 
@@ -827,7 +827,7 @@ mod tests {
         let mut app = App::new(None, ConnectionContext::default());
 
         let health = SplunkHealth {
-            health: "green".to_string(),
+            health: HealthStatus::Green,
             features: HashMap::new(),
         };
 
@@ -855,7 +855,7 @@ mod tests {
         let health_output = HealthCheckOutput {
             server_info: None,
             splunkd_health: Some(SplunkHealth {
-                health: "red".to_string(),
+                health: HealthStatus::Red,
                 features: HashMap::new(),
             }),
             license_usage: None,

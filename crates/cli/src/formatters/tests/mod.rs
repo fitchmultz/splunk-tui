@@ -20,15 +20,23 @@ mod streaming_tests;
 mod table_tests;
 mod xml_tests;
 
-use splunk_client::models::LogEntry;
+use splunk_client::models::{LogEntry, LogLevel};
 
 /// Helper function to create a test log entry for streaming tests.
 pub fn make_test_log_entry(time: &str, level: &str, component: &str, message: &str) -> LogEntry {
+    let log_level = match level {
+        "ERROR" => LogLevel::Error,
+        "WARN" => LogLevel::Warn,
+        "INFO" => LogLevel::Info,
+        "DEBUG" => LogLevel::Debug,
+        "FATAL" => LogLevel::Fatal,
+        _ => LogLevel::Unknown,
+    };
     LogEntry {
         time: time.to_string(),
         index_time: "2025-01-24T12:00:01.000Z".to_string(),
         serial: Some(1),
-        level: level.to_string(),
+        level: log_level,
         component: component.to_string(),
         message: message.to_string(),
     }

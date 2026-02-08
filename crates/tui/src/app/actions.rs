@@ -247,7 +247,7 @@ mod tests {
     use super::*;
     use crate::ConnectionContext;
     use crate::app::state::HealthState;
-    use splunk_client::models::{HealthCheckOutput, SplunkHealth};
+    use splunk_client::models::{HealthCheckOutput, HealthStatus, SplunkHealth};
     use std::collections::HashMap;
     use std::sync::Arc;
 
@@ -257,7 +257,7 @@ mod tests {
 
         // Simulate receiving a healthy status
         let health = SplunkHealth {
-            health: "green".to_string(),
+            health: HealthStatus::Green,
             features: HashMap::new(),
         };
 
@@ -288,7 +288,7 @@ mod tests {
         let health_output = HealthCheckOutput {
             server_info: None,
             splunkd_health: Some(SplunkHealth {
-                health: "red".to_string(),
+                health: HealthStatus::Red,
                 features: HashMap::new(),
             }),
             license_usage: None,

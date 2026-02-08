@@ -4,12 +4,47 @@
 //! and health check aggregation.
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 use crate::models::{
     kvstore::KvStoreStatus,
     license::LicenseUsage,
     server::{ServerInfo, SplunkHealth},
 };
+
+/// Log level for Splunk internal logs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+#[derive(Default)]
+pub enum LogLevel {
+    /// Error level.
+    Error,
+    /// Warning level.
+    Warn,
+    /// Info level.
+    Info,
+    /// Debug level.
+    Debug,
+    /// Fatal level.
+    Fatal,
+    /// Unknown level for fallback.
+    #[serde(other)]
+    #[default]
+    Unknown,
+}
+
+impl fmt::Display for LogLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LogLevel::Error => write!(f, "ERROR"),
+            LogLevel::Warn => write!(f, "WARN"),
+            LogLevel::Info => write!(f, "INFO"),
+            LogLevel::Debug => write!(f, "DEBUG"),
+            LogLevel::Fatal => write!(f, "FATAL"),
+            LogLevel::Unknown => write!(f, "UNKNOWN"),
+        }
+    }
+}
 
 /// A single log parsing error entry.
 #[derive(Debug, Deserialize, Clone, Serialize)]
@@ -20,7 +55,7 @@ pub struct LogParsingError {
     pub sourcetype: String,
     pub message: String,
     #[serde(default)]
-    pub log_level: String,
+    pub log_level: LogLevel,
     #[serde(default)]
     pub component: String,
 }
@@ -39,7 +74,7 @@ pub struct LogEntry {
     )]
     pub serial: Option<usize>,
     #[serde(rename = "log_level", default)]
-    pub level: String,
+    pub level: LogLevel,
     #[serde(default)]
     pub component: String,
     #[serde(rename = "_raw")]
@@ -98,14 +133,14 @@ impl LogEntry {
 /// # Example
 ///
 /// ```
-/// use splunk_client::models::LogEntry;
+/// use splunk_client::models::{LogEntry, LogLevel};
 ///
 /// let mut logs = vec![
 ///     LogEntry {
 ///         time: "2025-01-20T10:00:00.000Z".to_string(),
 ///         index_time: "2025-01-20T10:00:01.000Z".to_string(),
 ///         serial: Some(1),
-///         level: "INFO".to_string(),
+///         level: LogLevel::Info,
 ///         component: "test".to_string(),
 ///         message: "older".to_string(),
 ///     },
@@ -113,7 +148,7 @@ impl LogEntry {
 ///         time: "2025-01-20T10:01:00.000Z".to_string(),
 ///         index_time: "2025-01-20T10:01:01.000Z".to_string(),
 ///         serial: Some(2),
-///         level: "INFO".to_string(),
+///         level: LogLevel::Info,
 ///         component: "test".to_string(),
 ///         message: "newer".to_string(),
 ///     },
@@ -170,7 +205,7 @@ mod tests {
         assert_eq!(error.source, "/opt/splunk/var/log/splunk/metrics.log");
         assert_eq!(error.sourcetype, "splunkd");
         assert_eq!(error.message, "Failed to parse timestamp");
-        assert_eq!(error.log_level, "ERROR");
+        assert_eq!(error.log_level, LogLevel::Error);
         assert_eq!(error.component, "DateParserVerbose");
     }
 
@@ -199,7 +234,7 @@ mod tests {
         }"#;
         let entry: LogEntry = serde_json::from_str(json).unwrap();
         assert_eq!(entry.time, "2025-01-20T10:30:00.000Z");
-        assert_eq!(entry.level, "INFO");
+        assert_eq!(entry.level, LogLevel::Info);
         assert_eq!(entry.component, "Metrics");
         assert_eq!(entry.message, "some log message");
         // index_time defaults to empty string when missing
@@ -221,7 +256,7 @@ mod tests {
         assert_eq!(entry.time, "2025-01-20T10:30:00.000Z");
         assert_eq!(entry.index_time, "2025-01-20T10:30:01.000Z");
         assert_eq!(entry.serial, Some(42));
-        assert_eq!(entry.level, "INFO");
+        assert_eq!(entry.level, LogLevel::Info);
         assert_eq!(entry.component, "Metrics");
         assert_eq!(entry.message, "some log message");
         assert_eq!(
@@ -240,7 +275,7 @@ mod tests {
             time: "2025-01-20T10:30:00.000Z".to_string(),
             index_time: "2025-01-20T10:30:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Metrics".to_string(),
             message: "test message content".to_string(),
         };
@@ -248,7 +283,7 @@ mod tests {
             time: "2025-01-20T10:30:00.000Z".to_string(),
             index_time: "2025-01-20T10:30:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Metrics".to_string(),
             message: "test message content".to_string(),
         };
@@ -263,7 +298,7 @@ mod tests {
             time: "2025-01-20T10:30:00.000Z".to_string(),
             index_time: "2025-01-20T10:30:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Metrics".to_string(),
             message: "first message".to_string(),
         };
@@ -271,7 +306,7 @@ mod tests {
             time: "2025-01-20T10:30:00.000Z".to_string(),
             index_time: "2025-01-20T10:30:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Metrics".to_string(),
             message: "second message".to_string(),
         };
@@ -286,7 +321,7 @@ mod tests {
             time: "2025-01-20T10:30:00.000Z".to_string(),
             index_time: "2025-01-20T10:30:01.000Z".to_string(),
             serial: None,
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "Metrics".to_string(),
             message: "test message".to_string(),
         };
@@ -316,7 +351,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(1),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "oldest".to_string(),
             },
@@ -324,7 +359,7 @@ mod tests {
                 time: "2025-01-20T10:02:00.000Z".to_string(),
                 index_time: "2025-01-20T10:02:01.000Z".to_string(),
                 serial: Some(3),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "newest".to_string(),
             },
@@ -332,7 +367,7 @@ mod tests {
                 time: "2025-01-20T10:01:00.000Z".to_string(),
                 index_time: "2025-01-20T10:01:01.000Z".to_string(),
                 serial: Some(2),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "middle".to_string(),
             },
@@ -353,7 +388,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(1),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "older".to_string(),
             },
@@ -361,7 +396,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:03.000Z".to_string(),
                 serial: Some(3),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "newest".to_string(),
             },
@@ -369,7 +404,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:02.000Z".to_string(),
                 serial: Some(2),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "middle".to_string(),
             },
@@ -390,7 +425,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(10),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "older".to_string(),
             },
@@ -398,7 +433,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(30),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "newest".to_string(),
             },
@@ -406,7 +441,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(20),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "middle".to_string(),
             },
@@ -427,7 +462,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: None,
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "no_serial".to_string(),
             },
@@ -435,7 +470,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(10),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "with_serial".to_string(),
             },
@@ -456,7 +491,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "".to_string(),
                 serial: Some(1),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "empty_index".to_string(),
             },
@@ -464,7 +499,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: Some(2),
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "with_index".to_string(),
             },
@@ -490,7 +525,7 @@ mod tests {
             time: "2025-01-20T10:00:00.000Z".to_string(),
             index_time: "2025-01-20T10:00:01.000Z".to_string(),
             serial: Some(1),
-            level: "INFO".to_string(),
+            level: LogLevel::Info,
             component: "test".to_string(),
             message: "only".to_string(),
         }];
@@ -509,7 +544,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:01.000Z".to_string(),
                 serial: None,
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "first".to_string(),
             },
@@ -517,7 +552,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:03.000Z".to_string(),
                 serial: None,
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "third".to_string(),
             },
@@ -525,7 +560,7 @@ mod tests {
                 time: "2025-01-20T10:00:00.000Z".to_string(),
                 index_time: "2025-01-20T10:00:02.000Z".to_string(),
                 serial: None,
-                level: "INFO".to_string(),
+                level: LogLevel::Info,
                 component: "test".to_string(),
                 message: "second".to_string(),
             },
@@ -536,5 +571,111 @@ mod tests {
         assert_eq!(logs[0].message, "third");
         assert_eq!(logs[1].message, "second");
         assert_eq!(logs[2].message, "first");
+    }
+
+    // LogLevel enum tests
+
+    #[test]
+    fn test_log_level_deserialize_error() {
+        let json = r#""ERROR""#;
+        let level: LogLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, LogLevel::Error);
+    }
+
+    #[test]
+    fn test_log_level_deserialize_warn() {
+        let json = r#""WARN""#;
+        let level: LogLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, LogLevel::Warn);
+    }
+
+    #[test]
+    fn test_log_level_deserialize_info() {
+        let json = r#""INFO""#;
+        let level: LogLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, LogLevel::Info);
+    }
+
+    #[test]
+    fn test_log_level_deserialize_debug() {
+        let json = r#""DEBUG""#;
+        let level: LogLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, LogLevel::Debug);
+    }
+
+    #[test]
+    fn test_log_level_deserialize_fatal() {
+        let json = r#""FATAL""#;
+        let level: LogLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, LogLevel::Fatal);
+    }
+
+    #[test]
+    fn test_log_level_deserialize_unknown() {
+        let json = r#""TRACE""#;
+        let level: LogLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, LogLevel::Unknown);
+    }
+
+    #[test]
+    fn test_log_level_default() {
+        let level: LogLevel = Default::default();
+        assert_eq!(level, LogLevel::Unknown);
+    }
+
+    #[test]
+    fn test_log_level_display() {
+        assert_eq!(format!("{}", LogLevel::Error), "ERROR");
+        assert_eq!(format!("{}", LogLevel::Warn), "WARN");
+        assert_eq!(format!("{}", LogLevel::Info), "INFO");
+        assert_eq!(format!("{}", LogLevel::Debug), "DEBUG");
+        assert_eq!(format!("{}", LogLevel::Fatal), "FATAL");
+        assert_eq!(format!("{}", LogLevel::Unknown), "UNKNOWN");
+    }
+
+    #[test]
+    fn test_log_level_serialize() {
+        assert_eq!(
+            serde_json::to_string(&LogLevel::Error).unwrap(),
+            r#""ERROR""#
+        );
+        assert_eq!(serde_json::to_string(&LogLevel::Warn).unwrap(), r#""WARN""#);
+        assert_eq!(serde_json::to_string(&LogLevel::Info).unwrap(), r#""INFO""#);
+        assert_eq!(
+            serde_json::to_string(&LogLevel::Debug).unwrap(),
+            r#""DEBUG""#
+        );
+        assert_eq!(
+            serde_json::to_string(&LogLevel::Fatal).unwrap(),
+            r#""FATAL""#
+        );
+        assert_eq!(
+            serde_json::to_string(&LogLevel::Unknown).unwrap(),
+            r#""UNKNOWN""#
+        );
+    }
+
+    #[test]
+    fn test_log_entry_missing_level_defaults_to_unknown() {
+        let json = r#"{
+            "_time": "2025-01-20T10:30:00.000Z",
+            "component": "Metrics",
+            "_raw": "some log message"
+        }"#;
+        let entry: LogEntry = serde_json::from_str(json).unwrap();
+        assert_eq!(entry.level, LogLevel::Unknown);
+    }
+
+    #[test]
+    fn test_log_parsing_error_missing_level_defaults_to_unknown() {
+        let json = r#"{
+            "_time": "2025-01-20T10:30:00.000Z",
+            "source": "/opt/splunk/var/log/splunk/metrics.log",
+            "sourcetype": "splunkd",
+            "message": "Failed to parse timestamp",
+            "component": "DateParserVerbose"
+        }"#;
+        let error: LogParsingError = serde_json::from_str(json).unwrap();
+        assert_eq!(error.log_level, LogLevel::Unknown);
     }
 }

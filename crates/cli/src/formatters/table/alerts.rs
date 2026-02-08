@@ -29,7 +29,10 @@ pub fn format_fired_alerts(alerts: &[FiredAlert]) -> Result<String> {
 
     for alert in alerts {
         let savedsearch = alert.savedsearch_name.as_deref().unwrap_or("-");
-        let severity = alert.severity.as_deref().unwrap_or("Medium");
+        let severity = alert
+            .severity
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "Medium".to_string());
         let trigger_time = alert.trigger_time_rendered.as_deref().unwrap_or("-");
 
         // Truncate fields if too long

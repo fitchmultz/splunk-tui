@@ -245,11 +245,11 @@ async fn run_show(
             let info = ClusterInfoOutput {
                 id: cluster_info.id,
                 label: cluster_info.label,
-                mode: cluster_info.mode,
+                mode: cluster_info.mode.to_string(),
                 manager_uri: cluster_info.manager_uri,
                 replication_factor: cluster_info.replication_factor,
                 search_factor: cluster_info.search_factor,
-                status: cluster_info.status,
+                status: cluster_info.status.map(|s| s.to_string()),
                 maintenance_mode: cluster_info.maintenance_mode,
                 peers: peers_output,
             };

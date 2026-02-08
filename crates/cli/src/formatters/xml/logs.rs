@@ -15,7 +15,10 @@ fn format_log_entry(log: &LogEntry) -> String {
     let mut xml = String::new();
     xml.push_str("  <log>\n");
     xml.push_str(&format!("    <time>{}</time>\n", escape_xml(&log.time)));
-    xml.push_str(&format!("    <level>{}</level>\n", escape_xml(&log.level)));
+    xml.push_str(&format!(
+        "    <level>{}</level>\n",
+        escape_xml(&log.level.to_string())
+    ));
     xml.push_str(&format!(
         "    <component>{}</component>\n",
         escape_xml(&log.component)

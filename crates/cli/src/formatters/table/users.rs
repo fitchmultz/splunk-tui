@@ -32,7 +32,11 @@ pub fn format_users(users: &[User]) -> Result<String> {
     for user in users {
         let name = &user.name;
         let realname = user.realname.as_deref().unwrap_or("-");
-        let user_type = user.user_type.as_deref().unwrap_or("-");
+        let user_type = user
+            .user_type
+            .as_ref()
+            .map(|t| t.to_string())
+            .unwrap_or_else(|| "-".to_string());
         let roles = if user.roles.is_empty() {
             "-".to_string()
         } else {

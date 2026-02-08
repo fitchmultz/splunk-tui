@@ -33,17 +33,21 @@ pub mod users;
 pub mod workload;
 
 // Re-exports for backward compatibility
-pub use alerts::{AlertConfig, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
+pub use alerts::{AlertConfig, AlertSeverity, FiredAlert, FiredAlertEntry, FiredAlertListResponse};
 pub use apps::{App, AppEntry, AppListResponse};
-pub use audit::{AuditEvent, AuditEventEntry, AuditEventListResponse, ListAuditEventsParams};
+pub use audit::{
+    AuditAction, AuditEvent, AuditEventEntry, AuditEventListResponse, AuditResult,
+    ListAuditEventsParams,
+};
 #[cfg(test)]
 pub use auth::AuthResponse;
 pub use capabilities::{Capability, CapabilityEntry, CapabilityListResponse};
 pub use cluster::{
-    ClusterInfo, ClusterManagementResponse, ClusterPeer, DecommissionPeerParams,
-    MaintenanceModeParams, RemovePeersParams,
+    ClusterInfo, ClusterManagementResponse, ClusterMode, ClusterPeer, ClusterStatus,
+    DecommissionPeerParams, MaintenanceModeParams, PeerState, PeerStatus, RemovePeersParams,
+    ReplicationStatus,
 };
-pub use common::{Acl, Entry, Perms, SplunkMessage, SplunkMessages, SplunkResponse};
+pub use common::{Acl, Entry, MessageType, Perms, SplunkMessage, SplunkMessages, SplunkResponse};
 pub use configs::{
     ConfigFile, ConfigListResponse, ConfigStanza, ConfigStanzaEntry, SUPPORTED_CONFIG_FILES,
 };
@@ -55,32 +59,35 @@ pub use hec::{
     SendBatchParams,
 };
 pub use indexes::{CreateIndexParams, Index, IndexEntry, IndexListResponse, ModifyIndexParams};
-pub use inputs::{Input, InputEntry, InputListResponse};
+pub use inputs::{Input, InputEntry, InputListResponse, InputType};
 pub use jobs::{
     JobContent, JobEntry, SearchJob, SearchJobListResponse, SearchJobResults, SearchJobStatus,
     SplError, SplWarning, ValidateSplRequest, ValidateSplResponse,
 };
 pub use kvstore::{
     CollectionEntry, CollectionListResponse, CreateCollectionParams, KvStoreCollection,
-    KvStoreMember, KvStoreRecord, KvStoreReplicationStatus, KvStoreStatus, ModifyCollectionParams,
+    KvStoreMember, KvStoreMemberStatus, KvStoreRecord, KvStoreReplicationStatus, KvStoreStatus,
+    ModifyCollectionParams,
 };
 pub use license::{
     CreatePoolParams, InstalledLicense, LicenseActivationResult, LicenseInstallResult, LicensePool,
-    LicenseStack, LicenseUsage, ModifyPoolParams, SlavesUsageBytes,
+    LicenseStack, LicenseStatus, LicenseType, LicenseUsage, ModifyPoolParams, SlavesUsageBytes,
 };
-pub use logs::{HealthCheckOutput, LogEntry, LogParsingError, LogParsingHealth};
+pub use logs::{HealthCheckOutput, LogEntry, LogLevel, LogParsingError, LogParsingHealth};
 pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse, UploadLookupParams};
 pub use macros::{Macro, MacroEntry, MacroListResponse};
 pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListResponse};
 pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
-pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse};
-pub use server::{HealthFeature, ServerInfo, SplunkHealth};
+pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse, SearchPeerStatus};
+pub use server::{
+    FeatureStatus, HealthFeature, HealthStatus, ServerInfo, ServerMode, SplunkHealth,
+};
 pub use shc::{
     AddShcMemberParams, RemoveShcMemberParams, RollingRestartParams, SetCaptainParams, ShcCaptain,
-    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus,
+    ShcConfig, ShcManagementResponse, ShcMember, ShcMemberStatus, ShcStatus,
 };
-pub use users::{CreateUserParams, ModifyUserParams, User, UserEntry, UserListResponse};
+pub use users::{CreateUserParams, ModifyUserParams, User, UserEntry, UserListResponse, UserType};
 pub use workload::{
-    WorkloadPool, WorkloadPoolEntry, WorkloadPoolListResponse, WorkloadRule, WorkloadRuleEntry,
-    WorkloadRuleListResponse,
+    SearchType, WorkloadPool, WorkloadPoolEntry, WorkloadPoolListResponse, WorkloadRule,
+    WorkloadRuleEntry, WorkloadRuleListResponse,
 };

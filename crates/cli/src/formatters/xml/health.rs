@@ -41,18 +41,18 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
         xml.push_str("  <splunkdHealth>\n");
         xml.push_str(&format!(
             "    <status>{}</status>\n",
-            escape_xml(&sh.health)
+            escape_xml(&sh.health.to_string())
         ));
         xml.push_str("    <features>\n");
         for (name, feature) in &sh.features {
             xml.push_str(&format!("      <feature name=\"{}\">\n", escape_xml(name)));
             xml.push_str(&format!(
                 "        <health>{}</health>\n",
-                escape_xml(&feature.health)
+                escape_xml(&feature.health.to_string())
             ));
             xml.push_str(&format!(
                 "        <status>{}</status>\n",
-                escape_xml(&feature.status)
+                escape_xml(&feature.status.to_string())
             ));
             xml.push_str("        <reasons>\n");
             for reason in &feature.reasons {
@@ -109,7 +109,7 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
         xml.push_str(&format!("      <port>{}</port>\n", kv.current_member.port));
         xml.push_str(&format!(
             "      <status>{}</status>\n",
-            escape_xml(&kv.current_member.status)
+            escape_xml(&kv.current_member.status.to_string())
         ));
         xml.push_str(&format!(
             "      <replicaSet>{}</replicaSet>\n",
@@ -150,7 +150,7 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
             ));
             xml.push_str(&format!(
                 "        <logLevel>{}</logLevel>\n",
-                escape_xml(&err.log_level)
+                escape_xml(&err.log_level.to_string())
             ));
             xml.push_str(&format!(
                 "        <message>{}</message>\n",
@@ -180,7 +180,7 @@ pub fn format_kvstore_status(status: &KvStoreStatus) -> Result<String> {
     ));
     xml.push_str(&format!(
         "    <status>{}</status>\n",
-        escape_xml(&status.current_member.status)
+        escape_xml(&status.current_member.status.to_string())
     ));
     xml.push_str(&format!(
         "    <replicaSet>{}</replicaSet>\n",
