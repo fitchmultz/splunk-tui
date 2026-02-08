@@ -36,6 +36,7 @@ fn test_password_and_password_stdin_conflict() {
 #[test]
 fn test_password_and_password_file_conflict() {
     let (_temp_dir, config_path) = setup_temp_config();
+    let password_file = _temp_dir.path().join("pass.txt");
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
@@ -50,7 +51,7 @@ fn test_password_and_password_file_conflict() {
             "--password",
             "testpass",
             "--password-file",
-            "/tmp/pass.txt",
+            password_file.to_str().unwrap(),
         ])
         .assert()
         .failure()
@@ -61,6 +62,7 @@ fn test_password_and_password_file_conflict() {
 #[test]
 fn test_password_stdin_and_password_file_conflict() {
     let (_temp_dir, config_path) = setup_temp_config();
+    let password_file = _temp_dir.path().join("pass.txt");
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
@@ -74,7 +76,7 @@ fn test_password_stdin_and_password_file_conflict() {
             "https://splunk.example.com:8089",
             "--password-stdin",
             "--password-file",
-            "/tmp/pass.txt",
+            password_file.to_str().unwrap(),
         ])
         .assert()
         .failure()
@@ -109,6 +111,7 @@ fn test_api_token_and_api_token_stdin_conflict() {
 #[test]
 fn test_api_token_stdin_and_api_token_file_conflict() {
     let (_temp_dir, config_path) = setup_temp_config();
+    let token_file = _temp_dir.path().join("token.txt");
 
     splunk_cmd()
         .env("SPLUNK_CONFIG_PATH", &config_path)
@@ -122,7 +125,7 @@ fn test_api_token_stdin_and_api_token_file_conflict() {
             "https://splunk.example.com:8089",
             "--api-token-stdin",
             "--api-token-file",
-            "/tmp/token.txt",
+            token_file.to_str().unwrap(),
         ])
         .assert()
         .failure()

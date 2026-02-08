@@ -375,18 +375,20 @@ fn test_empty_splunk_config_path_with_config_loader() {
 fn test_splunk_config_path_with_nonexistent_file() {
     let _env = EnvVarGuard::new();
 
-    let nonexistent_path = "/tmp/nonexistent_splunk_config_12345.json";
+    let temp_dir = TempDir::new().unwrap();
+    let nonexistent_path = temp_dir.path().join("nonexistent_splunk_config_12345.json");
+    let nonexistent_path_str = nonexistent_path.to_string_lossy().to_string();
 
     // Set SPLUNK_CONFIG_PATH to a nonexistent file
     // SAFETY: This test holds the EnvVarGuard lock, ensuring exclusive access
     // to environment variables. Environment mutations are serialized across all
     // tests via the global mutex, preventing data races.
     unsafe {
-        std::env::set_var("SPLUNK_CONFIG_PATH", nonexistent_path);
+        std::env::set_var("SPLUNK_CONFIG_PATH", &nonexistent_path_str);
     }
 
     // Create ConfigManager with nonexistent path
-    let result = ConfigManager::new_with_path(std::path::PathBuf::from(nonexistent_path));
+    let result = ConfigManager::new_with_path(nonexistent_path);
 
     // ConfigManager::new_with_path should succeed, but load() will return default state
     assert!(result.is_ok(), "ConfigManager creation should succeed");

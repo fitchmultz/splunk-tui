@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0415",
-      "status": "todo",
-      "title": "Fix hardcoded /tmp paths for cross-platform compatibility",
-      "description": "Multiple test files use hardcoded /tmp paths which will fail on Windows and may fail on macOS/Linux systems with restricted /tmp permissions. Replace with tempfile::tempdir() for proper cross-platform temporary file handling.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "portability",
-        "testing",
-        "cli",
-        "tui"
-      ],
-      "scope": [
-        "crates/cli/tests/file_output_tests.rs:263",
-        "crates/cli/tests/config/secure_input_tests.rs:53,77,125",
-        "crates/tui/tests/config_loading_tests.rs:378"
-      ],
-      "evidence": [
-        "file_output_tests.rs:263: cmd.args(['logs', '--tail', '--output-file', '/tmp/test-results.json'])",
-        "secure_input_tests.rs:53: .args(['--password-file', '/tmp/pass.txt'])",
-        "secure_input_tests.rs:77,125: similar hardcoded /tmp paths",
-        "config_loading_tests.rs:378: let nonexistent_path = '/tmp/nonexistent_splunk_config_12345.json'",
-        "Tests will fail on Windows (no /tmp) or systems with noexec/tmpfs restrictions"
-      ],
-      "plan": [
-        "Replace hardcoded /tmp paths with tempfile::tempdir()",
-        "Use temp_dir.path().join('filename') pattern",
-        "Ensure files are cleaned up after tests (tempfile handles this)",
-        "Verify by running `make test-integration` on different platforms"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0416",
       "status": "todo",
       "title": "Fix CLI default count value mismatches between docs and code",

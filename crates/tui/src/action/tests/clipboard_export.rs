@@ -1,7 +1,5 @@
 //! Tests for clipboard and export action redaction.
 
-use std::path::PathBuf;
-
 use crate::action::format::ExportFormat;
 use crate::action::tests::redacted_debug;
 use crate::action::variants::Action;
@@ -23,7 +21,8 @@ fn test_redact_copy_to_clipboard() {
 #[test]
 fn test_redact_export_data() {
     let data = serde_json::json!({"results": [{"id": 1, "password": "secret123"}]});
-    let path = PathBuf::from("/tmp/export.json");
+    let temp_dir = tempfile::tempdir().unwrap();
+    let path = temp_dir.path().join("export.json");
     let action = Action::ExportData(data.clone(), path, ExportFormat::Json);
     let output = redacted_debug(&action);
 

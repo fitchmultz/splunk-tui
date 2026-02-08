@@ -7,7 +7,6 @@ use splunk_config::{
     AuthStrategy, ConfigError, ConfigLoader, InternalLogsDefaults, SearchDefaultConfig,
     env_var_or_none,
 };
-use std::path::PathBuf;
 
 /// Test that ConfigLoader respects the full precedence chain:
 /// CLI args > env vars > profile config > defaults
@@ -65,7 +64,9 @@ fn test_build_internal_logs_defaults_integration() {
 /// Test that ConfigLoader can be used with custom config path
 #[test]
 fn test_config_loader_with_custom_path() {
-    let loader = ConfigLoader::new().with_config_path(PathBuf::from("/tmp/test-config.json"));
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_path = temp_dir.path().join("test-config.json");
+    let loader = ConfigLoader::new().with_config_path(config_path);
 
     // Just verify it doesn't panic - actual profile loading is tested in unit tests
     let _ = loader;

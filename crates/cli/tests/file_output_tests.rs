@@ -259,13 +259,21 @@ async fn test_output_file_creates_parent_directories() {
 
 #[test]
 fn test_tail_mode_rejects_output_file() {
+    let temp_dir = TempDir::new().unwrap();
+    let output_path = temp_dir.path().join("test-results.json");
+
     let mut cmd = common::splunk_cmd_with_base_url("https://localhost:8089");
-    cmd.args(["logs", "--tail", "--output-file", "/tmp/test-results.json"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "Cannot use output file in tail mode",
-        ));
+    cmd.args([
+        "logs",
+        "--tail",
+        "--output-file",
+        output_path.to_str().unwrap(),
+    ])
+    .assert()
+    .failure()
+    .stderr(predicate::str::contains(
+        "Cannot use output file in tail mode",
+    ));
 }
 
 #[tokio::test]
