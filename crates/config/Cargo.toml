@@ -20,6 +20,7 @@ tracing = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
+proptest = { workspace = true }
 toml = "0.8"
 tempfile = "3"
 serial_test = { workspace = true }

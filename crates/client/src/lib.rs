@@ -13,6 +13,15 @@ pub mod error;
 pub mod metrics;
 pub mod models;
 mod name_merge;
+
+/// Serde helper functions for deserializing Splunk's inconsistent JSON types.
+///
+/// These helpers are primarily useful for testing and custom deserialization scenarios.
+/// They are exposed when the `test-utils` feature is enabled.
+#[cfg(feature = "test-utils")]
+pub mod serde_helpers;
+
+#[cfg(not(feature = "test-utils"))]
 mod serde_helpers;
 
 pub mod endpoints;

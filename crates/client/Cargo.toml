@@ -8,7 +8,7 @@ repository.workspace = true
 
 [features]
 default = []
-test-utils = []
+test-utils = ["proptest"]
 
 [dependencies]
 splunk-config = { path = "../config" }
@@ -42,8 +42,12 @@ metrics = "0.24"
 # URL Encoding
 percent-encoding = "2.3"
 
+# Testing (optional, enabled via test-utils feature)
+proptest = { workspace = true, optional = true }
+
 [dev-dependencies]
 dotenvy = { workspace = true }
+proptest = { workspace = true }
 mockito = { workspace = true }
 wiremock = { workspace = true }
 tokio-test = "0.4"

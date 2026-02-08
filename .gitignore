@@ -29,6 +29,10 @@ docs/splunk-test-environment.md
 # Build artifacts
 /dist/
 .ralph/lock
+
+# Property-based testing regression files
+*.proptest-regressions
+proptest-regressions/
 .ralph/cache/plans
 .ralph/cache/phase2_final
 .ralph/cache/queue.json.backup*

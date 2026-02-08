@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0431",
-      "status": "todo",
-      "title": "Add property-based testing infrastructure with proptest",
-      "description": "Introduce property-based testing using the proptest crate to catch edge cases in serialization, pagination, and business logic. Current tests are example-based and may miss edge cases like empty collections, maximum values, or malformed input.\n\nTarget areas:\n- Pagination logic (offset/count bounds, has_next calculation)\n- Serde serialization/deserialization roundtrips\n- Date/time parsing edge cases\n- URL encoding/query parameter generation\n- Response parsing with varying field presence\n\nProperty-based tests generate hundreds of random inputs to find edge cases that human-written tests miss. This improves reliability and catches regressions in data handling.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "testing",
-        "quality",
-        "property-based-testing"
-      ],
-      "scope": [
-        "crates/client/tests/property_*.rs",
-        "crates/config/tests/property_*.rs",
-        "Cargo.toml"
-      ],
-      "evidence": [
-        "No property-based testing found in codebase (no proptest, quickcheck usage)",
-        "Current tests are example-based with static fixtures in crates/client/fixtures/",
-        "Pagination logic tested with specific values but not edge cases like usize::MAX",
-        "Complex models like SearchJobStatus have many fields - roundtrip properties would catch serialization bugs"
-      ],
-      "plan": [
-        "Add proptest to workspace dependencies in root Cargo.toml",
-        "Create property_pagination_tests.rs testing offset/count/has_next properties",
-        "Create property_serde_tests.rs with Arbitrary implementations for models",
-        "Create property_date_tests.rs for timestamp parsing edge cases",
-        "Add Arbitrary derive implementations for key models",
-        "Run proptest to find edge cases and fix any discovered bugs",
-        "Add proptest to CI pipeline with --release for faster generation",
-        "Verify by running: cargo test -p splunk-client --test property_pagination_tests"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0432",
       "status": "todo",
       "title": "Add performance benchmarks for critical paths",
