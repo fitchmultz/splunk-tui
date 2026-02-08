@@ -2,6 +2,584 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0412",
+      "status": "todo",
+      "title": "Fix dangerous JSON array indexing without bounds checks",
+      "description": "Multiple endpoint modules use direct array indexing on JSON responses (resp['entry'][0]['content']) which will panic if the API returns unexpected structure (empty entry array, missing content field). Replace with safe get() chains and proper error handling to prevent runtime panics.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "reliability",
+        "correctness",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/shc.rs:90,231",
+        "crates/client/src/endpoints/search/jobs.rs:151",
+        "crates/client/src/endpoints/jobs.rs:36",
+        "crates/client/src/endpoints/cluster.rs:38"
+      ],
+      "evidence": [
+        "shc.rs:90: let content = &resp['entry'][0]['content']; - panics if entry is empty",
+        "search/jobs.rs:151: serde_json::from_value(resp['entry'][0]['content'].clone()) - no bounds check",
+        "jobs.rs:36: serde_json::from_value(resp['entry'][0]['content'].clone()) - same pattern",
+        "cluster.rs:38: let content = &resp['entry'][0]['content']; - direct indexing",
+        "Pattern repeated 15+ times across endpoint modules"
+      ],
+      "plan": [
+        "Replace direct indexing with safe get() chains: resp.get('entry').and_then(|e| e.get(0))...",
+        "Add proper error handling for malformed responses using ClientError::ApiError",
+        "Add unit tests for empty entry array edge case",
+        "Verify by running `make ci` and `make test-integration`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0413",
+      "status": "todo",
+      "title": "Fix search query logging that could expose sensitive data",
+      "description": "The search job creation endpoint logs the full search query at debug level, which may contain sensitive information such as tokens, PII, or proprietary SPL. Queries should be redacted or omitted from logs, or logged at trace level only with clear documentation of the risk.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "security",
+        "logging",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/search/jobs.rs:35,85-87"
+      ],
+      "evidence": [
+        "Line 35: debug!('Creating search job: {}', query); - full query logged",
+        "Lines 85-87: debug!('Search job form data: {:?}', form_data); - all params logged",
+        "Search queries may contain: tokens, passwords, PII, internal IP addresses",
+        "No redaction of sensitive SPL terms in logging"
+      ],
+      "plan": [
+        "Remove or redact search query from debug logging",
+        "If needed for debugging, log only at trace! level with security warning",
+        "Consider logging query length or hash instead of full content",
+        "Update logging documentation to note what is/isn't logged",
+        "Verify by searching for any remaining sensitive data logging"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0414",
+      "status": "todo",
+      "title": "Fix blocking file I/O in async export context",
+      "description": "The export module in TUI uses std::fs::File for writing exports in async contexts. This blocks the async runtime and degrades performance. Replace with tokio::fs for proper async file operations.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "performance",
+        "async",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/export.rs:58-66"
+      ],
+      "evidence": [
+        "export.rs:58: let file = File::create(path).map_err(...); - blocking I/O",
+        "export.rs:64-66: file.write_all(...) - blocking write in async context",
+        "Function is called from async side effect handlers",
+        "Large exports could block the UI for seconds"
+      ],
+      "plan": [
+        "Replace std::fs::File with tokio::fs::File",
+        "Use async write methods: file.write_all(bytes).await",
+        "Update error handling to work with async operations",
+        "Add progress indication for large exports",
+        "Verify by running `make ci` and testing export functionality"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0415",
+      "status": "todo",
+      "title": "Fix hardcoded /tmp paths for cross-platform compatibility",
+      "description": "Multiple test files use hardcoded /tmp paths which will fail on Windows and may fail on macOS/Linux systems with restricted /tmp permissions. Replace with tempfile::tempdir() for proper cross-platform temporary file handling.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "portability",
+        "testing",
+        "cli",
+        "tui"
+      ],
+      "scope": [
+        "crates/cli/tests/file_output_tests.rs:263",
+        "crates/cli/tests/config/secure_input_tests.rs:53,77,125",
+        "crates/tui/tests/config_loading_tests.rs:378"
+      ],
+      "evidence": [
+        "file_output_tests.rs:263: cmd.args(['logs', '--tail', '--output-file', '/tmp/test-results.json'])",
+        "secure_input_tests.rs:53: .args(['--password-file', '/tmp/pass.txt'])",
+        "secure_input_tests.rs:77,125: similar hardcoded /tmp paths",
+        "config_loading_tests.rs:378: let nonexistent_path = '/tmp/nonexistent_splunk_config_12345.json'",
+        "Tests will fail on Windows (no /tmp) or systems with noexec/tmpfs restrictions"
+      ],
+      "plan": [
+        "Replace hardcoded /tmp paths with tempfile::tempdir()",
+        "Use temp_dir.path().join('filename') pattern",
+        "Ensure files are cleaned up after tests (tempfile handles this)",
+        "Verify by running `make test-integration` on different platforms"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0416",
+      "status": "todo",
+      "title": "Fix CLI default count value mismatches between docs and code",
+      "description": "The default --count values documented in docs/usage.md don't match the actual CLI code defaults. This confuses users who expect behavior to match documentation. Update documentation to match actual code defaults (100 for most commands, 1000 for search).",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "documentation",
+        "consistency",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "crates/cli/src/args.rs",
+        "crates/cli/src/commands/*.rs"
+      ],
+      "evidence": [
+        "logs --count: docs say 50, code default is 100",
+        "jobs --count: docs say 50, code default is 100",
+        "indexes --count: docs say 30, code default is 100",
+        "cluster --count: docs say 50, code default is 100",
+        "alerts list --count: docs say 30, code default is 100",
+        "apps list --count: docs say 30, code default is 100",
+        "users list --count: docs say 30, code default is 100",
+        "search --count: docs say 100, code default is 1000"
+      ],
+      "plan": [
+        "Audit all --count default values in code",
+        "Update docs/usage.md to match actual code defaults",
+        "Update README.md if it contains the same incorrect values",
+        "Verify by running `make lint-docs` and checking generated docs"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0417",
+      "status": "todo",
+      "title": "Fix inconsistent error message formatting per AGENTS.md conventions",
+      "description": "Several CLI error messages don't follow AGENTS.md conventions. Some start with flag names (--count) instead of descriptive text, some use 'Error' instead of 'Failed to', and some start with lowercase letters. Standardize all error messages to follow the documented patterns.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "consistency",
+        "ux",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/cluster.rs:226,291",
+        "crates/cli/src/commands/shc.rs:222,286",
+        "crates/cli/src/commands/logs.rs:136"
+      ],
+      "evidence": [
+        "cluster.rs:226,291: anyhow::bail!('The value for --count must be greater than 0') - starts with flag",
+        "shc.rs:222,286: anyhow::bail!('The value for --count must be greater than 0') - same issue",
+        "logs.rs:136: eprintln!('Error fetching logs: {}', e) - should use 'Failed to fetch'",
+        "AGENTS.md: 'Title Case: Start with a capital letter', 'Action-Oriented: Use Failed to... patterns'"
+      ],
+      "plan": [
+        "Update cluster.rs messages to: 'The count value must be greater than 0'",
+        "Update shc.rs messages to: 'The count value must be greater than 0'",
+        "Update logs.rs to: 'Failed to fetch logs: {}'",
+        "Search for other error messages violating conventions",
+        "Verify by running `make ci` and reviewing error output"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0418",
+      "status": "todo",
+      "title": "Add error context to TUI export module error propagation",
+      "description": "The export module converts errors to strings without context about what operation was being performed. This makes debugging export failures difficult. Add proper error context using anyhow::Context or thiserror to indicate what was being exported and to where.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "operability",
+        "error-handling",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/export.rs:29,59-94"
+      ],
+      "evidence": [
+        "export.rs:29: serde_json::to_value(data).map_err(|e| e.to_string())? - no context",
+        "export.rs:59: File::create(path).map_err(|e| e.to_string())? - no context",
+        "Lines 64-94: Similar patterns for CSV operations",
+        "Error message gives no indication of: what format, what file, what data type"
+      ],
+      "plan": [
+        "Add context to JSON serialization: .context('Failed to serialize export data')",
+        "Add context to file creation: .with_context(|| format!('Failed to create export file: {}', path.display()))",
+        "Add context to CSV operations with format and path info",
+        "Use anyhow::Context for rich error messages",
+        "Verify by running `make ci` and testing error scenarios"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0419",
+      "status": "todo",
+      "title": "Fix swallowed errors in TUI export serialization",
+      "description": "The export module silently ignores serialization errors using .ok() on Result types. When export data fails to serialize, the operation silently produces no output without indicating an error to the user. Replace with proper error handling.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "reliability",
+        "error-handling",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/app/export.rs:127-215"
+      ],
+      "evidence": [
+        "export.rs:127-128: serde_json::to_value(v).ok() - error swallowed",
+        "Pattern repeated for: Indexes, Roles, Apps, SavedSearches, Macros, ClusterInfo, Jobs, Health, License, Kvstore, InternalLogs, Overview, SearchPeers, FiredAlerts, Forwarders, Lookups, ShcStatus",
+        "When serialization fails, user gets empty export with no error indication"
+      ],
+      "plan": [
+        "Replace .ok() with proper error propagation using ? operator",
+        "Change return type to Result<Option<Value>, String>",
+        "Map serialization errors to user-friendly messages",
+        "Add toast notification on export failure",
+        "Verify by running `make ci` and testing export error scenarios"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0420",
+      "status": "todo",
+      "title": "Consolidate duplicate load_fixture test helper functions",
+      "description": "The load_fixture() function is duplicated between client and TUI test modules with slightly different path resolution logic. Changes to fixture loading need to be made in multiple places. Create a shared test utility or have TUI re-export from client.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "dry",
+        "testing"
+      ],
+      "scope": [
+        "crates/client/tests/common/mod.rs:26-34",
+        "crates/tui/tests/common/mod.rs:32-44"
+      ],
+      "evidence": [
+        "client/tests/common/mod.rs: load_fixture() with manifest_dir.join('fixtures')",
+        "tui/tests/common/mod.rs: load_fixture() with manifest_dir.parent().join('client').join('fixtures')",
+        "Functions are 95% identical but use different fixture path resolution",
+        "Any changes to fixture format require updates in both places"
+      ],
+      "plan": [
+        "Create shared test-util crate or re-export pattern",
+        "Have TUI tests use client's load_fixture via re-export",
+        "Or extract common code into a shared module",
+        "Update all test imports to use shared version",
+        "Verify by running `make test-integration`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0421",
+      "status": "todo",
+      "title": "Fix swallowed CLI input errors in config command",
+      "description": "The config command uses .ok() on interactive input results, silently ignoring errors from dialoguer prompts. If input fails (e.g., terminal doesn't support interactive input), the command silently continues with None values instead of reporting the error.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "reliability",
+        "error-handling",
+        "cli"
+      ],
+      "scope": [
+        "crates/cli/src/commands/config.rs:242,509,521,562,575"
+      ],
+      "evidence": [
+        "config.rs:242: lock.read_line(&mut line).ok().and_then(...) - error swallowed",
+        "config.rs:509: Ok(input.interact().ok()) - dialoguer error ignored",
+        "config.rs:521: Ok(input.interact().ok().filter(...)) - error ignored",
+        "config.rs:562: Ok(confirm.interact().ok()) - error ignored",
+        "config.rs:575: Ok(input.interact().ok()) - error ignored"
+      ],
+      "plan": [
+        "Replace .ok() with proper error propagation",
+        "Add context about what input was being requested",
+        "Use anyhow::Context for rich error messages",
+        "Ensure non-interactive environments get clear error messages",
+        "Verify by running `make ci` and testing with piped input"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0422",
+      "status": "todo",
+      "title": "Store abort handles for spawned TUI tasks to prevent resource leaks",
+      "description": "The TUI side effect handlers spawn 50+ tokio tasks without storing abort handles. On application shutdown, these tasks may continue running unnecessarily. Store handles and abort them during graceful shutdown.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "resource-management",
+        "async",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/mod.rs",
+        "crates/tui/src/runtime/side_effects/*.rs",
+        "crates/tui/src/main.rs:116,243"
+      ],
+      "evidence": [
+        "side_effects/*.rs: tokio::spawn() called without storing JoinHandle",
+        "21+ handler modules spawn tasks for async operations",
+        "Jobs, searches, apps, users, cluster handlers all spawn tasks",
+        "No graceful shutdown mechanism for in-flight requests"
+      ],
+      "plan": [
+        "Create task tracker to store abort handles",
+        "Add AbortHandle storage to side effect context",
+        "Implement graceful shutdown that aborts pending tasks",
+        "Ensure cancellation is handled properly in spawned tasks",
+        "Verify by running `make ci` and testing shutdown behavior"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0423",
+      "status": "todo",
+      "title": "Add missing error path tests for core client modules",
+      "description": "Several core client modules only test happy paths and missing error scenarios. Add tests for: 404 not found, 403 permission denied, malformed responses, network timeouts, and invalid input validation.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "testing",
+        "reliability",
+        "client"
+      ],
+      "scope": [
+        "crates/client/tests/apps_tests.rs",
+        "crates/client/tests/indexes_tests.rs",
+        "crates/client/tests/inputs_tests.rs",
+        "crates/client/tests/forwarders_tests.rs",
+        "crates/client/tests/lookups_tests.rs"
+      ],
+      "evidence": [
+        "apps_tests.rs: 7 tests, all success paths - missing 404, 403, malformed data",
+        "indexes_tests.rs: missing invalid index name, creation failures, permission errors",
+        "inputs_tests.rs: missing invalid input path, enable/disable failures",
+        "forwarders_tests.rs: missing connection errors, invalid forwarder data",
+        "lookups_tests.rs: missing lookup not found, definition errors",
+        "error_tests.rs shows good patterns to follow for error path testing"
+      ],
+      "plan": [
+        "Add test_unauthorized_access tests to each module",
+        "Add test_not_found tests for missing resources",
+        "Add test_malformed_response tests",
+        "Add test_timeout_handling tests",
+        "Follow patterns from error_tests.rs and retry_*_tests.rs",
+        "Verify by running `make test-integration`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0424",
+      "status": "todo",
+      "title": "Fix inefficient string allocation in encode_stanza_name function",
+      "description": "The encode_stanza_name function allocates a new String for every character when encoding special characters. For large stanza names, this causes O(n²) allocation behavior. Pre-allocate capacity and use more efficient encoding.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "performance",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/configs.rs:227-264"
+      ],
+      "evidence": [
+        "configs.rs:227-264: encode_stanza_name allocates per character",
+        "Pattern: result.push('%'); result.push(hex1); result.push(hex2); - 3 allocations per special char",
+        "Called frequently for config stanza operations",
+        "O(n²) behavior for strings with many special characters"
+      ],
+      "plan": [
+        "Pre-allocate String with input capacity: String::with_capacity(name.len() * 3)",
+        "Use write! macro or push_str for hex digits instead of individual push",
+        "Consider using percent-encoding crate for standard encoding",
+        "Add benchmark to verify performance improvement",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0425",
+      "status": "todo",
+      "title": "Extract hardcoded magic constants to named constants",
+      "description": "Multiple modules contain hardcoded magic numbers for timeouts, intervals, limits, and UI dimensions. These should be centralized as named constants for maintainability and consistency.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "dry",
+        "configuration",
+        "tui",
+        "cli"
+      ],
+      "scope": [
+        "crates/tui/src/ui/toast.rs:47-48,127",
+        "crates/tui/src/app/input/search.rs:24",
+        "crates/cli/src/commands/logs.rs:141,246",
+        "crates/tui/src/ui/popup/mod.rs:15-16",
+        "crates/tui/src/app/state.rs:42-43"
+      ],
+      "evidence": [
+        "toast.rs:47-48: Duration::from_secs(5), Duration::from_secs(10) - toast TTLs",
+        "toast.rs:127: MAX_TOASTS = 5 - hardcoded limit",
+        "search.rs:24: VALIDATION_DEBOUNCE_MS = 500 - debounce timing",
+        "logs.rs:141: Duration::from_secs(2) - tail poll interval",
+        "logs.rs:246: default_value = '-15m' - default time range",
+        "popup/mod.rs:15-16: 60%, 50% - popup dimensions",
+        "state.rs:42-43: 3, 1 - header/footer heights"
+      ],
+      "plan": [
+        "Define constants in appropriate config or constants modules",
+        "TOAST_TTL_SHORT, TOAST_TTL_LONG, MAX_TOASTS",
+        "VALIDATION_DEBOUNCE_MS, TAIL_POLL_INTERVAL",
+        "DEFAULT_TIME_RANGE, POPUP_WIDTH_PERCENT, POPUP_HEIGHT_PERCENT",
+        "HEADER_HEIGHT, FOOTER_HEIGHT",
+        "Replace all hardcoded values with named constants",
+        "Verify by running `make ci`"
+      ],
+      "notes": [],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T01:18:11Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
       "id": "RQ-0398",
       "status": "todo",
       "title": "Convert stringly-typed model fields to proper enums",
