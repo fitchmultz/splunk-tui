@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-08T19:34:10.595530765Z",
+  "last_updated_at": "2026-02-08T19:50:48.462159069Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -586,7 +586,7 @@
     },
     "2026-02-08": {
       "date": "2026-02-08",
-      "completed_count": 30,
+      "completed_count": 31,
       "tasks": [
         {
           "id": "RQ-0412",
@@ -737,6 +737,11 @@
           "id": "RQ-0427",
           "title": "Implement structured exit codes for CLI scripting",
           "completed_at": "2026-02-08T19:34:10.595530095Z"
+        },
+        {
+          "id": "RQ-0428",
+          "title": "Add batch job operations to CLI for feature parity with TUI",
+          "completed_at": "2026-02-08T19:50:48.462157662Z"
         }
       ]
     }
@@ -746,7 +751,7 @@
     "longest_streak": 7,
     "last_completed_date": "2026-02-08"
   },
-  "total_completed": 139,
+  "total_completed": 140,
   "milestones": [
     {
       "threshold": 10,

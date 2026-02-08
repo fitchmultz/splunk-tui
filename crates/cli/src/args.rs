@@ -177,6 +177,9 @@ pub enum Commands {
 
     /// Manage search jobs
     Jobs {
+        #[command(subcommand)]
+        command: Option<commands::jobs::JobsCommand>,
+
         /// List all search jobs (default action)
         #[arg(long, default_value = "true")]
         list: bool,

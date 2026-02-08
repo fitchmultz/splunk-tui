@@ -6,6 +6,8 @@
 //! - `--list` flag explicit usage
 //! - `--results` flag for retrieving job results
 //! - `--inspect` flag for job inspection
+//! - Batch cancel and delete subcommands
+//! - File-based batch operations
 
 mod common;
 
@@ -404,4 +406,378 @@ fn test_jobs_results_live() {
     ])
     .assert()
     .success();
+}
+
+// =============================================================================
+// BATCH OPERATIONS TESTS
+// =============================================================================
+
+/// Test batch cancel subcommand is shown in help.
+#[test]
+fn test_jobs_batch_cancel_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["jobs", "cancel", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Cancel one or more search jobs"))
+        .stdout(predicate::str::contains("--file"))
+        .stdout(predicate::str::contains("--force"));
+}
+
+/// Test batch delete subcommand is shown in help.
+#[test]
+fn test_jobs_batch_delete_help() {
+    let mut cmd = splunk_cmd();
+
+    cmd.args(["jobs", "delete", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Delete one or more search jobs"))
+        .stdout(predicate::str::contains("--file"))
+        .stdout(predicate::str::contains("--force"));
+}
+
+/// Test batch cancel with multiple SIDs succeeds.
+#[tokio::test]
+async fn test_jobs_batch_cancel_success() {
+    let server = MockServer::start().await;
+
+    // Mock cancel endpoints for both jobs
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job1/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job2/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args(["jobs", "cancel", "job1", "job2", "--force"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Cancelled 2 job(s)"));
+}
+
+/// Test batch cancel with partial failure.
+#[tokio::test]
+async fn test_jobs_batch_cancel_partial_failure() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job1/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job2/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(404).set_body_string("Job not found"))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args(["jobs", "cancel", "job1", "job2", "--force"])
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("Cancelled 1 job(s)"))
+        .stderr(predicate::str::contains("job2"));
+}
+
+/// Test batch cancel from file.
+#[tokio::test]
+async fn test_jobs_batch_cancel_from_file() {
+    let server = MockServer::start().await;
+    let temp_dir = tempfile::tempdir().unwrap();
+    let sids_file = temp_dir.path().join("sids.txt");
+    std::fs::write(&sids_file, "job1\njob2\n# comment\njob3\n").unwrap();
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job1/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job2/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job3/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args([
+        "jobs",
+        "cancel",
+        "--file",
+        sids_file.to_str().unwrap(),
+        "--force",
+    ])
+    .assert()
+    .success()
+    .stdout(predicate::str::contains("Cancelled 3 job(s)"));
+}
+
+/// Test batch cancel with no SIDs errors properly.
+#[test]
+fn test_jobs_batch_cancel_no_sids() {
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    cmd.args(["jobs", "cancel", "--force"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("No job SIDs provided"));
+}
+
+/// Test batch cancel with non-existent file errors properly.
+#[test]
+fn test_jobs_batch_cancel_missing_file() {
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    cmd.args([
+        "jobs",
+        "cancel",
+        "--file",
+        "/nonexistent/file.txt",
+        "--force",
+    ])
+    .assert()
+    .failure()
+    .stderr(predicate::str::contains("Failed to read SIDs file"));
+}
+
+/// Test batch delete with multiple SIDs succeeds.
+#[tokio::test]
+async fn test_jobs_batch_delete_success() {
+    let server = MockServer::start().await;
+
+    // Mock delete endpoints for both jobs
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job1"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job2"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args(["jobs", "delete", "job1", "job2", "--force"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Deleted 2 job(s)"));
+}
+
+/// Test batch delete with partial failure.
+#[tokio::test]
+async fn test_jobs_batch_delete_partial_failure() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job1"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job2"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(404).set_body_string("Job not found"))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args(["jobs", "delete", "job1", "job2", "--force"])
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("Deleted 1 job(s)"))
+        .stderr(predicate::str::contains("job2"));
+}
+
+/// Test batch delete from file.
+#[tokio::test]
+async fn test_jobs_batch_delete_from_file() {
+    let server = MockServer::start().await;
+    let temp_dir = tempfile::tempdir().unwrap();
+    let sids_file = temp_dir.path().join("sids.txt");
+    std::fs::write(&sids_file, "job1\njob2\n# comment\njob3\n").unwrap();
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job1"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job2"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job3"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args([
+        "jobs",
+        "delete",
+        "--file",
+        sids_file.to_str().unwrap(),
+        "--force",
+    ])
+    .assert()
+    .success()
+    .stdout(predicate::str::contains("Deleted 3 job(s)"));
+}
+
+/// Test batch delete with no SIDs errors properly.
+#[test]
+fn test_jobs_batch_delete_no_sids() {
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", "https://localhost:8089");
+
+    cmd.args(["jobs", "delete", "--force"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("No job SIDs provided"));
+}
+
+/// Test batch cancel deduplicates SIDs.
+#[tokio::test]
+async fn test_jobs_batch_cancel_deduplicates_sids() {
+    let server = MockServer::start().await;
+
+    // Should only be called once for the duplicate SID
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job1/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    // Pass the same SID twice
+    cmd.args(["jobs", "cancel", "job1", "job1", "--force"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Cancelled 1 job(s)"));
+}
+
+/// Test batch delete deduplicates SIDs.
+#[tokio::test]
+async fn test_jobs_batch_delete_deduplicates_sids() {
+    let server = MockServer::start().await;
+
+    // Should only be called once for the duplicate SID
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job1"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    // Pass the same SID twice
+    cmd.args(["jobs", "delete", "job1", "job1", "--force"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Deleted 1 job(s)"));
+}
+
+/// Test batch cancel with quiet mode.
+#[tokio::test]
+async fn test_jobs_batch_cancel_quiet() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs/job1/control"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args(["--quiet", "jobs", "cancel", "job1", "--force"])
+        .assert()
+        .success()
+        .stderr(predicate::str::is_empty());
+}
+
+/// Test batch delete with quiet mode.
+#[tokio::test]
+async fn test_jobs_batch_delete_quiet() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/services/search/jobs/job1"))
+        .and(header("Authorization", "Bearer test-token"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let mut cmd = splunk_cmd();
+    cmd.env("SPLUNK_BASE_URL", server.uri());
+    cmd.env("SPLUNK_API_TOKEN", "test-token");
+
+    cmd.args(["--quiet", "jobs", "delete", "job1", "--force"])
+        .assert()
+        .success()
+        .stderr(predicate::str::is_empty());
 }

@@ -156,6 +156,7 @@ pub(crate) async fn run_command(
             .await?;
         }
         Commands::Jobs {
+            command,
             list,
             inspect,
             cancel,
@@ -180,6 +181,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.quiet,
                 cli.output_file.clone(),
+                command,
                 cancel_token,
             )
             .await?;

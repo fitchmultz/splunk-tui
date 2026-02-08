@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0428",
-      "status": "todo",
-      "title": "Add batch job operations to CLI for feature parity with TUI",
-      "description": "Implement batch job cancel and delete commands in CLI to achieve feature parity with TUI. TUI supports CancelJobsBatch and DeleteJobsBatch actions that operate on multiple selected jobs simultaneously. CLI only supports single job operations (--cancel SID, --delete SID).\n\nUse cases:\n- Cancel all jobs older than 24 hours: splunk-cli jobs batch-cancel --older-than 24h\n- Delete all failed jobs: splunk-cli jobs batch-delete --status failed\n- Cancel jobs matching pattern: splunk-cli jobs batch-cancel --search-pattern 'index=temp'\n- Bulk operations with confirmation and progress reporting\n\nImplementation leverages existing TUI batch logic pattern from crates/tui/src/action/variants.rs.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "cli",
-        "jobs",
-        "batch",
-        "feature-parity"
-      ],
-      "scope": [
-        "crates/cli/src/commands/jobs.rs",
-        "crates/cli/src/args.rs",
-        "crates/client/src/client/jobs.rs"
-      ],
-      "evidence": [
-        "TUI has CancelJobsBatch and DeleteJobsBatch actions (crates/tui/src/action/variants.rs)",
-        "CLI jobs command only supports single job --cancel and --delete (README.md:168-172)",
-        "No batch operations exist for any CLI command - all are single-resource",
-        "Feature parity gap documented: TUI has multi-select, CLI does not"
-      ],
-      "plan": [
-        "Add batch-cancel and batch-delete subcommands to jobs command in args.rs",
-        "Implement filter options: --older-than, --status, --search-pattern, --owner, --app",
-        "Add --dry-run flag to preview affected jobs before execution",
-        "Implement concurrent cancellation with progress bar and partial success handling",
-        "Add confirmation prompt listing number of affected jobs",
-        "Add --yes/-y flag for non-interactive automation",
-        "Add tests for batch operations with mock server",
-        "Verify by running: splunk-cli jobs batch-cancel --status running --older-than 1h --dry-run"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0429",
       "status": "todo",
       "title": "Implement dynamic shell completions for runtime values",
