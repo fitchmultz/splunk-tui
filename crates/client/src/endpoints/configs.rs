@@ -20,6 +20,7 @@ use crate::error::Result;
 use crate::metrics::MetricsCollector;
 use crate::models::{ConfigFile, ConfigListResponse, ConfigStanza};
 use crate::name_merge::attach_entry_name;
+use percent_encoding::{AsciiSet, CONTROLS, percent_encode};
 
 /// List configuration stanzas for a specific config file.
 ///
@@ -220,47 +221,48 @@ fn capitalize_first(s: &str) -> String {
     }
 }
 
+/// ASCII character set for encoding stanza names in URLs.
+///
+/// Includes control characters plus special characters that may appear
+/// in Splunk stanza names (e.g., spaces, brackets, colons in `source::...` patterns).
+const STANZA_ENCODE_SET: &AsciiSet = &CONTROLS
+    .add(b' ')
+    .add(b'[')
+    .add(b']')
+    .add(b':')
+    .add(b'/')
+    .add(b'?')
+    .add(b'&')
+    .add(b'=')
+    .add(b'%')
+    .add(b'#')
+    .add(b'@')
+    .add(b'!')
+    .add(b'$')
+    .add(b'\'')
+    .add(b'(')
+    .add(b')')
+    .add(b'*')
+    .add(b'+')
+    .add(b',')
+    .add(b';')
+    .add(b'<')
+    .add(b'>')
+    .add(b'"')
+    .add(b'{')
+    .add(b'}')
+    .add(b'|')
+    .add(b'\\')
+    .add(b'^')
+    .add(b'`')
+    .add(b'~');
+
 /// URL-encode a stanza name for use in API requests.
 ///
 /// Stanza names may contain special characters like spaces, brackets, etc.
-/// We use percent-encoding to ensure the URL is valid.
+/// Uses percent-encoding to ensure the URL is valid.
 fn encode_stanza_name(name: &str) -> String {
-    // Percent-encode special characters that may appear in stanza names
-    name.chars()
-        .map(|c| match c {
-            ' ' => "%20".to_string(),
-            '[' => "%5B".to_string(),
-            ']' => "%5D".to_string(),
-            ':' => "%3A".to_string(),
-            '/' => "%2F".to_string(),
-            '?' => "%3F".to_string(),
-            '&' => "%26".to_string(),
-            '=' => "%3D".to_string(),
-            '%' => "%25".to_string(),
-            '#' => "%23".to_string(),
-            '@' => "%40".to_string(),
-            '!' => "%21".to_string(),
-            '$' => "%24".to_string(),
-            '\'' => "%27".to_string(),
-            '(' => "%28".to_string(),
-            ')' => "%29".to_string(),
-            '*' => "%2A".to_string(),
-            '+' => "%2B".to_string(),
-            ',' => "%2C".to_string(),
-            ';' => "%3B".to_string(),
-            '<' => "%3C".to_string(),
-            '>' => "%3E".to_string(),
-            '"' => "%22".to_string(),
-            '{' => "%7B".to_string(),
-            '}' => "%7D".to_string(),
-            '|' => "%7C".to_string(),
-            '\\' => "%5C".to_string(),
-            '^' => "%5E".to_string(),
-            '`' => "%60".to_string(),
-            '~' => "%7E".to_string(),
-            _ => c.to_string(),
-        })
-        .collect()
+    percent_encode(name.as_bytes(), STANZA_ENCODE_SET).to_string()
 }
 
 /// Get a description for a config file.

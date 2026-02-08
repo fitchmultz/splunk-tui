@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0424",
-      "status": "todo",
-      "title": "Fix inefficient string allocation in encode_stanza_name function",
-      "description": "The encode_stanza_name function allocates a new String for every character when encoding special characters. For large stanza names, this causes O(n²) allocation behavior. Pre-allocate capacity and use more efficient encoding.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "performance",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/configs.rs:227-264"
-      ],
-      "evidence": [
-        "configs.rs:227-264: encode_stanza_name allocates per character",
-        "Pattern: result.push('%'); result.push(hex1); result.push(hex2); - 3 allocations per special char",
-        "Called frequently for config stanza operations",
-        "O(n²) behavior for strings with many special characters"
-      ],
-      "plan": [
-        "Pre-allocate String with input capacity: String::with_capacity(name.len() * 3)",
-        "Use write! macro or push_str for hex digits instead of individual push",
-        "Consider using percent-encoding crate for standard encoding",
-        "Add benchmark to verify performance improvement",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0425",
       "status": "todo",
       "title": "Extract hardcoded magic constants to named constants",

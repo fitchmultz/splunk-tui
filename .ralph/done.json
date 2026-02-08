@@ -3362,9 +3362,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "lines_of_dead_code": "598",
         "scan_agent": "scan-maintenance",
-        "unused_dependency": "tachyonfx@0.14",
-        "lines_of_dead_code": "598"
+        "unused_dependency": "tachyonfx@0.14"
       }
     },
     {
@@ -4007,8 +4007,8 @@
       "relates_to": [],
       "custom_fields": {
         "dead_code_count": "25",
-        "scan_agent": "scan-maintenance",
         "production_files_affected": "8",
+        "scan_agent": "scan-maintenance",
         "test_files_affected": "4"
       }
     },
@@ -4177,10 +4177,10 @@
         "RQ-0361"
       ],
       "custom_fields": {
-        "target_line_count": "300",
+        "scan_agent": "scan-maintenance",
         "macro_already_adopted": "true",
         "current_line_count": "867",
-        "scan_agent": "scan-maintenance"
+        "target_line_count": "300"
       }
     },
     {
@@ -4407,11 +4407,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "current_line_count": "523",
+        "submodule_count": "28",
+        "action_variants": "94",
         "scan_agent": "scan-maintenance",
         "target_line_count": "150",
-        "action_variants": "94",
-        "submodule_count": "28"
+        "current_line_count": "523"
       }
     },
     {
@@ -4470,10 +4470,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "formatter_count": "3",
         "scan_agent": "scan-maintenance",
+        "existing_macro_coverage": "4 methods total across all formatters",
         "estimated_method_count": "45",
-        "existing_macro_coverage": "4 methods total across all formatters"
+        "formatter_count": "3"
       }
     },
     {
@@ -4539,9 +4539,9 @@
       "relates_to": [],
       "custom_fields": {
         "with_context_usages": "120+",
+        "scan_agent": "scan-maintenance",
         "command_files": "27",
-        "bail_usages": "18",
-        "scan_agent": "scan-maintenance"
+        "bail_usages": "18"
       }
     },
     {
@@ -4593,12 +4593,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
         "file_count": "23",
-        "screen_files": "22",
-        "principle": "DRY"
+        "runner_used": "kimi",
+        "principle": "DRY",
+        "model_used": "kimi-code/kimi-for-coding",
+        "screen_files": "22"
       }
     },
     {
@@ -4678,10 +4678,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "files_using_pattern_a": "26",
+        "runner_used": "kimi",
         "files_using_pattern_b": "2",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
+        "files_using_pattern_a": "26",
         "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding"
       }
@@ -4745,13 +4745,13 @@
       "relates_to": [],
       "custom_fields": {
         "principle": "DRY",
-        "affected_screens": "25",
         "lines_duplicated": "~400",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
         "spinner_helper_location": "crates/tui/src/ui/theme.rs",
-        "widgets_dir_exists": "false"
+        "runner_used": "kimi",
+        "widgets_dir_exists": "false",
+        "affected_screens": "25",
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -4815,12 +4815,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "duplication_count": "6 functions across 5 files",
-        "files_with_duplicates": "5",
-        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "files_with_duplicates": "5",
+        "duplication_count": "6 functions across 5 files",
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -4879,12 +4879,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_files": "4",
-        "duplicate_count": "4",
+        "model_used": "kimi-code/kimi-for-coding",
         "principle": "DRY",
         "runner_used": "kimi",
+        "duplicate_count": "4",
         "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding"
+        "affected_files": "4"
       }
     },
     {
@@ -4942,9 +4942,9 @@
       "relates_to": [],
       "custom_fields": {
         "runner_used": "kimi",
-        "principle": "YAGNI",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -5004,12 +5004,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
-        "duplicate_count": "6",
-        "model_used": "kimi-code/kimi-for-coding",
+        "principle": "DRY",
         "files_to_update": "5",
+        "duplicate_count": "6",
         "runner_used": "kimi",
-        "principle": "DRY"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5062,13 +5062,13 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
+        "missing_variable_count": "12",
         "scan_agent": "scan-maintenance",
         "principle": "KISS",
-        "model_used": "kimi-code/kimi-for-coding",
-        "env_line_count": "18",
         "env_example_line_count": "66",
-        "missing_variable_count": "12"
+        "env_line_count": "18",
+        "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5114,10 +5114,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi"
+        "principle": "KISS"
       }
     },
     {
@@ -5168,10 +5168,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "principle": "DRY",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5225,8 +5225,8 @@
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
-        "runner_used": "kimi",
-        "principle": "DRY"
+        "principle": "DRY",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5275,11 +5275,11 @@
         "RQ-0375"
       ],
       "custom_fields": {
-        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs",
+        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
         "principle": "DRY",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "related_files": "crates/client/src/auth.rs, crates/client/tests/auth_tests.rs"
       }
     },
     {
@@ -5333,10 +5333,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "principle": "YAGNI",
-        "runner_used": "kimi"
+        "scan_agent": "scan-maintenance",
+        "principle": "YAGNI"
       }
     },
     {
@@ -5390,10 +5390,10 @@
       "relates_to": [],
       "custom_fields": {
         "affected_screens": "Indexes, SavedSearches, InternalLogs, Apps",
-        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen",
-        "scan_agent": "scan-innovation",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
+        "fix_pattern": "Add && !vec.is_empty() guard like Cluster screen"
       }
     },
     {
@@ -5438,9 +5438,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation"
+        "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -5503,9 +5503,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5564,8 +5564,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-innovation",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi"
       }
     },
@@ -5639,9 +5639,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5708,9 +5708,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "scan_agent": "scan-innovation",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "scan_agent": "scan-innovation"
       }
     },
     {
@@ -5772,11 +5772,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "env_vars_count_in_apply_env": "15",
-        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE",
-        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding",
+        "env_vars_count_in_apply_env": "15",
+        "missing_env_vars": "SPLUNK_CONFIG_PATH, SPLUNK_PROFILE"
       }
     },
     {
@@ -5908,11 +5908,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
+        "has_docs_generator": "true",
         "affected_screens_count": "8",
-        "has_docs_generator": "true"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -5978,11 +5978,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "footer_nav_width": "45",
         "scan_agent": "scan-innovation",
         "screen_count": "28",
-        "runner_used": "kimi"
+        "footer_nav_width": "45"
       }
     },
     {
@@ -6043,9 +6043,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -6107,10 +6107,10 @@
       "relates_to": [],
       "custom_fields": {
         "cli_subcommand_count": "28",
-        "tui_arg_count": "4",
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
         "scan_agent": "scan-innovation",
-        "model_used": "kimi-code/kimi-for-coding"
+        "tui_arg_count": "4"
       }
     },
     {
@@ -6170,8 +6170,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-innovation"
       }
     },
@@ -6251,11 +6251,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_api_methods": "~70+",
-        "model_used": "kimi-code/kimi-for-coding",
-        "blast_radius": "high",
         "runner_used": "kimi",
-        "scan_agent": "scan-innovation"
+        "affected_api_methods": "~70+",
+        "scan_agent": "scan-innovation",
+        "blast_radius": "high",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -6306,10 +6306,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "file_line_count": "604",
+        "principle": "fail-fast",
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "principle": "fail-fast",
+        "file_line_count": "604",
         "scan_agent": "scan-maintenance",
         "test_file_exists": "true"
       }
@@ -6360,10 +6360,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "principle": "KISS",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "principle": "KISS",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -6416,11 +6416,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "estimated_effort": "small",
-        "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding",
+        "issue_type": "dead-code",
         "runner_used": "kimi",
-        "issue_type": "dead-code"
+        "model_used": "kimi-code/kimi-for-coding",
+        "estimated_effort": "small",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -6483,9 +6483,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "inconsistencies_found": "3",
         "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
+        "inconsistencies_found": "3",
         "scan_agent": "scan-maintenance"
       }
     },
@@ -6555,9 +6555,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
+        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance",
-        "model_used": "kimi-code/kimi-for-coding"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -6607,9 +6607,9 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
+        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -6681,11 +6681,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "constants_affected": "DEFAULT_LIST_PAGE_SIZE,DEFAULT_INTERNAL_LOGS_COUNT,DEFAULT_MAX_RESULTS",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
-        "files_with_defaults_count": "17"
+        "constants_affected": "DEFAULT_LIST_PAGE_SIZE,DEFAULT_INTERNAL_LOGS_COUNT,DEFAULT_MAX_RESULTS",
+        "files_with_defaults_count": "17",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -6805,10 +6805,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
+        "affected_instances_count": "13",
         "scan_agent": "scan-maintenance",
-        "affected_instances_count": "13"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi"
       }
     },
     {
@@ -6863,9 +6863,9 @@
       "relates_to": [],
       "custom_fields": {
         "affected_endpoints": "2",
-        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi"
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -6928,9 +6928,9 @@
         "RQ-0419"
       ],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -6994,8 +6994,8 @@
         "tmp_occurrences_count": "7",
         "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
-        "affected_files_count": "5",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "affected_files_count": "5"
       }
     },
     {
@@ -7074,8 +7074,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
+        "runner_used": "kimi",
         "model_used": "kimi-code/kimi-for-coding"
       }
     },
@@ -7141,8 +7141,8 @@
       "relates_to": [],
       "custom_fields": {
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
-        "scan_agent": "scan-maintenance"
+        "scan_agent": "scan-maintenance",
+        "runner_used": "kimi"
       }
     },
     {
@@ -7199,8 +7199,8 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "runner_used": "kimi",
+        "model_used": "kimi-code/kimi-for-coding",
         "scan_agent": "scan-maintenance",
         "status_note": "Code already uses anyhow::Context - needs verification not implementation"
       }
@@ -7258,11 +7258,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
+        "affected_variants": "20",
         "scan_agent": "scan-maintenance",
         "runner_used": "kimi",
-        "affected_variants": "20",
-        "ok_pattern_count": "20"
+        "ok_pattern_count": "20",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -7319,11 +7319,11 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "test_files_affected": "50+",
         "model_used": "kimi-code/kimi-for-coding",
-        "runner_used": "kimi",
         "scan_agent": "scan-maintenance",
-        "fixtures_directories": "20"
+        "fixtures_directories": "20",
+        "runner_used": "kimi",
+        "test_files_affected": "50+"
       }
     },
     {
@@ -7384,10 +7384,10 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "model_used": "kimi-code/kimi-for-coding",
         "file_line_count": "667",
-        "scan_agent": "scan-maintenance",
-        "runner_used": "kimi"
+        "model_used": "kimi-code/kimi-for-coding",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance"
       }
     },
     {
@@ -7447,12 +7447,12 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "affected_files": "24",
         "runner_used": "kimi",
-        "model_used": "kimi-code/kimi-for-coding",
+        "affected_files": "24",
         "handler_modules": "27",
         "scan_agent": "scan-maintenance",
-        "spawn_count": "72"
+        "spawn_count": "72",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     },
     {
@@ -7509,9 +7509,68 @@
       "blocks": [],
       "relates_to": [],
       "custom_fields": {
-        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
         "model_used": "kimi-code/kimi-for-coding",
-        "scan_agent": "scan-maintenance"
+        "runner_used": "kimi"
+      }
+    },
+    {
+      "id": "RQ-0424",
+      "status": "done",
+      "title": "Fix inefficient string allocation in encode_stanza_name function",
+      "description": "The encode_stanza_name function allocates a new String for every character when encoding special characters via .map(|c| ...).collect(). For large stanza names, this causes O(n) separate String allocations. Replace with efficient pre-allocated buffer or percent-encoding crate.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "performance",
+        "client",
+        "allocation"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/configs.rs:227-264",
+        "crates/client/src/endpoints/configs.rs:127",
+        "crates/client/Cargo.toml",
+        "crates/client/tests/configs_tests.rs:131-170"
+      ],
+      "evidence": [
+        "configs.rs:227-264: encode_stanza_name uses chars().map(|c| c.to_string()).collect() pattern",
+        "Each character creates a new String allocation via to_string() in the match arms",
+        "28 special characters mapped to encoded strings like '%20', '%5B', etc.",
+        "Called at configs.rs:127 for all get_config_stanza operations",
+        "No percent-encoding crate currently in Cargo.toml dependencies",
+        "Test coverage exists at configs_tests.rs:131-170 for URL encoding verification"
+      ],
+      "plan": [
+        "Add percent-encoding crate to crates/client/Cargo.toml dependencies",
+        "Define ASCII_SET for stanza name characters that need encoding",
+        "Replace encode_stanza_name implementation with percent_encode()",
+        "Ensure existing tests pass (configs_tests.rs has URL encoding test with source%3A%3A...)",
+        "Consider adding benchmark if benches/ directory is created",
+        "Verify by running `make ci`"
+      ],
+      "notes": [
+        "Function is private (fn encode_stanza_name) so no public API changes needed",
+        "Existing test uses 'source::...' which encodes to 'source%3A%3A...'",
+        "No percent-encoding crate currently in workspace - will need to be added",
+        "Replaced O(n) String allocations with efficient percent-encoding crate",
+        "Added percent-encoding = 2.3 to crates/client/Cargo.toml",
+        "Encoding output remains identical (source::... → source%3A%3A...)",
+        "All CI checks pass"
+      ],
+      "request": "maintenance scan finding",
+      "created_at": "2026-02-08T01:18:11Z",
+      "updated_at": "2026-02-08T04:25:01.508423016Z",
+      "completed_at": "2026-02-08T04:25:01.508423016Z",
+      "started_at": "2026-02-08T04:18:32.378761482Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "estimated_lines_changed": "30",
+        "has_tests": "true",
+        "runner_used": "kimi",
+        "scan_agent": "scan-maintenance",
+        "model_used": "kimi-code/kimi-for-coding"
       }
     }
   ]

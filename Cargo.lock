@@ -2563,6 +2563,7 @@ dependencies = [
  "dotenvy",
  "metrics",
  "mockito",
+ "percent-encoding",
  "reqwest",
  "secrecy",
  "serde",

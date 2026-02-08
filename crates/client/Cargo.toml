@@ -39,6 +39,9 @@ time = { workspace = true }
 # Metrics
 metrics = "0.24"
 
+# URL Encoding
+percent-encoding = "2.3"
+
 [dev-dependencies]
 dotenvy = { workspace = true }
 mockito = { workspace = true }
