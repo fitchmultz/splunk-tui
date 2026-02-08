@@ -21,26 +21,23 @@ pub async fn handle_export_data(
     format: ExportFormat,
     tx: Sender<Action>,
 ) {
-    tokio::spawn(async move {
-        let result = crate::export::export_value(&data, &path, format);
-
-        match result {
-            Ok(_) => {
-                let _ = tx
-                    .send(Action::Notify(
-                        ToastLevel::Info,
-                        format!("Exported to {}", path.display()),
-                    ))
-                    .await;
-            }
-            Err(e) => {
-                let _ = tx
-                    .send(Action::Notify(
-                        ToastLevel::Error,
-                        format!("Export failed: {}", e),
-                    ))
-                    .await;
-            }
+    // Directly await the async export function
+    match crate::export::export_value(&data, &path, format).await {
+        Ok(_) => {
+            let _ = tx
+                .send(Action::Notify(
+                    ToastLevel::Info,
+                    format!("Exported to {}", path.display()),
+                ))
+                .await;
         }
-    });
+        Err(e) => {
+            let _ = tx
+                .send(Action::Notify(
+                    ToastLevel::Error,
+                    format!("Export failed: {}", e),
+                ))
+                .await;
+        }
+    }
 }

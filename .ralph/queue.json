@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0414",
-      "status": "todo",
-      "title": "Fix blocking file I/O in async export context",
-      "description": "The export module in TUI uses std::fs::File for writing exports in async contexts. This blocks the async runtime and degrades performance. Replace with tokio::fs for proper async file operations.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "performance",
-        "async",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/export.rs:58-66"
-      ],
-      "evidence": [
-        "export.rs:58: let file = File::create(path).map_err(...); - blocking I/O",
-        "export.rs:64-66: file.write_all(...) - blocking write in async context",
-        "Function is called from async side effect handlers",
-        "Large exports could block the UI for seconds"
-      ],
-      "plan": [
-        "Replace std::fs::File with tokio::fs::File",
-        "Use async write methods: file.write_all(bytes).await",
-        "Update error handling to work with async operations",
-        "Add progress indication for large exports",
-        "Verify by running `make ci` and testing export functionality"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0415",
       "status": "todo",
       "title": "Fix hardcoded /tmp paths for cross-platform compatibility",

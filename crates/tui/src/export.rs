@@ -10,24 +10,28 @@
 //! - Streaming extremely large exports efficiently (payload is provided in-memory).
 
 use crate::action::ExportFormat;
+use anyhow::Context;
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::BTreeSet, fs::File, path::Path};
+use std::{collections::BTreeSet, path::Path};
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 /// Export any serializable payload to a file in the requested format.
 ///
 /// For CSV, the payload is first serialized to `serde_json::Value` to allow
 /// uniform "tabularization" (arrays of objects become rows/columns).
-pub fn export_data<T: Serialize + ?Sized>(
+pub async fn export_data<T: Serialize + ?Sized>(
     data: &T,
     path: &Path,
     format: ExportFormat,
-) -> Result<(), String> {
+) -> anyhow::Result<()> {
     match format {
-        ExportFormat::Json => export_json_serialize(data, path),
+        ExportFormat::Json => export_json_serialize(data, path).await,
         ExportFormat::Csv => {
-            let v = serde_json::to_value(data).map_err(|e| e.to_string())?;
-            export_value(&v, path, ExportFormat::Csv)
+            let v = serde_json::to_value(data)
+                .context("Failed to serialize data to JSON for CSV export")?;
+            export_value(&v, path, ExportFormat::Csv).await
         }
     }
 }
@@ -37,61 +41,115 @@ pub fn export_data<T: Serialize + ?Sized>(
 /// JSON exports write the value directly. CSV exports attempt to treat:
 /// - `Value::Array` as rows
 /// - all other values as a single row
-pub fn export_value(value: &Value, path: &Path, format: ExportFormat) -> Result<(), String> {
+pub async fn export_value(value: &Value, path: &Path, format: ExportFormat) -> anyhow::Result<()> {
     match format {
-        ExportFormat::Json => export_json_value(value, path),
+        ExportFormat::Json => export_json_value(value, path).await,
         ExportFormat::Csv => match value {
-            Value::Array(rows) => export_csv_values(rows, path),
+            Value::Array(rows) => export_csv_values(rows, path).await,
             _ => {
                 let rows = vec![value.clone()];
-                export_csv_values(&rows, path)
+                export_csv_values(&rows, path).await
             }
         },
     }
 }
 
 /// Back-compat: export search results (slice of `Value`) to file.
-pub fn export_results(results: &[Value], path: &Path, format: ExportFormat) -> Result<(), String> {
-    export_data(results, path, format)
+pub async fn export_results(
+    results: &[Value],
+    path: &Path,
+    format: ExportFormat,
+) -> anyhow::Result<()> {
+    export_data(results, path, format).await
 }
 
-fn export_json_value(value: &Value, path: &Path) -> Result<(), String> {
-    let file = File::create(path).map_err(|e| e.to_string())?;
-    serde_json::to_writer_pretty(file, value).map_err(|e| e.to_string())
+async fn export_json_value(value: &Value, path: &Path) -> anyhow::Result<()> {
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create JSON export file: {}", path.display()))?;
+
+    let json_bytes =
+        serde_json::to_vec_pretty(value).context("Failed to serialize JSON for export")?;
+
+    file.write_all(&json_bytes)
+        .await
+        .with_context(|| format!("Failed to write JSON export to: {}", path.display()))?;
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush JSON export to: {}", path.display()))?;
+
+    Ok(())
 }
 
-fn export_json_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> Result<(), String> {
-    let file = File::create(path).map_err(|e| e.to_string())?;
-    serde_json::to_writer_pretty(file, data).map_err(|e| e.to_string())
+async fn export_json_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> anyhow::Result<()> {
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create JSON export file: {}", path.display()))?;
+
+    let json_bytes =
+        serde_json::to_vec_pretty(data).context("Failed to serialize data to JSON for export")?;
+
+    file.write_all(&json_bytes)
+        .await
+        .with_context(|| format!("Failed to write JSON export to: {}", path.display()))?;
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush JSON export to: {}", path.display()))?;
+
+    Ok(())
 }
 
-fn export_csv_values(rows: &[Value], path: &Path) -> Result<(), String> {
-    let mut w = csv::Writer::from_path(path).map_err(|e| e.to_string())?;
+async fn export_csv_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
+    // The csv crate has no async API, so we buffer in memory first
+    let mut buffer = Vec::new();
+    {
+        let mut w = csv::Writer::from_writer(&mut buffer);
 
-    let headers = collect_csv_headers(rows);
+        let headers = collect_csv_headers(rows);
 
-    if !headers.is_empty() {
-        w.write_record(&headers).map_err(|e| e.to_string())?;
+        if !headers.is_empty() {
+            w.write_record(&headers)
+                .context("Failed to write CSV headers")?;
 
-        for row in rows {
-            if let Some(map) = row.as_object() {
-                let record: Vec<String> = headers
-                    .iter()
-                    .map(|k| map.get(k).map(value_to_csv_cell).unwrap_or_default())
-                    .collect();
-                w.write_record(&record).map_err(|e| e.to_string())?;
+            for row in rows {
+                if let Some(map) = row.as_object() {
+                    let record: Vec<String> = headers
+                        .iter()
+                        .map(|k| map.get(k).map(value_to_csv_cell).unwrap_or_default())
+                        .collect();
+                    w.write_record(&record)
+                        .context("Failed to write CSV record")?;
+                }
+            }
+        } else {
+            // Fallback for non-object rows (or empty input)
+            w.write_record(["value"])
+                .context("Failed to write CSV fallback header")?;
+            for row in rows {
+                w.write_record([row.to_string()])
+                    .context("Failed to write CSV fallback record")?;
             }
         }
-    } else {
-        // Fallback for non-object rows (or empty input)
-        w.write_record(["value"]).map_err(|e| e.to_string())?;
-        for row in rows {
-            w.write_record([row.to_string()])
-                .map_err(|e| e.to_string())?;
-        }
-    }
 
-    w.flush().map_err(|e| e.to_string())
+        w.flush().context("Failed to flush CSV writer")?;
+    } // csv::Writer is dropped here, releasing the mutable borrow on buffer
+
+    // Now write the buffer to file asynchronously
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create CSV export file: {}", path.display()))?;
+
+    file.write_all(&buffer)
+        .await
+        .with_context(|| format!("Failed to write CSV export to: {}", path.display()))?;
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush CSV export to: {}", path.display()))?;
+
+    Ok(())
 }
 
 fn collect_csv_headers(rows: &[Value]) -> Vec<String> {
@@ -121,13 +179,15 @@ mod tests {
     use serde_json::json;
     use tempfile::tempdir;
 
-    #[test]
-    fn test_export_csv_mixed_keys() {
+    #[tokio::test]
+    async fn test_export_csv_mixed_keys() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("test.csv");
         let results = vec![json!({"a": 1, "b": 2}), json!({"b": 3, "c": 4})];
 
-        export_results(&results, &path, ExportFormat::Csv).unwrap();
+        export_results(&results, &path, ExportFormat::Csv)
+            .await
+            .unwrap();
 
         let mut rdr = csv::Reader::from_path(path).unwrap();
         let headers = rdr.headers().unwrap();
@@ -146,25 +206,29 @@ mod tests {
         assert_eq!(record2.get(2).unwrap(), "4");
     }
 
-    #[test]
-    fn test_export_json_array() {
+    #[tokio::test]
+    async fn test_export_json_array() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("test.json");
         let results = vec![json!({"a": 1})];
 
-        export_results(&results, &path, ExportFormat::Json).unwrap();
+        export_results(&results, &path, ExportFormat::Json)
+            .await
+            .unwrap();
 
         let content = std::fs::read_to_string(path).unwrap();
         assert!(content.contains("\"a\": 1"));
     }
 
-    #[test]
-    fn test_export_value_single_object_csv() {
+    #[tokio::test]
+    async fn test_export_value_single_object_csv() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("single.csv");
         let value = json!({"x": "y", "n": 2});
 
-        export_value(&value, &path, ExportFormat::Csv).unwrap();
+        export_value(&value, &path, ExportFormat::Csv)
+            .await
+            .unwrap();
 
         let mut rdr = csv::Reader::from_path(path).unwrap();
         let headers = rdr.headers().unwrap();
@@ -175,8 +239,8 @@ mod tests {
         assert_eq!(rec.get(1).unwrap(), "y");
     }
 
-    #[test]
-    fn test_export_data_struct_json() {
+    #[tokio::test]
+    async fn test_export_data_struct_json() {
         #[derive(Debug, Serialize)]
         struct Demo {
             a: i32,
@@ -190,7 +254,7 @@ mod tests {
             b: "ok".to_string(),
         };
 
-        export_data(&demo, &path, ExportFormat::Json).unwrap();
+        export_data(&demo, &path, ExportFormat::Json).await.unwrap();
         let content = std::fs::read_to_string(path).unwrap();
         assert!(content.contains("\"a\": 1"));
         assert!(content.contains("\"b\": \"ok\""));

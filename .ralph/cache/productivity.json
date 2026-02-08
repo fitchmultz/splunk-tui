@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-08T01:46:17.671632469Z",
+  "last_updated_at": "2026-02-08T01:56:17.373456638Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -586,7 +586,7 @@
     },
     "2026-02-08": {
       "date": "2026-02-08",
-      "completed_count": 2,
+      "completed_count": 3,
       "tasks": [
         {
           "id": "RQ-0412",
@@ -597,6 +597,11 @@
           "id": "RQ-0413",
           "title": "Fix search query logging that could expose sensitive data",
           "completed_at": "2026-02-08T01:46:17.671630598Z"
+        },
+        {
+          "id": "RQ-0414",
+          "title": "Fix blocking file I/O in async export context",
+          "completed_at": "2026-02-08T01:56:17.373455311Z"
         }
       ]
     }
@@ -606,7 +611,7 @@
     "longest_streak": 7,
     "last_completed_date": "2026-02-08"
   },
-  "total_completed": 111,
+  "total_completed": 112,
   "milestones": [
     {
       "threshold": 10,
