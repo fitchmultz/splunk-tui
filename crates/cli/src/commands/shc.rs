@@ -396,10 +396,7 @@ async fn run_manage(
     match command {
         ManageCommand::Add { target_uri } => {
             info!("Adding SHC member: {}", target_uri);
-            let result = tokio::select! {
-                res = client.add_shc_member(&target_uri) => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.add_shc_member(&target_uri), cancel)?;
 
             handle_management_result(
                 result,
@@ -415,10 +412,7 @@ async fn run_manage(
             }
 
             info!("Removing SHC member: {}", member_guid);
-            let result = tokio::select! {
-                res = client.remove_shc_member(&member_guid) => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.remove_shc_member(&member_guid), cancel)?;
 
             handle_management_result(
                 result,
@@ -430,19 +424,13 @@ async fn run_manage(
         }
         ManageCommand::RollingRestart { force } => {
             info!("Triggering SHC rolling restart (force: {})", force);
-            let result = tokio::select! {
-                res = client.rolling_restart_shc(force) => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.rolling_restart_shc(force), cancel)?;
 
             handle_management_result(result, "rolling restart", output_format, output_file).await?;
         }
         ManageCommand::SetCaptain { member_guid } => {
             info!("Setting SHC captain to: {}", member_guid);
-            let result = tokio::select! {
-                res = client.set_shc_captain(&member_guid) => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.set_shc_captain(&member_guid), cancel)?;
 
             handle_management_result(
                 result,

@@ -14,6 +14,7 @@
 //! - Global options (like `--base-url`) are applied consistently across all subcommands.
 
 mod args;
+#[macro_use]
 mod cancellation;
 mod commands;
 mod config_context;

@@ -20,7 +20,6 @@ use anyhow::{Context, Result};
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -142,10 +141,10 @@ async fn run_list(
     let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Listing lookup tables");
-    let lookups = tokio::select! {
-        res = client.list_lookup_tables(Some(count), Some(offset)) => res?,
-        _ = cancel_token.cancelled() => return Err(Cancelled.into()),
-    };
+    let lookups = cancellable!(
+        client.list_lookup_tables(Some(count), Some(offset)),
+        cancel_token
+    )?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;
@@ -169,10 +168,10 @@ async fn run_download(
     let client = crate::commands::build_client_from_config(&config)?;
 
     info!("Downloading lookup table: {}", name);
-    let content = tokio::select! {
-        res = client.download_lookup_table(name, app.as_deref(), owner.as_deref()) => res?,
-        _ = cancel_token.cancelled() => return Err(Cancelled.into()),
-    };
+    let content = cancellable!(
+        client.download_lookup_table(name, app.as_deref(), owner.as_deref()),
+        cancel_token
+    )?;
 
     // Determine output path
     let output_path = match output {
@@ -233,10 +232,7 @@ async fn run_upload(
     };
 
     info!("Uploading lookup table: {}", lookup_name);
-    let lookup = tokio::select! {
-        res = client.upload_lookup_table(&params) => res?,
-        _ = cancel_token.cancelled() => return Err(Cancelled.into()),
-    };
+    let lookup = cancellable!(client.upload_lookup_table(&params), cancel_token)?;
 
     println!("Lookup '{}' uploaded successfully.", lookup.name);
 
@@ -259,12 +255,12 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_lookup_table(name, app.as_deref(), owner.as_deref()) => {
-            res?;
+    cancellable_with!(
+        client.delete_lookup_table(name, app.as_deref(), owner.as_deref()),
+        cancel_token,
+        |_res| {
             println!("Lookup '{}' deleted successfully.", name);
             Ok(())
         }
-        _ = cancel_token.cancelled() => Err(Cancelled.into()),
-    }
+    )
 }

@@ -23,7 +23,6 @@ use splunk_client::{SearchMode, SearchRequest};
 use splunk_config::SearchDefaultConfig;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 #[allow(clippy::too_many_arguments)]
@@ -76,24 +75,16 @@ pub async fn run(
             progress.set_fraction(done_progress);
         };
 
-        let search_result = tokio::select! {
-            res = client.search_with_progress(
-                request,
-                if quiet { None } else { Some(&mut on_progress) },
-            ) => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        };
+        let search_result = cancellable!(
+            client
+                .search_with_progress(request, if quiet { None } else { Some(&mut on_progress) },),
+            cancel
+        )?;
 
         progress.finish();
         search_result
     } else {
-        tokio::select! {
-            res = client.search_with_progress(
-                request,
-                None,
-            ) => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        }
+        cancellable!(client.search_with_progress(request, None), cancel)?
     };
 
     // Parse output format

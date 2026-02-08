@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0409",
-      "status": "todo",
-      "title": "Create macro or wrapper for tokio::select! cancellation pattern",
-      "description": "The tokio::select! cancellation pattern is repeated 60+ times across CLI command files with nearly identical code. This pattern combines an API call with a cancellation token check. Create a macro or wrapper function to handle this consistently and reduce code duplication.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "dry",
-        "refactoring",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/jobs.rs",
-        "crates/cli/src/commands/cluster.rs",
-        "crates/cli/src/commands/license.rs",
-        "crates/cli/src/commands/*.rs"
-      ],
-      "evidence": [
-        "Pattern repeated 60+ times:",
-        "let result = tokio::select! {",
-        "    res = client.some_api_call() => res?;",
-        "    _ = cancel.cancelled() => return Err(Cancelled.into());",
-        "};"
-      ],
-      "plan": [
-        "Create a macro like retry_call! for cancellation handling",
-        "Or create a wrapper function that takes a future and cancellation token",
-        "Refactor all 60+ occurrences to use the new abstraction",
-        "Ensure the abstraction preserves error types correctly",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0410",
       "status": "todo",
       "title": "Create shared form parameter builder for endpoint modules",

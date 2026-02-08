@@ -19,7 +19,6 @@ use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -109,15 +108,12 @@ async fn run_list(
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
     let inputs = if let Some(input_type) = input_type {
-        tokio::select! {
-            res = client.list_inputs_by_type(&input_type, Some(count), offset_param) => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        }
+        cancellable!(
+            client.list_inputs_by_type(&input_type, Some(count), offset_param),
+            cancel
+        )?
     } else {
-        tokio::select! {
-            res = client.list_inputs(Some(count), offset_param) => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        }
+        cancellable!(client.list_inputs(Some(count), offset_param), cancel)?
     };
 
     // Parse output format

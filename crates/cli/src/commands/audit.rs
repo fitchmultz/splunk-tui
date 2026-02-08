@@ -20,7 +20,6 @@ use clap::Subcommand;
 use splunk_config::constants::*;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 
 #[derive(Subcommand)]
@@ -125,10 +124,7 @@ async fn run_list(
         action,
     };
 
-    let events = tokio::select! {
-        res = client.list_audit_events(&params) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let events = cancellable!(client.list_audit_events(&params), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
 
@@ -162,10 +158,7 @@ async fn run_recent(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let events = tokio::select! {
-        res = client.get_recent_audit_events(count) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let events = cancellable!(client.get_recent_audit_events(count), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);

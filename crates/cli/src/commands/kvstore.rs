@@ -23,7 +23,6 @@ use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -176,10 +175,7 @@ async fn run_status(
 
     info!("Connecting to {}", client.base_url());
 
-    let kvstore_status = tokio::select! {
-        res = client.get_kvstore_status() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let kvstore_status = cancellable!(client.get_kvstore_status(), cancel)?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;
@@ -209,10 +205,10 @@ async fn run_list(
 
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
-    let collections = tokio::select! {
-        res = client.list_collections(app.as_deref(), owner.as_deref(), Some(count), offset_param) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let collections = cancellable!(
+        client.list_collections(app.as_deref(), owner.as_deref(), Some(count), offset_param),
+        cancel
+    )?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;
@@ -258,14 +254,13 @@ async fn run_create(
         accelerated_fields,
     };
 
-    tokio::select! {
-        res = client.create_collection(&params) => {
-            let collection = res?;
-            println!("Collection '{}' created successfully in app '{}'.", collection.name, app);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.create_collection(&params), cancel, |collection| {
+        println!(
+            "Collection '{}' created successfully in app '{}'.",
+            collection.name, app
+        );
+        Ok(())
+    })
 }
 
 async fn run_delete(
@@ -284,14 +279,14 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_collection(&name, &app, &owner) => {
-            res?;
+    cancellable_with!(
+        client.delete_collection(&name, &app, &owner),
+        cancel,
+        |_res| {
             println!("Collection '{}' deleted successfully.", name);
             Ok(())
         }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -313,12 +308,17 @@ async fn run_data(
 
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
-    let records = tokio::select! {
-        res = client.list_collection_records(
-            &name, &app, &owner, query.as_deref(), Some(count), offset_param
-        ) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let records = cancellable!(
+        client.list_collection_records(
+            &name,
+            &app,
+            &owner,
+            query.as_deref(),
+            Some(count),
+            offset_param
+        ),
+        cancel
+    )?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

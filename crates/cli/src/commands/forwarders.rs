@@ -18,7 +18,6 @@
 use anyhow::Result;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 
 /// Run the forwarders command.
@@ -54,10 +53,7 @@ pub async fn run(
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
-    let forwarders = tokio::select! {
-        res = client.list_forwarders(Some(count), offset_param) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let forwarders = cancellable!(client.list_forwarders(Some(count), offset_param), cancel)?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

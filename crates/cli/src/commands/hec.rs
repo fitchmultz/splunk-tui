@@ -29,7 +29,6 @@ use clap::Subcommand;
 use std::path::PathBuf;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 /// HEC subcommands.
@@ -238,10 +237,7 @@ async fn run_send(
         .build()
         .context("Failed to create HEC client")?;
 
-    let response = tokio::select! {
-        res = client.hec_send_event(&hec_url, &hec_token, &event) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let response = cancellable!(client.hec_send_event(&hec_url, &hec_token, &event), cancel)?;
 
     // Format output
     let format = OutputFormat::from_str(output_format)?;
@@ -292,10 +288,10 @@ async fn run_send_batch(
         .build()
         .context("Failed to create HEC client")?;
 
-    let response = tokio::select! {
-        res = client.hec_send_batch(&hec_url, &hec_token, &events, ndjson) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let response = cancellable!(
+        client.hec_send_batch(&hec_url, &hec_token, &events, ndjson),
+        cancel
+    )?;
 
     // Format output
     let format = OutputFormat::from_str(output_format)?;
@@ -329,10 +325,7 @@ async fn run_health(
         .build()
         .context("Failed to create HEC client")?;
 
-    let health = tokio::select! {
-        res = client.hec_health_check(&hec_url, &hec_token) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let health = cancellable!(client.hec_health_check(&hec_url, &hec_token), cancel)?;
 
     // Format output
     let format = OutputFormat::from_str(output_format)?;
@@ -374,10 +367,10 @@ async fn run_check_ack(
         .build()
         .context("Failed to create HEC client")?;
 
-    let status = tokio::select! {
-        res = client.hec_check_acks(&hec_url, &hec_token, &ack_ids) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let status = cancellable!(
+        client.hec_check_acks(&hec_url, &hec_token, &ack_ids),
+        cancel
+    )?;
 
     // Format output
     let format = OutputFormat::from_str(output_format)?;

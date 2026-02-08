@@ -23,7 +23,6 @@ use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -156,10 +155,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let roles = tokio::select! {
-        res = client.list_roles(Some(count), None) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let roles = cancellable!(client.list_roles(Some(count), None), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -180,10 +176,7 @@ async fn run_capabilities(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let capabilities = tokio::select! {
-        res = client.list_capabilities() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let capabilities = cancellable!(client.list_capabilities(), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -218,14 +211,10 @@ async fn run_create(
         default_app,
     };
 
-    tokio::select! {
-        res = client.create_role(&params) => {
-            let role = res?;
-            println!("Role '{}' created successfully.", role.name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.create_role(&params), cancel, |role| {
+        println!("Role '{}' created successfully.", role.name);
+        Ok(())
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -251,14 +240,10 @@ async fn run_update(
         default_app,
     };
 
-    tokio::select! {
-        res = client.modify_role(name, &params) => {
-            let role = res?;
-            println!("Role '{}' modified successfully.", role.name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.modify_role(name, &params), cancel, |role| {
+        println!("Role '{}' modified successfully.", role.name);
+        Ok(())
+    })
 }
 
 async fn run_delete(
@@ -275,12 +260,8 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_role(name) => {
-            res?;
-            println!("Role '{}' deleted successfully.", name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.delete_role(name), cancel, |_res| {
+        println!("Role '{}' deleted successfully.", name);
+        Ok(())
+    })
 }

@@ -24,7 +24,6 @@ use tracing::info;
 
 use splunk_config::constants::*;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 #[derive(Subcommand)]
@@ -121,10 +120,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let apps = tokio::select! {
-        res = client.list_apps(Some(count), None) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let apps = cancellable!(client.list_apps(Some(count), None), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -145,11 +141,8 @@ async fn run_info(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let app = tokio::select! {
-        res = client.get_app(app_name) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to get app information for '{}'", app_name))?;
+    let app = cancellable!(client.get_app(app_name), cancel)
+        .with_context(|| format!("Failed to get app information for '{}'", app_name))?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -168,11 +161,8 @@ async fn run_enable(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.enable_app(app_name) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to enable app '{}'", app_name))?;
+    cancellable!(client.enable_app(app_name), cancel)
+        .with_context(|| format!("Failed to enable app '{}'", app_name))?;
 
     println!("App '{}' enabled successfully.", app_name);
 
@@ -188,11 +178,8 @@ async fn run_disable(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.disable_app(app_name) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to disable app '{}'", app_name))?;
+    cancellable!(client.disable_app(app_name), cancel)
+        .with_context(|| format!("Failed to disable app '{}'", app_name))?;
 
     println!("App '{}' disabled successfully.", app_name);
 
@@ -218,11 +205,8 @@ async fn run_install(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let app = tokio::select! {
-        res = client.install_app(file_path) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to install app from '{}'", file_path.display()))?;
+    let app = cancellable!(client.install_app(file_path), cancel)
+        .with_context(|| format!("Failed to install app from '{}'", file_path.display()))?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -246,11 +230,8 @@ async fn run_remove(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.remove_app(app_name) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to remove app '{}'", app_name))?;
+    cancellable!(client.remove_app(app_name), cancel)
+        .with_context(|| format!("Failed to remove app '{}'", app_name))?;
 
     println!("App '{}' removed successfully.", app_name);
 

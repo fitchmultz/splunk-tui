@@ -19,7 +19,6 @@ use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -89,10 +88,7 @@ async fn run_list(
 
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
-    let dashboards = tokio::select! {
-        res = client.list_dashboards(Some(count), offset_param) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let dashboards = cancellable!(client.list_dashboards(Some(count), offset_param), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
 
@@ -125,10 +121,7 @@ async fn run_view(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let dashboard = tokio::select! {
-        res = client.get_dashboard(name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let dashboard = cancellable!(client.get_dashboard(name), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);

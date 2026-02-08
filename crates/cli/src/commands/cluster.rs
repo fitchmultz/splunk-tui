@@ -332,10 +332,7 @@ async fn run_maintenance(
     match command {
         MaintenanceCommand::Enable => {
             info!("Enabling maintenance mode");
-            let result = tokio::select! {
-                res = client.enable_maintenance_mode() => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.enable_maintenance_mode(), cancel)?;
             handle_management_result(
                 result,
                 "enable maintenance mode",
@@ -346,10 +343,7 @@ async fn run_maintenance(
         }
         MaintenanceCommand::Disable => {
             info!("Disabling maintenance mode");
-            let result = tokio::select! {
-                res = client.disable_maintenance_mode() => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.disable_maintenance_mode(), cancel)?;
             handle_management_result(
                 result,
                 "disable maintenance mode",
@@ -360,10 +354,7 @@ async fn run_maintenance(
         }
         MaintenanceCommand::Status => {
             info!("Fetching maintenance mode status");
-            let info = tokio::select! {
-                res = client.get_cluster_info() => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let info = cancellable!(client.get_cluster_info(), cancel)?;
             let status = if info.maintenance_mode == Some(true) {
                 "enabled"
             } else {
@@ -386,10 +377,7 @@ async fn run_rebalance(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let result = tokio::select! {
-        res = client.rebalance_cluster() => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }?;
+    let result = cancellable!(client.rebalance_cluster(), cancel)?;
 
     handle_management_result(result, "rebalance cluster", output_format, output_file).await?;
 
@@ -408,10 +396,7 @@ async fn run_peers_manage(
     match command {
         PeersCommand::Decommission { peer } => {
             info!("Decommissioning peer: {}", peer);
-            let peer_result = tokio::select! {
-                res = client.decommission_peer(&peer) => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let peer_result = cancellable!(client.decommission_peer(&peer), cancel)?;
 
             let result = ClusterManagementOutput {
                 operation: "decommission".to_string(),
@@ -432,10 +417,7 @@ async fn run_peers_manage(
 
             info!("Removing peer: {}", peer_guid);
             let peer_guids = vec![peer_guid.clone()];
-            let result = tokio::select! {
-                res = client.remove_peers(&peer_guids) => res,
-                _ = cancel.cancelled() => return Err(Cancelled.into()),
-            }?;
+            let result = cancellable!(client.remove_peers(&peer_guids), cancel)?;
 
             handle_management_result(
                 result,

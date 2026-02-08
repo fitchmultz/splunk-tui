@@ -17,7 +17,6 @@
 use anyhow::Result;
 use tracing::{info, warn};
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 pub async fn run(
@@ -33,10 +32,7 @@ pub async fn run(
     info!("Connecting to {}", client.base_url());
 
     // Use shared health check aggregation from client crate
-    let health_result = tokio::select! {
-        res = client.check_health_aggregate() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let health_result = cancellable!(client.check_health_aggregate(), cancel)?;
 
     // Log partial errors as warnings (individual health checks that failed)
     for (endpoint, err) in &health_result.partial_errors {

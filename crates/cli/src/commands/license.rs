@@ -19,7 +19,6 @@ use anyhow::{Context, Result};
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{
     LicenseActivationOutput, LicenseInfoOutput, LicenseInstallOutput, LicensePoolOperationOutput,
     OutputFormat, get_formatter, output_result, write_to_file,
@@ -148,18 +147,9 @@ async fn run_show(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let usage = tokio::select! {
-        res = client.get_license_usage() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
-    let pools = tokio::select! {
-        res = client.list_license_pools() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
-    let stacks = tokio::select! {
-        res = client.list_license_stacks() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let usage = cancellable!(client.get_license_usage(), cancel)?;
+    let pools = cancellable!(client.list_license_pools(), cancel)?;
+    let stacks = cancellable!(client.list_license_stacks(), cancel)?;
 
     let output = LicenseInfoOutput {
         usage,
@@ -186,10 +176,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let licenses = tokio::select! {
-        res = client.list_installed_licenses() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let licenses = cancellable!(client.list_installed_licenses(), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -219,10 +206,7 @@ async fn run_install(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let result = tokio::select! {
-        res = client.install_license(file_path) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let result = cancellable!(client.install_license(file_path), cancel)?;
 
     let output = LicenseInstallOutput {
         success: result.success,
@@ -306,10 +290,7 @@ async fn run_pool_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let pools = tokio::select! {
-        res = client.list_license_pools() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let pools = cancellable!(client.list_license_pools(), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -342,10 +323,7 @@ async fn run_pool_create(
         description,
     };
 
-    let pool = tokio::select! {
-        res = client.create_license_pool(&params) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let pool = cancellable!(client.create_license_pool(&params), cancel)?;
 
     let output = LicensePoolOperationOutput {
         operation: "create".to_string(),
@@ -387,10 +365,7 @@ async fn run_pool_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_license_pool(name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    cancellable!(client.delete_license_pool(name), cancel)?;
 
     println!("License pool '{}' deleted successfully.", name);
 
@@ -415,10 +390,7 @@ async fn run_pool_modify(
         description,
     };
 
-    let pool = tokio::select! {
-        res = client.modify_license_pool(name, &params) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let pool = cancellable!(client.modify_license_pool(name, &params), cancel)?;
 
     let output = LicensePoolOperationOutput {
         operation: "modify".to_string(),
@@ -455,10 +427,7 @@ async fn run_activate(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let result = tokio::select! {
-        res = client.activate_license(license_name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let result = cancellable!(client.activate_license(license_name), cancel)?;
 
     let output = LicenseActivationOutput {
         operation: "activate".to_string(),
@@ -481,10 +450,7 @@ async fn run_deactivate(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let result = tokio::select! {
-        res = client.deactivate_license(license_name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let result = cancellable!(client.deactivate_license(license_name), cancel)?;
 
     let output = LicenseActivationOutput {
         operation: "deactivate".to_string(),

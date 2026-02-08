@@ -22,7 +22,6 @@ use clap::Subcommand;
 use secrecy::SecretString;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -150,10 +149,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let users = tokio::select! {
-        res = client.list_users(Some(count), None) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let users = cancellable!(client.list_users(Some(count), None), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -201,14 +197,10 @@ async fn run_create(
         default_app,
     };
 
-    tokio::select! {
-        res = client.create_user(&params) => {
-            let user = res?;
-            println!("User '{}' created successfully.", user.name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.create_user(&params), cancel, |user| {
+        println!("User '{}' created successfully.", user.name);
+        Ok(())
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -234,14 +226,10 @@ async fn run_modify(
         default_app,
     };
 
-    tokio::select! {
-        res = client.modify_user(name, &params) => {
-            let user = res?;
-            println!("User '{}' modified successfully.", user.name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.modify_user(name, &params), cancel, |user| {
+        println!("User '{}' modified successfully.", user.name);
+        Ok(())
+    })
 }
 
 async fn run_delete(
@@ -258,12 +246,8 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_user(name) => {
-            res?;
-            println!("User '{}' deleted successfully.", name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.delete_user(name), cancel, |_res| {
+        println!("User '{}' deleted successfully.", name);
+        Ok(())
+    })
 }

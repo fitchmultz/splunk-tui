@@ -19,7 +19,6 @@
 use anyhow::Result;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{
     Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, output_result,
 };
@@ -61,14 +60,18 @@ pub async fn run(
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
     // Fetch both pools and rules concurrently
-    let (pools, rules) = tokio::select! {
-        res = async {
-            let pools = client.list_workload_pools(Some(count), offset_param).await?;
-            let rules = client.list_workload_rules(Some(count), offset_param).await?;
+    let (pools, rules) = cancellable!(
+        async {
+            let pools = client
+                .list_workload_pools(Some(count), offset_param)
+                .await?;
+            let rules = client
+                .list_workload_rules(Some(count), offset_param)
+                .await?;
             Ok::<_, anyhow::Error>((pools, rules))
-        } => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+        },
+        cancel
+    )?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

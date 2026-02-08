@@ -20,7 +20,6 @@ use tracing::info;
 
 use splunk_config::constants::*;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 #[derive(Subcommand)]
@@ -67,10 +66,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let alerts = tokio::select! {
-        res = client.list_fired_alerts(Some(count), None) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let alerts = cancellable!(client.list_fired_alerts(Some(count), None), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -90,10 +86,7 @@ async fn run_info(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let alert = tokio::select! {
-        res = client.get_fired_alert(name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let alert = cancellable!(client.get_fired_alert(name), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);

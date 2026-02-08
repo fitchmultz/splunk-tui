@@ -24,7 +24,6 @@ use splunk_client::SearchRequest;
 use splunk_config::constants::*;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 #[derive(Subcommand)]
@@ -201,10 +200,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let searches = tokio::select! {
-        res = client.list_saved_searches(Some(count), None) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let searches = cancellable!(client.list_saved_searches(Some(count), None), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -225,10 +221,7 @@ async fn run_info(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let search = tokio::select! {
-        res = client.get_saved_search(name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let search = cancellable!(client.get_saved_search(name), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -254,19 +247,13 @@ async fn run_run(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let search = tokio::select! {
-        res = client.get_saved_search(name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let search = cancellable!(client.get_saved_search(name), cancel)?;
 
     info!("Executing search query: {}", search.search);
     let request = SearchRequest::new(&search.search, wait)
         .time_bounds(earliest.unwrap_or("-24h"), latest.unwrap_or("now"))
         .max_results(max_results);
-    let results = tokio::select! {
-        res = client.search(request) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let results = cancellable!(client.search(request), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -295,13 +282,14 @@ async fn run_edit(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.update_saved_search(name, search, description, disabled) => {
-            res?;
+    cancellable_with!(
+        client.update_saved_search(name, search, description, disabled),
+        cancel,
+        |_res| {
             eprintln!("Saved search '{}' updated successfully", name);
+            Ok(())
         }
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
+    )?;
 
     Ok(())
 }
@@ -319,18 +307,15 @@ async fn run_create(
     let client = crate::commands::build_client_from_config(&config)?;
 
     // First create the saved search
-    tokio::select! {
-        res = client.create_saved_search(name, search) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to create saved search '{}'", name))?;
+    cancellable!(client.create_saved_search(name, search), cancel)
+        .with_context(|| format!("Failed to create saved search '{}'", name))?;
 
     // If description or disabled flag provided, update the saved search
     if description.is_some() || disabled {
-        tokio::select! {
-            res = client.update_saved_search(name, None, description, Some(disabled)) => res,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        }
+        cancellable!(
+            client.update_saved_search(name, None, description, Some(disabled)),
+            cancel
+        )
         .with_context(|| {
             format!(
                 "Failed to update saved search '{}' with description/disabled",
@@ -357,11 +342,8 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_saved_search(name) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
-    .with_context(|| format!("Failed to delete saved search '{}'", name))?;
+    cancellable!(client.delete_saved_search(name), cancel)
+        .with_context(|| format!("Failed to delete saved search '{}'", name))?;
 
     println!("Saved search '{}' deleted successfully.", name);
 
@@ -381,10 +363,10 @@ async fn run_enable_disable(
 
     let status = if disabled { "disabled" } else { "enabled" };
 
-    tokio::select! {
-        res = client.update_saved_search(name, None, None, Some(disabled)) => res,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
+    cancellable!(
+        client.update_saved_search(name, None, None, Some(disabled)),
+        cancel
+    )
     .with_context(|| format!("Failed to {} saved search '{}'", status, name))?;
 
     println!("Saved search '{}' {} successfully.", name, status);

@@ -20,7 +20,6 @@ use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{
     Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, output_result,
 };
@@ -131,10 +130,10 @@ async fn run_list(
             config_file, count, offset
         );
 
-        let stanzas = tokio::select! {
-            res = client.list_config_stanzas(&config_file, Some(count), offset_param) => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        };
+        let stanzas = cancellable!(
+            client.list_config_stanzas(&config_file, Some(count), offset_param),
+            cancel
+        )?;
 
         // Parse output format
         let format = OutputFormat::from_str(output_format)?;
@@ -158,10 +157,7 @@ async fn run_list(
     } else {
         info!("Listing available config files");
 
-        let config_files = tokio::select! {
-            res = client.list_config_files() => res?,
-            _ = cancel.cancelled() => return Err(Cancelled.into()),
-        };
+        let config_files = cancellable!(client.list_config_files(), cancel)?;
 
         // Parse output format
         let format = OutputFormat::from_str(output_format)?;
@@ -197,10 +193,7 @@ async fn run_view(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let stanza = tokio::select! {
-        res = client.get_config_stanza(&config_file, &stanza_name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let stanza = cancellable!(client.get_config_stanza(&config_file, &stanza_name), cancel)?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;

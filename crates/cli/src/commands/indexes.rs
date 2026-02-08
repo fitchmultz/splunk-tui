@@ -23,7 +23,6 @@ use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -205,10 +204,7 @@ async fn run_list(
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
-    let indexes = tokio::select! {
-        res = client.list_indexes(Some(count), offset_param) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let indexes = cancellable!(client.list_indexes(Some(count), offset_param), cancel)?;
 
     // Parse output format
     let format = OutputFormat::from_str(output_format)?;
@@ -262,14 +258,10 @@ async fn run_create(
         cold_to_frozen_dir,
     };
 
-    tokio::select! {
-        res = client.create_index(&params) => {
-            let index = res?;
-            println!("Index '{}' created successfully.", index.name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.create_index(&params), cancel, |index| {
+        println!("Index '{}' created successfully.", index.name);
+        Ok(())
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -301,14 +293,10 @@ async fn run_modify(
         cold_to_frozen_dir,
     };
 
-    tokio::select! {
-        res = client.modify_index(name, &params) => {
-            let index = res?;
-            println!("Index '{}' modified successfully.", index.name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.modify_index(name, &params), cancel, |index| {
+        println!("Index '{}' modified successfully.", index.name);
+        Ok(())
+    })
 }
 
 async fn run_delete(
@@ -325,12 +313,8 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_index(name) => {
-            res?;
-            println!("Index '{}' deleted successfully.", name);
-            Ok(())
-        }
-        _ = cancel.cancelled() => Err(Cancelled.into()),
-    }
+    cancellable_with!(client.delete_index(name), cancel, |_res| {
+        println!("Index '{}' deleted successfully.", name);
+        Ok(())
+    })
 }

@@ -158,10 +158,7 @@ pub async fn run(
         Option<splunk_client::HealthCheckOutput>,
         Vec<(String, String)>,
     ) = if let Some(client) = client {
-        let health_result = tokio::select! {
-            res = client.check_health_aggregate() => res,
-            _ = cancel.cancelled() => return Err(crate::cancellation::Cancelled.into()),
-        };
+        let health_result = cancellable!(client.check_health_aggregate(), cancel);
         match health_result {
             Ok(health) => {
                 let server_name = health

@@ -24,7 +24,6 @@ use clap::Subcommand;
 use splunk_client::{MacroCreateParams, MacroUpdateParams};
 use tracing::info;
 
-use crate::cancellation::Cancelled;
 use crate::formatters::{OutputFormat, get_formatter, output_result};
 use splunk_config::constants::*;
 
@@ -211,13 +210,10 @@ async fn run_create(
         errormsg: errormsg.as_deref(),
     };
 
-    tokio::select! {
-        res = client.create_macro(params) => {
-            res?;
-            eprintln!("Macro '{}' created successfully", name);
-        }
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
+    cancellable_with!(client.create_macro(params), cancel, |_res| {
+        eprintln!("Macro '{}' created successfully", name);
+        Ok(())
+    })?;
 
     Ok(())
 }
@@ -295,13 +291,10 @@ async fn run_update(
         errormsg: errormsg.as_deref(),
     };
 
-    tokio::select! {
-        res = client.update_macro(params) => {
-            res?;
-            eprintln!("Macro '{}' updated successfully", name);
-        }
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
+    cancellable_with!(client.update_macro(params), cancel, |_res| {
+        eprintln!("Macro '{}' updated successfully", name);
+        Ok(())
+    })?;
 
     Ok(())
 }
@@ -317,10 +310,7 @@ async fn run_list(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let macros = tokio::select! {
-        res = client.list_macros() => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let macros = cancellable!(client.list_macros(), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -341,10 +331,7 @@ async fn run_info(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    let macro_info = tokio::select! {
-        res = client.get_macro(name) => res?,
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    };
+    let macro_info = cancellable!(client.get_macro(name), cancel)?;
 
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
@@ -368,13 +355,10 @@ async fn run_delete(
 
     let client = crate::commands::build_client_from_config(&config)?;
 
-    tokio::select! {
-        res = client.delete_macro(name) => {
-            res?;
-            eprintln!("Macro '{}' deleted successfully", name);
-        }
-        _ = cancel.cancelled() => return Err(Cancelled.into()),
-    }
+    cancellable_with!(client.delete_macro(name), cancel, |_res| {
+        eprintln!("Macro '{}' deleted successfully", name);
+        Ok(())
+    })?;
 
     Ok(())
 }
