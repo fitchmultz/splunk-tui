@@ -1,4 +1,1215 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0426",
+      "status": "todo",
+      "title": "Add NDJSON/JSONL output format for streaming workflows",
+      "description": "Implement NDJSON (newline-delimited JSON) output format to enable efficient streaming workflows and unix pipeline integration. Current formats (JSON, CSV, XML, Table) all require complete buffering or produce non-streamable output. NDJSON allows line-by-line processing with tools like jq, grep, and awk.\n\nThis is critical for:\n- Processing large result sets without loading entirely into memory\n- Unix pipeline integration (splunk-cli search '...' --format ndjson | jq '.message')\n- Real-time log streaming and filtering\n- Machine-to-machine data exchange\n\nImplementation should add 'ndjson' to OutputFormat enum in crates/cli/src/formatters/mod.rs and implement NDJSONFormatter that outputs one JSON object per line without outer array wrapper.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "formatters",
+        "streaming"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/mod.rs",
+        "crates/cli/src/formatters/json.rs",
+        "crates/cli/src/args.rs"
+      ],
+      "evidence": [
+        "Current OutputFormat enum only supports: Json, Table, Csv, Xml (crates/cli/src/formatters/mod.rs:84-89)",
+        "No streaming format available - JSON outputs pretty-printed array with all results",
+        "TUI export only supports Json and Csv (crates/tui/src/export.rs:28-36)",
+        "Streaming use case missing: cannot pipe large search results to jq without loading all into memory"
+      ],
+      "plan": [
+        "Add Ndjson variant to OutputFormat enum in crates/cli/src/formatters/mod.rs",
+        "Implement NDJSON formatter that writes one object per line without array wrapper",
+        "Add --format ndjson to CLI args and help text",
+        "Add unit tests for NDJSON output format",
+        "Add integration test with large result set to verify streaming behavior",
+        "Update docs/usage.md with NDJSON format documentation",
+        "Verify by running: splunk-cli search 'index=_internal | head 100' --format ndjson | jq -c '. | select(.message | contains(\"error\"))'"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0427",
+      "status": "todo",
+      "title": "Implement structured exit codes for CLI scripting",
+      "description": "Define and implement structured exit codes for splunk-cli to enable reliable shell scripting and automation. Currently CLI likely returns 0 for success and 1 for all failures, making it impossible for scripts to distinguish between authentication failures, connection errors, not found, or validation errors.\n\nExit code schema:\n- 0: Success\n- 1: General error\n- 2: Authentication failure (invalid credentials, expired session)\n- 3: Connection error (network, timeout, DNS)\n- 4: Resource not found (job, index, saved search)\n- 5: Validation error (invalid SPL, bad parameters)\n- 6: Permission denied (insufficient privileges)\n- 7: Rate limited (HTTP 429)\n- 8: Service unavailable (HTTP 503, maintenance mode)\n- 130: Interrupted (Ctrl+C)\n\nThis enables CI/CD pipelines to make intelligent decisions based on failure type.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "scripting",
+        "automation"
+      ],
+      "scope": [
+        "crates/cli/src/main.rs",
+        "crates/cli/src/error.rs",
+        "crates/client/src/error.rs"
+      ],
+      "evidence": [
+        "CLI main.rs uses anyhow for error handling without custom exit codes",
+        "No ExitCode enum or structured exit code mapping found in CLI crate",
+        "Scripts cannot distinguish auth failures from connection failures for retry logic",
+        "CI/CD integration requires parsing error strings instead of checking exit codes"
+      ],
+      "plan": [
+        "Create ExitCode enum in crates/cli/src/error.rs mapping error types to exit codes",
+        "Implement From<ClientError> for ExitCode mapping each error variant",
+        "Update main.rs to use std::process::exit(exit_code as u8)",
+        "Add --exit-codes flag to splunk-cli help that documents all exit codes",
+        "Update man page with exit code documentation",
+        "Add tests verifying correct exit codes for each error scenario using assert_cmd",
+        "Verify by running: splunk-cli search 'index=nosuchindex' --wait; echo \"Exit: $?\""
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0428",
+      "status": "todo",
+      "title": "Add batch job operations to CLI for feature parity with TUI",
+      "description": "Implement batch job cancel and delete commands in CLI to achieve feature parity with TUI. TUI supports CancelJobsBatch and DeleteJobsBatch actions that operate on multiple selected jobs simultaneously. CLI only supports single job operations (--cancel SID, --delete SID).\n\nUse cases:\n- Cancel all jobs older than 24 hours: splunk-cli jobs batch-cancel --older-than 24h\n- Delete all failed jobs: splunk-cli jobs batch-delete --status failed\n- Cancel jobs matching pattern: splunk-cli jobs batch-cancel --search-pattern 'index=temp'\n- Bulk operations with confirmation and progress reporting\n\nImplementation leverages existing TUI batch logic pattern from crates/tui/src/action/variants.rs.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "jobs",
+        "batch",
+        "feature-parity"
+      ],
+      "scope": [
+        "crates/cli/src/commands/jobs.rs",
+        "crates/cli/src/args.rs",
+        "crates/client/src/client/jobs.rs"
+      ],
+      "evidence": [
+        "TUI has CancelJobsBatch and DeleteJobsBatch actions (crates/tui/src/action/variants.rs)",
+        "CLI jobs command only supports single job --cancel and --delete (README.md:168-172)",
+        "No batch operations exist for any CLI command - all are single-resource",
+        "Feature parity gap documented: TUI has multi-select, CLI does not"
+      ],
+      "plan": [
+        "Add batch-cancel and batch-delete subcommands to jobs command in args.rs",
+        "Implement filter options: --older-than, --status, --search-pattern, --owner, --app",
+        "Add --dry-run flag to preview affected jobs before execution",
+        "Implement concurrent cancellation with progress bar and partial success handling",
+        "Add confirmation prompt listing number of affected jobs",
+        "Add --yes/-y flag for non-interactive automation",
+        "Add tests for batch operations with mock server",
+        "Verify by running: splunk-cli jobs batch-cancel --status running --older-than 1h --dry-run"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0429",
+      "status": "todo",
+      "title": "Implement dynamic shell completions for runtime values",
+      "description": "Extend shell completion generation to support dynamic values fetched from the Splunk server. Current completions are static (generated from clap derive macros) and only complete command names and flags. Dynamic completions would complete:\n\n- Profile names from config.json\n- Index names from server\n- Saved search names\n- App names\n- Field names for SPL queries\n- Job SIDs\n\nImplementation uses clap_complete's dynamic completion support with custom completer functions that call the Splunk API when completing. Falls back gracefully when server unavailable.\n\nExample: splunk-cli search 'index=<TAB>' queries server for index list\nExample: splunk-cli jobs --cancel <TAB> lists recent job SIDs",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "cli",
+        "ux",
+        "shell-completions"
+      ],
+      "scope": [
+        "crates/cli/src/commands/completions.rs",
+        "crates/cli/src/args.rs",
+        "crates/cli/src/dynamic_complete.rs"
+      ],
+      "evidence": [
+        "Current completions.rs only generates static completions from clap (crates/cli/src/commands/completions.rs:24-27)",
+        "No dynamic completion infrastructure exists",
+        "Users must manually type profile names, index names, job SIDs without completion",
+        "clap_complete supports dynamic completion with Completer trait (external research)"
+      ],
+      "plan": [
+        "Create dynamic_complete.rs module with Completer implementations for each value type",
+        "Implement ProfileCompleter that reads from config.json",
+        "Implement IndexCompleter that queries /services/data/indexes (with caching)",
+        "Implement SavedSearchCompleter for saved search names",
+        "Implement JobCompleter for recent job SIDs",
+        "Add completion caching with TTL to avoid excessive API calls",
+        "Update completions command to support --dynamic flag",
+        "Add tests for dynamic completion with mock server",
+        "Verify by running: source <(splunk-cli completions bash --dynamic) and testing tab completion"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0430",
+      "status": "todo",
+      "title": "Add SPL query validation command",
+      "description": "Create a new 'splunk-cli search validate' command that validates SPL syntax without executing the search. This helps users catch syntax errors early, especially in CI/CD pipelines for saved search validation.\n\nFeatures:\n- Validate SPL syntax using Splunk's /services/search/parser endpoint\n- Return structured error output with line/column positions\n- Support for validating macros and saved search definitions\n- Integration with --check mode for linting SPL files\n- Optional: local syntax validation without server roundtrip for common errors\n\nUse cases:\n- CI/CD validation of saved searches before deployment\n- Pre-commit hooks for SPL syntax checking\n- IDE integration for SPL linting\n- Teaching tool for SPL syntax education",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "cli",
+        "search",
+        "validation",
+        "spl"
+      ],
+      "scope": [
+        "crates/cli/src/commands/search.rs",
+        "crates/cli/src/args.rs",
+        "crates/client/src/endpoints/search/"
+      ],
+      "evidence": [
+        "No SPL validation command exists - users must execute search to find syntax errors",
+        "Splunk API has /services/search/parser endpoint for syntax validation",
+        "Saved search management lacks validation before create/edit (README.md:191-195)",
+        "No linting or CI/CD integration for SPL syntax checking"
+      ],
+      "plan": [
+        "Add validate subcommand to search command in args.rs",
+        "Implement parser endpoint client in crates/client/src/endpoints/search/validate.rs",
+        "Create validation response model with error positions and messages",
+        "Implement formatters for validation output (human-readable and JSON)",
+        "Add --file flag to validate SPL from file (for CI/CD use)",
+        "Add --json flag for machine-readable output",
+        "Create example pre-commit hook script",
+        "Add integration tests with mock parser responses",
+        "Verify by running: splunk-cli search validate 'index=main | stats count by' and seeing syntax error"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0431",
+      "status": "todo",
+      "title": "Add property-based testing infrastructure with proptest",
+      "description": "Introduce property-based testing using the proptest crate to catch edge cases in serialization, pagination, and business logic. Current tests are example-based and may miss edge cases like empty collections, maximum values, or malformed input.\n\nTarget areas:\n- Pagination logic (offset/count bounds, has_next calculation)\n- Serde serialization/deserialization roundtrips\n- Date/time parsing edge cases\n- URL encoding/query parameter generation\n- Response parsing with varying field presence\n\nProperty-based tests generate hundreds of random inputs to find edge cases that human-written tests miss. This improves reliability and catches regressions in data handling.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "testing",
+        "quality",
+        "property-based-testing"
+      ],
+      "scope": [
+        "crates/client/tests/property_*.rs",
+        "crates/config/tests/property_*.rs",
+        "Cargo.toml"
+      ],
+      "evidence": [
+        "No property-based testing found in codebase (no proptest, quickcheck usage)",
+        "Current tests are example-based with static fixtures in crates/client/fixtures/",
+        "Pagination logic tested with specific values but not edge cases like usize::MAX",
+        "Complex models like SearchJobStatus have many fields - roundtrip properties would catch serialization bugs"
+      ],
+      "plan": [
+        "Add proptest to workspace dependencies in root Cargo.toml",
+        "Create property_pagination_tests.rs testing offset/count/has_next properties",
+        "Create property_serde_tests.rs with Arbitrary implementations for models",
+        "Create property_date_tests.rs for timestamp parsing edge cases",
+        "Add Arbitrary derive implementations for key models",
+        "Run proptest to find edge cases and fix any discovered bugs",
+        "Add proptest to CI pipeline with --release for faster generation",
+        "Verify by running: cargo test -p splunk-client --test property_pagination_tests"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0432",
+      "status": "todo",
+      "title": "Add performance benchmarks for critical paths",
+      "description": "Implement Criterion-based benchmarks for critical performance paths to prevent regressions and establish baselines. Current codebase has only one benchmark file (crates/tui/benches/spawn_overhead.rs).\n\nBenchmark targets:\n- JSON parsing: 1k/10k/100k result sets\n- CSV/table formatting: wide datasets (1000x50)\n- XML parsing for health responses\n- SPL syntax highlighting\n- Search screen rendering\n- Memory usage during pagination\n\nBenchmarks run in CI to detect performance regressions. Establish baselines for:\n- Parsing: <10ms for 10MB JSON\n- Formatting: <5ms for 1000-row CSV\n- Rendering: <1ms for virtual scrolling",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "testing",
+        "performance",
+        "benchmarks"
+      ],
+      "scope": [
+        "crates/client/benches/",
+        "crates/cli/benches/",
+        "crates/tui/benches/"
+      ],
+      "evidence": [
+        "Only one benchmark exists: spawn_overhead.rs (crates/tui/benches/)",
+        "No performance baselines established for parsing, formatting, or rendering",
+        "Large search results could cause performance issues without measurement",
+        "Criterion configured but underutilized in workspace"
+      ],
+      "plan": [
+        "Create parsing_benchmarks.rs for JSON/XML parsing with varying sizes",
+        "Create formatter_benchmarks.rs for CSV, table, and JSON formatting",
+        "Create rendering_benchmarks.rs for TUI screen rendering",
+        "Add memory usage benchmarks for pagination scenarios",
+        "Configure benchmark CI job to run on PRs with performance comparison",
+        "Add benches to Makefile targets (make bench)",
+        "Document performance baselines in docs/performance.md",
+        "Verify by running: cargo bench -p splunk-client"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0433",
+      "status": "todo",
+      "title": "Add first-run tutorial and onboarding wizard to TUI",
+      "description": "Create an interactive first-run tutorial that guides new users through connecting to Splunk, running their first search, and understanding keybindings. Currently users must read docs to get started.\n\nTutorial flow:\n1. Welcome screen with quick setup\n2. Profile creation wizard (guided config.json creation)\n3. Connection test with visual feedback\n4. Guided first search with explanation\n5. Keybinding tutorial overlay\n6. Export/save results demonstration\n\nThe tutorial launches automatically on first run (detected by config absence) and can be replayed via '?' help menu. Uses the existing popup system and follows TUI patterns.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "onboarding",
+        "tutorial"
+      ],
+      "scope": [
+        "crates/tui/src/onboarding/",
+        "crates/tui/src/app/popups/",
+        "crates/tui/src/ui/screens/"
+      ],
+      "evidence": [
+        "No onboarding or tutorial system exists - users must read README/docs",
+        "Popup system exists for interactive dialogs (crates/tui/src/app/popups/)",
+        "Profile creation currently requires manual config.json editing",
+        "TUI has 25+ screens with complex keybindings - steep learning curve"
+      ],
+      "plan": [
+        "Create onboarding/ module with tutorial state machine",
+        "Add TutorialWizard popup with step-by-step guidance",
+        "Implement profile creation wizard UI",
+        "Add connection test with visual success/failure feedback",
+        "Create keybinding overlay that highlights keys during tutorial",
+        "Add 'Replay Tutorial' option to Settings screen",
+        "Add --skip-tutorial flag for automation",
+        "Write tests for tutorial flow",
+        "Verify by running: splunk-tui with no config and seeing tutorial launch"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0434",
+      "status": "todo",
+      "title": "Add chaos and fault injection tests for resilience",
+      "description": "Implement chaos engineering tests to verify resilience under network failures, partial responses, and timing issues. Current error recovery tests are limited to specific scenarios.\n\nChaos scenarios:\n- Network jitter (random delays 10-500ms)\n- Partial/truncated JSON responses\n- Connection drops mid-stream\n- Rapid status code changes (rate limiting simulation)\n- Memory pressure (limited buffer sizes)\n- Clock skew (token expiry edge cases)\n\nUses wiremock response templates with randomization and fault injection. Tests verify client retries, timeout handling, and graceful degradation.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "testing",
+        "resilience",
+        "chaos-engineering"
+      ],
+      "scope": [
+        "crates/client/tests/chaos_*.rs",
+        "crates/client/src/client/retry.rs"
+      ],
+      "evidence": [
+        "Error recovery tests exist but are limited (error_recovery_*.rs - 4 files)",
+        "No chaos testing for network jitter, partial responses, or connection drops",
+        "Retry logic exists but not stress-tested with rapid failures",
+        "Token refresh during pagination not tested under timing stress"
+      ],
+      "plan": [
+        "Create chaos_network_tests.rs with jitter, partial responses, drops",
+        "Create chaos_timing_tests.rs for clock skew and token expiry edge cases",
+        "Add rapid-status-change test simulating flapping server",
+        "Test session refresh during pagination with induced failures",
+        "Add memory pressure tests with limited buffer sizes",
+        "Document chaos test methodology in docs/testing.md",
+        "Run chaos tests in CI with multiple seeds",
+        "Verify by running: cargo test -p splunk-client --test chaos_network_tests"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0435",
+      "status": "todo",
+      "title": "Create examples directory with common workflow scripts",
+      "description": "Create a comprehensive examples/ directory with executable workflow scripts demonstrating real-world Splunk operations. Currently docs describe commands but don't show complete workflows.\n\nExample categories:\n1. Daily Operations: health checks, disk usage reports, job cleanup\n2. Incident Response: rapid search, alert investigation, log export\n3. Capacity Planning: index growth, license usage, retention analysis\n4. Security Auditing: login tracking, permission review, config changes\n5. Automation: scheduled reports, bulk operations, data onboarding\n\nEach example includes: README, executable script, sample output, and explanation of key concepts. Examples serve as copy-paste starting points for users.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "docs",
+        "examples",
+        "workflows",
+        "scripting"
+      ],
+      "scope": [
+        "examples/",
+        "docs/workflows.md"
+      ],
+      "evidence": [
+        "No examples/ directory exists in repository root",
+        "README shows individual commands but not complete workflows",
+        "Users must construct complex operations from scratch",
+        "No automation examples for CI/CD or scheduled tasks"
+      ],
+      "plan": [
+        "Create examples/ directory structure with category subdirectories",
+        "Write 01-basic/ examples: first search, export results, job management",
+        "Write 02-intermediate/ examples: incident response, health monitoring",
+        "Write 03-advanced/ examples: bulk operations, automation scripts",
+        "Add example-specific README files with explanations",
+        "Create examples/README.md with navigation and prerequisites",
+        "Add make examples-test to validate examples in CI",
+        "Verify by running: ls examples/ and seeing complete structure"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0436",
+      "status": "todo",
+      "title": "Add TUI command palette for quick navigation",
+      "description": "Implement a command palette (Ctrl+P) that provides quick access to all TUI actions, screens, and commands via fuzzy search. Reduces cognitive load by not requiring users to remember all keybindings.\n\nFeatures:\n- Fuzzy search through all available actions\n- Context-aware suggestions based on current screen\n- Recent commands history\n- Keyboard shortcut hints\n- Quick navigation to any screen\n- Action preview/description\n\nPattern inspired by VS Code command palette and vim's : command. Uses existing popup infrastructure.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "navigation"
+      ],
+      "scope": [
+        "crates/tui/src/app/popups/command_palette.rs",
+        "crates/tui/src/input/keymap/"
+      ],
+      "evidence": [
+        "TUI has 20+ screens with 100+ keybindings - hard to remember all",
+        "Current help system (? key) is static and requires reading",
+        "No quick navigation between distant screens (must Tab through)",
+        "Popup infrastructure exists and can be extended"
+      ],
+      "plan": [
+        "Create CommandPalette popup with fuzzy search input",
+        "Define CommandPaletteItem struct for actions with metadata",
+        "Implement fuzzy matching algorithm (fuse-rust or similar)",
+        "Add Ctrl+P binding to global keymap",
+        "Populate palette with all available actions from current context",
+        "Add recent commands tracking and prioritization",
+        "Add visual keyboard shortcut hints in palette",
+        "Write tests for palette filtering and selection",
+        "Verify by running: splunk-tui, press Ctrl+P, search 'export'"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0437",
+      "status": "todo",
+      "title": "Add YAML and Markdown export formats",
+      "description": "Extend export capabilities to support YAML and Markdown formats. Current exports support JSON and CSV. YAML is human-friendly for configuration, Markdown is useful for documentation and reports.\n\nUse cases:\n- Export saved searches to YAML for GitOps/version control\n- Generate Markdown reports from health checks for documentation\n- Human-readable config backups\n- Documentation generation from live data\n\nImplementation adds YamlFormatter and MarkdownFormatter following existing formatter patterns.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "cli",
+        "tui",
+        "export",
+        "formats"
+      ],
+      "scope": [
+        "crates/cli/src/formatters/mod.rs",
+        "crates/tui/src/export.rs",
+        "crates/tui/src/action/format.rs"
+      ],
+      "evidence": [
+        "Current formats: JSON, CSV, XML, Table (crates/cli/src/formatters/mod.rs:84-89)",
+        "TUI only supports JSON and CSV export (crates/tui/src/export.rs:28-36)",
+        "YAML would be ideal for saved search/config exports",
+        "Markdown useful for health reports and documentation"
+      ],
+      "plan": [
+        "Add Yaml and Markdown variants to OutputFormat enum",
+        "Implement YamlFormatter using serde_yaml crate",
+        "Implement MarkdownFormatter with table generation",
+        "Add format to TUI ExportFormat enum",
+        "Update TUI export to handle YAML and Markdown",
+        "Add tests for new formatters",
+        "Update docs with new format documentation",
+        "Verify by running: splunk-cli health --format markdown"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0438",
+      "status": "todo",
+      "title": "Add test data generators using fake crate",
+      "description": "Create test data generators using the fake crate to produce realistic Splunk data for testing. Current fixtures are static JSON files that don't scale or vary.\n\nGenerators:\n- SearchResultsGenerator: configurable row/column count, time ranges, null handling\n- SplQueryGenerator: valid, invalid, and edge-case SPL queries\n- ClusterTopologyGenerator: realistic cluster topologies with configurable size\n- LogEntryGenerator: realistic Splunk log formats\n- User/App/Index generators for bulk testing\n\nEnables scalable testing with varied data without manual fixture creation.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "testing",
+        "fixtures",
+        "generators"
+      ],
+      "scope": [
+        "crates/client/src/testing/generators.rs",
+        "crates/client/fixtures/generated/"
+      ],
+      "evidence": [
+        "Current fixtures are 63 static JSON files (crates/client/fixtures/)",
+        "No dynamic test data generation - fixtures become stale",
+        "Hard to test pagination with only fixed-size fixtures",
+        "No generator for realistic SPL queries or cluster topologies"
+      ],
+      "plan": [
+        "Add fake and rand to workspace dependencies",
+        "Create generators.rs with SearchResultsGenerator",
+        "Add SplQueryGenerator with valid/invalid/edge-case modes",
+        "Add ClusterTopologyGenerator for scalable cluster testing",
+        "Implement realistic log message generation with templates",
+        "Add fixture regeneration script for updating static fixtures",
+        "Use generators in property-based tests",
+        "Verify by running: cargo test -p splunk-client --features test-utils with generated data"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0439",
+      "status": "todo",
+      "title": "Add TUI session persistence and restore",
+      "description": "Implement session persistence that saves and restores TUI state between sessions. Users can resume work after closing the TUI.\n\nPersisted state:\n- Search history and current query\n- Open tabs and their state\n- Scroll positions and selections\n- Export settings and recent paths\n- Profile and theme preferences\n\nState saved on exit and periodically. Restored on launch unless --fresh flag used. Uses existing config persistence infrastructure.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "persistence"
+      ],
+      "scope": [
+        "crates/config/src/persistence/state.rs",
+        "crates/tui/src/app/state.rs"
+      ],
+      "evidence": [
+        "Config persistence exists but no session state persistence",
+        "Search history lost on TUI exit",
+        "Scroll positions and selections reset on restart",
+        "Users must reconstruct their workflow on each TUI launch"
+      ],
+      "plan": [
+        "Create SessionState struct with all persistable state",
+        "Add state persistence to config persistence module",
+        "Implement state save on exit and periodic auto-save",
+        "Add state restore on TUI launch",
+        "Add --fresh flag to start without restoring state",
+        "Add state migration for version compatibility",
+        "Add privacy redaction for sensitive query data",
+        "Write tests for state save/restore roundtrip",
+        "Verify by running: splunk-tui, search something, quit, relaunch - query restored"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0440",
+      "status": "todo",
+      "title": "Add client-side response caching for repeated queries",
+      "description": "Implement intelligent client-side caching for API responses to reduce server load and improve perceived performance. Cache GET requests with TTL based on endpoint volatility.\n\nCache features:\n- In-memory LRU cache with configurable size\n- TTL per endpoint type (indexes: 60s, jobs: 10s, health: 30s)\n- Cache invalidation on mutating operations\n- Cache-control header respect\n- Optional persistent disk cache\n- Cache statistics and introspection\n\nBenefits:\n- Faster TUI navigation between screens\n- Reduced Splunk server load\n- Better offline experience with stale-while-revalidate",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "client",
+        "performance",
+        "caching"
+      ],
+      "scope": [
+        "crates/client/src/client/cache.rs",
+        "crates/client/src/client/mod.rs"
+      ],
+      "evidence": [
+        "No client-side caching exists - every screen refresh hits server",
+        "TUI health check polls every 60s (configurable) but always fetches",
+        "Repeated index list calls within seconds return same data",
+        "No cache-control or etag handling in current client"
+      ],
+      "plan": [
+        "Create cache.rs module with Cache and CacheEntry structs",
+        "Implement LRU cache with configurable size and TTL per endpoint",
+        "Add cache layer to Client HTTP middleware",
+        "Define cache policies per endpoint (cacheable, TTL, invalidation)",
+        "Add cache invalidation on POST/PUT/DELETE operations",
+        "Add --no-cache flag to CLI for fresh data",
+        "Add cache stats to debug output",
+        "Write tests for cache hit/miss/expiration",
+        "Verify by running: splunk-cli indexes list twice and seeing second request cached"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:07:26Z",
+      "updated_at": "2026-02-08T15:07:26Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0441",
+      "status": "todo",
+      "title": "Add Prometheus metrics exporter for production observability",
+      "description": "Implement Prometheus metrics export endpoint for monitoring splunk-cli/splunk-tui in production environments. Current metrics are defined in crates/client/src/metrics.rs but never exported - the module explicitly documents this gap.\n\nMetrics to export:\n- splunk_api_request_duration_seconds (histogram)\n- splunk_api_requests_total (counter)\n- splunk_api_retries_total (counter)\n- splunk_api_errors_total (counter)\n- splunk_tui_frame_render_duration (histogram)\n- splunk_tui_action_queue_depth (gauge)\n\nImplementation adds metrics-exporter-prometheus or metrics-exporter-otlp, initializes recorder at startup, and exposes /metrics endpoint for CLI mode or push gateway support for TUI.\n\nCritical for production deployments where operators need visibility into Splunk API usage patterns, error rates, and client performance.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "observability",
+        "metrics",
+        "prometheus",
+        "production"
+      ],
+      "scope": [
+        "crates/client/src/metrics_exporter.rs",
+        "crates/client/src/metrics.rs",
+        "crates/cli/src/main.rs",
+        "crates/tui/src/main.rs"
+      ],
+      "evidence": [
+        "Metrics defined but never exported (crates/client/src/metrics.rs:8-11): \"What this module does NOT handle: Metrics exposition/export\"",
+        "Metrics defined: request_duration, requests_total, retries_total, errors_total (crates/client/src/metrics.rs:21-31)",
+        "No metrics-exporter-prometheus or metrics-exporter-otlp in Cargo.toml dependencies",
+        "Production deployments have no visibility into API client behavior, error rates, or performance"
+      ],
+      "plan": [
+        "Add metrics-exporter-prometheus to workspace dependencies",
+        "Create metrics_exporter.rs module with PrometheusBuilder initialization",
+        "Add --metrics-bind flag to CLI for /metrics endpoint address",
+        "Initialize metrics recorder in CLI main.rs before command execution",
+        "Add TUI metrics: frame render time, action queue depth, memory usage",
+        "Document metrics and their labels in docs/observability.md",
+        "Add Grafana dashboard JSON example",
+        "Verify by running: splunk-cli --metrics-bind localhost:9090 search '...' & and curl localhost:9090/metrics"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0442",
+      "status": "todo",
+      "title": "Add OpenTelemetry distributed tracing integration",
+      "description": "Implement OpenTelemetry tracing to provide distributed tracing across CLI/TUI operations and Splunk API calls. Current tracing uses tracing crate but has no span propagation or export.\n\nFeatures:\n- Automatic span creation for API requests with correlation IDs\n- Span propagation through async boundaries\n- OTLP export to Jaeger/Tempo/Honeycomb\n- Action-to-response latency tracking in TUI\n- B3/W3C trace context propagation for Splunk correlation\n\nSpans track:\n- API request lifecycle (start → retry → complete)\n- TUI action handling (dispatch → side effect → render)\n- Search execution (parse → dispatch → poll → results)\n\nCritical for debugging performance issues in production and correlating client behavior with Splunk server logs.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "observability",
+        "tracing",
+        "opentelemetry",
+        "debugging"
+      ],
+      "scope": [
+        "crates/client/src/tracing.rs",
+        "crates/client/src/endpoints/request.rs",
+        "crates/tui/src/runtime/side_effects/dispatcher.rs"
+      ],
+      "evidence": [
+        "tracing crate used but no #[instrument] attributes found (search result: none)",
+        "Request lifecycle not tracked: send_request_with_retry has no spans (crates/client/src/endpoints/request.rs:174-421)",
+        "Action handlers not instrumented: dispatcher.rs has 40+ handlers without spans",
+        "X-Splunk-Request-Id extracted but not used for correlation (crates/client/src/endpoints/request.rs:319-322)",
+        "No opentelemetry or tracing-opentelemetry dependencies in Cargo.toml"
+      ],
+      "plan": [
+        "Add opentelemetry and tracing-opentelemetry to workspace dependencies",
+        "Create tracing.rs module with OTLP pipeline initialization",
+        "Add #[instrument] to API request methods with correlation ID fields",
+        "Instrument TUI action dispatcher with action type and duration spans",
+        "Add trace context propagation to HTTP headers",
+        "Add --otlp-endpoint flag for collector configuration",
+        "Document tracing setup in docs/observability.md",
+        "Verify by running: OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 splunk-cli search '...' and seeing traces in Jaeger"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0443",
+      "status": "todo",
+      "title": "Add containerization support with Dockerfile and docker-compose",
+      "description": "Create Docker and container orchestration support for cloud-native deployments. No Dockerfile, docker-compose.yml, or .dockerignore exists in the repository.\n\nDeliverables:\n- Multi-stage Dockerfile with distroless final image for security\n- Multi-arch builds (amd64, arm64) with buildx\n- docker-compose.yml for local development with Splunk\n- .dockerignore for efficient builds\n- GitHub Actions workflow for image publishing\n- Helm chart for Kubernetes deployment\n\nUse cases:\n- Run splunk-cli in CI/CD pipelines without installing Rust\n- Deploy TUI as sidecar in Kubernetes for cluster introspection\n- Consistent environment across dev/staging/prod\n- Air-gapped deployments with private registry\n\nSecurity focus: Use distroless/cc-debian12 base, non-root user, minimal attack surface.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "containers",
+        "docker",
+        "kubernetes",
+        "deployment"
+      ],
+      "scope": [
+        "Dockerfile",
+        "docker-compose.yml",
+        ".dockerignore",
+        ".github/workflows/docker.yml",
+        "helm/"
+      ],
+      "evidence": [
+        "No Dockerfile exists in repository root",
+        "No docker-compose.yml for local development environment",
+        "No container images published for splunk-tui/splunk-cli",
+        "Users must build from source - no pre-built container option",
+        "No Kubernetes deployment manifests or Helm charts"
+      ],
+      "plan": [
+        "Create multi-stage Dockerfile with cargo-chef for layer caching",
+        "Use distroless/cc-debian12 as final image base for security",
+        "Create docker-compose.yml with Splunk Enterprise service and CLI/TUI",
+        "Add .dockerignore for efficient context",
+        "Create .github/workflows/docker.yml for multi-arch builds",
+        "Create basic Helm chart in helm/ directory",
+        "Document container usage in docs/containers.md",
+        "Verify by running: docker build -t splunk-tui . && docker run --rm splunk-tui --version"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0444",
+      "status": "todo",
+      "title": "Add GitHub Actions for Splunk operations in CI/CD",
+      "description": "Create official GitHub Actions for common Splunk operations to enable CI/CD integration. Similar to how aws-actions or azure/actions work, these actions enable workflows that interact with Splunk.\n\nActions to create:\n- splunk-search: Execute SPL and export results as artifacts\n- splunk-saved-search-run: Trigger saved searches and wait for completion\n- splunk-health-check: Verify Splunk instance health before deployment\n- splunk-config-validate: Validate configuration files against Splunk\n- splunk-hec-send: Send events via HEC for testing\n\nEach action:\n- Uses container image for fast startup\n- Accepts Splunk connection via inputs or env vars\n- Outputs results for downstream steps\n- Supports masking of sensitive values\n\nEnables workflows like: validate config → run health check → execute smoke tests → deploy → verify.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "ci-cd",
+        "github-actions",
+        "automation",
+        "integration"
+      ],
+      "scope": [
+        ".github/actions/",
+        "action.yml"
+      ],
+      "evidence": [
+        "No .github/actions/ directory exists",
+        "No GitHub Actions for Splunk operations found",
+        "CI/CD integration requires manual scripting with splunk-cli",
+        "Other tools (AWS, Azure, GCP) have official GitHub Actions but Splunk ecosystem lacks them"
+      ],
+      "plan": [
+        "Create .github/actions/search/action.yml with inputs for query, time range, output format",
+        "Create .github/actions/health-check/action.yml for pre-deployment validation",
+        "Create .github/actions/saved-search-run/action.yml for smoke testing",
+        "Add example workflow files in .github/workflows/examples/",
+        "Document actions in docs/github-actions.md",
+        "Publish to GitHub Marketplace",
+        "Verify by creating test workflow using splunk-search action and seeing results"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0445",
+      "status": "todo",
+      "title": "Add undo/redo system for destructive TUI operations",
+      "description": "Implement undo/redo system for destructive operations in TUI. Currently only simple Y/N confirmations exist - no recovery after confirmation. Users need a safety net for accidental deletions.\n\nOperations supporting undo:\n- Delete index (with 30-second grace period)\n- Delete saved search\n- Delete job\n- Delete lookup\n- Modify index settings (rollback)\n\nImplementation:\n- Undo buffer with time-based expiration (30s default)\n- Visual undo toast with countdown\n- Ctrl+Z to undo last operation\n- Ctrl+Shift+Z to redo\n- Undo history in settings for review\n\nPattern: 'Trash' style - operation queued, executed after grace period unless undone. For immediate operations (like API deletions), show recovery instructions or implement 'soft delete' where possible.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "safety",
+        "undo"
+      ],
+      "scope": [
+        "crates/tui/src/undo.rs",
+        "crates/tui/src/app/popups/confirm.rs",
+        "crates/tui/src/app/actions.rs"
+      ],
+      "evidence": [
+        "Only Y/N confirmation dialogs exist - no undo capability (crates/tui/src/app/popups/confirm.rs:34-44)",
+        "Destructive operations execute immediately without recovery option",
+        "No undo buffer or command history for reversal",
+        "Users report fear of accidental deletions in complex TUI with many keybindings"
+      ],
+      "plan": [
+        "Create undo.rs module with UndoBuffer and UndoableOperation structs",
+        "Define Undoable trait for operations that can be undone",
+        "Add undo action to global keymap (Ctrl+Z)",
+        "Modify confirmation flow to support delayed execution with countdown toast",
+        "Implement undo for index deletion (recreate with same settings)",
+        "Add undo history viewer in Settings screen",
+        "Write tests for undo/redo roundtrip",
+        "Verify by deleting an index, pressing Ctrl+Z within 30s, and seeing it restored"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0446",
+      "status": "todo",
+      "title": "Add circuit breaker pattern for resilient API calls",
+      "description": "Implement circuit breaker pattern to prevent cascading failures when Splunk API is struggling. Current retry logic retries forever without considering overall system health.\n\nCircuit breaker states:\n- Closed: Normal operation, requests pass through\n- Open: Failure threshold exceeded, requests fail fast\n- Half-Open: Testing if service recovered\n\nConfiguration per endpoint:\n- failure_threshold: 5 errors in 60s to open\n- reset_timeout: 30s before half-open test\n- half_open_requests: 1 test request allowed\n\nBenefits:\n- Fast fail during outages (better UX than hanging)\n- Prevents overwhelming struggling Splunk instances\n- Automatic recovery detection\n- Metrics for circuit state changes\n\nImplementation wraps the client with circuit breaker middleware using failsafe or custom implementation.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "reliability",
+        "circuit-breaker",
+        "resilience",
+        "client"
+      ],
+      "scope": [
+        "crates/client/src/client/circuit_breaker.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/client/src/endpoints/request.rs"
+      ],
+      "evidence": [
+        "Retry logic exists but retries forever without circuit breaking (crates/client/src/endpoints/request.rs:174-421)",
+        "No failure threshold or backoff between batches of requests",
+        "All requests continue to failing endpoint during outages",
+        "No metrics for tracking endpoint health over time"
+      ],
+      "plan": [
+        "Create circuit_breaker.rs with CircuitBreaker and CircuitState enums",
+        "Implement failure tracking with sliding window per endpoint",
+        "Add circuit breaker middleware to HTTP client",
+        "Emit metrics for circuit state transitions",
+        "Add TUI indicator showing circuit state for current profile",
+        "Add --circuit-breaker flag to CLI for enable/disable",
+        "Write chaos tests simulating endpoint failures",
+        "Verify by simulating 5 failures and seeing circuit open with fast-fail"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0447",
+      "status": "todo",
+      "title": "Add enhanced IDE support with VS Code and JetBrains configurations",
+      "description": "Create comprehensive IDE configuration files for VS Code and JetBrains IDEs to improve developer experience. Currently no .vscode/ or .idea/ configurations are present, requiring manual setup.\n\nVS Code deliverables:\n- settings.json: rust-analyzer config, formatting, tasks\n- launch.json: Debug configurations for CLI and TUI\n- tasks.json: Common make commands as tasks\n- extensions.json: Recommended extensions\n\nJetBrains deliverables:\n- runConfigurations/: Debug configs for each binary\n- Code style settings\n- Inspection profiles\n\nAlso adds:\n- .editorconfig for consistent formatting across editors\n- cargo-watch configuration for auto-rebuild\n- rust-analyzer settings optimized for workspace\n\nReduces onboarding friction for new contributors and ensures consistent development environment.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "developer-experience",
+        "ide",
+        "tooling",
+        "contributing"
+      ],
+      "scope": [
+        ".vscode/",
+        ".idea/",
+        ".editorconfig"
+      ],
+      "evidence": [
+        "No .vscode/settings.json for rust-analyzer configuration",
+        "No .vscode/launch.json for debugging CLI/TUI",
+        "No .editorconfig for cross-editor consistency",
+        "Contributors must manually configure IDE settings",
+        "No debug configurations for the 3 binaries (splunk-cli, splunk-tui, generate-tui-docs)"
+      ],
+      "plan": [
+        "Create .vscode/settings.json with rust-analyzer and formatting config",
+        "Create .vscode/launch.json with debug configs for all binaries",
+        "Create .vscode/tasks.json mapping Makefile targets",
+        "Create .vscode/extensions.json with recommended extensions",
+        "Create .editorconfig for consistent indentation and formatting",
+        "Add .idea/runConfigurations/ for JetBrains IDEs",
+        "Document IDE setup in docs/contributing.md",
+        "Verify by opening project in VS Code and seeing rust-analyzer working with completions"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0448",
+      "status": "todo",
+      "title": "Add configuration encryption at rest for sensitive profiles",
+      "description": "Implement encryption at rest for configuration files containing credentials. Currently config.json stores API tokens and passwords in plaintext. This is a security risk for shared systems or backup exposure.\n\nEncryption features:\n- AES-256-GCM encryption of sensitive fields\n- Argon2id key derivation from user password\n- Keyring integration for passwordless operation (store encryption key in OS keychain)\n- Automatic encryption detection and migration\n- CLI commands for encrypt/decrypt/rotate-key\n\nFields encrypted:\n- api_token\n- password\n- session tokens\n\nImplementation uses ring or aes-gcm crates. Master key can be:\n1. Derived from user-provided password\n2. Random key stored in OS keyring (default)\n3. Environment variable for CI/CD\n\nCritical for enterprise security requirements.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "security",
+        "encryption",
+        "configuration",
+        "enterprise"
+      ],
+      "scope": [
+        "crates/config/src/encryption.rs",
+        "crates/config/src/persistence/profiles.rs",
+        "crates/cli/src/commands/config.rs"
+      ],
+      "evidence": [
+        "Config stored as plaintext JSON (crates/config/src/persistence/profiles.rs)",
+        "API tokens and passwords visible in config.json",
+        "No encryption at rest - backups and file permissions are only protection",
+        "Keyring integration exists but only as opt-in, not default",
+        "No encrypted config format or migration path"
+      ],
+      "plan": [
+        "Add aes-gcm and argon2 to workspace dependencies",
+        "Create encryption.rs module with encrypt/decrypt functions",
+        "Define EncryptedProfile format with ciphertext and salt",
+        "Implement key derivation from password or keyring",
+        "Add --encrypt flag to config init command",
+        "Add config encrypt/decrypt/rotate-key commands",
+        "Create automatic migration from plaintext to encrypted",
+        "Write tests for encryption roundtrip and key rotation",
+        "Verify by running: splunk-cli config encrypt and seeing encrypted config.json"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0449",
+      "status": "todo",
+      "title": "Add graceful degradation for partial multi-instance failures",
+      "description": "Implement graceful degradation when some instances in multi-instance dashboard fail. Currently multi-instance operations are all-or-nothing - one failure can prevent viewing data from healthy instances.\n\nFeatures:\n- Per-instance error tracking\n- Partial results display with visual indicators\n- Cached fallback for failed instances\n- Automatic retry with exponential backoff\n- 'Last successful' timestamp per instance\n\nVisual indicators:\n- Green: Instance healthy, data fresh\n- Yellow: Instance failed, showing cached data\n- Red: Instance failed, no cached data available\n\nBenefits:\n- Better UX during partial outages\n- Continue monitoring healthy instances despite failures\n- Clear visibility into which instances have issues\n- Reduced alert fatigue from transient failures",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "reliability",
+        "multi-instance",
+        "graceful-degradation",
+        "tui"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/multi_instance.rs",
+        "crates/tui/src/ui/screens/multi_instance.rs"
+      ],
+      "evidence": [
+        "Multi-instance dashboard fetches all instances - one failure affects all (crates/tui/src/runtime/side_effects/multi_instance.rs)",
+        "No per-instance error isolation",
+        "No cached data fallback for failed instances",
+        "No visual indication of partial vs complete data"
+      ],
+      "plan": [
+        "Refactor multi_instance fetch to use join_all with individual error handling",
+        "Add InstanceResult enum with Data, Cached, Failed variants",
+        "Implement per-instance caching with TTL",
+        "Add visual indicators in multi_instance screen for instance health",
+        "Add 'last successful fetch' timestamp display",
+        "Add retry button for individual failed instances",
+        "Write tests for partial failure scenarios",
+        "Verify by configuring 3 instances, taking one down, and seeing 2 healthy + 1 cached/failed"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0450",
+      "status": "todo",
+      "title": "Add comprehensive GitHub Actions CI/CD pipeline",
+      "description": "Create complete GitHub Actions CI/CD pipeline with testing, security scanning, documentation, and release automation. Currently minimal CI automation exists.\n\nWorkflows to create:\n- ci.yml: Test matrix (stable, nightly), formatting, clippy, doc tests\n- security.yml: cargo-audit, cargo-deny, secret scanning\n- coverage.yml: Code coverage with codecov upload\n- docs.yml: Deploy rustdocs to GitHub Pages\n- release.yml: Multi-platform builds, changelog generation, GitHub releases\n- bench.yml: Performance regression detection\n\nFeatures:\n- Test on Linux, macOS, Windows\n- Cache dependencies for fast builds\n- Security scanning on dependency changes\n- Automated changelog with git-cliff\n- Multi-arch container builds\n- Automated crates.io publishing (future)\n\nReplaces/enhances existing Makefile CI with cloud-native automation.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "ci-cd",
+        "github-actions",
+        "automation",
+        "devops"
+      ],
+      "scope": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/security.yml",
+        ".github/workflows/release.yml"
+      ],
+      "evidence": [
+        "No .github/workflows/ directory exists",
+        "CI only runs via local make ci - no cloud automation",
+        "No automated testing on PRs from forks",
+        "No security scanning in CI pipeline",
+        "Release process is manual - no automated builds or changelogs"
+      ],
+      "plan": [
+        "Create .github/workflows/ci.yml with test matrix and checks",
+        "Create .github/workflows/security.yml with cargo-audit and cargo-deny",
+        "Create .github/workflows/coverage.yml with tarpaulin and codecov",
+        "Create .github/workflows/docs.yml for GitHub Pages deployment",
+        "Create .github/workflows/release.yml with multi-platform builds",
+        "Add cliff.toml for changelog generation",
+        "Add release.toml for cargo-release configuration",
+        "Verify by pushing to branch and seeing all workflows pass"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0451",
+      "status": "todo",
+      "title": "Add transaction support for multi-step configuration changes",
+      "description": "Implement transaction support for atomic multi-step configuration operations. Currently multi-step operations lack atomicity - partial failures can leave system in inconsistent state.\n\nTransaction features:\n- Begin/commit/rollback for configuration changes\n- Savepoint support for nested operations\n- Automatic rollback on error\n- Preview/dry-run mode showing planned changes\n- Transaction log for audit trail\n\nUse cases:\n- Create index + setup inputs + configure forwarding (all succeed or all rollback)\n- Modify multiple saved searches atomically\n- Bulk user/role changes with consistency\n\nImplementation uses two-phase commit pattern:\n1. Phase 1: Validate all operations, acquire locks\n2. Phase 2: Execute operations, commit or rollback\n\nBenefits: Data consistency, auditability, safer bulk operations.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "reliability",
+        "transactions",
+        "atomicity",
+        "configuration"
+      ],
+      "scope": [
+        "crates/client/src/transaction.rs",
+        "crates/client/src/client/mod.rs",
+        "crates/cli/src/commands/"
+      ],
+      "evidence": [
+        "No transaction support in client or CLI - operations are individual API calls",
+        "Multi-step config changes can fail partially leaving inconsistent state",
+        "No rollback mechanism for failed operations",
+        "No preview/dry-run for complex multi-resource changes"
+      ],
+      "plan": [
+        "Create transaction.rs with Transaction and TransactionManager structs",
+        "Define TransactionOperation trait for reversible operations",
+        "Implement two-phase commit with validation and execution phases",
+        "Add transaction begin/commit/rollback to client",
+        "Add --transaction flag to CLI for batch operations",
+        "Add transaction log persistence for audit trail",
+        "Write tests for transaction commit and rollback scenarios",
+        "Verify by running: splunk-cli --transaction index create ... input create ... commit"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0452",
+      "status": "todo",
+      "title": "Add colorblind-friendly and high-contrast TUI themes",
+      "description": "Implement accessibility-focused themes for users with visual impairments. Current themes may not be accessible to users with color vision deficiencies.\n\nNew themes:\n- High Contrast: Pure black/white with clear borders, WCAG AAA compliant\n- Deuteranopia-friendly: Blue/yellow palette (red-green safe)\n- Protanopia-friendly: Blue/orange palette (red-green safe)\n- Tritanopia-friendly: Red/teal palette (blue-yellow safe)\n- Monochrome: Patterns and intensity instead of color\n\nFeatures:\n- Theme preview in settings\n- Automatic detection from terminal capabilities\n- Custom color overrides per user\n- Pattern/texture indicators (not just color)\n\nImplementation adds new theme variants to existing theme system in crates/tui/src/ui/theme.rs.\n\nCritical for inclusive design and accessibility compliance.",
+      "priority": "low",
+      "tags": [
+        "innovation",
+        "accessibility",
+        "a11y",
+        "themes",
+        "inclusive-design"
+      ],
+      "scope": [
+        "crates/tui/src/ui/theme.rs",
+        "crates/tui/src/ui/screens/settings.rs",
+        "crates/config/src/types/theme.rs"
+      ],
+      "evidence": [
+        "Current themes use color without pattern/texture alternatives",
+        "No high-contrast theme option",
+        "No colorblind-friendly palettes",
+        "No accessibility settings in theme configuration",
+        "WCAG guidelines recommend not relying solely on color for information"
+      ],
+      "plan": [
+        "Add HighContrast theme variant with WCAG AAA colors",
+        "Add Deuteranopia and Protanopia-friendly palettes",
+        "Add Monochrome theme using patterns and intensity",
+        "Add pattern indicators for critical states (not just color)",
+        "Add theme preview widget showing all semantic colors",
+        "Add --theme-accessibility flag for CLI output",
+        "Write accessibility documentation in docs/accessibility.md",
+        "Verify by running: splunk-tui, open Settings, cycle themes and checking contrast ratios"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-08T15:30:00Z",
+      "updated_at": "2026-02-08T15:30:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    }
+  ]
 }
