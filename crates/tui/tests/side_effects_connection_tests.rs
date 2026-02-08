@@ -100,7 +100,9 @@ async fn test_connection_refused_error_handling() {
     };
 
     // Handle the action
-    let handle_future = handle_side_effects(action, client, action_tx, config_manager);
+    let task_tracker = TaskTracker::new();
+    let handle_future =
+        handle_side_effects(action, client, action_tx, config_manager, task_tracker);
 
     // Should complete quickly (not hang)
     match tokio::time::timeout(Duration::from_secs(5), handle_future).await {
@@ -215,7 +217,9 @@ async fn test_dns_resolution_failure() {
         offset: 0,
     };
 
-    let handle_future = handle_side_effects(action, client, action_tx, config_manager);
+    let task_tracker = TaskTracker::new();
+    let handle_future =
+        handle_side_effects(action, client, action_tx, config_manager, task_tracker);
 
     // Should complete (not hang forever)
     match tokio::time::timeout(Duration::from_secs(10), handle_future).await {
@@ -398,12 +402,13 @@ async fn test_concurrent_request_handling_under_stress() {
         let tx = harness.action_tx.clone();
         let cm = harness.config_manager.clone();
 
+        let task_tracker = TaskTracker::new();
         let handle = tokio::spawn(async move {
             let action = Action::LoadIndexes {
                 count: 10,
                 offset: 0,
             };
-            handle_side_effects(action, client, tx, cm).await;
+            handle_side_effects(action, client, tx, cm, task_tracker).await;
         });
         handles.push(handle);
     }

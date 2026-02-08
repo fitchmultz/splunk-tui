@@ -19,7 +19,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Helper to redact a query string for logging, showing only length and hash.
 fn redact_query_for_log(query: &str) -> String {
@@ -30,9 +30,13 @@ fn redact_query_for_log(query: &str) -> String {
 }
 
 /// Handle loading saved searches.
-pub async fn handle_load_saved_searches(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_saved_searches(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_saved_searches(None, None).await {
             Ok(searches) => {
                 let _ = tx.send(Action::SavedSearchesLoaded(Ok(searches))).await;
@@ -48,6 +52,7 @@ pub async fn handle_load_saved_searches(client: SharedClient, tx: Sender<Action>
 pub async fn handle_run_search(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     query: String,
     search_defaults: SearchDefaults,
     search_mode: SearchMode,
@@ -84,7 +89,7 @@ pub async fn handle_run_search(
 
     let tx_clone = tx.clone();
     let query_clone = query.clone();
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         // Create progress callback that sends Action::Progress via channel
         let progress_tx = tx_clone.clone();
         let mut progress_callback = progress_callback_to_action_sender(progress_tx);
@@ -132,12 +137,13 @@ pub async fn handle_run_search(
 pub async fn handle_load_more_search_results(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     sid: String,
     offset: usize,
     count: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.get_search_results(&sid, count, offset).await {
             Ok(results) => {
                 let _ = tx
@@ -165,6 +171,7 @@ pub async fn handle_load_more_search_results(
 pub async fn handle_validate_spl(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     search: String,
     request_id: u64,
 ) {
@@ -181,7 +188,7 @@ pub async fn handle_validate_spl(
         return;
     }
 
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.validate_spl(&search).await {
             Ok(result) => {
                 let _ = tx
@@ -216,13 +223,14 @@ pub async fn handle_validate_spl(
 pub async fn handle_update_saved_search(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     search: Option<String>,
     description: Option<String>,
     disabled: Option<bool>,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client
             .update_saved_search(&name, search.as_deref(), description.as_deref(), disabled)
             .await
@@ -241,13 +249,14 @@ pub async fn handle_update_saved_search(
 pub async fn handle_create_saved_search(
     client: SharedClient,
     action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     search: String,
     description: Option<String>,
     disabled: bool,
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         // First create the saved search
         match client.create_saved_search(&name, &search).await {
             Ok(()) => {
@@ -290,10 +299,11 @@ pub async fn handle_create_saved_search(
 pub async fn handle_delete_saved_search(
     client: SharedClient,
     action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.delete_saved_search(&name).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::SavedSearchDeleted(Ok(name))).await;
@@ -313,11 +323,12 @@ pub async fn handle_delete_saved_search(
 pub async fn handle_toggle_saved_search(
     client: SharedClient,
     action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     disabled: bool,
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client
             .update_saved_search(&name, None, None, Some(disabled))
             .await

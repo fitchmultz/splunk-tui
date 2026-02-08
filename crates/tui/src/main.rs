@@ -44,7 +44,7 @@ use splunk_config::{
 use splunk_tui::runtime::{
     client::create_client,
     config::{load_config_with_defaults, save_and_quit},
-    side_effects::{SharedClient, handle_side_effects},
+    side_effects::{SharedClient, TaskTracker, handle_side_effects},
     terminal::TerminalGuard,
 };
 
@@ -86,6 +86,9 @@ async fn main() -> Result<()> {
     // Build and authenticate client
     let client: SharedClient = Arc::new(create_client(&config).await?);
 
+    // Create task tracker for managing spawned tasks
+    let task_tracker = TaskTracker::new();
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
@@ -113,7 +116,7 @@ async fn main() -> Result<()> {
 
     // Spawn input stream task with backpressure handling
     let tx_input = tx.clone();
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         use crossterm::event::EventStream;
         use tokio::sync::mpsc::error::TrySendError;
 
@@ -240,7 +243,7 @@ async fn main() -> Result<()> {
     let tx_health = tx.clone();
     let client_health = client.clone();
     let health_check_interval = config.connection.health_check_interval_seconds;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         use tokio::sync::mpsc::error::TrySendError;
 
         let mut interval =
@@ -339,22 +342,22 @@ async fn main() -> Result<()> {
 
                         let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
-                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
+                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
 
                         // Execute follow-up action for workload pagination if derived
                         if let Some(followup) = followup_action {
-                            handle_side_effects(followup, client.clone(), tx.clone(), config_manager.clone()).await;
+                            handle_side_effects(followup, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                         }
 
                         // If navigation action, trigger load for new screen
                         if is_navigation
                             && let Some(load_action) = app.load_action_for_screen()
                         {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                         }
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                         }
                     }
                 } else if let Action::Mouse(mouse) = action {
@@ -370,32 +373,32 @@ async fn main() -> Result<()> {
                         let a = app.translate_load_more_action(a);
                         let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
-                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
+                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                         // If navigation action, trigger load for new screen
                         if is_navigation
                             && let Some(load_action) = app.load_action_for_screen()
                         {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                         }
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                         }
                     }
                 } else {
                     let was_toggle = matches!(action, Action::ToggleClusterViewMode);
                     let was_profile_switch = matches!(action, Action::ProfileSwitchResult(Ok(_)));
                     app.update(action.clone());
-                    handle_side_effects(action, client.clone(), tx.clone(), config_manager.clone()).await;
+                    handle_side_effects(action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                     // After toggle, if we're now in Peers view, trigger peers load
                     if was_toggle && app.cluster_view_mode == splunk_tui::app::ClusterViewMode::Peers {
-                        handle_side_effects(Action::LoadClusterPeers, client.clone(), tx.clone(), config_manager.clone()).await;
+                        handle_side_effects(Action::LoadClusterPeers, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                     }
                     // After successful profile switch, trigger reload for current screen
                     if was_profile_switch
                         && let Some(load_action) = app.load_action_for_screen()
                     {
-                        handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone()).await;
+                        handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                     }
                 }
             }
@@ -407,11 +410,15 @@ async fn main() -> Result<()> {
                 // Data refresh is separate from UI tick
                 if let Some(a) = app.handle_tick() {
                     app.update(a.clone());
-                    handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone()).await;
+                    handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                 }
             }
         }
     }
+
+    // Graceful shutdown: close tracker and wait for tasks
+    let _ = task_tracker.close();
+    task_tracker.wait().await;
 
     // Restore terminal
     disable_raw_mode()?;

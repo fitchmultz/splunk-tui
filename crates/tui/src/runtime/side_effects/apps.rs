@@ -15,6 +15,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
+use super::TaskTracker;
 
 /// Handle loading apps with pagination support.
 ///
@@ -23,11 +24,12 @@ use super::SharedClient;
 pub async fn handle_load_apps(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_apps(Some(count), Some(offset)).await {
             Ok(apps) => {
                 if offset == 0 {
@@ -48,9 +50,14 @@ pub async fn handle_load_apps(
 }
 
 /// Handle enabling an app.
-pub async fn handle_enable_app(client: SharedClient, tx: Sender<Action>, name: String) {
+pub async fn handle_enable_app(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.enable_app(&name).await {
             Ok(_) => {
                 let _ = tx
@@ -81,9 +88,14 @@ pub async fn handle_enable_app(client: SharedClient, tx: Sender<Action>, name: S
 }
 
 /// Handle disabling an app.
-pub async fn handle_disable_app(client: SharedClient, tx: Sender<Action>, name: String) {
+pub async fn handle_disable_app(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.disable_app(&name).await {
             Ok(_) => {
                 let _ = tx
@@ -114,9 +126,14 @@ pub async fn handle_disable_app(client: SharedClient, tx: Sender<Action>, name: 
 }
 
 /// Handle installing an app.
-pub async fn handle_install_app(client: SharedClient, tx: Sender<Action>, file_path: PathBuf) {
+pub async fn handle_install_app(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    file_path: PathBuf,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.install_app(&file_path).await {
             Ok(app) => {
                 let _ = tx
@@ -147,9 +164,14 @@ pub async fn handle_install_app(client: SharedClient, tx: Sender<Action>, file_p
 }
 
 /// Handle removing an app.
-pub async fn handle_remove_app(client: SharedClient, tx: Sender<Action>, name: String) {
+pub async fn handle_remove_app(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.remove_app(&name).await {
             Ok(_) => {
                 let _ = tx

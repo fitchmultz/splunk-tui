@@ -16,7 +16,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use crate::action::Action;
-use crate::runtime::side_effects::SharedClient;
+use crate::runtime::side_effects::{SharedClient, TaskTracker};
 
 /// Handle loading lookup tables with pagination support.
 ///
@@ -25,11 +25,12 @@ use crate::runtime::side_effects::SharedClient;
 pub async fn handle_load_lookups(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_lookup_tables(Some(count), Some(offset)).await {
             Ok(lookups) => {
                 if offset == 0 {
@@ -57,13 +58,14 @@ pub async fn handle_load_lookups(
 pub async fn handle_download_lookup(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     app: Option<String>,
     owner: Option<String>,
     output_path: PathBuf,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client
             .download_lookup_table(&name, app.as_deref(), owner.as_deref())
             .await
@@ -98,12 +100,13 @@ pub async fn handle_download_lookup(
 pub async fn handle_delete_lookup(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     app: Option<String>,
     owner: Option<String>,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client
             .delete_lookup_table(&name, app.as_deref(), owner.as_deref())
             .await

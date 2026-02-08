@@ -11,7 +11,7 @@
 use tokio::sync::mpsc::Sender;
 
 use crate::action::Action;
-use crate::runtime::side_effects::SharedClient;
+use crate::runtime::side_effects::{SharedClient, TaskTracker};
 use std::sync::Arc;
 
 /// Handle loading search peers with pagination support.
@@ -21,11 +21,12 @@ use std::sync::Arc;
 pub async fn handle_load_search_peers(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_search_peers(Some(count), Some(offset)).await {
             Ok(peers) => {
                 if offset == 0 {

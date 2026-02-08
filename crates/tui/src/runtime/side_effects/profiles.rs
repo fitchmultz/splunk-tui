@@ -17,15 +17,16 @@ use splunk_config::{ConfigManager, ProfileConfig};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::Sender};
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle switching to settings screen.
 pub async fn handle_switch_to_settings(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let cm = config_manager.lock().await;
         let state = cm.load();
         let _ = tx.send(Action::SettingsLoaded(state)).await;
@@ -36,10 +37,11 @@ pub async fn handle_switch_to_settings(
 pub async fn handle_open_profile_switcher(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
 ) {
     let config_manager_clone = config_manager.clone();
     let tx_popup = tx.clone();
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let cm = config_manager_clone.lock().await;
         let profiles: Vec<String> = cm.list_profiles().keys().cloned().collect();
         drop(cm); // Release lock before sending actions
@@ -65,13 +67,14 @@ pub async fn handle_profile_selected(
     client: SharedClient,
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     profile_name: String,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     let config_manager_clone = config_manager.clone();
     let _client_clone = client.clone();
 
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let cm = config_manager_clone.lock().await;
 
         // Get profile config
@@ -213,13 +216,14 @@ fn get_auth_mode_display(profile_config: &ProfileConfig) -> String {
 pub async fn handle_open_edit_profile(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     profile_name: String,
 ) {
     let config_manager_clone = config_manager.clone();
     let tx_clone = tx.clone();
     let name_clone = profile_name.clone();
 
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let cm = config_manager_clone.lock().await;
 
         // Get the profile config
@@ -253,6 +257,7 @@ pub async fn handle_open_edit_profile(
 pub async fn handle_save_profile(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     profile: ProfileConfig,
     use_keyring: bool,
@@ -263,7 +268,7 @@ pub async fn handle_save_profile(
     let name_clone = name.clone();
     let original_name_clone = original_name.clone();
 
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let mut cm = config_manager_clone.lock().await;
 
         // Store credentials in keyring if enabled
@@ -388,13 +393,14 @@ async fn send_profile_save_result(
 pub async fn handle_delete_profile(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
 ) {
     let config_manager_clone = config_manager.clone();
     let tx_clone = tx.clone();
     let name_clone = name.clone();
 
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let mut cm = config_manager_clone.lock().await;
 
         match cm.delete_profile(&name_clone) {

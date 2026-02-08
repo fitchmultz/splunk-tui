@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0422",
-      "status": "todo",
-      "title": "Store abort handles for spawned TUI tasks to prevent resource leaks",
-      "description": "The TUI side effect handlers spawn 50+ tokio tasks without storing abort handles. On application shutdown, these tasks may continue running unnecessarily. Store handles and abort them during graceful shutdown.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "resource-management",
-        "async",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/mod.rs",
-        "crates/tui/src/runtime/side_effects/*.rs",
-        "crates/tui/src/main.rs:116,243"
-      ],
-      "evidence": [
-        "side_effects/*.rs: tokio::spawn() called without storing JoinHandle",
-        "21+ handler modules spawn tasks for async operations",
-        "Jobs, searches, apps, users, cluster handlers all spawn tasks",
-        "No graceful shutdown mechanism for in-flight requests"
-      ],
-      "plan": [
-        "Create task tracker to store abort handles",
-        "Add AbortHandle storage to side effect context",
-        "Implement graceful shutdown that aborts pending tasks",
-        "Ensure cancellation is handled properly in spawned tasks",
-        "Verify by running `make ci` and testing shutdown behavior"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0423",
       "status": "todo",
       "title": "Add missing error path tests for core client modules",

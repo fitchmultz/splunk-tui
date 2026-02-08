@@ -14,11 +14,16 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
+use super::TaskTracker;
 
 /// Handle loading cluster info.
-pub async fn handle_load_cluster_info(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_cluster_info(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.get_cluster_info().await {
             Ok(info) => {
                 let _ = tx.send(Action::ClusterInfoLoaded(Ok(info))).await;
@@ -31,9 +36,13 @@ pub async fn handle_load_cluster_info(client: SharedClient, tx: Sender<Action>) 
 }
 
 /// Handle loading cluster peers.
-pub async fn handle_load_cluster_peers(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_cluster_peers(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.get_cluster_peers().await {
             Ok(peers) => {
                 let _ = tx.send(Action::ClusterPeersLoaded(Ok(peers))).await;
@@ -46,9 +55,14 @@ pub async fn handle_load_cluster_peers(client: SharedClient, tx: Sender<Action>)
 }
 
 /// Handle setting maintenance mode.
-pub async fn handle_set_maintenance_mode(client: SharedClient, tx: Sender<Action>, enable: bool) {
+pub async fn handle_set_maintenance_mode(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    enable: bool,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.set_maintenance_mode(enable).await {
             Ok(_) => {
                 let _ = tx.send(Action::MaintenanceModeSet { result: Ok(()) }).await;
@@ -65,9 +79,13 @@ pub async fn handle_set_maintenance_mode(client: SharedClient, tx: Sender<Action
 }
 
 /// Handle rebalancing the cluster.
-pub async fn handle_rebalance_cluster(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_rebalance_cluster(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.rebalance_cluster().await {
             Ok(_) => {
                 let _ = tx.send(Action::ClusterRebalanced { result: Ok(()) }).await;
@@ -84,9 +102,14 @@ pub async fn handle_rebalance_cluster(client: SharedClient, tx: Sender<Action>) 
 }
 
 /// Handle decommissioning a peer.
-pub async fn handle_decommission_peer(client: SharedClient, tx: Sender<Action>, peer_guid: String) {
+pub async fn handle_decommission_peer(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    peer_guid: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.decommission_peer(&peer_guid).await {
             Ok(_) => {
                 let _ = tx.send(Action::PeerDecommissioned { result: Ok(()) }).await;
@@ -103,9 +126,14 @@ pub async fn handle_decommission_peer(client: SharedClient, tx: Sender<Action>, 
 }
 
 /// Handle removing a peer from the cluster.
-pub async fn handle_remove_peer(client: SharedClient, tx: Sender<Action>, peer_guid: String) {
+pub async fn handle_remove_peer(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    peer_guid: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let peer_guids = vec![peer_guid];
         match client.remove_peers(&peer_guids).await {
             Ok(_) => {

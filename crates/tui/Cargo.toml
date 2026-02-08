@@ -24,6 +24,7 @@ splunk-config = { path = "../config" }
 
 # Async Runtime
 tokio = { workspace = true }
+tokio-util = { version = "0.7", features = ["full"] }
 futures-util = "0.3"
 
 # Date/Time

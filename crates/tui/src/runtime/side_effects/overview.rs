@@ -11,12 +11,16 @@
 use crate::action::{Action, OverviewData};
 use tokio::sync::mpsc::Sender;
 
-use super::{SharedClient, overview_fetch};
+use super::{SharedClient, TaskTracker, overview_fetch};
 
 /// Handle loading overview information from all resource endpoints.
-pub async fn handle_load_overview(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_overview(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let mut resources = Vec::new();
 
         // Fetch each resource type with timeout

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-08T03:48:24.309542980Z",
+  "last_updated_at": "2026-02-08T04:04:31.094413618Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -586,7 +586,7 @@
     },
     "2026-02-08": {
       "date": "2026-02-08",
-      "completed_count": 10,
+      "completed_count": 11,
       "tasks": [
         {
           "id": "RQ-0412",
@@ -637,6 +637,11 @@
           "id": "RQ-0421",
           "title": "Fix swallowed CLI input errors in config command",
           "completed_at": "2026-02-08T03:48:24.309542283Z"
+        },
+        {
+          "id": "RQ-0422",
+          "title": "Store abort handles for spawned TUI tasks to prevent resource leaks",
+          "completed_at": "2026-02-08T04:04:31.094412954Z"
         }
       ]
     }
@@ -646,7 +651,7 @@
     "longest_streak": 7,
     "last_completed_date": "2026-02-08"
   },
-  "total_completed": 119,
+  "total_completed": 120,
   "milestones": [
     {
       "threshold": 10,

@@ -13,7 +13,7 @@ use crate::ui::ToastLevel;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading jobs with pagination support.
 ///
@@ -22,11 +22,12 @@ use super::SharedClient;
 pub async fn handle_load_jobs(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_jobs(Some(count), Some(offset)).await {
             Ok(jobs) => {
                 if offset == 0 {
@@ -47,9 +48,14 @@ pub async fn handle_load_jobs(
 }
 
 /// Handle canceling a single job.
-pub async fn handle_cancel_job(client: SharedClient, tx: Sender<Action>, sid: String) {
+pub async fn handle_cancel_job(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    sid: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.cancel_job(&sid).await {
             Ok(_) => {
                 let _ = tx
@@ -80,9 +86,14 @@ pub async fn handle_cancel_job(client: SharedClient, tx: Sender<Action>, sid: St
 }
 
 /// Handle deleting a single job.
-pub async fn handle_delete_job(client: SharedClient, tx: Sender<Action>, sid: String) {
+pub async fn handle_delete_job(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    sid: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.delete_job(&sid).await {
             Ok(_) => {
                 let _ = tx
@@ -113,10 +124,15 @@ pub async fn handle_delete_job(client: SharedClient, tx: Sender<Action>, sid: St
 }
 
 /// Handle canceling multiple jobs in a batch.
-pub async fn handle_cancel_jobs_batch(client: SharedClient, tx: Sender<Action>, sids: Vec<String>) {
+pub async fn handle_cancel_jobs_batch(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    sids: Vec<String>,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     let tx_clone = tx.clone();
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let mut success_count = 0;
         let mut error_messages = Vec::new();
 
@@ -158,10 +174,15 @@ pub async fn handle_cancel_jobs_batch(client: SharedClient, tx: Sender<Action>, 
 }
 
 /// Handle deleting multiple jobs in a batch.
-pub async fn handle_delete_jobs_batch(client: SharedClient, tx: Sender<Action>, sids: Vec<String>) {
+pub async fn handle_delete_jobs_batch(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    sids: Vec<String>,
+) {
     let _ = tx.send(Action::Loading(true)).await;
     let tx_clone = tx.clone();
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let mut success_count = 0;
         let mut error_messages = Vec::new();
 

@@ -89,6 +89,7 @@ async fn test_concurrent_different_requests() {
     let client1 = harness.client.clone();
     let tx1 = harness.action_tx.clone();
     let cm1 = harness.config_manager.clone();
+    let tt1 = TaskTracker::new();
     handles.push(tokio::spawn(async move {
         handle_side_effects(
             Action::LoadIndexes {
@@ -98,6 +99,7 @@ async fn test_concurrent_different_requests() {
             client1,
             tx1,
             cm1,
+            tt1,
         )
         .await;
     }));
@@ -105,6 +107,7 @@ async fn test_concurrent_different_requests() {
     let client2 = harness.client.clone();
     let tx2 = harness.action_tx.clone();
     let cm2 = harness.config_manager.clone();
+    let tt2 = TaskTracker::new();
     handles.push(tokio::spawn(async move {
         handle_side_effects(
             Action::LoadApps {
@@ -114,6 +117,7 @@ async fn test_concurrent_different_requests() {
             client2,
             tx2,
             cm2,
+            tt2,
         )
         .await;
     }));

@@ -20,16 +20,17 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::Sender;
 
-use super::overview_fetch;
+use super::{TaskTracker, overview_fetch};
 
 /// Handle loading multi-instance overview from all configured profiles.
 pub async fn handle_load_multi_instance_overview(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
 
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let cm = config_manager.lock().await;
         let profiles = cm.list_profiles().clone();
         drop(cm); // Release lock before async operations

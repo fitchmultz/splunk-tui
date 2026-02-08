@@ -15,17 +15,18 @@ use splunk_client::{CreateRoleParams, ModifyRoleParams};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading roles.
 pub async fn handle_load_roles(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_roles(Some(count), Some(offset)).await {
             Ok(roles) => {
                 let _ = tx.send(Action::RolesLoaded(Ok(roles))).await;
@@ -38,9 +39,13 @@ pub async fn handle_load_roles(
 }
 
 /// Handle loading capabilities.
-pub async fn handle_load_capabilities(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_capabilities(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_capabilities().await {
             Ok(capabilities) => {
                 let _ = tx.send(Action::CapabilitiesLoaded(Ok(capabilities))).await;
@@ -56,10 +61,11 @@ pub async fn handle_load_capabilities(client: SharedClient, tx: Sender<Action>) 
 pub async fn handle_create_role(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     params: CreateRoleParams,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.create_role(&params).await {
             Ok(role) => {
                 let _ = tx
@@ -95,11 +101,12 @@ pub async fn handle_create_role(
 pub async fn handle_modify_role(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     params: ModifyRoleParams,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.modify_role(&name, &params).await {
             Ok(role) => {
                 let _ = tx
@@ -132,9 +139,14 @@ pub async fn handle_modify_role(
 }
 
 /// Handle deleting a role.
-pub async fn handle_delete_role(client: SharedClient, tx: Sender<Action>, name: String) {
+pub async fn handle_delete_role(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.delete_role(&name).await {
             Ok(()) => {
                 let _ = tx

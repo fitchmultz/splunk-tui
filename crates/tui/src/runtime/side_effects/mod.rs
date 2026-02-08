@@ -113,4 +113,4 @@ mod workload;
 
 // Re-export public API
 pub use dispatcher::handle_side_effects;
-pub use types::SharedClient;
+pub use types::{SharedClient, TaskTracker};

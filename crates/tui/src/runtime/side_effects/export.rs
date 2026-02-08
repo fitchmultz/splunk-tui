@@ -9,6 +9,7 @@
 
 use crate::action::Action;
 use crate::action::ExportFormat;
+use crate::runtime::side_effects::TaskTracker;
 use crate::ui::ToastLevel;
 use serde_json::Value;
 use std::path::PathBuf;
@@ -20,6 +21,7 @@ pub async fn handle_export_data(
     path: PathBuf,
     format: ExportFormat,
     tx: Sender<Action>,
+    _task_tracker: TaskTracker,
 ) {
     // Directly await the async export function
     match crate::export::export_value(&data, &path, format).await {

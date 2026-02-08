@@ -18,12 +18,16 @@ use splunk_client::ClientError;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading health information from multiple endpoints.
-pub async fn handle_load_health(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_health(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         // Use shared health check aggregation from client crate
         match client.check_health_aggregate().await {
             Ok(health_result) => {

@@ -15,7 +15,7 @@ use splunk_client::{CreateUserParams, ModifyUserParams};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading users with pagination support.
 ///
@@ -24,11 +24,12 @@ use super::SharedClient;
 pub async fn handle_load_users(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_users(Some(count), Some(offset)).await {
             Ok(users) => {
                 if offset == 0 {
@@ -52,10 +53,11 @@ pub async fn handle_load_users(
 pub async fn handle_create_user(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     params: CreateUserParams,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.create_user(&params).await {
             Ok(user) => {
                 let _ = tx
@@ -91,11 +93,12 @@ pub async fn handle_create_user(
 pub async fn handle_modify_user(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     params: ModifyUserParams,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.modify_user(&name, &params).await {
             Ok(user) => {
                 let _ = tx
@@ -128,9 +131,14 @@ pub async fn handle_modify_user(
 }
 
 /// Handle deleting a user.
-pub async fn handle_delete_user(client: SharedClient, tx: Sender<Action>, name: String) {
+pub async fn handle_delete_user(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.delete_user(&name).await {
             Ok(()) => {
                 let _ = tx

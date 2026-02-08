@@ -11,12 +11,16 @@ use crate::action::Action;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading KVStore status.
-pub async fn handle_load_kvstore(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_kvstore(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.get_kvstore_status().await {
             Ok(status) => {
                 let _ = tx.send(Action::KvstoreLoaded(Ok(status))).await;

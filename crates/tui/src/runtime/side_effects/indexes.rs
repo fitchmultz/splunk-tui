@@ -15,7 +15,7 @@ use splunk_client::{CreateIndexParams, ModifyIndexParams};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading indexes with pagination support.
 ///
@@ -24,11 +24,12 @@ use super::SharedClient;
 pub async fn handle_load_indexes(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_indexes(Some(count), Some(offset)).await {
             Ok(indexes) => {
                 if offset == 0 {
@@ -52,10 +53,11 @@ pub async fn handle_load_indexes(
 pub async fn handle_create_index(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     params: CreateIndexParams,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.create_index(&params).await {
             Ok(index) => {
                 let _ = tx
@@ -91,11 +93,12 @@ pub async fn handle_create_index(
 pub async fn handle_modify_index(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     name: String,
     params: ModifyIndexParams,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.modify_index(&name, &params).await {
             Ok(index) => {
                 let _ = tx
@@ -128,9 +131,14 @@ pub async fn handle_modify_index(
 }
 
 /// Handle deleting an index.
-pub async fn handle_delete_index(client: SharedClient, tx: Sender<Action>, name: String) {
+pub async fn handle_delete_index(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.delete_index(&name).await {
             Ok(()) => {
                 let _ = tx

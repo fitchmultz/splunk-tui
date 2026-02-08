@@ -12,7 +12,7 @@ use crate::action::Action;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading data models with pagination support.
 ///
@@ -21,11 +21,12 @@ use super::SharedClient;
 pub async fn handle_load_datamodels(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_datamodels(Some(count), Some(offset)).await {
             Ok(datamodels) => {
                 if offset == 0 {

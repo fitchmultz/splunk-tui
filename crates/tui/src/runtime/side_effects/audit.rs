@@ -14,18 +14,20 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
+use super::TaskTracker;
 
 /// Handle loading audit events.
 pub async fn handle_load_audit_events(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
     earliest: String,
     latest: String,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let params = ListAuditEventsParams {
             earliest: Some(earliest),
             latest: Some(latest),
@@ -49,10 +51,11 @@ pub async fn handle_load_audit_events(
 pub async fn handle_load_recent_audit_events(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.get_recent_audit_events(count).await {
             Ok(events) => {
                 let _ = tx.send(Action::AuditEventsLoaded(Ok(events))).await;

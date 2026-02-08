@@ -13,6 +13,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
+use super::TaskTracker;
 
 /// Handle loading fired alerts with pagination support.
 ///
@@ -21,11 +22,12 @@ use super::SharedClient;
 pub async fn handle_load_fired_alerts(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_fired_alerts(Some(count), Some(offset)).await {
             Ok(alerts) => {
                 if offset == 0 {

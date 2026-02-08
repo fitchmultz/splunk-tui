@@ -17,7 +17,7 @@
 use tokio::sync::mpsc::Sender;
 
 use crate::action::Action;
-use crate::runtime::side_effects::SharedClient;
+use crate::runtime::side_effects::{SharedClient, TaskTracker};
 
 /// Build the action for workload pools based on fetch result and offset.
 ///
@@ -66,11 +66,12 @@ fn build_workload_rules_action(
 pub async fn handle_load_workload_pools(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let result = client.list_workload_pools(Some(count), Some(offset)).await;
         let action = build_workload_pools_action(result, offset);
         let _ = tx.send(action).await;
@@ -84,11 +85,12 @@ pub async fn handle_load_workload_pools(
 pub async fn handle_load_workload_rules(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let result = client.list_workload_rules(Some(count), Some(offset)).await;
         let action = build_workload_rules_action(result, offset);
         let _ = tx.send(action).await;

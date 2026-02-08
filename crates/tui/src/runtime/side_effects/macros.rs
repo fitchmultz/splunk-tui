@@ -9,7 +9,7 @@
 //! - Does not handle input (see app/input/macros.rs).
 
 use crate::action::Action;
-use crate::runtime::side_effects::SharedClient;
+use crate::runtime::side_effects::{SharedClient, TaskTracker};
 use splunk_client::{MacroCreateParams, MacroUpdateParams};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -49,9 +49,13 @@ pub struct UpdateMacroEffectParams {
 }
 
 /// Load macros list from the Splunk API.
-pub async fn handle_load_macros(client: SharedClient, action_tx: Sender<Action>) {
+pub async fn handle_load_macros(
+    client: SharedClient,
+    action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_macros().await {
             Ok(macros) => {
                 let _ = action_tx.send(Action::MacrosLoaded(Ok(macros))).await;
@@ -67,10 +71,11 @@ pub async fn handle_load_macros(client: SharedClient, action_tx: Sender<Action>)
 pub async fn handle_create_macro(
     client: SharedClient,
     action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
     params: CreateMacroEffectParams,
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let macro_params = MacroCreateParams {
             name: &params.name,
             definition: &params.definition,
@@ -99,10 +104,11 @@ pub async fn handle_create_macro(
 pub async fn handle_update_macro(
     client: SharedClient,
     action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
     params: UpdateMacroEffectParams,
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let macro_params = MacroUpdateParams {
             name: &params.name,
             definition: params.definition.as_deref(),
@@ -128,9 +134,14 @@ pub async fn handle_update_macro(
 }
 
 /// Delete a macro.
-pub async fn handle_delete_macro(client: SharedClient, action_tx: Sender<Action>, name: String) {
+pub async fn handle_delete_macro(
+    client: SharedClient,
+    action_tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    name: String,
+) {
     let _ = action_tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.delete_macro(&name).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::MacroDeleted(Ok(name))).await;

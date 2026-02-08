@@ -28,7 +28,7 @@ pub use splunk_client::testing::load_fixture;
 pub use splunk_client::{AuthStrategy, SplunkClient};
 pub use splunk_config::ConfigManager;
 pub use splunk_tui::action::Action;
-pub use splunk_tui::runtime::side_effects::{SharedClient, handle_side_effects};
+pub use splunk_tui::runtime::side_effects::{SharedClient, TaskTracker, handle_side_effects};
 pub use tokio::sync::mpsc::{Receiver, Sender};
 pub use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -89,7 +89,8 @@ impl SideEffectsTestHarness {
         let tx = self.action_tx.clone();
         let config_manager = self.config_manager.clone();
 
-        let handle_future = handle_side_effects(action, client, tx, config_manager);
+        let task_tracker = TaskTracker::new();
+        let handle_future = handle_side_effects(action, client, tx, config_manager, task_tracker);
         match tokio::time::timeout(tokio::time::Duration::from_millis(100), handle_future).await {
             Ok(()) => {}
             Err(_) => {

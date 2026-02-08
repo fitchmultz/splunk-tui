@@ -17,12 +17,16 @@ use tokio::sync::mpsc::Sender;
 use crate::action::{Action, LicenseData};
 use splunk_client::{ClientError, CreatePoolParams, ModifyPoolParams};
 
-use super::SharedClient;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading license information from multiple endpoints.
-pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_license(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         // Collect license data from all three endpoints
         let mut license_data = LicenseData {
             usage: Vec::new(),
@@ -75,8 +79,13 @@ pub async fn handle_load_license(client: SharedClient, tx: Sender<Action>) {
 }
 
 /// Handle installing a license file.
-pub async fn handle_install_license(client: SharedClient, file_path: PathBuf, tx: Sender<Action>) {
-    tokio::spawn(async move {
+pub async fn handle_install_license(
+    client: SharedClient,
+    file_path: PathBuf,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
+    task_tracker.spawn(async move {
         let result = client.install_license(&file_path).await;
         let _ = tx
             .send(Action::LicenseInstalled(result.map_err(Arc::new)))
@@ -89,8 +98,9 @@ pub async fn handle_create_license_pool(
     client: SharedClient,
     params: CreatePoolParams,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
 ) {
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let result = client.create_license_pool(&params).await;
         let _ = tx
             .send(Action::LicensePoolCreated(result.map_err(Arc::new)))
@@ -104,8 +114,9 @@ pub async fn handle_modify_license_pool(
     name: String,
     params: ModifyPoolParams,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
 ) {
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         let result = client.modify_license_pool(&name, &params).await;
         let _ = tx
             .send(Action::LicensePoolModified(result.map_err(Arc::new)))
@@ -114,8 +125,13 @@ pub async fn handle_modify_license_pool(
 }
 
 /// Handle deleting a license pool.
-pub async fn handle_delete_license_pool(client: SharedClient, name: String, tx: Sender<Action>) {
-    tokio::spawn(async move {
+pub async fn handle_delete_license_pool(
+    client: SharedClient,
+    name: String,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
+    task_tracker.spawn(async move {
         let result = client.delete_license_pool(&name).await;
         let _ = tx
             .send(Action::LicensePoolDeleted(
@@ -126,8 +142,13 @@ pub async fn handle_delete_license_pool(client: SharedClient, name: String, tx: 
 }
 
 /// Handle activating a license.
-pub async fn handle_activate_license(client: SharedClient, name: String, tx: Sender<Action>) {
-    tokio::spawn(async move {
+pub async fn handle_activate_license(
+    client: SharedClient,
+    name: String,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
+    task_tracker.spawn(async move {
         let result = client.activate_license(&name).await;
         let _ = tx
             .send(Action::LicenseActivated(result.map_err(Arc::new)))
@@ -136,8 +157,13 @@ pub async fn handle_activate_license(client: SharedClient, name: String, tx: Sen
 }
 
 /// Handle deactivating a license.
-pub async fn handle_deactivate_license(client: SharedClient, name: String, tx: Sender<Action>) {
-    tokio::spawn(async move {
+pub async fn handle_deactivate_license(
+    client: SharedClient,
+    name: String,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
+    task_tracker.spawn(async move {
         let result = client.deactivate_license(&name).await;
         let _ = tx
             .send(Action::LicenseDeactivated(result.map_err(Arc::new)))

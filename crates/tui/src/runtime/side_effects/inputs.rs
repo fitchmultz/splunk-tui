@@ -8,8 +8,8 @@
 //! - Direct state modification (sends actions for that).
 //! - UI rendering.
 
+use super::{SharedClient, TaskTracker};
 use crate::action::Action;
-use crate::runtime::side_effects::SharedClient;
 use crate::ui::ToastLevel;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -21,11 +21,12 @@ use tokio::sync::mpsc::Sender;
 pub async fn handle_load_inputs(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_inputs(Some(count), Some(offset)).await {
             Ok(inputs) => {
                 if offset == 0 {
@@ -49,11 +50,12 @@ pub async fn handle_load_inputs(
 pub async fn handle_enable_input(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     input_type: String,
     name: String,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.enable_input(&input_type, &name).await {
             Ok(_) => {
                 let _ = tx
@@ -87,11 +89,12 @@ pub async fn handle_enable_input(
 pub async fn handle_disable_input(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     input_type: String,
     name: String,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.disable_input(&input_type, &name).await {
             Ok(_) => {
                 let _ = tx

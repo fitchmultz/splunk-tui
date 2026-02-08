@@ -9,15 +9,19 @@
 //! - UI rendering.
 
 use crate::action::Action;
-use crate::runtime::side_effects::SharedClient;
+use crate::runtime::side_effects::{SharedClient, TaskTracker};
 use crate::ui::ToastLevel;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 /// Handle loading config files.
-pub async fn handle_load_config_files(client: SharedClient, tx: Sender<Action>) {
+pub async fn handle_load_config_files(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client.list_config_files().await {
             Ok(files) => {
                 let _ = tx.send(Action::ConfigFilesLoaded(Ok(files))).await;
@@ -33,12 +37,13 @@ pub async fn handle_load_config_files(client: SharedClient, tx: Sender<Action>) 
 pub async fn handle_load_config_stanzas(
     client: SharedClient,
     tx: Sender<Action>,
+    task_tracker: TaskTracker,
     config_file: String,
     count: usize,
     offset: usize,
 ) {
     let _ = tx.send(Action::Loading(true)).await;
-    tokio::spawn(async move {
+    task_tracker.spawn(async move {
         match client
             .list_config_stanzas(&config_file, Some(count), Some(offset))
             .await
