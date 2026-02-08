@@ -2,52 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0423",
-      "status": "todo",
-      "title": "Add missing error path tests for core client modules",
-      "description": "Several core client modules only test happy paths and missing error scenarios. Add tests for: 404 not found, 403 permission denied, malformed responses, network timeouts, and invalid input validation.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "testing",
-        "reliability",
-        "client"
-      ],
-      "scope": [
-        "crates/client/tests/apps_tests.rs",
-        "crates/client/tests/indexes_tests.rs",
-        "crates/client/tests/inputs_tests.rs",
-        "crates/client/tests/forwarders_tests.rs",
-        "crates/client/tests/lookups_tests.rs"
-      ],
-      "evidence": [
-        "apps_tests.rs: 7 tests, all success paths - missing 404, 403, malformed data",
-        "indexes_tests.rs: missing invalid index name, creation failures, permission errors",
-        "inputs_tests.rs: missing invalid input path, enable/disable failures",
-        "forwarders_tests.rs: missing connection errors, invalid forwarder data",
-        "lookups_tests.rs: missing lookup not found, definition errors",
-        "error_tests.rs shows good patterns to follow for error path testing"
-      ],
-      "plan": [
-        "Add test_unauthorized_access tests to each module",
-        "Add test_not_found tests for missing resources",
-        "Add test_malformed_response tests",
-        "Add test_timeout_handling tests",
-        "Follow patterns from error_tests.rs and retry_*_tests.rs",
-        "Verify by running `make test-integration`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0424",
       "status": "todo",
       "title": "Fix inefficient string allocation in encode_stanza_name function",

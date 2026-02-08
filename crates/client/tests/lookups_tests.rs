@@ -14,6 +14,7 @@
 mod common;
 
 use common::*;
+use splunk_client::error::ClientError;
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -150,4 +151,151 @@ async fn test_splunk_client_list_lookup_tables() {
     assert_eq!(lookups.len(), 2);
     assert_eq!(lookups[0].name, "my_lookup");
     assert_eq!(lookups[1].name, "countries");
+}
+
+#[tokio::test]
+async fn test_list_lookup_tables_unauthorized() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/lookup-table-files"))
+        .respond_with(ResponseTemplate::new(401).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Unauthorized"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_lookup_tables(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        None,
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+}
+
+#[tokio::test]
+async fn test_list_lookup_tables_forbidden() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/lookup-table-files"))
+        .respond_with(ResponseTemplate::new(403).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Forbidden"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_lookup_tables(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        None,
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 403, .. }));
+}
+
+#[tokio::test]
+async fn test_download_lookup_table_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/servicesNS/-/search/data/lookup-table-files/nonexistent",
+        ))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Not Found"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::download_lookup_table(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "nonexistent",
+        Some("search"),
+        Some("-"),
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+}
+
+#[tokio::test]
+async fn test_delete_lookup_table_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path(
+            "/servicesNS/-/search/data/lookup-table-files/nonexistent",
+        ))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Not Found"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::delete_lookup_table(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "nonexistent",
+        Some("search"),
+        Some("-"),
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+}
+
+#[tokio::test]
+async fn test_list_lookup_tables_malformed_response() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/lookup-table-files"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("invalid json"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_lookup_tables(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        None,
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
 }

@@ -16,6 +16,7 @@
 mod common;
 
 use common::*;
+use splunk_client::error::ClientError;
 use wiremock::matchers::{method, path};
 
 #[tokio::test]
@@ -283,4 +284,178 @@ async fn test_list_inputs_by_type_with_special_characters_in_name() {
     assert_eq!(inputs.len(), 1);
     assert_eq!(inputs[0].name, "script://./bin/my_script.sh");
     assert_eq!(inputs[0].input_type, "script");
+}
+
+#[tokio::test]
+async fn test_list_inputs_by_type_unauthorized() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/tcp/raw"))
+        .respond_with(ResponseTemplate::new(401).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Unauthorized"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_inputs_by_type(
+        &client,
+        &mock_server.uri(),
+        "invalid-token",
+        "tcp/raw",
+        Some(30),
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+}
+
+#[tokio::test]
+async fn test_list_inputs_by_type_forbidden() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/tcp/raw"))
+        .respond_with(ResponseTemplate::new(403).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Forbidden"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_inputs_by_type(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "tcp/raw",
+        Some(30),
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 403, .. }));
+}
+
+#[tokio::test]
+async fn test_list_inputs_by_type_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/invalid-type"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Not Found"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_inputs_by_type(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "invalid-type",
+        Some(30),
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+}
+
+#[tokio::test]
+async fn test_enable_input_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/data/inputs/tcp/raw/9999/enable"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Not Found"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::enable_input(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "tcp/raw",
+        "9999",
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+}
+
+#[tokio::test]
+async fn test_disable_input_not_found() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/services/data/inputs/tcp/raw/9999/disable"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Not Found"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::disable_input(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "tcp/raw",
+        "9999",
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+}
+
+#[tokio::test]
+async fn test_list_inputs_malformed_response() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/tcp/raw"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("invalid json"))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_inputs_by_type(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "tcp/raw",
+        Some(30),
+        None,
+        3,
+        None,
+    )
+    .await;
+
+    assert!(result.is_err());
 }
