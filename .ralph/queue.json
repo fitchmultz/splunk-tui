@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0402",
-      "status": "todo",
-      "title": "Fix dangerous as i32 cast in serde_helpers.rs that truncates floats",
-      "description": "The StringOrNumber deserialization helper uses `as i32` to convert f64 to i32, which silently truncates decimal values. This can lead to data loss and unexpected behavior. Replace with proper error handling using try_from or explicit rounding.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "type-safety",
-        "correctness",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/serde_helpers.rs"
-      ],
-      "evidence": [
-        "Line 71: Some(StringOrNumber::F64(v)) => Ok(Some(v as i32))",
-        "Silent truncation of floating-point values",
-        "Should use try_from or proper error handling"
-      ],
-      "plan": [
-        "Replace 'v as i32' with i32::try_from(v as i64)",
-        "Add proper error handling for out-of-range values",
-        "Add test cases for float truncation edge cases",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0403",
       "status": "todo",
       "title": "Add debug logging to CLI dispatch module",

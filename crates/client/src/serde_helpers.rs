@@ -95,7 +95,23 @@ where
         Some(StringOrNumber::String(s)) => s.parse::<i32>().map_err(D::Error::custom).map(Some),
         Some(StringOrNumber::U64(v)) => i32::try_from(v).map_err(D::Error::custom).map(Some),
         Some(StringOrNumber::I64(v)) => i32::try_from(v).map_err(D::Error::custom).map(Some),
-        Some(StringOrNumber::F64(v)) => Ok(Some(v as i32)),
+        Some(StringOrNumber::F64(v)) => {
+            // Reject NaN and infinite values
+            if v.is_nan() {
+                return Err(D::Error::custom("float value is NaN"));
+            }
+            if v.is_infinite() {
+                return Err(D::Error::custom("float value is infinite"));
+            }
+            // Check if value is within i32 range (using i64 as intermediate to avoid overflow)
+            let truncated = v.trunc();
+            if truncated < i32::MIN as f64 || truncated > i32::MAX as f64 {
+                return Err(D::Error::custom("float value out of range for i32"));
+            }
+            // For quota fields, fractional values are unexpected but we truncate explicitly
+            // rather than silently truncating with `as i32`
+            Ok(Some(truncated as i32))
+        }
     }
 }
 
@@ -247,5 +263,131 @@ mod tests {
         let parsed: Wrapper = serde_json::from_str(r#"{ "value": { "a": "3", "b": 4 } }"#).unwrap();
         assert_eq!(parsed.value.get("a"), Some(&3));
         assert_eq!(parsed.value.get("b"), Some(&4));
+    }
+
+    // Tests for opt_i32_from_string_or_number float handling
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_accepts_integer_float() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // Whole number float should work
+        let parsed: Wrapper = serde_json::from_str(r#"{ "value": 100.0 }"#).unwrap();
+        assert_eq!(parsed.value, Some(100));
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_truncates_fractional_float() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // Fractional float should be truncated (not rejected)
+        let parsed: Wrapper = serde_json::from_str(r#"{ "value": 100.9 }"#).unwrap();
+        assert_eq!(parsed.value, Some(100));
+
+        // Negative fractional float should be truncated toward zero
+        let parsed: Wrapper = serde_json::from_str(r#"{ "value": -100.9 }"#).unwrap();
+        assert_eq!(parsed.value, Some(-100));
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_rejects_nan() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // NaN should fail
+        let result: Result<Wrapper, _> = serde_json::from_str(r#"{ "value": NaN }"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_rejects_infinite() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // Infinity should fail
+        let result: Result<Wrapper, _> = serde_json::from_str(r#"{ "value": Infinity }"#);
+        assert!(result.is_err());
+
+        // Negative infinity should fail
+        let result: Result<Wrapper, _> = serde_json::from_str(r#"{ "value": -Infinity }"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_rejects_out_of_range_float() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // Out of range positive float should fail
+        let result: Result<Wrapper, _> = serde_json::from_str(r#"{ "value": 2147483648.0 }"#);
+        assert!(result.is_err());
+
+        // Out of range negative float should fail
+        let result: Result<Wrapper, _> = serde_json::from_str(r#"{ "value": -2147483649.0 }"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_accepts_negative_float() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // Negative whole number float should work
+        let parsed: Wrapper = serde_json::from_str(r#"{ "value": -100.0 }"#).unwrap();
+        assert_eq!(parsed.value, Some(-100));
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_accepts_i32_max_float() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // i32::MAX as float should work
+        let parsed: Wrapper = serde_json::from_str(r#"{ "value": 2147483647.0 }"#).unwrap();
+        assert_eq!(parsed.value, Some(2147483647));
+    }
+
+    #[test]
+    fn test_opt_i32_from_string_or_number_accepts_i32_min_float() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "opt_i32_from_string_or_number")]
+            value: Option<i32>,
+        }
+
+        // i32::MIN as float should work
+        let parsed: Wrapper = serde_json::from_str(r#"{ "value": -2147483648.0 }"#).unwrap();
+        assert_eq!(parsed.value, Some(-2147483648));
     }
 }
