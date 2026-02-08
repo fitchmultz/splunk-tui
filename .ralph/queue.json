@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0405",
-      "status": "todo",
-      "title": "Add user feedback for silent parse failures in popup handlers",
-      "description": "Profile popup handlers silently ignore parse failures when users enter invalid values. For example, when parsing timeout values, if parse fails, the code does nothing (empty match arm). Users get no feedback that their input was invalid. Add error feedback or validation.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "ux",
-        "error-handling",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/app/popups/profile.rs",
-        "crates/tui/src/app/popups/*.rs"
-      ],
-      "evidence": [
-        "profile.rs: Err(_) => {} // Silent parse failure",
-        "Multiple field update handlers ignore parse errors",
-        "User enters invalid value, sees no feedback",
-        "Fields may appear to accept input but don't change"
-      ],
-      "plan": [
-        "Add toast notifications for parse failures",
-        "Show inline validation errors in popup fields",
-        "Consider preventing invalid input at input handling level",
-        "Verify by running TUI and testing invalid input"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0406",
       "status": "todo",
       "title": "Create shared output writing helper for CLI commands",

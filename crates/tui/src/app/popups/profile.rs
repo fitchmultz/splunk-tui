@@ -12,6 +12,7 @@
 
 use crate::action::Action;
 use crate::app::App;
+use crate::ui::ToastLevel;
 use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -558,6 +559,11 @@ impl App {
                             })
                             .build(),
                         );
+                    } else {
+                        return Some(Action::Notify(
+                            ToastLevel::Error,
+                            "Invalid timeout value: number too large".to_string(),
+                        ));
                     }
                 }
                 return None;
@@ -582,6 +588,11 @@ impl App {
                             })
                             .build(),
                         );
+                    } else {
+                        return Some(Action::Notify(
+                            ToastLevel::Error,
+                            "Invalid max retries value: number too large".to_string(),
+                        ));
                     }
                 }
                 return None;
@@ -697,6 +708,11 @@ impl App {
                         })
                         .build(),
                     );
+                } else {
+                    return Some(Action::Notify(
+                        ToastLevel::Error,
+                        "Invalid timeout value".to_string(),
+                    ));
                 }
                 return None;
             }
@@ -719,6 +735,11 @@ impl App {
                         })
                         .build(),
                     );
+                } else {
+                    return Some(Action::Notify(
+                        ToastLevel::Error,
+                        "Invalid max retries value".to_string(),
+                    ));
                 }
                 return None;
             }
@@ -872,6 +893,11 @@ impl App {
                             })
                             .build(),
                         );
+                    } else {
+                        return Some(Action::Notify(
+                            ToastLevel::Error,
+                            "Invalid timeout value: number too large".to_string(),
+                        ));
                     }
                 }
                 return None;
@@ -897,6 +923,11 @@ impl App {
                             })
                             .build(),
                         );
+                    } else {
+                        return Some(Action::Notify(
+                            ToastLevel::Error,
+                            "Invalid max retries value: number too large".to_string(),
+                        ));
                     }
                 }
                 return None;
@@ -1017,6 +1048,11 @@ impl App {
                         })
                         .build(),
                     );
+                } else {
+                    return Some(Action::Notify(
+                        ToastLevel::Error,
+                        "Invalid timeout value".to_string(),
+                    ));
                 }
                 return None;
             }
@@ -1040,6 +1076,11 @@ impl App {
                         })
                         .build(),
                     );
+                } else {
+                    return Some(Action::Notify(
+                        ToastLevel::Error,
+                        "Invalid max retries value".to_string(),
+                    ));
                 }
                 return None;
             }
