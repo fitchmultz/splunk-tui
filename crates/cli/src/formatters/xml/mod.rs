@@ -533,7 +533,7 @@ impl Formatter for XmlFormatter {
         ));
         output.push_str(&format!(
             "  <captain_uri>{}</captain_uri>\n",
-            escape_xml(status.captain_uri.as_deref().unwrap_or(""))
+            escape_xml(status.captain_uri.as_deref().unwrap_or("N/A"))
         ));
         output.push_str(&format!(
             "  <member_count>{}</member_count>\n",
@@ -577,7 +577,7 @@ impl Formatter for XmlFormatter {
         ));
         output.push_str(&format!(
             "  <site>{}</site>\n",
-            escape_xml(captain.site.as_deref().unwrap_or(""))
+            escape_xml(captain.site.as_deref().unwrap_or("N/A"))
         ));
         output.push_str("</shc_captain>\n");
         Ok(output)
@@ -594,11 +594,11 @@ impl Formatter for XmlFormatter {
         ));
         output.push_str(&format!(
             "  <captain_uri>{}</captain_uri>\n",
-            escape_xml(config.captain_uri.as_deref().unwrap_or(""))
+            escape_xml(config.captain_uri.as_deref().unwrap_or("N/A"))
         ));
         output.push_str(&format!(
             "  <shcluster_label>{}</shcluster_label>\n",
-            escape_xml(config.shcluster_label.as_deref().unwrap_or(""))
+            escape_xml(config.shcluster_label.as_deref().unwrap_or("N/A"))
         ));
         output.push_str("</shc_config>\n");
         Ok(output)

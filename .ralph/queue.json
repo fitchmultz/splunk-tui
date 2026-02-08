@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0399",
-      "status": "todo",
-      "title": "Fix inconsistent empty/null value rendering across formatters",
-      "description": "Empty optional values are rendered inconsistently across output formats. Table formatters use 'N/A' for missing values, while XML formatters use empty strings. This inconsistency could confuse users parsing output programmatically. Standardize on a single representation for missing values across all formatters.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "consistency",
-        "formatters",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/table/*.rs",
-        "crates/cli/src/formatters/xml/*.rs",
-        "crates/cli/src/formatters/csv/*.rs"
-      ],
-      "evidence": [
-        "Table formatters use 'N/A': indexes.rs:32,38-41, forwarders.rs:32-35, jobs.rs:68-77",
-        "XML formatter uses empty strings: xml/mod.rs:536,580 (unwrap_or(''))",
-        "Same data renders differently depending on output format",
-        "No documented standard for representing missing values"
-      ],
-      "plan": [
-        "Decide on standard representation for missing values (recommend 'N/A' or empty string consistently)",
-        "Update all formatters to use the same representation",
-        "Document the standard in formatter module documentation",
-        "Update tests to verify consistent behavior",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0400",
       "status": "todo",
       "title": "Update documentation to match actual CLI implementation",
@@ -419,8 +378,8 @@
       "evidence": [
         "Pattern repeated 60+ times:",
         "let result = tokio::select! {",
-        "    res = client.some_api_call() => res?,",
-        "    _ = cancel.cancelled() => return Err(Cancelled.into()),",
+        "    res = client.some_api_call() => res?;",
+        "    _ = cancel.cancelled() => return Err(Cancelled.into());",
         "};"
       ],
       "plan": [

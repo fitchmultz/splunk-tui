@@ -31,11 +31,11 @@ pub fn format_forwarders(forwarders: &[Forwarder], detailed: bool) -> Result<Str
     for forwarder in forwarders {
         let mut values = vec![
             escape_csv(&forwarder.name),
-            format_opt_str(forwarder.hostname.as_deref(), ""),
-            format_opt_str(forwarder.client_name.as_deref(), ""),
-            format_opt_str(forwarder.ip_address.as_deref(), ""),
-            format_opt_str(forwarder.version.as_deref(), ""),
-            format_opt_str(forwarder.last_phone.as_deref(), ""),
+            format_opt_str(forwarder.hostname.as_deref(), "N/A"),
+            format_opt_str(forwarder.client_name.as_deref(), "N/A"),
+            format_opt_str(forwarder.ip_address.as_deref(), "N/A"),
+            format_opt_str(forwarder.version.as_deref(), "N/A"),
+            format_opt_str(forwarder.last_phone.as_deref(), "N/A"),
         ];
 
         if detailed {
@@ -43,10 +43,10 @@ pub fn format_forwarders(forwarders: &[Forwarder], detailed: bool) -> Result<Str
                 .server_classes
                 .as_ref()
                 .map(|sc| sc.join(";"))
-                .unwrap_or_default();
+                .unwrap_or_else(|| "N/A".to_string());
             values.extend(vec![
-                format_opt_str(forwarder.utsname.as_deref(), ""),
-                format_opt_str(forwarder.repository_location.as_deref(), ""),
+                format_opt_str(forwarder.utsname.as_deref(), "N/A"),
+                format_opt_str(forwarder.repository_location.as_deref(), "N/A"),
                 escape_csv(&server_classes),
             ]);
         }

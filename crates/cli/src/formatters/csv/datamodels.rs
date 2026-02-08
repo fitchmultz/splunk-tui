@@ -32,8 +32,8 @@ pub fn format_datamodels(datamodels: &[DataModel], detailed: bool) -> Result<Str
                 escape_csv(&datamodel.owner),
                 escape_csv(&datamodel.app),
                 escape_csv(&datamodel.is_accelerated.to_string()),
-                escape_csv(datamodel.description.as_deref().unwrap_or("")),
-                escape_csv(datamodel.updated.as_deref().unwrap_or("")),
+                escape_csv(datamodel.description.as_deref().unwrap_or("N/A")),
+                escape_csv(datamodel.updated.as_deref().unwrap_or("N/A")),
             ]));
         }
     } else {
@@ -74,8 +74,8 @@ pub fn format_datamodel(datamodel: &DataModel) -> Result<String> {
         escape_csv(&datamodel.app),
         escape_csv(&datamodel.is_accelerated.to_string()),
         escape_csv(datamodel.description.as_deref().unwrap_or("")),
-        escape_csv(datamodel.updated.as_deref().unwrap_or("")),
-        escape_csv(datamodel.json_data.as_deref().unwrap_or("")),
+        escape_csv(datamodel.updated.as_deref().unwrap_or("N/A")),
+        escape_csv(datamodel.json_data.as_deref().unwrap_or("N/A")),
     ]));
 
     Ok(output)

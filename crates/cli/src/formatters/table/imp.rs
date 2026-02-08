@@ -296,7 +296,7 @@ impl TableFormatter {
                             member.status,
                             captain_marker,
                             &member.guid[..member.guid.len().min(8)],
-                            member.site.as_deref().unwrap_or("-"),
+                            member.site.as_deref().unwrap_or("N/A"),
                         ));
                     }
                 }

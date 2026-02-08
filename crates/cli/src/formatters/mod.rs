@@ -29,6 +29,22 @@
 //! - Human-facing formats (Table) provide clear feedback
 //!
 //! See RQ-0359 for the standardization effort.
+//!
+//! ## Missing/Null Value Handling
+//!
+//! All formatters use a consistent representation for missing, null, or empty values:
+//!
+//! | Format | Missing Value Representation | Example |
+//! |--------|------------------------------|---------|
+//! | JSON | `null` (via serde) | `"field": null` |
+//! | XML | `"N/A"` string | `<field>N/A</field>` |
+//! | CSV | `N/A` | `field_name,N/A` |
+//! | Table | `N/A` | `Field: N/A` |
+//!
+//! This ensures predictable behavior when parsing output programmatically.
+//! Use `common::DEFAULT_MISSING_VALUE` constant when implementing new formatters.
+//!
+//! See RQ-0399 for the standardization effort.
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

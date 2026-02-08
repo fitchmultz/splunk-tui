@@ -33,9 +33,9 @@ pub fn format_dashboards(dashboards: &[Dashboard], detailed: bool) -> Result<Str
                 escape_csv(&dashboard.author),
                 escape_csv(&dashboard.is_dashboard.to_string()),
                 escape_csv(&dashboard.is_visible.to_string()),
-                escape_csv(dashboard.description.as_deref().unwrap_or("")),
-                escape_csv(dashboard.version.as_deref().unwrap_or("")),
-                escape_csv(dashboard.updated.as_deref().unwrap_or("")),
+                escape_csv(dashboard.description.as_deref().unwrap_or("N/A")),
+                escape_csv(dashboard.version.as_deref().unwrap_or("N/A")),
+                escape_csv(dashboard.updated.as_deref().unwrap_or("N/A")),
             ]));
         }
     } else {
@@ -77,8 +77,8 @@ pub fn format_dashboard(dashboard: &Dashboard) -> Result<String> {
         escape_csv(&dashboard.is_visible.to_string()),
         escape_csv(dashboard.description.as_deref().unwrap_or("")),
         escape_csv(dashboard.version.as_deref().unwrap_or("")),
-        escape_csv(dashboard.updated.as_deref().unwrap_or("")),
-        escape_csv(dashboard.xml_data.as_deref().unwrap_or("")),
+        escape_csv(dashboard.updated.as_deref().unwrap_or("N/A")),
+        escape_csv(dashboard.xml_data.as_deref().unwrap_or("N/A")),
     ]));
 
     Ok(output)

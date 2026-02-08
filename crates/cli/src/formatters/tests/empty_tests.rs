@@ -283,3 +283,42 @@ fn test_table_empty_saved_searches() {
     let output = formatter.format_saved_searches(&searches).unwrap();
     assert!(output.contains("No saved searches found"));
 }
+
+// === Missing Value Consistency Tests (RQ-0399) ===
+// These tests ensure that null/empty/missing values are rendered
+// consistently as "N/A" across all formatter types.
+
+#[test]
+fn test_default_missing_value_constant() {
+    use crate::formatters::common::DEFAULT_MISSING_VALUE;
+
+    // Verify the constant is "N/A"
+    assert_eq!(DEFAULT_MISSING_VALUE, "N/A");
+}
+
+#[test]
+fn test_common_format_missing() {
+    use crate::formatters::common::format_missing;
+
+    // Verify format_missing helper works correctly
+    assert_eq!(format_missing(Some("value")), "value");
+    assert_eq!(format_missing(None), "N/A");
+}
+
+#[test]
+fn test_common_format_missing_display() {
+    use crate::formatters::common::format_missing_display;
+
+    // Verify format_missing_display helper works correctly
+    assert_eq!(format_missing_display(Some(42)), "42");
+    assert_eq!(format_missing_display(None::<i32>), "N/A");
+}
+
+#[test]
+fn test_csv_format_opt_str_with_na_default() {
+    use crate::formatters::common::format_opt_str;
+
+    // CSV should render None as "N/A" when using the standard default
+    assert_eq!(format_opt_str(None, "N/A"), "N/A");
+    assert_eq!(format_opt_str(Some("value"), "N/A"), "value");
+}

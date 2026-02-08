@@ -42,9 +42,9 @@ pub fn format_inputs(inputs: &[Input], detailed: bool) -> Result<String> {
         let mut values = vec![
             escape_csv(&input.name),
             escape_csv(&input.input_type.to_string()),
-            format_opt_str(input.host.as_deref(), ""),
-            format_opt_str(input.source.as_deref(), ""),
-            format_opt_str(input.sourcetype.as_deref(), ""),
+            format_opt_str(input.host.as_deref(), "N/A"),
+            format_opt_str(input.source.as_deref(), "N/A"),
+            format_opt_str(input.sourcetype.as_deref(), "N/A"),
             escape_csv(disabled),
         ];
 
@@ -52,16 +52,16 @@ pub fn format_inputs(inputs: &[Input], detailed: bool) -> Result<String> {
             let recursive = input
                 .recursive
                 .map(|r| if r { "true" } else { "false" })
-                .unwrap_or("");
+                .unwrap_or("N/A");
             values.extend(vec![
-                format_opt_str(input.port.as_deref(), ""),
-                format_opt_str(input.path.as_deref(), ""),
-                format_opt_str(input.connection_host.as_deref(), ""),
-                format_opt_str(input.blacklist.as_deref(), ""),
-                format_opt_str(input.whitelist.as_deref(), ""),
+                format_opt_str(input.port.as_deref(), "N/A"),
+                format_opt_str(input.path.as_deref(), "N/A"),
+                format_opt_str(input.connection_host.as_deref(), "N/A"),
+                format_opt_str(input.blacklist.as_deref(), "N/A"),
+                format_opt_str(input.whitelist.as_deref(), "N/A"),
                 escape_csv(recursive),
-                format_opt_str(input.command.as_deref(), ""),
-                format_opt_str(input.interval.as_deref(), ""),
+                format_opt_str(input.command.as_deref(), "N/A"),
+                format_opt_str(input.interval.as_deref(), "N/A"),
             ]);
         }
 

@@ -87,7 +87,7 @@ pub fn format_cluster_peers(
             peer.port,
             peer.status,
             peer.peer_state,
-            peer.site.as_deref().unwrap_or("-"),
+            peer.site.as_deref().unwrap_or("N/A"),
             captain_marker
         ));
     }

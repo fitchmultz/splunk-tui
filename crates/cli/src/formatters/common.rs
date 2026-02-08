@@ -4,6 +4,7 @@
 //! - JSON flattening for CSV output.
 //! - String escaping for CSV and XML.
 //! - Atomic file writing.
+//! - Standardized missing/null value handling.
 //!
 //! Does NOT handle:
 //! - Format-specific logic (lives in respective formatter modules).
@@ -11,6 +12,55 @@
 
 use anyhow::{Context, Result};
 use std::collections::BTreeMap;
+
+/// Default string representation for missing/null/empty values across all formatters.
+///
+/// # Consistency Guarantee
+/// All formatters (Table, CSV, XML) use this constant to ensure that missing
+/// values are represented identically regardless of output format.
+#[allow(dead_code)]
+pub const DEFAULT_MISSING_VALUE: &str = "N/A";
+
+/// Format an optional string value, using the default missing value if None.
+///
+/// # Arguments
+/// * `opt` - The optional string to format
+///
+/// # Returns
+/// The contained string slice if Some, or `DEFAULT_MISSING_VALUE` if None
+///
+/// # Example
+/// ```
+/// use splunk_cli::formatters::common::format_missing;
+///
+/// assert_eq!(format_missing(Some("value")), "value");
+/// assert_eq!(format_missing(None), "N/A");
+/// ```
+#[allow(dead_code)]
+pub fn format_missing(opt: Option<&str>) -> &str {
+    opt.unwrap_or(DEFAULT_MISSING_VALUE)
+}
+
+/// Format an optional value using Display, using the default missing value if None.
+///
+/// # Arguments
+/// * `opt` - The optional value to format
+///
+/// # Returns
+/// The formatted string if Some, or `DEFAULT_MISSING_VALUE` if None
+///
+/// # Example
+/// ```
+/// use splunk_cli::formatters::common::format_missing_display;
+///
+/// assert_eq!(format_missing_display(Some(42)), "42");
+/// assert_eq!(format_missing_display(None::<i32>), "N/A");
+/// ```
+#[allow(dead_code)]
+pub fn format_missing_display<T: std::fmt::Display>(opt: Option<T>) -> String {
+    opt.map(|v| v.to_string())
+        .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string())
+}
 
 /// Flatten a JSON object into a map of dot-notation keys to string values.
 ///

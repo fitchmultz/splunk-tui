@@ -53,9 +53,9 @@ pub fn format_job_details(job: &SearchJobStatus) -> Result<String> {
     ]));
 
     // Data row
-    let priority = job.priority.map_or("".to_string(), |p| p.to_string());
-    let cursor_time = job.cursor_time.as_deref().unwrap_or("");
-    let label = job.label.as_deref().unwrap_or("");
+    let priority = job.priority.map_or("N/A".to_string(), |p| p.to_string());
+    let cursor_time = job.cursor_time.as_deref().unwrap_or("N/A");
+    let label = job.label.as_deref().unwrap_or("N/A");
 
     csv.push_str(&build_csv_row(&[
         escape_csv(&job.sid),

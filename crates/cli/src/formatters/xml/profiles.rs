@@ -17,13 +17,13 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 
     xml.push_str(&format!("  <name>{}</name>\n", escape_xml(profile_name)));
 
-    let base_url = profile.base_url.as_deref().unwrap_or("");
+    let base_url = profile.base_url.as_deref().unwrap_or("N/A");
     xml.push_str(&format!(
         "  <base_url>{}</base_url>\n",
         escape_xml(base_url)
     ));
 
-    let username = profile.username.as_deref().unwrap_or("");
+    let username = profile.username.as_deref().unwrap_or("N/A");
     xml.push_str(&format!(
         "  <username>{}</username>\n",
         escape_xml(username)
@@ -31,7 +31,7 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 
     let password_display = match &profile.password {
         Some(_) => "****",
-        None => "",
+        None => "N/A",
     };
     xml.push_str(&format!(
         "  <password>{}</password>\n",
@@ -40,7 +40,7 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 
     let token_display = match &profile.api_token {
         Some(_) => "****",
-        None => "",
+        None => "N/A",
     };
     xml.push_str(&format!(
         "  <api_token>{}</api_token>\n",

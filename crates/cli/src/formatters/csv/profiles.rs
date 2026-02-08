@@ -24,17 +24,17 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 
     csv.push_str(&build_csv_row(&[
         escape_csv("Base URL"),
-        format_opt_str(profile.base_url.as_deref(), "(not set)"),
+        format_opt_str(profile.base_url.as_deref(), "N/A"),
     ]));
 
     csv.push_str(&build_csv_row(&[
         escape_csv("Username"),
-        format_opt_str(profile.username.as_deref(), "(not set)"),
+        format_opt_str(profile.username.as_deref(), "N/A"),
     ]));
 
     let password_display = match &profile.password {
         Some(_) => "****",
-        None => "(not set)",
+        None => "N/A",
     };
     csv.push_str(&build_csv_row(&[
         escape_csv("Password"),
@@ -52,7 +52,7 @@ pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<Str
 
     let skip_verify = profile
         .skip_verify
-        .map_or("(not set)".to_string(), |b| b.to_string());
+        .map_or("N/A".to_string(), |b| b.to_string());
     csv.push_str(&build_csv_row(&[
         escape_csv("Skip TLS Verify"),
         escape_csv(&skip_verify),
@@ -92,12 +92,12 @@ pub fn format_profiles(profiles: &BTreeMap<String, ProfileConfig>) -> Result<Str
     for (name, profile) in profiles {
         csv.push_str(&build_csv_row(&[
             escape_csv(name),
-            format_opt_str(profile.base_url.as_deref(), ""),
-            format_opt_str(profile.username.as_deref(), ""),
+            format_opt_str(profile.base_url.as_deref(), "N/A"),
+            format_opt_str(profile.username.as_deref(), "N/A"),
             escape_csv(
                 &profile
                     .skip_verify
-                    .map_or("".to_string(), |b| b.to_string()),
+                    .map_or("N/A".to_string(), |b| b.to_string()),
             ),
             escape_csv(
                 &profile

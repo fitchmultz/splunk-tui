@@ -31,14 +31,14 @@ pub fn format_users(users: &[User]) -> Result<String> {
     // Rows
     for user in users {
         let name = &user.name;
-        let realname = user.realname.as_deref().unwrap_or("-");
+        let realname = user.realname.as_deref().unwrap_or("N/A");
         let user_type = user
             .user_type
             .as_ref()
             .map(|t| t.to_string())
-            .unwrap_or_else(|| "-".to_string());
+            .unwrap_or_else(|| "N/A".to_string());
         let roles = if user.roles.is_empty() {
-            "-".to_string()
+            "N/A".to_string()
         } else {
             user.roles.join(", ")
         };
