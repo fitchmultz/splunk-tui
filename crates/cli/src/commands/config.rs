@@ -216,39 +216,41 @@ fn run_list(
 fn prompt_for_secret(
     prompt_text: &str,
     existing_value: &Option<SecureValue>,
-) -> Option<SecureValue> {
+) -> Result<Option<SecureValue>> {
     if existing_value.is_some() {
-        existing_value.clone()
-    } else if let Ok(input) = dialoguer::Password::new()
-        .with_prompt(prompt_text)
-        .allow_empty_password(false)
-        .interact()
-    {
-        Some(SecureValue::Plain(secrecy::SecretString::new(input.into())))
+        Ok(existing_value.clone())
     } else {
-        None
+        let input = dialoguer::Password::new()
+            .with_prompt(prompt_text)
+            .allow_empty_password(false)
+            .interact()
+            .with_context(|| format!("Failed to prompt for {}", prompt_text))?;
+        Ok(Some(SecureValue::Plain(secrecy::SecretString::new(
+            input.into(),
+        ))))
     }
 }
 
 /// Read a secret from stdin (single line, trailing newline trimmed).
 /// Returns None if stdin is not available or empty.
-fn read_secret_from_stdin() -> Option<SecureValue> {
+fn read_secret_from_stdin() -> Result<Option<SecureValue>> {
     use std::io::{self, BufRead};
 
     let stdin = io::stdin();
     let mut lock = stdin.lock();
     let mut line = String::new();
 
-    lock.read_line(&mut line).ok().and_then(|_| {
-        let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(SecureValue::Plain(secrecy::SecretString::new(
-                trimmed.into(),
-            )))
-        }
-    })
+    lock.read_line(&mut line)
+        .context("Failed to read from stdin")?;
+
+    let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
+    if trimmed.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(SecureValue::Plain(secrecy::SecretString::new(
+            trimmed.into(),
+        ))))
+    }
 }
 
 /// Read a secret from a file (content trimmed).
@@ -374,7 +376,7 @@ fn run_set(
     let password_from_input = if let Some(pw) = password {
         Some(SecureValue::Plain(secrecy::SecretString::new(pw.into())))
     } else if password_stdin {
-        read_secret_from_stdin()
+        read_secret_from_stdin()?
     } else if let Some(path) = password_file {
         Some(read_secret_from_file(&path)?)
     } else {
@@ -385,7 +387,7 @@ fn run_set(
     let api_token_from_input = if let Some(token) = api_token {
         Some(SecureValue::Plain(secrecy::SecretString::new(token.into())))
     } else if api_token_stdin {
-        read_secret_from_stdin()
+        read_secret_from_stdin()?
     } else if let Some(path) = api_token_file {
         Some(read_secret_from_file(&path)?)
     } else {
@@ -424,18 +426,28 @@ fn run_set(
         }
     }
 
-    // Resolve password: input → existing profile → interactive prompt (unless --no-prompt)
-    let password = if no_prompt {
-        password
+    // Resolve credentials interactively only if no credentials were provided
+    // and authentication is needed (has username but no password/token)
+    let (password, api_token) = if no_prompt {
+        (password, api_token)
     } else {
-        password.or_else(|| prompt_for_secret("Password", &None))
-    };
+        let has_password = password.is_some();
+        let has_token = api_token.is_some();
+        let needs_auth = resolved_username.is_some();
 
-    // Resolve API token: input → existing profile → interactive prompt (unless --no-prompt)
-    let api_token = if no_prompt {
-        api_token
-    } else {
-        api_token.or_else(|| prompt_for_secret("API Token", &None))
+        // Only prompt if auth is needed but no credentials provided at all
+        if needs_auth && !has_password && !has_token {
+            // Try password first, then API token if password prompt is skipped
+            let password = prompt_for_secret("Password", &None)?;
+            let api_token = if password.is_none() {
+                prompt_for_secret("API Token", &None)?
+            } else {
+                None
+            };
+            (password, api_token)
+        } else {
+            (password, api_token)
+        }
     };
 
     let mut profile_config = ProfileConfig {
@@ -506,7 +518,8 @@ fn prompt_for_base_url(existing: Option<&String>) -> Result<Option<String>> {
     } else {
         input
     };
-    Ok(input.interact().ok())
+    let result = input.interact().context("Failed to prompt for Base URL")?;
+    Ok(Some(result))
 }
 
 /// Prompt for username, using existing value as default if present.
@@ -518,7 +531,8 @@ fn prompt_for_username(existing: Option<&String>) -> Result<Option<String>> {
     } else {
         input
     };
-    Ok(input.interact().ok().filter(|s| !s.is_empty()))
+    let result = input.interact().context("Failed to prompt for Username")?;
+    Ok(Some(result).filter(|s| !s.is_empty()))
 }
 
 /// Prompt for password during edit, allowing keep existing.
@@ -559,7 +573,10 @@ fn prompt_for_bool(prompt: &str, existing: Option<bool>) -> Result<Option<bool>>
     let confirm = confirm
         .with_prompt(prompt)
         .default(existing.unwrap_or(false));
-    Ok(confirm.interact().ok())
+    let result = confirm
+        .interact()
+        .with_context(|| format!("Failed to prompt for {}", prompt))?;
+    Ok(Some(result))
 }
 
 /// Prompt for numeric input with default.
@@ -572,7 +589,10 @@ where
     let input = input
         .with_prompt(prompt)
         .default(existing.unwrap_or(default));
-    Ok(input.interact().ok())
+    let result = input
+        .interact()
+        .with_context(|| format!("Failed to prompt for {}", prompt))?;
+    Ok(Some(result))
 }
 
 /// Gather all profile inputs interactively for edit command.

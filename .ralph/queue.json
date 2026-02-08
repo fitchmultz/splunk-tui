@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0421",
-      "status": "todo",
-      "title": "Fix swallowed CLI input errors in config command",
-      "description": "The config command uses .ok() on interactive input results, silently ignoring errors from dialoguer prompts. If input fails (e.g., terminal doesn't support interactive input), the command silently continues with None values instead of reporting the error.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "reliability",
-        "error-handling",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/config.rs:242,509,521,562,575"
-      ],
-      "evidence": [
-        "config.rs:242: lock.read_line(&mut line).ok().and_then(...) - error swallowed",
-        "config.rs:509: Ok(input.interact().ok()) - dialoguer error ignored",
-        "config.rs:521: Ok(input.interact().ok().filter(...)) - error ignored",
-        "config.rs:562: Ok(confirm.interact().ok()) - error ignored",
-        "config.rs:575: Ok(input.interact().ok()) - error ignored"
-      ],
-      "plan": [
-        "Replace .ok() with proper error propagation",
-        "Add context about what input was being requested",
-        "Use anyhow::Context for rich error messages",
-        "Ensure non-interactive environments get clear error messages",
-        "Verify by running `make ci` and testing with piped input"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0422",
       "status": "todo",
       "title": "Store abort handles for spawned TUI tasks to prevent resource leaks",
