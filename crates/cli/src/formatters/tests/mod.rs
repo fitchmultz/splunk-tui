@@ -16,6 +16,7 @@ mod common_tests;
 mod csv_tests;
 mod empty_tests;
 mod json_tests;
+mod ndjson_tests;
 mod streaming_tests;
 mod table_tests;
 mod xml_tests;

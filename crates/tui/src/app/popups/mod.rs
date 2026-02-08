@@ -305,12 +305,17 @@ mod tests {
         app.export_input.set_value("test.json");
         app.export_format = ExportFormat::Json;
 
-        // Toggle format with Tab
+        // Toggle format with Tab: Json -> Csv
         app.handle_popup_input(key(KeyCode::Tab));
         assert_eq!(app.export_format, ExportFormat::Csv);
         assert_eq!(app.export_input.value(), "test.csv");
 
-        // Toggle back
+        // Toggle format with Tab: Csv -> Ndjson
+        app.handle_popup_input(key(KeyCode::Tab));
+        assert_eq!(app.export_format, ExportFormat::Ndjson);
+        assert_eq!(app.export_input.value(), "test.ndjson");
+
+        // Toggle format with Tab: Ndjson -> Json
         app.handle_popup_input(key(KeyCode::Tab));
         assert_eq!(app.export_format, ExportFormat::Json);
         assert_eq!(app.export_input.value(), "test.json");

@@ -33,6 +33,11 @@ pub async fn export_data<T: Serialize + ?Sized>(
                 .context("Failed to serialize data to JSON for CSV export")?;
             export_value(&v, path, ExportFormat::Csv).await
         }
+        ExportFormat::Ndjson => {
+            let v = serde_json::to_value(data)
+                .context("Failed to serialize data to JSON for NDJSON export")?;
+            export_value(&v, path, ExportFormat::Ndjson).await
+        }
     }
 }
 
@@ -49,6 +54,13 @@ pub async fn export_value(value: &Value, path: &Path, format: ExportFormat) -> a
             _ => {
                 let rows = vec![value.clone()];
                 export_csv_values(&rows, path).await
+            }
+        },
+        ExportFormat::Ndjson => match value {
+            Value::Array(rows) => export_ndjson_values(rows, path).await,
+            _ => {
+                let rows = vec![value.clone()];
+                export_ndjson_values(&rows, path).await
             }
         },
     }
@@ -148,6 +160,36 @@ async fn export_csv_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
     file.flush()
         .await
         .with_context(|| format!("Failed to flush CSV export to: {}", path.display()))?;
+
+    Ok(())
+}
+
+async fn export_ndjson_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
+    use tokio::io::AsyncWriteExt;
+
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create NDJSON export file: {}", path.display()))?;
+
+    for (i, row) in rows.iter().enumerate() {
+        let line = serde_json::to_string(row)
+            .context("Failed to serialize row to JSON for NDJSON export")?;
+
+        file.write_all(line.as_bytes())
+            .await
+            .with_context(|| format!("Failed to write NDJSON export to: {}", path.display()))?;
+
+        // Add newline between rows, but not after the last one
+        if i < rows.len() - 1 {
+            file.write_all(b"\n").await.with_context(|| {
+                format!("Failed to write NDJSON newline to: {}", path.display())
+            })?;
+        }
+    }
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush NDJSON export to: {}", path.display()))?;
 
     Ok(())
 }
@@ -258,5 +300,41 @@ mod tests {
         let content = std::fs::read_to_string(path).unwrap();
         assert!(content.contains("\"a\": 1"));
         assert!(content.contains("\"b\": \"ok\""));
+    }
+
+    #[tokio::test]
+    async fn test_export_ndjson_array() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("test.ndjson");
+        let results = vec![json!({"a": 1, "b": 2}), json!({"a": 3, "b": 4})];
+
+        export_results(&results, &path, ExportFormat::Ndjson)
+            .await
+            .unwrap();
+
+        let content = std::fs::read_to_string(path).unwrap();
+        let lines: Vec<&str> = content.lines().collect();
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("\"a\":1"));
+        assert!(lines[0].contains("\"b\":2"));
+        assert!(lines[1].contains("\"a\":3"));
+        assert!(lines[1].contains("\"b\":4"));
+    }
+
+    #[tokio::test]
+    async fn test_export_ndjson_single_object() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("single.ndjson");
+        let value = json!({"x": "y", "n": 2});
+
+        export_value(&value, &path, ExportFormat::Ndjson)
+            .await
+            .unwrap();
+
+        let content = std::fs::read_to_string(path).unwrap();
+        let lines: Vec<&str> = content.lines().collect();
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].contains("\"x\":\"y\""));
+        assert!(lines[0].contains("\"n\":2"));
     }
 }

@@ -234,10 +234,15 @@ fn test_export_search_popup_flow() {
     assert_eq!(app.export_input.value(), "results.json");
     assert_eq!(app.export_format, ExportFormat::Json);
 
-    // Press Tab to toggle format
+    // Press Tab to toggle format: Json -> Csv
     app.handle_input(tab_key());
     assert_eq!(app.export_format, ExportFormat::Csv);
     assert_eq!(app.export_input.value(), "results.csv");
+
+    // Toggle to Ndjson
+    app.handle_input(tab_key());
+    assert_eq!(app.export_format, ExportFormat::Ndjson);
+    assert_eq!(app.export_input.value(), "results.ndjson");
 
     // Toggle back to Json
     app.handle_input(tab_key());

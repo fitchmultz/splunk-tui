@@ -147,6 +147,7 @@ pub fn format_multi_profile_output(
         OutputFormat::Table => format_multi_profile_table(output),
         OutputFormat::Csv => format_multi_profile_csv(output),
         OutputFormat::Xml => format_multi_profile_xml(output),
+        OutputFormat::Ndjson => format_multi_profile_ndjson(output),
     }
 }
 
@@ -287,6 +288,57 @@ fn format_multi_profile_xml(output: &ListAllMultiOutput) -> Result<String> {
     xml.push_str("  </profiles>\n");
     xml.push_str("</list_all_multi>");
     Ok(xml)
+}
+
+/// Format multi-profile output as NDJSON.
+fn format_multi_profile_ndjson(output: &ListAllMultiOutput) -> Result<String> {
+    let mut ndjson = String::new();
+
+    for profile in &output.profiles {
+        if let Some(ref error) = profile.error {
+            // Profile-level error
+            let line = serde_json::json!({
+                "profile_name": &profile.profile_name,
+                "base_url": &profile.base_url,
+                "timestamp": &output.timestamp,
+                "resource_type": null,
+                "count": null,
+                "status": "error",
+                "error": error
+            });
+            ndjson.push_str(&serde_json::to_string(&line)?);
+            ndjson.push('\n');
+        } else if profile.resources.is_empty() {
+            // No resources found for this profile
+            let line = serde_json::json!({
+                "profile_name": &profile.profile_name,
+                "base_url": &profile.base_url,
+                "timestamp": &output.timestamp,
+                "resource_type": null,
+                "count": null,
+                "status": "empty",
+                "error": null
+            });
+            ndjson.push_str(&serde_json::to_string(&line)?);
+            ndjson.push('\n');
+        } else {
+            for resource in &profile.resources {
+                let line = serde_json::json!({
+                    "profile_name": &profile.profile_name,
+                    "base_url": &profile.base_url,
+                    "timestamp": &output.timestamp,
+                    "resource_type": &resource.resource_type,
+                    "count": resource.count,
+                    "status": &resource.status,
+                    "error": resource.error.as_deref().unwrap_or("")
+                });
+                ndjson.push_str(&serde_json::to_string(&line)?);
+                ndjson.push('\n');
+            }
+        }
+    }
+
+    Ok(ndjson)
 }
 
 /// Escape a string for CSV output.

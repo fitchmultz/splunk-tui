@@ -294,10 +294,11 @@ The CLI tool is named `splunk-cli`.
 - `--skip-verify`: Skip TLS certificate verification
 - `--config-path <FILE>`: Path to a custom configuration file (overrides default location)
 - `--profile <NAME>`: Config profile name to load
-- `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`) [default: `table`]
+- `-o, --output <FORMAT>`: Output format (`json`, `table`, `csv`, `xml`, `ndjson`) [default: `table`]
   - **Note**: For CSV and XML formats, nested JSON structures are automatically handled:
     - **CSV**: Nested objects are flattened using dot-notation (e.g., `user.address.city`). Arrays use indexed notation (e.g., `tags.0`, `tags.1`).
     - **XML**: Nested structures are preserved as hierarchical elements. Arrays become container elements with `<item>` children.
+    - **NDJSON**: One JSON object per line, ideal for streaming and Unix pipeline processing (e.g., `splunk-cli search '...' --output ndjson | jq '.message'`)
 - `--output-file <FILE>`: Save command results to a file instead of printing to stdout
   - Creates parent directories if they don't exist
   - Overwrites existing files
@@ -480,10 +481,10 @@ splunk-cli alerts info "scheduler__admin__search__MyAlert_at_1351181001_5.31_135
 **Subcommands:**
 - `list` [options]: List fired alerts
   - `-c, --count <NUMBER>`: Maximum number of fired alerts to list [default: 100]
-  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml, ndjson) [default: table]
 
 - `info <NAME>`: Show detailed information about a fired alert
-  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml, ndjson) [default: table]
 
 **Output Fields:**
 - **Name**: The alert identifier (scheduler format)
@@ -702,7 +703,7 @@ splunk-cli jobs --delete "1705852800.123"
 - `-c, --count <NUMBER>`: Maximum number of jobs to list [default: 100]
 - `--job-count <NUMBER>`: Deprecated alias for `--count`
 
-**Output formats for `--inspect`**: Supports `--output table` (default), `--output json`, `--output csv`, `--output xml`
+**Output formats for `--inspect`**: Supports `--output table` (default), `--output json`, `--output csv`, `--output xml`, `--output ndjson`
 
 **Retrieve job results by SID:**
 
@@ -850,10 +851,10 @@ splunk-cli apps remove my_app --force
 **Subcommands:**
 - `list` [options]: List installed apps
   - `-c, --count <NUMBER>`: Maximum number of apps to list [default: 100]
-  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml, ndjson) [default: table]
 
 - `info <APP_NAME>`: Show detailed information about an app
-  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml, ndjson) [default: table]
 
 - `enable <APP_NAME>`: Enable an app by name
 
@@ -958,17 +959,17 @@ splunk-cli saved-searches delete "Daily Errors" --force
 **Subcommands:**
 - `list` [options]: List saved searches
   - `-c, --count <NUMBER>`: Maximum number of saved searches to list [default: 100]
-  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml, ndjson) [default: table]
 
 - `info <NAME>`: Show detailed information about a saved search
-  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format (table, json, csv, xml, ndjson) [default: table]
 
 - `run <NAME>`: Execute a saved search by name
   - `-w, --wait`: Wait for the search to complete before returning results
   - `-e, --earliest <TIME>`: Earliest time for the search (e.g., `-24h`, `2024-01-01T00:00:00`)
   - `-l, --latest <TIME>`: Latest time for the search (e.g., `now`, `2024-01-02T00:00:00`)
   - `-c, --count <NUMBER>`: Maximum number of results to return [default: 1000]
-  - `-o, --output <FORMAT>`: Output format for search results (table, json, csv, xml) [default: table]
+  - `-o, --output <FORMAT>`: Output format for search results (table, json, csv, xml, ndjson) [default: table]
 
 - `edit <NAME>`: Edit an existing saved search
   - `-s, --search <QUERY>`: New search query (SPL)

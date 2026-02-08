@@ -98,6 +98,7 @@ impl ExportTarget {
         let ext = match format {
             ExportFormat::Json => "json",
             ExportFormat::Csv => "csv",
+            ExportFormat::Ndjson => "ndjson",
         };
 
         format!("{base}.{ext}")
@@ -302,6 +303,7 @@ impl App {
             let format_str = match self.export_format {
                 ExportFormat::Json => "JSON",
                 ExportFormat::Csv => "CSV",
+                ExportFormat::Ndjson => "NDJSON",
             };
 
             let popup = Popup::builder(PopupType::ExportSearch)

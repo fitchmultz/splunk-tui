@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0426",
-      "status": "todo",
-      "title": "Add NDJSON/JSONL output format for streaming workflows",
-      "description": "Implement NDJSON (newline-delimited JSON) output format to enable efficient streaming workflows and unix pipeline integration. Current formats (JSON, CSV, XML, Table) all require complete buffering or produce non-streamable output. NDJSON allows line-by-line processing with tools like jq, grep, and awk.\n\nThis is critical for:\n- Processing large result sets without loading entirely into memory\n- Unix pipeline integration (splunk-cli search '...' --format ndjson | jq '.message')\n- Real-time log streaming and filtering\n- Machine-to-machine data exchange\n\nImplementation should add 'ndjson' to OutputFormat enum in crates/cli/src/formatters/mod.rs and implement NDJSONFormatter that outputs one JSON object per line without outer array wrapper.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "cli",
-        "formatters",
-        "streaming"
-      ],
-      "scope": [
-        "crates/cli/src/formatters/mod.rs",
-        "crates/cli/src/formatters/json.rs",
-        "crates/cli/src/args.rs"
-      ],
-      "evidence": [
-        "Current OutputFormat enum only supports: Json, Table, Csv, Xml (crates/cli/src/formatters/mod.rs:84-89)",
-        "No streaming format available - JSON outputs pretty-printed array with all results",
-        "TUI export only supports Json and Csv (crates/tui/src/export.rs:28-36)",
-        "Streaming use case missing: cannot pipe large search results to jq without loading all into memory"
-      ],
-      "plan": [
-        "Add Ndjson variant to OutputFormat enum in crates/cli/src/formatters/mod.rs",
-        "Implement NDJSON formatter that writes one object per line without array wrapper",
-        "Add --format ndjson to CLI args and help text",
-        "Add unit tests for NDJSON output format",
-        "Add integration test with large result set to verify streaming behavior",
-        "Update docs/usage.md with NDJSON format documentation",
-        "Verify by running: splunk-cli search 'index=_internal | head 100' --format ndjson | jq -c '. | select(.message | contains(\"error\"))'"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0427",
       "status": "todo",
       "title": "Implement structured exit codes for CLI scripting",

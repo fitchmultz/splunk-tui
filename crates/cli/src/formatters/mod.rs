@@ -67,6 +67,7 @@ mod common;
 mod csv;
 mod json;
 mod macros;
+mod ndjson;
 mod resource_impls;
 mod table;
 mod xml;
@@ -76,6 +77,7 @@ mod xml;
 pub use common::{escape_xml, output_result, write_to_file};
 pub use csv::CsvFormatter;
 pub use json::JsonFormatter;
+pub use ndjson::NdjsonFormatter;
 pub use table::{Pagination, TableFormatter};
 pub use xml::XmlFormatter;
 
@@ -86,6 +88,7 @@ pub enum OutputFormat {
     Table,
     Csv,
     Xml,
+    Ndjson,
 }
 
 impl OutputFormat {
@@ -96,8 +99,9 @@ impl OutputFormat {
             "table" => Ok(OutputFormat::Table),
             "csv" => Ok(OutputFormat::Csv),
             "xml" => Ok(OutputFormat::Xml),
+            "ndjson" | "jsonl" => Ok(OutputFormat::Ndjson),
             _ => anyhow::bail!(
-                "Invalid output format: {}. Valid options: json, table, csv, xml",
+                "Invalid output format: {}. Valid options: json, table, csv, xml, ndjson",
                 s
             ),
         }
@@ -593,6 +597,7 @@ pub fn get_formatter(format: OutputFormat) -> Box<dyn Formatter> {
         OutputFormat::Table => Box::new(TableFormatter),
         OutputFormat::Csv => Box::new(CsvFormatter),
         OutputFormat::Xml => Box::new(XmlFormatter),
+        OutputFormat::Ndjson => Box::new(NdjsonFormatter),
     }
 }
 

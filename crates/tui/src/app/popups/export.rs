@@ -55,7 +55,8 @@ impl App {
             KeyCode::Tab => {
                 self.export_format = match self.export_format {
                     ExportFormat::Json => ExportFormat::Csv,
-                    ExportFormat::Csv => ExportFormat::Json,
+                    ExportFormat::Csv => ExportFormat::Ndjson,
+                    ExportFormat::Ndjson => ExportFormat::Json,
                 };
                 // Automatically update extension if it matches the previous format
                 let current_value = self.export_input.value().to_string();
@@ -63,6 +64,8 @@ impl App {
                     ExportFormat::Json => {
                         if current_value.ends_with(".csv") {
                             current_value[..current_value.len() - 4].to_string() + ".json"
+                        } else if current_value.ends_with(".ndjson") {
+                            current_value[..current_value.len() - 7].to_string() + ".json"
                         } else {
                             current_value
                         }
@@ -70,6 +73,17 @@ impl App {
                     ExportFormat::Csv => {
                         if current_value.ends_with(".json") {
                             current_value[..current_value.len() - 5].to_string() + ".csv"
+                        } else if current_value.ends_with(".ndjson") {
+                            current_value[..current_value.len() - 7].to_string() + ".csv"
+                        } else {
+                            current_value
+                        }
+                    }
+                    ExportFormat::Ndjson => {
+                        if current_value.ends_with(".json") {
+                            current_value[..current_value.len() - 5].to_string() + ".ndjson"
+                        } else if current_value.ends_with(".csv") {
+                            current_value[..current_value.len() - 4].to_string() + ".ndjson"
                         } else {
                             current_value
                         }

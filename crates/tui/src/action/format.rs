@@ -8,6 +8,7 @@
 //!
 //! - `Json`: JSON format with proper serialization
 //! - `Csv`: CSV format for spreadsheet applications
+//! - `Ndjson`: NDJSON format for streaming workflows
 //!
 //! # What This Module Does NOT Handle
 //!
@@ -22,4 +23,6 @@ pub enum ExportFormat {
     Json,
     /// CSV format
     Csv,
+    /// NDJSON format (newline-delimited JSON)
+    Ndjson,
 }
