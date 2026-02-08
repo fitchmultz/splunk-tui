@@ -17,7 +17,7 @@
 //! - Deduplication ensures no duplicate entries in tail output
 //! - Time filtering uses Splunk's standard time format
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use splunk_client::models::LogEntry;
 use splunk_client::models::logs::sort_logs_newest_first;
 use splunk_config::constants::DEFAULT_LOGS_TAIL_POLL_INTERVAL_SECS;
@@ -25,7 +25,7 @@ use tokio::time::{Duration, sleep};
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{Formatter, OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{Formatter, OutputFormat, get_formatter, output_result};
 
 /// Cursor for tracking log position during tailing.
 #[derive(Debug, Clone)]
@@ -223,17 +223,7 @@ async fn run_normal_mode(
     };
 
     let output = formatter.format_logs(&logs)?;
-    if let Some(path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        println!("{}", output);
-    }
+    output_result(&output, format, output_file)?;
 
     Ok(())
 }

@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0406",
-      "status": "todo",
-      "title": "Create shared output writing helper for CLI commands",
-      "description": "The output writing pattern is duplicated across 40+ locations in CLI command files. Each command repeats the same logic for writing to file vs stdout with error handling. Create a unified helper function like `output_result(formatter, format, output_file)` to eliminate this duplication.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "dry",
-        "refactoring",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/*.rs",
-        "crates/cli/src/formatters/mod.rs"
-      ],
-      "evidence": [
-        "Pattern repeated 40+ times across command files:",
-        "if let Some(ref path) = output_file {",
-        "    write_to_file(&output, path)",
-        "        .with_context(|| format!(\"Failed to write output to {}\", path.display()))?;",
-        "    eprintln!(\"Results written to {} ({:?} format)\", path.display(), format);",
-        "} else { print!(\"{}\", output); }"
-      ],
-      "plan": [
-        "Add output_result() helper to formatters module",
-        "Helper should handle both file and stdout output",
-        "Include proper error context and user feedback",
-        "Refactor all command files to use the helper",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0407",
       "status": "todo",
       "title": "Fix hardcoded timeout in overview_fetch.rs to use FETCH_TIMEOUT constant",

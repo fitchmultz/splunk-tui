@@ -16,14 +16,14 @@
 
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use tracing::{info, warn};
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{
     OutputFormat, Pagination, ShcCaptainOutput, ShcConfigOutput, ShcManagementOutput,
-    ShcMemberOutput, ShcStatusOutput, TableFormatter, get_formatter, write_to_file,
+    ShcMemberOutput, ShcStatusOutput, TableFormatter, get_formatter, output_result,
 };
 use splunk_config::constants::*;
 
@@ -188,17 +188,7 @@ async fn render_shc_output(
         formatter.format_shc_status(status)?
     };
 
-    if let Some(path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file)?;
 
     Ok(())
 }
@@ -315,17 +305,7 @@ async fn run_members(
             let formatter = get_formatter(format);
             let output = formatter.format_shc_members(&page, &pagination)?;
 
-            if let Some(ref path) = output_file {
-                write_to_file(&output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", output);
-            }
+            output_result(&output, format, output_file.as_ref())?;
         }
         Err(e) => {
             warn!("Failed to fetch SHC members: {}", e);
@@ -359,17 +339,7 @@ async fn run_captain(
             let formatter = get_formatter(format);
             let formatted = formatter.format_shc_captain(&output)?;
 
-            if let Some(ref path) = output_file {
-                write_to_file(&formatted, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", formatted);
-            }
+            output_result(&formatted, format, output_file.as_ref())?;
         }
         Err(e) => {
             warn!("Failed to fetch SHC captain: {}", e);
@@ -403,17 +373,7 @@ async fn run_config(
             let formatter = get_formatter(format);
             let formatted = formatter.format_shc_config(&output)?;
 
-            if let Some(ref path) = output_file {
-                write_to_file(&formatted, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", formatted);
-            }
+            output_result(&formatted, format, output_file.as_ref())?;
         }
         Err(e) => {
             warn!("Failed to fetch SHC config: {}", e);
@@ -524,17 +484,7 @@ async fn handle_management_output(
     let formatter = get_formatter(format);
     let formatted = formatter.format_shc_management(&output)?;
 
-    if let Some(ref path) = output_file {
-        write_to_file(&formatted, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        println!("{}", formatted);
-    }
+    output_result(&formatted, format, output_file.as_ref())?;
 
     Ok(())
 }

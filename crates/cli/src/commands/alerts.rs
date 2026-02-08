@@ -14,14 +14,14 @@
 //! - Count parameter is validated to be positive
 //! - Alert names are passed through without modification
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
 use splunk_config::constants::*;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 #[derive(Subcommand)]
 pub enum AlertsCommand {
@@ -75,18 +75,7 @@ async fn run_list(
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_fired_alerts(&alerts)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
-
+    output_result(&output, format, output_file.as_ref())?;
     Ok(())
 }
 
@@ -109,17 +98,6 @@ async fn run_info(
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_fired_alert_info(&alert)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
-
+    output_result(&output, format, output_file.as_ref())?;
     Ok(())
 }

@@ -30,7 +30,7 @@ use std::path::PathBuf;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 /// HEC subcommands.
 #[derive(Subcommand)]
@@ -252,17 +252,7 @@ async fn run_send(
         formatter.format_hec_response(&response)?
     };
 
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }
@@ -316,17 +306,7 @@ async fn run_send_batch(
         formatter.format_hec_batch_response(&response)?
     };
 
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }
@@ -363,17 +343,7 @@ async fn run_health(
         formatter.format_hec_health(&health)?
     };
 
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }
@@ -418,17 +388,7 @@ async fn run_check_ack(
         formatter.format_hec_ack_status(&status)?
     };
 
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

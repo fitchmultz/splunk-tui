@@ -18,13 +18,13 @@
 //! - Max results default to configuration or 100
 //! - Progress callbacks are only used in non-quiet mode
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use splunk_client::{SearchMode, SearchRequest};
 use splunk_config::SearchDefaultConfig;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run(
@@ -102,18 +102,7 @@ pub async fn run(
 
     // Format and print results
     let output = formatter.format_search_results(&results)?;
-
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

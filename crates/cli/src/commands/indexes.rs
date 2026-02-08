@@ -19,12 +19,12 @@
 //! - Index names are passed through without modification
 //! - Server-side total may not be available for all index listings
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 use splunk_config::constants::*;
 
 #[derive(Subcommand)]
@@ -222,34 +222,13 @@ async fn run_list(
             total: None, // server-side total is not available in current client response shape
         };
         let output = formatter.format_indexes_paginated(&indexes, detailed, pagination)?;
-        if let Some(ref path) = output_file {
-            write_to_file(&output, path)
-                .with_context(|| format!("Failed to write output to {}", path.display()))?;
-            eprintln!(
-                "Results written to {} ({:?} format)",
-                path.display(),
-                format
-            );
-        } else {
-            print!("{}", output);
-        }
+        output_result(&output, format, output_file.as_ref())?;
         return Ok(());
     }
 
     let formatter = get_formatter(format);
     let output = formatter.format_indexes(&indexes, detailed)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
-
+    output_result(&output, format, output_file.as_ref())?;
     Ok(())
 }
 

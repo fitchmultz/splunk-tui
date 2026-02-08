@@ -20,12 +20,12 @@ pub mod fetchers;
 pub mod output;
 pub mod types;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use tracing::info;
 
 use crate::cancellation::CancellationToken;
 use crate::commands::build_client_from_config;
-use crate::formatters::{OutputFormat, write_to_file};
+use crate::formatters::{OutputFormat, output_result};
 
 pub use types::{ListAllMultiOutput, ProfileResult, VALID_RESOURCES};
 
@@ -69,17 +69,7 @@ async fn write_output(
     output_file: Option<std::path::PathBuf>,
     format: OutputFormat,
 ) -> Result<()> {
-    if let Some(ref path) = output_file {
-        write_to_file(formatted, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", formatted);
-    }
+    output_result(formatted, format, output_file.as_ref())?;
     Ok(())
 }
 

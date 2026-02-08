@@ -15,13 +15,13 @@
 //! - Count and offset parameters are validated for safe pagination
 //! - Time-based filtering uses Splunk's standard time format
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use splunk_config::constants::*;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, Pagination, TableFormatter, get_formatter, output_result};
 
 #[derive(Subcommand)]
 pub enum AuditCommand {
@@ -140,33 +140,13 @@ async fn run_list(
             total: None,
         };
         let output = formatter.format_audit_events_paginated(&events, detailed, pagination)?;
-        if let Some(ref path) = output_file {
-            write_to_file(&output, path)
-                .with_context(|| format!("Failed to write output to {}", path.display()))?;
-            eprintln!(
-                "Results written to {} ({:?} format)",
-                path.display(),
-                format
-            );
-        } else {
-            print!("{}", output);
-        }
+        output_result(&output, format, output_file.as_ref())?;
         return Ok(());
     }
 
     let formatter = get_formatter(format);
     let output = formatter.format_audit_events(&events, detailed)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }
@@ -190,18 +170,7 @@ async fn run_recent(
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
     let output = formatter.format_audit_events(&events, false)?;
-
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

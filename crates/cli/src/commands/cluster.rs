@@ -16,7 +16,7 @@
 
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use tracing::{info, warn};
 
@@ -25,7 +25,7 @@ use splunk_config::constants::*;
 use crate::cancellation::Cancelled;
 use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, OutputFormat, Pagination,
-    TableFormatter, get_formatter, write_to_file,
+    TableFormatter, get_formatter, output_result,
 };
 
 /// Cluster management subcommands.
@@ -192,17 +192,7 @@ async fn render_cluster_output(
         formatter.format_cluster_info(info, detailed)?
     };
 
-    if let Some(path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file)?;
 
     Ok(())
 }
@@ -319,18 +309,7 @@ async fn run_peers(
             let format = OutputFormat::from_str(output_format)?;
             let formatter = get_formatter(format);
             let output = formatter.format_cluster_peers(&page, &pagination)?;
-
-            if let Some(ref path) = output_file {
-                write_to_file(&output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", output);
-            }
+            output_result(&output, format, output_file.as_ref())?;
         }
         Err(e) => {
             warn!("Failed to fetch cluster peers: {}", e);
@@ -498,17 +477,7 @@ async fn handle_management_output(
     let formatter = get_formatter(format);
     let formatted = formatter.format_cluster_management(&output)?;
 
-    if let Some(ref path) = output_file {
-        write_to_file(&formatted, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        println!("{}", formatted);
-    }
+    output_result(&formatted, format, output_file.as_ref())?;
 
     Ok(())
 }

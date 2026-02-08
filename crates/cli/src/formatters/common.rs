@@ -190,6 +190,46 @@ pub fn escape_xml(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
+/// Write formatted output to file or stdout with proper error handling and user feedback.
+///
+/// This helper eliminates the duplicated pattern across CLI command files for handling
+/// output to either a file or stdout. It provides consistent error messages and
+/// user feedback when writing to files.
+///
+/// # Arguments
+/// * `output` - The formatted output string to write
+/// * `format` - The output format (used for user feedback message)
+/// * `output_file` - Optional path to write output to; if None, writes to stdout
+///
+/// # Returns
+/// Returns `Ok(())` on success, or an error with context if writing fails.
+///
+/// # Example
+/// ```rust,ignore
+/// let format = OutputFormat::from_str(output_format)?;
+/// let formatter = get_formatter(format);
+/// let output = formatter.format_indexes(&indexes, detailed)?;
+/// output_result(&output, format, output_file.as_ref())?;
+/// ```
+pub fn output_result(
+    output: &str,
+    format: crate::formatters::OutputFormat,
+    output_file: Option<&std::path::PathBuf>,
+) -> Result<()> {
+    if let Some(path) = output_file {
+        write_to_file(output, path)
+            .with_context(|| format!("Failed to write output to {}", path.display()))?;
+        eprintln!(
+            "Results written to {} ({:?} format)",
+            path.display(),
+            format
+        );
+    } else {
+        print!("{}", output);
+    }
+    Ok(())
+}
+
 /// Write formatted output to a file atomically.
 ///
 /// Creates parent directories if needed, writes to temp file then renames

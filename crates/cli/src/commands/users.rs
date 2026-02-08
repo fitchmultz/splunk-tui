@@ -17,13 +17,13 @@
 //! - Role assignments are passed through without validation
 //! - Passwords are handled securely via SecretString
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use secrecy::SecretString;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, get_formatter, output_result};
 use splunk_config::constants::*;
 
 #[derive(Debug, Subcommand)]
@@ -159,17 +159,7 @@ async fn run_list(
     let formatter = get_formatter(format);
 
     let output = formatter.format_users(&users)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

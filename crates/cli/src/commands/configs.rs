@@ -16,13 +16,13 @@
 //! - Config file names and stanza names are passed through without modification
 //! - Count and offset parameters are validated for safe pagination
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{
-    Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file,
+    Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, output_result,
 };
 use splunk_config::constants::*;
 
@@ -148,33 +148,13 @@ async fn run_list(
                 total: None,
             };
             let output = formatter.format_config_stanzas_paginated(&stanzas, pagination)?;
-            if let Some(ref path) = output_file {
-                write_to_file(&output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", output);
-            }
+            output_result(&output, format, output_file.as_ref())?;
             return Ok(());
         }
 
         let formatter = get_formatter(format);
         let output = formatter.format_config_stanzas(&stanzas)?;
-        if let Some(ref path) = output_file {
-            write_to_file(&output, path)
-                .with_context(|| format!("Failed to write output to {}", path.display()))?;
-            eprintln!(
-                "Results written to {} ({:?} format)",
-                path.display(),
-                format
-            );
-        } else {
-            print!("{}", output);
-        }
+        output_result(&output, format, output_file.as_ref())?;
     } else {
         info!("Listing available config files");
 
@@ -189,33 +169,13 @@ async fn run_list(
         if format == OutputFormat::Table {
             let formatter = TableFormatter;
             let output = formatter.format_config_files(&config_files)?;
-            if let Some(ref path) = output_file {
-                write_to_file(&output, path)
-                    .with_context(|| format!("Failed to write output to {}", path.display()))?;
-                eprintln!(
-                    "Results written to {} ({:?} format)",
-                    path.display(),
-                    format
-                );
-            } else {
-                print!("{}", output);
-            }
+            output_result(&output, format, output_file.as_ref())?;
             return Ok(());
         }
 
         let formatter = get_formatter(format);
         let output = formatter.format_config_files(&config_files)?;
-        if let Some(ref path) = output_file {
-            write_to_file(&output, path)
-                .with_context(|| format!("Failed to write output to {}", path.display()))?;
-            eprintln!(
-                "Results written to {} ({:?} format)",
-                path.display(),
-                format
-            );
-        } else {
-            print!("{}", output);
-        }
+        output_result(&output, format, output_file.as_ref())?;
     }
 
     Ok(())
@@ -247,17 +207,7 @@ async fn run_view(
 
     let formatter = get_formatter(format);
     let output = formatter.format_config_stanza(&stanza)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

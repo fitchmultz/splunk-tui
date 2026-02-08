@@ -14,11 +14,11 @@
 //! - Partial failures are logged but do not fail the overall command
 //! - Health check results are aggregated from multiple endpoints
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use tracing::{info, warn};
 
 use crate::cancellation::Cancelled;
-use crate::formatters::{OutputFormat, get_formatter, write_to_file};
+use crate::formatters::{OutputFormat, get_formatter, output_result};
 
 pub async fn run(
     config: splunk_config::Config,
@@ -49,17 +49,7 @@ pub async fn run(
 
     // Format and print results
     let output = formatter.format_health(&health_result.output)?;
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

@@ -16,12 +16,12 @@
 //! - Pools and rules are fetched concurrently for efficiency
 //! - Server-side total may not be available for all listings
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use tracing::info;
 
 use crate::cancellation::Cancelled;
 use crate::formatters::{
-    Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, write_to_file,
+    Formatter, OutputFormat, Pagination, TableFormatter, get_formatter, output_result,
 };
 
 /// Run the workload command.
@@ -87,17 +87,7 @@ pub async fn run(
             output,
             formatter.format_workload_rules(&rules, detailed)?
         );
-        if let Some(ref path) = output_file {
-            write_to_file(&output, path)
-                .with_context(|| format!("Failed to write output to {}", path.display()))?;
-            eprintln!(
-                "Results written to {} ({:?} format)",
-                path.display(),
-                format
-            );
-        } else {
-            print!("{}", output);
-        }
+        output_result(&output, format, output_file.as_ref())?;
         return Ok(());
     }
 
@@ -106,17 +96,7 @@ pub async fn run(
     output.push('\n');
     output.push_str(&formatter.format_workload_rules(&rules, detailed)?);
 
-    if let Some(ref path) = output_file {
-        write_to_file(&output, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        print!("{}", output);
-    }
+    output_result(&output, format, output_file.as_ref())?;
 
     Ok(())
 }

@@ -22,7 +22,7 @@ use tracing::info;
 use crate::cancellation::Cancelled;
 use crate::formatters::{
     LicenseActivationOutput, LicenseInfoOutput, LicenseInstallOutput, LicensePoolOperationOutput,
-    OutputFormat, get_formatter, write_to_file,
+    OutputFormat, get_formatter, output_result, write_to_file,
 };
 
 #[derive(Subcommand)]
@@ -171,17 +171,7 @@ async fn run_show(
     let formatter = get_formatter(format);
     let formatted = formatter.format_license(&output)?;
 
-    if let Some(ref path) = output_file {
-        write_to_file(&formatted, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        println!("{}", formatted);
-    }
+    output_result(&formatted, format, output_file.as_ref())?;
 
     Ok(())
 }
@@ -205,17 +195,7 @@ async fn run_list(
     let formatter = get_formatter(format);
     let formatted = formatter.format_installed_licenses(&licenses)?;
 
-    if let Some(ref path) = output_file {
-        write_to_file(&formatted, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        println!("{}", formatted);
-    }
+    output_result(&formatted, format, output_file.as_ref())?;
 
     Ok(())
 }
@@ -335,17 +315,7 @@ async fn run_pool_list(
     let formatter = get_formatter(format);
     let formatted = formatter.format_license_pools(&pools)?;
 
-    if let Some(ref path) = output_file {
-        write_to_file(&formatted, path)
-            .with_context(|| format!("Failed to write output to {}", path.display()))?;
-        eprintln!(
-            "Results written to {} ({:?} format)",
-            path.display(),
-            format
-        );
-    } else {
-        println!("{}", formatted);
-    }
+    output_result(&formatted, format, output_file.as_ref())?;
 
     Ok(())
 }
