@@ -109,12 +109,12 @@ splunk-cli jobs --delete 1705852800.123
 
 **List all indexes:**
 ```bash
-splunk-cli indexes
+splunk-cli indexes list
 ```
 
 **Get detailed index metrics:**
 ```bash
-splunk-cli indexes --detailed
+splunk-cli indexes list --detailed
 ```
 
 ### Cluster & Health Monitoring
@@ -124,9 +124,14 @@ splunk-cli indexes --detailed
 splunk-cli health
 ```
 
-**View cluster peer status:**
+**View cluster status:**
 ```bash
-splunk-cli cluster --detailed
+splunk-cli cluster show
+```
+
+**View detailed cluster information including peers:**
+```bash
+splunk-cli cluster show --detailed
 ```
 
 ### Configuration Profiles

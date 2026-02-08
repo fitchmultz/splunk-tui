@@ -533,14 +533,51 @@ splunk-cli search "index=main" --realtime
 #### `indexes`
 List and manage Splunk indexes.
 
-```bash
-splunk-cli indexes --detailed
-splunk-cli indexes --count 30 --offset 30
-```
+**Subcommands:**
 
-- `-d, --detailed`: Show detailed information about each index
-- `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 100]
-- `--offset <NUMBER>`: Offset into the index list (zero-based) [default: 0]
+- `list` [options]: List all indexes (default)
+  - `-d, --detailed`: Show detailed information about each index
+  - `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 100]
+  - `--offset <NUMBER>`: Offset into the index list (zero-based) [default: 0]
+
+- `create <NAME>`: Create a new index
+  - `--max-data-size-mb <MB>`: Maximum data size in MB
+  - `--max-hot-buckets <N>`: Maximum hot buckets
+  - `--max-warm-db-count <N>`: Maximum warm DB count
+  - `--frozen-time-period-secs <SECS>`: Frozen time period in seconds
+  - `--home-path <PATH>`: Home path for hot/warm buckets
+  - `--cold-db-path <PATH>`: Cold DB path
+  - `--thawed-path <PATH>`: Thawed path
+  - `--cold-to-frozen-dir <DIR>`: Cold to frozen directory
+
+- `modify <NAME>`: Modify an existing index
+  - `--max-data-size-mb <MB>`: Maximum data size in MB
+  - `--max-hot-buckets <N>`: Maximum hot buckets
+  - `--max-warm-db-count <N>`: Maximum warm DB count
+  - `--frozen-time-period-secs <SECS>`: Frozen time period in seconds
+  - `--home-path <PATH>`: Home path
+  - `--cold-db-path <PATH>`: Cold DB path
+  - `--thawed-path <PATH>`: Thawed path
+  - `--cold-to-frozen-dir <DIR>`: Cold to frozen directory
+
+- `delete <NAME>`: Delete an index
+  - `-f, --force`: Skip confirmation prompt
+
+```bash
+# List indexes
+splunk-cli indexes list
+splunk-cli indexes list --detailed
+splunk-cli indexes list --count 30 --offset 30
+
+# Create a new index
+splunk-cli indexes create myindex --max-data-size-mb 1000
+
+# Modify an index
+splunk-cli indexes modify myindex --max-hot-buckets 10
+
+# Delete an index
+splunk-cli indexes delete myindex --force
+```
 
 **Note (table output):** table output includes a pagination footer (e.g., `Showing 31-60 (page 2)`).
 
@@ -641,6 +678,8 @@ splunk-cli shc config
 
 #### `jobs`
 Manage search jobs.
+
+**Note:** The `jobs` command uses flat flags (not subcommands) for actions.
 
 ```bash
 # List all jobs
@@ -903,6 +942,17 @@ splunk-cli saved-searches edit "Errors Last 24 Hours" --disabled true
 
 # Update description
 splunk-cli saved-searches edit "Errors Last 24 Hours" --description "Updated description"
+
+# Create a new saved search
+splunk-cli saved-searches create "Daily Errors" --search "index=main ERROR | stats count" --description "Count of daily errors"
+
+# Enable/disable a saved search
+splunk-cli saved-searches enable "Daily Errors"
+splunk-cli saved-searches disable "Daily Errors"
+
+# Delete a saved search
+splunk-cli saved-searches delete "Daily Errors"
+splunk-cli saved-searches delete "Daily Errors" --force
 ```
 
 **Subcommands:**
@@ -924,6 +974,18 @@ splunk-cli saved-searches edit "Errors Last 24 Hours" --description "Updated des
   - `-s, --search <QUERY>`: New search query (SPL)
   - `-d, --description <DESC>`: New description
   - `--disabled <BOOL>`: Enable/disable the saved search (true/false)
+
+- `create <NAME>`: Create a new saved search
+  - `-s, --search <QUERY>`: Search query (SPL) - required
+  - `-d, --description <DESC>`: Description for the saved search
+  - `--disabled`: Create in disabled state
+
+- `delete <NAME>`: Delete a saved search
+  - `-f, --force`: Skip confirmation prompt
+
+- `enable <NAME>`: Enable a saved search
+
+- `disable <NAME>`: Disable a saved search
 
 **Output Formats:**
 - **Table**: Human-readable formatted output (list: table view, info: detailed view)

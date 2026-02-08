@@ -63,10 +63,28 @@ export SPLUNK_USERNAME=admin
 export SPLUNK_PASSWORD=changeme
 export SPLUNK_API_TOKEN=your-api-token
 
-# Optional
+# Optional Connection Settings
 export SPLUNK_SKIP_VERIFY=false
 export SPLUNK_TIMEOUT=30
 export SPLUNK_MAX_RETRIES=3
+
+# Session Management
+export SPLUNK_SESSION_TTL=3600
+export SPLUNK_SESSION_EXPIRY_BUFFER=60
+
+# Search Defaults
+export SPLUNK_EARLIEST_TIME=-24h
+export SPLUNK_LATEST_TIME=now
+export SPLUNK_MAX_RESULTS=1000
+
+# TUI Settings
+export SPLUNK_HEALTH_CHECK_INTERVAL=60
+export SPLUNK_INTERNAL_LOGS_COUNT=100
+export SPLUNK_INTERNAL_LOGS_EARLIEST=-15m
+
+# Profile Selection
+export SPLUNK_PROFILE=default
+export SPLUNK_CONFIG_PATH=/path/to/config.json
 ```
 
 Copy `.env.example` to `.env` and configure as needed.
@@ -93,33 +111,95 @@ splunk-cli search "search index=main" --count 1000 --wait
 
 ```bash
 # List all indexes
-splunk-cli indexes
+splunk-cli indexes list
 
 # Detailed information
-splunk-cli indexes --detailed
+splunk-cli indexes list --detailed
+
+# Pagination
+splunk-cli indexes list --count 30 --offset 30
+
+# Create a new index
+splunk-cli indexes create myindex --max-data-size-mb 1000
+
+# Modify an index
+splunk-cli indexes modify myindex --max-hot-buckets 10
+
+# Delete an index
+splunk-cli indexes delete myindex
 ```
 
 ### Cluster
 
 ```bash
 # Show cluster status
-splunk-cli cluster
+splunk-cli cluster show
 
 # Detailed cluster information including peers
-splunk-cli cluster --detailed
+splunk-cli cluster show --detailed
+
+# List cluster peers
+splunk-cli cluster peers
+
+# Maintenance mode
+splunk-cli cluster maintenance enable
+splunk-cli cluster maintenance disable
+splunk-cli cluster maintenance status
+
+# Rebalance cluster
+splunk-cli cluster rebalance
+
+# Manage peers
+splunk-cli cluster peers-manage decommission <peer_name>
+splunk-cli cluster peers-manage remove <peer_guid>
 ```
 
 ### Jobs
 
 ```bash
-# List all search jobs
+# List all search jobs (default)
+splunk-cli jobs
 splunk-cli jobs --list
+splunk-cli jobs --list --count 50
+
+# Inspect a specific job
+splunk-cli jobs --inspect 1705852800.123
 
 # Cancel a job
-splunk-cli jobs --cancel 123456789.123456789
+splunk-cli jobs --cancel 1705852800.123
 
 # Delete a job
-splunk-cli jobs --delete 123456789.123456789
+splunk-cli jobs --delete 1705852800.123
+
+# Retrieve job results
+splunk-cli jobs --results 1705852800.123
+splunk-cli jobs --results 1705852800.123 --result-count 500
+```
+
+### Saved Searches
+
+```bash
+# List all saved searches
+splunk-cli saved-searches list
+
+# Show detailed information
+splunk-cli saved-searches info "My Saved Search"
+
+# Run a saved search
+splunk-cli saved-searches run "My Saved Search" --wait
+
+# Create a new saved search
+splunk-cli saved-searches create "New Search" --search "index=main | stats count"
+
+# Edit a saved search
+splunk-cli saved-searches edit "My Saved Search" --description "Updated description"
+
+# Enable/disable a saved search
+splunk-cli saved-searches enable "My Saved Search"
+splunk-cli saved-searches disable "My Saved Search"
+
+# Delete a saved search
+splunk-cli saved-searches delete "My Saved Search"
 ```
 
 ## TUI Usage

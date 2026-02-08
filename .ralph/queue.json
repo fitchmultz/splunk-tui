@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0400",
-      "status": "todo",
-      "title": "Update documentation to match actual CLI implementation",
-      "description": "README.md and docs/usage.md contain outdated command syntax that doesn't match the actual implementation. The docs show deprecated flat-flag syntax (e.g., 'indexes --detailed') but the actual CLI uses subcommands ('indexes list --detailed'). Additionally, many subcommands like 'indexes create/delete', 'cluster peers', and 'saved-searches create/delete' are not documented at all.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "documentation",
-        "consistency",
-        "ux"
-      ],
-      "scope": [
-        "README.md",
-        "docs/usage.md",
-        "docs/user-guide.md"
-      ],
-      "evidence": [
-        "README.md lines 96-99: 'splunk-cli indexes --detailed' should be 'splunk-cli indexes list --detailed'",
-        "docs/usage.md lines 536-543: Same deprecated syntax",
-        "Missing docs for: indexes create/modify/delete",
-        "Missing docs for: cluster peers/maintenance/rebalance",
-        "Missing docs for: saved-searches create/delete/enable/disable",
-        "Missing env var: SPLUNK_HEALTH_CHECK_INTERVAL in docs table"
-      ],
-      "plan": [
-        "Update README.md with correct command syntax",
-        "Update docs/usage.md with all supported subcommands",
-        "Add missing environment variable documentation",
-        "Run `make generate` to regenerate keybinding docs",
-        "Run `make lint-docs` to verify docs are in sync",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0401",
       "status": "todo",
       "title": "Replace hardcoded page size values in TUI side effects with constants",
