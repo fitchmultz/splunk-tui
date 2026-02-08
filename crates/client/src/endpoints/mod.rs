@@ -76,3 +76,121 @@ pub use shc::{
 };
 pub use users::{create_user, delete_user, list_users, modify_user};
 pub use workload::{list_workload_pools, list_workload_rules};
+
+use crate::error::ClientError;
+
+/// Safely extract the first entry's content from a Splunk API response.
+///
+/// Splunk REST API responses typically have the structure:
+/// `{ "entry": [ { "content": { ... } } ] }`
+///
+/// This helper safely navigates that structure and returns an error if any
+/// part is missing (empty entry array, missing entry field, missing content field).
+pub(crate) fn extract_entry_content(
+    resp: &serde_json::Value,
+) -> Result<&serde_json::Value, ClientError> {
+    let entry = resp
+        .get("entry")
+        .and_then(|e| e.as_array())
+        .and_then(|arr| arr.first())
+        .ok_or_else(|| {
+            ClientError::InvalidResponse("Missing or empty 'entry' array in response".to_string())
+        })?;
+
+    entry
+        .get("content")
+        .ok_or_else(|| ClientError::InvalidResponse("Missing 'content' field in entry".to_string()))
+}
+
+/// Safely extract a message from the first entry's content.
+///
+/// Used for management API responses that return a message in the content.
+pub(crate) fn extract_entry_message(resp: &serde_json::Value) -> Option<String> {
+    resp.get("entry")?
+        .as_array()?
+        .first()?
+        .get("content")?
+        .get("message")?
+        .as_str()
+        .map(|s| s.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_extract_entry_content_success() {
+        let resp = json!({
+            "entry": [{
+                "content": {
+                    "id": "test-123",
+                    "name": "test"
+                }
+            }]
+        });
+
+        let content = extract_entry_content(&resp).unwrap();
+        assert_eq!(content["id"], "test-123");
+    }
+
+    #[test]
+    fn test_extract_entry_content_missing_entry() {
+        let resp = json!({ "other": "field" });
+
+        let result = extract_entry_content(&resp);
+        assert!(matches!(result, Err(ClientError::InvalidResponse(_))));
+    }
+
+    #[test]
+    fn test_extract_entry_content_empty_entry_array() {
+        let resp = json!({ "entry": [] });
+
+        let result = extract_entry_content(&resp);
+        assert!(matches!(result, Err(ClientError::InvalidResponse(_))));
+    }
+
+    #[test]
+    fn test_extract_entry_content_missing_content() {
+        let resp = json!({
+            "entry": [{ "name": "test" }]
+        });
+
+        let result = extract_entry_content(&resp);
+        assert!(matches!(result, Err(ClientError::InvalidResponse(_))));
+    }
+
+    #[test]
+    fn test_extract_entry_message_success() {
+        let resp = json!({
+            "entry": [{
+                "content": {
+                    "message": "Operation successful"
+                }
+            }]
+        });
+
+        assert_eq!(
+            extract_entry_message(&resp),
+            Some("Operation successful".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_entry_message_missing() {
+        let resp = json!({
+            "entry": [{
+                "content": { "other": "field" }
+            }]
+        });
+
+        assert_eq!(extract_entry_message(&resp), None);
+    }
+
+    #[test]
+    fn test_extract_entry_message_empty_entry() {
+        let resp = json!({ "entry": [] });
+        assert_eq!(extract_entry_message(&resp), None);
+    }
+}

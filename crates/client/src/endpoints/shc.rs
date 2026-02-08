@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
+use crate::endpoints::{extract_entry_content, extract_entry_message};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::{
@@ -87,7 +88,7 @@ pub async fn get_shc_captain(
 
     let resp: serde_json::Value = response.json().await?;
 
-    let content = &resp["entry"][0]["content"];
+    let content = extract_entry_content(&resp)?;
 
     Ok(ShcCaptain {
         id: content["id"].as_str().unwrap_or("unknown").to_string(),
@@ -127,7 +128,7 @@ pub async fn get_shc_status(
 
     let resp: serde_json::Value = response.json().await?;
 
-    let content = &resp["entry"][0]["content"];
+    let content = extract_entry_content(&resp)?;
 
     Ok(ShcStatus {
         is_captain: content["is_captain"].as_bool().unwrap_or(false),
@@ -170,7 +171,7 @@ pub async fn get_shc_config(
 
     let resp: serde_json::Value = response.json().await?;
 
-    let content = &resp["entry"][0]["content"];
+    let content = extract_entry_content(&resp)?;
 
     Ok(ShcConfig {
         id: content["id"].as_str().unwrap_or("unknown").to_string(),
@@ -228,9 +229,7 @@ pub async fn add_shc_member(
 
     Ok(ShcManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }
 
@@ -276,9 +275,7 @@ pub async fn remove_shc_member(
 
     Ok(ShcManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }
 
@@ -329,9 +326,7 @@ pub async fn rolling_restart_shc(
 
     Ok(ShcManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }
 
@@ -382,8 +377,6 @@ pub async fn set_shc_captain(
 
     Ok(ShcManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }

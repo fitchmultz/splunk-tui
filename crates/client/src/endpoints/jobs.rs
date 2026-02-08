@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::endpoints::extract_entry_content;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -33,7 +34,8 @@ pub async fn get_job(
 
     let resp: serde_json::Value = response.json().await?;
 
-    serde_json::from_value(resp["entry"][0]["content"].clone())
+    let content = extract_entry_content(&resp)?;
+    serde_json::from_value(content.clone())
         .map_err(|e| ClientError::InvalidResponse(format!("Failed to parse job: {}", e)))
 }
 

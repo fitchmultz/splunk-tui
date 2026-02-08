@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::endpoints::send_request_with_retry;
+use crate::endpoints::{extract_entry_content, extract_entry_message};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::{
@@ -35,7 +36,7 @@ pub async fn get_cluster_info(
 
     let resp: serde_json::Value = response.json().await?;
 
-    let content = &resp["entry"][0]["content"];
+    let content = extract_entry_content(&resp)?;
 
     Ok(ClusterInfo {
         id: content["id"].as_str().unwrap_or("unknown").to_string(),
@@ -157,9 +158,7 @@ pub async fn set_maintenance_mode(
 
     Ok(ClusterManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }
 
@@ -207,9 +206,7 @@ pub async fn rebalance_cluster(
 
     Ok(ClusterManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }
 
@@ -261,9 +258,7 @@ pub async fn remove_peers(
 
     Ok(ClusterManagementResponse {
         success: true,
-        message: resp["entry"][0]["content"]["message"]
-            .as_str()
-            .map(|s| s.to_string()),
+        message: extract_entry_message(&resp),
     })
 }
 

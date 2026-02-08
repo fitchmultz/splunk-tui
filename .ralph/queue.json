@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0412",
-      "status": "todo",
-      "title": "Fix dangerous JSON array indexing without bounds checks",
-      "description": "Multiple endpoint modules use direct array indexing on JSON responses (resp['entry'][0]['content']) which will panic if the API returns unexpected structure (empty entry array, missing content field). Replace with safe get() chains and proper error handling to prevent runtime panics.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "reliability",
-        "correctness",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/shc.rs:90,231",
-        "crates/client/src/endpoints/search/jobs.rs:151",
-        "crates/client/src/endpoints/jobs.rs:36",
-        "crates/client/src/endpoints/cluster.rs:38"
-      ],
-      "evidence": [
-        "shc.rs:90: let content = &resp['entry'][0]['content']; - panics if entry is empty",
-        "search/jobs.rs:151: serde_json::from_value(resp['entry'][0]['content'].clone()) - no bounds check",
-        "jobs.rs:36: serde_json::from_value(resp['entry'][0]['content'].clone()) - same pattern",
-        "cluster.rs:38: let content = &resp['entry'][0]['content']; - direct indexing",
-        "Pattern repeated 15+ times across endpoint modules"
-      ],
-      "plan": [
-        "Replace direct indexing with safe get() chains: resp.get('entry').and_then(|e| e.get(0))...",
-        "Add proper error handling for malformed responses using ClientError::ApiError",
-        "Add unit tests for empty entry array edge case",
-        "Verify by running `make ci` and `make test-integration`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0413",
       "status": "todo",
       "title": "Fix search query logging that could expose sensitive data",
