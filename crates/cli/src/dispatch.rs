@@ -493,10 +493,33 @@ pub(crate) async fn run_command(
             )
             .await?;
         }
-        Commands::Completions { shell } => {
+        Commands::Completions {
+            shell,
+            dynamic,
+            completion_cache_ttl,
+        } => {
             trace!("Routing to completions command (no config required)");
             // Completions command doesn't need config - works offline
-            commands::completions::run(shell)?;
+            commands::completions::run(shell, dynamic, completion_cache_ttl)?;
+        }
+        Commands::Complete {
+            completion_type,
+            cache_ttl,
+        } => {
+            trace!("Routing to complete command for dynamic completions");
+            // Complete command may need config for server-based completions
+            let config_result = config.into_real_config();
+            let values = crate::dynamic_complete::generate_completions(
+                completion_type,
+                config_result.as_ref().ok(),
+                Some(cache_ttl),
+            )
+            .await;
+
+            // Print each value on its own line for shell parsing
+            for value in values {
+                println!("{}", value);
+            }
         }
         Commands::Man => {
             trace!("Routing to manpage command (no config required)");

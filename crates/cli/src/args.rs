@@ -18,6 +18,7 @@ use splunk_config::constants::*;
 use std::path::PathBuf;
 
 use crate::commands;
+use crate::dynamic_complete::CompletionType;
 
 #[derive(Parser)]
 #[command(name = "splunk-cli")]
@@ -394,6 +395,26 @@ pub enum Commands {
         /// Shell to generate completions for
         #[arg(value_enum)]
         shell: clap_complete::Shell,
+
+        /// Enable dynamic completion support (includes helper functions)
+        #[arg(long)]
+        dynamic: bool,
+
+        /// Cache TTL in seconds for dynamic completions
+        #[arg(long, default_value = "60", requires = "dynamic")]
+        completion_cache_ttl: u64,
+    },
+
+    /// Generate completion values for shell integration (internal use)
+    #[command(hide = true)]
+    Complete {
+        /// Type of completion to generate
+        #[arg(value_enum)]
+        completion_type: CompletionType,
+
+        /// Cache TTL in seconds
+        #[arg(long, default_value = "60")]
+        cache_ttl: u64,
     },
 
     /// Generate manpage

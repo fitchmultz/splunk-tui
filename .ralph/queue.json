@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0429",
-      "status": "todo",
-      "title": "Implement dynamic shell completions for runtime values",
-      "description": "Extend shell completion generation to support dynamic values fetched from the Splunk server. Current completions are static (generated from clap derive macros) and only complete command names and flags. Dynamic completions would complete:\n\n- Profile names from config.json\n- Index names from server\n- Saved search names\n- App names\n- Field names for SPL queries\n- Job SIDs\n\nImplementation uses clap_complete's dynamic completion support with custom completer functions that call the Splunk API when completing. Falls back gracefully when server unavailable.\n\nExample: splunk-cli search 'index=<TAB>' queries server for index list\nExample: splunk-cli jobs --cancel <TAB> lists recent job SIDs",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "cli",
-        "ux",
-        "shell-completions"
-      ],
-      "scope": [
-        "crates/cli/src/commands/completions.rs",
-        "crates/cli/src/args.rs",
-        "crates/cli/src/dynamic_complete.rs"
-      ],
-      "evidence": [
-        "Current completions.rs only generates static completions from clap (crates/cli/src/commands/completions.rs:24-27)",
-        "No dynamic completion infrastructure exists",
-        "Users must manually type profile names, index names, job SIDs without completion",
-        "clap_complete supports dynamic completion with Completer trait (external research)"
-      ],
-      "plan": [
-        "Create dynamic_complete.rs module with Completer implementations for each value type",
-        "Implement ProfileCompleter that reads from config.json",
-        "Implement IndexCompleter that queries /services/data/indexes (with caching)",
-        "Implement SavedSearchCompleter for saved search names",
-        "Implement JobCompleter for recent job SIDs",
-        "Add completion caching with TTL to avoid excessive API calls",
-        "Update completions command to support --dynamic flag",
-        "Add tests for dynamic completion with mock server",
-        "Verify by running: source <(splunk-cli completions bash --dynamic) and testing tab completion"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0430",
       "status": "todo",
       "title": "Add SPL query validation command",

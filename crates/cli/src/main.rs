@@ -19,6 +19,7 @@ mod cancellation;
 mod commands;
 mod config_context;
 mod dispatch;
+mod dynamic_complete;
 mod error;
 mod formatters;
 mod interactive;
@@ -68,6 +69,7 @@ async fn main() {
         args::Commands::Config { .. }
             | args::Commands::Hec { .. }
             | args::Commands::Completions { .. }
+            | args::Commands::Complete { .. }
             | args::Commands::Man
     ) && !is_multi_profile_list_all;
 
