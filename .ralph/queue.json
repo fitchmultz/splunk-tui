@@ -2,43 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0403",
-      "status": "todo",
-      "title": "Add debug logging to CLI dispatch module",
-      "description": "The dispatch module (crates/cli/src/dispatch.rs) routes all CLI commands but has zero logging. This makes it difficult to debug command routing issues and understand execution flow. Add appropriate trace/debug logging for command routing decisions.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "operability",
-        "logging",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/dispatch.rs"
-      ],
-      "evidence": [
-        "dispatch.rs has no info!, debug!, or trace! statements",
-        "Command routing decisions are invisible in logs",
-        "Makes debugging routing issues difficult"
-      ],
-      "plan": [
-        "Add trace! logging for each command dispatch path",
-        "Add debug! logging for command execution start/completion",
-        "Follow existing logging patterns from other modules",
-        "Verify by running CLI with RUST_LOG=debug and checking output"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0404",
       "status": "todo",
       "title": "Unify serde naming convention (camelCase vs snake_case)",
