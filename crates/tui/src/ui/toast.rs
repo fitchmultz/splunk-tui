@@ -12,6 +12,10 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
 };
 use splunk_config::Theme;
+use splunk_config::constants::{
+    DEFAULT_MAX_TOASTS, DEFAULT_TOAST_HEIGHT, DEFAULT_TOAST_MAX_LINES, DEFAULT_TOAST_PADDING,
+    DEFAULT_TOAST_TTL_LONG_SECS, DEFAULT_TOAST_TTL_SHORT_SECS, DEFAULT_TOAST_WIDTH,
+};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -44,8 +48,10 @@ impl ToastLevel {
     /// Returns the TTL (time-to-live) for this level.
     pub fn ttl(&self) -> Duration {
         match self {
-            Self::Info | Self::Success | Self::Warning => Duration::from_secs(5),
-            Self::Error => Duration::from_secs(10),
+            Self::Info | Self::Success | Self::Warning => {
+                Duration::from_secs(DEFAULT_TOAST_TTL_SHORT_SECS)
+            }
+            Self::Error => Duration::from_secs(DEFAULT_TOAST_TTL_LONG_SECS),
         }
     }
 
@@ -124,7 +130,7 @@ impl Toast {
 }
 
 /// Maximum number of toasts to display at once (prevents screen overflow).
-const MAX_TOASTS: usize = 5;
+const MAX_TOASTS: usize = DEFAULT_MAX_TOASTS;
 
 /// Renders all active toasts in the bottom-right corner.
 ///
@@ -153,9 +159,9 @@ pub fn render_toasts(f: &mut Frame, toasts: &[Toast], has_error: bool, theme: &T
     };
 
     // Calculate total height needed
-    let toast_height = 4; // Each toast is 4 lines tall (for 'e' hint)
+    let toast_height = DEFAULT_TOAST_HEIGHT; // Each toast is 4 lines tall (for 'e' hint)
     let total_height = active.len() as u16 * toast_height;
-    let toast_width = 60;
+    let toast_width = DEFAULT_TOAST_WIDTH;
 
     // Get the terminal area
     let area = f.area();
@@ -201,7 +207,7 @@ fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool
     let label = level.label();
 
     // Truncate message if too long
-    let max_width = area.width.saturating_sub(4) as usize;
+    let max_width = area.width.saturating_sub(DEFAULT_TOAST_PADDING) as usize;
     let message = if toast.message.len() > max_width {
         format!("{}...", &toast.message[..max_width.saturating_sub(3)])
     } else {
@@ -209,7 +215,7 @@ fn render_single_toast(f: &mut Frame, toast: &Toast, area: Rect, has_error: bool
     };
 
     // Replace the truncation logic with line wrapping for multi-line support
-    let max_lines = 2;
+    let max_lines = DEFAULT_TOAST_MAX_LINES;
     let chars: Vec<char> = toast.message.chars().collect();
     let wrapped_text: Vec<String> = chars
         .chunks(max_width)
@@ -289,21 +295,35 @@ mod tests {
         let toast = Toast::info("Test".to_string());
         let remaining = toast.remaining();
         assert!(
-            remaining.as_secs() <= 5,
-            "Remaining should be at most 5 seconds"
+            remaining.as_secs() <= DEFAULT_TOAST_TTL_SHORT_SECS,
+            "Remaining should be at most {} seconds",
+            DEFAULT_TOAST_TTL_SHORT_SECS
         );
         assert!(
-            remaining.as_secs() >= 4,
-            "Remaining should be at least 4 seconds"
+            remaining.as_secs() >= DEFAULT_TOAST_TTL_SHORT_SECS - 1,
+            "Remaining should be at least {} seconds",
+            DEFAULT_TOAST_TTL_SHORT_SECS - 1
         );
     }
 
     #[test]
     fn test_toast_level_ttl() {
-        assert_eq!(ToastLevel::Info.ttl(), Duration::from_secs(5));
-        assert_eq!(ToastLevel::Success.ttl(), Duration::from_secs(5));
-        assert_eq!(ToastLevel::Warning.ttl(), Duration::from_secs(5));
-        assert_eq!(ToastLevel::Error.ttl(), Duration::from_secs(10));
+        assert_eq!(
+            ToastLevel::Info.ttl(),
+            Duration::from_secs(DEFAULT_TOAST_TTL_SHORT_SECS)
+        );
+        assert_eq!(
+            ToastLevel::Success.ttl(),
+            Duration::from_secs(DEFAULT_TOAST_TTL_SHORT_SECS)
+        );
+        assert_eq!(
+            ToastLevel::Warning.ttl(),
+            Duration::from_secs(DEFAULT_TOAST_TTL_SHORT_SECS)
+        );
+        assert_eq!(
+            ToastLevel::Error.ttl(),
+            Duration::from_secs(DEFAULT_TOAST_TTL_LONG_SECS)
+        );
     }
 
     #[test]

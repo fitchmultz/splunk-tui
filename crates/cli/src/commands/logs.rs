@@ -20,6 +20,7 @@
 use anyhow::{Context, Result};
 use splunk_client::models::LogEntry;
 use splunk_client::models::logs::sort_logs_newest_first;
+use splunk_config::constants::DEFAULT_LOGS_TAIL_POLL_INTERVAL_SECS;
 use tokio::time::{Duration, sleep};
 use tracing::info;
 
@@ -140,7 +141,7 @@ async fn run_tail_mode(
         }
 
         tokio::select! {
-            _ = sleep(Duration::from_secs(2)) => {}
+            _ = sleep(Duration::from_secs(DEFAULT_LOGS_TAIL_POLL_INTERVAL_SECS)) => {}
             _ = cancel.cancelled() => return Err(Cancelled.into()),
         }
     }

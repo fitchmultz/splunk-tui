@@ -18,10 +18,11 @@ use crate::app::export::ExportTarget;
 use crate::app::state::SearchInputMode;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use splunk_client::SearchMode;
+use splunk_config::constants::DEFAULT_VALIDATION_DEBOUNCE_MS;
 use std::time::Instant;
 
 /// Debounce delay for SPL validation in milliseconds.
-const VALIDATION_DEBOUNCE_MS: u64 = 500;
+const VALIDATION_DEBOUNCE_MS: u64 = DEFAULT_VALIDATION_DEBOUNCE_MS;
 
 impl App {
     /// Trigger SPL validation with debouncing.

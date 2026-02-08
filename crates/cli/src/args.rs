@@ -243,7 +243,7 @@ pub enum Commands {
         count: usize,
 
         /// Earliest time for logs (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long, default_value = "-15m", allow_hyphen_values = true)]
+        #[arg(short, long, default_value = DEFAULT_INTERNAL_LOGS_EARLIEST_TIME, allow_hyphen_values = true)]
         earliest: String,
 
         /// Follow logs in real-time

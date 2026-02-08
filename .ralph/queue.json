@@ -2,55 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0425",
-      "status": "todo",
-      "title": "Extract hardcoded magic constants to named constants",
-      "description": "Multiple modules contain hardcoded magic numbers for timeouts, intervals, limits, and UI dimensions. These should be centralized as named constants for maintainability and consistency.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "dry",
-        "configuration",
-        "tui",
-        "cli"
-      ],
-      "scope": [
-        "crates/tui/src/ui/toast.rs:47-48,127",
-        "crates/tui/src/app/input/search.rs:24",
-        "crates/cli/src/commands/logs.rs:141,246",
-        "crates/tui/src/ui/popup/mod.rs:15-16",
-        "crates/tui/src/app/state.rs:42-43"
-      ],
-      "evidence": [
-        "toast.rs:47-48: Duration::from_secs(5), Duration::from_secs(10) - toast TTLs",
-        "toast.rs:127: MAX_TOASTS = 5 - hardcoded limit",
-        "search.rs:24: VALIDATION_DEBOUNCE_MS = 500 - debounce timing",
-        "logs.rs:141: Duration::from_secs(2) - tail poll interval",
-        "logs.rs:246: default_value = '-15m' - default time range",
-        "popup/mod.rs:15-16: 60%, 50% - popup dimensions",
-        "state.rs:42-43: 3, 1 - header/footer heights"
-      ],
-      "plan": [
-        "Define constants in appropriate config or constants modules",
-        "TOAST_TTL_SHORT, TOAST_TTL_LONG, MAX_TOASTS",
-        "VALIDATION_DEBOUNCE_MS, TAIL_POLL_INTERVAL",
-        "DEFAULT_TIME_RANGE, POPUP_WIDTH_PERCENT, POPUP_HEIGHT_PERCENT",
-        "HEADER_HEIGHT, FOOTER_HEIGHT",
-        "Replace all hardcoded values with named constants",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0398",
       "status": "todo",
       "title": "Convert stringly-typed model fields to proper enums",
