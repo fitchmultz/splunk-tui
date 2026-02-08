@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0418",
-      "status": "todo",
-      "title": "Add error context to TUI export module error propagation",
-      "description": "The export module converts errors to strings without context about what operation was being performed. This makes debugging export failures difficult. Add proper error context using anyhow::Context or thiserror to indicate what was being exported and to where.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "operability",
-        "error-handling",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/export.rs:29,59-94"
-      ],
-      "evidence": [
-        "export.rs:29: serde_json::to_value(data).map_err(|e| e.to_string())? - no context",
-        "export.rs:59: File::create(path).map_err(|e| e.to_string())? - no context",
-        "Lines 64-94: Similar patterns for CSV operations",
-        "Error message gives no indication of: what format, what file, what data type"
-      ],
-      "plan": [
-        "Add context to JSON serialization: .context('Failed to serialize export data')",
-        "Add context to file creation: .with_context(|| format!('Failed to create export file: {}', path.display()))",
-        "Add context to CSV operations with format and path info",
-        "Use anyhow::Context for rich error messages",
-        "Verify by running `make ci` and testing error scenarios"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0419",
       "status": "todo",
       "title": "Fix swallowed errors in TUI export serialization",
