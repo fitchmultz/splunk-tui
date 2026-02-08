@@ -10,6 +10,7 @@
 
 use crate::action::{Action, ExportFormat};
 use crate::app::App;
+use crate::ui::ToastLevel;
 use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
@@ -26,14 +27,29 @@ impl App {
                     return None;
                 }
 
-                if let Some(data) = self.collect_export_data() {
-                    let path = std::path::PathBuf::from(self.export_input.value());
-                    let format = self.export_format;
-                    self.popup = None;
-                    self.export_target = None;
-                    Some(Action::ExportData(data, path, format))
-                } else {
-                    None
+                match self.collect_export_data() {
+                    Ok(Some(data)) => {
+                        let path = std::path::PathBuf::from(self.export_input.value());
+                        let format = self.export_format;
+                        self.popup = None;
+                        self.export_target = None;
+                        Some(Action::ExportData(data, path, format))
+                    }
+                    Ok(None) => {
+                        // No data available (screen not loaded yet) - silently close
+                        self.popup = None;
+                        self.export_target = None;
+                        None
+                    }
+                    Err(e) => {
+                        // Serialization failed - show error toast and close popup
+                        self.popup = None;
+                        self.export_target = None;
+                        Some(Action::Notify(
+                            ToastLevel::Error,
+                            format!("Export failed: {}", e),
+                        ))
+                    }
                 }
             }
             KeyCode::Tab => {

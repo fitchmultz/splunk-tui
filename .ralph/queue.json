@@ -2,44 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0419",
-      "status": "todo",
-      "title": "Fix swallowed errors in TUI export serialization",
-      "description": "The export module silently ignores serialization errors using .ok() on Result types. When export data fails to serialize, the operation silently produces no output without indicating an error to the user. Replace with proper error handling.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "reliability",
-        "error-handling",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/app/export.rs:127-215"
-      ],
-      "evidence": [
-        "export.rs:127-128: serde_json::to_value(v).ok() - error swallowed",
-        "Pattern repeated for: Indexes, Roles, Apps, SavedSearches, Macros, ClusterInfo, Jobs, Health, License, Kvstore, InternalLogs, Overview, SearchPeers, FiredAlerts, Forwarders, Lookups, ShcStatus",
-        "When serialization fails, user gets empty export with no error indication"
-      ],
-      "plan": [
-        "Replace .ok() with proper error propagation using ? operator",
-        "Change return type to Result<Option<Value>, String>",
-        "Map serialization errors to user-friendly messages",
-        "Add toast notification on export failure",
-        "Verify by running `make ci` and testing export error scenarios"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0420",
       "status": "todo",
       "title": "Consolidate duplicate load_fixture test helper functions",

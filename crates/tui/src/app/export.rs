@@ -115,89 +115,161 @@ impl App {
     }
 
     /// Collect the dataset to export, pre-serialized as `serde_json::Value`.
-    pub fn collect_export_data(&self) -> Option<serde_json::Value> {
+    pub fn collect_export_data(&self) -> Result<Option<serde_json::Value>, String> {
         let target = self.export_target.unwrap_or(ExportTarget::SearchResults);
 
         match target {
             ExportTarget::SearchResults => {
-                Some(serde_json::Value::Array(self.search_results.clone()))
+                Ok(Some(serde_json::Value::Array(self.search_results.clone())))
             }
             ExportTarget::Indexes => self
                 .indexes
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize indexes: {}", e))
+                })
+                .transpose(),
             ExportTarget::Users => self
                 .users
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v).map_err(|e| format!("Failed to serialize users: {}", e))
+                })
+                .transpose(),
             ExportTarget::Roles => self
                 .roles
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v).map_err(|e| format!("Failed to serialize roles: {}", e))
+                })
+                .transpose(),
             ExportTarget::Apps => self
                 .apps
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v).map_err(|e| format!("Failed to serialize apps: {}", e))
+                })
+                .transpose(),
             ExportTarget::SavedSearches => self
                 .saved_searches
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize saved searches: {}", e))
+                })
+                .transpose(),
             ExportTarget::Macros => self
                 .macros
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize macros: {}", e))
+                })
+                .transpose(),
             ExportTarget::ClusterInfo => self
                 .cluster_info
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize cluster info: {}", e))
+                })
+                .transpose(),
             ExportTarget::Jobs => self
                 .jobs
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v).map_err(|e| format!("Failed to serialize jobs: {}", e))
+                })
+                .transpose(),
             ExportTarget::Health => self
                 .health_info
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize health: {}", e))
+                })
+                .transpose(),
             ExportTarget::License => self
                 .license_info
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize license: {}", e))
+                })
+                .transpose(),
             ExportTarget::Kvstore => self
                 .kvstore_status
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize kvstore: {}", e))
+                })
+                .transpose(),
             ExportTarget::InternalLogs => self
                 .internal_logs
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize internal logs: {}", e))
+                })
+                .transpose(),
             ExportTarget::Overview => self
                 .overview_data
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize overview: {}", e))
+                })
+                .transpose(),
             ExportTarget::SearchPeers => self
                 .search_peers
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize search peers: {}", e))
+                })
+                .transpose(),
             ExportTarget::FiredAlerts => self
                 .fired_alerts
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize fired alerts: {}", e))
+                })
+                .transpose(),
             ExportTarget::Forwarders => self
                 .forwarders
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize forwarders: {}", e))
+                })
+                .transpose(),
             ExportTarget::Lookups => self
                 .lookups
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize lookups: {}", e))
+                })
+                .transpose(),
             ExportTarget::MultiInstance => self
                 .multi_instance_data
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize multi-instance data: {}", e))
+                })
+                .transpose(),
             ExportTarget::AuditEvents => self
                 .audit_events
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize audit events: {}", e))
+                })
+                .transpose(),
             ExportTarget::Workload => {
                 // Export both pools and rules as a combined object
                 let pools = self.workload_pools.clone().unwrap_or_default();
@@ -206,12 +278,16 @@ impl App {
                     "pools": pools,
                     "rules": rules,
                 });
-                Some(combined)
+                Ok(Some(combined))
             }
             ExportTarget::ShcStatus => self
                 .shc_status
                 .as_ref()
-                .and_then(|v| serde_json::to_value(v).ok()),
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize shc status: {}", e))
+                })
+                .transpose(),
         }
     }
 
