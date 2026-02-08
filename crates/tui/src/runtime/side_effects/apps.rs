@@ -16,6 +16,7 @@ use tokio::sync::mpsc::Sender;
 
 use super::SharedClient;
 use super::TaskTracker;
+use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 
 /// Handle loading apps with pagination support.
 ///
@@ -69,7 +70,7 @@ pub async fn handle_enable_app(
                 // Refresh apps list (reset pagination)
                 let _ = tx
                     .send(Action::LoadApps {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -107,7 +108,7 @@ pub async fn handle_disable_app(
                 // Refresh apps list (reset pagination)
                 let _ = tx
                     .send(Action::LoadApps {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -145,7 +146,7 @@ pub async fn handle_install_app(
                 // Refresh apps list (reset pagination)
                 let _ = tx
                     .send(Action::LoadApps {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -183,7 +184,7 @@ pub async fn handle_remove_app(
                 // Refresh apps list (reset pagination)
                 let _ = tx
                     .send(Action::LoadApps {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;

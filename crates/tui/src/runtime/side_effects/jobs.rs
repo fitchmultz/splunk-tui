@@ -10,6 +10,7 @@
 
 use crate::action::Action;
 use crate::ui::ToastLevel;
+use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
@@ -67,7 +68,7 @@ pub async fn handle_cancel_job(
                 // Reload the job list (reset pagination)
                 let _ = tx
                     .send(Action::LoadJobs {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -105,7 +106,7 @@ pub async fn handle_delete_job(
                 // Reload the job list (reset pagination)
                 let _ = tx
                     .send(Action::LoadJobs {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -166,7 +167,7 @@ pub async fn handle_cancel_jobs_batch(
         let _ = tx_clone.send(Action::JobOperationComplete(msg)).await;
         let _ = tx_clone
             .send(Action::LoadJobs {
-                count: 100,
+                count: DEFAULT_LIST_PAGE_SIZE,
                 offset: 0,
             })
             .await;
@@ -215,7 +216,7 @@ pub async fn handle_delete_jobs_batch(
         let _ = tx_clone.send(Action::JobOperationComplete(msg)).await;
         let _ = tx_clone
             .send(Action::LoadJobs {
-                count: 100,
+                count: DEFAULT_LIST_PAGE_SIZE,
                 offset: 0,
             })
             .await;

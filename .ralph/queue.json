@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0401",
-      "status": "todo",
-      "title": "Replace hardcoded page size values in TUI side effects with constants",
-      "description": "TUI side effect handlers use hardcoded page size values of 100 instead of referencing DEFAULT_LIST_PAGE_SIZE from the constants module. This creates inconsistency between TUI and the centralized configuration and makes it harder to change the default globally.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "dry",
-        "configuration",
-        "tui"
-      ],
-      "scope": [
-        "crates/tui/src/runtime/side_effects/jobs.rs",
-        "crates/tui/src/runtime/side_effects/indexes.rs",
-        "crates/tui/src/runtime/side_effects/apps.rs",
-        "crates/tui/src/runtime/side_effects/*.rs"
-      ],
-      "evidence": [
-        "jobs.rs:59,92,148,192 - count: 100 (hardcoded)",
-        "indexes.rs:71,111,146 - count: 100 (hardcoded)",
-        "apps.rs:60,93,126,159 - count: 100 (hardcoded)",
-        "DEFAULT_LIST_PAGE_SIZE = 100 exists in crates/config/src/constants.rs:79"
-      ],
-      "plan": [
-        "Import DEFAULT_LIST_PAGE_SIZE from config crate in side effect modules",
-        "Replace all hardcoded 'count: 100' with 'count: DEFAULT_LIST_PAGE_SIZE'",
-        "Check for other hardcoded pagination values in side effects",
-        "Verify by running `make ci` and `make test-unit`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0402",
       "status": "todo",
       "title": "Fix dangerous as i32 cast in serde_helpers.rs that truncates floats",

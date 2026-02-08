@@ -12,6 +12,7 @@
 use crate::action::Action;
 use crate::ui::ToastLevel;
 use splunk_client::{CreateIndexParams, ModifyIndexParams};
+use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
@@ -70,7 +71,7 @@ pub async fn handle_create_index(
                 // Refresh indexes list
                 let _ = tx
                     .send(Action::LoadIndexes {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -111,7 +112,7 @@ pub async fn handle_modify_index(
                 // Refresh indexes list
                 let _ = tx
                     .send(Action::LoadIndexes {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -151,7 +152,7 @@ pub async fn handle_delete_index(
                 // Refresh indexes list
                 let _ = tx
                     .send(Action::LoadIndexes {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;

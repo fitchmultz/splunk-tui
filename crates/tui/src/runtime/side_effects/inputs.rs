@@ -11,6 +11,7 @@
 use super::{SharedClient, TaskTracker};
 use crate::action::Action;
 use crate::ui::ToastLevel;
+use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
@@ -67,7 +68,7 @@ pub async fn handle_enable_input(
                 // Refresh inputs list (reset pagination)
                 let _ = tx
                     .send(Action::LoadInputs {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
@@ -106,7 +107,7 @@ pub async fn handle_disable_input(
                 // Refresh inputs list (reset pagination)
                 let _ = tx
                     .send(Action::LoadInputs {
-                        count: 100,
+                        count: DEFAULT_LIST_PAGE_SIZE,
                         offset: 0,
                     })
                     .await;
