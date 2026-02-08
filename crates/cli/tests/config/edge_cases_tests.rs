@@ -31,7 +31,7 @@ fn test_config_set_username_without_password_error() {
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "Either --password or --api-token must be provided when using username",
+            "Failed to validate profile: Password or API token must be provided when using username",
         ));
 }
 

@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0417",
-      "status": "todo",
-      "title": "Fix inconsistent error message formatting per AGENTS.md conventions",
-      "description": "Several CLI error messages don't follow AGENTS.md conventions. Some start with flag names (--count) instead of descriptive text, some use 'Error' instead of 'Failed to', and some start with lowercase letters. Standardize all error messages to follow the documented patterns.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "consistency",
-        "ux",
-        "cli"
-      ],
-      "scope": [
-        "crates/cli/src/commands/cluster.rs:226,291",
-        "crates/cli/src/commands/shc.rs:222,286",
-        "crates/cli/src/commands/logs.rs:136"
-      ],
-      "evidence": [
-        "cluster.rs:226,291: anyhow::bail!('The value for --count must be greater than 0') - starts with flag",
-        "shc.rs:222,286: anyhow::bail!('The value for --count must be greater than 0') - same issue",
-        "logs.rs:136: eprintln!('Error fetching logs: {}', e) - should use 'Failed to fetch'",
-        "AGENTS.md: 'Title Case: Start with a capital letter', 'Action-Oriented: Use Failed to... patterns'"
-      ],
-      "plan": [
-        "Update cluster.rs messages to: 'The count value must be greater than 0'",
-        "Update shc.rs messages to: 'The count value must be greater than 0'",
-        "Update logs.rs to: 'Failed to fetch logs: {}'",
-        "Search for other error messages violating conventions",
-        "Verify by running `make ci` and reviewing error output"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0418",
       "status": "todo",
       "title": "Add error context to TUI export module error propagation",

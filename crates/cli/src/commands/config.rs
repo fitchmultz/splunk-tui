@@ -326,7 +326,7 @@ fn validate_profile_requirements(
 ) -> Result<()> {
     // Validate that we have required fields
     if base_url.is_none() {
-        anyhow::bail!("Base URL is required. Use --base-url to specify the Splunk server URL");
+        anyhow::bail!("Failed to validate profile: Base URL is required");
     }
 
     // Validate auth requirements BEFORE prompting to avoid interactive prompts in test environments
@@ -337,7 +337,7 @@ fn validate_profile_requirements(
     // If username is set (CLI or profile), password or token must also be set
     if (username.is_some() || profile_username.is_some()) && !has_password && !has_token {
         anyhow::bail!(
-            "Either --password or --api-token must be provided when using username. Use one for authentication"
+            "Failed to validate profile: Password or API token must be provided when using username"
         );
     }
 
@@ -582,7 +582,7 @@ fn gather_edit_inputs(profile: &ProfileConfig) -> Result<ProfileConfig> {
 
     // Validate required fields
     if base_url.is_none() {
-        anyhow::bail!("Base URL is required");
+        anyhow::bail!("Failed to validate profile: Base URL is required");
     }
 
     let password = if username.is_some() {
@@ -595,7 +595,9 @@ fn gather_edit_inputs(profile: &ProfileConfig) -> Result<ProfileConfig> {
 
     // Validate auth requirements
     if username.is_some() && password.is_none() && api_token.is_none() {
-        anyhow::bail!("Either password or API token must be provided when using username");
+        anyhow::bail!(
+            "Failed to validate profile: Password or API token must be provided when using username"
+        );
     }
 
     let skip_verify = prompt_for_bool("Skip TLS certificate verification?", profile.skip_verify)?;

@@ -313,7 +313,7 @@ fn test_no_prompt_fails_fast_without_credentials() {
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "Either --password or --api-token must be provided",
+            "Failed to validate profile: Password or API token must be provided when using username",
         ));
 }
 

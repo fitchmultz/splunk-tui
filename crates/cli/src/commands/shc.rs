@@ -219,7 +219,7 @@ async fn run_show(
 
     // Validate pagination inputs (client-side pagination must be safe)
     if count == 0 {
-        anyhow::bail!("The value for --count must be greater than 0");
+        anyhow::bail!("The count value must be greater than 0");
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -283,7 +283,7 @@ async fn run_members(
     );
 
     if count == 0 {
-        anyhow::bail!("The value for --count must be greater than 0");
+        anyhow::bail!("The count value must be greater than 0");
     }
 
     let client = crate::commands::build_client_from_config(&config)?;

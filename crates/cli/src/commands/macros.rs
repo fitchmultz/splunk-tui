@@ -242,12 +242,12 @@ async fn run_update(
     // Validate conflicting flags
     if disable && enable {
         return Err(anyhow::anyhow!(
-            "Cannot use both --disable and --enable flags"
+            "Invalid flags: --disable and --enable cannot be used together"
         ));
     }
     if iseval && no_iseval {
         return Err(anyhow::anyhow!(
-            "Cannot use both --iseval and --no-iseval flags"
+            "Invalid flags: --iseval and --no-iseval cannot be used together"
         ));
     }
 

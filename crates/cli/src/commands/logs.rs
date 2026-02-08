@@ -90,7 +90,9 @@ pub async fn run(
 ) -> Result<()> {
     // Tail mode is incompatible with file output
     if tail && output_file.is_some() {
-        anyhow::bail!("Cannot use output file in tail mode");
+        anyhow::bail!(
+            "Failed to use output file in tail mode: tail mode does not support file output"
+        );
     }
 
     let mut client = crate::commands::build_client_from_config(&config)?;
@@ -133,7 +135,7 @@ async fn run_tail_mode(
                 process_log_batch(&logs, &mut cursor, formatter, &mut is_first).await?;
             }
             Err(e) => {
-                eprintln!("Error fetching logs: {}", e);
+                eprintln!("Failed to fetch logs: {}", e);
             }
         }
 
