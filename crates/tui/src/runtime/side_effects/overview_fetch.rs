@@ -222,7 +222,7 @@ mod tests {
 
     #[test]
     fn test_resource_error_creates_correct_resource() {
-        let error = ClientError::Timeout(std::time::Duration::from_secs(30));
+        let error = ClientError::Timeout(FETCH_TIMEOUT);
         let resource = resource_error("indexes", error);
 
         assert_eq!(resource.resource_type, "indexes");
@@ -235,8 +235,11 @@ mod tests {
 
     #[test]
     fn test_timeout_duration_constant() {
-        // Verify the timeout constant is 30 seconds as expected
-        assert_eq!(FETCH_TIMEOUT, std::time::Duration::from_secs(30));
+        // Verify the timeout constant matches the expected value from config
+        assert_eq!(
+            FETCH_TIMEOUT,
+            std::time::Duration::from_secs(DEFAULT_TIMEOUT_SECS)
+        );
     }
 
     #[test]
