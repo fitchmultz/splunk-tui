@@ -17,7 +17,7 @@
 
 use reqwest::Client;
 
-use crate::endpoints::send_request_with_retry;
+use crate::endpoints::{form_params_str, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::{
@@ -267,17 +267,13 @@ pub async fn create_license_pool(
 ) -> Result<LicensePool> {
     let url = format!("{}/services/licenser/pools", base_url);
 
-    let mut form_params = vec![
-        ("name", params.name.clone()),
-        ("stack_id", params.stack_id.clone()),
-    ];
+    let mut form_params: Vec<(&str, String)> = vec![];
 
-    if let Some(quota) = params.quota_bytes {
-        form_params.push(("quota", quota.to_string()));
-    }
-
-    if let Some(ref desc) = params.description {
-        form_params.push(("description", desc.clone()));
+    form_params_str! { form_params =>
+        "name" => str Some(&params.name),
+        "stack_id" => str Some(&params.stack_id),
+        "quota" => params.quota_bytes,
+        "description" => str params.description.as_deref(),
     }
 
     let builder = client
@@ -354,12 +350,9 @@ pub async fn modify_license_pool(
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
-    if let Some(quota) = params.quota_bytes {
-        form_params.push(("quota", quota.to_string()));
-    }
-
-    if let Some(ref desc) = params.description {
-        form_params.push(("description", desc.clone()));
+    form_params_str! { form_params =>
+        "quota" => params.quota_bytes,
+        "description" => str params.description.as_deref(),
     }
 
     let builder = client

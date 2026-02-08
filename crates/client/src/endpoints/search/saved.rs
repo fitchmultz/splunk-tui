@@ -16,6 +16,7 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::endpoints::form_params_str;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -244,14 +245,10 @@ pub async fn update_saved_search(
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
-    if let Some(s) = params.search {
-        form_params.push(("search", s.to_string()));
-    }
-    if let Some(d) = params.description {
-        form_params.push(("description", d.to_string()));
-    }
-    if let Some(disabled_flag) = params.disabled {
-        form_params.push(("disabled", disabled_flag.to_string()));
+    form_params_str! { form_params =>
+        "search" => str params.search,
+        "description" => str params.description,
+        "disabled" => bool params.disabled,
     }
 
     let builder = client

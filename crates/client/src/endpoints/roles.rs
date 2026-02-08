@@ -2,6 +2,7 @@
 
 use reqwest::{Client, Url};
 
+use crate::endpoints::form_params;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -62,32 +63,16 @@ pub async fn create_role(
 ) -> Result<Role> {
     let url = format!("{}/services/authorization/roles", base_url);
 
-    let mut form_params: Vec<(String, String)> = vec![
-        ("name".to_string(), params.name.clone()),
-        ("output_mode".to_string(), "json".to_string()),
-    ];
+    let mut form_params: Vec<(String, String)> =
+        vec![("output_mode".to_string(), "json".to_string())];
 
-    // Add capabilities (comma-separated)
-    if !params.capabilities.is_empty() {
-        form_params.push(("capabilities".to_string(), params.capabilities.join(",")));
-    }
-
-    // Add search indexes (comma-separated)
-    if !params.search_indexes.is_empty() {
-        form_params.push(("searchIndexes".to_string(), params.search_indexes.join(",")));
-    }
-
-    if let Some(ref search_filter) = params.search_filter {
-        form_params.push(("searchFilter".to_string(), search_filter.clone()));
-    }
-
-    // Add imported roles (comma-separated)
-    if !params.imported_roles.is_empty() {
-        form_params.push(("importedRoles".to_string(), params.imported_roles.join(",")));
-    }
-
-    if let Some(ref default_app) = params.default_app {
-        form_params.push(("defaultApp".to_string(), default_app.clone()));
+    form_params! { form_params =>
+        "name" => required_clone params.name,
+        "capabilities" => join params.capabilities,
+        "searchIndexes" => join params.search_indexes,
+        "searchFilter" => ref params.search_filter,
+        "importedRoles" => join params.imported_roles,
+        "defaultApp" => ref params.default_app,
     }
 
     let builder = client
@@ -145,27 +130,12 @@ pub async fn modify_role(
     let mut form_params: Vec<(String, String)> =
         vec![("output_mode".to_string(), "json".to_string())];
 
-    // Add capabilities if provided (comma-separated, replaces existing)
-    if let Some(ref capabilities) = params.capabilities {
-        form_params.push(("capabilities".to_string(), capabilities.join(",")));
-    }
-
-    // Add search indexes if provided (comma-separated, replaces existing)
-    if let Some(ref search_indexes) = params.search_indexes {
-        form_params.push(("searchIndexes".to_string(), search_indexes.join(",")));
-    }
-
-    if let Some(ref search_filter) = params.search_filter {
-        form_params.push(("searchFilter".to_string(), search_filter.clone()));
-    }
-
-    // Add imported roles if provided (comma-separated, replaces existing)
-    if let Some(ref imported_roles) = params.imported_roles {
-        form_params.push(("importedRoles".to_string(), imported_roles.join(",")));
-    }
-
-    if let Some(ref default_app) = params.default_app {
-        form_params.push(("defaultApp".to_string(), default_app.clone()));
+    form_params! { form_params =>
+        "capabilities" => join_opt params.capabilities,
+        "searchIndexes" => join_opt params.search_indexes,
+        "searchFilter" => ref params.search_filter,
+        "importedRoles" => join_opt params.imported_roles,
+        "defaultApp" => ref params.default_app,
     }
 
     let builder = client

@@ -2,48 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0410",
-      "status": "todo",
-      "title": "Create shared form parameter builder for endpoint modules",
-      "description": "Endpoint modules repeat the same pattern for building form parameters with repetitive if let Some() blocks. This pattern appears 20+ times across endpoint files with slight variations. Create a macro or builder pattern to reduce this duplication.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "dry",
-        "refactoring",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/indexes.rs",
-        "crates/client/src/endpoints/users.rs",
-        "crates/client/src/endpoints/roles.rs"
-      ],
-      "evidence": [
-        "Pattern repeated with slight variations:",
-        "if let Some(max_data_size) = params.max_data_size_mb {",
-        "    form_params.push(('maxTotalDataSizeMB'.to_string(), max_data_size.to_string()));",
-        "}",
-        "Duplicated within indexes.rs at lines 70-96 and 153-179"
-      ],
-      "plan": [
-        "Create a macro or helper for form parameter construction",
-        "Helper should handle Option<T> to form param conversion",
-        "Handle serde rename attribute lookup automatically if possible",
-        "Refactor endpoint files to use the helper",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0411",
       "status": "todo",
       "title": "Fix timestamp formatting in error_details.rs to use proper time formatting",

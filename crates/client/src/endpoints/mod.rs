@@ -8,6 +8,7 @@ mod cluster;
 mod configs;
 mod dashboards;
 mod datamodels;
+mod form_params;
 mod forwarders;
 pub mod hec;
 mod indexes;
@@ -27,6 +28,9 @@ mod server;
 mod shc;
 mod users;
 mod workload;
+
+// Re-export form parameter macros for use by endpoint modules
+pub use crate::{form_params, form_params_str};
 
 pub use alerts::{get_fired_alert, list_fired_alerts};
 pub use audit::{get_recent_audit_events, list_audit_events};

@@ -11,7 +11,7 @@
 use reqwest::Client;
 use tracing::debug;
 
-use crate::endpoints::send_request_with_retry;
+use crate::endpoints::{form_params_str, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::MacroListResponse;
@@ -211,28 +211,17 @@ pub async fn create_macro(
 
     let url = format!("{}/services/admin/macros", base_url);
 
-    let mut form_params: Vec<(&str, String)> = vec![
-        ("name", request.name.to_string()),
-        ("definition", request.definition.to_string()),
-    ];
+    let mut form_params: Vec<(&str, String)> = vec![];
 
-    if let Some(a) = request.args {
-        form_params.push(("args", a.to_string()));
-    }
-    if let Some(d) = request.description {
-        form_params.push(("description", d.to_string()));
-    }
-    if request.disabled {
-        form_params.push(("disabled", request.disabled.to_string()));
-    }
-    if request.iseval {
-        form_params.push(("iseval", request.iseval.to_string()));
-    }
-    if let Some(v) = request.validation {
-        form_params.push(("validation", v.to_string()));
-    }
-    if let Some(e) = request.errormsg {
-        form_params.push(("errormsg", e.to_string()));
+    form_params_str! { form_params =>
+        "name" => str Some(request.name),
+        "definition" => str Some(request.definition),
+        "args" => str request.args,
+        "description" => str request.description,
+        "disabled" => required_bool request.disabled,
+        "iseval" => required_bool request.iseval,
+        "validation" => str request.validation,
+        "errormsg" => str request.errormsg,
     }
 
     let builder = client
@@ -281,26 +270,14 @@ pub async fn update_macro(
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
-    if let Some(d) = request.definition {
-        form_params.push(("definition", d.to_string()));
-    }
-    if let Some(a) = request.args {
-        form_params.push(("args", a.to_string()));
-    }
-    if let Some(d) = request.description {
-        form_params.push(("description", d.to_string()));
-    }
-    if let Some(disabled_flag) = request.disabled {
-        form_params.push(("disabled", disabled_flag.to_string()));
-    }
-    if let Some(iseval_flag) = request.iseval {
-        form_params.push(("iseval", iseval_flag.to_string()));
-    }
-    if let Some(v) = request.validation {
-        form_params.push(("validation", v.to_string()));
-    }
-    if let Some(e) = request.errormsg {
-        form_params.push(("errormsg", e.to_string()));
+    form_params_str! { form_params =>
+        "definition" => str request.definition,
+        "args" => str request.args,
+        "description" => str request.description,
+        "disabled" => bool request.disabled,
+        "iseval" => bool request.iseval,
+        "validation" => str request.validation,
+        "errormsg" => str request.errormsg,
     }
 
     let builder = client

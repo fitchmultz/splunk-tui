@@ -5,6 +5,7 @@ use secrecy::ExposeSecret;
 
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
+use crate::form_params;
 use crate::metrics::MetricsCollector;
 use crate::models::{CreateUserParams, ModifyUserParams, User, UserListResponse};
 use crate::name_merge::attach_entry_name;
@@ -63,30 +64,16 @@ pub async fn create_user(
 ) -> Result<User> {
     let url = format!("{}/services/authentication/users", base_url);
 
-    let mut form_params: Vec<(String, String)> = vec![
-        ("name".to_string(), params.name.clone()),
-        ("output_mode".to_string(), "json".to_string()),
-    ];
+    let mut form_params: Vec<(String, String)> =
+        vec![("output_mode".to_string(), "json".to_string())];
 
-    // Add password (required for create)
-    form_params.push((
-        "password".to_string(),
-        params.password.expose_secret().to_string(),
-    ));
-
-    // Add roles (comma-separated, required - at least one)
-    if !params.roles.is_empty() {
-        form_params.push(("roles".to_string(), params.roles.join(",")));
-    }
-
-    if let Some(ref realname) = params.realname {
-        form_params.push(("realname".to_string(), realname.clone()));
-    }
-    if let Some(ref email) = params.email {
-        form_params.push(("email".to_string(), email.clone()));
-    }
-    if let Some(ref default_app) = params.default_app {
-        form_params.push(("defaultApp".to_string(), default_app.clone()));
+    form_params! { form_params =>
+        "name" => required_clone params.name,
+        "password" => secret &params.password,
+        "roles" => join params.roles,
+        "realname" => ref params.realname,
+        "email" => ref params.email,
+        "defaultApp" => ref params.default_app,
     }
 
     let builder = client
@@ -144,24 +131,12 @@ pub async fn modify_user(
     let mut form_params: Vec<(String, String)> =
         vec![("output_mode".to_string(), "json".to_string())];
 
-    // Add password if provided
-    if let Some(ref password) = params.password {
-        form_params.push(("password".to_string(), password.expose_secret().to_string()));
-    }
-
-    // Add roles if provided (comma-separated, replaces existing)
-    if let Some(ref roles) = params.roles {
-        form_params.push(("roles".to_string(), roles.join(",")));
-    }
-
-    if let Some(ref realname) = params.realname {
-        form_params.push(("realname".to_string(), realname.clone()));
-    }
-    if let Some(ref email) = params.email {
-        form_params.push(("email".to_string(), email.clone()));
-    }
-    if let Some(ref default_app) = params.default_app {
-        form_params.push(("defaultApp".to_string(), default_app.clone()));
+    form_params! { form_params =>
+        "password" => secret_opt &params.password,
+        "roles" => join_opt params.roles,
+        "realname" => ref params.realname,
+        "email" => ref params.email,
+        "defaultApp" => ref params.default_app,
     }
 
     let builder = client

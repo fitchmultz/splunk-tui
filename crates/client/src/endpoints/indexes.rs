@@ -2,6 +2,7 @@
 
 use reqwest::{Client, Url};
 
+use crate::endpoints::form_params;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -62,37 +63,19 @@ pub async fn create_index(
 ) -> Result<Index> {
     let url = format!("{}/services/data/indexes", base_url);
 
-    let mut form_params: Vec<(String, String)> = vec![
-        ("name".to_string(), params.name.clone()),
-        ("output_mode".to_string(), "json".to_string()),
-    ];
+    let mut form_params: Vec<(String, String)> =
+        vec![("output_mode".to_string(), "json".to_string())];
 
-    if let Some(max_data_size) = params.max_data_size_mb {
-        form_params.push(("maxTotalDataSizeMB".to_string(), max_data_size.to_string()));
-    }
-    if let Some(max_hot) = params.max_hot_buckets {
-        form_params.push(("maxHotBuckets".to_string(), max_hot.to_string()));
-    }
-    if let Some(max_warm) = params.max_warm_db_count {
-        form_params.push(("maxWarmDBCount".to_string(), max_warm.to_string()));
-    }
-    if let Some(frozen_time) = params.frozen_time_period_in_secs {
-        form_params.push((
-            "frozenTimePeriodInSecs".to_string(),
-            frozen_time.to_string(),
-        ));
-    }
-    if let Some(ref home_path) = params.home_path {
-        form_params.push(("homePath".to_string(), home_path.clone()));
-    }
-    if let Some(ref cold_db_path) = params.cold_db_path {
-        form_params.push(("coldDBPath".to_string(), cold_db_path.clone()));
-    }
-    if let Some(ref thawed_path) = params.thawed_path {
-        form_params.push(("thawedPath".to_string(), thawed_path.clone()));
-    }
-    if let Some(ref cold_to_frozen) = params.cold_to_frozen_dir {
-        form_params.push(("coldToFrozenDir".to_string(), cold_to_frozen.clone()));
+    form_params! { form_params =>
+        "name" => required_clone params.name,
+        "maxTotalDataSizeMB" => params.max_data_size_mb,
+        "maxHotBuckets" => params.max_hot_buckets,
+        "maxWarmDBCount" => params.max_warm_db_count,
+        "frozenTimePeriodInSecs" => params.frozen_time_period_in_secs,
+        "homePath" => ref params.home_path,
+        "coldDBPath" => ref params.cold_db_path,
+        "thawedPath" => ref params.thawed_path,
+        "coldToFrozenDir" => ref params.cold_to_frozen_dir,
     }
 
     let builder = client
@@ -150,32 +133,15 @@ pub async fn modify_index(
     let mut form_params: Vec<(String, String)> =
         vec![("output_mode".to_string(), "json".to_string())];
 
-    if let Some(max_data_size) = params.max_data_size_mb {
-        form_params.push(("maxTotalDataSizeMB".to_string(), max_data_size.to_string()));
-    }
-    if let Some(max_hot) = params.max_hot_buckets {
-        form_params.push(("maxHotBuckets".to_string(), max_hot.to_string()));
-    }
-    if let Some(max_warm) = params.max_warm_db_count {
-        form_params.push(("maxWarmDBCount".to_string(), max_warm.to_string()));
-    }
-    if let Some(frozen_time) = params.frozen_time_period_in_secs {
-        form_params.push((
-            "frozenTimePeriodInSecs".to_string(),
-            frozen_time.to_string(),
-        ));
-    }
-    if let Some(ref home_path) = params.home_path {
-        form_params.push(("homePath".to_string(), home_path.clone()));
-    }
-    if let Some(ref cold_db_path) = params.cold_db_path {
-        form_params.push(("coldDBPath".to_string(), cold_db_path.clone()));
-    }
-    if let Some(ref thawed_path) = params.thawed_path {
-        form_params.push(("thawedPath".to_string(), thawed_path.clone()));
-    }
-    if let Some(ref cold_to_frozen) = params.cold_to_frozen_dir {
-        form_params.push(("coldToFrozenDir".to_string(), cold_to_frozen.clone()));
+    form_params! { form_params =>
+        "maxTotalDataSizeMB" => params.max_data_size_mb,
+        "maxHotBuckets" => params.max_hot_buckets,
+        "maxWarmDBCount" => params.max_warm_db_count,
+        "frozenTimePeriodInSecs" => params.frozen_time_period_in_secs,
+        "homePath" => ref params.home_path,
+        "coldDBPath" => ref params.cold_db_path,
+        "thawedPath" => ref params.thawed_path,
+        "coldToFrozenDir" => ref params.cold_to_frozen_dir,
     }
 
     let builder = client

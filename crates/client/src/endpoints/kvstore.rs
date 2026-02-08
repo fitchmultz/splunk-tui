@@ -2,7 +2,7 @@
 
 use reqwest::{Client, Url};
 
-use crate::endpoints::send_request_with_retry;
+use crate::endpoints::{form_params, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::{
@@ -181,16 +181,13 @@ pub async fn create_collection(
         base_url, owner, app
     );
 
-    let mut form_params: Vec<(String, String)> = vec![
-        ("name".to_string(), params.name.clone()),
-        ("output_mode".to_string(), "json".to_string()),
-    ];
+    let mut form_params: Vec<(String, String)> =
+        vec![("output_mode".to_string(), "json".to_string())];
 
-    if let Some(ref fields) = params.fields {
-        form_params.push(("fields".to_string(), fields.clone()));
-    }
-    if let Some(ref accelerated_fields) = params.accelerated_fields {
-        form_params.push(("acceleratedFields".to_string(), accelerated_fields.clone()));
+    form_params! { form_params =>
+        "name" => required_clone params.name,
+        "fields" => ref params.fields,
+        "acceleratedFields" => ref params.accelerated_fields,
     }
 
     let builder = client
@@ -256,14 +253,10 @@ pub async fn modify_collection(
     let mut form_params: Vec<(String, String)> =
         vec![("output_mode".to_string(), "json".to_string())];
 
-    if let Some(ref fields) = params.fields {
-        form_params.push(("fields".to_string(), fields.clone()));
-    }
-    if let Some(ref accelerated_fields) = params.accelerated_fields {
-        form_params.push(("acceleratedFields".to_string(), accelerated_fields.clone()));
-    }
-    if let Some(disabled) = params.disabled {
-        form_params.push(("disabled".to_string(), disabled.to_string()));
+    form_params! { form_params =>
+        "fields" => ref params.fields,
+        "acceleratedFields" => ref params.accelerated_fields,
+        "disabled" => params.disabled,
     }
 
     let builder = client
