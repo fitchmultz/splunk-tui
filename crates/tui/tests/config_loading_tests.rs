@@ -444,6 +444,7 @@ fn test_config_manager_persistence_with_custom_path() {
         keybind_overrides: splunk_config::KeybindOverrides::default(),
         list_defaults: splunk_config::ListDefaults::default(),
         internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
+        tutorial_completed: false,
     };
 
     // Save the state

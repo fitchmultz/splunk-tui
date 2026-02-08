@@ -21,6 +21,7 @@ mod macros;
 mod misc;
 mod profile;
 mod saved_search;
+mod tutorial;
 mod user;
 
 impl App {
@@ -112,6 +113,9 @@ impl App {
             Some(PopupType::CreateMacro { .. } | PopupType::EditMacro { .. }) => {
                 self.handle_macro_popup(key)
             }
+
+            // Tutorial wizard
+            Some(PopupType::TutorialWizard { .. }) => self.handle_tutorial_popup(key),
 
             // No popup active
             None => None,

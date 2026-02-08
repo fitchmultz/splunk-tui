@@ -1181,6 +1181,7 @@ mod tests {
             keybind_overrides: splunk_config::KeybindOverrides::default(),
             list_defaults: splunk_config::ListDefaults::default(),
             internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
+            tutorial_completed: false,
         };
 
         app.handle_data_loading_action(Action::SettingsLoaded(new_state));
@@ -1219,6 +1220,7 @@ mod tests {
             keybind_overrides: splunk_config::KeybindOverrides::default(),
             list_defaults: splunk_config::ListDefaults::default(),
             internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
+            tutorial_completed: false,
         };
 
         app.handle_data_loading_action(Action::SettingsLoaded(new_state));

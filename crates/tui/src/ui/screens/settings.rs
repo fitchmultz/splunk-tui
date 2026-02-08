@@ -184,6 +184,11 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
             Span::styled("x", theme.title()),
             Span::styled("' to delete selected profile", theme.text_dim()),
         ]),
+        Line::from(vec![
+            Span::styled("Press '", theme.text_dim()),
+            Span::styled("?", theme.title()),
+            Span::styled("' to replay the tutorial", theme.text_dim()),
+        ]),
     ];
 
     f.render_widget(

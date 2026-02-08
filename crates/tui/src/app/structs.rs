@@ -18,6 +18,7 @@ use crate::app::state::{
 };
 use crate::error_details::ErrorDetails;
 use crate::focus::FocusManager;
+use crate::onboarding::TutorialState;
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
 use ratatui::layout::Rect;
@@ -270,6 +271,10 @@ pub struct App {
     pub focus_manager: FocusManager,
     /// Whether focus navigation mode is active (Ctrl+Tab to toggle).
     pub focus_navigation_mode: bool,
+    /// Tutorial state for onboarding (only Some during tutorial)
+    pub tutorial_state: Option<TutorialState>,
+    /// Whether the tutorial has been completed (persisted)
+    pub tutorial_completed: bool,
 }
 
 /// SPL validation state for real-time feedback in the search screen.

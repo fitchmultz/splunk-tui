@@ -24,6 +24,7 @@ pub mod focus;
 pub mod ui;
 
 pub mod input;
+pub mod onboarding;
 pub mod runtime;
 pub mod utils;
 

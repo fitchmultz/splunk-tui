@@ -29,6 +29,8 @@ use ratatui::{Terminal, backend::CrosstermBackend};
 use splunk_tui::action::Action;
 use splunk_tui::app::{App, ConnectionContext};
 use splunk_tui::cli::Cli;
+use splunk_tui::onboarding::TutorialState;
+use splunk_tui::ui::popup::{Popup, PopupType};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::channel};
 use tracing_appender::non_blocking;
@@ -192,6 +194,13 @@ async fn main() -> Result<()> {
     let mut persisted_state = config_manager.load();
     let config_manager = Arc::new(Mutex::new(config_manager));
 
+    // Check if this is first run (no profiles exist and tutorial not completed)
+    let config_manager_for_first_run = config_manager.lock().await;
+    let is_first_run = config_manager_for_first_run.list_profiles().is_empty()
+        && !cli.skip_tutorial
+        && !persisted_state.tutorial_completed;
+    drop(config_manager_for_first_run); // Release lock before creating app
+
     // Apply environment variable overrides to search defaults
     // Precedence: env vars > persisted values > hardcoded defaults
     // Sanitize to ensure invariants (non-empty times, max_results >= 1) are enforced
@@ -238,6 +247,16 @@ async fn main() -> Result<()> {
 
     // Create app with persisted state (now includes env var overrides for search defaults)
     let mut app = App::new(Some(persisted_state), connection_ctx);
+
+    // Launch tutorial on first run
+    if is_first_run {
+        app.popup = Some(
+            Popup::builder(PopupType::TutorialWizard {
+                state: TutorialState::new(),
+            })
+            .build(),
+        );
+    }
 
     // Spawn background health monitoring task (configurable interval, default 60s)
     let tx_health = tx.clone();
@@ -304,6 +323,19 @@ async fn main() -> Result<()> {
                         tracing::error!(error = %e, "Failed to save config");
                     }
                     break;
+                }
+
+                // Handle PersistState specially - needs access to app
+                if matches!(action, Action::PersistState) {
+                    let state = app.get_persisted_state();
+                    let cm = config_manager.clone();
+                    tokio::task::spawn(async move {
+                        let manager = cm.lock().await;
+                        if let Err(e) = manager.save(&state) {
+                            tracing::error!("Failed to persist state: {}", e);
+                        }
+                    });
+                    continue;
                 }
 
                 // Handle LoadMore* actions by converting to Load* with pagination params

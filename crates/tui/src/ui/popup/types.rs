@@ -3,6 +3,7 @@
 //! This module contains the `PopupType` enum which defines all possible
 //! popup dialog types used throughout the TUI application.
 
+use crate::onboarding::TutorialState;
 use crate::ui::popup::{MacroField, ProfileField, SavedSearchField};
 
 /// The type/kind of popup dialog.
@@ -134,6 +135,8 @@ pub enum PopupType {
         max_retries: u64,
         use_keyring: bool,
         selected_field: ProfileField,
+        /// Whether this dialog was opened from the tutorial
+        from_tutorial: bool,
     },
     /// Profile editing dialog
     EditProfile {
@@ -214,5 +217,10 @@ pub enum PopupType {
         iseval: bool,
         /// Currently selected field for navigation
         selected_field: MacroField,
+    },
+    /// Tutorial wizard for first-run onboarding
+    TutorialWizard {
+        /// Current tutorial state
+        state: TutorialState,
     },
 }

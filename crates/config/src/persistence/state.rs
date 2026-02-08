@@ -240,6 +240,9 @@ pub struct PersistedState {
     /// Default internal logs query parameters.
     #[serde(default)]
     pub internal_logs_defaults: InternalLogsDefaults,
+    /// Whether the tutorial has been completed.
+    #[serde(default)]
+    pub tutorial_completed: bool,
 }
 
 impl Default for PersistedState {
@@ -255,6 +258,7 @@ impl Default for PersistedState {
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: false,
         }
     }
 }
@@ -356,6 +360,7 @@ mod tests {
         assert!(state.last_search_query.is_none());
         assert!(state.search_history.is_empty());
         assert_eq!(state.selected_theme, ColorTheme::Default);
+        assert!(!state.tutorial_completed);
     }
 
     #[test]
@@ -375,6 +380,7 @@ mod tests {
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: true,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -389,6 +395,7 @@ mod tests {
         );
         assert_eq!(deserialized.search_history, vec!["query1", "query2"]);
         assert_eq!(deserialized.selected_theme, ColorTheme::Dark);
+        assert!(deserialized.tutorial_completed);
     }
 
     #[test]
@@ -405,6 +412,7 @@ mod tests {
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: false,
         };
 
         writeln!(
@@ -574,6 +582,7 @@ mod tests {
             keybind_overrides: KeybindOverrides::default(),
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: false,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -622,6 +631,7 @@ mod tests {
             keybind_overrides: KeybindOverrides { overrides },
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: false,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -789,6 +799,7 @@ mod tests {
                 roles_page_size: None,
             },
             internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: false,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -878,6 +889,7 @@ mod tests {
                 count: 200,
                 earliest_time: "-30m".to_string(),
             },
+            tutorial_completed: false,
         };
 
         let json = serde_json::to_string(&state).unwrap();

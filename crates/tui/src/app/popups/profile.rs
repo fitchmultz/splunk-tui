@@ -101,6 +101,7 @@ impl App {
                             timeout_seconds,
                             max_retries,
                             use_keyring,
+                            from_tutorial,
                             ..
                         },
                     ..
@@ -148,6 +149,7 @@ impl App {
                         profile,
                         use_keyring,
                         original_name: None,
+                        from_tutorial,
                     })
                 } else {
                     None
@@ -166,6 +168,7 @@ impl App {
                     max_retries,
                     use_keyring,
                     selected_field,
+                    from_tutorial,
                 }),
                 KeyCode::Tab,
             ) => {
@@ -186,6 +189,7 @@ impl App {
                         max_retries: *max_retries,
                         use_keyring: *use_keyring,
                         selected_field: new_field,
+                        from_tutorial: *from_tutorial,
                     })
                     .build(),
                 );
@@ -204,6 +208,7 @@ impl App {
                     max_retries,
                     use_keyring,
                     selected_field,
+                    from_tutorial,
                 }),
                 KeyCode::Up,
             ) => {
@@ -219,6 +224,7 @@ impl App {
                         max_retries: *max_retries,
                         use_keyring: *use_keyring,
                         selected_field: selected_field.previous(),
+                        from_tutorial: *from_tutorial,
                     })
                     .build(),
                 );
@@ -237,6 +243,7 @@ impl App {
                     max_retries,
                     use_keyring,
                     selected_field,
+                    from_tutorial,
                 }),
                 KeyCode::Down,
             ) => {
@@ -252,6 +259,7 @@ impl App {
                         max_retries: *max_retries,
                         use_keyring: *use_keyring,
                         selected_field: selected_field.next(),
+                        from_tutorial: *from_tutorial,
                     })
                     .build(),
                 );
@@ -270,6 +278,7 @@ impl App {
                     max_retries,
                     use_keyring,
                     selected_field,
+                    from_tutorial,
                 }),
                 KeyCode::Char(c),
             ) => self.handle_create_profile_char_input(
@@ -283,6 +292,7 @@ impl App {
                 *max_retries,
                 *use_keyring,
                 *selected_field,
+                *from_tutorial,
                 c,
             ),
             // CreateProfile - backspace
@@ -298,6 +308,7 @@ impl App {
                     max_retries,
                     use_keyring,
                     selected_field,
+                    from_tutorial,
                 }),
                 KeyCode::Backspace,
             ) => self.handle_create_profile_backspace(

@@ -35,7 +35,7 @@ impl App {
             Action::ClearAllData => {
                 self.clear_all_cached_data();
             }
-            Action::OpenCreateProfileDialog => {
+            Action::OpenCreateProfileDialog { .. } => {
                 self.open_create_profile_dialog();
             }
             Action::OpenEditProfileDialogWithData {

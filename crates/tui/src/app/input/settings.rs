@@ -28,6 +28,7 @@ impl App {
             KeyCode::Char('c') => self.clear_search_history(),
             KeyCode::Char('e') => self.open_edit_profile(),
             KeyCode::Char('x') => self.open_delete_profile(),
+            KeyCode::Char('?') => Some(Action::StartTutorial { is_replay: true }),
             _ => None,
         }
     }

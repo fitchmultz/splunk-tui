@@ -100,7 +100,9 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('n'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: Some(Action::OpenCreateProfileDialog),
+            action: Some(Action::OpenCreateProfileDialog {
+                from_tutorial: false,
+            }),
             handles_input: true,
         },
         Keybinding {

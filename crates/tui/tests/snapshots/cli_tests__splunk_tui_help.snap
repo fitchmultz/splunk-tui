@@ -23,6 +23,9 @@ Options:
       --no-mouse
           Disable mouse support
 
+      --skip-tutorial
+          Skip the first-run tutorial
+
   -h, --help
           Print help (see a summary with '-h')
 
@@ -34,3 +37,4 @@ Examples:
   splunk-tui --profile production
   splunk-tui --config-path /etc/splunk-tui/config.json
   splunk-tui --log-dir /var/log/splunk-tui --no-mouse
+  splunk-tui --skip-tutorial

@@ -26,6 +26,7 @@ mod navigation;
 mod profiles;
 mod search;
 mod system;
+mod tutorial;
 
 impl App {
     /// Pure state mutation based on Action.
@@ -125,13 +126,27 @@ impl App {
                 self.handle_search_action(action);
             }
 
+            // Tutorial actions (must come before profile actions to catch from_tutorial: true)
+            Action::StartTutorial { .. }
+            | Action::TutorialCompleted
+            | Action::TutorialSkipped
+            | Action::TutorialProfileCreated { .. }
+            | Action::TutorialConnectionResult { .. }
+            | Action::LoadSearchScreenForTutorial
+            | Action::OpenCreateProfileDialog { from_tutorial: true } => {
+                if let Some(remaining) = self.handle_tutorial_action(action) {
+                    // Re-dispatch non-tutorial actions that need further handling
+                    self.update(remaining);
+                }
+            }
+
             // Profile actions
             Action::OpenProfileSwitcher
             | Action::OpenProfileSelectorWithList(_)
             | Action::ProfileSelected(_)
             | Action::ProfileSwitchResult(_)
             | Action::ClearAllData
-            | Action::OpenCreateProfileDialog
+            | Action::OpenCreateProfileDialog { .. }
             | Action::OpenEditProfileDialogWithData { .. }
             | Action::OpenDeleteProfileConfirm { .. }
             | Action::ProfileSaved(_)

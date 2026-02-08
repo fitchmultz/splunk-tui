@@ -904,7 +904,10 @@ pub enum Action {
 
     // Profile Management
     /// Open profile creation dialog
-    OpenCreateProfileDialog,
+    OpenCreateProfileDialog {
+        /// Whether this dialog was opened from the tutorial
+        from_tutorial: bool,
+    },
     /// Open profile editing dialog (triggers async load)
     OpenEditProfileDialog { name: String },
     /// Open profile editing dialog with pre-populated data
@@ -927,6 +930,8 @@ pub enum Action {
         use_keyring: bool,
         /// Original name when renaming a profile (None for new profiles)
         original_name: Option<String>,
+        /// Whether this was initiated from the tutorial
+        from_tutorial: bool,
     },
     /// Delete a profile
     DeleteProfile { name: String },
@@ -934,4 +939,30 @@ pub enum Action {
     ProfileSaved(Result<String, String>),
     /// Result of profile delete operation
     ProfileDeleted(Result<String, String>),
+
+    // =========================================================================
+    // Tutorial
+    // =========================================================================
+    /// Tutorial-related actions
+    /// Launch the tutorial wizard (first-run or replay)
+    StartTutorial {
+        /// Whether this is a replay (false for first-run)
+        is_replay: bool,
+    },
+    /// Profile created from tutorial - continue flow
+    TutorialProfileCreated { profile_name: String },
+    /// Connection test completed in tutorial
+    TutorialConnectionResult { success: bool },
+    /// User completed the tutorial
+    TutorialCompleted,
+    /// User skipped the tutorial
+    TutorialSkipped,
+    /// Navigate to search screen for tutorial
+    LoadSearchScreenForTutorial,
+
+    // =========================================================================
+    // State Persistence
+    // =========================================================================
+    /// Persist application state to disk
+    PersistState,
 }

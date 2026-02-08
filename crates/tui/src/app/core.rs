@@ -16,6 +16,7 @@ use crate::app::state::{
 };
 use crate::app::structs::{App, ConnectionContext, SplValidationState};
 use crate::focus::FocusManager;
+use crate::onboarding::TutorialState;
 use splunk_client::SearchMode;
 use splunk_config::{
     ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
@@ -100,6 +101,7 @@ impl App {
             keybind_overrides,
             list_defaults,
             internal_logs_defaults,
+            tutorial_completed,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -112,6 +114,7 @@ impl App {
                 state.keybind_overrides,
                 state.list_defaults,
                 state.internal_logs_defaults,
+                state.tutorial_completed,
             ),
             None => (
                 false,
@@ -124,6 +127,7 @@ impl App {
                 KeybindOverrides::default(),
                 ListDefaults::default(),
                 splunk_config::InternalLogsDefaults::default(),
+                false,
             ),
         };
 
@@ -288,6 +292,8 @@ impl App {
             realtime_window: None,
             focus_manager: FocusManager::default(),
             focus_navigation_mode: false,
+            tutorial_state: None,
+            tutorial_completed,
         }
     }
 
@@ -310,6 +316,7 @@ impl App {
             keybind_overrides: self.keybind_overrides.clone(),
             list_defaults: self.list_defaults.clone(),
             internal_logs_defaults: self.internal_logs_defaults.clone(),
+            tutorial_completed: self.tutorial_completed,
         }
     }
 }

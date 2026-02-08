@@ -262,6 +262,7 @@ pub async fn handle_save_profile(
     profile: ProfileConfig,
     use_keyring: bool,
     original_name: Option<String>,
+    from_tutorial: bool,
 ) {
     let config_manager_clone = config_manager.clone();
     let tx_clone = tx.clone();
@@ -288,6 +289,15 @@ pub async fn handle_save_profile(
             if let Some(old_name) = original_name_clone.filter(|old| old != &name_clone) {
                 handle_profile_rename(&mut cm, &tx_clone, &old_name, &name_clone).await;
             }
+        }
+
+        // If this was from the tutorial, emit the tutorial action
+        if result.is_ok() && from_tutorial {
+            let _ = tx_clone
+                .send(Action::TutorialProfileCreated {
+                    profile_name: name_clone.clone(),
+                })
+                .await;
         }
 
         send_profile_save_result(&tx_clone, &name_clone, result).await;

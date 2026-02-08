@@ -8,10 +8,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "review": {
-          "secs": 152,
-          "nanos": 271004403
-        },
         "implementation": {
           "secs": 596,
           "nanos": 650661802
@@ -19,6 +15,10 @@
         "planning": {
           "secs": 71,
           "nanos": 871991067
+        },
+        "review": {
+          "secs": 152,
+          "nanos": 271004403
         }
       },
       "total_duration": {
@@ -33,13 +33,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 1079,
-          "nanos": 952061759
-        },
         "review": {
           "secs": 450,
           "nanos": 648252613
+        },
+        "implementation": {
+          "secs": 1079,
+          "nanos": 952061759
         },
         "planning": {
           "secs": 93,
@@ -58,6 +58,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "planning": {
+          "secs": 97,
+          "nanos": 499287716
+        },
         "implementation": {
           "secs": 726,
           "nanos": 143676331
@@ -65,10 +69,6 @@
         "review": {
           "secs": 329,
           "nanos": 837648089
-        },
-        "planning": {
-          "secs": 97,
-          "nanos": 499287716
         }
       },
       "total_duration": {
@@ -83,10 +83,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 59,
-          "nanos": 698704943
-        },
         "review": {
           "secs": 267,
           "nanos": 471278388
@@ -94,6 +90,10 @@
         "implementation": {
           "secs": 396,
           "nanos": 57862488
+        },
+        "planning": {
+          "secs": 59,
+          "nanos": 698704943
         }
       },
       "total_duration": {
@@ -108,13 +108,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 47,
-          "nanos": 277075957
-        },
         "review": {
           "secs": 108,
           "nanos": 931710232
+        },
+        "planning": {
+          "secs": 47,
+          "nanos": 277075957
         },
         "implementation": {
           "secs": 417,
@@ -133,10 +133,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 50,
-          "nanos": 128843395
-        },
         "implementation": {
           "secs": 188,
           "nanos": 32150246
@@ -144,6 +140,10 @@
         "review": {
           "secs": 58,
           "nanos": 600407190
+        },
+        "planning": {
+          "secs": 50,
+          "nanos": 128843395
         }
       },
       "total_duration": {
@@ -183,6 +183,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "implementation": {
+          "secs": 170,
+          "nanos": 261685072
+        },
         "planning": {
           "secs": 53,
           "nanos": 393178026
@@ -190,10 +194,6 @@
         "review": {
           "secs": 226,
           "nanos": 557259747
-        },
-        "implementation": {
-          "secs": 170,
-          "nanos": 261685072
         }
       },
       "total_duration": {
@@ -208,13 +208,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 24,
-          "nanos": 514321761
-        },
         "review": {
           "secs": 32,
           "nanos": 770976457
+        },
+        "implementation": {
+          "secs": 24,
+          "nanos": 514321761
         },
         "planning": {
           "secs": 23,
@@ -233,17 +233,17 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 312,
-          "nanos": 655495998
+        "planning": {
+          "secs": 47,
+          "nanos": 924696739
         },
         "review": {
           "secs": 78,
           "nanos": 602657984
         },
-        "planning": {
-          "secs": 47,
-          "nanos": 924696739
+        "implementation": {
+          "secs": 312,
+          "nanos": 655495998
         }
       },
       "total_duration": {
@@ -258,10 +258,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 312,
-          "nanos": 479582682
-        },
         "review": {
           "secs": 125,
           "nanos": 862635880
@@ -269,6 +265,10 @@
         "planning": {
           "secs": 59,
           "nanos": 5075661
+        },
+        "implementation": {
+          "secs": 312,
+          "nanos": 479582682
         }
       },
       "total_duration": {
@@ -283,6 +283,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "planning": {
+          "secs": 23,
+          "nanos": 245356902
+        },
         "review": {
           "secs": 205,
           "nanos": 279217975
@@ -290,10 +294,6 @@
         "implementation": {
           "secs": 369,
           "nanos": 774132256
-        },
-        "planning": {
-          "secs": 23,
-          "nanos": 245356902
         }
       },
       "total_duration": {
@@ -308,10 +308,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 393,
-          "nanos": 182994769
-        },
         "review": {
           "secs": 201,
           "nanos": 368017235
@@ -319,6 +315,10 @@
         "planning": {
           "secs": 56,
           "nanos": 464737199
+        },
+        "implementation": {
+          "secs": 393,
+          "nanos": 182994769
         }
       },
       "total_duration": {
@@ -383,10 +383,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 151,
-          "nanos": 339086270
-        },
         "implementation": {
           "secs": 1060,
           "nanos": 730467868
@@ -394,6 +390,10 @@
         "review": {
           "secs": 474,
           "nanos": 625823254
+        },
+        "planning": {
+          "secs": 151,
+          "nanos": 339086270
         }
       },
       "total_duration": {
@@ -433,10 +433,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "review": {
-          "secs": 501,
-          "nanos": 806065770
-        },
         "implementation": {
           "secs": 1384,
           "nanos": 52100024
@@ -444,6 +440,10 @@
         "planning": {
           "secs": 334,
           "nanos": 54924630
+        },
+        "review": {
+          "secs": 501,
+          "nanos": 806065770
         }
       },
       "total_duration": {
@@ -458,10 +458,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "review": {
-          "secs": 603,
-          "nanos": 768085332
-        },
         "implementation": {
           "secs": 1377,
           "nanos": 822288846
@@ -469,6 +465,10 @@
         "planning": {
           "secs": 302,
           "nanos": 284545899
+        },
+        "review": {
+          "secs": 603,
+          "nanos": 768085332
         }
       },
       "total_duration": {
@@ -508,10 +508,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "review": {
-          "secs": 174,
-          "nanos": 782961652
-        },
         "planning": {
           "secs": 65,
           "nanos": 167101420
@@ -519,6 +515,10 @@
         "implementation": {
           "secs": 269,
           "nanos": 744071713
+        },
+        "review": {
+          "secs": 174,
+          "nanos": 782961652
         }
       },
       "total_duration": {
@@ -533,13 +533,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 110,
-          "nanos": 132308698
-        },
         "implementation": {
           "secs": 858,
           "nanos": 200563743
+        },
+        "planning": {
+          "secs": 110,
+          "nanos": 132308698
         },
         "review": {
           "secs": 1170,
@@ -608,13 +608,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "review": {
-          "secs": 258,
-          "nanos": 593934320
-        },
         "planning": {
           "secs": 60,
           "nanos": 353985785
+        },
+        "review": {
+          "secs": 258,
+          "nanos": 593934320
         },
         "implementation": {
           "secs": 816,
@@ -633,6 +633,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "review": {
+          "secs": 287,
+          "nanos": 122122406
+        },
         "planning": {
           "secs": 86,
           "nanos": 803400424
@@ -640,10 +644,6 @@
         "implementation": {
           "secs": 622,
           "nanos": 371121482
-        },
-        "review": {
-          "secs": 287,
-          "nanos": 122122406
         }
       },
       "total_duration": {
@@ -683,10 +683,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "implementation": {
-          "secs": 323,
-          "nanos": 280051285
-        },
         "planning": {
           "secs": 56,
           "nanos": 292688739
@@ -694,6 +690,10 @@
         "review": {
           "secs": 168,
           "nanos": 655160720
+        },
+        "implementation": {
+          "secs": 323,
+          "nanos": 280051285
         }
       },
       "total_duration": {
@@ -708,10 +708,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 30,
-          "nanos": 221640872
-        },
         "review": {
           "secs": 25,
           "nanos": 64900869
@@ -719,6 +715,10 @@
         "implementation": {
           "secs": 150,
           "nanos": 403684989
+        },
+        "planning": {
+          "secs": 30,
+          "nanos": 221640872
         }
       },
       "total_duration": {
@@ -733,6 +733,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "planning": {
+          "secs": 60,
+          "nanos": 561033514
+        },
         "implementation": {
           "secs": 404,
           "nanos": 369755166
@@ -740,10 +744,6 @@
         "review": {
           "secs": 476,
           "nanos": 431451771
-        },
-        "planning": {
-          "secs": 60,
-          "nanos": 561033514
         }
       },
       "total_duration": {
@@ -758,6 +758,10 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
+        "review": {
+          "secs": 226,
+          "nanos": 200169181
+        },
         "implementation": {
           "secs": 237,
           "nanos": 114372123
@@ -765,10 +769,6 @@
         "planning": {
           "secs": 55,
           "nanos": 88085212
-        },
-        "review": {
-          "secs": 226,
-          "nanos": 200169181
         }
       },
       "total_duration": {
@@ -808,10 +808,6 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 3,
       "phase_durations": {
-        "planning": {
-          "secs": 33,
-          "nanos": 687770862
-        },
         "review": {
           "secs": 182,
           "nanos": 550534146
@@ -819,6 +815,10 @@
         "implementation": {
           "secs": 265,
           "nanos": 403089724
+        },
+        "planning": {
+          "secs": 33,
+          "nanos": 687770862
         }
       },
       "total_duration": {
@@ -959,13 +959,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 183,
-          "nanos": 453494949
-        },
         "planning": {
           "secs": 84,
           "nanos": 667989752
+        },
+        "implementation": {
+          "secs": 183,
+          "nanos": 453494949
         }
       },
       "total_duration": {
@@ -980,13 +980,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 466,
-          "nanos": 561034392
-        },
         "planning": {
           "secs": 101,
           "nanos": 220620750
+        },
+        "implementation": {
+          "secs": 466,
+          "nanos": 561034392
         }
       },
       "total_duration": {
@@ -1001,13 +1001,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 738,
-          "nanos": 306185068
-        },
         "planning": {
           "secs": 89,
           "nanos": 39786536
+        },
+        "implementation": {
+          "secs": 738,
+          "nanos": 306185068
         }
       },
       "total_duration": {
@@ -1085,13 +1085,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "planning": {
-          "secs": 61,
-          "nanos": 259215375
-        },
         "implementation": {
           "secs": 345,
           "nanos": 300282405
+        },
+        "planning": {
+          "secs": 61,
+          "nanos": 259215375
         }
       },
       "total_duration": {
@@ -1211,13 +1211,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 349,
-          "nanos": 935129962
-        },
         "planning": {
           "secs": 71,
           "nanos": 479483748
+        },
+        "implementation": {
+          "secs": 349,
+          "nanos": 935129962
         }
       },
       "total_duration": {
@@ -1232,13 +1232,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "planning": {
-          "secs": 58,
-          "nanos": 397612086
-        },
         "implementation": {
           "secs": 275,
           "nanos": 662590967
+        },
+        "planning": {
+          "secs": 58,
+          "nanos": 397612086
         }
       },
       "total_duration": {
@@ -1274,13 +1274,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "planning": {
-          "secs": 66,
-          "nanos": 329731895
-        },
         "implementation": {
           "secs": 335,
           "nanos": 655126968
+        },
+        "planning": {
+          "secs": 66,
+          "nanos": 329731895
         }
       },
       "total_duration": {
@@ -1295,13 +1295,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 423,
-          "nanos": 461448491
-        },
         "planning": {
           "secs": 367,
           "nanos": 307049221
+        },
+        "implementation": {
+          "secs": 423,
+          "nanos": 461448491
         }
       },
       "total_duration": {
@@ -1337,13 +1337,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "planning": {
-          "secs": 95,
-          "nanos": 253242950
-        },
         "implementation": {
           "secs": 1097,
           "nanos": 936968775
+        },
+        "planning": {
+          "secs": 95,
+          "nanos": 253242950
         }
       },
       "total_duration": {
@@ -1379,13 +1379,13 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 277,
-          "nanos": 379247083
-        },
         "planning": {
           "secs": 52,
           "nanos": 693068720
+        },
+        "implementation": {
+          "secs": 277,
+          "nanos": 379247083
         }
       },
       "total_duration": {
@@ -1505,18 +1505,39 @@
       "model": "kimi-code/kimi-for-coding",
       "phase_count": 2,
       "phase_durations": {
-        "implementation": {
-          "secs": 4325,
-          "nanos": 274281588
-        },
         "planning": {
           "secs": 564,
           "nanos": 348133626
+        },
+        "implementation": {
+          "secs": 4325,
+          "nanos": 274281588
         }
       },
       "total_duration": {
         "secs": 4889,
         "nanos": 622415214
+      }
+    },
+    {
+      "timestamp": "2026-02-08T23:21:04.111711556Z",
+      "task_id": "RQ-0432",
+      "runner": "kimi",
+      "model": "kimi-code/kimi-for-coding",
+      "phase_count": 2,
+      "phase_durations": {
+        "implementation": {
+          "secs": 1116,
+          "nanos": 696283624
+        },
+        "planning": {
+          "secs": 357,
+          "nanos": 994735137
+        }
+      },
+      "total_duration": {
+        "secs": 1474,
+        "nanos": 691018761
       }
     }
   ]

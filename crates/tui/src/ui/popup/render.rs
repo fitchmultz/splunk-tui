@@ -49,7 +49,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::EditSavedSearch { .. }
         | PopupType::CreateSavedSearch { .. }
         | PopupType::CreateMacro { .. }
-        | PopupType::EditMacro { .. } => theme.border,
+        | PopupType::EditMacro { .. }
+        | PopupType::TutorialWizard { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -88,7 +89,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::EditSavedSearch { .. }
         | PopupType::CreateSavedSearch { .. }
         | PopupType::CreateMacro { .. }
-        | PopupType::EditMacro { .. } => Wrap { trim: false },
+        | PopupType::EditMacro { .. }
+        | PopupType::TutorialWizard { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -125,6 +127,38 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
 
         // Calculate content height and render scrollbar if needed
         // Content height is the number of lines in the content
+        let content_height = popup.content.lines().count();
+        let visible_lines = popup_area.height.saturating_sub(2) as usize; // Account for borders
+
+        if content_height > visible_lines {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓"));
+            let mut scrollbar_state =
+                ScrollbarState::new(content_height.saturating_sub(1)).position(scroll_offset);
+            f.render_stateful_widget(
+                scrollbar,
+                popup_area.inner(Margin::new(0, 1)),
+                &mut scrollbar_state,
+            );
+        }
+    } else if let PopupType::TutorialWizard { state } = &popup.kind {
+        // Tutorial wizard popup with scroll support for keybinding step
+        let scroll_offset = state.keybinding_scroll_offset;
+
+        let p = Paragraph::new(popup.content.as_str())
+            .block(
+                Block::default()
+                    .title(popup.title.as_str())
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(border_color)),
+            )
+            .alignment(alignment)
+            .wrap(wrap_mode)
+            .scroll((scroll_offset as u16, 0));
+        f.render_widget(p, popup_area);
+
+        // Calculate content height and render scrollbar if needed
         let content_height = popup.content.lines().count();
         let visible_lines = popup_area.height.saturating_sub(2) as usize; // Account for borders
 

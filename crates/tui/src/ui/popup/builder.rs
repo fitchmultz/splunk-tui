@@ -4,6 +4,7 @@
 //! popup dialogs with customizable titles and content.
 
 use crate::input::help;
+use crate::onboarding::{TutorialState, TutorialSteps};
 use crate::ui::popup::{MacroField, PopupType, ProfileField, SavedSearchField};
 
 /// A modal popup dialog with title, content, and type.
@@ -208,6 +209,7 @@ impl PopupBuilder {
                 max_retries,
                 use_keyring,
                 selected_field,
+                ..
             } => self.build_create_profile_defaults(
                 name_input,
                 base_url_input,
@@ -326,7 +328,35 @@ impl PopupBuilder {
                 *iseval,
                 *selected_field,
             ),
+            PopupType::TutorialWizard { state } => self.build_tutorial_wizard_defaults(state),
         }
+    }
+
+    fn build_tutorial_wizard_defaults(&self, state: &TutorialState) -> (String, String) {
+        let title = format!(
+            "Tutorial - {} ({}%)",
+            state.current_step.title(),
+            state.progress_percent()
+        );
+
+        let mut content = TutorialSteps::content(&state.current_step);
+
+        // Add progress bar
+        let progress = state.progress_percent();
+        let filled = (progress as usize) / 5; // 20 segments
+        let empty = 20 - filled;
+        let progress_bar = format!(
+            "\n\n[{}{}]",
+            "█".repeat(filled),
+            "░".repeat(empty)
+        );
+        content.push_str(&progress_bar);
+
+        // Add footer hint
+        let footer = TutorialSteps::footer_hint(&state.current_step);
+        content.push_str(&format!("\n\n{}", footer));
+
+        (title, content)
     }
 
     fn build_profile_selector_defaults(

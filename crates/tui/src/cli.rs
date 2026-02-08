@@ -28,7 +28,7 @@ use std::path::PathBuf;
     name = "splunk-tui",
     about = "Terminal user interface for Splunk Enterprise",
     version,
-    after_help = "Examples:\n  splunk-tui\n  splunk-tui --profile production\n  splunk-tui --config-path /etc/splunk-tui/config.json\n  splunk-tui --log-dir /var/log/splunk-tui --no-mouse\n"
+    after_help = "Examples:\n  splunk-tui\n  splunk-tui --profile production\n  splunk-tui --config-path /etc/splunk-tui/config.json\n  splunk-tui --log-dir /var/log/splunk-tui --no-mouse\n  splunk-tui --skip-tutorial\n"
 )]
 pub struct Cli {
     /// Config profile name to load
@@ -46,4 +46,8 @@ pub struct Cli {
     /// Disable mouse support
     #[arg(long)]
     pub no_mouse: bool,
+
+    /// Skip the first-run tutorial
+    #[arg(long)]
+    pub skip_tutorial: bool,
 }
