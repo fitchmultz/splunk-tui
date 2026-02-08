@@ -4,6 +4,9 @@
 //! Enterprise REST API v9+. It supports both session token and API token
 //! authentication with automatic session renewal.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 mod auth;
 pub mod client;
 pub mod error;
@@ -41,3 +44,15 @@ pub use models::{
 // Re-export search types for CLI/TUI use
 pub use client::search::SearchRequest;
 pub use endpoints::search::{CreateJobOptions, OutputMode, SearchMode};
+
+/// Redact a query string for logging, showing only length and a short hash prefix.
+/// This allows operators to correlate logs without exposing query content.
+///
+/// Security: Search queries may contain sensitive data (tokens, PII, proprietary SPL).
+/// Never log full queries at debug level - use this redaction helper instead.
+pub(crate) fn redact_query(query: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    query.hash(&mut hasher);
+    let hash = hasher.finish();
+    format!("<{} chars, hash={:08x}>", query.len(), hash)
+}

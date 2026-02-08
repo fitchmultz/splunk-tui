@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0413",
-      "status": "todo",
-      "title": "Fix search query logging that could expose sensitive data",
-      "description": "The search job creation endpoint logs the full search query at debug level, which may contain sensitive information such as tokens, PII, or proprietary SPL. Queries should be redacted or omitted from logs, or logged at trace level only with clear documentation of the risk.",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "security",
-        "logging",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/endpoints/search/jobs.rs:35,85-87"
-      ],
-      "evidence": [
-        "Line 35: debug!('Creating search job: {}', query); - full query logged",
-        "Lines 85-87: debug!('Search job form data: {:?}', form_data); - all params logged",
-        "Search queries may contain: tokens, passwords, PII, internal IP addresses",
-        "No redaction of sensitive SPL terms in logging"
-      ],
-      "plan": [
-        "Remove or redact search query from debug logging",
-        "If needed for debugging, log only at trace! level with security warning",
-        "Consider logging query length or hash instead of full content",
-        "Update logging documentation to note what is/isn't logged",
-        "Verify by searching for any remaining sensitive data logging"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0414",
       "status": "todo",
       "title": "Fix blocking file I/O in async export context",

@@ -15,6 +15,8 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::redact_query;
+
 use crate::endpoints::{extract_entry_content, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -32,7 +34,8 @@ pub async fn create_job(
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<String> {
-    debug!("Creating search job: {}", query);
+    // Security: Log only redacted query to avoid exposing sensitive data (tokens, PII, etc.)
+    debug!("Creating search job: {}", redact_query(query));
 
     let url = format!("{}/services/search/jobs", base_url);
 
@@ -81,10 +84,14 @@ pub async fn create_job(
         form_data.push(("realtime_window", window.to_string()));
     }
 
-    // Debug: Log the complete form data being sent
-    debug!("Search job form data: {:?}", form_data);
+    // Security: Log form data keys with redacted search query
+    // The 'search' field contains the query which is already logged above (redacted)
     for (key, value) in &form_data {
-        debug!("  {}: {}", key, value);
+        if *key == "search" {
+            debug!("  {}: {}", key, redact_query(value));
+        } else {
+            debug!("  {}: {}", key, value);
+        }
     }
 
     let builder = client

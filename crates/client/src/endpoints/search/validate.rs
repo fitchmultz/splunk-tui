@@ -15,6 +15,8 @@ use reqwest::Client;
 use reqwest::StatusCode;
 use tracing::debug;
 
+use crate::redact_query;
+
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -48,7 +50,8 @@ pub async fn validate_spl(
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
 ) -> Result<ValidateSplResponse> {
-    debug!("Validating SPL syntax: {}", search);
+    // Security: Log only redacted query to avoid exposing sensitive data (tokens, PII, etc.)
+    debug!("Validating SPL syntax: {}", redact_query(search));
 
     let url = format!("{}/services/search/parser", base_url);
 
