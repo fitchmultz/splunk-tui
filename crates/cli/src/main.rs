@@ -19,11 +19,11 @@ mod cancellation;
 mod commands;
 mod config_context;
 mod dispatch;
+mod error;
 mod formatters;
 mod interactive;
 mod progress;
 
-use anyhow::Result;
 use args::Cli;
 use cancellation::{
     CancellationToken, SIGINT_EXIT_CODE, is_cancelled_error, print_cancelled_message,
@@ -31,13 +31,17 @@ use cancellation::{
 use clap::Parser;
 use config_context::ConfigCommandContext;
 use dispatch::run_command;
+use error::{ExitCode, ExitCodeExt};
 use splunk_config::ConfigLoader;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
     // Load .env file BEFORE CLI parsing so clap env defaults can read .env values
-    ConfigLoader::new().load_dotenv()?;
+    if let Err(e) = ConfigLoader::new().load_dotenv() {
+        eprintln!("Failed to load environment: {}", e);
+        std::process::exit(ExitCode::GeneralError.as_i32());
+    }
 
     let cli = Cli::parse();
 
@@ -87,11 +91,23 @@ async fn main() -> Result<()> {
 
         // Apply environment variables (including SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
         // if not already set via CLI args). Env vars override profile values.
-        loader = loader.from_env()?;
+        loader = match loader.from_env() {
+            Ok(l) => l,
+            Err(e) => {
+                eprintln!("Failed to load configuration from environment: {:#}", e);
+                std::process::exit(ExitCode::GeneralError.as_i32());
+            }
+        };
 
         // Load from profile if profile_name is now set (from CLI or env var)
         if loader.profile_name().is_some() {
-            loader = loader.from_profile()?;
+            loader = match loader.from_profile() {
+                Ok(l) => l,
+                Err(e) => {
+                    eprintln!("Failed to load configuration from profile: {:#}", e);
+                    std::process::exit(ExitCode::GeneralError.as_i32());
+                }
+            };
         }
 
         // Apply CLI overrides (highest priority)
@@ -121,7 +137,13 @@ async fn main() -> Result<()> {
         // Must be done before loader.build() since build() consumes the loader
         let search_defaults = loader.build_search_defaults(None);
 
-        let config = loader.build()?;
+        let config = match loader.build() {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Failed to build configuration: {:#}", e);
+                std::process::exit(ExitCode::GeneralError.as_i32());
+            }
+        };
 
         // Warn if using default credentials (security check)
         if config.is_using_default_credentials() {
@@ -157,11 +179,20 @@ async fn main() -> Result<()> {
 
     // Execute command
     match run_command(cli, config_context, &cancel).await {
-        Ok(()) => Ok(()),
+        Ok(()) => {
+            std::process::exit(ExitCode::Success.as_i32());
+        }
         Err(e) if is_cancelled_error(&e) => {
             print_cancelled_message();
             std::process::exit(SIGINT_EXIT_CODE as i32);
         }
-        Err(e) => Err(e),
+        Err(e) => {
+            // Print the error message
+            eprintln!("{:#}", e);
+
+            // Exit with structured exit code
+            let exit_code = e.exit_code();
+            std::process::exit(exit_code.as_i32());
+        }
     }
 }

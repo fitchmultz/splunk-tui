@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0427",
-      "status": "todo",
-      "title": "Implement structured exit codes for CLI scripting",
-      "description": "Define and implement structured exit codes for splunk-cli to enable reliable shell scripting and automation. Currently CLI likely returns 0 for success and 1 for all failures, making it impossible for scripts to distinguish between authentication failures, connection errors, not found, or validation errors.\n\nExit code schema:\n- 0: Success\n- 1: General error\n- 2: Authentication failure (invalid credentials, expired session)\n- 3: Connection error (network, timeout, DNS)\n- 4: Resource not found (job, index, saved search)\n- 5: Validation error (invalid SPL, bad parameters)\n- 6: Permission denied (insufficient privileges)\n- 7: Rate limited (HTTP 429)\n- 8: Service unavailable (HTTP 503, maintenance mode)\n- 130: Interrupted (Ctrl+C)\n\nThis enables CI/CD pipelines to make intelligent decisions based on failure type.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "cli",
-        "scripting",
-        "automation"
-      ],
-      "scope": [
-        "crates/cli/src/main.rs",
-        "crates/cli/src/error.rs",
-        "crates/client/src/error.rs"
-      ],
-      "evidence": [
-        "CLI main.rs uses anyhow for error handling without custom exit codes",
-        "No ExitCode enum or structured exit code mapping found in CLI crate",
-        "Scripts cannot distinguish auth failures from connection failures for retry logic",
-        "CI/CD integration requires parsing error strings instead of checking exit codes"
-      ],
-      "plan": [
-        "Create ExitCode enum in crates/cli/src/error.rs mapping error types to exit codes",
-        "Implement From<ClientError> for ExitCode mapping each error variant",
-        "Update main.rs to use std::process::exit(exit_code as u8)",
-        "Add --exit-codes flag to splunk-cli help that documents all exit codes",
-        "Update man page with exit code documentation",
-        "Add tests verifying correct exit codes for each error scenario using assert_cmd",
-        "Verify by running: splunk-cli search 'index=nosuchindex' --wait; echo \"Exit: $?\""
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0428",
       "status": "todo",
       "title": "Add batch job operations to CLI for feature parity with TUI",

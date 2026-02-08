@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-08T19:06:21.837592908Z",
+  "last_updated_at": "2026-02-08T19:34:10.595530765Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -586,7 +586,7 @@
     },
     "2026-02-08": {
       "date": "2026-02-08",
-      "completed_count": 29,
+      "completed_count": 30,
       "tasks": [
         {
           "id": "RQ-0412",
@@ -732,6 +732,11 @@
           "id": "RQ-0426",
           "title": "Add NDJSON/JSONL output format for streaming workflows",
           "completed_at": "2026-02-08T19:06:21.837591622Z"
+        },
+        {
+          "id": "RQ-0427",
+          "title": "Implement structured exit codes for CLI scripting",
+          "completed_at": "2026-02-08T19:34:10.595530095Z"
         }
       ]
     }
@@ -741,7 +746,7 @@
     "longest_streak": 7,
     "last_completed_date": "2026-02-08"
   },
-  "total_completed": 138,
+  "total_completed": 139,
   "milestones": [
     {
       "threshold": 10,

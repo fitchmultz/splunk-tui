@@ -23,6 +23,9 @@ use std::sync::{
 use tokio::sync::Notify;
 
 /// Standard Unix exit code for SIGINT: 128 + 2.
+///
+/// This is also defined as `ExitCode::Interrupted` in the `error` module.
+/// Both values must remain synchronized.
 pub const SIGINT_EXIT_CODE: u8 = 130;
 
 /// Cancellation token usable across async tasks.
