@@ -47,7 +47,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 # Time
 time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde", "clock"] }
 
 # Testing
 mockito = "1.6"

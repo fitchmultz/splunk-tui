@@ -42,7 +42,7 @@ impl ErrorDetails {
             request_id: None,
             messages: Vec::new(),
             raw_body: None,
-            timestamp: format!("{:?}", std::time::SystemTime::now()),
+            timestamp: chrono::Utc::now().to_rfc3339(),
             context: HashMap::new(),
         };
 
@@ -132,7 +132,7 @@ impl ErrorDetails {
             request_id: None,
             messages: Vec::new(),
             raw_body: None,
-            timestamp: format!("{:?}", std::time::SystemTime::now()),
+            timestamp: chrono::Utc::now().to_rfc3339(),
             context: HashMap::new(),
         }
     }
