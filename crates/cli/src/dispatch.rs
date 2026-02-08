@@ -54,6 +54,7 @@ pub(crate) async fn run_command(
             )?;
         }
         Commands::Search {
+            command,
             query,
             wait,
             earliest,
@@ -64,22 +65,75 @@ pub(crate) async fn run_command(
         } => {
             trace!("Routing to search command");
             let (config, search_defaults) = config.into_real_config_with_search_defaults()?;
-            commands::search::run(
-                config,
-                query,
-                wait,
-                earliest.as_deref(),
-                latest.as_deref(),
-                count,
-                &search_defaults,
-                &cli.output,
-                cli.quiet,
-                cli.output_file.clone(),
-                cancel_token,
-                realtime,
-                realtime_window,
-            )
-            .await?;
+
+            // Handle subcommand or backward-compatible direct query
+            match command {
+                Some(commands::search::SearchCommand::Execute {
+                    query,
+                    wait,
+                    earliest,
+                    latest,
+                    count,
+                    realtime,
+                    realtime_window,
+                }) => {
+                    commands::search::run(
+                        config,
+                        query,
+                        wait,
+                        earliest.as_deref(),
+                        latest.as_deref(),
+                        count,
+                        &search_defaults,
+                        &cli.output,
+                        cli.quiet,
+                        cli.output_file.clone(),
+                        cancel_token,
+                        realtime,
+                        realtime_window,
+                    )
+                    .await?;
+                }
+                Some(commands::search::SearchCommand::Validate { query, file, json }) => {
+                    // Determine output format: --json flag overrides global --output flag
+                    let output_format = if json { "json" } else { &cli.output };
+
+                    commands::search::run_validate(
+                        config,
+                        query,
+                        file,
+                        output_format,
+                        cli.output_file.clone(),
+                        cancel_token,
+                    )
+                    .await?;
+                }
+                None => {
+                    // Backward compatibility: if no subcommand, check for legacy positional query
+                    if let Some(query) = query {
+                        commands::search::run(
+                            config,
+                            query,
+                            wait,
+                            earliest.as_deref(),
+                            latest.as_deref(),
+                            count,
+                            &search_defaults,
+                            &cli.output,
+                            cli.quiet,
+                            cli.output_file.clone(),
+                            cancel_token,
+                            realtime,
+                            realtime_window,
+                        )
+                        .await?;
+                    } else {
+                        anyhow::bail!(
+                            "Failed to execute search: either provide a query or use a subcommand (execute, validate). See 'splunk-cli search --help' for more information."
+                        );
+                    }
+                }
+            }
         }
         Commands::Indexes { command } => {
             trace!("Routing to indexes command");

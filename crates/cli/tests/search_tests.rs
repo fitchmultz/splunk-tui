@@ -35,11 +35,9 @@ fn splunk_cli_cmd_with_base_url() -> assert_cmd::Command {
 fn test_search_help() {
     let mut cmd = splunk_cli_cmd();
     cmd.args(["search", "--help"]).assert().success().stdout(
-        predicate::str::contains("Execute a search query")
-            .and(predicate::str::contains("--wait"))
-            .and(predicate::str::contains("--earliest"))
-            .and(predicate::str::contains("--latest"))
-            .and(predicate::str::contains("--count")),
+        predicate::str::contains("Execute a search query or validate SPL syntax")
+            .and(predicate::str::contains("execute"))
+            .and(predicate::str::contains("validate")),
     );
 }
 
@@ -47,9 +45,10 @@ fn test_search_help() {
 fn test_search_requires_query_argument() {
     let mut cmd = splunk_cli_cmd();
     cmd.arg("search")
+        .env("SPLUNK_BASE_URL", TEST_BASE_URL)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("<QUERY>").or(predicate::str::contains("<query>")));
+        .stderr(predicate::str::contains("Failed to execute search"));
 }
 
 #[test]

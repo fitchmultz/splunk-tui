@@ -624,4 +624,60 @@ impl Formatter for XmlFormatter {
         result.push_str("</shc_management>\n");
         Ok(result)
     }
+
+    fn format_validation_result(
+        &self,
+        result: &splunk_client::models::ValidateSplResponse,
+    ) -> Result<String> {
+        use crate::formatters::common::escape_xml;
+
+        let mut output = String::new();
+        output.push_str(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<validation>
+"#,
+        );
+        output.push_str(&format!("  <valid>{}</valid>\n", result.valid));
+
+        if !result.errors.is_empty() {
+            output.push_str("  <errors>\n");
+            for error in &result.errors {
+                output.push_str("    <error>\n");
+                output.push_str(&format!(
+                    "      <message>{}</message>\n",
+                    escape_xml(&error.message)
+                ));
+                if let Some(line) = error.line {
+                    output.push_str(&format!("      <line>{}</line>\n", line));
+                }
+                if let Some(col) = error.column {
+                    output.push_str(&format!("      <column>{}</column>\n", col));
+                }
+                output.push_str("    </error>\n");
+            }
+            output.push_str("  </errors>\n");
+        }
+
+        if !result.warnings.is_empty() {
+            output.push_str("  <warnings>\n");
+            for warning in &result.warnings {
+                output.push_str("    <warning>\n");
+                output.push_str(&format!(
+                    "      <message>{}</message>\n",
+                    escape_xml(&warning.message)
+                ));
+                if let Some(line) = warning.line {
+                    output.push_str(&format!("      <line>{}</line>\n", line));
+                }
+                if let Some(col) = warning.column {
+                    output.push_str(&format!("      <column>{}</column>\n", col));
+                }
+                output.push_str("    </warning>\n");
+            }
+            output.push_str("  </warnings>\n");
+        }
+
+        output.push_str("</validation>\n");
+        Ok(output)
+    }
 }

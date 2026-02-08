@@ -211,6 +211,13 @@ impl Formatter for TableFormatter {
 
         Ok(lines.join("\n"))
     }
+
+    fn format_validation_result(
+        &self,
+        result: &splunk_client::models::ValidateSplResponse,
+    ) -> Result<String> {
+        super::validate::format_validation_result(result)
+    }
 }
 
 impl TableFormatter {

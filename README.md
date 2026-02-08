@@ -6,6 +6,7 @@ A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployme
 
 - **Dual Authentication**: Session token (username/password) and API token support
 - **Search Management**: Create, execute, and monitor search jobs
+- **SPL Validation**: Validate search syntax without executing (`splunk-cli search validate`)
 - **Index Operations**: List and inspect indexes with detailed information
 - **Cluster Support**: View cluster status and peer information
 - **Health Monitoring**: Comprehensive health checks including server info, splunkd health, license usage, KVStore status, and log parsing health

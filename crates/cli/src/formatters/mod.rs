@@ -50,7 +50,8 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use splunk_client::models::{
     AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, FiredAlert, Input,
-    KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer, WorkloadPool, WorkloadRule,
+    KvStoreCollection, KvStoreRecord, LogEntry, SearchPeer, ValidateSplResponse, WorkloadPool,
+    WorkloadRule,
 };
 use splunk_client::{
     App, ClusterPeer, Forwarder, Index, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
@@ -340,6 +341,9 @@ pub trait Formatter {
 
     /// Format SHC management operation result.
     fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String>;
+
+    /// Format SPL validation results.
+    fn format_validation_result(&self, result: &ValidateSplResponse) -> Result<String>;
 }
 
 /// Cluster peer output structure.

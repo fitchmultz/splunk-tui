@@ -353,4 +353,52 @@ impl Formatter for NdjsonFormatter {
     fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
         to_ndjson_single(output)
     }
+
+    fn format_validation_result(
+        &self,
+        result: &splunk_client::models::ValidateSplResponse,
+    ) -> Result<String> {
+        let mut output = String::new();
+
+        // Output errors
+        for error in &result.errors {
+            let line = serde_json::json!({
+                "type": "error",
+                "valid": false,
+                "message": &error.message,
+                "line": error.line,
+                "column": error.column
+            });
+            output.push_str(&serde_json::to_string(&line)?);
+            output.push('\n');
+        }
+
+        // Output warnings
+        for warning in &result.warnings {
+            let line = serde_json::json!({
+                "type": "warning",
+                "valid": true,
+                "message": &warning.message,
+                "line": warning.line,
+                "column": warning.column
+            });
+            output.push_str(&serde_json::to_string(&line)?);
+            output.push('\n');
+        }
+
+        // If valid with no warnings, output a single success line
+        if result.errors.is_empty() && result.warnings.is_empty() {
+            let line = serde_json::json!({
+                "type": "success",
+                "valid": true,
+                "message": "SPL is valid",
+                "line": null,
+                "column": null
+            });
+            output.push_str(&serde_json::to_string(&line)?);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
 }

@@ -2,52 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0430",
-      "status": "todo",
-      "title": "Add SPL query validation command",
-      "description": "Create a new 'splunk-cli search validate' command that validates SPL syntax without executing the search. This helps users catch syntax errors early, especially in CI/CD pipelines for saved search validation.\n\nFeatures:\n- Validate SPL syntax using Splunk's /services/search/parser endpoint\n- Return structured error output with line/column positions\n- Support for validating macros and saved search definitions\n- Integration with --check mode for linting SPL files\n- Optional: local syntax validation without server roundtrip for common errors\n\nUse cases:\n- CI/CD validation of saved searches before deployment\n- Pre-commit hooks for SPL syntax checking\n- IDE integration for SPL linting\n- Teaching tool for SPL syntax education",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "cli",
-        "search",
-        "validation",
-        "spl"
-      ],
-      "scope": [
-        "crates/cli/src/commands/search.rs",
-        "crates/cli/src/args.rs",
-        "crates/client/src/endpoints/search/"
-      ],
-      "evidence": [
-        "No SPL validation command exists - users must execute search to find syntax errors",
-        "Splunk API has /services/search/parser endpoint for syntax validation",
-        "Saved search management lacks validation before create/edit (README.md:191-195)",
-        "No linting or CI/CD integration for SPL syntax checking"
-      ],
-      "plan": [
-        "Add validate subcommand to search command in args.rs",
-        "Implement parser endpoint client in crates/client/src/endpoints/search/validate.rs",
-        "Create validation response model with error positions and messages",
-        "Implement formatters for validation output (human-readable and JSON)",
-        "Add --file flag to validate SPL from file (for CI/CD use)",
-        "Add --json flag for machine-readable output",
-        "Create example pre-commit hook script",
-        "Add integration tests with mock parser responses",
-        "Verify by running: splunk-cli search validate 'index=main | stats count by' and seeing syntax error"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0431",
       "status": "todo",
       "title": "Add property-based testing infrastructure with proptest",

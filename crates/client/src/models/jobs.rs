@@ -178,7 +178,7 @@ pub struct ValidateSplRequest {
 ///
 /// Contains the result of parsing the SPL query, including any errors
 /// or warnings detected by Splunk's parser.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ValidateSplResponse {
     /// Whether the SPL is valid (no errors)
     pub valid: bool,
@@ -191,7 +191,7 @@ pub struct ValidateSplResponse {
 }
 
 /// SPL syntax error.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SplError {
     /// Error message describing the problem
     pub message: String,
@@ -202,7 +202,7 @@ pub struct SplError {
 }
 
 /// SPL syntax warning.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SplWarning {
     /// Warning message
     pub message: String,

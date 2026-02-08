@@ -352,4 +352,11 @@ impl Formatter for JsonFormatter {
     fn format_shc_management(&self, output: &ShcManagementOutput) -> Result<String> {
         Ok(serde_json::to_string_pretty(output)?)
     }
+
+    fn format_validation_result(
+        &self,
+        result: &splunk_client::models::ValidateSplResponse,
+    ) -> Result<String> {
+        Ok(serde_json::to_string_pretty(result)?)
+    }
 }

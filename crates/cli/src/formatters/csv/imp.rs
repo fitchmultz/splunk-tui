@@ -195,4 +195,43 @@ impl Formatter for CsvFormatter {
 
         Ok(output)
     }
+
+    fn format_validation_result(
+        &self,
+        result: &splunk_client::models::ValidateSplResponse,
+    ) -> Result<String> {
+        use crate::formatters::common::escape_csv;
+
+        let mut output = String::new();
+
+        // Header
+        output.push_str("valid,type,message,line,column\n");
+
+        // Errors
+        for error in &result.errors {
+            output.push_str(&format!(
+                "false,error,\"{}\",{},{}\n",
+                escape_csv(&error.message),
+                error.line.map(|n| n.to_string()).unwrap_or_default(),
+                error.column.map(|n| n.to_string()).unwrap_or_default()
+            ));
+        }
+
+        // Warnings (mark as valid since they're not errors)
+        for warning in &result.warnings {
+            output.push_str(&format!(
+                "true,warning,\"{}\",{},{}\n",
+                escape_csv(&warning.message),
+                warning.line.map(|n| n.to_string()).unwrap_or_default(),
+                warning.column.map(|n| n.to_string()).unwrap_or_default()
+            ));
+        }
+
+        // If no errors or warnings, output a valid row
+        if result.errors.is_empty() && result.warnings.is_empty() {
+            output.push_str("true,success,Valid SPL,,\n");
+        }
+
+        Ok(output)
+    }
 }

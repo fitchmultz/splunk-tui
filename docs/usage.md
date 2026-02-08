@@ -531,6 +531,79 @@ splunk-cli search "index=main" --realtime
 
 **Note:** Real-time searches run continuously until cancelled. Use `Ctrl+C` to cancel a running real-time search, or omit `--wait` to start the search without waiting for results.
 
+#### `search validate`
+
+Validate SPL syntax without executing the search. This is useful for catching syntax errors early, especially in CI/CD pipelines.
+
+```bash
+# Validate a query string
+splunk-cli search validate 'index=main | stats count by host'
+
+# Validate from a file (useful for CI/CD)
+splunk-cli search validate --file my_saved_search.spl
+
+# Output structured JSON for parsing
+splunk-cli search validate 'index=main | stats count' --json
+
+# Validate with error (non-zero exit code on failure)
+splunk-cli search validate 'index=main | stats by' || echo "Invalid SPL!"
+```
+
+**Arguments:**
+- `<query>`: The SPL query to validate (optional if `--file` is provided)
+- `--file <PATH>`: Path to a file containing SPL to validate
+- `--json`: Output machine-readable JSON format with structured error details
+
+**Exit Codes:**
+- `0`: SPL is valid (may have warnings)
+- `1`: SPL has syntax errors
+- `130`: Operation cancelled (Ctrl+C)
+
+**Output Formats:**
+
+The validation command supports all standard output formats:
+
+| Format | Description |
+|--------|-------------|
+| `table` (default) | Human-readable output with ✓/✗ indicators |
+| `json` | Full structured response with errors/warnings arrays |
+| `csv` | One row per error/warning with line/column positions |
+| `xml` | Hierarchical XML structure |
+| `ndjson` | One JSON object per line (for streaming/pipelines) |
+
+**JSON Output Structure:**
+
+```json
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "message": "Deprecated command usage",
+      "line": 2,
+      "column": 5
+    }
+  ]
+}
+```
+
+**CI/CD Integration:**
+
+For pre-commit hooks or CI pipelines:
+
+```bash
+# Exit with error if validation fails
+splunk-cli search validate --file queries/main.spl || exit 1
+
+# Validate multiple files
+for file in queries/*.spl; do
+    echo "Validating $file..."
+    splunk-cli search validate --file "$file" || exit 1
+done
+```
+
+See `scripts/pre-commit-spl-check.sh` for a complete pre-commit hook example.
+
 #### `indexes`
 List and manage Splunk indexes.
 

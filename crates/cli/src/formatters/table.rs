@@ -42,4 +42,5 @@ mod search;
 mod search_peers;
 mod shc;
 mod users;
+mod validate;
 mod workload;

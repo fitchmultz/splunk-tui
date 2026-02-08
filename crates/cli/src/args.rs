@@ -25,7 +25,7 @@ use crate::dynamic_complete::CompletionType;
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
 #[command(version)]
 #[command(
-    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli doctor\n  splunk-cli doctor --bundle ./support-bundle.zip\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli --api-token $SPLUNK_API_TOKEN search 'index=_internal' --wait\n  splunk-cli jobs --results 1705852800.123 --result-count 100\n  splunk-cli jobs --results 1705852800.123 --result-offset 100 --result-count 50 -o json\n  splunk-cli jobs --results 1705852800.123 --output-file results.json\n\nShell Completions:\n  splunk-cli completions bash > /etc/bash_completion.d/splunk-cli\n  splunk-cli completions zsh > /usr/local/share/zsh/site-functions/_splunk-cli\n  splunk-cli completions fish > ~/.config/fish/completions/splunk-cli.fish\n\nManpage:\n  splunk-cli man > /usr/local/share/man/man1/splunk-cli.1\n"
+    after_help = "Examples:\n  splunk-cli search 'index=main | head 10' --wait\n  splunk-cli search validate 'index=main | stats count'\n  splunk-cli indexes --detailed\n  splunk-cli forwarders --detailed\n  splunk-cli health\n  splunk-cli doctor\n  splunk-cli doctor --bundle ./support-bundle.zip\n  splunk-cli list-all --all-profiles\n  splunk-cli --profile production jobs --list\n  splunk-cli --api-token $SPLUNK_API_TOKEN search 'index=_internal' --wait\n  splunk-cli jobs --results 1705852800.123 --result-count 100\n  splunk-cli jobs --results 1705852800.123 --result-offset 100 --result-count 50 -o json\n  splunk-cli jobs --results 1705852800.123 --output-file results.json\n\nShell Completions:\n  splunk-cli completions bash > /etc/bash_completion.d/splunk-cli\n  splunk-cli completions zsh > /usr/local/share/zsh/site-functions/_splunk-cli\n  splunk-cli completions fish > ~/.config/fish/completions/splunk-cli.fish\n\nManpage:\n  splunk-cli man > /usr/local/share/man/man1/splunk-cli.1\n"
 )]
 pub struct Cli {
     /// Base URL of the Splunk server (e.g., https://localhost:8089)
@@ -92,33 +92,44 @@ pub enum Commands {
         command: commands::config::ConfigCommand,
     },
 
-    /// Execute a search query
+    /// Execute a search query or validate SPL syntax
     Search {
+        #[command(subcommand)]
+        command: Option<commands::search::SearchCommand>,
+
         /// The search query to execute (e.g., 'search index=main | head 10')
-        query: String,
+        /// (Deprecated: use 'search execute <QUERY>')
+        #[arg(hide = true)]
+        query: Option<String>,
 
         /// Wait for the search to complete before returning results
-        #[arg(long)]
+        /// (Deprecated: use 'search execute --wait')
+        #[arg(long, hide = true)]
         wait: bool,
 
         /// Earliest time for the search (e.g., '-24h', '2024-01-01T00:00:00')
-        #[arg(short, long, allow_hyphen_values = true)]
+        /// (Deprecated: use 'search execute --earliest')
+        #[arg(short, long, allow_hyphen_values = true, hide = true)]
         earliest: Option<String>,
 
         /// Latest time for the search (e.g., 'now', '2024-01-02T00:00:00')
-        #[arg(short, long, allow_hyphen_values = true)]
+        /// (Deprecated: use 'search execute --latest')
+        #[arg(short, long, allow_hyphen_values = true, hide = true)]
         latest: Option<String>,
 
         /// Maximum number of results to return
-        #[arg(short, long)]
+        /// (Deprecated: use 'search execute --count')
+        #[arg(short, long, hide = true)]
         count: Option<usize>,
 
         /// Run search in real-time mode
-        #[arg(long)]
+        /// (Deprecated: use 'search execute --realtime')
+        #[arg(long, hide = true)]
         realtime: bool,
 
-        /// Real-time window in seconds (e.g., 60 for a 60-second window)
-        #[arg(long, requires = "realtime")]
+        /// Real-time window in seconds
+        /// (Deprecated: use 'search execute --realtime-window')
+        #[arg(long, requires = "realtime", hide = true)]
         realtime_window: Option<u64>,
     },
 
