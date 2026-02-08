@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-08T08:02:39.325989994Z",
+  "last_updated_at": "2026-02-08T08:10:39.278148507Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -586,7 +586,7 @@
     },
     "2026-02-08": {
       "date": "2026-02-08",
-      "completed_count": 24,
+      "completed_count": 25,
       "tasks": [
         {
           "id": "RQ-0412",
@@ -707,6 +707,11 @@
           "id": "RQ-0407",
           "title": "Fix hardcoded timeout in overview_fetch.rs to use FETCH_TIMEOUT constant",
           "completed_at": "2026-02-08T08:02:39.325989356Z"
+        },
+        {
+          "id": "RQ-0408",
+          "title": "Standardize warn! message patterns across CLI commands",
+          "completed_at": "2026-02-08T08:10:39.278147204Z"
         }
       ]
     }
@@ -716,7 +721,7 @@
     "longest_streak": 7,
     "last_completed_date": "2026-02-08"
   },
-  "total_completed": 133,
+  "total_completed": 134,
   "milestones": [
     {
       "threshold": 10,

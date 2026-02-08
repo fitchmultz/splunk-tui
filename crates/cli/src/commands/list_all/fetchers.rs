@@ -122,7 +122,7 @@ where
             }
         }
         Err(_) => {
-            warn!("Timeout fetching {}", resource_type);
+            warn!("Failed to fetch {}", resource_type);
             ResourceSummary {
                 resource_type: resource_type.to_string(),
                 count: 0,
@@ -220,7 +220,7 @@ async fn fetch_cluster(client: &SplunkClient) -> ResourceSummary {
             }
         },
         Err(_) => {
-            warn!("Timeout fetching cluster info");
+            warn!("Failed to fetch cluster info");
             ResourceSummary {
                 resource_type: "cluster".to_string(),
                 count: 0,
@@ -287,7 +287,7 @@ async fn fetch_license(client: &SplunkClient) -> ResourceSummary {
             }
         }
         Err(_) => {
-            warn!("Timeout fetching license");
+            warn!("Failed to fetch license");
             ResourceSummary {
                 resource_type: "license".to_string(),
                 count: 0,
