@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0416",
-      "status": "todo",
-      "title": "Fix CLI default count value mismatches between docs and code",
-      "description": "The default --count values documented in docs/usage.md don't match the actual CLI code defaults. This confuses users who expect behavior to match documentation. Update documentation to match actual code defaults (100 for most commands, 1000 for search).",
-      "priority": "high",
-      "tags": [
-        "maintenance",
-        "documentation",
-        "consistency",
-        "ux",
-        "cli"
-      ],
-      "scope": [
-        "docs/usage.md",
-        "crates/cli/src/args.rs",
-        "crates/cli/src/commands/*.rs"
-      ],
-      "evidence": [
-        "logs --count: docs say 50, code default is 100",
-        "jobs --count: docs say 50, code default is 100",
-        "indexes --count: docs say 30, code default is 100",
-        "cluster --count: docs say 50, code default is 100",
-        "alerts list --count: docs say 30, code default is 100",
-        "apps list --count: docs say 30, code default is 100",
-        "users list --count: docs say 30, code default is 100",
-        "search --count: docs say 100, code default is 1000"
-      ],
-      "plan": [
-        "Audit all --count default values in code",
-        "Update docs/usage.md to match actual code defaults",
-        "Update README.md if it contains the same incorrect values",
-        "Verify by running `make lint-docs` and checking generated docs"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0417",
       "status": "todo",
       "title": "Fix inconsistent error message formatting per AGENTS.md conventions",

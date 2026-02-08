@@ -322,7 +322,7 @@ List and manage lookup tables (CSV-based lookups).
 **Subcommands:**
 
 - `list`: List all lookup tables (default)
-  - `-c, --count <NUMBER>`: Maximum number of lookup tables to list [default: 30]
+  - `-c, --count <NUMBER>`: Maximum number of lookup tables to list [default: 100]
   - `--offset <NUMBER>`: Offset into the lookup table list [default: 0]
 
 - `download <NAME>`: Download a lookup table as CSV
@@ -479,7 +479,7 @@ splunk-cli alerts info "scheduler__admin__search__MyAlert_at_1351181001_5.31_135
 
 **Subcommands:**
 - `list` [options]: List fired alerts
-  - `-c, --count <NUMBER>`: Maximum number of fired alerts to list [default: 30]
+  - `-c, --count <NUMBER>`: Maximum number of fired alerts to list [default: 100]
   - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
 
 - `info <NAME>`: Show detailed information about a fired alert
@@ -509,7 +509,7 @@ splunk-cli search "index=main | head 10" --wait --earliest "-24h"
 - `--wait`: Wait for the search to complete before returning results
 - `-e, --earliest <TIME>`: Earliest time (e.g., `-24h`, `2024-01-01T00:00:00`)
 - `-l, --latest <TIME>`: Latest time (e.g., `now`)
-- `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
+- `-c, --count <NUMBER>`: Maximum number of results to return [default: 1000]
 - `--realtime`: Run search in real-time mode
 - `--realtime-window <SECONDS>`: Real-time window in seconds (e.g., 60 for a 60-second window). Only valid with `--realtime`.
 
@@ -539,7 +539,7 @@ splunk-cli indexes --count 30 --offset 30
 ```
 
 - `-d, --detailed`: Show detailed information about each index
-- `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 30]
+- `-c, --count <NUMBER>`: Maximum number of indexes to list [default: 100]
 - `--offset <NUMBER>`: Offset into the index list (zero-based) [default: 0]
 
 **Note (table output):** table output includes a pagination footer (e.g., `Showing 31-60 (page 2)`).
@@ -585,12 +585,12 @@ splunk-cli cluster peers --offset 50 --count 50
 - `show` [options]: Show cluster status and information (default)
   - `-d, --detailed`: Show detailed cluster information with peers
   - `--offset <NUMBER>`: Offset into the cluster peer list (zero-based) [default: 0] (only applies with `--detailed`)
-  - `-c, --count <NUMBER>`: Number of peers per page [default: 50] (only applies with `--detailed`)
+  - `-c, --count <NUMBER>`: Number of peers per page [default: 100] (only applies with `--detailed`)
   - `--page-size <NUMBER>`: Deprecated alias for `--count`
 
 - `peers` [options]: Show cluster peers
   - `--offset <NUMBER>`: Offset into the cluster peer list (zero-based) [default: 0]
-  - `-c, --count <NUMBER>`: Number of peers per page [default: 50]
+  - `-c, --count <NUMBER>`: Number of peers per page [default: 100]
   - `--page-size <NUMBER>`: Deprecated alias for `--count`
 
 - `maintenance`: Manage cluster maintenance mode
@@ -660,7 +660,7 @@ splunk-cli jobs --delete "1705852800.123"
 - `--inspect <SID>`: Show detailed information for a specific job by SID (includes status, duration, event counts, disk usage, priority, label, etc.)
 - `--cancel <SID>`: Cancel a specific job by SID
 - `--delete <SID>`: Delete a specific job by SID
-- `-c, --count <NUMBER>`: Maximum number of jobs to list [default: 50]
+- `-c, --count <NUMBER>`: Maximum number of jobs to list [default: 100]
 - `--job-count <NUMBER>`: Deprecated alias for `--count`
 
 **Output formats for `--inspect`**: Supports `--output table` (default), `--output json`, `--output csv`, `--output xml`
@@ -751,7 +751,7 @@ splunk-cli users delete janedoe --force
 ```
 
 **List options:**
-- `-c, --count <NUMBER>`: Maximum number of users to list [default: 30]
+- `-c, --count <NUMBER>`: Maximum number of users to list [default: 100]
 
 **Create options:**
 - `name`: Username (required)
@@ -810,7 +810,7 @@ splunk-cli apps remove my_app --force
 
 **Subcommands:**
 - `list` [options]: List installed apps
-  - `-c, --count <NUMBER>`: Maximum number of apps to list [default: 30]
+  - `-c, --count <NUMBER>`: Maximum number of apps to list [default: 100]
   - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
 
 - `info <APP_NAME>`: Show detailed information about an app
@@ -843,7 +843,7 @@ View internal logs with real-time streaming support.
 splunk-cli logs --count 50 --earliest "-15m" --tail
 ```
 
-- `-c, --count <NUMBER>`: Maximum number of log entries to show [default: 50]
+- `-c, --count <NUMBER>`: Maximum number of log entries to show [default: 100]
 - `-e, --earliest <TIME>`: Earliest time for logs [default: "-15m"]
 - `-t, --tail`: Follow logs in real-time (streaming mode)
 
@@ -907,7 +907,7 @@ splunk-cli saved-searches edit "Errors Last 24 Hours" --description "Updated des
 
 **Subcommands:**
 - `list` [options]: List saved searches
-  - `-c, --count <NUMBER>`: Maximum number of saved searches to list [default: 30]
+  - `-c, --count <NUMBER>`: Maximum number of saved searches to list [default: 100]
   - `-o, --output <FORMAT>`: Output format (table, json, csv, xml) [default: table]
 
 - `info <NAME>`: Show detailed information about a saved search
@@ -917,7 +917,7 @@ splunk-cli saved-searches edit "Errors Last 24 Hours" --description "Updated des
   - `-w, --wait`: Wait for the search to complete before returning results
   - `-e, --earliest <TIME>`: Earliest time for the search (e.g., `-24h`, `2024-01-01T00:00:00`)
   - `-l, --latest <TIME>`: Latest time for the search (e.g., `now`, `2024-01-02T00:00:00`)
-  - `-c, --count <NUMBER>`: Maximum number of results to return [default: 100]
+  - `-c, --count <NUMBER>`: Maximum number of results to return [default: 1000]
   - `-o, --output <FORMAT>`: Output format for search results (table, json, csv, xml) [default: table]
 
 - `edit <NAME>`: Edit an existing saved search
