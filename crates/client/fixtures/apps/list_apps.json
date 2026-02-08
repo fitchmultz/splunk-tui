@@ -10,8 +10,8 @@
         "name": "search",
         "label": "Search & Reporting",
         "version": "9.1.2",
-        "is_configured": true,
-        "is_visible": true,
+        "isConfigured": true,
+        "isVisible": true,
         "disabled": false,
         "description": "Splunk Search app",
         "author": "Splunk Inc."
@@ -27,8 +27,8 @@
         "name": "Splunk_TA_example",
         "label": "Example Add-on",
         "version": "1.2.3",
-        "is_configured": true,
-        "is_visible": false,
+        "isConfigured": true,
+        "isVisible": false,
         "disabled": false,
         "description": "An example Splunk TA",
         "author": "Splunk"
@@ -44,8 +44,8 @@
         "name": "disabled_app",
         "label": "Disabled App",
         "version": "1.0.0",
-        "is_configured": false,
-        "is_visible": true,
+        "isConfigured": false,
+        "isVisible": true,
         "disabled": true,
         "description": "A disabled app",
         "author": "Test Author"

@@ -11,9 +11,9 @@ pub struct App {
     pub name: String,
     pub label: Option<String>,
     pub version: Option<String>,
-    #[serde(rename = "is_configured")]
+    #[serde(rename = "isConfigured")]
     pub is_configured: Option<bool>,
-    #[serde(rename = "is_visible")]
+    #[serde(rename = "isVisible")]
     pub is_visible: Option<bool>,
     #[serde(default)]
     pub disabled: bool,
@@ -44,8 +44,8 @@ mod tests {
             "name": "Splunk_TA_example",
             "label": "Example Add-on",
             "version": "1.2.3",
-            "is_configured": true,
-            "is_visible": true,
+            "isConfigured": true,
+            "isVisible": true,
             "disabled": false,
             "description": "An example Splunk app",
             "author": "Splunk"

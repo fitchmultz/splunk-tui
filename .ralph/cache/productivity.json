@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-08T07:00:47.167340415Z",
+  "last_updated_at": "2026-02-08T07:19:39.419345330Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -586,7 +586,7 @@
     },
     "2026-02-08": {
       "date": "2026-02-08",
-      "completed_count": 20,
+      "completed_count": 21,
       "tasks": [
         {
           "id": "RQ-0412",
@@ -687,6 +687,11 @@
           "id": "RQ-0403",
           "title": "Add debug logging to CLI dispatch module",
           "completed_at": "2026-02-08T07:00:47.167339613Z"
+        },
+        {
+          "id": "RQ-0404",
+          "title": "Unify serde naming convention (camelCase vs snake_case)",
+          "completed_at": "2026-02-08T07:19:39.419343639Z"
         }
       ]
     }
@@ -696,7 +701,7 @@
     "longest_streak": 7,
     "last_completed_date": "2026-02-08"
   },
-  "total_completed": 129,
+  "total_completed": 130,
   "milestones": [
     {
       "threshold": 10,

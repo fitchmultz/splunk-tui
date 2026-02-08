@@ -10,8 +10,8 @@
         "name": "search",
         "label": "Search & Reporting",
         "version": "9.1.2",
-        "is_configured": true,
-        "is_visible": true,
+        "isConfigured": true,
+        "isVisible": true,
         "disabled": false,
         "description": "Splunk Search app",
         "author": "Splunk Inc."

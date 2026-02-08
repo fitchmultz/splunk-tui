@@ -19,11 +19,11 @@
         "master_uri": "https://localhost:8089",
         "mode": "standalone",
         "os_build": "23C71",
-        "os_name": "Darwin",
+        "osName": "Darwin",
         "os_version": "14.2.1",
         "product_type": "splunk",
         "serverName": "splunk-local",
-        "server_roles": [
+        "serverRoles": [
           "indexer",
           "license_master",
           "search_head"

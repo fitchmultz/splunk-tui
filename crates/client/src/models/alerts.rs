@@ -57,29 +57,29 @@ pub struct FiredAlert {
     /// Additional alert actions triggered by this alert.
     pub actions: Option<String>,
     /// Indicates if the alert was historical or real-time.
-    #[serde(rename = "alert_type")]
+    #[serde(rename = "alertType")]
     pub alert_type: Option<String>,
     /// Digest mode setting.
-    #[serde(rename = "digest_mode")]
+    #[serde(rename = "digestMode")]
     pub digest_mode: Option<bool>,
     /// Expiration time rendered.
-    #[serde(rename = "expiration_time_rendered")]
+    #[serde(rename = "expirationTimeRendered")]
     pub expiration_time_rendered: Option<String>,
     /// Name of the saved search that triggered the alert.
-    #[serde(rename = "savedsearch_name")]
+    #[serde(rename = "savedsearchName")]
     pub savedsearch_name: Option<String>,
     /// Severity level: Info, Low, Medium, High, Critical.
     pub severity: Option<AlertSeverity>,
     /// The search ID of the search that triggered the alert.
     pub sid: Option<String>,
     /// The time the alert was triggered.
-    #[serde(rename = "trigger_time")]
+    #[serde(rename = "triggerTime")]
     pub trigger_time: Option<i64>,
     /// Trigger time rendered.
-    #[serde(rename = "trigger_time_rendered")]
+    #[serde(rename = "triggerTimeRendered")]
     pub trigger_time_rendered: Option<String>,
     /// Triggered alerts count.
-    #[serde(rename = "triggered_alerts")]
+    #[serde(rename = "triggeredAlerts")]
     pub triggered_alerts: Option<String>,
 }
 
@@ -108,22 +108,22 @@ pub struct FiredAlertListResponse {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AlertConfig {
     /// Whether alerting is enabled on this saved search.
-    #[serde(rename = "is_scheduled")]
+    #[serde(rename = "isScheduled")]
     pub is_scheduled: Option<bool>,
     /// Alert condition (e.g., "number of events", "custom").
-    #[serde(rename = "alert_condition")]
+    #[serde(rename = "alertCondition")]
     pub alert_condition: Option<String>,
     /// Alert severity: Info, Low, Medium, High, Critical.
-    #[serde(rename = "alert_severity")]
+    #[serde(rename = "alertSeverity")]
     pub alert_severity: Option<AlertSeverity>,
     /// Alert expiration in seconds.
-    #[serde(rename = "alert_expires")]
+    #[serde(rename = "alertExpires")]
     pub alert_expires: Option<String>,
     /// Digest mode (group alerts).
-    #[serde(rename = "alert_digest_mode")]
+    #[serde(rename = "alertDigestMode")]
     pub alert_digest_mode: Option<bool>,
     /// Alert track setting.
-    #[serde(rename = "alert_track")]
+    #[serde(rename = "alertTrack")]
     pub alert_track: Option<String>,
     /// Comma-separated list of alert actions (email, webhook, etc.).
     #[serde(rename = "actions")]
@@ -209,8 +209,8 @@ mod tests {
     #[test]
     fn test_alert_config_with_severity() {
         let json = r#"{
-            "is_scheduled": true,
-            "alert_severity": "Critical"
+            "isScheduled": true,
+            "alertSeverity": "Critical"
         }"#;
         let config: AlertConfig = serde_json::from_str(json).unwrap();
         assert_eq!(config.is_scheduled, Some(true));

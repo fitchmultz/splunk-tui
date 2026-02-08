@@ -10,8 +10,8 @@
         "name": "installed_app",
         "label": "Installed App",
         "version": "1.0.0",
-        "is_configured": true,
-        "is_visible": true,
+        "isConfigured": true,
+        "isVisible": true,
         "disabled": false,
         "description": "Newly installed app",
         "author": "Test Author"

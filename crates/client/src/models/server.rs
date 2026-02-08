@@ -82,9 +82,9 @@ pub struct ServerInfo {
     pub version: String,
     pub build: String,
     pub mode: Option<ServerMode>,
-    #[serde(rename = "server_roles", default)]
+    #[serde(rename = "serverRoles", default)]
     pub server_roles: Vec<String>,
-    #[serde(rename = "os_name")]
+    #[serde(rename = "osName")]
     pub os_name: Option<String>,
 }
 

@@ -146,7 +146,7 @@ pub struct ClusterPeer {
     pub replication_count: Option<u32>,
     pub replication_status: Option<ReplicationStatus>,
     pub bundle_replication_count: Option<u32>,
-    #[serde(rename = "is_captain")]
+    #[serde(rename = "isCaptain")]
     pub is_captain: Option<bool>,
 }
 

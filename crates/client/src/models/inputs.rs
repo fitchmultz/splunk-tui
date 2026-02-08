@@ -85,7 +85,7 @@ pub struct Input {
     /// Sourcetype value for the input.
     pub sourcetype: Option<String>,
     /// Connection host setting (TCP/UDP).
-    #[serde(rename = "connection_host")]
+    #[serde(rename = "connectionHost")]
     pub connection_host: Option<String>,
     /// Port number (TCP/UDP).
     pub port: Option<String>,
@@ -135,7 +135,7 @@ mod tests {
             "host": "$decideOnStartup",
             "source": "tcp:9997",
             "sourcetype": "tcp",
-            "connection_host": "ip",
+            "connectionHost": "ip",
             "port": "9997"
         }"#;
         let input: Input = serde_json::from_str(json).unwrap();

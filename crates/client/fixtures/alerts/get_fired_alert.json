@@ -4,15 +4,15 @@
       "name": "scheduler__admin__search__MyAlert_at_1351181001_5.31_1351181987",
       "content": {
         "actions": "email",
-        "alert_type": "scheduled",
-        "digest_mode": true,
-        "expiration_time_rendered": "2012-10-26T09:19:47-07:00",
-        "savedsearch_name": "MyAlert",
+        "alertType": "scheduled",
+        "digestMode": true,
+        "expirationTimeRendered": "2012-10-26T09:19:47-07:00",
+        "savedsearchName": "MyAlert",
         "severity": "High",
         "sid": "scheduler__admin__search__MyAlert_at_1351181001_5.31",
-        "trigger_time": 1351181987,
-        "trigger_time_rendered": "2012-10-25T09:19:47-07:00",
-        "triggered_alerts": "1"
+        "triggerTime": 1351181987,
+        "triggerTimeRendered": "2012-10-25T09:19:47-07:00",
+        "triggeredAlerts": "1"
       }
     }
   ]

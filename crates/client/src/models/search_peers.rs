@@ -70,7 +70,7 @@ pub struct SearchPeer {
     #[serde(rename = "guid")]
     pub guid: Option<String>,
     /// The last time the peer was connected.
-    #[serde(rename = "last_connected")]
+    #[serde(rename = "lastConnected")]
     pub last_connected: Option<String>,
     /// Whether the peer is disabled.
     #[serde(rename = "disabled")]
@@ -215,7 +215,7 @@ mod tests {
                 "status": "Up",
                 "version": "9.1.0",
                 "guid": "abc-123",
-                "last_connected": "2024-01-01T00:00:00Z",
+                "lastConnected": "2024-01-01T00:00:00Z",
                 "disabled": false
             }"#;
 

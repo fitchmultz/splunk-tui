@@ -9,7 +9,7 @@
         "host": "$decideOnStartup",
         "source": "tcp:9997",
         "sourcetype": "tcp",
-        "connection_host": "ip",
+        "connectionHost": "ip",
         "port": "9997"
       }
     },
@@ -22,7 +22,7 @@
         "host": "$decideOnStartup",
         "source": "tcp:9998",
         "sourcetype": "tcp",
-        "connection_host": "ip",
+        "connectionHost": "ip",
         "port": "9998"
       }
     }

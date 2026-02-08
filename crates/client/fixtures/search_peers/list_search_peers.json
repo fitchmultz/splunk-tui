@@ -9,7 +9,7 @@
         "status": "Up",
         "version": "9.1.0",
         "guid": "abc-123-def-456",
-        "last_connected": "2024-01-15T10:30:00Z",
+        "lastConnected": "2024-01-15T10:30:00Z",
         "disabled": false
       }
     },
@@ -22,7 +22,7 @@
         "status": "Down",
         "version": "9.1.0",
         "guid": "xyz-789-abc-012",
-        "last_connected": "2024-01-14T08:00:00Z",
+        "lastConnected": "2024-01-14T08:00:00Z",
         "disabled": true
       }
     }

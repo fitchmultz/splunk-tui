@@ -2,46 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0404",
-      "status": "todo",
-      "title": "Unify serde naming convention (camelCase vs snake_case)",
-      "description": "Model files use inconsistent naming conventions in serde rename attributes. Some fields use camelCase (isDone, maxTotalDataSizeMB) while others use snake_case (is_configured, is_captain). This inconsistency should be standardized, preferably using the Splunk API's native naming (camelCase) consistently.",
-      "priority": "low",
-      "tags": [
-        "maintenance",
-        "consistency",
-        "serialization",
-        "client"
-      ],
-      "scope": [
-        "crates/client/src/models/*.rs"
-      ],
-      "evidence": [
-        "jobs.rs: isDone (camelCase)",
-        "apps.rs: is_configured (snake_case)",
-        "cluster.rs: is_captain (snake_case)",
-        "indexes.rs: maxTotalDataSizeMB (camelCase)",
-        "Mixed conventions within same model files"
-      ],
-      "plan": [
-        "Document the naming convention standard (match Splunk API)",
-        "Audit all model files for naming consistency",
-        "Update inconsistent rename attributes",
-        "Verify serialization tests still pass",
-        "Verify by running `make ci`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-07T14:43:17Z",
-      "updated_at": "2026-02-07T14:43:17Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0405",
       "status": "todo",
       "title": "Add user feedback for silent parse failures in popup handlers",
