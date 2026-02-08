@@ -17,31 +17,12 @@
 // Allow dead code since not all tests use all utilities
 #![allow(dead_code)]
 
-use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
 
-/// Load a JSON fixture file from the client's fixtures directory.
-///
-/// # Arguments
-/// * `fixture_path` - Relative path within the fixtures directory (e.g., "indexes/list_indexes.json")
-///
-/// # Panics
-/// - If the fixture file cannot be read
-/// - If the file content is not valid JSON
-pub fn load_fixture(fixture_path: &str) -> serde_json::Value {
-    // Fixtures are in the client crate's fixtures directory
-    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let fixture_dir = manifest_dir
-        .parent()
-        .expect("No parent directory")
-        .join("client")
-        .join("fixtures");
-    let full_path = fixture_dir.join(fixture_path);
-    let content = std::fs::read_to_string(&full_path)
-        .unwrap_or_else(|_| panic!("Failed to load fixture: {}", full_path.display()));
-    serde_json::from_str(&content).expect("Invalid JSON in fixture")
-}
+// Re-export test utilities from splunk-client
+#[allow(unused_imports)]
+pub use splunk_client::testing::load_fixture;
 
 // Re-export commonly used types for test convenience
 pub use splunk_client::{AuthStrategy, SplunkClient};

@@ -12,26 +12,11 @@
 //! - Mock server setup (use wiremock directly in tests)
 //! - Test-specific assertions or test logic
 
-use std::path::Path;
 use std::time::Duration;
 
-/// Load a JSON fixture file from the fixtures directory.
-///
-/// # Arguments
-/// * `fixture_path` - Relative path within the fixtures directory (e.g., "auth/login_success.json")
-///
-/// # Panics
-/// - If the fixture file cannot be read
-/// - If the file content is not valid JSON
-#[allow(dead_code)]
-pub fn load_fixture(fixture_path: &str) -> serde_json::Value {
-    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let fixture_dir = manifest_dir.join("fixtures");
-    let full_path = fixture_dir.join(fixture_path);
-    let content = std::fs::read_to_string(&full_path)
-        .unwrap_or_else(|_| panic!("Failed to load fixture: {}", full_path.display()));
-    serde_json::from_str(&content).expect("Invalid JSON in fixture")
-}
+// Re-export test utilities from splunk-client
+#[allow(unused_imports)]
+pub use splunk_client::testing::load_fixture;
 
 // Re-export commonly used types for test convenience
 // These are used via `use common::*;` in test files

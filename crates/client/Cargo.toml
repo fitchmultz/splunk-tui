@@ -6,6 +6,10 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+test-utils = []
+
 [dependencies]
 splunk-config = { path = "../config" }
 
@@ -40,3 +44,5 @@ dotenvy = { workspace = true }
 mockito = { workspace = true }
 wiremock = { workspace = true }
 tokio-test = "0.4"
+# Enable test-utils feature for integration tests to access testing module
+splunk-client = { path = ".", features = ["test-utils"] }

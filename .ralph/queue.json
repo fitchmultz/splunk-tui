@@ -2,45 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0420",
-      "status": "todo",
-      "title": "Consolidate duplicate load_fixture test helper functions",
-      "description": "The load_fixture() function is duplicated between client and TUI test modules with slightly different path resolution logic. Changes to fixture loading need to be made in multiple places. Create a shared test utility or have TUI re-export from client.",
-      "priority": "medium",
-      "tags": [
-        "maintenance",
-        "dry",
-        "testing"
-      ],
-      "scope": [
-        "crates/client/tests/common/mod.rs:26-34",
-        "crates/tui/tests/common/mod.rs:32-44"
-      ],
-      "evidence": [
-        "client/tests/common/mod.rs: load_fixture() with manifest_dir.join('fixtures')",
-        "tui/tests/common/mod.rs: load_fixture() with manifest_dir.parent().join('client').join('fixtures')",
-        "Functions are 95% identical but use different fixture path resolution",
-        "Any changes to fixture format require updates in both places"
-      ],
-      "plan": [
-        "Create shared test-util crate or re-export pattern",
-        "Have TUI tests use client's load_fixture via re-export",
-        "Or extract common code into a shared module",
-        "Update all test imports to use shared version",
-        "Verify by running `make test-integration`"
-      ],
-      "notes": [],
-      "request": "maintenance scan finding",
-      "created_at": "2026-02-08T01:18:11Z",
-      "updated_at": "2026-02-08T01:18:11Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0421",
       "status": "todo",
       "title": "Fix swallowed CLI input errors in config command",

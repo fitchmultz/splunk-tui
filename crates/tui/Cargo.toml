@@ -81,6 +81,8 @@ wiremock = "0.6"
 reqwest = { workspace = true }
 secrecy = { workspace = true }
 criterion = { version = "0.5", features = ["async_tokio"] }
+# Enable test-utils feature for shared test helpers
+splunk-client = { path = "../client", features = ["test-utils"] }
 
 [[bench]]
 name = "spawn_overhead"
