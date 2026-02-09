@@ -1,0 +1,145 @@
+# CI/CD Pipeline Example for Splunk Operations
+#
+# This workflow demonstrates a complete CI/CD pipeline that:
+# 1. Validates configuration and SPL queries
+# 2. Performs pre-deployment health checks
+# 3. Runs smoke tests via saved searches
+# 4. Sends deployment events to Splunk via HEC
+# 5. Performs post-deployment verification
+#
+# Usage: Copy this file to .github/workflows/ and customize as needed
+
+name: Splunk CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  # Splunk REST API credentials
+  SPLUNK_BASE_URL: ${{ secrets.SPLUNK_BASE_URL }}
+  SPLUNK_API_TOKEN: ${{ secrets.SPLUNK_API_TOKEN }}
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Step 2: Validate SPL queries in repository
+      - name: Validate SPL Queries
+        uses: ./.github/actions/splunk-config-validate
+        with:
+          file: './config/smoke-test.spl'
+          fail-on-warning: 'true'
+
+      # Step 3: Health check before deployment
+      - name: Pre-deployment Health Check
+        uses: ./.github/actions/splunk-health-check
+        id: pre-health
+        with:
+          fail-on-degraded: 'true'
+          output-file: 'pre-health-report.json'
+
+      # Step 4: Run smoke tests via saved search
+      - name: Run Smoke Tests
+        uses: ./.github/actions/splunk-saved-search-run
+        id: smoke-test
+        with:
+          name: 'CI Smoke Test'
+          earliest: '-1h'
+          output-file: 'smoke-test-results.json'
+
+      # Step 5: Upload smoke test results as artifact
+      - name: Upload Smoke Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results-${{ github.run_id }}
+          path: smoke-test-results.json
+
+      # Step 6: Execute custom validation query
+      - name: Validate Index Data
+        uses: ./.github/actions/splunk-search
+        id: validation-search
+        with:
+          query: 'index=_internal | stats count by sourcetype | head 10'
+          earliest: '-15m'
+          output-format: 'json'
+          output-file: 'index-validation.json'
+
+      # Step 7: Upload validation results
+      - name: Upload Validation Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-results-${{ github.run_id }}
+          path: index-validation.json
+
+      # Step 8: Your deployment steps would go here
+      # - name: Deploy to ${{ github.event.inputs.environment || 'staging' }}
+      #   run: |
+      #     # Your deployment script here
+      #     echo "Deploying application..."
+
+      # Step 9: Send deployment event to Splunk via HEC
+      - name: Log Deployment Event
+        uses: ./.github/actions/splunk-hec-send
+        with:
+          hec-url: ${{ secrets.SPLUNK_HEC_URL }}
+          hec-token: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          event: |
+            {
+              "message": "Deployment completed",
+              "environment": "${{ github.event.inputs.environment || 'staging' }}",
+              "commit": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}",
+              "repository": "${{ github.repository }}",
+              "run_id": "${{ github.run_id }}",
+              "actor": "${{ github.actor }}"
+            }
+          index: 'ci_cd_events'
+          sourcetype: 'github:deployment'
+          source: 'github-actions'
+
+      # Step 10: Post-deployment health check
+      - name: Post-deployment Health Check
+        uses: ./.github/actions/splunk-health-check
+        id: post-health
+        with:
+          fail-on-degraded: 'true'
+          output-file: 'post-health-report.json'
+
+      # Step 11: Compare pre and post deployment health
+      - name: Compare Health Status
+        run: |
+          echo "Pre-deployment status: ${{ steps.pre-health.outputs.status }}"
+          echo "Post-deployment status: ${{ steps.post-health.outputs.status }}"
+          
+          if [[ "${{ steps.pre-health.outputs.status }}" != "${{ steps.post-health.outputs.status }}" ]]; then
+            echo "::warning::Health status changed after deployment"
+          fi
+
+      # Step 12: Upload all health reports
+      - name: Upload Health Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: health-reports-${{ github.run_id }}
+          path: |
+            pre-health-report.json
+            post-health-report.json

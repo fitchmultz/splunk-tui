@@ -1,0 +1,206 @@
+name: 'Splunk HEC Send'
+description: 'Send events to Splunk via HTTP Event Collector (HEC)'
+author: 'Splunk TUI Contributors'
+branding:
+  icon: 'send'
+  color: 'purple'
+
+inputs:
+  hec-url:
+    description: 'HEC endpoint URL (e.g., https://splunk:8088)'
+    required: true
+  hec-token:
+    description: 'HEC authentication token'
+    required: true
+  event:
+    description: 'Event data as JSON string or @file.json'
+    required: false
+  events-file:
+    description: 'Path to file containing events array (for batch send)'
+    required: false
+  index:
+    description: 'Destination index'
+    required: false
+  source:
+    description: 'Source field'
+    required: false
+  sourcetype:
+    description: 'Sourcetype field'
+    required: false
+  host:
+    description: 'Host field'
+    required: false
+  time:
+    description: 'Event timestamp as Unix epoch (optional)'
+    required: false
+  ndjson:
+    description: 'Use NDJSON format for batch (true/false)'
+    required: false
+    default: 'false'
+  skip-verify:
+    description: 'Skip TLS verification (true/false)'
+    required: false
+    default: 'false'
+  output-format:
+    description: 'Output format (json, yaml, table)'
+    required: false
+    default: 'json'
+  output-file:
+    description: 'Output file for response'
+    required: false
+    default: 'hec-response.json'
+  image-tag:
+    description: 'Container image tag to use (default: latest)'
+    required: false
+    default: 'latest'
+
+outputs:
+  success:
+    description: 'Whether send succeeded (true/false)'
+    value: ${{ steps.send.outputs.success }}
+  ack-id:
+    description: 'Acknowledgment ID if available'
+    value: ${{ steps.send.outputs.ack-id }}
+  ack-ids:
+    description: 'Comma-separated acknowledgment IDs for batch sends'
+    value: ${{ steps.send.outputs.ack-ids }}
+  output-file:
+    description: 'Path to response file'
+    value: ${{ steps.send.outputs.output-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send to HEC
+      id: send
+      shell: bash
+      env:
+        SPLUNK_HEC_URL: ${{ inputs.hec-url }}
+        SPLUNK_HEC_TOKEN: ${{ inputs.hec-token }}
+        SPLUNK_SKIP_VERIFY: ${{ inputs.skip-verify }}
+      run: |
+        # Mask sensitive values
+        echo "::add-mask::${{ inputs.hec-token }}"
+
+        # Validate required inputs
+        if [[ -z "${{ inputs.event }}" && -z "${{ inputs.events-file }}" ]]; then
+          echo "::error::Either 'event' or 'events-file' input must be provided"
+          exit 1
+        fi
+
+        # Build image reference
+        IMAGE="${{ env.REGISTRY || 'ghcr.io' }}/${{ github.repository }}:${{ inputs.image-tag }}"
+
+        # Build optional args
+        args=""
+        if [[ -n "${{ inputs.index }}" ]]; then
+          args="$args --index ${{ inputs.index }}"
+        fi
+        if [[ -n "${{ inputs.source }}" ]]; then
+          args="$args --source ${{ inputs.source }}"
+        fi
+        if [[ -n "${{ inputs.sourcetype }}" ]]; then
+          args="$args --sourcetype ${{ inputs.sourcetype }}"
+        fi
+        if [[ -n "${{ inputs.host }}" ]]; then
+          args="$args --host ${{ inputs.host }}"
+        fi
+        if [[ -n "${{ inputs.time }}" ]]; then
+          args="$args --time ${{ inputs.time }}"
+        fi
+
+        set +e
+        if [[ -n "${{ inputs.events-file }}" ]]; then
+          # Batch mode
+          echo "Sending batch from file: ${{ inputs.events-file }}"
+          
+          if [[ ! -f "${{ inputs.events-file }}" ]]; then
+            echo "::error::Events file not found: ${{ inputs.events-file }}"
+            exit 1
+          fi
+
+          ndjson_flag=""
+          if [[ "${{ inputs.ndjson }}" == "true" ]]; then
+            ndjson_flag="--ndjson"
+          fi
+
+          # shellcheck disable=SC2086
+          docker run --rm \
+            -e SPLUNK_HEC_URL \
+            -e SPLUNK_HEC_TOKEN \
+            -e SPLUNK_SKIP_VERIFY \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$IMAGE" \
+            hec send-batch "${{ inputs.events-file }}" \
+            --hec-url "${{ inputs.hec-url }}" \
+            --hec-token "${{ inputs.hec-token }}" \
+            --output ${{ inputs.output-format }} \
+            --output-file "${{ inputs.output-file }}" \
+            $ndjson_flag
+        else
+          # Single event mode
+          echo "Sending single event to HEC"
+          
+          # Check if event is a file reference
+          event_arg="${{ inputs.event }}"
+          if [[ "$event_arg" == @* ]]; then
+            event_file="${event_arg#@}"
+            if [[ ! -f "$event_file" ]]; then
+              echo "::error::Event file not found: $event_file"
+              exit 1
+            fi
+            echo "Reading event from file: $event_file"
+          fi
+
+          # shellcheck disable=SC2086
+          docker run --rm \
+            -e SPLUNK_HEC_URL \
+            -e SPLUNK_HEC_TOKEN \
+            -e SPLUNK_SKIP_VERIFY \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$IMAGE" \
+            hec send '${{ inputs.event }}' \
+            --hec-url "${{ inputs.hec-url }}" \
+            --hec-token "${{ inputs.hec-token }}" \
+            --output ${{ inputs.output-format }} \
+            --output-file "${{ inputs.output-file }}" \
+            $args
+        fi
+        exit_code=$?
+        set -e
+
+        if [[ $exit_code -ne 0 ]]; then
+          echo "::error::Failed to send event(s) to HEC"
+          exit 1
+        fi
+
+        # Parse response for ack IDs
+        ack_id=""
+        ack_ids=""
+        if [[ -f "${{ inputs.output-file }}" ]]; then
+          if [[ "${{ inputs.output-format }}" == "json" ]]; then
+            # Single ack ID
+            if jq -e 'has("ackId")' "${{ inputs.output-file }}" >/dev/null 2>&1; then
+              ack_id=$(jq -r '.ackId // empty' "${{ inputs.output-file }}")
+            fi
+            # Batch ack IDs (array)
+            if jq -e 'has("ackIds")' "${{ inputs.output-file }}" >/dev/null 2>&1; then
+              ack_ids=$(jq -r '[.ackIds[]] | join(",")' "${{ inputs.output-file }}")
+            fi
+          fi
+        fi
+
+        echo "✅ Event(s) sent successfully"
+        if [[ -n "$ack_id" ]]; then
+          echo "Ack ID: $ack_id"
+        fi
+        if [[ -n "$ack_ids" ]]; then
+          echo "Ack IDs: $ack_ids"
+        fi
+
+        echo "success=true" >> "$GITHUB_OUTPUT"
+        echo "ack-id=$ack_id" >> "$GITHUB_OUTPUT"
+        echo "ack-ids=$ack_ids" >> "$GITHUB_OUTPUT"
+        echo "output-file=${{ inputs.output-file }}" >> "$GITHUB_OUTPUT"

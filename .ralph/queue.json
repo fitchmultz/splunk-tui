@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0444",
-      "status": "todo",
-      "title": "Add GitHub Actions for Splunk operations in CI/CD",
-      "description": "Create official GitHub Actions for common Splunk operations to enable CI/CD integration. Similar to how aws-actions or azure/actions work, these actions enable workflows that interact with Splunk.\n\nActions to create:\n- splunk-search: Execute SPL and export results as artifacts\n- splunk-saved-search-run: Trigger saved searches and wait for completion\n- splunk-health-check: Verify Splunk instance health before deployment\n- splunk-config-validate: Validate configuration files against Splunk\n- splunk-hec-send: Send events via HEC for testing\n\nEach action:\n- Uses container image for fast startup\n- Accepts Splunk connection via inputs or env vars\n- Outputs results for downstream steps\n- Supports masking of sensitive values\n\nEnables workflows like: validate config → run health check → execute smoke tests → deploy → verify.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "ci-cd",
-        "github-actions",
-        "automation",
-        "integration"
-      ],
-      "scope": [
-        ".github/actions/",
-        "action.yml"
-      ],
-      "evidence": [
-        "No .github/actions/ directory exists",
-        "No GitHub Actions for Splunk operations found",
-        "CI/CD integration requires manual scripting with splunk-cli",
-        "Other tools (AWS, Azure, GCP) have official GitHub Actions but Splunk ecosystem lacks them"
-      ],
-      "plan": [
-        "Create .github/actions/search/action.yml with inputs for query, time range, output format",
-        "Create .github/actions/health-check/action.yml for pre-deployment validation",
-        "Create .github/actions/saved-search-run/action.yml for smoke testing",
-        "Add example workflow files in .github/workflows/examples/",
-        "Document actions in docs/github-actions.md",
-        "Publish to GitHub Marketplace",
-        "Verify by creating test workflow using splunk-search action and seeing results"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:30:00Z",
-      "updated_at": "2026-02-08T15:30:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0445",
       "status": "todo",
       "title": "Add undo/redo system for destructive TUI operations",

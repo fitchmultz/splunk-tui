@@ -1,0 +1,178 @@
+name: 'Splunk Health Check'
+description: 'Verify Splunk instance health before deployment'
+author: 'Splunk TUI Contributors'
+branding:
+  icon: 'activity'
+  color: 'green'
+
+inputs:
+  base-url:
+    description: 'Splunk base URL (or use SPLUNK_BASE_URL env var)'
+    required: false
+  api-token:
+    description: 'Splunk API token (or use SPLUNK_API_TOKEN env var)'
+    required: false
+  username:
+    description: 'Splunk username (or use SPLUNK_USERNAME env var)'
+    required: false
+  password:
+    description: 'Splunk password (or use SPLUNK_PASSWORD env var)'
+    required: false
+  skip-verify:
+    description: 'Skip TLS verification (true/false)'
+    required: false
+    default: 'false'
+  fail-on-degraded:
+    description: 'Fail if health is degraded (true/false)'
+    required: false
+    default: 'true'
+  fail-on-unhealthy:
+    description: 'Fail if health is unhealthy (true/false)'
+    required: false
+    default: 'true'
+  output-file:
+    description: 'Output file for health report'
+    required: false
+    default: 'health-report.json'
+  output-format:
+    description: 'Output format (json, yaml, table)'
+    required: false
+    default: 'json'
+  image-tag:
+    description: 'Container image tag to use (default: latest)'
+    required: false
+    default: 'latest'
+
+outputs:
+  status:
+    description: 'Health status (healthy, degraded, unhealthy, unknown)'
+    value: ${{ steps.health.outputs.status }}
+  output-file:
+    description: 'Path to health report'
+    value: ${{ steps.health.outputs.output-file }}
+  healthy:
+    description: 'Whether health check passed (true/false)'
+    value: ${{ steps.health.outputs.healthy }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Splunk Health
+      id: health
+      shell: bash
+      env:
+        SPLUNK_BASE_URL: ${{ inputs.base-url || env.SPLUNK_BASE_URL }}
+        SPLUNK_API_TOKEN: ${{ inputs.api-token || env.SPLUNK_API_TOKEN }}
+        SPLUNK_USERNAME: ${{ inputs.username || env.SPLUNK_USERNAME }}
+        SPLUNK_PASSWORD: ${{ inputs.password || env.SPLUNK_PASSWORD }}
+        SPLUNK_SKIP_VERIFY: ${{ inputs.skip-verify }}
+      run: |
+        # Mask sensitive values
+        if [[ -n "$SPLUNK_API_TOKEN" ]]; then
+          echo "::add-mask::$SPLUNK_API_TOKEN"
+        fi
+        if [[ -n "$SPLUNK_PASSWORD" ]]; then
+          echo "::add-mask::$SPLUNK_PASSWORD"
+        fi
+
+        # Validate required environment
+        if [[ -z "$SPLUNK_BASE_URL" ]]; then
+          echo "::error::SPLUNK_BASE_URL must be provided via input or environment variable"
+          exit 1
+        fi
+
+        # Build image reference
+        IMAGE="${{ env.REGISTRY || 'ghcr.io' }}/${{ github.repository }}:${{ inputs.image-tag }}"
+
+        echo "Checking health of: $SPLUNK_BASE_URL"
+
+        # Run health check using container
+        set +e
+        docker run --rm \
+          -e SPLUNK_BASE_URL \
+          -e SPLUNK_API_TOKEN \
+          -e SPLUNK_USERNAME \
+          -e SPLUNK_PASSWORD \
+          -e SPLUNK_SKIP_VERIFY \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          "$IMAGE" \
+          health \
+          --output ${{ inputs.output-format }} \
+          --output-file "${{ inputs.output-file }}"
+        exit_code=$?
+        set -e
+
+        # Determine status based on exit code and output file
+        status="unknown"
+        healthy="false"
+
+        if [[ $exit_code -ne 0 ]]; then
+          status="unhealthy"
+          healthy="false"
+          echo "::error::Splunk health check failed with exit code $exit_code"
+          
+          if [[ "${{ inputs.fail-on-unhealthy }}" == "true" ]]; then
+            exit 1
+          fi
+        elif [[ -f "${{ inputs.output-file }}" ]]; then
+          # Try to parse status from JSON output
+          if [[ "${{ inputs.output-format }}" == "json" ]]; then
+            # Extract health status from .splunkd_health.health
+            # Map: Green -> healthy, Yellow -> degraded, Red -> unhealthy
+            raw_health=$(jq -r '.splunkd_health.health // empty' "${{ inputs.output-file }}" 2>/dev/null)
+            
+            case "${raw_health,,}" in
+              "green")
+                status="healthy"
+                ;;
+              "yellow")
+                status="degraded"
+                ;;
+              "red")
+                status="unhealthy"
+                ;;
+              "")
+                # splunkd_health is null or health field is missing (partial error case)
+                status="unknown"
+                ;;
+              *)
+                # Unexpected value
+                status="unknown"
+                ;;
+            esac
+          fi
+
+          # Determine if healthy based on status
+          case "$status" in
+            healthy)
+              healthy="true"
+              echo "✅ Splunk is healthy"
+              ;;
+            degraded)
+              healthy="true"
+              echo "⚠️ Splunk health is degraded"
+              if [[ "${{ inputs.fail-on-degraded }}" == "true" ]]; then
+                echo "::error::Splunk health is degraded (fail-on-degraded is enabled)"
+                exit 1
+              fi
+              ;;
+            unhealthy)
+              healthy="false"
+              echo "❌ Splunk is unhealthy"
+              if [[ "${{ inputs.fail-on-unhealthy }}" == "true" ]]; then
+                exit 1
+              fi
+              ;;
+            *)
+              healthy="true"
+              echo "✅ Health check completed (status: $status)"
+              ;;
+          esac
+        else
+          echo "::warning::Health report file not found"
+        fi
+
+        echo "status=$status" >> "$GITHUB_OUTPUT"
+        echo "output-file=${{ inputs.output-file }}" >> "$GITHUB_OUTPUT"
+        echo "healthy=$healthy" >> "$GITHUB_OUTPUT"
