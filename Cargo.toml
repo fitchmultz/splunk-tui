@@ -70,7 +70,7 @@ criterion = { version = "0.8", features = ["async_tokio"] }
 
 # Fake data generation for testing
 fake = { version = "4.4", features = ["derive", "chrono"] }
-rand = "0.8"
+rand = "0.9"
 
 # Workspace crates
 splunk-client = { path = "crates/client" }

@@ -10,7 +10,7 @@ use fake::faker::lorem::en::{Sentence, Word};
 use fake::faker::name::en::Name;
 use fake::faker::number::en::Digit;
 use rand::Rng;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -39,7 +39,7 @@ impl NullHandling {
             NullHandling::Dense => 30,
             NullHandling::Percent(p) => (*p).min(100),
         };
-        rng.gen_ratio(probability as u32, 100)
+        rng.random_ratio(probability as u32, 100)
     }
 }
 
@@ -149,9 +149,9 @@ impl SearchResultsGenerator {
 
     /// Generate search results as a JSON Value.
     pub fn generate(&self) -> Value {
-        use rand::seq::SliceRandom;
+        use rand::seq::IndexedRandom;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut results = Vec::with_capacity(self.row_count);
 
         // Generate column names
@@ -203,10 +203,10 @@ impl SearchResultsGenerator {
             // Custom fields
             for field in &custom_fields {
                 if !self.null_handling.should_be_null(&mut rng) {
-                    let value = match rng.gen_range(0..4) {
+                    let value = match rng.random_range(0..4) {
                         0 => Value::String(Word().fake()),
-                        1 => Value::Number(rng.gen_range(0..10000).into()),
-                        2 => Value::Bool(rand::random()),
+                        1 => Value::Number(rng.random_range(0..10000).into()),
+                        2 => Value::Bool(rand::random::<bool>()),
                         _ => Value::String(Digit().fake()),
                     };
                     row.insert(field.clone(), value);
@@ -324,8 +324,8 @@ impl SplQueryGenerator {
             SplQueryMode::Invalid => self.generate_invalid(),
             SplQueryMode::EdgeCase => self.generate_edge_case(),
             SplQueryMode::Mixed => {
-                let mut rng = rand::thread_rng();
-                match rng.gen_range(0..3) {
+                let mut rng = rand::rng();
+                match rng.random_range(0..3) {
                     0 => self.generate_valid(),
                     1 => self.generate_invalid(),
                     _ => self.generate_edge_case(),
@@ -340,7 +340,7 @@ impl SplQueryGenerator {
     }
 
     fn generate_valid(&self) -> String {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Base search
         let index = self.indexes.choose(&mut rng).unwrap();
@@ -348,7 +348,7 @@ impl SplQueryGenerator {
         let mut query = format!("index={} sourcetype={}", index, sourcetype);
 
         // Add optional time range (30% chance)
-        if rng.gen_ratio(3, 10) {
+        if rng.random_ratio(3, 10) {
             let ranges = [
                 "earliest=-1h",
                 "earliest=-24h",
@@ -378,7 +378,7 @@ impl SplQueryGenerator {
 
         for _ in 0..self.pipeline_depth {
             for (cmd, prob) in &commands {
-                if rng.gen_ratio((*prob * 100.0) as u32, 100) {
+                if rng.random_ratio((*prob * 100.0) as u32, 100) {
                     query.push_str(cmd);
                     break;
                 }
@@ -400,7 +400,7 @@ impl SplQueryGenerator {
             "index=main | | stats count",     // Double pipe
             "index=main sourcetype=",         // Empty sourcetype
         ];
-        errors[rand::random::<usize>() % errors.len()].to_string()
+        errors[rand::random::<u64>() as usize % errors.len()].to_string()
     }
 
     fn generate_edge_case(&self) -> String {
@@ -414,7 +414,7 @@ impl SplQueryGenerator {
             "index=main | eval special=\"!@#$%^&*()\"".to_string(),
             "index=мейн".to_string(), // Unicode
         ];
-        edge_cases[rand::random::<usize>() % edge_cases.len()].clone()
+        edge_cases[rand::random::<u64>() as usize % edge_cases.len()].clone()
     }
 }
 
@@ -501,7 +501,7 @@ impl ClusterTopologyGenerator {
 
     /// Generate cluster topology as JSON.
     pub fn generate(&self) -> Value {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut peers = Vec::new();
 
         for i in 0..self.peer_count {
@@ -511,13 +511,13 @@ impl ClusterTopologyGenerator {
                 "site1".to_string()
             };
 
-            let status = match rng.gen_range(0..10) {
+            let status = match rng.random_range(0..10) {
                 0 => "Down",
                 1..=8 => "Up",
                 _ => "Pending",
             };
 
-            let peer_state = match rng.gen_range(0..5) {
+            let peer_state = match rng.random_range(0..5) {
                 0 => "Searchable",
                 1 => "Unsearchable",
                 2 => "Streaming",
@@ -535,9 +535,9 @@ impl ClusterTopologyGenerator {
                     rand::random::<u16>(), rand::random::<u64>()),
                 "host": format!("splunk-peer-{:02}.example.com", i + 1),
                 "port": 8089,
-                "replication_count": rng.gen_range(100..10000),
-                "replication_status": if rng.gen_bool(0.9) { "Complete" } else { "Pending" },
-                "bundle_replication_count": rng.gen_range(10..100),
+                "replication_count": rng.random_range(100..10000),
+                "replication_status": if rng.random_bool(0.9) { "Complete" } else { "Pending" },
+                "bundle_replication_count": rng.random_range(10..100),
                 "is_captain": i == 0 && self.peer_count > 0,
             }));
         }
@@ -565,14 +565,14 @@ impl ClusterTopologyGenerator {
         // Add search heads if requested
         if self.include_search_heads {
             let mut search_heads = Vec::new();
-            let sh_count = rng.gen_range(1..=3);
+            let sh_count = rng.random_range(1..=3);
             for i in 0..sh_count {
                 search_heads.push(serde_json::json!({
                     "id": format!("search-head-{}", i + 1),
                     "label": format!("Search Head {}", i + 1),
                     "host": format!("splunk-sh-{:02}.example.com", i + 1),
                     "port": 8089,
-                    "status": if rng.gen_bool(0.95) { "Up" } else { "Down" },
+                    "status": if rng.random_bool(0.95) { "Up" } else { "Down" },
                 }));
             }
             if let Some(obj) = topology.as_object_mut() {
@@ -654,7 +654,7 @@ impl LogEntryGenerator {
 
     /// Generate a single log entry.
     pub fn generate_one(&self) -> Value {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let levels = ["ERROR", "WARN", "INFO", "DEBUG", "FATAL"];
         let components = [
@@ -712,7 +712,7 @@ impl LogEntryGenerator {
         serde_json::json!({
             "_time": time,
             "_indextime": DateTime().fake::<String>(),
-            "_serial": format!("{}", rng.gen_range(0..1000000)),
+            "_serial": format!("{}", rng.random_range(0..1000000)),
             "log_level": level,
             "component": component,
             "_raw": message,
@@ -742,7 +742,7 @@ impl UserGenerator {
 
     /// Generate a single user.
     pub fn generate_one(&self) -> Value {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let name: String = Username().fake();
         let roles = ["admin", "power", "user", "can_delete"];
@@ -755,7 +755,7 @@ impl UserGenerator {
             "type": user_types.choose(&mut rng).unwrap(),
             "defaultApp": "search",
             "roles": vec![roles.choose(&mut rng).unwrap()],
-            "lastSuccessfulLogin": rng.gen_range(1_700_000_000i64..1_800_000_000i64),
+            "lastSuccessfulLogin": rng.random_range(1_700_000_000i64..1_800_000_000i64),
         })
     }
 
@@ -778,23 +778,23 @@ impl AppGenerator {
 
     /// Generate a single app.
     pub fn generate_one(&self) -> Value {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let name: String = Word().fake();
         let version = format!(
             "{}.{}.{}",
-            rng.gen_range(1..10),
-            rng.gen_range(0..20),
-            rng.gen_range(0..10)
+            rng.random_range(1..10),
+            rng.random_range(0..20),
+            rng.random_range(0..10)
         );
 
         serde_json::json!({
             "name": name.to_lowercase(),
             "label": format!("{} App", name.chars().next().unwrap().to_uppercase().to_string() + &name[1..]),
             "version": version,
-            "isConfigured": rng.gen_bool(0.8),
-            "isVisible": rng.gen_bool(0.9),
-            "disabled": rng.gen_bool(0.1),
+            "isConfigured": rng.random_bool(0.8),
+            "isVisible": rng.random_bool(0.9),
+            "disabled": rng.random_bool(0.1),
             "description": Sentence(5..15).fake::<String>(),
             "author": "Splunk Inc.",
         })
@@ -835,7 +835,7 @@ impl IndexGenerator {
 
     /// Generate a single index.
     pub fn generate_one(&self) -> Value {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let names = if self.include_internal {
             vec![
@@ -854,12 +854,12 @@ impl IndexGenerator {
 
         serde_json::json!({
             "name": name,
-            "maxTotalDataSizeMB": rng.gen_range(100000..10000000),
-            "currentDBSizeMB": rng.gen_range(1000..500000),
-            "totalEventCount": rng.gen_range(100000..1000000000i64),
-            "maxWarmDBCount": rng.gen_range(100..1000),
+            "maxTotalDataSizeMB": rng.random_range(100000..10000000),
+            "currentDBSizeMB": rng.random_range(1000..500000),
+            "totalEventCount": rng.random_range(100000..1000000000i64),
+            "maxWarmDBCount": rng.random_range(100..1000),
             "maxHotBuckets": "auto",
-            "frozenTimePeriodInSecs": rng.gen_range(86400..31536000),
+            "frozenTimePeriodInSecs": rng.random_range(86400..31536000),
             "coldDBPath": format!("/opt/splunk/colddb/{}", name),
             "homePath": format!("/opt/splunk/var/lib/splunk/{}/db", name),
             "thawedPath": format!("/opt/splunk/var/lib/splunk/{}/thaweddb", name),
@@ -1042,7 +1042,7 @@ mod tests {
 
     #[test]
     fn test_null_handling() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // None should never return true
         assert!(!NullHandling::None.should_be_null(&mut rng));

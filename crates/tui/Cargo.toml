@@ -91,7 +91,7 @@ serial_test = { workspace = true }
 wiremock = "0.6"
 reqwest = { workspace = true }
 secrecy = { workspace = true }
-criterion = { version = "0.5", features = ["async_tokio"] }
+criterion = { workspace = true }
 # Enable test-utils feature for shared test helpers
 splunk-client = { path = "../client", features = ["test-utils"] }
 
