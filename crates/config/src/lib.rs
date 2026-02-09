@@ -13,7 +13,8 @@ pub mod types;
 
 pub use loader::{ConfigError, ConfigLoader, SearchDefaultConfig, env_var_or_none};
 pub use persistence::{
-    ConfigManager, InternalLogsDefaults, ListDefaults, ListType, PersistedState, SearchDefaults,
+    ConfigManager, InternalLogsDefaults, ListDefaults, ListType, PersistedState, ScrollPositions,
+    SearchDefaults,
 };
 pub use types::{
     AuthConfig, AuthStrategy, ColorTheme, Config, ConnectionConfig, KeybindAction,

@@ -186,7 +186,8 @@ impl App {
             | Action::PeerRemoved { .. }
             | Action::OpenDeleteLookupConfirm { .. }
             | Action::LookupDownloaded(_)
-            | Action::LookupDeleted(_) => {
+            | Action::LookupDeleted(_)
+            | Action::ExportSuccess(_) => {
                 self.handle_system_action(action);
             }
 

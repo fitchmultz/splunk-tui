@@ -287,6 +287,19 @@ impl App {
                     }
                 }
             }
+            Action::ExportSuccess(path) => {
+                // Add to recent export paths, keeping most recent first and limiting size
+                const MAX_RECENT_EXPORTS: usize = 10;
+                let path_str = path.to_string_lossy().to_string();
+                // Remove if already exists to avoid duplicates
+                self.recent_export_paths.retain(|p| p != &path_str);
+                // Insert at the beginning
+                self.recent_export_paths.insert(0, path_str);
+                // Keep only the most recent paths
+                if self.recent_export_paths.len() > MAX_RECENT_EXPORTS {
+                    self.recent_export_paths.truncate(MAX_RECENT_EXPORTS);
+                }
+            }
             _ => {}
         }
     }

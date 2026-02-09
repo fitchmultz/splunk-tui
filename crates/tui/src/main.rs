@@ -40,7 +40,8 @@ use splunk_config::constants::{
     DEFAULT_CHANNEL_CAPACITY, DEFAULT_REFRESH_INTERVAL_SECS, DEFAULT_UI_TICK_MS,
 };
 use splunk_config::{
-    AuthStrategy as ConfigAuthStrategy, ConfigManager, InternalLogsDefaults, SearchDefaults,
+    AuthStrategy as ConfigAuthStrategy, ConfigManager, InternalLogsDefaults, PersistedState,
+    SearchDefaults,
 };
 
 use splunk_tui::runtime::{
@@ -191,7 +192,12 @@ async fn main() -> Result<()> {
     } else {
         ConfigManager::new()?
     };
-    let mut persisted_state = config_manager.load();
+    let mut persisted_state = if cli.fresh {
+        tracing::info!("--fresh flag set, starting with default state");
+        PersistedState::default()
+    } else {
+        config_manager.load()
+    };
     let config_manager = Arc::new(Mutex::new(config_manager));
 
     // Check if this is first run (no profiles exist and tutorial not completed)
@@ -308,6 +314,11 @@ async fn main() -> Result<()> {
     let mut refresh_interval = tokio::time::interval(tokio::time::Duration::from_secs(
         DEFAULT_REFRESH_INTERVAL_SECS,
     ));
+
+    // Create auto-save interval (every 30 seconds)
+    const AUTO_SAVE_INTERVAL_SECS: u64 = 30;
+    let mut auto_save_interval =
+        tokio::time::interval(tokio::time::Duration::from_secs(AUTO_SAVE_INTERVAL_SECS));
 
     // Main event loop
     loop {
@@ -444,6 +455,19 @@ async fn main() -> Result<()> {
                     app.update(a.clone());
                     handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
                 }
+            }
+            _ = auto_save_interval.tick() => {
+                // Periodic auto-save of persisted state
+                let state = app.get_persisted_state();
+                let cm = config_manager.clone();
+                tokio::task::spawn(async move {
+                    let mut manager = cm.lock().await;
+                    if let Err(e) = manager.save(&state) {
+                        tracing::error!("Failed to auto-save state: {}", e);
+                    } else {
+                        tracing::debug!("State auto-saved successfully");
+                    }
+                });
             }
         }
     }

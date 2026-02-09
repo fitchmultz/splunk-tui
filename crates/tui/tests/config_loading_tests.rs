@@ -445,6 +445,11 @@ fn test_config_manager_persistence_with_custom_path() {
         list_defaults: splunk_config::ListDefaults::default(),
         internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
         tutorial_completed: false,
+        current_screen: "Search".to_string(),
+        scroll_positions: splunk_config::ScrollPositions::default(),
+        recent_export_paths: Vec::new(),
+        export_format: "Json".to_string(),
+        last_saved_at: None,
     };
 
     // Save the state

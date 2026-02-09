@@ -79,6 +79,9 @@ impl std::fmt::Debug for RedactedAction<'_> {
                     data_size, path, format
                 )
             }
+            Action::ExportSuccess(path) => {
+                write!(f, "ExportSuccess({:?})", path)
+            }
             Action::Notify(level, message) => {
                 write!(f, "Notify({:?}, <{} chars>)", level, message.len())
             }

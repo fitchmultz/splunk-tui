@@ -32,3 +32,16 @@ pub enum ExportFormat {
     /// Markdown format
     Markdown,
 }
+
+impl ExportFormat {
+    /// Parse export format from string.
+    pub fn parse_from_str(s: &str) -> Self {
+        match s {
+            "Csv" => Self::Csv,
+            "Ndjson" => Self::Ndjson,
+            "Yaml" => Self::Yaml,
+            "Markdown" => Self::Markdown,
+            _ => Self::Json,
+        }
+    }
+}

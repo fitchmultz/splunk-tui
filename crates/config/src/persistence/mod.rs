@@ -27,7 +27,8 @@ mod state;
 
 pub use profiles::ConfigManager;
 pub use state::{
-    ConfigFileError, InternalLogsDefaults, ListDefaults, ListType, PersistedState, SearchDefaults,
+    ConfigFileError, InternalLogsDefaults, ListDefaults, ListType, PersistedState, ScrollPositions,
+    SearchDefaults,
 };
 
 // Internal re-exports for use by loader module

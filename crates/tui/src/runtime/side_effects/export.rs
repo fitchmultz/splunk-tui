@@ -26,12 +26,15 @@ pub async fn handle_export_data(
     // Directly await the async export function
     match crate::export::export_value(&data, &path, format).await {
         Ok(_) => {
+            // Send notification
             let _ = tx
                 .send(Action::Notify(
                     ToastLevel::Info,
                     format!("Exported to {}", path.display()),
                 ))
                 .await;
+            // Track successful export for persistence
+            let _ = tx.send(Action::ExportSuccess(path)).await;
         }
         Err(e) => {
             let _ = tx

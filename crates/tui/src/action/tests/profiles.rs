@@ -101,6 +101,11 @@ fn test_redact_settings_loaded() {
         list_defaults: splunk_config::ListDefaults::default(),
         internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
         tutorial_completed: false,
+        current_screen: "Search".to_string(),
+        scroll_positions: splunk_config::ScrollPositions::default(),
+        recent_export_paths: Vec::new(),
+        export_format: "Json".to_string(),
+        last_saved_at: None,
     };
     let action = Action::SettingsLoaded(state);
     let output = redacted_debug(&action);

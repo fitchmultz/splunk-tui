@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0439",
-      "status": "todo",
-      "title": "Add TUI session persistence and restore",
-      "description": "Implement session persistence that saves and restores TUI state between sessions. Users can resume work after closing the TUI.\n\nPersisted state:\n- Search history and current query\n- Open tabs and their state\n- Scroll positions and selections\n- Export settings and recent paths\n- Profile and theme preferences\n\nState saved on exit and periodically. Restored on launch unless --fresh flag used. Uses existing config persistence infrastructure.",
-      "priority": "low",
-      "tags": [
-        "innovation",
-        "tui",
-        "ux",
-        "persistence"
-      ],
-      "scope": [
-        "crates/config/src/persistence/state.rs",
-        "crates/tui/src/app/state.rs"
-      ],
-      "evidence": [
-        "Config persistence exists but no session state persistence",
-        "Search history lost on TUI exit",
-        "Scroll positions and selections reset on restart",
-        "Users must reconstruct their workflow on each TUI launch"
-      ],
-      "plan": [
-        "Create SessionState struct with all persistable state",
-        "Add state persistence to config persistence module",
-        "Implement state save on exit and periodic auto-save",
-        "Add state restore on TUI launch",
-        "Add --fresh flag to start without restoring state",
-        "Add state migration for version compatibility",
-        "Add privacy redaction for sensitive query data",
-        "Write tests for state save/restore roundtrip",
-        "Verify by running: splunk-tui, search something, quit, relaunch - query restored"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0440",
       "status": "todo",
       "title": "Add client-side response caching for repeated queries",

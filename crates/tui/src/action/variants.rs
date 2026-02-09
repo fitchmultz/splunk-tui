@@ -422,6 +422,11 @@ pub enum Action {
     /// This payload is produced by the UI state machine so the main event loop
     /// can export without needing access to `App` state.
     ExportData(Value, PathBuf, ExportFormat),
+    /// Export completed successfully.
+    ///
+    /// Sent by the export side effect handler after a successful export.
+    /// The app uses this to track recent export paths for persistence.
+    ExportSuccess(PathBuf),
 
     // API Results
     /// Result of loading indexes

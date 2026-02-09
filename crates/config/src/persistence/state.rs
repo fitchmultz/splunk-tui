@@ -211,8 +211,36 @@ impl InternalLogsDefaults {
     }
 }
 
+/// Scroll positions for various scrollable areas in the TUI.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ScrollPositions {
+    /// Search results scroll offset.
+    #[serde(default)]
+    pub search_scroll_offset: usize,
+    /// Index details popup scroll offset.
+    #[serde(default)]
+    pub index_details_scroll_offset: usize,
+    /// Help popup scroll offset.
+    #[serde(default)]
+    pub help_scroll_offset: usize,
+    /// Error popup scroll offset.
+    #[serde(default)]
+    pub error_scroll_offset: usize,
+}
+
+/// Default value for current_screen field.
+fn default_current_screen() -> String {
+    "Search".to_string()
+}
+
+/// Default value for export_format field.
+fn default_export_format() -> String {
+    "Json".to_string()
+}
+
 /// User preferences that persist across application runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct PersistedState {
     /// Whether auto-refresh is enabled for the jobs screen.
     pub auto_refresh: bool,
@@ -243,6 +271,21 @@ pub struct PersistedState {
     /// Whether the tutorial has been completed.
     #[serde(default)]
     pub tutorial_completed: bool,
+    /// The last active screen before shutdown.
+    #[serde(default = "default_current_screen")]
+    pub current_screen: String,
+    /// Scroll positions for various scrollable areas.
+    #[serde(default)]
+    pub scroll_positions: ScrollPositions,
+    /// Recently used export paths (most recent first).
+    #[serde(default)]
+    pub recent_export_paths: Vec<String>,
+    /// Last used export format.
+    #[serde(default = "default_export_format")]
+    pub export_format: String,
+    /// Timestamp of last state save (for debugging/auditing).
+    #[serde(default)]
+    pub last_saved_at: Option<u64>,
 }
 
 impl Default for PersistedState {
@@ -259,6 +302,12 @@ impl Default for PersistedState {
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
             tutorial_completed: false,
+            // New fields
+            current_screen: "Search".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         }
     }
 }
@@ -361,6 +410,12 @@ mod tests {
         assert!(state.search_history.is_empty());
         assert_eq!(state.selected_theme, ColorTheme::Default);
         assert!(!state.tutorial_completed);
+        // New fields
+        assert_eq!(state.current_screen, "Search");
+        assert_eq!(state.scroll_positions.search_scroll_offset, 0);
+        assert!(state.recent_export_paths.is_empty());
+        assert_eq!(state.export_format, "Json");
+        assert!(state.last_saved_at.is_none());
     }
 
     #[test]
@@ -381,6 +436,11 @@ mod tests {
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
             tutorial_completed: true,
+            current_screen: "Jobs".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -413,6 +473,11 @@ mod tests {
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         writeln!(
@@ -583,6 +648,11 @@ mod tests {
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -632,6 +702,11 @@ mod tests {
             list_defaults: ListDefaults::default(),
             internal_logs_defaults: InternalLogsDefaults::default(),
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -800,6 +875,11 @@ mod tests {
             },
             internal_logs_defaults: InternalLogsDefaults::default(),
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -890,6 +970,11 @@ mod tests {
                 earliest_time: "-30m".to_string(),
             },
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -957,5 +1042,93 @@ mod tests {
         let sanitized = defaults.sanitize();
         assert_eq!(sanitized.count, 200);
         assert_eq!(sanitized.earliest_time, "-1h");
+    }
+
+    #[test]
+    fn test_scroll_positions_default() {
+        let positions = ScrollPositions::default();
+        assert_eq!(positions.search_scroll_offset, 0);
+        assert_eq!(positions.index_details_scroll_offset, 0);
+        assert_eq!(positions.help_scroll_offset, 0);
+        assert_eq!(positions.error_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_persisted_state_with_new_fields_round_trip() {
+        let state = PersistedState {
+            auto_refresh: true,
+            sort_column: "status".to_string(),
+            sort_direction: "desc".to_string(),
+            last_search_query: Some("test".to_string()),
+            search_history: vec!["query1".to_string()],
+            selected_theme: ColorTheme::Dark,
+            search_defaults: SearchDefaults::default(),
+            keybind_overrides: KeybindOverrides::default(),
+            list_defaults: ListDefaults::default(),
+            internal_logs_defaults: InternalLogsDefaults::default(),
+            tutorial_completed: true,
+            // New fields
+            current_screen: "Jobs".to_string(),
+            scroll_positions: ScrollPositions {
+                search_scroll_offset: 100,
+                index_details_scroll_offset: 50,
+                help_scroll_offset: 10,
+                error_scroll_offset: 5,
+            },
+            recent_export_paths: vec!["/path/to/export.json".to_string()],
+            export_format: "Csv".to_string(),
+            last_saved_at: Some(1234567890),
+        };
+
+        let json = serde_json::to_string(&state).unwrap();
+        let deserialized: PersistedState = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.current_screen, "Jobs");
+        assert_eq!(deserialized.scroll_positions.search_scroll_offset, 100);
+        assert_eq!(
+            deserialized.scroll_positions.index_details_scroll_offset,
+            50
+        );
+        assert_eq!(deserialized.scroll_positions.help_scroll_offset, 10);
+        assert_eq!(deserialized.scroll_positions.error_scroll_offset, 5);
+        assert_eq!(deserialized.recent_export_paths.len(), 1);
+        assert_eq!(deserialized.export_format, "Csv");
+        assert_eq!(deserialized.last_saved_at, Some(1234567890));
+    }
+
+    #[test]
+    fn test_persisted_state_backward_compatibility_without_new_fields() {
+        // Simulate an old config file without the new fields
+        let json = r#"{
+            "auto_refresh": false,
+            "sort_column": "sid",
+            "sort_direction": "asc",
+            "last_search_query": null,
+            "search_history": [],
+            "selected_theme": "default",
+            "search_defaults": {
+                "earliest_time": "-24h",
+                "latest_time": "now",
+                "max_results": 1000
+            },
+            "keybind_overrides": {},
+            "list_defaults": {
+                "page_size": 100,
+                "max_items": 1000
+            },
+            "internal_logs_defaults": {
+                "count": 100,
+                "earliest_time": "-15m"
+            },
+            "tutorial_completed": false
+        }"#;
+
+        let deserialized: PersistedState = serde_json::from_str(json).unwrap();
+        // Should use defaults for missing fields
+        assert_eq!(deserialized.current_screen, "Search");
+        assert_eq!(deserialized.scroll_positions.search_scroll_offset, 0);
+        assert!(deserialized.recent_export_paths.is_empty());
+        assert_eq!(deserialized.export_format, "Json");
+        assert!(deserialized.last_saved_at.is_none());
     }
 }

@@ -214,6 +214,8 @@ pub struct App {
     pub export_input: SingleLineInput,
     pub export_format: ExportFormat,
     pub(crate) export_target: Option<ExportTarget>,
+    /// Recently used export paths (persisted)
+    pub recent_export_paths: Vec<String>,
 
     // Error state
     pub current_error: Option<ErrorDetails>,

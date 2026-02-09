@@ -28,7 +28,7 @@ use std::path::PathBuf;
     name = "splunk-tui",
     about = "Terminal user interface for Splunk Enterprise",
     version,
-    after_help = "Examples:\n  splunk-tui\n  splunk-tui --profile production\n  splunk-tui --config-path /etc/splunk-tui/config.json\n  splunk-tui --log-dir /var/log/splunk-tui --no-mouse\n  splunk-tui --skip-tutorial\n"
+    after_help = "Examples:\n  splunk-tui\n  splunk-tui --profile production\n  splunk-tui --config-path /etc/splunk-tui/config.json\n  splunk-tui --log-dir /var/log/splunk-tui --no-mouse\n  splunk-tui --skip-tutorial\n  splunk-tui --fresh\n"
 )]
 pub struct Cli {
     /// Config profile name to load
@@ -50,6 +50,10 @@ pub struct Cli {
     /// Skip the first-run tutorial
     #[arg(long)]
     pub skip_tutorial: bool,
+
+    /// Start with fresh state, ignoring any persisted state
+    #[arg(long)]
+    pub fresh: bool,
 }
 
 #[cfg(test)]
@@ -79,5 +83,17 @@ mod tests {
     fn test_cli_no_mouse_flag() {
         let cli = Cli::parse_from(["splunk-tui", "--no-mouse"]);
         assert!(cli.no_mouse);
+    }
+
+    #[test]
+    fn test_cli_fresh_flag() {
+        let cli = Cli::parse_from(["splunk-tui", "--fresh"]);
+        assert!(cli.fresh);
+    }
+
+    #[test]
+    fn test_cli_fresh_default_false() {
+        let cli = Cli::parse_from(["splunk-tui"]);
+        assert!(!cli.fresh);
     }
 }

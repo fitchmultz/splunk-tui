@@ -101,6 +101,11 @@ impl App {
             list_defaults,
             internal_logs_defaults,
             tutorial_completed,
+            // New fields
+            current_screen,
+            scroll_positions,
+            recent_export_paths,
+            export_format,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -114,6 +119,11 @@ impl App {
                 state.list_defaults,
                 state.internal_logs_defaults,
                 state.tutorial_completed,
+                // New fields
+                crate::app::state::parse_current_screen(&state.current_screen),
+                state.scroll_positions,
+                state.recent_export_paths,
+                crate::action::ExportFormat::parse_from_str(&state.export_format),
             ),
             None => (
                 false,
@@ -127,16 +137,21 @@ impl App {
                 ListDefaults::default(),
                 splunk_config::InternalLogsDefaults::default(),
                 false,
+                // New fields
+                CurrentScreen::Search,
+                splunk_config::ScrollPositions::default(),
+                Vec::new(),
+                crate::action::ExportFormat::Json,
             ),
         };
 
         Self {
-            current_screen: CurrentScreen::Search,
+            current_screen,
             search_input: SingleLineInput::with_value(last_search_query.unwrap_or_default()),
             running_query: None,
             search_status: String::from("Press Enter to execute search"),
             search_results: Vec::new(),
-            search_scroll_offset: 0,
+            search_scroll_offset: scroll_positions.search_scroll_offset,
             search_sid: None,
             search_results_total_count: None,
             // Use search_defaults.max_results as the source of truth for pagination page size.
@@ -269,12 +284,13 @@ impl App {
                 list_defaults.max_items,
             ),
             export_input: SingleLineInput::new(),
-            export_format: crate::action::ExportFormat::Json,
+            export_format,
             export_target: None,
+            recent_export_paths,
             current_error: None,
-            error_scroll_offset: 0,
-            index_details_scroll_offset: 0,
-            help_scroll_offset: 0,
+            error_scroll_offset: scroll_positions.error_scroll_offset,
+            index_details_scroll_offset: scroll_positions.index_details_scroll_offset,
+            help_scroll_offset: scroll_positions.help_scroll_offset,
             spinner_frame: 0,
             last_area: ratatui::layout::Rect::default(),
             profile_name: connection_ctx.profile_name,
@@ -317,6 +333,22 @@ impl App {
             list_defaults: self.list_defaults.clone(),
             internal_logs_defaults: self.internal_logs_defaults.clone(),
             tutorial_completed: self.tutorial_completed,
+            // New fields
+            current_screen: self.current_screen.as_str().to_string(),
+            scroll_positions: splunk_config::ScrollPositions {
+                search_scroll_offset: self.search_scroll_offset,
+                index_details_scroll_offset: self.index_details_scroll_offset,
+                help_scroll_offset: self.help_scroll_offset,
+                error_scroll_offset: self.error_scroll_offset,
+            },
+            recent_export_paths: self.recent_export_paths.clone(),
+            export_format: format!("{:?}", self.export_format),
+            last_saved_at: Some(
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs(),
+            ),
         }
     }
 }

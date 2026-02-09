@@ -145,6 +145,75 @@ impl CurrentScreen {
             CurrentScreen::MultiInstance => CurrentScreen::Overview,
         }
     }
+
+    /// Returns the screen name as a string for serialization.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Search => "Search",
+            Self::Indexes => "Indexes",
+            Self::Cluster => "Cluster",
+            Self::Jobs => "Jobs",
+            Self::JobInspect => "JobInspect",
+            Self::Health => "Health",
+            Self::License => "License",
+            Self::Kvstore => "Kvstore",
+            Self::SavedSearches => "SavedSearches",
+            Self::Macros => "Macros",
+            Self::InternalLogs => "InternalLogs",
+            Self::Apps => "Apps",
+            Self::Users => "Users",
+            Self::Roles => "Roles",
+            Self::SearchPeers => "SearchPeers",
+            Self::Inputs => "Inputs",
+            Self::Configs => "Configs",
+            Self::Settings => "Settings",
+            Self::Overview => "Overview",
+            Self::MultiInstance => "MultiInstance",
+            Self::FiredAlerts => "FiredAlerts",
+            Self::Forwarders => "Forwarders",
+            Self::Lookups => "Lookups",
+            Self::Audit => "Audit",
+            Self::Dashboards => "Dashboards",
+            Self::DataModels => "DataModels",
+            Self::WorkloadManagement => "WorkloadManagement",
+            Self::Shc => "Shc",
+        }
+    }
+}
+
+/// Parse current screen from string (for deserialization).
+pub fn parse_current_screen(s: &str) -> CurrentScreen {
+    match s {
+        "Search" => CurrentScreen::Search,
+        "Indexes" => CurrentScreen::Indexes,
+        "Cluster" => CurrentScreen::Cluster,
+        "Jobs" => CurrentScreen::Jobs,
+        "JobInspect" => CurrentScreen::JobInspect,
+        "Health" => CurrentScreen::Health,
+        "License" => CurrentScreen::License,
+        "Kvstore" => CurrentScreen::Kvstore,
+        "SavedSearches" => CurrentScreen::SavedSearches,
+        "Macros" => CurrentScreen::Macros,
+        "InternalLogs" => CurrentScreen::InternalLogs,
+        "Apps" => CurrentScreen::Apps,
+        "Users" => CurrentScreen::Users,
+        "Roles" => CurrentScreen::Roles,
+        "SearchPeers" => CurrentScreen::SearchPeers,
+        "Inputs" => CurrentScreen::Inputs,
+        "Configs" => CurrentScreen::Configs,
+        "Settings" => CurrentScreen::Settings,
+        "Overview" => CurrentScreen::Overview,
+        "MultiInstance" => CurrentScreen::MultiInstance,
+        "FiredAlerts" => CurrentScreen::FiredAlerts,
+        "Forwarders" => CurrentScreen::Forwarders,
+        "Lookups" => CurrentScreen::Lookups,
+        "Audit" => CurrentScreen::Audit,
+        "Dashboards" => CurrentScreen::Dashboards,
+        "DataModels" => CurrentScreen::DataModels,
+        "WorkloadManagement" => CurrentScreen::WorkloadManagement,
+        "Shc" => CurrentScreen::Shc,
+        _ => CurrentScreen::Search, // Default fallback
+    }
 }
 
 /// Sort column for jobs table.

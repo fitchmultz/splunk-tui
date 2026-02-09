@@ -26,6 +26,9 @@ Options:
       --skip-tutorial
           Skip the first-run tutorial
 
+      --fresh
+          Start with fresh state, ignoring any persisted state
+
   -h, --help
           Print help (see a summary with '-h')
 
@@ -38,3 +41,4 @@ Examples:
   splunk-tui --config-path /etc/splunk-tui/config.json
   splunk-tui --log-dir /var/log/splunk-tui --no-mouse
   splunk-tui --skip-tutorial
+  splunk-tui --fresh

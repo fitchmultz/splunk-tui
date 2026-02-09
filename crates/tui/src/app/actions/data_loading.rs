@@ -1182,6 +1182,11 @@ mod tests {
             list_defaults: splunk_config::ListDefaults::default(),
             internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: splunk_config::ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         app.handle_data_loading_action(Action::SettingsLoaded(new_state));
@@ -1221,6 +1226,11 @@ mod tests {
             list_defaults: splunk_config::ListDefaults::default(),
             internal_logs_defaults: splunk_config::InternalLogsDefaults::default(),
             tutorial_completed: false,
+            current_screen: "Search".to_string(),
+            scroll_positions: splunk_config::ScrollPositions::default(),
+            recent_export_paths: Vec::new(),
+            export_format: "Json".to_string(),
+            last_saved_at: None,
         };
 
         app.handle_data_loading_action(Action::SettingsLoaded(new_state));
