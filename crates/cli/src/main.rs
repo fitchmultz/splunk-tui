@@ -26,9 +26,7 @@ mod interactive;
 mod progress;
 
 use args::Cli;
-use cancellation::{
-    CancellationToken, SIGINT_EXIT_CODE, is_cancelled_error, print_cancelled_message,
-};
+use cancellation::{CancellationToken, is_cancelled_error, print_cancelled_message};
 use clap::Parser;
 use config_context::ConfigCommandContext;
 use dispatch::run_command;
@@ -46,11 +44,33 @@ async fn main() {
 
     let cli = Cli::parse();
 
-    // Initialize logging
-    tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env())
-        .with(fmt::layer())
-        .init();
+    // Initialize OpenTelemetry tracing if OTLP endpoint is configured
+    let _tracing_guard = if let Some(ref endpoint) = cli.otlp_endpoint {
+        let service_name = cli
+            .otel_service_name
+            .clone()
+            .unwrap_or_else(|| "splunk-cli".to_string());
+
+        let config = splunk_client::TracingConfig::new()
+            .with_otlp_endpoint(endpoint)
+            .with_service_name(service_name)
+            .with_stdout(true);
+
+        match config.init() {
+            Ok(guard) => Some(guard),
+            Err(e) => {
+                eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
+                std::process::exit(ExitCode::GeneralError.as_i32());
+            }
+        }
+    } else {
+        // Fallback to standard logging
+        tracing_subscriber::registry()
+            .with(EnvFilter::from_default_env())
+            .with(fmt::layer())
+            .init();
+        None
+    };
 
     // Initialize metrics exporter if --metrics-bind is provided
     let _metrics_exporter = if let Some(ref bind_addr) = cli.metrics_bind {
@@ -196,21 +216,25 @@ async fn main() {
     };
 
     // Execute command
-    match run_command(cli, config_context, &cancel).await {
-        Ok(()) => {
-            std::process::exit(ExitCode::Success.as_i32());
-        }
+    let exit_code = match run_command(cli, config_context, &cancel).await {
+        Ok(()) => ExitCode::Success,
         Err(e) if is_cancelled_error(&e) => {
             print_cancelled_message();
-            std::process::exit(SIGINT_EXIT_CODE as i32);
+            ExitCode::Interrupted
         }
         Err(e) => {
             // Print the error message
             eprintln!("{:#}", e);
 
-            // Exit with structured exit code
-            let exit_code = e.exit_code();
-            std::process::exit(exit_code.as_i32());
+            // Return structured exit code
+            e.exit_code()
         }
+    };
+
+    // Shutdown tracing to ensure all spans are flushed
+    if let Some(guard) = _tracing_guard {
+        guard.shutdown();
     }
+
+    std::process::exit(exit_code.as_i32());
 }

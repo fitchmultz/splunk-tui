@@ -93,6 +93,19 @@ pub struct Cli {
     #[arg(long, global = true, env = "SPLUNK_METRICS_BIND")]
     pub metrics_bind: Option<String>,
 
+    /// Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:4317")
+    ///
+    /// When enabled, traces are exported to the specified OTLP endpoint.
+    /// Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
+    #[arg(long, global = true, env = "SPLUNK_OTLP_ENDPOINT")]
+    pub otlp_endpoint: Option<String>,
+
+    /// Service name for OpenTelemetry traces
+    ///
+    /// Defaults to "splunk-cli". Can be customized when running multiple instances.
+    #[arg(long, global = true, env = "SPLUNK_OTEL_SERVICE_NAME")]
+    pub otel_service_name: Option<String>,
+
     #[command(subcommand)]
     pub command: Commands,
 }

@@ -2,52 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0442",
-      "status": "todo",
-      "title": "Add OpenTelemetry distributed tracing integration",
-      "description": "Implement OpenTelemetry tracing to provide distributed tracing across CLI/TUI operations and Splunk API calls. Current tracing uses tracing crate but has no span propagation or export.\n\nFeatures:\n- Automatic span creation for API requests with correlation IDs\n- Span propagation through async boundaries\n- OTLP export to Jaeger/Tempo/Honeycomb\n- Action-to-response latency tracking in TUI\n- B3/W3C trace context propagation for Splunk correlation\n\nSpans track:\n- API request lifecycle (start → retry → complete)\n- TUI action handling (dispatch → side effect → render)\n- Search execution (parse → dispatch → poll → results)\n\nCritical for debugging performance issues in production and correlating client behavior with Splunk server logs.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "observability",
-        "tracing",
-        "opentelemetry",
-        "debugging"
-      ],
-      "scope": [
-        "crates/client/src/tracing.rs",
-        "crates/client/src/endpoints/request.rs",
-        "crates/tui/src/runtime/side_effects/dispatcher.rs"
-      ],
-      "evidence": [
-        "tracing crate used but no #[instrument] attributes found (search result: none)",
-        "Request lifecycle not tracked: send_request_with_retry has no spans (crates/client/src/endpoints/request.rs:174-421)",
-        "Action handlers not instrumented: dispatcher.rs has 40+ handlers without spans",
-        "X-Splunk-Request-Id extracted but not used for correlation (crates/client/src/endpoints/request.rs:319-322)",
-        "No opentelemetry or tracing-opentelemetry dependencies in Cargo.toml"
-      ],
-      "plan": [
-        "Add opentelemetry and tracing-opentelemetry to workspace dependencies",
-        "Create tracing.rs module with OTLP pipeline initialization",
-        "Add #[instrument] to API request methods with correlation ID fields",
-        "Instrument TUI action dispatcher with action type and duration spans",
-        "Add trace context propagation to HTTP headers",
-        "Add --otlp-endpoint flag for collector configuration",
-        "Document tracing setup in docs/observability.md",
-        "Verify by running: OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 splunk-cli search '...' and seeing traces in Jaeger"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:30:00Z",
-      "updated_at": "2026-02-08T15:30:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0443",
       "status": "todo",
       "title": "Add containerization support with Dockerfile and docker-compose",

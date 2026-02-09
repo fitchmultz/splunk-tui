@@ -1,169 +1,135 @@
 # Observability Guide
 
-## Prometheus Metrics
+Splunk TUI and CLI support OpenTelemetry distributed tracing for production debugging and performance analysis.
 
-Both `splunk-cli` and `splunk-tui` can expose Prometheus metrics for production monitoring.
+## Quick Start
 
-### Enabling Metrics
+### Run with Jaeger (Local Development)
 
-Use the `--metrics-bind` flag or `SPLUNK_METRICS_BIND` environment variable:
+1. Start Jaeger:
+   ```bash
+   docker run -d --name jaeger \
+     -p 16686:16686 \
+     -p 4317:4317 \
+     jaegertracing/all-in-one:1.50
+   ```
 
-```bash
-# CLI
-splunk-cli --metrics-bind localhost:9090 health
+2. Run CLI with tracing:
+   ```bash
+   splunk-cli --otlp-endpoint http://localhost:4317 search 'index=_internal | head 10' --wait
+   ```
 
-# TUI
-splunk-tui --metrics-bind localhost:9090
+3. View traces at http://localhost:16686
 
-# Or via environment variable
-export SPLUNK_METRICS_BIND=0.0.0.0:9090
-splunk-tui
-```
-
-### Available Metrics
-
-#### API Metrics
-
-| Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
-| `splunk_api_request_duration_seconds` | Histogram | `endpoint`, `method`, `status` | Request latency |
-| `splunk_api_requests_total` | Counter | `endpoint`, `method` | Total requests |
-| `splunk_api_retries_total` | Counter | `endpoint`, `method`, `attempt` | Retry attempts |
-| `splunk_api_errors_total` | Counter | `endpoint`, `method`, `error_category` | Error count |
-| `splunk_api_cache_hits_total` | Counter | - | Cache hits |
-| `splunk_api_cache_misses_total` | Counter | - | Cache misses |
-| `splunk_api_cache_size` | Gauge | - | Current cache size |
-
-#### TUI Metrics
-
-| Metric | Type | Description |
-|--------|------|-------------|
-| `splunk_tui_frame_render_duration_seconds` | Histogram | Frame render time |
-| `splunk_tui_action_queue_depth` | Gauge | Action queue depth |
-
-### Error Categories
-
-The `error_category` label can have these values:
-
-- `transport` - Connection/DNS issues
-- `http_4xx` - Client errors
-- `http_5xx` - Server errors
-- `api` - API-level errors
-- `timeout` - Request timeouts
-- `tls` - TLS/SSL errors
-- `unknown` - Unclassified errors
-
-### Example Prometheus Configuration
-
-```yaml
-scrape_configs:
-  - job_name: 'splunk-cli'
-    static_configs:
-      - targets: ['localhost:9090']
-    scrape_interval: 15s
-```
-
-### Metric Buckets
-
-#### Request Duration Buckets (seconds)
-
-- 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0
-
-#### TUI Frame Render Duration Buckets (seconds)
-
-- 0.0001, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5
-
-## Grafana Dashboard
-
-A sample Grafana dashboard is provided in [`grafana-dashboard.json`](grafana-dashboard.json).
-
-To import:
-
-1. Open Grafana → Create → Import
-2. Upload `grafana-dashboard.json`
-3. Select your Prometheus data source
-4. Click Import
-
-## Usage Examples
-
-### Viewing Metrics with curl
+### Run TUI with Tracing
 
 ```bash
-# Start CLI with metrics endpoint
-splunk-cli --metrics-bind localhost:9090 search 'search index=_internal | head 1'
-
-# In another terminal, scrape metrics
-curl -s http://localhost:9090/metrics
-
-# Filter for specific metrics
-curl -s http://localhost:9090/metrics | grep splunk_api_requests_total
-curl -s http://localhost:9090/metrics | grep splunk_api_request_duration_seconds_bucket
+splunk-tui --otlp-endpoint http://localhost:4317
 ```
 
-### Monitoring Cache Efficiency
+## Configuration
 
-```promql
-# Cache hit ratio
-splunk_api_cache_hits_total / (splunk_api_cache_hits_total + splunk_api_cache_misses_total)
+### Environment Variables
 
-# Cache size over time
-splunk_api_cache_size
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SPLUNK_OTLP_ENDPOINT` | OTLP/gRPC endpoint for trace export | `http://localhost:4317` |
+| `SPLUNK_OTEL_SERVICE_NAME` | Service name in traces | `splunk-tui-prod` |
+| `RUST_LOG` | Log level filter | `info,splunk_client=debug` |
+
+### Command-Line Flags
+
+**CLI:**
+```bash
+splunk-cli --otlp-endpoint http://tempo:4317 --otel-service-name my-instance search '...'
 ```
 
-### Monitoring API Performance
-
-```promql
-# Request rate by endpoint
-rate(splunk_api_requests_total[5m])
-
-# p99 latency by endpoint
-histogram_quantile(0.99, rate(splunk_api_request_duration_seconds_bucket[5m]))
-
-# Error rate by category
-rate(splunk_api_errors_total[5m])
+**TUI:**
+```bash
+splunk-tui --otlp-endpoint http://jaeger:4317 --otel-service-name splunk-tui-prod
 ```
 
-### Monitoring TUI Performance
+## Supported Backends
 
-```promql
-# Average frame render time
-rate(splunk_tui_frame_render_duration_seconds_sum[5m]) / rate(splunk_tui_frame_render_duration_seconds_count[5m])
+- **Jaeger**: Native OTLP support (v1.35+)
+- **Grafana Tempo**: Full OTLP/gRPC support
+- **Honeycomb**: OTLP endpoint support
+- **Splunk Observability Cloud**: OTLP ingest
 
-# Action queue depth
-splunk_tui_action_queue_depth
+## Trace Structure
+
+### Spans
+
+**API Request Spans** (`http.request`):
+- `endpoint` - API path (e.g., `/services/search/jobs`)
+- `method` - HTTP method
+- `status` - HTTP status code
+- `duration_ms` - Request duration
+- `attempt` - Retry attempt number
+- `trace_id` - Correlation ID for Splunk server logs
+
+**TUI Action Spans** (`tui.handle_action`):
+- `action_type` - Action variant name
+- `duration_ms` - Total handling duration
+
+**Search Spans** (`search.execute`):
+- `query_hash` - Query identifier (for correlation)
+- `search_mode` - Search mode (normal, realtime)
+- `sid` - Search job ID
+
+## Trace Context Propagation
+
+Traces include W3C Trace Context headers (`traceparent`) in all HTTP requests
+to Splunk. This enables correlating client behavior with Splunk server logs.
+
+### Splunk Server Configuration
+
+Enable trace ID logging in Splunk:
+
+```ini
+# props.conf
+[default]
+TRUNCATE = 999999
+
+# transforms.conf
+[traceid-extract]
+REGEX = traceparent: (\d+)-([a-f0-9]+)-([a-f0-9]+)-(\d+)
+FORMAT = trace_id::$2
 ```
 
-## Security Considerations
+## Performance Impact
 
-- The metrics endpoint does NOT expose sensitive data (no credentials, tokens, or query content)
-- Bind to localhost by default for safety
-- Use firewall/network policies for remote access
-- The metrics endpoint is unauthenticated; secure it via network policies in production
+- **Minimal overhead** when OTLP endpoint is not configured
+- **~1-5% overhead** when tracing is enabled (mostly network I/O)
+- Spans are batched and sent asynchronously
+- Use sampling in production for high-volume scenarios
 
 ## Troubleshooting
 
-### Metrics Not Appearing
+### No traces appearing
 
-1. Verify the exporter started: Check logs for `Metrics exporter started`
-2. Test the endpoint: `curl http://localhost:9090/metrics`
-3. Ensure no firewall is blocking the port
+1. Check endpoint connectivity:
+   ```bash
+   grpcurl -plaintext localhost:4317 list jaeger.api_v2.CollectorService
+   ```
 
-### Port Already in Use
+2. Verify `RUST_LOG` includes `info` level:
+   ```bash
+   RUST_LOG=info splunk-cli --otlp-endpoint ...
+   ```
 
-If you see "Address already in use":
+3. Check for errors in application logs
 
-```bash
-# Find the process using the port
-lsof -i :9090
+### High memory usage
 
-# Or use a different port
-splunk-cli --metrics-bind localhost:9091 health
-```
+Spans are batched in memory before export. For long-running TUI sessions,
+consider increasing the batch timeout or enabling sampling.
 
-### High Memory Usage
+## Metrics vs Tracing
 
-The Prometheus client keeps all metrics in memory. If memory usage is high:
+The project uses both:
 
-1. Check for high-cardinality labels (unique values per request)
-2. Verify metrics are being scraped regularly (old data is not retained)
-3. Consider reducing the number of buckets if histogram memory is high
+- **Metrics** (`metrics` crate): Prometheus-compatible counters/gauges for dashboards
+- **Tracing** (OpenTelemetry): Distributed request flows for debugging
+
+Use metrics for monitoring, tracing for investigation.

@@ -60,6 +60,17 @@ pub struct Cli {
     /// When enabled, exposes /metrics endpoint for Prometheus scraping.
     #[arg(long, env = "SPLUNK_METRICS_BIND")]
     pub metrics_bind: Option<String>,
+
+    /// Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:4317")
+    ///
+    /// When enabled, traces are exported to the specified OTLP endpoint.
+    /// Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
+    #[arg(long, env = "SPLUNK_OTLP_ENDPOINT")]
+    pub otlp_endpoint: Option<String>,
+
+    /// Service name for OpenTelemetry traces
+    #[arg(long, env = "SPLUNK_OTEL_SERVICE_NAME")]
+    pub otel_service_name: Option<String>,
 }
 
 #[cfg(test)]

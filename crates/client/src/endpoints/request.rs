@@ -34,11 +34,14 @@ use reqwest::{RequestBuilder, Response};
 use std::time::{Duration, Instant};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc2822;
-use tracing::{debug, warn};
+use tracing::field::Empty;
+use tracing::{debug, instrument, warn};
 
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::SplunkMessages;
+use crate::tracing::inject_trace_context;
+use opentelemetry::trace::TraceContextExt;
 
 /// Maximum number of retry attempts for rate-limited requests.
 const DEFAULT_MAX_RETRIES: usize = 3;
@@ -171,6 +174,20 @@ fn parse_splunk_error_response(body: &str) -> String {
 /// Requests with streaming bodies cannot be retried. If `try_clone()` fails on
 /// the first attempt, the request is sent without retry capability. Callers
 /// requiring guaranteed retries should use non-streaming request bodies.
+#[instrument(
+    skip(builder, metrics),
+    fields(
+        endpoint = endpoint,
+        method = method,
+        attempt = Empty,
+        retry_count = Empty,
+        duration_ms = Empty,
+        status = Empty,
+        error = Empty,
+        trace_id = Empty,
+    ),
+    level = "debug"
+)]
 pub async fn send_request_with_retry(
     builder: RequestBuilder,
     max_retries: usize,
@@ -186,12 +203,26 @@ pub async fn send_request_with_retry(
 
     let start_time = Instant::now();
 
+    // Record trace_id if OTel is enabled
+    let trace_id = opentelemetry::Context::current()
+        .span()
+        .span_context()
+        .trace_id()
+        .to_string();
+    tracing::Span::current().record("trace_id", &trace_id);
+
+    // Inject trace context into request headers for distributed tracing
+    let builder = inject_trace_context(builder);
+
     // Record the initial request attempt
     if let Some(m) = metrics {
         m.record_request(endpoint, method);
     }
 
     for attempt in 0..=max_retries {
+        // Record current attempt number in span
+        tracing::Span::current().record("attempt", attempt as i64 + 1);
+
         // Try to clone the builder for this attempt
         // On first attempt (0), we try to clone to see if retry is possible
         // On subsequent attempts, we clone again for the retry
@@ -236,6 +267,13 @@ pub async fn send_request_with_retry(
         match attempt_builder.send().await {
             Ok(response) => {
                 let status = response.status();
+                let status_u16 = status.as_u16();
+
+                // Record status and duration in span
+                let duration_ms = start_time.elapsed().as_millis() as i64;
+                tracing::Span::current().record("status", status_u16 as i64);
+                tracing::Span::current().record("duration_ms", duration_ms);
+                tracing::Span::current().record("retry_count", attempt as i64);
 
                 if status.is_success() {
                     // Successful response
@@ -244,12 +282,7 @@ pub async fn send_request_with_retry(
                     }
                     if let Some(m) = metrics {
                         let duration = start_time.elapsed();
-                        m.record_request_duration(
-                            endpoint,
-                            method,
-                            duration,
-                            Some(status.as_u16()),
-                        );
+                        m.record_request_duration(endpoint, method, duration, Some(status_u16));
                     }
                     return Ok(response);
                 }
@@ -336,6 +369,11 @@ pub async fn send_request_with_retry(
                                 request_id,
                             }),
                         );
+                        // Record error in span
+                        tracing::Span::current().record(
+                            "error",
+                            format!("MaxRetriesExceeded: {}", status_u16).as_str(),
+                        );
                         if let Some(m) = metrics {
                             let duration = start_time.elapsed();
                             m.record_request_duration(endpoint, method, duration, Some(status_u16));
@@ -361,9 +399,12 @@ pub async fn send_request_with_retry(
                     let err = ClientError::ApiError {
                         status: status_u16,
                         url,
-                        message,
+                        message: message.clone(),
                         request_id,
                     };
+                    // Record error in span
+                    tracing::Span::current()
+                        .record("error", format!("ApiError: {}", message).as_str());
                     if let Some(m) = metrics {
                         let duration = start_time.elapsed();
                         m.record_request_duration(endpoint, method, duration, Some(status_u16));
@@ -394,6 +435,11 @@ pub async fn send_request_with_retry(
                 } else {
                     // Non-retryable error: propagate immediately
                     let err = ClientError::from(e);
+                    let error_str = err.to_string();
+                    // Record error in span
+                    tracing::Span::current().record("error", error_str.as_str());
+                    tracing::Span::current()
+                        .record("duration_ms", start_time.elapsed().as_millis() as i64);
                     if let Some(m) = metrics {
                         let duration = start_time.elapsed();
                         m.record_request_duration(endpoint, method, duration, None);

@@ -26,6 +26,7 @@ use tokio::sync::Notify;
 ///
 /// This is also defined as `ExitCode::Interrupted` in the `error` module.
 /// Both values must remain synchronized.
+#[allow(dead_code)]
 pub const SIGINT_EXIT_CODE: u8 = 130;
 
 /// Cancellation token usable across async tasks.

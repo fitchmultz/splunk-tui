@@ -39,6 +39,12 @@ secrecy = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
+# OpenTelemetry
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
 # Progress indicators (stderr-only via ProgressDrawTarget::stderr())
 indicatif = "0.17"
 

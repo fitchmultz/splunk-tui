@@ -36,6 +36,18 @@ Options:
           
           [env: SPLUNK_METRICS_BIND=]
 
+      --otlp-endpoint <OTLP_ENDPOINT>
+          Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:X")
+          
+          When enabled, traces are exported to the specified OTLP endpoint. Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
+          
+          [env: SPLUNK_OTLP_ENDPOINT=]
+
+      --otel-service-name <OTEL_SERVICE_NAME>
+          Service name for OpenTelemetry traces
+          
+          [env: SPLUNK_OTEL_SERVICE_NAME=]
+
   -h, --help
           Print help (see a summary with '-h')
 

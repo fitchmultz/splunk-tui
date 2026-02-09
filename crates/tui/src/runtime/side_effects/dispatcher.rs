@@ -11,7 +11,9 @@ use crate::runtime::side_effects::{
 };
 use splunk_config::ConfigManager;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::{Mutex, mpsc::Sender};
+use tracing::{Instrument, info_span};
 
 /// Handle side effects (async API calls) for actions.
 ///
@@ -32,6 +34,154 @@ use tokio::sync::{Mutex, mpsc::Sender};
 /// * `tx` - The action channel sender for sending results
 /// * `config_manager` - The configuration manager for profile operations
 pub async fn handle_side_effects(
+    action: Action,
+    client: SharedClient,
+    tx: Sender<Action>,
+    config_manager: Arc<Mutex<ConfigManager>>,
+    task_tracker: TaskTracker,
+) {
+    let action_name = action_type_name(&action);
+    let start = Instant::now();
+
+    let span = info_span!(
+        "tui.handle_action",
+        action_type = action_name,
+        duration_ms = tracing::field::Empty,
+    );
+
+    async move {
+        handle_action(action, client, tx, config_manager, task_tracker).await;
+
+        // Record duration at the end
+        let duration = start.elapsed().as_millis() as i64;
+        tracing::Span::current().record("duration_ms", duration);
+    }
+    .instrument(span)
+    .await;
+}
+
+/// Get a safe action name for tracing (no sensitive data).
+fn action_type_name(action: &Action) -> &'static str {
+    match action {
+        Action::LoadIndexes { .. } => "LoadIndexes",
+        Action::LoadJobs { .. } => "LoadJobs",
+        Action::LoadClusterInfo => "LoadClusterInfo",
+        Action::LoadClusterPeers => "LoadClusterPeers",
+        Action::SetMaintenanceMode { .. } => "SetMaintenanceMode",
+        Action::RebalanceCluster => "RebalanceCluster",
+        Action::DecommissionPeer { .. } => "DecommissionPeer",
+        Action::RemovePeer { .. } => "RemovePeer",
+        Action::LoadSavedSearches => "LoadSavedSearches",
+        Action::LoadMacros => "LoadMacros",
+        Action::CreateMacro { .. } => "CreateMacro",
+        Action::UpdateMacro { .. } => "UpdateMacro",
+        Action::DeleteMacro { .. } => "DeleteMacro",
+        Action::UpdateSavedSearch { .. } => "UpdateSavedSearch",
+        Action::CreateSavedSearch { .. } => "CreateSavedSearch",
+        Action::DeleteSavedSearch { .. } => "DeleteSavedSearch",
+        Action::ToggleSavedSearch { .. } => "ToggleSavedSearch",
+        Action::LoadInternalLogs { .. } => "LoadInternalLogs",
+        Action::LoadApps { .. } => "LoadApps",
+        Action::LoadUsers { .. } => "LoadUsers",
+        Action::LoadMoreIndexes => "LoadMoreIndexes",
+        Action::LoadMoreJobs => "LoadMoreJobs",
+        Action::LoadMoreApps => "LoadMoreApps",
+        Action::LoadMoreUsers => "LoadMoreUsers",
+        Action::LoadMoreInternalLogs => "LoadMoreInternalLogs",
+        Action::LoadSearchPeers { .. } => "LoadSearchPeers",
+        Action::LoadMoreSearchPeers => "LoadMoreSearchPeers",
+        Action::LoadForwarders { .. } => "LoadForwarders",
+        Action::LoadMoreForwarders => "LoadMoreForwarders",
+        Action::LoadLookups { .. } => "LoadLookups",
+        Action::LoadMoreLookups => "LoadMoreLookups",
+        Action::DownloadLookup { .. } => "DownloadLookup",
+        Action::DeleteLookup { .. } => "DeleteLookup",
+        Action::LoadInputs { .. } => "LoadInputs",
+        Action::LoadMoreInputs => "LoadMoreInputs",
+        Action::LoadConfigFiles => "LoadConfigFiles",
+        Action::LoadFiredAlerts { .. } => "LoadFiredAlerts",
+        Action::LoadMoreFiredAlerts => "LoadMoreFiredAlerts",
+        Action::LoadConfigStanzas { .. } => "LoadConfigStanzas",
+        Action::EnableInput { .. } => "EnableInput",
+        Action::DisableInput { .. } => "DisableInput",
+        Action::SwitchToSettings => "SwitchToSettings",
+        Action::RunSearch { .. } => "RunSearch",
+        Action::LoadMoreSearchResults { .. } => "LoadMoreSearchResults",
+        Action::ValidateSpl { .. } => "ValidateSpl",
+        Action::CancelJob(_) => "CancelJob",
+        Action::DeleteJob(_) => "DeleteJob",
+        Action::CancelJobsBatch(_) => "CancelJobsBatch",
+        Action::DeleteJobsBatch(_) => "DeleteJobsBatch",
+        Action::EnableApp(_) => "EnableApp",
+        Action::DisableApp(_) => "DisableApp",
+        Action::InstallApp { .. } => "InstallApp",
+        Action::RemoveApp { .. } => "RemoveApp",
+        Action::LoadHealth => "LoadHealth",
+        Action::LoadLicense => "LoadLicense",
+        Action::LoadKvstore => "LoadKvstore",
+        Action::LoadOverview => "LoadOverview",
+        Action::LoadMultiInstanceOverview => "LoadMultiInstanceOverview",
+        Action::ExportData(_, _, _) => "ExportData",
+        Action::OpenProfileSwitcher => "OpenProfileSwitcher",
+        Action::ProfileSelected(_) => "ProfileSelected",
+        Action::CreateIndex { .. } => "CreateIndex",
+        Action::ModifyIndex { .. } => "ModifyIndex",
+        Action::DeleteIndex { .. } => "DeleteIndex",
+        Action::CreateUser { .. } => "CreateUser",
+        Action::ModifyUser { .. } => "ModifyUser",
+        Action::DeleteUser { .. } => "DeleteUser",
+        Action::LoadRoles { .. } => "LoadRoles",
+        Action::LoadCapabilities => "LoadCapabilities",
+        Action::CreateRole { .. } => "CreateRole",
+        Action::ModifyRole { .. } => "ModifyRole",
+        Action::DeleteRole { .. } => "DeleteRole",
+        Action::InstallLicense { .. } => "InstallLicense",
+        Action::CreateLicensePool { .. } => "CreateLicensePool",
+        Action::ModifyLicensePool { .. } => "ModifyLicensePool",
+        Action::DeleteLicensePool { .. } => "DeleteLicensePool",
+        Action::ActivateLicense { .. } => "ActivateLicense",
+        Action::DeactivateLicense { .. } => "DeactivateLicense",
+        Action::OpenEditProfileDialog { .. } => "OpenEditProfileDialog",
+        Action::SaveProfile { .. } => "SaveProfile",
+        Action::DeleteProfile { .. } => "DeleteProfile",
+        Action::LoadAuditEvents { .. } => "LoadAuditEvents",
+        Action::LoadRecentAuditEvents { .. } => "LoadRecentAuditEvents",
+        Action::LoadDashboards { .. } => "LoadDashboards",
+        Action::LoadMoreDashboards => "LoadMoreDashboards",
+        Action::LoadDataModels { .. } => "LoadDataModels",
+        Action::LoadMoreDataModels => "LoadMoreDataModels",
+        Action::RefreshIndexes => "RefreshIndexes",
+        Action::RefreshJobs => "RefreshJobs",
+        Action::RefreshApps => "RefreshApps",
+        Action::RefreshUsers => "RefreshUsers",
+        Action::RefreshInternalLogs => "RefreshInternalLogs",
+        Action::RefreshDashboards => "RefreshDashboards",
+        Action::RefreshDataModels => "RefreshDataModels",
+        Action::RefreshInputs => "RefreshInputs",
+        Action::LoadWorkloadPools { .. } => "LoadWorkloadPools",
+        Action::LoadMoreWorkloadPools => "LoadMoreWorkloadPools",
+        Action::LoadWorkloadRules { .. } => "LoadWorkloadRules",
+        Action::LoadMoreWorkloadRules => "LoadMoreWorkloadRules",
+        Action::LoadShcStatus => "LoadShcStatus",
+        Action::LoadShcMembers => "LoadShcMembers",
+        Action::LoadShcCaptain => "LoadShcCaptain",
+        Action::LoadShcConfig => "LoadShcConfig",
+        Action::AddShcMember { .. } => "AddShcMember",
+        Action::RemoveShcMember { .. } => "RemoveShcMember",
+        Action::RollingRestartShc { .. } => "RollingRestartShc",
+        Action::SetShcCaptain { .. } => "SetShcCaptain",
+        Action::Input(_) => "Input",
+        Action::Mouse(_) => "Mouse",
+        Action::Resize(_, _) => "Resize",
+        Action::Tick => "Tick",
+        Action::Quit => "Quit",
+        Action::Loading(_) => "Loading",
+        Action::PersistState => "PersistState",
+        _ => "Other",
+    }
+}
+
+async fn handle_action(
     action: Action,
     client: SharedClient,
     tx: Sender<Action>,

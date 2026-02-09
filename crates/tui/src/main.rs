@@ -61,15 +61,40 @@ async fn main() -> Result<()> {
     // Create logs directory if it doesn't exist
     std::fs::create_dir_all(&cli.log_dir)?;
 
-    // Initialize file-based logging with configurable directory
-    let log_file_name = "splunk-tui.log";
-    let file_appender = tracing_appender::rolling::daily(&cli.log_dir, log_file_name);
-    let (non_blocking, _guard) = non_blocking(file_appender);
+    // Initialize OpenTelemetry if OTLP endpoint is configured
+    let _otel_guard = if let Some(ref endpoint) = cli.otlp_endpoint {
+        let service_name = cli
+            .otel_service_name
+            .clone()
+            .unwrap_or_else(|| "splunk-tui".to_string());
 
-    tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env())
-        .with(fmt::layer().with_writer(non_blocking))
-        .init();
+        let config = splunk_client::TracingConfig::new()
+            .with_otlp_endpoint(endpoint)
+            .with_service_name(service_name)
+            .with_stdout(false); // TUI uses file logging, not stdout
+
+        match config.init() {
+            Ok(guard) => {
+                tracing::info!("OpenTelemetry tracing enabled: endpoint={}", endpoint);
+                Some(guard)
+            }
+            Err(e) => {
+                tracing::warn!("Failed to initialize OpenTelemetry: {}", e);
+                None
+            }
+        }
+    } else {
+        // Initialize file-based logging with configurable directory
+        let log_file_name = "splunk-tui.log";
+        let file_appender = tracing_appender::rolling::daily(&cli.log_dir, log_file_name);
+        let (non_blocking, _guard) = non_blocking(file_appender);
+
+        tracing_subscriber::registry()
+            .with(EnvFilter::from_default_env())
+            .with(fmt::layer().with_writer(non_blocking))
+            .init();
+        None
+    };
 
     // Note: _guard must live for entire main() duration to ensure logs are flushed
 
@@ -506,6 +531,11 @@ async fn main() -> Result<()> {
     // Graceful shutdown: close tracker and wait for tasks
     let _ = task_tracker.close();
     task_tracker.wait().await;
+
+    // Shutdown OpenTelemetry to flush pending spans
+    if let Some(guard) = _otel_guard {
+        guard.shutdown();
+    }
 
     // Restore terminal
     disable_raw_mode()?;
