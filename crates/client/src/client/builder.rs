@@ -21,6 +21,7 @@ use std::time::Duration;
 use crate::auth::{AuthStrategy, SessionManager};
 use crate::client::SplunkClient;
 use crate::client::cache;
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use splunk_config::{
@@ -30,6 +31,7 @@ use splunk_config::{
         DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS,
     },
 };
+use std::sync::Arc;
 
 /// Builder for creating a new [`SplunkClient`].
 ///
@@ -64,6 +66,10 @@ pub struct SplunkClientBuilder {
     cache: Option<cache::ResponseCache>,
     /// Whether to disable caching.
     disable_cache: bool,
+    /// Circuit breaker configuration.
+    circuit_breaker: Option<Arc<CircuitBreaker>>,
+    /// Whether to disable circuit breaker.
+    disable_circuit_breaker: bool,
 }
 
 impl Default for SplunkClientBuilder {
@@ -79,6 +85,8 @@ impl Default for SplunkClientBuilder {
             metrics: None,
             cache: None,
             disable_cache: false,
+            circuit_breaker: None,
+            disable_circuit_breaker: false,
         }
     }
 }
@@ -210,6 +218,36 @@ impl SplunkClientBuilder {
         self
     }
 
+    /// Set the circuit breaker.
+    ///
+    /// When set, the client will use the provided circuit breaker to track
+    /// endpoint health and fail fast when thresholds are exceeded.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use splunk_client::{SplunkClient, CircuitBreaker};
+    ///
+    /// let circuit_breaker = CircuitBreaker::new();
+    /// let client = SplunkClient::builder()
+    ///     .base_url("https://localhost:8089".to_string())
+    ///     .auth_strategy(auth_strategy)
+    ///     .circuit_breaker(circuit_breaker.into())
+    ///     .build()?;
+    /// ```
+    pub fn circuit_breaker(mut self, cb: Arc<CircuitBreaker>) -> Self {
+        self.circuit_breaker = Some(cb);
+        self
+    }
+
+    /// Disable circuit breaker.
+    ///
+    /// This overrides any circuit breaker set via [`Self::circuit_breaker`].
+    pub fn no_circuit_breaker(mut self) -> Self {
+        self.disable_circuit_breaker = true;
+        self
+    }
+
     /// Create a client builder from configuration.
     ///
     /// This method centralizes the conversion from config crate types to client crate types,
@@ -310,6 +348,17 @@ impl SplunkClientBuilder {
             self.cache.unwrap_or_default()
         };
 
+        // Build or configure circuit breaker
+        let circuit_breaker = if self.disable_circuit_breaker {
+            None
+        } else {
+            self.circuit_breaker.or_else(|| {
+                self.metrics.as_ref().map(|m| {
+                    Arc::new(CircuitBreaker::with_metrics(m.clone()))
+                })
+            })
+        };
+
         Ok(SplunkClient {
             http,
             base_url,
@@ -322,6 +371,7 @@ impl SplunkClientBuilder {
             session_ttl_seconds: self.session_ttl_seconds,
             metrics: self.metrics,
             cache,
+            circuit_breaker,
         })
     }
 }

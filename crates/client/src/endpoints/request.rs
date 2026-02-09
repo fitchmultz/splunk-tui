@@ -37,6 +37,7 @@ use time::format_description::well_known::Rfc2822;
 use tracing::field::Empty;
 use tracing::{debug, instrument, warn};
 
+use crate::client::circuit_breaker::{CircuitBreaker, CircuitBreakerError};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::SplunkMessages;
@@ -159,6 +160,7 @@ fn parse_splunk_error_response(body: &str) -> String {
 /// * `endpoint` - The API endpoint path for metrics labeling (e.g., "/services/search/jobs")
 /// * `method` - The HTTP method for metrics labeling (e.g., "GET", "POST")
 /// * `metrics` - Optional metrics collector for recording request metrics
+/// * `circuit_breaker` - Optional circuit breaker for tracking endpoint health
 ///
 /// # Returns
 ///
@@ -167,6 +169,7 @@ fn parse_splunk_error_response(body: &str) -> String {
 /// # Errors
 ///
 /// Returns `ClientError::MaxRetriesExceeded` when all retry attempts are exhausted.
+/// Returns `ClientError::CircuitBreakerOpen` when the circuit breaker is open.
 /// Propagates other `reqwest` errors as `ClientError::ReqwestError`.
 ///
 /// # Limitations
@@ -175,7 +178,7 @@ fn parse_splunk_error_response(body: &str) -> String {
 /// the first attempt, the request is sent without retry capability. Callers
 /// requiring guaranteed retries should use non-streaming request bodies.
 #[instrument(
-    skip(builder, metrics),
+    skip(builder, metrics, circuit_breaker),
     fields(
         endpoint = endpoint,
         method = method,
@@ -194,12 +197,21 @@ pub async fn send_request_with_retry(
     endpoint: &str,
     method: &str,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Response> {
     let max_retries = if max_retries == 0 {
         DEFAULT_MAX_RETRIES
     } else {
         max_retries
     };
+
+    // Check circuit breaker before attempting request
+    if let Some(cb) = circuit_breaker {
+        if let Err(e) = cb.check(endpoint) {
+            warn!(endpoint = endpoint, "Circuit breaker open, failing fast");
+            return Err(ClientError::from(e));
+        }
+    }
 
     let start_time = Instant::now();
 
@@ -283,6 +295,10 @@ pub async fn send_request_with_retry(
                     if let Some(m) = metrics {
                         let duration = start_time.elapsed();
                         m.record_request_duration(endpoint, method, duration, Some(status_u16));
+                    }
+                    // Record success in circuit breaker
+                    if let Some(cb) = circuit_breaker {
+                        cb.record_success(endpoint);
                     }
                     return Ok(response);
                 }
@@ -379,6 +395,10 @@ pub async fn send_request_with_retry(
                             m.record_request_duration(endpoint, method, duration, Some(status_u16));
                             m.record_client_error(endpoint, method, &err);
                         }
+                        // Record failure in circuit breaker
+                        if let Some(cb) = circuit_breaker {
+                            cb.record_failure(endpoint);
+                        }
                         return Err(err);
                     }
                 } else {
@@ -409,6 +429,10 @@ pub async fn send_request_with_retry(
                         let duration = start_time.elapsed();
                         m.record_request_duration(endpoint, method, duration, Some(status_u16));
                         m.record_client_error(endpoint, method, &err);
+                    }
+                    // Record failure in circuit breaker
+                    if let Some(cb) = circuit_breaker {
+                        cb.record_failure(endpoint);
                     }
                     return Err(err);
                 }
@@ -444,6 +468,10 @@ pub async fn send_request_with_retry(
                         let duration = start_time.elapsed();
                         m.record_request_duration(endpoint, method, duration, None);
                         m.record_client_error(endpoint, method, &err);
+                    }
+                    // Record failure in circuit breaker
+                    if let Some(cb) = circuit_breaker {
+                        cb.record_failure(endpoint);
                     }
                     return Err(err);
                 }

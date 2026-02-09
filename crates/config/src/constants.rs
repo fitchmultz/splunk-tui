@@ -149,3 +149,19 @@ pub const DEFAULT_VALIDATION_DEBOUNCE_MS: u64 = 500;
 
 /// Default poll interval for tail mode in seconds.
 pub const DEFAULT_LOGS_TAIL_POLL_INTERVAL_SECS: u64 = 2;
+
+// =============================================================================
+// Circuit Breaker Defaults
+// =============================================================================
+
+/// Default failure threshold for circuit breaker (errors in window to open).
+pub const DEFAULT_CIRCUIT_FAILURE_THRESHOLD: u32 = 5;
+
+/// Default failure window for circuit breaker in seconds.
+pub const DEFAULT_CIRCUIT_FAILURE_WINDOW_SECS: u64 = 60;
+
+/// Default reset timeout for circuit breaker in seconds.
+pub const DEFAULT_CIRCUIT_RESET_TIMEOUT_SECS: u64 = 30;
+
+/// Default number of half-open requests allowed.
+pub const DEFAULT_CIRCUIT_HALF_OPEN_REQUESTS: u32 = 1;

@@ -32,6 +32,7 @@
 
 pub mod builder;
 pub mod cache;
+pub mod circuit_breaker;
 mod session;
 
 // API method submodules
@@ -63,7 +64,9 @@ mod users;
 mod workload;
 
 use crate::auth::SessionManager;
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::metrics::MetricsCollector;
+use std::sync::Arc;
 
 /// Macro to wrap an async API call with automatic session retry on 401/403 errors.
 ///
@@ -138,6 +141,8 @@ pub struct SplunkClient {
     pub(crate) metrics: Option<MetricsCollector>,
     /// Response cache for GET requests.
     pub(crate) cache: cache::ResponseCache,
+    /// Circuit breaker for resilient API calls.
+    pub(crate) circuit_breaker: Option<Arc<CircuitBreaker>>,
 }
 
 impl SplunkClient {

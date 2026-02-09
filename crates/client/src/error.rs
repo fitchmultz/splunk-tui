@@ -69,6 +69,10 @@ pub enum ClientError {
     /// Invalid request parameters.
     #[error("Invalid request: {0}")]
     InvalidRequest(String),
+
+    /// Circuit breaker is open.
+    #[error("Circuit breaker open: {0}")]
+    CircuitBreakerOpen(String),
 }
 
 impl ClientError {
@@ -78,6 +82,11 @@ impl ClientError {
             self,
             Self::HttpError(_) | Self::Timeout(_) | Self::RateLimited(_)
         )
+    }
+
+    /// Check if this error is a circuit breaker error.
+    pub fn is_circuit_breaker_error(&self) -> bool {
+        matches!(self, Self::CircuitBreakerOpen(_))
     }
 
     /// Check if an HTTP status code is retryable.
@@ -102,6 +111,16 @@ impl ClientError {
             self,
             Self::AuthFailed(_) | Self::SessionExpired { .. } | Self::Unauthorized(_)
         )
+    }
+}
+
+impl From<crate::client::circuit_breaker::CircuitBreakerError> for ClientError {
+    fn from(e: crate::client::circuit_breaker::CircuitBreakerError) -> Self {
+        match e {
+            crate::client::circuit_breaker::CircuitBreakerError::CircuitOpen { endpoint } => {
+                ClientError::CircuitBreakerOpen(endpoint)
+            }
+        }
     }
 }
 
