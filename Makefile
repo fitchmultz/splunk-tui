@@ -1,5 +1,5 @@
 .PHONY: install update lint format clean type-check \
-	test test-all test-unit test-integration test-live test-live-manual \
+	test test-all test-unit test-integration test-chaos test-live test-live-manual \
 	bench bench-client bench-cli bench-tui \
 	build release generate lint-docs ci help lint-secrets install-hooks \
 	_generate-docs _lint-docs-check
@@ -24,7 +24,7 @@ endif
 # Hermetic tests:
 # Prevent test runs from accidentally loading a developer's local `.env` file.
 # (The Rust config loader respects `DOTENV_DISABLED` in `crates/config/src/loader.rs`.)
-test test-all test-unit test-integration ci: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
+test test-all test-unit test-integration test-chaos ci: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
 
 # Fetch all dependencies (warm caches, no build)
 install:
@@ -87,6 +87,16 @@ test-unit:
 # Run integration tests
 test-integration:
 	@cargo test --workspace --tests --all-features --locked
+
+# Run chaos engineering tests
+# These tests verify resilience under network failures, partial responses,
+# timing issues, and rapid state changes.
+test-chaos:
+	@echo "→ Running chaos engineering tests..."
+	@cargo test -p splunk-client --test chaos_network_tests --features test-utils --locked
+	@cargo test -p splunk-client --test chaos_timing_tests --features test-utils --locked
+	@cargo test -p splunk-client --test chaos_flapping_tests --features test-utils --locked
+	@echo "  ✓ Chaos tests complete"
 
 # Run live tests (requires a reachable Splunk server configured via env / .env.test)
 test-live:
@@ -193,6 +203,7 @@ help:
 	@echo "  make test-all         - Alias for make test"
 	@echo "  make test-unit        - Run unit tests (lib and bins)"
 	@echo "  make test-integration - Run integration tests"
+	@echo "  make test-chaos       - Run chaos engineering tests"
 	@echo "  make test-live        - Run live tests (set SKIP_LIVE_TESTS=1 to skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
 	@echo "  make bench            - Run all benchmarks"

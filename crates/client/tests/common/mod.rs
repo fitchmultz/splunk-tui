@@ -24,6 +24,7 @@ pub use splunk_client::testing::load_fixture;
 pub use reqwest::Client;
 #[allow(unused_imports)]
 pub use splunk_client::endpoints;
+#[allow(unused_imports)]
 pub use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Advance Tokio's paused clock and yield so sleepers can observe the change.
