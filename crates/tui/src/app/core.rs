@@ -310,6 +310,9 @@ impl App {
             tutorial_state: None,
             tutorial_completed,
             command_palette_state: crate::app::command_palette::CommandPaletteState::new(),
+            // Undo/Redo system
+            undo_buffer: crate::undo::UndoBuffer::new(),
+            undo_toast_id: None,
         }
     }
 

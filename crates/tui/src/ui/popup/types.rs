@@ -232,4 +232,9 @@ pub enum PopupType {
         /// Filtered command items (cached from fuzzy search)
         filtered_items: Vec<crate::app::command_palette::CommandPaletteItem>,
     },
+    /// Undo history viewer showing recent operations
+    UndoHistory {
+        /// Current scroll offset for viewing history
+        scroll_offset: usize,
+    },
 }

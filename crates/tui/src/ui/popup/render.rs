@@ -51,7 +51,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateMacro { .. }
         | PopupType::EditMacro { .. }
         | PopupType::TutorialWizard { .. }
-        | PopupType::CommandPalette { .. } => theme.border,
+        | PopupType::CommandPalette { .. }
+        | PopupType::UndoHistory { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -92,7 +93,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateMacro { .. }
         | PopupType::EditMacro { .. }
         | PopupType::TutorialWizard { .. }
-        | PopupType::CommandPalette { .. } => Wrap { trim: false },
+        | PopupType::CommandPalette { .. }
+        | PopupType::UndoHistory { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -162,6 +164,77 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
 
         // Calculate content height and render scrollbar if needed
         let content_height = popup.content.lines().count();
+        let visible_lines = popup_area.height.saturating_sub(2) as usize; // Account for borders
+
+        if content_height > visible_lines {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓"));
+            let mut scrollbar_state =
+                ScrollbarState::new(content_height.saturating_sub(1)).position(scroll_offset);
+            f.render_stateful_widget(
+                scrollbar,
+                popup_area.inner(Margin::new(0, 1)),
+                &mut scrollbar_state,
+            );
+        }
+    } else if let PopupType::UndoHistory { scroll_offset } = &popup.kind {
+        // Undo history popup with scroll support
+        let scroll_offset = *scroll_offset;
+
+        // Build the content from undo buffer history
+        let mut content =
+            String::from("Recent operations (Ctrl+Z to undo, Ctrl+Shift+Z to redo):\n\n");
+
+        if app.undo_buffer.history().is_empty() {
+            content.push_str("No operations in history.");
+        } else {
+            for (i, entry) in app.undo_buffer.history().iter().enumerate() {
+                let status_icon = match entry.status() {
+                    crate::undo::UndoEntryStatus::Pending => "⏳",
+                    crate::undo::UndoEntryStatus::Executed => "✓",
+                    crate::undo::UndoEntryStatus::Undone => "↩",
+                    crate::undo::UndoEntryStatus::Expired => "✗",
+                };
+                let remaining = if entry.status() == crate::undo::UndoEntryStatus::Pending {
+                    format!(" ({}s)", entry.remaining_secs())
+                } else {
+                    String::new()
+                };
+                content.push_str(&format!(
+                    "{} {}: {}{}\n",
+                    status_icon,
+                    i + 1,
+                    entry.description,
+                    remaining
+                ));
+            }
+        }
+
+        // Add redo stack if not empty
+        if !app.undo_buffer.redo_stack().is_empty() {
+            content.push_str("\nRedo stack:\n");
+            for (i, entry) in app.undo_buffer.redo_stack().iter().enumerate() {
+                content.push_str(&format!("  {}: {}\n", i + 1, entry.description));
+            }
+        }
+
+        content.push_str("\nPress Esc to close, j/k to scroll");
+
+        let p = Paragraph::new(content.as_str())
+            .block(
+                Block::default()
+                    .title(popup.title.as_str())
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(border_color)),
+            )
+            .alignment(Alignment::Left)
+            .wrap(wrap_mode)
+            .scroll((scroll_offset as u16, 0));
+        f.render_widget(p, popup_area);
+
+        // Calculate content height and render scrollbar if needed
+        let content_height = content.lines().count();
         let visible_lines = popup_area.height.saturating_sub(2) as usize; // Account for borders
 
         if content_height > visible_lines {

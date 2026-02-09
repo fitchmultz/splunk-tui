@@ -334,6 +334,10 @@ impl PopupBuilder {
                 selected_index,
                 filtered_items,
             } => self.build_command_palette_defaults(input, *selected_index, filtered_items),
+            PopupType::UndoHistory { .. } => (
+                "Undo History".to_string(),
+                "Recent operations (press Esc to close, j/k to scroll)".to_string(),
+            ),
         }
     }
 

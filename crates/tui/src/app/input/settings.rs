@@ -28,6 +28,7 @@ impl App {
             KeyCode::Char('c') => self.clear_search_history(),
             KeyCode::Char('e') => self.open_edit_profile(),
             KeyCode::Char('x') => self.open_delete_profile(),
+            KeyCode::Char('u') => self.show_undo_history(),
             KeyCode::Char('?') => Some(Action::StartTutorial { is_replay: true }),
             _ => None,
         }
@@ -96,6 +97,11 @@ impl App {
             ));
             None
         }
+    }
+
+    /// Show undo history popup.
+    fn show_undo_history(&mut self) -> Option<Action> {
+        Some(Action::ShowUndoHistory)
     }
 }
 

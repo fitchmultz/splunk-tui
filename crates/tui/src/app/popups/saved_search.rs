@@ -11,6 +11,7 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::ui::popup::{Popup, PopupType, SavedSearchField};
+use crate::undo::{SavedSearchRecoveryData, UndoableOperation};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl App {
@@ -483,14 +484,20 @@ impl App {
                 }
                 None
             }
-            // DeleteSavedSearchConfirm - confirm
+            // DeleteSavedSearchConfirm - confirm (queue as undoable operation)
             (
                 Some(PopupType::DeleteSavedSearchConfirm { search_name }),
                 KeyCode::Char('y') | KeyCode::Enter,
             ) => {
                 let name = search_name.clone();
+                let description = format!("Delete saved search '{}'", search_name);
                 self.popup = None;
-                Some(Action::DeleteSavedSearch { name })
+                // Try to capture original saved search data for recovery
+                let original = self.get_saved_search_recovery_data(&name);
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteSavedSearch { name, original },
+                    description,
+                })
             }
             // DeleteSavedSearchConfirm - cancel
             (
@@ -503,6 +510,23 @@ impl App {
             // Default: ignore other keys
             _ => None,
         }
+    }
+
+    /// Get saved search recovery data for undo.
+    ///
+    /// Attempts to find the saved search in the currently loaded list
+    /// and extract its data for potential recovery.
+    fn get_saved_search_recovery_data(&self, name: &str) -> Option<SavedSearchRecoveryData> {
+        self.saved_searches.as_ref().and_then(|searches| {
+            searches
+                .iter()
+                .find(|s| s.name == name)
+                .map(|s| SavedSearchRecoveryData {
+                    search: s.search.clone(),
+                    description: s.description.clone(),
+                    disabled: s.disabled,
+                })
+        })
     }
 }
 

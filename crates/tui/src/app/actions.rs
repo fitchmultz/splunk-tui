@@ -27,6 +27,7 @@ mod profiles;
 mod search;
 mod system;
 mod tutorial;
+mod undo;
 
 impl App {
     /// Pure state mutation based on Action.
@@ -194,6 +195,17 @@ impl App {
             // Focus management actions
             Action::NextFocus | Action::PreviousFocus | Action::SetFocus(_) | Action::ToggleFocusMode => {
                 self.handle_focus_action(action);
+            }
+
+            // Undo/Redo actions
+            Action::QueueUndoableOperation { .. }
+            | Action::Undo
+            | Action::Redo
+            | Action::ExecutePendingOperation { .. }
+            | Action::OperationUndone { .. }
+            | Action::OperationRedone { .. }
+            | Action::ShowUndoHistory => {
+                self.handle_undo_action(action);
             }
 
             // Catch-all for unhandled actions

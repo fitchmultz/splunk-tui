@@ -2,51 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0445",
-      "status": "todo",
-      "title": "Add undo/redo system for destructive TUI operations",
-      "description": "Implement undo/redo system for destructive operations in TUI. Currently only simple Y/N confirmations exist - no recovery after confirmation. Users need a safety net for accidental deletions.\n\nOperations supporting undo:\n- Delete index (with 30-second grace period)\n- Delete saved search\n- Delete job\n- Delete lookup\n- Modify index settings (rollback)\n\nImplementation:\n- Undo buffer with time-based expiration (30s default)\n- Visual undo toast with countdown\n- Ctrl+Z to undo last operation\n- Ctrl+Shift+Z to redo\n- Undo history in settings for review\n\nPattern: 'Trash' style - operation queued, executed after grace period unless undone. For immediate operations (like API deletions), show recovery instructions or implement 'soft delete' where possible.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "tui",
-        "ux",
-        "safety",
-        "undo"
-      ],
-      "scope": [
-        "crates/tui/src/undo.rs",
-        "crates/tui/src/app/popups/confirm.rs",
-        "crates/tui/src/app/actions.rs"
-      ],
-      "evidence": [
-        "Only Y/N confirmation dialogs exist - no undo capability (crates/tui/src/app/popups/confirm.rs:34-44)",
-        "Destructive operations execute immediately without recovery option",
-        "No undo buffer or command history for reversal",
-        "Users report fear of accidental deletions in complex TUI with many keybindings"
-      ],
-      "plan": [
-        "Create undo.rs module with UndoBuffer and UndoableOperation structs",
-        "Define Undoable trait for operations that can be undone",
-        "Add undo action to global keymap (Ctrl+Z)",
-        "Modify confirmation flow to support delayed execution with countdown toast",
-        "Implement undo for index deletion (recreate with same settings)",
-        "Add undo history viewer in Settings screen",
-        "Write tests for undo/redo roundtrip",
-        "Verify by deleting an index, pressing Ctrl+Z within 30s, and seeing it restored"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:30:00Z",
-      "updated_at": "2026-02-08T15:30:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0446",
       "status": "todo",
       "title": "Add circuit breaker pattern for resilient API calls",

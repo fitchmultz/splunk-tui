@@ -26,6 +26,7 @@ pub mod ui;
 pub mod input;
 pub mod onboarding;
 pub mod runtime;
+pub mod undo;
 pub mod utils;
 
 // Re-export commonly used types at the crate root
@@ -38,6 +39,7 @@ pub use focus::{ComponentFocusData, FocusManager, Focusable};
 pub use ui::popup::{Popup, PopupType};
 pub use ui::theme::ThemeExt;
 pub use ui::toast::{Toast, ToastLevel};
+pub use undo::{UndoBuffer, UndoableOperation};
 
 /// Render the TUI keybinding documentation block for docs/usage.md.
 ///

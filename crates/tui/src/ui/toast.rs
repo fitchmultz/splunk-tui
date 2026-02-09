@@ -127,6 +127,32 @@ impl Toast {
     pub fn error(message: impl Into<String>) -> Self {
         Self::new(message.into(), ToastLevel::Error)
     }
+
+    /// Creates an undo countdown toast showing remaining seconds.
+    ///
+    /// This toast has an extended TTL to match the grace period and includes
+    /// a countdown timer in the message.
+    pub fn undo_countdown(message: impl Into<String>, remaining_secs: u64) -> Self {
+        let message = message.into();
+        let mut toast = Self::new(
+            format!("{} ({}s to undo)", message, remaining_secs),
+            ToastLevel::Warning,
+        );
+        // Extend TTL to match grace period (30 seconds)
+        toast.ttl = Duration::from_secs(30);
+        toast
+    }
+
+    /// Updates the toast message for countdown display.
+    ///
+    /// Finds the "Xs to undo" pattern and replaces it with the new remaining time.
+    pub fn update_undo_countdown(&mut self, remaining_secs: u64) {
+        // Find the "(Xs to undo)" pattern and replace it
+        if let Some(idx) = self.message.rfind('(') {
+            let base = &self.message[..idx].trim_end();
+            self.message = format!("{} ({}s to undo)", base, remaining_secs);
+        }
+    }
 }
 
 /// Maximum number of toasts to display at once (prevents screen overflow).

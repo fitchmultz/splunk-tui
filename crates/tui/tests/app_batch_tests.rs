@@ -24,7 +24,10 @@
 mod helpers;
 use helpers::*;
 use splunk_client::models::SearchJobStatus;
-use splunk_tui::{CurrentScreen, PopupType, action::Action, app::App, app::ConnectionContext};
+use splunk_tui::{
+    CurrentScreen, PopupType, action::Action, app::App, app::ConnectionContext,
+    undo::UndoableOperation,
+};
 
 fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
     (0..count)
@@ -208,13 +211,17 @@ fn test_batch_delete_action_generated() {
     let action = app.handle_input(key('y'));
     assert!(action.is_some(), "Confirming should return action");
 
-    // Verify it's DeleteJobsBatch with correct SIDs
+    // Verify it's queued as undoable operation with DeleteJobsBatch
     assert!(
         matches!(
-            action,
-            Some(Action::DeleteJobsBatch(sids)) if sids.len() == 2
+            &action,
+            Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteJobsBatch { sids },
+                description,
+            }) if sids.len() == 2 && description.contains("Delete")
         ),
-        "Should be DeleteJobsBatch with 2 SIDs"
+        "Should be QueueUndoableOperation for DeleteJobsBatch with 2 SIDs, got {:?}",
+        action
     );
     assert!(app.popup.is_none(), "Popup should be closed after confirm");
 }

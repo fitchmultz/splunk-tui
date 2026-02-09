@@ -137,6 +137,31 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None,
             handles_input: false,
         },
+        // Undo/Redo (Global)
+        Keybinding {
+            section: Section::Global,
+            keys: "Ctrl+Z",
+            description: "Undo last operation",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('z'),
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: Some(Action::Undo),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
+            keys: "Ctrl+Shift+Z",
+            description: "Redo last undone operation",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('Z'),
+                modifiers: KeyModifiers::CONTROL | KeyModifiers::SHIFT,
+            }),
+            action: Some(Action::Redo),
+            handles_input: true,
+        },
         // Search
         Keybinding {
             section: Section::Search,

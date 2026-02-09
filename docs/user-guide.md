@@ -198,6 +198,8 @@ Launch the interactive interface with `splunk-tui`.
 - `Ctrl+Shift+Tab`: Previous focus
 - `Ctrl+c`: Copy to clipboard
 - `e`: Show error details (when an error is present)
+- `Ctrl+Z`: Undo last operation
+- `Ctrl+Shift+Z`: Redo last undone operation
 
 ### Screen Specific Shortcuts
 

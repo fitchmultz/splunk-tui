@@ -23,6 +23,7 @@ mod misc;
 mod profile;
 mod saved_search;
 mod tutorial;
+mod undo_history;
 mod user;
 
 impl App {
@@ -57,7 +58,8 @@ impl App {
                 | PopupType::ConfirmRemoveApp(_)
                 | PopupType::DeleteIndexConfirm { .. }
                 | PopupType::DeleteUserConfirm { .. }
-                | PopupType::DeleteLookupConfirm { .. },
+                | PopupType::DeleteLookupConfirm { .. }
+                | PopupType::DeleteRoleConfirm { .. },
             ) => self.handle_confirm_popup(key),
 
             // Profile management
@@ -90,18 +92,6 @@ impl App {
                 }
                 None
             }
-            Some(PopupType::DeleteRoleConfirm { role_name }) => match key.code {
-                KeyCode::Char('y') | KeyCode::Enter => {
-                    let name = role_name.clone();
-                    self.popup = None;
-                    Some(Action::DeleteRole { name })
-                }
-                KeyCode::Char('n') | KeyCode::Esc => {
-                    self.popup = None;
-                    None
-                }
-                _ => None,
-            },
 
             // Saved search popups (edit, create, delete confirm)
             Some(
@@ -120,6 +110,9 @@ impl App {
 
             // Command palette
             Some(PopupType::CommandPalette { .. }) => self.handle_command_palette_popup(key),
+
+            // Undo history popup
+            Some(PopupType::UndoHistory { .. }) => self.handle_undo_history_popup(key),
 
             // No popup active
             None => None,
@@ -724,6 +717,7 @@ mod tests {
     #[test]
     fn test_popup_delete_index_confirm() {
         use crate::ui::popup::Popup;
+        use crate::undo::UndoableOperation;
 
         let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(
@@ -735,13 +729,24 @@ mod tests {
 
         // Confirm with 'y'
         let action = app.handle_popup_input(key(KeyCode::Char('y')));
-        assert!(matches!(action, Some(Action::DeleteIndex { name }) if name == "test_index"));
+        assert!(
+            matches!(
+                &action,
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteIndex { name, .. },
+                    description,
+                }) if name == "test_index" && description.contains("Delete index")
+            ),
+            "Expected QueueUndoableOperation for DeleteIndex, got {:?}",
+            action
+        );
         assert!(app.popup.is_none());
     }
 
     #[test]
     fn test_popup_delete_index_confirm_with_enter() {
         use crate::ui::popup::Popup;
+        use crate::undo::UndoableOperation;
 
         let mut app = App::new(None, ConnectionContext::default());
         app.popup = Some(
@@ -753,7 +758,17 @@ mod tests {
 
         // Confirm with Enter
         let action = app.handle_popup_input(key(KeyCode::Enter));
-        assert!(matches!(action, Some(Action::DeleteIndex { name }) if name == "test_index"));
+        assert!(
+            matches!(
+                &action,
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteIndex { name, .. },
+                    description,
+                }) if name == "test_index" && description.contains("Delete index")
+            ),
+            "Expected QueueUndoableOperation for DeleteIndex, got {:?}",
+            action
+        );
         assert!(app.popup.is_none());
     }
 

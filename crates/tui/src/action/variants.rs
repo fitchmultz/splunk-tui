@@ -972,4 +972,36 @@ pub enum Action {
     // =========================================================================
     /// Persist application state to disk
     PersistState,
+
+    // =========================================================================
+    // Undo/Redo System
+    // =========================================================================
+    /// Queue a destructive operation for undoable execution
+    QueueUndoableOperation {
+        /// The operation to queue
+        operation: crate::undo::UndoableOperation,
+        /// Human-readable description of the operation
+        description: String,
+    },
+    /// Undo the last operation
+    Undo,
+    /// Redo the last undone operation
+    Redo,
+    /// Execute a pending operation (called after grace period)
+    ExecutePendingOperation {
+        /// ID of the operation to execute
+        id: uuid::Uuid,
+    },
+    /// Operation was successfully undone
+    OperationUndone {
+        /// Description of the undone operation
+        description: String,
+    },
+    /// Operation was successfully redone
+    OperationRedone {
+        /// Description of the redone operation
+        description: String,
+    },
+    /// Show undo history
+    ShowUndoHistory,
 }

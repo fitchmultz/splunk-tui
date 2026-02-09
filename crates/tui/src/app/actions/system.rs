@@ -35,6 +35,8 @@ impl App {
             Action::Tick => {
                 // Prune expired toasts
                 self.toasts.retain(|t| !t.is_expired());
+                // Prune expired undo buffer entries and execute pending ones
+                self.process_undo_buffer();
                 // Advance spinner animation frame
                 if self.loading {
                     self.spinner_frame = (self.spinner_frame + 1) % 8;

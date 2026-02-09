@@ -21,7 +21,7 @@ use helpers::*;
 use splunk_client::models::SearchJobStatus;
 use splunk_tui::{
     CurrentScreen, Popup, PopupType, action::Action, action::ExportFormat, app::App,
-    app::ConnectionContext,
+    app::ConnectionContext, undo::UndoableOperation,
 };
 
 fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
@@ -152,7 +152,17 @@ fn test_popup_delete_confirm_action() {
     // Press 'y' to confirm
     let action = app.handle_input(key('y'));
     assert!(action.is_some(), "Confirming delete should return action");
-    assert!(matches!(action, Some(Action::DeleteJob(sid)) if sid == expected_sid));
+    assert!(
+        matches!(
+            &action,
+            Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteJob { sid },
+                description,
+            }) if sid == &expected_sid && description.contains("Delete job")
+        ),
+        "Expected QueueUndoableOperation for DeleteJob, got {:?}",
+        action
+    );
 }
 
 #[test]

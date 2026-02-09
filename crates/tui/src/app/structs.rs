@@ -279,6 +279,12 @@ pub struct App {
     pub tutorial_completed: bool,
     /// Command palette state for fuzzy search and recent commands
     pub command_palette_state: crate::app::command_palette::CommandPaletteState,
+
+    // Undo/Redo system
+    /// Buffer for managing undoable operations
+    pub undo_buffer: crate::undo::UndoBuffer,
+    /// Active undo toast ID for countdown updates
+    pub undo_toast_id: Option<uuid::Uuid>,
 }
 
 /// SPL validation state for real-time feedback in the search screen.
