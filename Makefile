@@ -2,7 +2,10 @@
 	test test-all test-unit test-integration test-chaos test-live test-live-manual \
 	bench bench-client bench-cli bench-tui \
 	build release generate lint-docs ci help lint-secrets install-hooks \
-	_generate-docs _lint-docs-check examples-test
+	_generate-docs _lint-docs-check examples-test \
+	docker-build docker-run-cli docker-run-tui docker-compose-up \
+	docker-compose-cli docker-compose-tui docker-clean \
+	helm-install helm-upgrade helm-uninstall
 
 # Binaries and Installation
 BINS := splunk-cli splunk-tui generate-tui-docs
@@ -228,4 +231,116 @@ help:
 	@echo "  make lint-secrets     - Run secret-commit guard"
 	@echo "  make install-hooks    - Install git pre-commit hook for secret guard"
 	@echo "  make ci               - Full local pipeline (speed-first, mutates code, uses ci profile for faster builds)"
+	@echo "  make docker-build     - Build Docker image locally"
+	@echo "  make docker-run-cli   - Run CLI in Docker container"
+	@echo "  make docker-run-tui   - Run TUI in Docker container (interactive)"
+	@echo "  make docker-compose-up - Start docker-compose services (Splunk)"
+	@echo "  make docker-compose-cli - Run CLI via docker-compose"
+	@echo "  make docker-compose-tui - Run TUI via docker-compose (interactive)"
+	@echo "  make docker-clean     - Remove local Docker images"
+	@echo "  make helm-install     - Install Helm chart"
+	@echo "  make helm-upgrade     - Upgrade Helm release"
+	@echo "  make helm-uninstall   - Uninstall Helm release"
 	@echo "  make help             - Show this help message"
+
+# Docker Operations
+# ------------------------------------------------------------------------------
+
+# Build Docker image locally
+docker-build:
+	@echo "→ Building Docker image..."
+	@docker build -t splunk-tui:latest .
+	@echo "  ✓ Docker image built (splunk-tui:latest)"
+
+# Run CLI in container (use ARGS="" to pass additional arguments)
+docker-run-cli:
+	@echo "→ Running CLI in Docker container..."
+	@docker run --rm -it \
+		-e SPLUNK_BASE_URL \
+		-e SPLUNK_USERNAME \
+		-e SPLUNK_PASSWORD \
+		-e SPLUNK_API_TOKEN \
+		-e SPLUNK_SKIP_VERIFY \
+		-e SPLUNK_TIMEOUT \
+		-e SPLUNK_MAX_RETRIES \
+		-e RUST_LOG \
+		splunk-tui:latest $(ARGS)
+	@echo "  ✓ CLI container exited"
+
+# Run TUI in container (interactive)
+docker-run-tui:
+	@echo "→ Running TUI in Docker container..."
+	@docker run --rm -it \
+		-e SPLUNK_BASE_URL \
+		-e SPLUNK_USERNAME \
+		-e SPLUNK_PASSWORD \
+		-e SPLUNK_API_TOKEN \
+		-e SPLUNK_SKIP_VERIFY \
+		-e SPLUNK_TIMEOUT \
+		-e SPLUNK_MAX_RETRIES \
+		-e RUST_LOG \
+		--entrypoint /usr/local/bin/splunk-tui \
+		splunk-tui:latest $(ARGS)
+	@echo "  ✓ TUI container exited"
+
+# Start docker-compose services (Splunk only)
+docker-compose-up:
+	@echo "→ Starting docker-compose services..."
+	@docker-compose up -d splunk
+	@echo "  ✓ Services started"
+	@echo ""
+	@echo "  Splunk is starting up. Health check will run automatically."
+	@echo "  Web UI: http://localhost:8000"
+	@echo "  REST API: https://localhost:8089"
+
+# Run CLI via docker-compose
+docker-compose-cli:
+	@echo "→ Running CLI via docker-compose..."
+	@docker-compose --profile cli run --rm cli $(ARGS)
+	@echo "  ✓ CLI service exited"
+
+# Run TUI via docker-compose (interactive)
+docker-compose-tui:
+	@echo "→ Running TUI via docker-compose..."
+	@docker-compose --profile tui run --rm tui $(ARGS)
+	@echo "  ✓ TUI service exited"
+
+# Remove local docker images
+docker-clean:
+	@echo "→ Removing local Docker images..."
+	@docker rmi splunk-tui:latest 2>/dev/null || echo "  Image not found or already removed"
+	@docker-compose down --rmi local 2>/dev/null || true
+	@echo "  ✓ Docker cleanup complete"
+
+# Helm Operations
+# ------------------------------------------------------------------------------
+
+# Install Helm chart
+helm-install:
+	@if [ -z "$${SPLUNK_BASE_URL}" ]; then echo "Error: SPLUNK_BASE_URL not set"; exit 1; fi
+	@if [ -z "$${SPLUNK_USERNAME}" ]; then echo "Error: SPLUNK_USERNAME not set"; exit 1; fi
+	@if [ -z "$${SPLUNK_PASSWORD}" ]; then echo "Error: SPLUNK_PASSWORD not set"; exit 1; fi
+	@echo "→ Installing Helm chart..."
+	@helm install splunk-tui ./helm/splunk-tui \
+		--set cli.splunk.baseUrl=$${SPLUNK_BASE_URL} \
+		--set cli.splunk.username=$${SPLUNK_USERNAME} \
+		--set cli.splunk.password=$${SPLUNK_PASSWORD}
+	@echo "  ✓ Helm chart installed"
+
+# Upgrade Helm release
+helm-upgrade:
+	@if [ -z "$${SPLUNK_BASE_URL}" ]; then echo "Error: SPLUNK_BASE_URL not set"; exit 1; fi
+	@if [ -z "$${SPLUNK_USERNAME}" ]; then echo "Error: SPLUNK_USERNAME not set"; exit 1; fi
+	@if [ -z "$${SPLUNK_PASSWORD}" ]; then echo "Error: SPLUNK_PASSWORD not set"; exit 1; fi
+	@echo "→ Upgrading Helm release..."
+	@helm upgrade splunk-tui ./helm/splunk-tui \
+		--set cli.splunk.baseUrl=$${SPLUNK_BASE_URL} \
+		--set cli.splunk.username=$${SPLUNK_USERNAME} \
+		--set cli.splunk.password=$${SPLUNK_PASSWORD}
+	@echo "  ✓ Helm release upgraded"
+
+# Uninstall Helm release
+helm-uninstall:
+	@echo "→ Uninstalling Helm release..."
+	@helm uninstall splunk-tui
+	@echo "  ✓ Helm release uninstalled"

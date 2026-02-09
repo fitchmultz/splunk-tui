@@ -1,0 +1,13 @@
+apiVersion: v2
+name: splunk-tui
+description: A Helm chart for Splunk TUI and CLI
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - splunk
+  - tui
+  - cli
+home: https://github.com/fitchmultz/splunk-tui
+sources:
+  - https://github.com/fitchmultz/splunk-tui

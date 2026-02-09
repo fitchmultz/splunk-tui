@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0443",
-      "status": "todo",
-      "title": "Add containerization support with Dockerfile and docker-compose",
-      "description": "Create Docker and container orchestration support for cloud-native deployments. No Dockerfile, docker-compose.yml, or .dockerignore exists in the repository.\n\nDeliverables:\n- Multi-stage Dockerfile with distroless final image for security\n- Multi-arch builds (amd64, arm64) with buildx\n- docker-compose.yml for local development with Splunk\n- .dockerignore for efficient builds\n- GitHub Actions workflow for image publishing\n- Helm chart for Kubernetes deployment\n\nUse cases:\n- Run splunk-cli in CI/CD pipelines without installing Rust\n- Deploy TUI as sidecar in Kubernetes for cluster introspection\n- Consistent environment across dev/staging/prod\n- Air-gapped deployments with private registry\n\nSecurity focus: Use distroless/cc-debian12 base, non-root user, minimal attack surface.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "containers",
-        "docker",
-        "kubernetes",
-        "deployment"
-      ],
-      "scope": [
-        "Dockerfile",
-        "docker-compose.yml",
-        ".dockerignore",
-        ".github/workflows/docker.yml",
-        "helm/"
-      ],
-      "evidence": [
-        "No Dockerfile exists in repository root",
-        "No docker-compose.yml for local development environment",
-        "No container images published for splunk-tui/splunk-cli",
-        "Users must build from source - no pre-built container option",
-        "No Kubernetes deployment manifests or Helm charts"
-      ],
-      "plan": [
-        "Create multi-stage Dockerfile with cargo-chef for layer caching",
-        "Use distroless/cc-debian12 as final image base for security",
-        "Create docker-compose.yml with Splunk Enterprise service and CLI/TUI",
-        "Add .dockerignore for efficient context",
-        "Create .github/workflows/docker.yml for multi-arch builds",
-        "Create basic Helm chart in helm/ directory",
-        "Document container usage in docs/containers.md",
-        "Verify by running: docker build -t splunk-tui . && docker run --rm splunk-tui --version"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:30:00Z",
-      "updated_at": "2026-02-08T15:30:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0444",
       "status": "todo",
       "title": "Add GitHub Actions for Splunk operations in CI/CD",

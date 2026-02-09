@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  splunk:
+    image: splunk/splunk:latest
+    container_name: splunk-dev
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=changeme
+      - SPLUNK_HEC_TOKEN=hec-token-123
+    ports:
+      - "8000:8000"   # Web UI
+      - "8088:8088"   # HEC
+      - "8089:8089"   # REST API
+    volumes:
+      - splunk-data:/opt/splunk/var
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:8089/services/server/info", "-u", "admin:changeme"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # CLI service for running commands
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SPLUNK_BASE_URL=https://splunk:8089
+      - SPLUNK_USERNAME=admin
+      - SPLUNK_PASSWORD=changeme
+      - SPLUNK_SKIP_VERIFY=true
+    depends_on:
+      splunk:
+        condition: service_healthy
+    profiles: ["cli"]
+    entrypoint: ["/usr/local/bin/splunk-cli"]
+
+  # TUI service (requires interactive mode)
+  tui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SPLUNK_BASE_URL=https://splunk:8089
+      - SPLUNK_USERNAME=admin
+      - SPLUNK_PASSWORD=changeme
+      - SPLUNK_SKIP_VERIFY=true
+    depends_on:
+      splunk:
+        condition: service_healthy
+    profiles: ["tui"]
+    stdin_open: true
+    tty: true
+    entrypoint: ["/usr/local/bin/splunk-tui"]
+
+volumes:
+  splunk-data:
