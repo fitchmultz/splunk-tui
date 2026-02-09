@@ -66,36 +66,5 @@ pub(crate) fn redact_query(query: &str) -> String {
     format!("<{} chars, hash={:08x}>", query.len(), hash)
 }
 
-/// Testing utilities for Splunk client tests.
-///
-/// This module provides helper functions for loading test fixtures and other
-/// test-related utilities. It is available when running tests or when the
-/// `test-utils` feature is enabled.
-///
-/// # Example
-/// ```ignore
-/// use splunk_client::testing::load_fixture;
-///
-/// let fixture = load_fixture("indexes/list_indexes.json");
-/// ```
 #[cfg(any(feature = "test-utils", test))]
-pub mod testing {
-    use std::path::Path;
-
-    /// Load a JSON fixture file from the fixtures directory.
-    ///
-    /// # Arguments
-    /// * `fixture_path` - Relative path within the fixtures directory (e.g., "indexes/list_indexes.json")
-    ///
-    /// # Panics
-    /// - If the fixture file cannot be read
-    /// - If the file content is not valid JSON
-    pub fn load_fixture(fixture_path: &str) -> serde_json::Value {
-        let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let fixture_dir = manifest_dir.join("fixtures");
-        let full_path = fixture_dir.join(fixture_path);
-        let content = std::fs::read_to_string(&full_path)
-            .unwrap_or_else(|_| panic!("Failed to load fixture: {}", full_path.display()));
-        serde_json::from_str(&content).expect("Invalid JSON in fixture")
-    }
-}
+pub mod testing;

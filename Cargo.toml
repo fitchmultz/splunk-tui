@@ -58,6 +58,10 @@ assert_cmd = "2.1"
 serial_test = "3.2"
 criterion = { version = "0.5", features = ["async_tokio"] }
 
+# Fake data generation for testing
+fake = { version = "2.9", features = ["derive", "chrono"] }
+rand = "0.8"
+
 # Workspace crates
 splunk-client = { path = "crates/client" }
 splunk-config = { path = "crates/config" }

@@ -2,49 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0438",
-      "status": "todo",
-      "title": "Add test data generators using fake crate",
-      "description": "Create test data generators using the fake crate to produce realistic Splunk data for testing. Current fixtures are static JSON files that don't scale or vary.\n\nGenerators:\n- SearchResultsGenerator: configurable row/column count, time ranges, null handling\n- SplQueryGenerator: valid, invalid, and edge-case SPL queries\n- ClusterTopologyGenerator: realistic cluster topologies with configurable size\n- LogEntryGenerator: realistic Splunk log formats\n- User/App/Index generators for bulk testing\n\nEnables scalable testing with varied data without manual fixture creation.",
-      "priority": "low",
-      "tags": [
-        "innovation",
-        "testing",
-        "fixtures",
-        "generators"
-      ],
-      "scope": [
-        "crates/client/src/testing/generators.rs",
-        "crates/client/fixtures/generated/"
-      ],
-      "evidence": [
-        "Current fixtures are 63 static JSON files (crates/client/fixtures/)",
-        "No dynamic test data generation - fixtures become stale",
-        "Hard to test pagination with only fixed-size fixtures",
-        "No generator for realistic SPL queries or cluster topologies"
-      ],
-      "plan": [
-        "Add fake and rand to workspace dependencies",
-        "Create generators.rs with SearchResultsGenerator",
-        "Add SplQueryGenerator with valid/invalid/edge-case modes",
-        "Add ClusterTopologyGenerator for scalable cluster testing",
-        "Implement realistic log message generation with templates",
-        "Add fixture regeneration script for updating static fixtures",
-        "Use generators in property-based tests",
-        "Verify by running: cargo test -p splunk-client --features test-utils with generated data"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0439",
       "status": "todo",
       "title": "Add TUI session persistence and restore",

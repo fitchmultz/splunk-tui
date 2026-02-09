@@ -794,3 +794,127 @@ mod edge_case_tests {
         assert_eq!(status.label, deserialized.label);
     }
 }
+
+// =============================================================================
+// Fake Generator Property Tests
+// =============================================================================
+/// Tests using the fake crate-based generators for realistic Splunk data.
+#[cfg(feature = "test-utils")]
+mod fake_generator_tests {
+    use super::*;
+    use splunk_client::testing::generators::{
+        ClusterTopologyGenerator, LogEntryGenerator, SplQueryGenerator, SplQueryMode, UserGenerator,
+    };
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(100))]
+
+        /// Test that fake-generated log entries have valid structure.
+        ///
+        /// # Invariants Tested
+        /// - Generated entries have required _time field
+        /// - Generated entries have log_level field
+        /// - Generated entries have component field
+        #[test]
+        fn test_fake_log_entry_structure(_seed in 0..1000usize) {
+            let generator = LogEntryGenerator::new();
+            let entry = generator.generate_one();
+
+            // Verify required fields exist
+            prop_assert!(entry.get("_time").is_some(), "Missing _time field");
+            prop_assert!(entry.get("log_level").is_some(), "Missing log_level field");
+            prop_assert!(entry.get("component").is_some(), "Missing component field");
+
+            // Verify log_level is a valid string
+            let level = entry["log_level"].as_str().unwrap_or("");
+            prop_assert!(
+                ["ERROR", "WARN", "INFO", "DEBUG", "FATAL"].contains(&level),
+                "Invalid log level: {}",
+                level
+            );
+        }
+
+        /// Test that fake-generated SPL queries have expected structure.
+        ///
+        /// # Invariants Tested
+        /// - Valid queries start with index=
+        /// - Generated queries are non-empty
+        #[test]
+        fn test_fake_spl_query_valid(_seed in 0..1000usize) {
+            let generator = SplQueryGenerator::new().with_mode(SplQueryMode::Valid);
+            let query = generator.generate_one();
+
+            // Valid queries should start with index=
+            prop_assert!(
+                query.starts_with("index="),
+                "Valid query should start with index=, got: {}",
+                query
+            );
+            prop_assert!(!query.is_empty(), "Query should not be empty");
+        }
+
+        /// Test that fake-generated users have valid structure.
+        ///
+        /// # Invariants Tested
+        /// - Users have required name field
+        /// - Users have email field
+        /// - Users have roles field
+        #[test]
+        fn test_fake_user_structure(_seed in 0..1000usize) {
+            let generator = UserGenerator::new();
+            let user = generator.generate_one();
+
+            prop_assert!(user.get("name").is_some(), "Missing name field");
+            prop_assert!(user.get("email").is_some(), "Missing email field");
+            prop_assert!(user.get("roles").is_some(), "Missing roles field");
+
+            // Name should be a non-empty string
+            let name = user["name"].as_str().unwrap_or("");
+            prop_assert!(!name.is_empty(), "User name should not be empty");
+        }
+
+        /// Test that fake-generated cluster topology has valid structure.
+        ///
+        /// # Invariants Tested
+        /// - Topology has cluster_manager
+        /// - Topology has peers array
+        /// - Peers count matches configured count
+        #[test]
+        fn test_fake_cluster_topology_structure(peer_count in 1usize..20usize) {
+            let generator = ClusterTopologyGenerator::new().with_peer_count(peer_count);
+            let topology = generator.generate();
+
+            prop_assert!(
+                topology.get("cluster_manager").is_some(),
+                "Missing cluster_manager"
+            );
+            prop_assert!(topology.get("peers").is_some(), "Missing peers array");
+
+            let peers = topology["peers"].as_array().expect("peers should be an array");
+            prop_assert_eq!(
+                peers.len(),
+                peer_count,
+                "Peer count mismatch: expected {}, got {}",
+                peer_count,
+                peers.len()
+            );
+        }
+
+        /// Test fake-generated log entries with specific component.
+        ///
+        /// # Invariants Tested
+        /// - Component is correctly set
+        /// - All entries have the specified component
+        #[test]
+        fn test_fake_log_entry_with_component(_seed in 0..1000usize) {
+            let generator = LogEntryGenerator::new().with_component("TestComponent");
+            let entry = generator.generate_one();
+
+            prop_assert_eq!(
+                entry["component"].as_str(),
+                Some("TestComponent"),
+                "Component should match specified value"
+            );
+        }
+    }
+}

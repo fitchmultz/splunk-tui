@@ -8,7 +8,7 @@ repository.workspace = true
 
 [features]
 default = []
-test-utils = ["proptest"]
+test-utils = ["proptest", "fake", "rand"]
 benchmark-utils = []
 
 [dependencies]
@@ -45,6 +45,8 @@ percent-encoding = "2.3"
 
 # Testing (optional, enabled via test-utils feature)
 proptest = { workspace = true, optional = true }
+fake = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
 
 [dev-dependencies]
 dotenvy = { workspace = true }
