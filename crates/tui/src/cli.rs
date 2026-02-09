@@ -54,6 +54,12 @@ pub struct Cli {
     /// Start with fresh state, ignoring any persisted state
     #[arg(long)]
     pub fresh: bool,
+
+    /// Enable Prometheus metrics endpoint and bind address (e.g., "localhost:9090")
+    ///
+    /// When enabled, exposes /metrics endpoint for Prometheus scraping.
+    #[arg(long, env = "SPLUNK_METRICS_BIND")]
+    pub metrics_bind: Option<String>,
 }
 
 #[cfg(test)]

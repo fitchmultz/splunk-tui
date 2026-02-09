@@ -39,6 +39,12 @@ pub const METRIC_CACHE_MISSES: &str = "splunk_api_cache_misses_total";
 /// Metric name for cache size gauge.
 pub const METRIC_CACHE_SIZE: &str = "splunk_api_cache_size";
 
+/// Metric name for TUI frame render duration histogram.
+pub const METRIC_TUI_FRAME_RENDER_DURATION: &str = "splunk_tui_frame_render_duration_seconds";
+
+/// Metric name for TUI action queue depth gauge.
+pub const METRIC_TUI_ACTION_QUEUE_DEPTH: &str = "splunk_tui_action_queue_depth";
+
 /// Error categories for metrics labeling.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCategory {
@@ -271,6 +277,28 @@ impl MetricsCollector {
             return;
         }
         metrics::gauge!(METRIC_CACHE_SIZE).set(size as f64);
+    }
+
+    /// Record TUI frame render duration.
+    ///
+    /// # Arguments
+    /// * `duration` - The time taken to render a frame
+    pub fn record_tui_frame_render_duration(&self, duration: Duration) {
+        if !self.enabled {
+            return;
+        }
+        metrics::histogram!(METRIC_TUI_FRAME_RENDER_DURATION).record(duration.as_secs_f64());
+    }
+
+    /// Record TUI action queue depth.
+    ///
+    /// # Arguments
+    /// * `depth` - Current number of items in the action queue
+    pub fn record_tui_action_queue_depth(&self, depth: usize) {
+        if !self.enabled {
+            return;
+        }
+        metrics::gauge!(METRIC_TUI_ACTION_QUEUE_DEPTH).set(depth as f64);
     }
 }
 

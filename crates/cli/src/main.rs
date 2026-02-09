@@ -52,6 +52,22 @@ async fn main() {
         .with(fmt::layer())
         .init();
 
+    // Initialize metrics exporter if --metrics-bind is provided
+    let _metrics_exporter = if let Some(ref bind_addr) = cli.metrics_bind {
+        match splunk_client::MetricsExporter::install(bind_addr) {
+            Ok(exporter) => {
+                tracing::info!("Metrics exporter started on http://{}/metrics", bind_addr);
+                Some(exporter)
+            }
+            Err(e) => {
+                eprintln!("Failed to start metrics exporter: {}", e);
+                std::process::exit(ExitCode::GeneralError.as_i32());
+            }
+        }
+    } else {
+        None
+    };
+
     // Determine if we need a real config or can use a placeholder
     // Config commands, multi-profile list-all, and HEC commands don't need standard connection details
     let is_multi_profile_list_all = matches!(

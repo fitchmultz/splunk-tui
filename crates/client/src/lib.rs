@@ -11,6 +11,7 @@ mod auth;
 pub mod client;
 pub mod error;
 pub mod metrics;
+pub mod metrics_exporter;
 pub mod models;
 mod name_merge;
 
@@ -34,6 +35,7 @@ pub use client::health::AggregatedHealth;
 pub use client::macros::{MacroCreateParams, MacroUpdateParams};
 pub use error::{ClientError, Result};
 pub use metrics::{ErrorCategory, MetricsCollector};
+pub use metrics_exporter::{MetricsExporter, MetricsExporterError};
 pub use models::{
     AddShcMemberParams, App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo,
     ClusterManagementResponse, ClusterPeer, CreateIndexParams, CreatePoolParams, CreateRoleParams,

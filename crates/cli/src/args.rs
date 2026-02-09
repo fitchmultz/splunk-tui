@@ -87,6 +87,12 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub no_cache: bool,
 
+    /// Enable Prometheus metrics endpoint and bind address (e.g., "localhost:9090")
+    ///
+    /// When enabled, exposes /metrics endpoint for Prometheus scraping.
+    #[arg(long, global = true, env = "SPLUNK_METRICS_BIND")]
+    pub metrics_bind: Option<String>,
+
     #[command(subcommand)]
     pub command: Commands,
 }

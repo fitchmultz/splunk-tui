@@ -39,6 +39,7 @@ time = { workspace = true }
 
 # Metrics
 metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
 
 # Caching
 moka = { workspace = true }

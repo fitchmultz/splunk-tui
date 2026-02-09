@@ -29,6 +29,13 @@ Options:
       --fresh
           Start with fresh state, ignoring any persisted state
 
+      --metrics-bind <METRICS_BIND>
+          Enable Prometheus metrics endpoint and bind address (e.g., "localhost:X")
+          
+          When enabled, exposes /metrics endpoint for Prometheus scraping.
+          
+          [env: SPLUNK_METRICS_BIND=]
+
   -h, --help
           Print help (see a summary with '-h')
 

@@ -73,6 +73,22 @@ async fn main() -> Result<()> {
 
     // Note: _guard must live for entire main() duration to ensure logs are flushed
 
+    // Initialize metrics exporter if --metrics-bind is provided
+    let _metrics_exporter = if let Some(ref bind_addr) = cli.metrics_bind {
+        match splunk_client::MetricsExporter::install(bind_addr) {
+            Ok(exporter) => {
+                tracing::info!("Metrics exporter started on http://{}/metrics", bind_addr);
+                Some(exporter)
+            }
+            Err(e) => {
+                tracing::error!("Failed to start metrics exporter: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // Load config at startup with CLI overrides
     // Also get search defaults and internal logs defaults with env var overrides applied
     let (search_default_config, internal_logs_default_config, config, resolved_profile_name) =
@@ -322,10 +338,25 @@ async fn main() -> Result<()> {
 
     // Main event loop
     loop {
+        // Record frame render duration
+        let render_start = std::time::Instant::now();
         terminal.draw(|f| app.render(f))?;
+        let render_duration = render_start.elapsed();
+
+        // Record TUI frame render duration metric if metrics are enabled
+        if _metrics_exporter.is_some() {
+            metrics::histogram!("splunk_tui_frame_render_duration_seconds")
+                .record(render_duration.as_secs_f64());
+        }
 
         tokio::select! {
             Some(action) = rx.recv() => {
+                // Record action queue depth metric if metrics are enabled
+                if _metrics_exporter.is_some() {
+                    let queue_depth = rx.len();
+                    metrics::gauge!("splunk_tui_action_queue_depth").set(queue_depth as f64);
+                }
+
                 tracing::info!("Handling action: {:?}", splunk_tui::action::RedactedAction(&action));
 
                 // Check for quit first

@@ -2,52 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0441",
-      "status": "todo",
-      "title": "Add Prometheus metrics exporter for production observability",
-      "description": "Implement Prometheus metrics export endpoint for monitoring splunk-cli/splunk-tui in production environments. Current metrics are defined in crates/client/src/metrics.rs but never exported - the module explicitly documents this gap.\n\nMetrics to export:\n- splunk_api_request_duration_seconds (histogram)\n- splunk_api_requests_total (counter)\n- splunk_api_retries_total (counter)\n- splunk_api_errors_total (counter)\n- splunk_tui_frame_render_duration (histogram)\n- splunk_tui_action_queue_depth (gauge)\n\nImplementation adds metrics-exporter-prometheus or metrics-exporter-otlp, initializes recorder at startup, and exposes /metrics endpoint for CLI mode or push gateway support for TUI.\n\nCritical for production deployments where operators need visibility into Splunk API usage patterns, error rates, and client performance.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "observability",
-        "metrics",
-        "prometheus",
-        "production"
-      ],
-      "scope": [
-        "crates/client/src/metrics_exporter.rs",
-        "crates/client/src/metrics.rs",
-        "crates/cli/src/main.rs",
-        "crates/tui/src/main.rs"
-      ],
-      "evidence": [
-        "Metrics defined but never exported (crates/client/src/metrics.rs:8-11): \"What this module does NOT handle: Metrics exposition/export\"",
-        "Metrics defined: request_duration, requests_total, retries_total, errors_total (crates/client/src/metrics.rs:21-31)",
-        "No metrics-exporter-prometheus or metrics-exporter-otlp in Cargo.toml dependencies",
-        "Production deployments have no visibility into API client behavior, error rates, or performance"
-      ],
-      "plan": [
-        "Add metrics-exporter-prometheus to workspace dependencies",
-        "Create metrics_exporter.rs module with PrometheusBuilder initialization",
-        "Add --metrics-bind flag to CLI for /metrics endpoint address",
-        "Initialize metrics recorder in CLI main.rs before command execution",
-        "Add TUI metrics: frame render time, action queue depth, memory usage",
-        "Document metrics and their labels in docs/observability.md",
-        "Add Grafana dashboard JSON example",
-        "Verify by running: splunk-cli --metrics-bind localhost:9090 search '...' & and curl localhost:9090/metrics"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:30:00Z",
-      "updated_at": "2026-02-08T15:30:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0442",
       "status": "todo",
       "title": "Add OpenTelemetry distributed tracing integration",
