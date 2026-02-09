@@ -323,6 +323,20 @@ pub(crate) struct ConfigFile {
     pub state: Option<PersistedState>,
 }
 
+/// Storage format for the configuration file, supporting encryption.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "version")]
+pub(crate) enum ConfigStorage {
+    #[serde(rename = "1")]
+    Plain(Box<ConfigFile>),
+    #[serde(rename = "2-encrypted")]
+    Encrypted {
+        kdf_salt: Option<Vec<u8>>,
+        nonce: Vec<u8>,
+        ciphertext: Vec<u8>,
+    },
+}
+
 /// Errors that can occur when reading the config file.
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigFileError {
@@ -361,32 +375,44 @@ impl ConfigFileError {
 
 /// Reads and parses the config file from disk.
 ///
-/// This function supports legacy config files that only contain `PersistedState`
-/// (without the `profiles` wrapper). It returns a `ConfigFile` with empty profiles
-/// for legacy files.
-pub(crate) fn read_config_file(path: &Path) -> Result<ConfigFile, ConfigFileError> {
+/// Returns the parsed storage and a boolean indicating if it was a legacy format.
+pub(crate) fn read_config_file(path: &Path) -> Result<(ConfigStorage, bool), ConfigFileError> {
     let content = std::fs::read_to_string(path).map_err(|e| ConfigFileError::Read {
         path: path.to_path_buf(),
         source: e,
     })?;
 
-    // Try parsing as the new ConfigFile format first
-    if let Ok(mut file) = serde_json::from_str::<ConfigFile>(&content) {
-        // If we got a ConfigFile but it has no state, try legacy format
-        if file.state.is_none()
-            && let Ok(state) = serde_json::from_str::<PersistedState>(&content)
-        {
-            file.state = Some(state);
+    // Try parsing as the new ConfigStorage format first
+    if let Ok(storage) = serde_json::from_str::<ConfigStorage>(&content) {
+        return Ok((storage, false));
+    }
+
+    // Try parsing as the old ConfigFile format
+    if let Ok(file) = serde_json::from_str::<ConfigFile>(&content) {
+        // If we got a ConfigFile but it has no state and no profiles, it might be legacy PersistedState
+        if file.state.is_none() && file.profiles.is_empty() {
+            if let Ok(state) = serde_json::from_str::<PersistedState>(&content) {
+                return Ok((
+                    ConfigStorage::Plain(Box::new(ConfigFile {
+                        profiles: BTreeMap::new(),
+                        state: Some(state),
+                    })),
+                    true,
+                ));
+            }
         }
-        return Ok(file);
+        return Ok((ConfigStorage::Plain(Box::new(file)), true));
     }
 
     // Fall back to legacy format: try parsing as PersistedState directly
     match serde_json::from_str::<PersistedState>(&content) {
-        Ok(state) => Ok(ConfigFile {
-            profiles: BTreeMap::new(),
-            state: Some(state),
-        }),
+        Ok(state) => Ok((
+            ConfigStorage::Plain(Box::new(ConfigFile {
+                profiles: BTreeMap::new(),
+                state: Some(state),
+            })),
+            true,
+        )),
         Err(e) => Err(ConfigFileError::Parse {
             path: path.to_path_buf(),
             source: e,
@@ -487,7 +513,11 @@ mod tests {
         )
         .unwrap();
 
-        let config_file = read_config_file(temp_file.path()).unwrap();
+        let (storage, _is_legacy) = read_config_file(temp_file.path()).unwrap();
+        let config_file = match storage {
+            ConfigStorage::Plain(file) => *file,
+            _ => panic!("Expected plain storage"),
+        };
 
         // Legacy file should result in empty profiles
         assert!(config_file.profiles.is_empty());

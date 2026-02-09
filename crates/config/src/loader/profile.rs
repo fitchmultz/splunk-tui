@@ -17,8 +17,9 @@
 
 use super::builder::ConfigLoader;
 use super::error::ConfigError;
+use crate::encryption::MasterKeySource;
 use crate::persistence::{
-    default_config_path, legacy_config_path, migrate_config_file_if_needed, read_config_file,
+    ConfigManager, default_config_path, legacy_config_path, migrate_config_file_if_needed,
 };
 use crate::types::ProfileConfig;
 
@@ -52,9 +53,18 @@ pub fn apply_profile(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         return Ok(());
     }
 
-    let config_file = read_config_file(&config_path)?;
+    let source = if let Some(pw) = loader.config_password() {
+        MasterKeySource::Password(pw.clone())
+    } else if let Some(var) = loader.config_key_var() {
+        MasterKeySource::Env(var.clone())
+    } else {
+        MasterKeySource::Keyring
+    };
 
-    let profile = match config_file.profiles.get(&profile_name) {
+    let manager = ConfigManager::new_with_path_and_source(config_path, source)
+        .map_err(|e| ConfigError::DecryptionFailed(e.to_string()))?;
+
+    let profile = match manager.list_profiles().get(&profile_name) {
         Some(p) => p,
         None => {
             loader.set_profile_missing(Some(profile_name));

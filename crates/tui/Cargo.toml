@@ -88,6 +88,7 @@ tui-big-text = "0.7"
 insta = { version = "1.46", features = ["filters"] }
 tempfile = "3"
 serial_test = { workspace = true }
+temp-env = { workspace = true }
 wiremock = "0.6"
 reqwest = { workspace = true }
 secrecy = { workspace = true }

@@ -74,6 +74,14 @@ pub struct Cli {
     #[arg(long, global = true, env = "SPLUNK_CONFIG_PATH", value_name = "FILE")]
     pub config_path: Option<PathBuf>,
 
+    /// Password for configuration file encryption
+    #[arg(long, global = true, env = "SPLUNK_CONFIG_PASSWORD")]
+    pub config_password: Option<String>,
+
+    /// Environment variable containing the configuration encryption key (hex)
+    #[arg(long, global = true, env = "SPLUNK_CONFIG_KEY_VAR")]
+    pub config_key_var: Option<String>,
+
     /// Suppress all progress output (spinners / progress bars).
     ///
     /// Note: Progress indicators always write to STDERR; this flag disables them entirely.

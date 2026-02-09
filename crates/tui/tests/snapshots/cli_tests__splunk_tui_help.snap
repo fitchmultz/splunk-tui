@@ -15,6 +15,16 @@ Options:
       --config-path <CONFIG_PATH>
           Path to a custom configuration file
 
+      --config-password <CONFIG_PASSWORD>
+          Password for configuration file encryption
+          
+          [env: SPLUNK_CONFIG_PASSWORD=]
+
+      --config-key-var <CONFIG_KEY_VAR>
+          Environment variable containing the configuration encryption key (hex)
+          
+          [env: SPLUNK_CONFIG_KEY_VAR=]
+
       --log-dir <LOG_DIR>
           Directory for log files
           

@@ -22,12 +22,13 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use secrecy::SecretString;
 
+use crate::encryption::{Encryptor, MasterKeySource};
 use crate::types::{KEYRING_SERVICE, ProfileConfig, SecureValue};
 
 use super::create_corrupt_backup;
 use super::migration::migrate_config_file_if_needed;
 use super::path::{default_config_path, legacy_config_path};
-use super::state::{ConfigFile, ConfigFileError, PersistedState, read_config_file};
+use super::state::{ConfigFile, ConfigFileError, ConfigStorage, PersistedState, read_config_file};
 use crate::env_var_or_none;
 
 /// Manages loading and saving user configuration to disk.
@@ -36,6 +37,10 @@ pub struct ConfigManager {
     config_path: PathBuf,
     /// Cached config file data (profiles + state).
     config_file: ConfigFile,
+    /// Source for the master encryption key.
+    master_key_source: MasterKeySource,
+    /// Whether to encrypt the config file on save.
+    use_encryption: bool,
 }
 
 impl ConfigManager {
@@ -50,6 +55,11 @@ impl ConfigManager {
     /// # Errors
     /// Returns an error if `ProjectDirs::from` fails (should be rare).
     pub fn new() -> Result<Self> {
+        Self::new_with_source(MasterKeySource::Keyring)
+    }
+
+    /// Creates a new `ConfigManager` using platform-standard config directories and a specific master key source.
+    pub fn new_with_source(master_key_source: MasterKeySource) -> Result<Self> {
         // Check SPLUNK_CONFIG_PATH env var first (centralized handling)
         let config_path = if let Some(path_str) = env_var_or_none("SPLUNK_CONFIG_PATH") {
             PathBuf::from(path_str)
@@ -65,7 +75,7 @@ impl ConfigManager {
             default_path
         };
 
-        Self::new_with_path(config_path)
+        Self::new_with_path_and_source(config_path, master_key_source)
     }
 
     /// Creates a new `ConfigManager` with a specific config file path.
@@ -75,9 +85,34 @@ impl ConfigManager {
     /// extension and a default configuration is used instead. This prevents
     /// data loss while allowing the application to start.
     pub fn new_with_path(config_path: PathBuf) -> Result<Self> {
+        Self::new_with_path_and_source(config_path, MasterKeySource::Keyring)
+    }
+
+    /// Creates a new `ConfigManager` with a specific config file path and master key source.
+    pub fn new_with_path_and_source(
+        config_path: PathBuf,
+        master_key_source: MasterKeySource,
+    ) -> Result<Self> {
+        let no_migrate = std::env::var("SPLUNK_CONFIG_NO_MIGRATE")
+            .map(|v| v == "1")
+            .unwrap_or(false);
+        let mut use_encryption = !no_migrate; // Default to true for auto-migration, unless disabled
         let config_file = if config_path.exists() {
             match read_config_file(&config_path) {
-                Ok(file) => file,
+                Ok((storage, is_legacy)) => {
+                    if matches!(storage, ConfigStorage::Encrypted { .. }) {
+                        use_encryption = true;
+                    } else if !is_legacy || no_migrate {
+                        use_encryption = false;
+                    }
+                    match Self::decrypt_storage(storage, &master_key_source) {
+                        Ok(file) => file,
+                        Err(e) => {
+                            tracing::error!(error = %e, "Failed to decrypt config file, using defaults");
+                            ConfigFile::default()
+                        }
+                    }
+                }
                 Err(e) => {
                     // Check if this is a "file not found" error - if so, no backup needed
                     let is_not_found = matches!(
@@ -118,13 +153,41 @@ impl ConfigManager {
                 }
             }
         } else {
+            if no_migrate {
+                use_encryption = false;
+            }
             ConfigFile::default()
         };
 
         Ok(Self {
             config_path,
             config_file,
+            master_key_source,
+            use_encryption,
         })
+    }
+
+    fn decrypt_storage(storage: ConfigStorage, source: &MasterKeySource) -> Result<ConfigFile> {
+        match storage {
+            ConfigStorage::Plain(file) => Ok(*file),
+            ConfigStorage::Encrypted {
+                kdf_salt,
+                nonce,
+                ciphertext,
+            } => {
+                let key = source
+                    .resolve(kdf_salt.as_deref())
+                    .map_err(|e| anyhow::anyhow!("Failed to resolve master key: {}", e))?;
+                let nonce_bytes: [u8; 12] = nonce
+                    .try_into()
+                    .map_err(|_| anyhow::anyhow!("Invalid nonce size"))?;
+                let plaintext = Encryptor::decrypt(&ciphertext, &key, &nonce_bytes)
+                    .map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))?;
+                let file: ConfigFile = serde_json::from_slice(&plaintext)
+                    .context("Failed to parse decrypted config JSON")?;
+                Ok(file)
+            }
+        }
     }
 
     /// Returns the path to the configuration file.
@@ -288,6 +351,26 @@ impl ConfigManager {
         &self.config_file.profiles
     }
 
+    /// Enables encryption for the configuration file.
+    pub fn enable_encryption(&mut self, source: MasterKeySource) -> Result<()> {
+        self.master_key_source = source;
+        self.use_encryption = true;
+        self.atomic_save()
+    }
+
+    /// Disables encryption for the configuration file, storing it in plaintext.
+    pub fn disable_encryption(&mut self) -> Result<()> {
+        self.use_encryption = false;
+        self.atomic_save()
+    }
+
+    /// Rotates the master encryption key.
+    pub fn rotate_key(&mut self, new_source: MasterKeySource) -> Result<()> {
+        self.master_key_source = new_source;
+        self.use_encryption = true;
+        self.atomic_save()
+    }
+
     /// Saves or updates a profile configuration.
     ///
     /// This inserts a new profile or updates an existing one, then saves
@@ -336,9 +419,38 @@ impl ConfigManager {
             std::fs::create_dir_all(parent).context("Failed to create config directory")?;
         }
 
+        let storage = if self.use_encryption {
+            let (salt, key) = match &self.master_key_source {
+                MasterKeySource::Password(pw) => {
+                    let salt = Encryptor::generate_salt();
+                    let key = Encryptor::derive_key(pw, &salt)
+                        .map_err(|e| anyhow::anyhow!("Key derivation failed: {}", e))?;
+                    (Some(salt.to_vec()), key)
+                }
+                source => {
+                    let key = source
+                        .resolve(None)
+                        .map_err(|e| anyhow::anyhow!("Failed to resolve master key: {}", e))?;
+                    (None, key)
+                }
+            };
+
+            let plaintext = serde_json::to_vec(&self.config_file)?;
+            let (ciphertext, nonce) = Encryptor::encrypt(&plaintext, &key)
+                .map_err(|e| anyhow::anyhow!("Encryption failed: {}", e))?;
+
+            ConfigStorage::Encrypted {
+                kdf_salt: salt,
+                nonce: nonce.to_vec(),
+                ciphertext,
+            }
+        } else {
+            ConfigStorage::Plain(Box::new(self.config_file.clone()))
+        };
+
         // Write to a temporary file first
         let temp_path = self.config_path.with_extension("tmp");
-        let content = serde_json::to_string_pretty(&self.config_file)?;
+        let content = serde_json::to_string_pretty(&storage)?;
         std::fs::write(&temp_path, content).context("Failed to write temporary config file")?;
 
         // Atomically rename the temporary file to the target path
@@ -347,6 +459,7 @@ impl ConfigManager {
 
         tracing::debug!(
             path = %self.config_path.display(),
+            encryption = %self.use_encryption,
             "Config saved atomically"
         );
 
@@ -364,44 +477,46 @@ mod tests {
 
     #[test]
     fn test_save_preserves_profiles() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+        temp_env::with_var("SPLUNK_CONFIG_NO_MIGRATE", Some("1"), || {
+            let temp_file = NamedTempFile::new().unwrap();
+            let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
 
-        // Add a profile
-        let password = SecretString::new("test-password".to_string().into());
-        manager.config_file.profiles.insert(
-            "test-profile".to_string(),
-            ProfileConfig {
-                base_url: Some("https://splunk.example.com:8089".to_string()),
-                username: Some("admin".to_string()),
-                password: Some(SecureValue::Plain(password)),
-                api_token: None,
-                skip_verify: Some(true),
-                timeout_seconds: Some(60),
-                max_retries: Some(5),
-                session_expiry_buffer_seconds: Some(60),
-                session_ttl_seconds: Some(3600),
-                health_check_interval_seconds: None,
-            },
-        );
+            // Add a profile
+            let password = SecretString::new("test-password".to_string().into());
+            manager.config_file.profiles.insert(
+                "test-profile".to_string(),
+                ProfileConfig {
+                    base_url: Some("https://splunk.example.com:8089".to_string()),
+                    username: Some("admin".to_string()),
+                    password: Some(SecureValue::Plain(password)),
+                    api_token: None,
+                    skip_verify: Some(true),
+                    timeout_seconds: Some(60),
+                    max_retries: Some(5),
+                    session_expiry_buffer_seconds: Some(60),
+                    session_ttl_seconds: Some(3600),
+                    health_check_interval_seconds: None,
+                },
+            );
 
-        // Save state
-        let state = PersistedState {
-            auto_refresh: true,
-            ..Default::default()
-        };
-        manager.save(&state).unwrap();
+            // Save state
+            let state = PersistedState {
+                auto_refresh: true,
+                ..Default::default()
+            };
+            manager.save(&state).unwrap();
 
-        // Reload and verify profiles are preserved
-        let reloaded = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
-        assert!(reloaded.config_file.profiles.contains_key("test-profile"));
-        assert_eq!(
-            reloaded.config_file.profiles["test-profile"]
-                .base_url
-                .as_ref()
-                .unwrap(),
-            "https://splunk.example.com:8089"
-        );
+            // Reload and verify profiles are preserved
+            let reloaded = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+            assert!(reloaded.config_file.profiles.contains_key("test-profile"));
+            assert_eq!(
+                reloaded.config_file.profiles["test-profile"]
+                    .base_url
+                    .as_ref()
+                    .unwrap(),
+                "https://splunk.example.com:8089"
+            );
+        });
     }
 
     #[test]
@@ -764,13 +879,14 @@ mod tests {
 
     #[test]
     fn test_no_data_loss_on_corrupt_config_recovery() {
-        use std::io::Write;
+        temp_env::with_var("SPLUNK_CONFIG_NO_MIGRATE", Some("1"), || {
+            use std::io::Write;
 
-        let temp_dir = tempfile::tempdir().unwrap();
-        let config_path = temp_dir.path().join("config.json");
+            let temp_dir = tempfile::tempdir().unwrap();
+            let config_path = temp_dir.path().join("config.json");
 
-        // Create a valid config with profiles
-        let valid_config = r#"{
+            // Create a valid config with profiles
+            let valid_config = r#"{
             "profiles": {
                 "production": {
                     "base_url": "https://prod.splunk.com:8089",
@@ -784,51 +900,86 @@ mod tests {
             }
         }"#;
 
-        std::fs::write(&config_path, valid_config).unwrap();
+            std::fs::write(&config_path, valid_config).unwrap();
 
-        // Corrupt the file by overwriting with invalid JSON
-        let mut file = std::fs::File::create(&config_path).unwrap();
-        file.write_all(b"{ corrupted }").unwrap();
-        drop(file);
+            // Corrupt the file by overwriting with invalid JSON
+            let mut file = std::fs::File::create(&config_path).unwrap();
+            file.write_all(b"{ corrupted }").unwrap();
+            drop(file);
 
-        // Initialize ConfigManager - should backup corrupt file
-        let mut manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+            // Initialize ConfigManager - should backup corrupt file
+            let mut manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
 
-        // Verify backup exists with original content
-        let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .filter(|e| {
-                let name = e.file_name();
-                let name_str = name.to_string_lossy();
-                name_str.starts_with("config.corrupt.")
-            })
-            .collect();
+            // Verify backup exists with original content
+            let backup_files: Vec<_> = std::fs::read_dir(&temp_dir)
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    let name = e.file_name();
+                    let name_str = name.to_string_lossy();
+                    name_str.starts_with("config.corrupt.")
+                })
+                .collect();
 
-        assert_eq!(backup_files.len(), 1);
+            assert_eq!(backup_files.len(), 1);
 
-        // Verify backup contains the corrupted content (not the original valid config)
-        let backup_content = std::fs::read_to_string(backup_files[0].path()).unwrap();
-        assert_eq!(backup_content, "{ corrupted }");
+            // Verify backup contains the corrupted content (not the original valid config)
+            let backup_content = std::fs::read_to_string(backup_files[0].path()).unwrap();
+            assert_eq!(backup_content, "{ corrupted }");
 
-        // Verify manager uses defaults (empty)
-        assert!(manager.list_profiles().is_empty());
+            // Verify manager uses defaults (empty)
+            assert!(manager.list_profiles().is_empty());
 
-        // Add a new profile and save
-        let new_profile = ProfileConfig {
-            base_url: Some("https://new.splunk.com:8089".to_string()),
-            username: Some("new_user".to_string()),
-            ..Default::default()
-        };
-        manager.save_profile("new-profile", new_profile).unwrap();
+            // Add a new profile and save
+            let new_profile = ProfileConfig {
+                base_url: Some("https://new.splunk.com:8089".to_string()),
+                username: Some("new_user".to_string()),
+                ..Default::default()
+            };
+            manager.save_profile("new-profile", new_profile).unwrap();
 
-        // Reload and verify new config is valid
-        let reloaded = ConfigManager::new_with_path(config_path.clone()).unwrap();
-        assert_eq!(reloaded.list_profiles().len(), 1);
-        assert!(reloaded.list_profiles().contains_key("new-profile"));
+            // Reload and verify new config is valid
+            let reloaded = ConfigManager::new_with_path(config_path.clone()).unwrap();
+            assert_eq!(reloaded.list_profiles().len(), 1);
+            assert!(reloaded.list_profiles().contains_key("new-profile"));
+        });
     }
 
     #[test]
+    fn test_encryption_roundtrip_persistence() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let config_path = temp_file.path().to_path_buf();
+
+        // Use password for testing to avoid keyring dependency in CI
+        let password = SecretString::new("test-password".to_string().into());
+        let source = MasterKeySource::Password(password.clone());
+
+        let mut manager =
+            ConfigManager::new_with_path_and_source(config_path.clone(), source.clone()).unwrap();
+        manager.enable_encryption(source.clone()).unwrap();
+
+        let profile = ProfileConfig {
+            base_url: Some("https://encrypted.splunk.com:8089".to_string()),
+            ..Default::default()
+        };
+        manager.save_profile("encrypted-profile", profile).unwrap();
+
+        // Check that file is indeed encrypted (contains version 2-encrypted)
+        let content = std::fs::read_to_string(&config_path).unwrap();
+        assert!(content.contains("2-encrypted"));
+        assert!(!content.contains("encrypted.splunk.com"));
+
+        // Reload and verify
+        let reloaded = ConfigManager::new_with_path_and_source(config_path, source).unwrap();
+        assert!(reloaded.use_encryption);
+        assert_eq!(
+            reloaded.config_file.profiles["encrypted-profile"].base_url,
+            Some("https://encrypted.splunk.com:8089".to_string())
+        );
+    }
+
+    #[test]
+    #[serial]
     fn test_multiple_corrupt_backups_different_timestamps() {
         use std::thread;
         use std::time::Duration;

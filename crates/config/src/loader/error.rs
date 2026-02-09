@@ -46,6 +46,9 @@ pub enum ConfigError {
     #[error("Profile '{0}' not found in config file")]
     ProfileNotFound(String),
 
+    #[error("Failed to decrypt configuration: {0}")]
+    DecryptionFailed(String),
+
     #[error("Keyring error: {0}")]
     Keyring(#[from] keyring::Error),
 

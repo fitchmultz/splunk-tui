@@ -127,6 +127,14 @@ async fn main() {
             loader = loader.with_profile_name(profile_name.clone());
         }
 
+        // Apply encryption options from CLI
+        if let Some(ref password) = cli.config_password {
+            loader = loader.with_config_password(password.clone());
+        }
+        if let Some(ref var_name) = cli.config_key_var {
+            loader = loader.with_config_key_var(var_name.clone());
+        }
+
         // Apply environment variables (including SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
         // if not already set via CLI args). Env vars override profile values.
         loader = match loader.from_env() {

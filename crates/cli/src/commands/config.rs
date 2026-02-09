@@ -16,6 +16,8 @@
 use crate::formatters::{OutputFormat, get_formatter, write_to_file};
 use anyhow::{Context, Result};
 use clap::Subcommand;
+use secrecy::SecretString;
+use splunk_config::encryption::MasterKeySource;
 use splunk_config::persistence::ConfigManager;
 use splunk_config::types::{ProfileConfig, SecureValue};
 use std::path::PathBuf;
@@ -27,6 +29,7 @@ pub enum ConfigCommand {
 
     /// Set or update a profile
     Set {
+        // ... (existing fields)
         /// Profile name
         profile_name: String,
 
@@ -110,6 +113,31 @@ pub enum ConfigCommand {
         )]
         plaintext: bool,
     },
+
+    /// Encrypt the configuration file
+    Encrypt {
+        /// Use a password for encryption instead of the OS keyring
+        #[arg(short, long)]
+        password: Option<String>,
+
+        /// Use an environment variable for the encryption key (hex encoded)
+        #[arg(long)]
+        env_var: Option<String>,
+    },
+
+    /// Decrypt the configuration file to plaintext
+    Decrypt,
+
+    /// Rotate the master encryption key
+    RotateKey {
+        /// New password for encryption
+        #[arg(short, long)]
+        password: Option<String>,
+
+        /// New environment variable for the encryption key
+        #[arg(long)]
+        env_var: Option<String>,
+    },
 }
 
 pub fn run(
@@ -117,14 +145,24 @@ pub fn run(
     output_format: &str,
     output_file: Option<PathBuf>,
     config_path: Option<PathBuf>,
+    config_password: Option<String>,
+    config_key_var: Option<String>,
 ) -> Result<()> {
     // Filter out blank/whitespace-only config paths to allow fallback to env/default
     let config_path = config_path.filter(|p| !p.to_string_lossy().trim().is_empty());
 
-    let mut manager = if let Some(path) = config_path {
-        ConfigManager::new_with_path(path)?
+    let source = if let Some(pw) = config_password {
+        MasterKeySource::Password(SecretString::new(pw.into()))
+    } else if let Some(var) = config_key_var {
+        MasterKeySource::Env(var)
     } else {
-        ConfigManager::new()?
+        MasterKeySource::Keyring
+    };
+
+    let mut manager = if let Some(path) = config_path {
+        ConfigManager::new_with_path_and_source(path, source)?
+    } else {
+        ConfigManager::new_with_source(source)?
     };
 
     match command {
@@ -176,6 +214,32 @@ pub fn run(
         }
         ConfigCommand::Delete { profile_name } => {
             run_delete(&mut manager, &profile_name)?;
+        }
+        ConfigCommand::Encrypt { password, env_var } => {
+            let source = if let Some(pw) = password {
+                MasterKeySource::Password(SecretString::new(pw.into()))
+            } else if let Some(var) = env_var {
+                MasterKeySource::Env(var)
+            } else {
+                MasterKeySource::Keyring
+            };
+            manager.enable_encryption(source)?;
+            println!("Configuration encrypted successfully.");
+        }
+        ConfigCommand::Decrypt => {
+            manager.disable_encryption()?;
+            println!("Configuration decrypted successfully.");
+        }
+        ConfigCommand::RotateKey { password, env_var } => {
+            let source = if let Some(pw) = password {
+                MasterKeySource::Password(SecretString::new(pw.into()))
+            } else if let Some(var) = env_var {
+                MasterKeySource::Env(var)
+            } else {
+                MasterKeySource::Keyring
+            };
+            manager.rotate_key(source)?;
+            println!("Encryption key rotated successfully.");
         }
     }
 

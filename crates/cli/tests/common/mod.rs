@@ -46,6 +46,9 @@ pub fn splunk_cmd() -> Command {
     // Satisfy configuration requirements for non-config tests
     cmd.env("SPLUNK_API_TOKEN", "test-token");
 
+    // Prevent automatic encryption migration in tests
+    cmd.env("SPLUNK_CONFIG_NO_MIGRATE", "1");
+
     // Clear potential host leakage
     cmd.env_remove("SPLUNK_BASE_URL")
         .env_remove("SPLUNK_USERNAME")

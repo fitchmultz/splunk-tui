@@ -61,12 +61,19 @@ chrono = { version = "0.4", features = ["serde", "clock"] }
 moka = { version = "0.12", features = ["future"] }
 
 # Testing
+mockall = "0.13"
 mockito = "1.7"
 proptest = "1.10"
 wiremock = "0.6"
 assert_cmd = "2.1"
 serial_test = "3.3"
 criterion = { version = "0.8", features = ["async_tokio"] }
+temp-env = "0.3"
+
+# Encryption
+aes-gcm = "0.10"
+argon2 = "0.5"
+hex = "0.4"
 
 # Fake data generation for testing
 fake = { version = "4.4", features = ["derive", "chrono"] }

@@ -1221,6 +1221,13 @@ splunk-cli config delete my-profile
   - Prompts for each field with current values as defaults
   - Press Enter when prompted for password/token to keep existing values
 - `delete <profile-name>`: Delete a profile
+- `encrypt`: Encrypt the configuration file
+  - `-p, --password <PASS>`: Use a password for encryption instead of the OS keyring
+  - `--env-var <VAR>`: Use an environment variable for the encryption key (hex encoded)
+- `decrypt`: Decrypt the configuration file to plaintext
+- `rotate-key`: Rotate the master encryption key
+  - `-p, --password <PASS>`: New password for encryption
+  - `--env-var <VAR>`: New environment variable for the encryption key
 
 **Secure Credential Input (Recommended for CI/CD):**
 
@@ -1265,6 +1272,49 @@ If the keyring is unavailable or you prefer to store credentials in the configur
 - TUI: Uncheck "Use Keyring" in the profile creation/edit dialog
 
 **Security Warning**: Storing credentials as plaintext in `config.json` is less secure and should be avoided in production environments.
+
+##### Configuration Encryption at Rest
+
+Splunk TUI supports encrypting your entire `config.json` file at rest using AES-256-GCM. This protects your API tokens and passwords even if the configuration file is exposed via backups or shared systems.
+
+**Master Key Sources:**
+1. **OS Keyring (Default)**: Automatically generates a random 32-byte key and stores it in your OS keychain. This provides a balance of security and convenience (no password required).
+2. **User Password**: Derives a key using Argon2id from a password you provide. Use this for maximum security or when a keyring is unavailable.
+3. **Environment Variable**: Uses a hex-encoded key from an environment variable (e.g., `SPLUNK_CONFIG_KEY`). Ideal for CI/CD pipelines.
+
+**Encryption Commands:**
+
+```bash
+# Encrypt using OS keyring (default)
+splunk-cli config encrypt
+
+# Encrypt using a password
+splunk-cli config encrypt --password "my-secret-password"
+
+# Decrypt back to plaintext
+splunk-cli config decrypt
+
+# Rotate encryption key
+splunk-cli config rotate-key --password "new-password"
+```
+
+**Accessing Encrypted Config:**
+
+If your configuration is encrypted with a password or environment variable, you must provide the master key whenever you run the tool:
+
+```bash
+# Using a password
+splunk-cli --config-password "my-password" jobs --list
+splunk-tui --config-password "my-password"
+
+# Using an environment variable
+export SPLUNK_CONFIG_KEY_VAR=MY_SECRET_KEY
+export MY_SECRET_KEY=...hex-key...
+splunk-cli jobs --list
+```
+
+**Auto-Migration:**
+By default, the tool will automatically migrate your configuration to an encrypted state (using the OS keyring) the first time you save any settings, unless `SPLUNK_CONFIG_NO_MIGRATE=1` is set.
 
 ---
 

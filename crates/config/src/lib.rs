@@ -6,6 +6,7 @@
 #![cfg_attr(not(test), warn(clippy::unwrap_used))]
 
 pub mod constants;
+pub mod encryption;
 pub mod keybind;
 pub mod loader;
 pub mod persistence;

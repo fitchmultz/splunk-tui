@@ -31,10 +31,9 @@ pub use state::{
     SearchDefaults,
 };
 
-// Internal re-exports for use by loader module
+// Re-exports for use by other crates
 pub(crate) use migration::migrate_config_file_if_needed;
-pub(crate) use path::{default_config_path, legacy_config_path};
-pub(crate) use state::read_config_file;
+pub use path::{default_config_path, legacy_config_path};
 
 /// Creates a backup of a corrupt config file before it is overwritten.
 ///

@@ -18,6 +18,10 @@ ratatui = { workspace = true }
 directories = "6"
 tracing = { workspace = true }
 url = { workspace = true }
+aes-gcm = { workspace = true }
+argon2 = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

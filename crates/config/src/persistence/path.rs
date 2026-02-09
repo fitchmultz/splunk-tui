@@ -18,7 +18,7 @@ use anyhow::Context;
 /// This path is the **documented** config location:
 /// - Linux/macOS: `~/.config/splunk-tui/config.json`
 /// - Windows: `%AppData%\splunk-tui\config.json`
-pub(crate) fn default_config_path() -> Result<PathBuf, anyhow::Error> {
+pub fn default_config_path() -> Result<PathBuf, anyhow::Error> {
     let proj_dirs = directories::ProjectDirs::from("", "", "splunk-tui")
         .context("Failed to determine project directories")?;
 
@@ -31,7 +31,7 @@ pub(crate) fn default_config_path() -> Result<PathBuf, anyhow::Error> {
 /// `ProjectDirs::from("com", "splunk-tui", "splunk-tui")`
 /// which produced a redundant directory segment like:
 /// `.../splunk-tui/splunk-tui/config.json`
-pub(crate) fn legacy_config_path() -> Result<PathBuf, anyhow::Error> {
+pub fn legacy_config_path() -> Result<PathBuf, anyhow::Error> {
     let proj_dirs = directories::ProjectDirs::from("com", "splunk-tui", "splunk-tui")
         .context("Failed to determine legacy project directories")?;
 

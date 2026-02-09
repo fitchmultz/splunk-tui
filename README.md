@@ -11,7 +11,7 @@ A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployme
 - **Cluster Support**: View cluster status and peer information
 - **Health Monitoring**: Comprehensive health checks including server info, splunkd health, license usage, KVStore status, and log parsing health
 - **Interactive TUI**: Terminal user interface with tab navigation
-- **Secure**: Credentials handled with the `secrecy` crate
+- **Secure**: Credentials handled with the `secrecy` crate and encrypted at rest using AES-256-GCM
 
 ## Installation
 
@@ -86,6 +86,10 @@ export SPLUNK_INTERNAL_LOGS_EARLIEST=-15m
 # Profile Selection
 export SPLUNK_PROFILE=default
 export SPLUNK_CONFIG_PATH=/path/to/config.json
+
+# Configuration Encryption
+export SPLUNK_CONFIG_PASSWORD=my-password
+export SPLUNK_CONFIG_KEY_VAR=MY_SECRET_KEY
 ```
 
 Copy `.env.example` to `.env` and configure as needed.
@@ -201,6 +205,22 @@ splunk-cli saved-searches disable "My Saved Search"
 
 # Delete a saved search
 splunk-cli saved-searches delete "My Saved Search"
+```
+
+### Configuration Encryption
+
+```bash
+# Encrypt config file using OS keyring (default)
+splunk-cli config encrypt
+
+# Encrypt using a password
+splunk-cli config encrypt --password "my-password"
+
+# Decrypt back to plaintext
+splunk-cli config decrypt
+
+# Rotate encryption key
+splunk-cli config rotate-key --password "new-password"
 ```
 
 ## TUI Usage

@@ -2,53 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0448",
-      "status": "todo",
-      "title": "Add configuration encryption at rest for sensitive profiles",
-      "description": "Implement encryption at rest for configuration files containing credentials. Currently config.json stores API tokens and passwords in plaintext. This is a security risk for shared systems or backup exposure.\n\nEncryption features:\n- AES-256-GCM encryption of sensitive fields\n- Argon2id key derivation from user password\n- Keyring integration for passwordless operation (store encryption key in OS keychain)\n- Automatic encryption detection and migration\n- CLI commands for encrypt/decrypt/rotate-key\n\nFields encrypted:\n- api_token\n- password\n- session tokens\n\nImplementation uses ring or aes-gcm crates. Master key can be:\n1. Derived from user-provided password\n2. Random key stored in OS keyring (default)\n3. Environment variable for CI/CD\n\nCritical for enterprise security requirements.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "security",
-        "encryption",
-        "configuration",
-        "enterprise"
-      ],
-      "scope": [
-        "crates/config/src/encryption.rs",
-        "crates/config/src/persistence/profiles.rs",
-        "crates/cli/src/commands/config.rs"
-      ],
-      "evidence": [
-        "Config stored as plaintext JSON (crates/config/src/persistence/profiles.rs)",
-        "API tokens and passwords visible in config.json",
-        "No encryption at rest - backups and file permissions are only protection",
-        "Keyring integration exists but only as opt-in, not default",
-        "No encrypted config format or migration path"
-      ],
-      "plan": [
-        "Add aes-gcm and argon2 to workspace dependencies",
-        "Create encryption.rs module with encrypt/decrypt functions",
-        "Define EncryptedProfile format with ciphertext and salt",
-        "Implement key derivation from password or keyring",
-        "Add --encrypt flag to config init command",
-        "Add config encrypt/decrypt/rotate-key commands",
-        "Create automatic migration from plaintext to encrypted",
-        "Write tests for encryption roundtrip and key rotation",
-        "Verify by running: splunk-cli config encrypt and seeing encrypted config.json"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:30:00Z",
-      "updated_at": "2026-02-08T15:30:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0449",
       "status": "todo",
       "title": "Add graceful degradation for partial multi-instance failures",

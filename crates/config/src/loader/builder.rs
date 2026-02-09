@@ -57,6 +57,8 @@ pub struct ConfigLoader {
     max_results: Option<usize>,
     internal_logs_count: Option<usize>,
     internal_logs_earliest: Option<String>,
+    config_password: Option<SecretString>,
+    config_key_var: Option<String>,
 }
 
 impl Default for ConfigLoader {
@@ -92,7 +94,21 @@ impl ConfigLoader {
             max_results: None,
             internal_logs_count: None,
             internal_logs_earliest: None,
+            config_password: None,
+            config_key_var: None,
         }
+    }
+
+    /// Set the configuration file password.
+    pub fn with_config_password(mut self, password: String) -> Self {
+        self.config_password = Some(SecretString::new(password.into()));
+        self
+    }
+
+    /// Set the environment variable name containing the configuration encryption key.
+    pub fn with_config_key_var(mut self, var_name: String) -> Self {
+        self.config_key_var = Some(var_name);
+        self
     }
 
     /// Check if dotenv loading is disabled via environment variable.
@@ -547,6 +563,14 @@ impl ConfigLoader {
 
     pub(crate) fn set_profile_name(&mut self, name: Option<String>) {
         self.profile_name = name;
+    }
+
+    pub(crate) fn config_password(&self) -> Option<&SecretString> {
+        self.config_password.as_ref()
+    }
+
+    pub(crate) fn config_key_var(&self) -> Option<&String> {
+        self.config_key_var.as_ref()
     }
 }
 

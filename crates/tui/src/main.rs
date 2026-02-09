@@ -223,15 +223,31 @@ async fn main() -> Result<()> {
 
     // Load persisted configuration
     // CLI --config-path takes precedence (if not blank); ConfigManager uses the same resolution logic
+    use secrecy::SecretString;
+    use splunk_config::encryption::MasterKeySource;
+    let source = if let Some(ref pw) = cli.config_password {
+        MasterKeySource::Password(SecretString::new(pw.clone().into()))
+    } else if let Some(ref var) = cli.config_key_var {
+        MasterKeySource::Env(var.clone())
+    } else {
+        MasterKeySource::Keyring
+    };
+
     let config_manager = if let Some(config_path) = &cli.config_path {
         let path_str = config_path.to_string_lossy();
         if !path_str.trim().is_empty() {
-            ConfigManager::new_with_path(config_path.clone())?
+            ConfigManager::new_with_path_and_source(config_path.clone(), source)?
         } else {
-            ConfigManager::new()?
+            ConfigManager::new_with_path_and_source(
+                splunk_config::persistence::default_config_path()?,
+                source,
+            )?
         }
     } else {
-        ConfigManager::new()?
+        ConfigManager::new_with_path_and_source(
+            splunk_config::persistence::default_config_path()?,
+            source,
+        )?
     };
     let mut persisted_state = if cli.fresh {
         tracing::info!("--fresh flag set, starting with default state");

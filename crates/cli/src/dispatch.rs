@@ -51,6 +51,8 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cli.config_path.clone(),
+                cli.config_password.clone(),
+                cli.config_key_var.clone(),
             )?;
         }
         Commands::Search {
