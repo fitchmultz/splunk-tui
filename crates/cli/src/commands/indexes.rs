@@ -114,6 +114,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         IndexesCommand::List {
@@ -129,6 +130,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -155,6 +157,7 @@ pub async fn run(
                 thawed_path,
                 cold_to_frozen_dir,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -181,13 +184,17 @@ pub async fn run(
                 thawed_path,
                 cold_to_frozen_dir,
                 cancel,
+                no_cache,
             )
             .await
         }
-        IndexesCommand::Delete { name, force } => run_delete(config, &name, force, cancel).await,
+        IndexesCommand::Delete { name, force } => {
+            run_delete(config, &name, force, cancel, no_cache).await
+        }
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_list(
     config: splunk_config::Config,
     detailed: bool,
@@ -196,10 +203,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing indexes (count: {}, offset: {})", count, offset);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
     let offset_param = if offset == 0 { None } else { Some(offset) };
@@ -241,10 +249,11 @@ async fn run_create(
     thawed_path: Option<String>,
     cold_to_frozen_dir: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating index: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::CreateIndexParams {
         name: name.to_string(),
@@ -277,10 +286,11 @@ async fn run_modify(
     thawed_path: Option<String>,
     cold_to_frozen_dir: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Modifying index: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::ModifyIndexParams {
         max_data_size_mb,
@@ -304,6 +314,7 @@ async fn run_delete(
     name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(name, "index")? {
         return Ok(());
@@ -311,7 +322,7 @@ async fn run_delete(
 
     info!("Deleting index: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(client.delete_index(name), cancel, |_res| {
         println!("Index '{}' deleted successfully.", name);

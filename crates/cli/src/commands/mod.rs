@@ -57,17 +57,24 @@ use splunk_client::SplunkClient;
 ///
 /// # Arguments
 /// * `config` - The loaded configuration containing connection and auth settings
+/// * `no_cache` - Optional flag to disable client-side response caching
 ///
 /// # Returns
 /// A configured SplunkClient ready for API calls
 ///
 /// # Errors
 /// Returns an error if the client builder fails (e.g., invalid base_url)
-pub fn build_client_from_config(config: &splunk_config::Config) -> Result<SplunkClient> {
-    SplunkClient::builder()
-        .from_config(config)
-        .build()
-        .map_err(|e| e.into())
+pub fn build_client_from_config(
+    config: &splunk_config::Config,
+    no_cache: Option<bool>,
+) -> Result<SplunkClient> {
+    let mut builder = SplunkClient::builder().from_config(config);
+
+    if no_cache == Some(true) {
+        builder = builder.no_cache();
+    }
+
+    builder.build().map_err(|e| e.into())
 }
 
 #[cfg(test)]
@@ -82,7 +89,7 @@ mod tests {
             SecretString::new("test-token".to_string().into()),
         );
 
-        let client = build_client_from_config(&config);
+        let client = build_client_from_config(&config, None);
 
         assert!(client.is_ok());
         let client = client.unwrap();
@@ -98,7 +105,7 @@ mod tests {
             SecretString::new("test-password".to_string().into()),
         );
 
-        let client = build_client_from_config(&config);
+        let client = build_client_from_config(&config, None);
 
         assert!(client.is_ok());
         let client = client.unwrap();

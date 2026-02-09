@@ -40,6 +40,7 @@ use crate::formatters::{
 /// # Returns
 ///
 /// Returns `Ok(())` on success, or an error if the operation fails.
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config: splunk_config::Config,
     detailed: bool,
@@ -48,13 +49,14 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Listing workload pools and rules (count: {}, offset: {})",
         count, offset
     );
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
     let offset_param = if offset == 0 { None } else { Some(offset) };

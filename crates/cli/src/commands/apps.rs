@@ -76,10 +76,19 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         AppsCommand::List { count } => {
-            run_list(config, count, output_format, output_file.clone(), cancel).await
+            run_list(
+                config,
+                count,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         AppsCommand::Info { app_name } => {
             run_info(
@@ -88,11 +97,12 @@ pub async fn run(
                 output_format,
                 output_file.clone(),
                 cancel,
+                no_cache,
             )
             .await
         }
-        AppsCommand::Enable { app_name } => run_enable(config, &app_name, cancel).await,
-        AppsCommand::Disable { app_name } => run_disable(config, &app_name, cancel).await,
+        AppsCommand::Enable { app_name } => run_enable(config, &app_name, cancel, no_cache).await,
+        AppsCommand::Disable { app_name } => run_disable(config, &app_name, cancel, no_cache).await,
         AppsCommand::Install { file_path } => {
             run_install(
                 config,
@@ -100,11 +110,12 @@ pub async fn run(
                 output_format,
                 output_file.clone(),
                 cancel,
+                no_cache,
             )
             .await
         }
         AppsCommand::Remove { app_name, force } => {
-            run_remove(config, &app_name, force, cancel).await
+            run_remove(config, &app_name, force, cancel, no_cache).await
         }
     }
 }
@@ -115,10 +126,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing installed apps (count: {})", count);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let apps = cancellable!(client.list_apps(Some(count), None), cancel)?;
 
@@ -136,10 +148,11 @@ async fn run_info(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Getting app info for: {}", app_name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let app = cancellable!(client.get_app(app_name), cancel)
         .with_context(|| format!("Failed to get app information for '{}'", app_name))?;
@@ -156,10 +169,11 @@ async fn run_enable(
     config: splunk_config::Config,
     app_name: &str,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Enabling app: {}", app_name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable!(client.enable_app(app_name), cancel)
         .with_context(|| format!("Failed to enable app '{}'", app_name))?;
@@ -173,10 +187,11 @@ async fn run_disable(
     config: splunk_config::Config,
     app_name: &str,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Disabling app: {}", app_name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable!(client.disable_app(app_name), cancel)
         .with_context(|| format!("Failed to disable app '{}'", app_name))?;
@@ -192,6 +207,7 @@ async fn run_install(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     // Validate file exists before attempting upload
     if !file_path.exists() {
@@ -203,7 +219,7 @@ async fn run_install(
 
     info!("Installing app from: {}", file_path.display());
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let app = cancellable!(client.install_app(file_path), cancel)
         .with_context(|| format!("Failed to install app from '{}'", file_path.display()))?;
@@ -221,6 +237,7 @@ async fn run_remove(
     app_name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(app_name, "app")? {
         return Ok(());
@@ -228,7 +245,7 @@ async fn run_remove(
 
     info!("Removing app: {}", app_name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable!(client.remove_app(app_name), cancel)
         .with_context(|| format!("Failed to remove app '{}'", app_name))?;

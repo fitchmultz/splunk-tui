@@ -104,6 +104,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         ShcCommand::Show {
@@ -119,16 +120,38 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
         ShcCommand::Members { offset, count } => {
-            run_members(config, offset, count, output_format, output_file, cancel).await
+            run_members(
+                config,
+                offset,
+                count,
+                output_format,
+                output_file,
+                cancel,
+                no_cache,
+            )
+            .await
         }
-        ShcCommand::Captain => run_captain(config, output_format, output_file, cancel).await,
-        ShcCommand::Config => run_config(config, output_format, output_file, cancel).await,
+        ShcCommand::Captain => {
+            run_captain(config, output_format, output_file, cancel, no_cache).await
+        }
+        ShcCommand::Config => {
+            run_config(config, output_format, output_file, cancel, no_cache).await
+        }
         ShcCommand::Manage(manage_cmd) => {
-            run_manage(config, manage_cmd, output_format, output_file, cancel).await
+            run_manage(
+                config,
+                manage_cmd,
+                output_format,
+                output_file,
+                cancel,
+                no_cache,
+            )
+            .await
         }
     }
 }
@@ -193,6 +216,7 @@ async fn render_shc_output(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_show(
     config: splunk_config::Config,
     detailed: bool,
@@ -201,6 +225,7 @@ async fn run_show(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Fetching SHC status (detailed: {}, offset: {}, count: {})",
@@ -212,7 +237,7 @@ async fn run_show(
         anyhow::bail!("The count value must be greater than 0");
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let mut client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let shc_status = tokio::select! {
         res = client.get_shc_status() => res,
@@ -266,6 +291,7 @@ async fn run_members(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Fetching SHC members (offset: {}, count: {})",
@@ -276,7 +302,7 @@ async fn run_members(
         anyhow::bail!("The count value must be greater than 0");
     }
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let members_result = tokio::select! {
         res = client.get_shc_members() => res,
@@ -321,10 +347,11 @@ async fn run_captain(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Fetching SHC captain information");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let captain_result = tokio::select! {
         res = client.get_shc_captain() => res,
@@ -355,10 +382,11 @@ async fn run_config(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Fetching SHC configuration");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let config_result = tokio::select! {
         res = client.get_shc_config() => res,
@@ -390,8 +418,9 @@ async fn run_manage(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     match command {
         ManageCommand::Add { target_uri } => {

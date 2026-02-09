@@ -92,13 +92,14 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         RolesCommand::List { count } => {
-            run_list(config, count, output_format, output_file, cancel).await
+            run_list(config, count, output_format, output_file, cancel, no_cache).await
         }
         RolesCommand::Capabilities => {
-            run_capabilities(config, output_format, output_file, cancel).await
+            run_capabilities(config, output_format, output_file, cancel, no_cache).await
         }
         RolesCommand::Create {
             name,
@@ -117,6 +118,7 @@ pub async fn run(
                 imported_roles,
                 default_app,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -137,10 +139,13 @@ pub async fn run(
                 imported_roles,
                 default_app,
                 cancel,
+                no_cache,
             )
             .await
         }
-        RolesCommand::Delete { name, force } => run_delete(config, &name, force, cancel).await,
+        RolesCommand::Delete { name, force } => {
+            run_delete(config, &name, force, cancel, no_cache).await
+        }
     }
 }
 
@@ -150,10 +155,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing roles");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let roles = cancellable!(client.list_roles(Some(count), None), cancel)?;
 
@@ -171,10 +177,11 @@ async fn run_capabilities(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing capabilities");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let capabilities = cancellable!(client.list_capabilities(), cancel)?;
 
@@ -197,10 +204,11 @@ async fn run_create(
     imported_roles: Vec<String>,
     default_app: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating role: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::CreateRoleParams {
         name: name.to_string(),
@@ -227,10 +235,11 @@ async fn run_update(
     imported_roles: Option<Vec<String>>,
     default_app: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Modifying role: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::ModifyRoleParams {
         capabilities,
@@ -251,6 +260,7 @@ async fn run_delete(
     name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(name, "role")? {
         return Ok(());
@@ -258,7 +268,7 @@ async fn run_delete(
 
     info!("Deleting role: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(client.delete_role(name), cancel, |_res| {
         println!("Role '{}' deleted successfully.", name);

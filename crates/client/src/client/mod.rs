@@ -31,6 +31,7 @@
 //! - The `retry_call!` macro centralizes this retry pattern across all API methods
 
 pub mod builder;
+pub mod cache;
 mod session;
 
 // API method submodules
@@ -135,6 +136,8 @@ pub struct SplunkClient {
     pub(crate) max_retries: usize,
     pub(crate) session_ttl_seconds: u64,
     pub(crate) metrics: Option<MetricsCollector>,
+    /// Response cache for GET requests.
+    pub(crate) cache: cache::ResponseCache,
 }
 
 impl SplunkClient {
@@ -187,6 +190,36 @@ impl SplunkClient {
             client.login().await?;
         }
         Ok(client)
+    }
+
+    /// Get a reference to the response cache.
+    pub fn cache(&self) -> &cache::ResponseCache {
+        &self.cache
+    }
+
+    /// Get a mutable reference to the response cache.
+    pub fn cache_mut(&mut self) -> &mut cache::ResponseCache {
+        &mut self.cache
+    }
+
+    /// Disable response caching for this client.
+    pub fn disable_cache(&mut self) {
+        self.cache.disable();
+    }
+
+    /// Enable response caching for this client.
+    pub fn enable_cache(&mut self) {
+        self.cache.enable();
+    }
+
+    /// Get cache statistics.
+    pub fn cache_stats(&self) -> cache::CacheStats {
+        self.cache.stats()
+    }
+
+    /// Clear all cached responses.
+    pub async fn clear_cache(&self) {
+        self.cache.invalidate_all().await;
     }
 }
 

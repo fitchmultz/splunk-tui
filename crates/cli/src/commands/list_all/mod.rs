@@ -84,6 +84,7 @@ pub async fn run_single_profile(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing all Splunk resources (single-profile mode)");
 
@@ -91,7 +92,7 @@ pub async fn run_single_profile(
     let resources_to_fetch = normalize_and_validate_resources(resources_filter)?;
 
     // Build client and fetch resources
-    let client = build_client_from_config(&config)?;
+    let client = build_client_from_config(&config, Some(no_cache))?;
     let resources = fetchers::fetch_all_resources(&client, resources_to_fetch, cancel).await?;
 
     // Build output structure

@@ -74,6 +74,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         ConfigsCommand::List {
@@ -89,6 +90,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -103,6 +105,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -118,8 +121,9 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // Avoid sending offset=0 unless user explicitly paginates
     let offset_param = if offset == 0 { None } else { Some(offset) };
@@ -185,13 +189,14 @@ async fn run_view(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Viewing config stanza '{}' from '{}'",
         stanza_name, config_file
     );
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let stanza = cancellable!(client.get_config_stanza(&config_file, &stanza_name), cancel)?;
 

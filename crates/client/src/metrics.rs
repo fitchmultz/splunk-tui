@@ -30,6 +30,15 @@ pub const METRIC_RETRIES_TOTAL: &str = "splunk_api_retries_total";
 /// Metric name for error counter.
 pub const METRIC_ERRORS_TOTAL: &str = "splunk_api_errors_total";
 
+/// Metric name for cache hit counter.
+pub const METRIC_CACHE_HITS: &str = "splunk_api_cache_hits_total";
+
+/// Metric name for cache miss counter.
+pub const METRIC_CACHE_MISSES: &str = "splunk_api_cache_misses_total";
+
+/// Metric name for cache size gauge.
+pub const METRIC_CACHE_SIZE: &str = "splunk_api_cache_size";
+
 /// Error categories for metrics labeling.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCategory {
@@ -238,6 +247,30 @@ impl MetricsCollector {
     pub fn record_client_error(&self, endpoint: &str, method: &str, error: &ClientError) {
         let category = ErrorCategory::from(error);
         self.record_error(endpoint, method, category);
+    }
+
+    /// Record a cache hit.
+    pub fn record_cache_hit(&self) {
+        if !self.enabled {
+            return;
+        }
+        metrics::counter!(METRIC_CACHE_HITS).increment(1);
+    }
+
+    /// Record a cache miss.
+    pub fn record_cache_miss(&self) {
+        if !self.enabled {
+            return;
+        }
+        metrics::counter!(METRIC_CACHE_MISSES).increment(1);
+    }
+
+    /// Record current cache size.
+    pub fn record_cache_size(&self, size: u64) {
+        if !self.enabled {
+            return;
+        }
+        metrics::gauge!(METRIC_CACHE_SIZE).set(size as f64);
     }
 }
 

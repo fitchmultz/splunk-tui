@@ -117,6 +117,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Running doctor diagnostics...");
 
@@ -131,7 +132,7 @@ pub async fn run(
     checks.push(auth_check);
 
     // Build client and run connectivity/health checks
-    let client_result = crate::commands::build_client_from_config(&config);
+    let client_result = crate::commands::build_client_from_config(&config, Some(no_cache));
     let client = match client_result {
         Ok(c) => {
             checks.push(DiagnosticCheck {

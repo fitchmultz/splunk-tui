@@ -66,6 +66,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         InputsCommand::List {
@@ -83,6 +84,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -99,10 +101,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing inputs (count: {}, offset: {})", count, offset);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // Avoid sending offset=0 unless user explicitly paginates; both are functionally OK.
     let offset_param = if offset == 0 { None } else { Some(offset) };

@@ -89,10 +89,11 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         UsersCommand::List { count } => {
-            run_list(config, count, output_format, output_file, cancel).await
+            run_list(config, count, output_format, output_file, cancel, no_cache).await
         }
         UsersCommand::Create {
             name,
@@ -111,6 +112,7 @@ pub async fn run(
                 email,
                 default_app,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -131,10 +133,13 @@ pub async fn run(
                 email,
                 default_app,
                 cancel,
+                no_cache,
             )
             .await
         }
-        UsersCommand::Delete { name, force } => run_delete(config, &name, force, cancel).await,
+        UsersCommand::Delete { name, force } => {
+            run_delete(config, &name, force, cancel, no_cache).await
+        }
     }
 }
 
@@ -144,10 +149,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing users");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let users = cancellable!(client.list_users(Some(count), None), cancel)?;
 
@@ -170,6 +176,7 @@ async fn run_create(
     email: Option<String>,
     default_app: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating user: {}", name);
 
@@ -186,7 +193,7 @@ async fn run_create(
         }
     };
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::CreateUserParams {
         name: name.to_string(),
@@ -213,10 +220,11 @@ async fn run_modify(
     email: Option<String>,
     default_app: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Modifying user: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::ModifyUserParams {
         password: password.map(|p| SecretString::new(p.into())),
@@ -237,6 +245,7 @@ async fn run_delete(
     name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(name, "user")? {
         return Ok(());
@@ -244,7 +253,7 @@ async fn run_delete(
 
     info!("Deleting user: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(client.delete_user(name), cancel, |_res| {
         println!("User '{}' deleted successfully.", name);

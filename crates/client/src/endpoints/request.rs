@@ -420,6 +420,120 @@ pub async fn send_request_with_retry(
     Err(err)
 }
 
+/// Extract cacheable headers from a response.
+#[allow(dead_code)]
+fn extract_cacheable_headers(response: &Response) -> Vec<(String, String)> {
+    let cacheable = [
+        "content-type",
+        "etag",
+        "last-modified",
+        "cache-control",
+        "expires",
+    ];
+
+    let mut headers = Vec::new();
+    for name in &cacheable {
+        if let Some(value) = response.headers().get(*name) {
+            if let Ok(v) = value.to_str() {
+                headers.push((name.to_string(), v.to_string()));
+            }
+        }
+    }
+    headers
+}
+
+/// Check cache for a GET request and return cached response if available.
+///
+/// # Returns
+/// - `Ok(Some(bytes))` if cache hit
+/// - `Ok(None)` if cache miss or not cacheable
+/// - `Err(...)` only for unexpected errors (should not happen in normal operation)
+#[allow(dead_code)]
+pub async fn check_cache(
+    cache: &crate::client::cache::ResponseCache,
+    method: &str,
+    url: &str,
+    query_params: &[(String, String)],
+) -> Option<crate::client::cache::CacheEntry> {
+    use crate::client::cache::CachePolicy;
+    use reqwest::Method;
+
+    if method.to_uppercase() != "GET" {
+        return None;
+    }
+
+    let http_method = Method::GET;
+    let policy = cache.should_cache_request(&http_method, url);
+
+    if let CachePolicy::CacheWithTtl(_) = policy {
+        let cache_key = crate::client::cache::CacheKey::new(url.to_string(), query_params.to_vec());
+        return cache.get(&cache_key).await;
+    }
+
+    None
+}
+
+/// Store a successful response in the cache.
+///
+/// # Arguments
+/// * `cache` - The response cache
+/// * `method` - HTTP method
+/// * `url` - Request URL
+/// * `query_params` - Query parameters
+/// * `status` - HTTP status code
+/// * `headers` - Response headers
+/// * `body` - Response body
+#[allow(dead_code)]
+pub async fn store_in_cache(
+    cache: &crate::client::cache::ResponseCache,
+    method: &str,
+    url: &str,
+    query_params: &[(String, String)],
+    status: u16,
+    headers: Vec<(String, String)>,
+    body: Vec<u8>,
+) {
+    use crate::client::cache::{CacheEntry, CacheKey, CachePolicy};
+    use reqwest::Method;
+
+    if method.to_uppercase() != "GET" || status != 200 {
+        return;
+    }
+
+    let http_method = Method::GET;
+    let policy = cache.should_cache_request(&http_method, url);
+
+    if let CachePolicy::CacheWithTtl(ttl) = policy {
+        let cache_key = CacheKey::new(url.to_string(), query_params.to_vec());
+        let entry = CacheEntry::new(body, status, headers, ttl);
+        cache.insert(cache_key, entry).await;
+    }
+}
+
+/// Invalidate cache entries for a mutating request.
+///
+/// Called after POST/PUT/DELETE operations to clear related cache entries.
+#[allow(dead_code)]
+pub async fn invalidate_cache_for_mutation(
+    cache: &crate::client::cache::ResponseCache,
+    method: &str,
+    endpoint: &str,
+) {
+    use reqwest::Method;
+
+    let http_method = match method.to_uppercase().as_str() {
+        "POST" => Method::POST,
+        "PUT" => Method::PUT,
+        "DELETE" => Method::DELETE,
+        "PATCH" => Method::PATCH,
+        _ => return, // Not a mutating method
+    };
+
+    if http_method != Method::GET {
+        cache.invalidate_prefix(endpoint).await;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

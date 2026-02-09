@@ -74,8 +74,9 @@ pub async fn run(
     output_file: Option<std::path::PathBuf>,
     command: Option<JobsCommand>,
     cancel_token: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // Handle new subcommand-based operations first
     if let Some(cmd) = command {

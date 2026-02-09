@@ -118,13 +118,30 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         MacrosCommand::List { count } => {
-            run_list(config, count, output_format, output_file.clone(), cancel).await
+            run_list(
+                config,
+                count,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         MacrosCommand::Info { name } => {
-            run_info(config, &name, output_format, output_file.clone(), cancel).await
+            run_info(
+                config,
+                &name,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         MacrosCommand::Create {
             name,
@@ -147,6 +164,7 @@ pub async fn run(
                 validation,
                 errormsg,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -175,10 +193,13 @@ pub async fn run(
                 validation,
                 errormsg,
                 cancel,
+                no_cache,
             )
             .await
         }
-        MacrosCommand::Delete { name, force } => run_delete(config, &name, force, cancel).await,
+        MacrosCommand::Delete { name, force } => {
+            run_delete(config, &name, force, cancel, no_cache).await
+        }
     }
 }
 
@@ -194,10 +215,11 @@ async fn run_create(
     validation: Option<String>,
     errormsg: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating macro: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = MacroCreateParams {
         name: &name,
@@ -232,6 +254,7 @@ async fn run_update(
     validation: Option<String>,
     errormsg: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Updating macro: {}", name);
 
@@ -278,7 +301,7 @@ async fn run_update(
         ));
     }
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = MacroUpdateParams {
         name: &name,
@@ -305,10 +328,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing macros (count: {})", count);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let macros = cancellable!(client.list_macros(), cancel)?;
 
@@ -326,10 +350,11 @@ async fn run_info(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Getting macro info for: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let macro_info = cancellable!(client.get_macro(name), cancel)?;
 
@@ -346,6 +371,7 @@ async fn run_delete(
     name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Deleting macro: {}", name);
 
@@ -353,7 +379,7 @@ async fn run_delete(
         return Ok(());
     }
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(client.delete_macro(name), cancel, |_res| {
         eprintln!("Macro '{}' deleted successfully", name);

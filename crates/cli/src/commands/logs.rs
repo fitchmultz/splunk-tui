@@ -88,6 +88,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     // Tail mode is incompatible with file output
     if tail && output_file.is_some() {
@@ -96,7 +97,7 @@ pub async fn run(
         );
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let mut client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
     let format = OutputFormat::from_str(output_format)?;
     let formatter = get_formatter(format);
 

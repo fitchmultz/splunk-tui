@@ -174,7 +174,7 @@ async fn main() {
 
     // Wrap config in appropriate context based on command type
     let config_context = if let Some((config, search_defaults)) = config {
-        ConfigCommandContext::Real(config, search_defaults)
+        ConfigCommandContext::Real(config, search_defaults, cli.no_cache)
     } else {
         ConfigCommandContext::Placeholder
     };

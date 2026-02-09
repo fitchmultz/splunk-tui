@@ -81,6 +81,7 @@ pub enum LookupsCommand {
     },
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config: splunk_config::Config,
     command: Option<LookupsCommand>,
@@ -89,6 +90,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel_token: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     // Handle backward compatibility
     let cmd = match command {
@@ -105,6 +107,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel_token,
+                no_cache,
             )
             .await
         }
@@ -113,20 +116,32 @@ pub async fn run(
             output,
             app,
             owner,
-        } => run_download(config, &name, output, app, owner, cancel_token).await,
+        } => run_download(config, &name, output, app, owner, cancel_token, no_cache).await,
         LookupsCommand::Upload {
             file,
             name,
             app,
             owner,
             sharing,
-        } => run_upload(config, &file, name, app, owner, sharing, cancel_token).await,
+        } => {
+            run_upload(
+                config,
+                &file,
+                name,
+                app,
+                owner,
+                sharing,
+                cancel_token,
+                no_cache,
+            )
+            .await
+        }
         LookupsCommand::Delete {
             name,
             app,
             owner,
             force,
-        } => run_delete(config, &name, app, owner, force, cancel_token).await,
+        } => run_delete(config, &name, app, owner, force, cancel_token, no_cache).await,
     }
 }
 
@@ -137,8 +152,9 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel_token: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     info!("Listing lookup tables");
     let lookups = cancellable!(
@@ -164,8 +180,9 @@ async fn run_download(
     app: Option<String>,
     owner: Option<String>,
     cancel_token: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     info!("Downloading lookup table: {}", name);
     let content = cancellable!(
@@ -189,6 +206,7 @@ async fn run_download(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_upload(
     config: splunk_config::Config,
     file: &std::path::PathBuf,
@@ -197,6 +215,7 @@ async fn run_upload(
     owner: Option<String>,
     sharing: Option<String>,
     cancel_token: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     // Read file content
     let content = tokio::fs::read(file)
@@ -220,7 +239,7 @@ async fn run_upload(
         .context("Failed to determine filename from path")?
         .to_string();
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::UploadLookupParams {
         name: lookup_name.clone(),
@@ -246,6 +265,7 @@ async fn run_delete(
     owner: Option<String>,
     force: bool,
     cancel_token: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(name, "lookup")? {
         return Ok(());
@@ -253,7 +273,7 @@ async fn run_delete(
 
     info!("Deleting lookup table: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(
         client.delete_lookup_table(name, app.as_deref(), owner.as_deref()),

@@ -49,6 +49,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         DatamodelsCommand::List {
@@ -64,15 +65,17 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
         DatamodelsCommand::View { name } => {
-            run_view(config, &name, output_format, output_file, cancel).await
+            run_view(config, &name, output_format, output_file, cancel, no_cache).await
         }
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_list(
     config: splunk_config::Config,
     detailed: bool,
@@ -81,10 +84,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing data models (count: {}, offset: {})", count, offset);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
@@ -116,10 +120,11 @@ async fn run_view(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Viewing data model: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let datamodel = cancellable!(client.get_datamodel(name), cancel)?;
 

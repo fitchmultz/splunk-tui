@@ -80,6 +80,13 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub quiet: bool,
 
+    /// Disable client-side response caching.
+    ///
+    /// By default, GET responses are cached to improve performance.
+    /// Use this flag to always fetch fresh data from the server.
+    #[arg(long, global = true)]
+    pub no_cache: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }

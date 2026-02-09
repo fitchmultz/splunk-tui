@@ -62,6 +62,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         AuditCommand::List {
@@ -85,11 +86,12 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
         AuditCommand::Recent { count } => {
-            run_recent(config, count, output_format, output_file, cancel).await
+            run_recent(config, count, output_format, output_file, cancel, no_cache).await
         }
     }
 }
@@ -107,13 +109,14 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Listing audit events (count: {}, offset: {}, earliest: {}, latest: {})",
         count, offset, earliest, latest
     );
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::models::ListAuditEventsParams {
         earliest: Some(earliest),
@@ -153,10 +156,11 @@ async fn run_recent(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Getting recent audit events (count: {})", count);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let events = cancellable!(client.get_recent_audit_events(count), cancel)?;
 

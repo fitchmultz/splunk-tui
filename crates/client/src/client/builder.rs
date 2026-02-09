@@ -20,6 +20,7 @@ use std::time::Duration;
 
 use crate::auth::{AuthStrategy, SessionManager};
 use crate::client::SplunkClient;
+use crate::client::cache;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use splunk_config::{
@@ -59,6 +60,10 @@ pub struct SplunkClientBuilder {
     session_ttl_seconds: u64,
     session_expiry_buffer_seconds: u64,
     metrics: Option<MetricsCollector>,
+    /// Response cache configuration.
+    cache: Option<cache::ResponseCache>,
+    /// Whether to disable caching.
+    disable_cache: bool,
 }
 
 impl Default for SplunkClientBuilder {
@@ -72,6 +77,8 @@ impl Default for SplunkClientBuilder {
             session_ttl_seconds: DEFAULT_SESSION_TTL_SECS,
             session_expiry_buffer_seconds: DEFAULT_EXPIRY_BUFFER_SECS,
             metrics: None,
+            cache: None,
+            disable_cache: false,
         }
     }
 }
@@ -172,6 +179,37 @@ impl SplunkClientBuilder {
         self
     }
 
+    /// Set the response cache.
+    ///
+    /// When set, the client will cache GET request responses according to
+    /// the cache's configuration.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use splunk_client::{SplunkClient, ResponseCache, CacheConfig};
+    ///
+    /// let cache = ResponseCache::new()
+    ///     .with_config(CacheConfig::default());
+    /// let client = SplunkClient::builder()
+    ///     .base_url("https://localhost:8089".to_string())
+    ///     .auth_strategy(auth_strategy)
+    ///     .cache(cache)
+    ///     .build()?;
+    /// ```
+    pub fn cache(mut self, cache: cache::ResponseCache) -> Self {
+        self.cache = Some(cache);
+        self
+    }
+
+    /// Disable response caching.
+    ///
+    /// This overrides any cache set via [`Self::cache`].
+    pub fn no_cache(mut self) -> Self {
+        self.disable_cache = true;
+        self
+    }
+
     /// Create a client builder from configuration.
     ///
     /// This method centralizes the conversion from config crate types to client crate types,
@@ -265,6 +303,13 @@ impl SplunkClientBuilder {
 
         let http = http_builder.build()?;
 
+        // Build or configure cache
+        let cache = if self.disable_cache {
+            cache::ResponseCache::disabled()
+        } else {
+            self.cache.unwrap_or_default()
+        };
+
         Ok(SplunkClient {
             http,
             base_url,
@@ -276,6 +321,7 @@ impl SplunkClientBuilder {
             max_retries: self.max_retries,
             session_ttl_seconds: self.session_ttl_seconds,
             metrics: self.metrics,
+            cache,
         })
     }
 }

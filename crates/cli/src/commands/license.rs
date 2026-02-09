@@ -111,10 +111,15 @@ pub async fn run(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
-        LicenseCommand::Show => run_show(config, output_format, output_file.clone(), cancel).await,
-        LicenseCommand::List => run_list(config, output_format, output_file.clone(), cancel).await,
+        LicenseCommand::Show => {
+            run_show(config, output_format, output_file.clone(), cancel, no_cache).await
+        }
+        LicenseCommand::List => {
+            run_list(config, output_format, output_file.clone(), cancel, no_cache).await
+        }
         LicenseCommand::Install { file_path } => {
             run_install(
                 config,
@@ -122,17 +127,26 @@ pub async fn run(
                 output_format,
                 output_file.clone(),
                 cancel,
+                no_cache,
             )
             .await
         }
         LicenseCommand::Pool(pool_cmd) => {
-            run_pool(config, pool_cmd, output_format, output_file.clone(), cancel).await
+            run_pool(
+                config,
+                pool_cmd,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         LicenseCommand::Activate { license_name } => {
-            run_activate(config, &license_name, cancel).await
+            run_activate(config, &license_name, cancel, no_cache).await
         }
         LicenseCommand::Deactivate { license_name } => {
-            run_deactivate(config, &license_name, cancel).await
+            run_deactivate(config, &license_name, cancel, no_cache).await
         }
     }
 }
@@ -142,10 +156,11 @@ async fn run_show(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Fetching license information...");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let usage = cancellable!(client.get_license_usage(), cancel)?;
     let pools = cancellable!(client.list_license_pools(), cancel)?;
@@ -171,10 +186,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing installed licenses...");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let licenses = cancellable!(client.list_installed_licenses(), cancel)?;
 
@@ -193,6 +209,7 @@ async fn run_install(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     // Validate file exists before attempting upload
     if !file_path.exists() {
@@ -204,7 +221,7 @@ async fn run_install(
 
     info!("Installing license from: {}", file_path.display());
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let result = cancellable!(client.install_license(file_path), cancel)?;
 
@@ -239,9 +256,12 @@ async fn run_pool(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
-        PoolCommands::List => run_pool_list(config, output_format, output_file, cancel).await,
+        PoolCommands::List => {
+            run_pool_list(config, output_format, output_file, cancel, no_cache).await
+        }
         PoolCommands::Create {
             name,
             stack_id,
@@ -257,10 +277,13 @@ async fn run_pool(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
-        PoolCommands::Delete { name, force } => run_pool_delete(config, &name, force, cancel).await,
+        PoolCommands::Delete { name, force } => {
+            run_pool_delete(config, &name, force, cancel, no_cache).await
+        }
         PoolCommands::Modify {
             name,
             quota,
@@ -274,6 +297,7 @@ async fn run_pool(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -285,10 +309,11 @@ async fn run_pool_list(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing license pools...");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let pools = cancellable!(client.list_license_pools(), cancel)?;
 
@@ -311,10 +336,11 @@ async fn run_pool_create(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating license pool: {} (stack: {})", name, stack_id);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::CreatePoolParams {
         name: name.to_string(),
@@ -356,6 +382,7 @@ async fn run_pool_delete(
     name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(name, "license pool")? {
         return Ok(());
@@ -363,7 +390,7 @@ async fn run_pool_delete(
 
     info!("Deleting license pool: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable!(client.delete_license_pool(name), cancel)?;
 
@@ -372,6 +399,7 @@ async fn run_pool_delete(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_pool_modify(
     config: splunk_config::Config,
     name: &str,
@@ -380,10 +408,11 @@ async fn run_pool_modify(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Modifying license pool: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::ModifyPoolParams {
         quota_bytes: quota,
@@ -422,10 +451,11 @@ async fn run_activate(
     config: splunk_config::Config,
     license_name: &str,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Activating license: {}", license_name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let result = cancellable!(client.activate_license(license_name), cancel)?;
 
@@ -445,10 +475,11 @@ async fn run_deactivate(
     config: splunk_config::Config,
     license_name: &str,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Deactivating license: {}", license_name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let result = cancellable!(client.deactivate_license(license_name), cancel)?;
 

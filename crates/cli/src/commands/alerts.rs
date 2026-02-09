@@ -44,13 +44,30 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         AlertsCommand::List { count } => {
-            run_list(config, count, output_format, output_file.clone(), cancel).await
+            run_list(
+                config,
+                count,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         AlertsCommand::Info { name } => {
-            run_info(config, &name, output_format, output_file.clone(), cancel).await
+            run_info(
+                config,
+                &name,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
     }
 }
@@ -61,10 +78,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing fired alerts (count: {})", count);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let alerts = cancellable!(client.list_fired_alerts(Some(count), None), cancel)?;
 
@@ -81,10 +99,11 @@ async fn run_info(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Getting fired alert info for: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let alert = cancellable!(client.get_fired_alert(name), cancel)?;
 

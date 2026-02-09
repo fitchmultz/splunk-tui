@@ -97,6 +97,7 @@ pub async fn run(
     cancel: &crate::cancellation::CancellationToken,
     realtime: bool,
     realtime_window: Option<u64>,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Executing search: {}", query);
 
@@ -112,7 +113,7 @@ pub async fn run(
         Some(SearchMode::Normal)
     };
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     info!("Connecting to {}", client.base_url());
 
@@ -182,6 +183,7 @@ pub async fn run_validate(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     _cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     use anyhow::Context;
 
@@ -202,7 +204,7 @@ pub async fn run_validate(
 
     info!("Validating SPL syntax");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
     let result = client.validate_spl(&spl_query).await?;
 
     // Parse output format

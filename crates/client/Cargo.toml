@@ -40,6 +40,9 @@ time = { workspace = true }
 # Metrics
 metrics = "0.24"
 
+# Caching
+moka = { workspace = true }
+
 # URL Encoding
 percent-encoding = "2.3"
 

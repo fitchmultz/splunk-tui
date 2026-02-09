@@ -117,13 +117,30 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         SavedSearchesCommand::List { count } => {
-            run_list(config, count, output_format, output_file.clone(), cancel).await
+            run_list(
+                config,
+                count,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         SavedSearchesCommand::Info { name } => {
-            run_info(config, &name, output_format, output_file.clone(), cancel).await
+            run_info(
+                config,
+                &name,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
         }
         SavedSearchesCommand::Run {
             name,
@@ -142,6 +159,7 @@ pub async fn run(
                 output_format,
                 output_file.clone(),
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -158,6 +176,7 @@ pub async fn run(
                 description.as_deref(),
                 disabled,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -174,17 +193,18 @@ pub async fn run(
                 description.as_deref(),
                 disabled,
                 cancel,
+                no_cache,
             )
             .await
         }
         SavedSearchesCommand::Delete { name, force } => {
-            run_delete(config, &name, force, cancel).await
+            run_delete(config, &name, force, cancel, no_cache).await
         }
         SavedSearchesCommand::Enable { name } => {
-            run_enable_disable(config, &name, false, cancel).await
+            run_enable_disable(config, &name, false, cancel, no_cache).await
         }
         SavedSearchesCommand::Disable { name } => {
-            run_enable_disable(config, &name, true, cancel).await
+            run_enable_disable(config, &name, true, cancel, no_cache).await
         }
     }
 }
@@ -195,10 +215,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing saved searches (count: {})", count);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let searches = cancellable!(client.list_saved_searches(Some(count), None), cancel)?;
 
@@ -216,10 +237,11 @@ async fn run_info(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Getting saved search info for: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let search = cancellable!(client.get_saved_search(name), cancel)?;
 
@@ -242,10 +264,11 @@ async fn run_run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Running saved search: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let search = cancellable!(client.get_saved_search(name), cancel)?;
 
@@ -270,6 +293,7 @@ async fn run_edit(
     description: Option<&str>,
     disabled: Option<bool>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Editing saved search: {}", name);
 
@@ -280,7 +304,7 @@ async fn run_edit(
         ));
     }
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(
         client.update_saved_search(name, search, description, disabled),
@@ -301,10 +325,11 @@ async fn run_create(
     description: Option<&str>,
     disabled: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating saved search: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // First create the saved search
     cancellable!(client.create_saved_search(name, search), cancel)
@@ -333,6 +358,7 @@ async fn run_delete(
     name: &str,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Deleting saved search: {}", name);
 
@@ -340,7 +366,7 @@ async fn run_delete(
         return Ok(());
     }
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable!(client.delete_saved_search(name), cancel)
         .with_context(|| format!("Failed to delete saved search '{}'", name))?;
@@ -355,11 +381,12 @@ async fn run_enable_disable(
     name: &str,
     disabled: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     let action = if disabled { "Disabling" } else { "Enabling" };
     info!("{} saved search: {}", action, name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let status = if disabled { "disabled" } else { "enabled" };
 

@@ -29,6 +29,7 @@ pub mod endpoints;
 pub use auth::{AuthStrategy, SessionManager};
 pub use client::SplunkClient;
 pub use client::builder::SplunkClientBuilder;
+pub use client::cache::{CacheConfig, CachePolicy, CacheStats, ResponseCache};
 pub use client::health::AggregatedHealth;
 pub use client::macros::{MacroCreateParams, MacroUpdateParams};
 pub use error::{ClientError, Result};

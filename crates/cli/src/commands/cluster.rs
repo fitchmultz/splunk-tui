@@ -105,6 +105,7 @@ pub async fn run(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
         ClusterCommand::Show {
@@ -120,20 +121,46 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
         ClusterCommand::Peers { offset, count } => {
-            run_peers(config, offset, count, output_format, output_file, cancel).await
+            run_peers(
+                config,
+                offset,
+                count,
+                output_format,
+                output_file,
+                cancel,
+                no_cache,
+            )
+            .await
         }
         ClusterCommand::Maintenance(maintenance_cmd) => {
-            run_maintenance(config, maintenance_cmd, output_format, output_file, cancel).await
+            run_maintenance(
+                config,
+                maintenance_cmd,
+                output_format,
+                output_file,
+                cancel,
+                no_cache,
+            )
+            .await
         }
         ClusterCommand::Rebalance => {
-            run_rebalance(config, output_format, output_file, cancel).await
+            run_rebalance(config, output_format, output_file, cancel, no_cache).await
         }
         ClusterCommand::PeersManage(peers_cmd) => {
-            run_peers_manage(config, peers_cmd, output_format, output_file, cancel).await
+            run_peers_manage(
+                config,
+                peers_cmd,
+                output_format,
+                output_file,
+                cancel,
+                no_cache,
+            )
+            .await
         }
     }
 }
@@ -197,6 +224,7 @@ async fn render_cluster_output(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_show(
     config: splunk_config::Config,
     detailed: bool,
@@ -205,6 +233,7 @@ async fn run_show(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Fetching cluster information (detailed: {}, offset: {}, count: {})",
@@ -216,7 +245,7 @@ async fn run_show(
         anyhow::bail!("The count value must be greater than 0");
     }
 
-    let mut client = crate::commands::build_client_from_config(&config)?;
+    let mut client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let cluster_info = tokio::select! {
         res = client.get_cluster_info() => res,
@@ -271,6 +300,7 @@ async fn run_peers(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!(
         "Fetching cluster peers (offset: {}, count: {})",
@@ -281,7 +311,7 @@ async fn run_peers(
         anyhow::bail!("The count value must be greater than 0");
     }
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let peers_result = tokio::select! {
         res = client.get_cluster_peers() => res,
@@ -326,8 +356,9 @@ async fn run_maintenance(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     match command {
         MaintenanceCommand::Enable => {
@@ -372,10 +403,11 @@ async fn run_rebalance(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Rebalancing cluster primaries");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let result = cancellable!(client.rebalance_cluster(), cancel)?;
 
@@ -390,8 +422,9 @@ async fn run_peers_manage(
     output_format: &str,
     output_file: Option<PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     match command {
         PeersCommand::Decommission { peer } => {

@@ -64,7 +64,7 @@ pub(crate) async fn run_command(
             realtime_window,
         } => {
             trace!("Routing to search command");
-            let (config, search_defaults) = config.into_real_config_with_search_defaults()?;
+            let (config, search_defaults, no_cache) = config.into_real_config_with_cache()?;
 
             // Handle subcommand or backward-compatible direct query
             match command {
@@ -91,6 +91,7 @@ pub(crate) async fn run_command(
                         cancel_token,
                         realtime,
                         realtime_window,
+                        no_cache,
                     )
                     .await?;
                 }
@@ -105,6 +106,7 @@ pub(crate) async fn run_command(
                         output_format,
                         cli.output_file.clone(),
                         cancel_token,
+                        no_cache,
                     )
                     .await?;
                 }
@@ -125,6 +127,7 @@ pub(crate) async fn run_command(
                             cancel_token,
                             realtime,
                             realtime_window,
+                            no_cache,
                         )
                         .await?;
                     } else {
@@ -137,13 +140,14 @@ pub(crate) async fn run_command(
         }
         Commands::Indexes { command } => {
             trace!("Routing to indexes command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::indexes::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -153,7 +157,7 @@ pub(crate) async fn run_command(
             offset,
         } => {
             trace!("Routing to forwarders command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::forwarders::run(
                 config,
                 detailed,
@@ -162,6 +166,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -171,7 +176,7 @@ pub(crate) async fn run_command(
             offset,
         } => {
             trace!("Routing to search-peers command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::search_peers::run(
                 config,
                 detailed,
@@ -180,6 +185,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -190,7 +196,7 @@ pub(crate) async fn run_command(
             count,
         } => {
             trace!("Routing to cluster command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             // Handle backward compatibility: if no subcommand but old flags are used, use Show
             let cmd = match command {
                 Some(cmd) => cmd,
@@ -206,6 +212,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -221,7 +228,7 @@ pub(crate) async fn run_command(
             count,
         } => {
             trace!("Routing to jobs command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::jobs::run(
                 config,
                 list,
@@ -237,21 +244,28 @@ pub(crate) async fn run_command(
                 cli.output_file.clone(),
                 command,
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Health => {
             trace!("Routing to health command");
-            let config = config.into_real_config()?;
-            commands::health::run(config, &cli.output, cli.output_file.clone(), cancel_token)
-                .await?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
+            commands::health::run(
+                config,
+                &cli.output,
+                cli.output_file.clone(),
+                cancel_token,
+                no_cache,
+            )
+            .await?;
         }
         Commands::Doctor {
             bundle,
             include_logs,
         } => {
             trace!("Routing to doctor command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::doctor::run(
                 config,
                 bundle,
@@ -259,24 +273,26 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Kvstore { command } => {
             trace!("Routing to kvstore command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::kvstore::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::License { command } => {
             trace!("Routing to license command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             // Default to "show" if no subcommand is provided
             let cmd = command.unwrap_or(commands::license::LicenseCommand::Show);
             commands::license::run(
@@ -285,6 +301,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -294,7 +311,7 @@ pub(crate) async fn run_command(
             tail,
         } => {
             trace!("Routing to logs command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::logs::run(
                 config,
                 count,
@@ -303,42 +320,46 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Users { command } => {
             trace!("Routing to users command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::users::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Roles { command } => {
             trace!("Routing to roles command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::roles::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Apps { apps_command } => {
             trace!("Routing to apps command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::apps::run(
                 config,
                 apps_command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -372,7 +393,7 @@ pub(crate) async fn run_command(
                 .await?;
             } else {
                 // Single-profile mode: extract real config and route to run_single_profile
-                let config = config.into_real_config()?;
+                let (config, _, no_cache) = config.into_real_config_with_cache()?;
 
                 commands::list_all::run_single_profile(
                     config,
@@ -380,103 +401,112 @@ pub(crate) async fn run_command(
                     &cli.output,
                     cli.output_file.clone(),
                     cancel_token,
+                    no_cache,
                 )
                 .await?;
             }
         }
         Commands::SavedSearches { command } => {
             trace!("Routing to saved-searches command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::saved_searches::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Macros { command } => {
             trace!("Routing to macros command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::macros::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Inputs { command } => {
             trace!("Routing to inputs command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::inputs::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Configs { command } => {
             trace!("Routing to configs command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::configs::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Alerts { command } => {
             trace!("Routing to alerts command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::alerts::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Audit { command } => {
             trace!("Routing to audit command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::audit::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Dashboards { command } => {
             trace!("Routing to dashboards command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::dashboards::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
         Commands::Datamodels { command } => {
             trace!("Routing to datamodels command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::datamodels::run(
                 config,
                 command,
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -486,7 +516,7 @@ pub(crate) async fn run_command(
             offset,
         } => {
             trace!("Routing to lookups command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::lookups::run(
                 config,
                 command,
@@ -495,6 +525,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -504,7 +535,7 @@ pub(crate) async fn run_command(
             offset,
         } => {
             trace!("Routing to workload command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             commands::workload::run(
                 config,
                 detailed,
@@ -513,6 +544,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }
@@ -528,7 +560,7 @@ pub(crate) async fn run_command(
             count,
         } => {
             trace!("Routing to SHC command");
-            let config = config.into_real_config()?;
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
             // Handle backward compatibility: if no subcommand but old flags are used, use Show
             let cmd = match command {
                 Some(cmd) => cmd,
@@ -544,6 +576,7 @@ pub(crate) async fn run_command(
                 &cli.output,
                 cli.output_file.clone(),
                 cancel_token,
+                no_cache,
             )
             .await?;
         }

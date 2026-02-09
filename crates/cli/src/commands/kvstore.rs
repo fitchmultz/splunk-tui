@@ -104,9 +104,12 @@ pub async fn run(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     match command {
-        KvstoreCommand::Status => run_status(config, output_format, output_file, cancel).await,
+        KvstoreCommand::Status => {
+            run_status(config, output_format, output_file, cancel, no_cache).await
+        }
         KvstoreCommand::List {
             app,
             owner,
@@ -122,6 +125,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -131,13 +135,25 @@ pub async fn run(
             owner,
             fields,
             accelerated_fields,
-        } => run_create(config, name, app, owner, fields, accelerated_fields, cancel).await,
+        } => {
+            run_create(
+                config,
+                name,
+                app,
+                owner,
+                fields,
+                accelerated_fields,
+                cancel,
+                no_cache,
+            )
+            .await
+        }
         KvstoreCommand::Delete {
             name,
             app,
             owner,
             force,
-        } => run_delete(config, name, app, owner, force, cancel).await,
+        } => run_delete(config, name, app, owner, force, cancel, no_cache).await,
         KvstoreCommand::Data {
             name,
             app,
@@ -157,6 +173,7 @@ pub async fn run(
                 output_format,
                 output_file,
                 cancel,
+                no_cache,
             )
             .await
         }
@@ -168,10 +185,11 @@ async fn run_status(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Fetching KVStore status...");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     info!("Connecting to {}", client.base_url());
 
@@ -198,10 +216,11 @@ async fn run_list(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Listing KVStore collections...");
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
@@ -233,6 +252,7 @@ async fn run_list(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_create(
     config: splunk_config::Config,
     name: String,
@@ -241,10 +261,11 @@ async fn run_create(
     fields: Option<String>,
     accelerated_fields: Option<String>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Creating KVStore collection: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = splunk_client::models::CreateCollectionParams {
         name: name.clone(),
@@ -270,6 +291,7 @@ async fn run_delete(
     owner: String,
     force: bool,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     if !force && !crate::interactive::confirm_delete(&name, "collection")? {
         return Ok(());
@@ -277,7 +299,7 @@ async fn run_delete(
 
     info!("Deleting KVStore collection: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     cancellable_with!(
         client.delete_collection(&name, &app, &owner),
@@ -301,10 +323,11 @@ async fn run_data(
     output_format: &str,
     output_file: Option<std::path::PathBuf>,
     cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
 ) -> Result<()> {
     info!("Querying KVStore collection data: {}", name);
 
-    let client = crate::commands::build_client_from_config(&config)?;
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let offset_param = if offset == 0 { None } else { Some(offset) };
 
