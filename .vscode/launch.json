@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug splunk-cli",
+            "cargo": {
+                "args": ["build", "--bin", "splunk-cli", "--package", "splunk-cli"],
+                "filter": { "name": "splunk-cli", "kind": "bin" }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug splunk-tui",
+            "cargo": {
+                "args": ["build", "--bin", "splunk-tui", "--package", "splunk-tui"],
+                "filter": { "name": "splunk-tui", "kind": "bin" }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug generate-tui-docs",
+            "cargo": {
+                "args": ["build", "--bin", "generate-tui-docs", "--package", "splunk-tui"],
+                "filter": { "name": "generate-tui-docs", "kind": "bin" }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

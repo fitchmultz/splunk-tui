@@ -1,0 +1,15 @@
+{
+  "clear": true,
+  "ignore": [
+    "target/",
+    ".git/",
+    ".ralph/"
+  ],
+  "watch": [
+    "src/",
+    "crates/",
+    "Cargo.toml",
+    "Makefile"
+  ],
+  "delay": "2s"
+}

@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        { "label": "make install", "type": "shell", "command": "make install", "group": "build" },
+        { "label": "make test", "type": "shell", "command": "make test", "group": "test" },
+        { "label": "make ci", "type": "shell", "command": "make ci", "group": "build" },
+        { "label": "make format", "type": "shell", "command": "make format" },
+        { "label": "make lint", "type": "shell", "command": "make lint" },
+        { "label": "make type-check", "type": "shell", "command": "make type-check" }
+    ]
+}

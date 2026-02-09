@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug generate-tui-docs" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run --package splunk-tui --bin generate-tui-docs" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+    <option name="emulateTerminal" value="true" />
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>
