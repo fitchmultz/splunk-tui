@@ -104,7 +104,7 @@ fn test_ndjson_output_format_parsing() {
 
 #[test]
 fn test_ndjson_invalid_format_error_message() {
-    let result = OutputFormat::from_str("yaml");
+    let result = OutputFormat::from_str("invalid");
     assert!(result.is_err());
     let error = result.unwrap_err().to_string();
     // Error message should include ndjson as a valid option
@@ -113,6 +113,8 @@ fn test_ndjson_invalid_format_error_message() {
     assert!(error.contains("table"));
     assert!(error.contains("csv"));
     assert!(error.contains("xml"));
+    assert!(error.contains("yaml"));
+    assert!(error.contains("markdown"));
 }
 
 #[test]

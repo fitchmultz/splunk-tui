@@ -2,7 +2,7 @@
 //!
 //! Tests cover:
 //! - Help text verification for all subcommands (list, run, info, edit, create, delete, enable, disable)
-//! - Output format parsing validation (json, table, csv, xml)
+//! - Output format parsing validation (json, table, csv, xml, ndjson, yaml, markdown)
 //!
 //! Does NOT:
 //! - Test live Splunk server interactions (see `test-live` in Makefile).

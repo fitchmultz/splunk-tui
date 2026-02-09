@@ -323,7 +323,17 @@ mod tests {
         assert_eq!(app.export_format, ExportFormat::Ndjson);
         assert_eq!(app.export_input.value(), "test.ndjson");
 
-        // Toggle format with Tab: Ndjson -> Json
+        // Toggle format with Tab: Ndjson -> Yaml
+        app.handle_popup_input(key(KeyCode::Tab));
+        assert_eq!(app.export_format, ExportFormat::Yaml);
+        assert_eq!(app.export_input.value(), "test.yaml");
+
+        // Toggle format with Tab: Yaml -> Markdown
+        app.handle_popup_input(key(KeyCode::Tab));
+        assert_eq!(app.export_format, ExportFormat::Markdown);
+        assert_eq!(app.export_input.value(), "test.md");
+
+        // Toggle format with Tab: Markdown -> Json
         app.handle_popup_input(key(KeyCode::Tab));
         assert_eq!(app.export_format, ExportFormat::Json);
         assert_eq!(app.export_input.value(), "test.json");

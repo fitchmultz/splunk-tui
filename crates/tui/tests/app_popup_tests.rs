@@ -244,6 +244,16 @@ fn test_export_search_popup_flow() {
     assert_eq!(app.export_format, ExportFormat::Ndjson);
     assert_eq!(app.export_input.value(), "results.ndjson");
 
+    // Toggle to Yaml
+    app.handle_input(tab_key());
+    assert_eq!(app.export_format, ExportFormat::Yaml);
+    assert_eq!(app.export_input.value(), "results.yaml");
+
+    // Toggle to Markdown
+    app.handle_input(tab_key());
+    assert_eq!(app.export_format, ExportFormat::Markdown);
+    assert_eq!(app.export_input.value(), "results.md");
+
     // Toggle back to Json
     app.handle_input(tab_key());
     assert_eq!(app.export_format, ExportFormat::Json);

@@ -56,7 +56,9 @@ impl App {
                 self.export_format = match self.export_format {
                     ExportFormat::Json => ExportFormat::Csv,
                     ExportFormat::Csv => ExportFormat::Ndjson,
-                    ExportFormat::Ndjson => ExportFormat::Json,
+                    ExportFormat::Ndjson => ExportFormat::Yaml,
+                    ExportFormat::Yaml => ExportFormat::Markdown,
+                    ExportFormat::Markdown => ExportFormat::Json,
                 };
                 // Automatically update extension if it matches the previous format
                 let current_value = self.export_input.value().to_string();
@@ -66,6 +68,10 @@ impl App {
                             current_value[..current_value.len() - 4].to_string() + ".json"
                         } else if current_value.ends_with(".ndjson") {
                             current_value[..current_value.len() - 7].to_string() + ".json"
+                        } else if current_value.ends_with(".yaml") {
+                            current_value[..current_value.len() - 5].to_string() + ".json"
+                        } else if current_value.ends_with(".md") {
+                            current_value[..current_value.len() - 3].to_string() + ".json"
                         } else {
                             current_value
                         }
@@ -75,6 +81,10 @@ impl App {
                             current_value[..current_value.len() - 5].to_string() + ".csv"
                         } else if current_value.ends_with(".ndjson") {
                             current_value[..current_value.len() - 7].to_string() + ".csv"
+                        } else if current_value.ends_with(".yaml") {
+                            current_value[..current_value.len() - 5].to_string() + ".csv"
+                        } else if current_value.ends_with(".md") {
+                            current_value[..current_value.len() - 3].to_string() + ".csv"
                         } else {
                             current_value
                         }
@@ -84,6 +94,36 @@ impl App {
                             current_value[..current_value.len() - 5].to_string() + ".ndjson"
                         } else if current_value.ends_with(".csv") {
                             current_value[..current_value.len() - 4].to_string() + ".ndjson"
+                        } else if current_value.ends_with(".yaml") {
+                            current_value[..current_value.len() - 5].to_string() + ".ndjson"
+                        } else if current_value.ends_with(".md") {
+                            current_value[..current_value.len() - 3].to_string() + ".ndjson"
+                        } else {
+                            current_value
+                        }
+                    }
+                    ExportFormat::Yaml => {
+                        if current_value.ends_with(".json") {
+                            current_value[..current_value.len() - 5].to_string() + ".yaml"
+                        } else if current_value.ends_with(".csv") {
+                            current_value[..current_value.len() - 4].to_string() + ".yaml"
+                        } else if current_value.ends_with(".ndjson") {
+                            current_value[..current_value.len() - 7].to_string() + ".yaml"
+                        } else if current_value.ends_with(".md") {
+                            current_value[..current_value.len() - 3].to_string() + ".yaml"
+                        } else {
+                            current_value
+                        }
+                    }
+                    ExportFormat::Markdown => {
+                        if current_value.ends_with(".json") {
+                            current_value[..current_value.len() - 5].to_string() + ".md"
+                        } else if current_value.ends_with(".csv") {
+                            current_value[..current_value.len() - 4].to_string() + ".md"
+                        } else if current_value.ends_with(".ndjson") {
+                            current_value[..current_value.len() - 7].to_string() + ".md"
+                        } else if current_value.ends_with(".yaml") {
+                            current_value[..current_value.len() - 5].to_string() + ".md"
                         } else {
                             current_value
                         }

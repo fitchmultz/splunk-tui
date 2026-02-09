@@ -68,19 +68,23 @@ mod common;
 mod csv;
 mod json;
 mod macros;
+mod markdown;
 mod ndjson;
 mod resource_impls;
 mod table;
 mod xml;
+mod yaml;
 
 // Macros are exported at crate root via #[macro_export]
 
 pub use common::{escape_xml, output_result, write_to_file};
 pub use csv::CsvFormatter;
 pub use json::JsonFormatter;
+pub use markdown::MarkdownFormatter;
 pub use ndjson::NdjsonFormatter;
 pub use table::{Pagination, TableFormatter};
 pub use xml::XmlFormatter;
+pub use yaml::YamlFormatter;
 
 /// Supported output formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,6 +94,8 @@ pub enum OutputFormat {
     Csv,
     Xml,
     Ndjson,
+    Yaml,
+    Markdown,
 }
 
 impl OutputFormat {
@@ -101,8 +107,10 @@ impl OutputFormat {
             "csv" => Ok(OutputFormat::Csv),
             "xml" => Ok(OutputFormat::Xml),
             "ndjson" | "jsonl" => Ok(OutputFormat::Ndjson),
+            "yaml" | "yml" => Ok(OutputFormat::Yaml),
+            "markdown" | "md" => Ok(OutputFormat::Markdown),
             _ => anyhow::bail!(
-                "Invalid output format: {}. Valid options: json, table, csv, xml, ndjson",
+                "Invalid output format: {}. Valid options: json, table, csv, xml, ndjson, yaml, markdown",
                 s
             ),
         }
@@ -602,6 +610,8 @@ pub fn get_formatter(format: OutputFormat) -> Box<dyn Formatter> {
         OutputFormat::Csv => Box::new(CsvFormatter),
         OutputFormat::Xml => Box::new(XmlFormatter),
         OutputFormat::Ndjson => Box::new(NdjsonFormatter),
+        OutputFormat::Yaml => Box::new(YamlFormatter),
+        OutputFormat::Markdown => Box::new(MarkdownFormatter),
     }
 }
 

@@ -99,6 +99,8 @@ impl ExportTarget {
             ExportFormat::Json => "json",
             ExportFormat::Csv => "csv",
             ExportFormat::Ndjson => "ndjson",
+            ExportFormat::Yaml => "yaml",
+            ExportFormat::Markdown => "md",
         };
 
         format!("{base}.{ext}")
@@ -304,6 +306,8 @@ impl App {
                 ExportFormat::Json => "JSON",
                 ExportFormat::Csv => "CSV",
                 ExportFormat::Ndjson => "NDJSON",
+                ExportFormat::Yaml => "YAML",
+                ExportFormat::Markdown => "Markdown",
             };
 
             let popup = Popup::builder(PopupType::ExportSearch)

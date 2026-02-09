@@ -38,6 +38,8 @@ pub async fn export_data<T: Serialize + ?Sized>(
                 .context("Failed to serialize data to JSON for NDJSON export")?;
             export_value(&v, path, ExportFormat::Ndjson).await
         }
+        ExportFormat::Yaml => export_yaml_serialize(data, path).await,
+        ExportFormat::Markdown => export_markdown_serialize(data, path).await,
     }
 }
 
@@ -63,6 +65,8 @@ pub async fn export_value(value: &Value, path: &Path, format: ExportFormat) -> a
                 export_ndjson_values(&rows, path).await
             }
         },
+        ExportFormat::Yaml => export_yaml_value(value, path).await,
+        ExportFormat::Markdown => export_markdown_value(value, path).await,
     }
 }
 
@@ -212,6 +216,151 @@ fn value_to_csv_cell(v: &Value) -> String {
         Value::Null => String::new(),
         _ => v.to_string(),
     }
+}
+
+async fn export_yaml_value(value: &Value, path: &Path) -> anyhow::Result<()> {
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create YAML export file: {}", path.display()))?;
+
+    let yaml_str = serde_yaml::to_string(value).context("Failed to serialize YAML for export")?;
+
+    file.write_all(yaml_str.as_bytes())
+        .await
+        .with_context(|| format!("Failed to write YAML export to: {}", path.display()))?;
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush YAML export to: {}", path.display()))?;
+
+    Ok(())
+}
+
+async fn export_yaml_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> anyhow::Result<()> {
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create YAML export file: {}", path.display()))?;
+
+    let yaml_str =
+        serde_yaml::to_string(data).context("Failed to serialize data to YAML for export")?;
+
+    file.write_all(yaml_str.as_bytes())
+        .await
+        .with_context(|| format!("Failed to write YAML export to: {}", path.display()))?;
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush YAML export to: {}", path.display()))?;
+
+    Ok(())
+}
+
+async fn export_markdown_value(value: &Value, path: &Path) -> anyhow::Result<()> {
+    let mut file = File::create(path)
+        .await
+        .with_context(|| format!("Failed to create Markdown export file: {}", path.display()))?;
+
+    let markdown = value_to_markdown(value);
+
+    file.write_all(markdown.as_bytes())
+        .await
+        .with_context(|| format!("Failed to write Markdown export to: {}", path.display()))?;
+
+    file.flush()
+        .await
+        .with_context(|| format!("Failed to flush Markdown export to: {}", path.display()))?;
+
+    Ok(())
+}
+
+async fn export_markdown_serialize<T: Serialize + ?Sized>(
+    data: &T,
+    path: &Path,
+) -> anyhow::Result<()> {
+    let v = serde_json::to_value(data)
+        .context("Failed to serialize data to JSON for Markdown export")?;
+    export_markdown_value(&v, path).await
+}
+
+/// Convert a JSON value to Markdown format
+fn value_to_markdown(value: &Value) -> String {
+    match value {
+        Value::Array(arr) => array_to_markdown_table(arr),
+        Value::Object(obj) => object_to_markdown(obj),
+        _ => format!("```\n{}\n```\n", value),
+    }
+}
+
+/// Convert an array of objects to a markdown table
+fn array_to_markdown_table(arr: &[Value]) -> String {
+    if arr.is_empty() {
+        return "_No data available._\n".to_string();
+    }
+
+    // Collect all unique keys
+    let mut all_keys: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for item in arr {
+        if let Some(obj) = item.as_object() {
+            all_keys.extend(obj.keys().cloned());
+        }
+    }
+
+    if all_keys.is_empty() {
+        return "_No data available._\n".to_string();
+    }
+
+    let headers: Vec<&str> = all_keys.iter().map(|s| s.as_str()).collect();
+    let mut output = String::new();
+
+    // Header row
+    output.push('|');
+    for header in &headers {
+        output.push(' ');
+        output.push_str(header);
+        output.push(' ');
+        output.push('|');
+    }
+    output.push('\n');
+
+    // Separator row
+    output.push('|');
+    for _ in &headers {
+        output.push(' ');
+        output.push_str("---");
+        output.push(' ');
+        output.push('|');
+    }
+    output.push('\n');
+
+    // Data rows
+    for item in arr {
+        if let Some(obj) = item.as_object() {
+            output.push('|');
+            for key in &all_keys {
+                output.push(' ');
+                let value = obj
+                    .get(key)
+                    .map(|v| v.to_string().trim_matches('"').replace('|', "\\|"))
+                    .unwrap_or_else(|| "_".to_string());
+                output.push_str(&value);
+                output.push(' ');
+                output.push('|');
+            }
+            output.push('\n');
+        }
+    }
+
+    output
+}
+
+/// Convert a single object to markdown key-value list
+fn object_to_markdown(obj: &serde_json::Map<String, Value>) -> String {
+    let mut output = String::new();
+    for (key, value) in obj {
+        output.push_str(&format!("- **{}**: {}\n", key, value));
+    }
+    output.push('\n');
+    output
 }
 
 #[cfg(test)]

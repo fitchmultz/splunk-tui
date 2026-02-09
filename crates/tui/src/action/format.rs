@@ -9,6 +9,8 @@
 //! - `Json`: JSON format with proper serialization
 //! - `Csv`: CSV format for spreadsheet applications
 //! - `Ndjson`: NDJSON format for streaming workflows
+//! - `Yaml`: YAML format for human-readable configuration exports
+//! - `Markdown`: Markdown format for documentation and reports
 //!
 //! # What This Module Does NOT Handle
 //!
@@ -25,4 +27,8 @@ pub enum ExportFormat {
     Csv,
     /// NDJSON format (newline-delimited JSON)
     Ndjson,
+    /// YAML format
+    Yaml,
+    /// Markdown format
+    Markdown,
 }

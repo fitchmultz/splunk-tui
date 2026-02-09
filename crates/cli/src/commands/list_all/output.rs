@@ -148,6 +148,8 @@ pub fn format_multi_profile_output(
         OutputFormat::Csv => format_multi_profile_csv(output),
         OutputFormat::Xml => format_multi_profile_xml(output),
         OutputFormat::Ndjson => format_multi_profile_ndjson(output),
+        OutputFormat::Yaml => Ok(serde_yaml::to_string(output)?),
+        OutputFormat::Markdown => format_multi_profile_markdown(output),
     }
 }
 
@@ -339,6 +341,42 @@ fn format_multi_profile_ndjson(output: &ListAllMultiOutput) -> Result<String> {
     }
 
     Ok(ndjson)
+}
+
+/// Format multi-profile output as Markdown.
+fn format_multi_profile_markdown(output: &ListAllMultiOutput) -> Result<String> {
+    let mut md = String::new();
+    md.push_str("# Multi-Profile Resource Summary\n\n");
+    md.push_str(&format!("**Timestamp**: {}\n\n", output.timestamp));
+
+    if output.profiles.is_empty() {
+        md.push_str("_No profiles found._\n");
+        return Ok(md);
+    }
+
+    for profile in &output.profiles {
+        md.push_str(&format!("## Profile: {}\n\n", profile.profile_name));
+        md.push_str(&format!("- **Base URL**: {}\n", profile.base_url));
+
+        if let Some(ref error) = profile.error {
+            md.push_str(&format!("- **Error**: {}\n", error));
+        } else if profile.resources.is_empty() {
+            md.push_str("- **Status**: No resources found\n");
+        } else {
+            md.push_str("\n### Resources\n\n");
+            md.push_str("| Type | Count | Status |\n");
+            md.push_str("|------|-------|--------|\n");
+            for resource in &profile.resources {
+                md.push_str(&format!(
+                    "| {} | {} | {} |\n",
+                    resource.resource_type, resource.count, resource.status
+                ));
+            }
+        }
+        md.push('\n');
+    }
+
+    Ok(md)
 }
 
 /// Escape a string for CSV output.

@@ -164,7 +164,7 @@ pub async fn run(
 /// * `config` - Splunk configuration
 /// * `query` - Optional SPL query string (from positional arg)
 /// * `file` - Optional path to file containing SPL
-/// * `output_format` - Output format string (json, table, csv, xml, ndjson)
+/// * `output_format` - Output format string (json, table, csv, xml, ndjson, yaml, markdown)
 /// * `output_file` - Optional file path to write results to
 /// * `_cancel` - Cancellation token (unused for validation)
 ///

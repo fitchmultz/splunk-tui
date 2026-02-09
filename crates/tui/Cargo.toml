@@ -37,6 +37,7 @@ crossterm = { workspace = true, features = ["event-stream"] }
 # Serialization
 serde_json = { workspace = true }
 serde = { workspace = true }
+serde_yaml = { workspace = true }
 csv = { workspace = true }
 
 # Error Handling

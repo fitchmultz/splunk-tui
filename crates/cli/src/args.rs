@@ -60,7 +60,7 @@ pub struct Cli {
     #[arg(long, global = true, env = "SPLUNK_PROFILE")]
     pub profile: Option<String>,
 
-    /// Output format (json, table, csv, xml, ndjson)
+    /// Output format (json, table, csv, xml, ndjson, yaml, markdown)
     #[arg(short, long, global = true, default_value = "table")]
     pub output: String,
 

@@ -3,7 +3,7 @@
 //! Tests cover:
 //! - Default behavior (list users)
 //! - `--count` flag
-//! - Output format variations (json, table, csv, xml)
+//! - Output format variations (json, table, csv, xml, ndjson, yaml, markdown)
 //! - Create, modify, delete subcommands
 
 mod common;
