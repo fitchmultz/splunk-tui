@@ -51,3 +51,33 @@ pub struct Cli {
     #[arg(long)]
     pub skip_tutorial: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn test_skip_tutorial_flag() {
+        let cli = Cli::parse_from(["splunk-tui", "--skip-tutorial"]);
+        assert!(cli.skip_tutorial);
+    }
+
+    #[test]
+    fn test_skip_tutorial_default_false() {
+        let cli = Cli::parse_from(["splunk-tui"]);
+        assert!(!cli.skip_tutorial);
+    }
+
+    #[test]
+    fn test_cli_profile_flag() {
+        let cli = Cli::parse_from(["splunk-tui", "--profile", "production"]);
+        assert_eq!(cli.profile, Some("production".to_string()));
+    }
+
+    #[test]
+    fn test_cli_no_mouse_flag() {
+        let cli = Cli::parse_from(["splunk-tui", "--no-mouse"]);
+        assert!(cli.no_mouse);
+    }
+}

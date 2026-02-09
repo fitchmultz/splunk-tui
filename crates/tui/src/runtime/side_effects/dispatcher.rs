@@ -426,6 +426,7 @@ pub async fn handle_side_effects(
             profile,
             use_keyring,
             original_name,
+            from_tutorial,
         } => {
             profiles::handle_save_profile(
                 config_manager.clone(),
@@ -435,6 +436,7 @@ pub async fn handle_side_effects(
                 profile,
                 use_keyring,
                 original_name,
+                from_tutorial,
             )
             .await;
         }

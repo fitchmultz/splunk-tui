@@ -2,9 +2,9 @@
 
 use crate::action::Action;
 use crate::app::App;
-use crate::onboarding::{TutorialState, TutorialStep, TutorialSteps};
-use crate::ui::popup::{Popup, PopupType};
+use crate::onboarding::TutorialStep;
 use crate::ui::Toast;
+use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {

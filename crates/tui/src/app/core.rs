@@ -16,7 +16,6 @@ use crate::app::state::{
 };
 use crate::app::structs::{App, ConnectionContext, SplValidationState};
 use crate::focus::FocusManager;
-use crate::onboarding::TutorialState;
 use splunk_client::SearchMode;
 use splunk_config::{
     ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,

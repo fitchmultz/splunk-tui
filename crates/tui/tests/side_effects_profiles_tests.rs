@@ -56,6 +56,7 @@ async fn test_save_profile_without_rename() {
                 profile,
                 use_keyring: false,
                 original_name: None,
+                from_tutorial: false,
             },
             1,
         )
@@ -129,6 +130,7 @@ async fn test_save_profile_with_rename() {
                 profile,
                 use_keyring: false,
                 original_name: Some("old-profile".to_string()),
+                from_tutorial: false,
             },
             1,
         )
@@ -213,6 +215,7 @@ async fn test_save_profile_rename_same_name() {
                 profile,
                 use_keyring: false,
                 original_name: Some("same-profile".to_string()),
+                from_tutorial: false,
             },
             1,
         )

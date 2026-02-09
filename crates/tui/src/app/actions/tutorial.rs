@@ -16,10 +16,7 @@ impl App {
                     // For replays, mark as already completed so we know user has seen it
                     state.has_completed = true;
                 }
-                self.popup = Some(
-                    Popup::builder(PopupType::TutorialWizard { state })
-                        .build(),
-                );
+                self.popup = Some(Popup::builder(PopupType::TutorialWizard { state }).build());
                 None
             }
             Action::TutorialCompleted => {

@@ -322,6 +322,7 @@ impl App {
                 *max_retries,
                 *use_keyring,
                 *selected_field,
+                *from_tutorial,
             ),
             // EditProfile - submit
             (Some(PopupType::EditProfile { name_input, .. }), KeyCode::Enter) => {
@@ -533,6 +534,7 @@ impl App {
         max_retries: u64,
         use_keyring: bool,
         selected_field: crate::ui::popup::ProfileField,
+        from_tutorial: bool,
         c: char,
     ) -> Option<Action> {
         let mut new_name = name_input.clone();
@@ -567,6 +569,7 @@ impl App {
                                 max_retries,
                                 use_keyring,
                                 selected_field,
+                                from_tutorial,
                             })
                             .build(),
                         );
@@ -596,6 +599,7 @@ impl App {
                                 max_retries: val,
                                 use_keyring,
                                 selected_field,
+                                from_tutorial,
                             })
                             .build(),
                         );
@@ -629,6 +633,7 @@ impl App {
                             max_retries,
                             use_keyring,
                             selected_field,
+                            from_tutorial,
                         })
                         .build(),
                     );
@@ -646,6 +651,7 @@ impl App {
                             max_retries,
                             use_keyring: !use_keyring,
                             selected_field,
+                            from_tutorial,
                         })
                         .build(),
                     );
@@ -667,6 +673,7 @@ impl App {
                 max_retries,
                 use_keyring,
                 selected_field,
+                from_tutorial,
             })
             .build(),
         );
@@ -687,6 +694,7 @@ impl App {
         max_retries: u64,
         use_keyring: bool,
         selected_field: crate::ui::popup::ProfileField,
+        from_tutorial: bool,
     ) -> Option<Action> {
         let mut new_name = name_input.clone();
         let mut new_base_url = base_url_input.clone();
@@ -716,6 +724,7 @@ impl App {
                             max_retries,
                             use_keyring,
                             selected_field,
+                            from_tutorial,
                         })
                         .build(),
                     );
@@ -743,6 +752,7 @@ impl App {
                             max_retries: val,
                             use_keyring,
                             selected_field,
+                            from_tutorial,
                         })
                         .build(),
                     );
@@ -769,6 +779,7 @@ impl App {
                 max_retries,
                 use_keyring,
                 selected_field,
+                from_tutorial,
             })
             .build(),
         );
@@ -845,6 +856,7 @@ impl App {
                 profile,
                 use_keyring,
                 original_name: if is_rename { Some(original_name) } else { None },
+                from_tutorial: false,
             })
         } else {
             None

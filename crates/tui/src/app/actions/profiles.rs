@@ -157,6 +157,7 @@ impl App {
                 max_retries: 3,
                 use_keyring: true,
                 selected_field: ProfileField::Name,
+                from_tutorial: false,
             })
             .build(),
         );

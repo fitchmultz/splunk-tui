@@ -256,4 +256,35 @@ mod tests {
 
         assert!(app.search_history.is_empty());
     }
+
+    #[test]
+    fn test_handle_settings_input_question_mark_starts_tutorial() {
+        let mut app = create_test_app();
+        app.current_screen = crate::app::state::CurrentScreen::Settings;
+
+        // Press '?' in settings
+        let action = app.handle_settings_input(key('?'));
+
+        assert!(
+            matches!(action, Some(Action::StartTutorial { is_replay: true })),
+            "Pressing '?' in Settings should start tutorial replay"
+        );
+    }
+
+    #[test]
+    fn test_handle_settings_input_question_mark_returns_replay_true() {
+        let mut app = create_test_app();
+        app.current_screen = crate::app::state::CurrentScreen::Settings;
+
+        let action = app.handle_settings_input(key('?'));
+
+        if let Some(Action::StartTutorial { is_replay }) = action {
+            assert!(
+                is_replay,
+                "Tutorial started from Settings should be a replay"
+            );
+        } else {
+            panic!("Expected StartTutorial action");
+        }
+    }
 }

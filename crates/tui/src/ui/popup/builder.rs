@@ -345,11 +345,7 @@ impl PopupBuilder {
         let progress = state.progress_percent();
         let filled = (progress as usize) / 5; // 20 segments
         let empty = 20 - filled;
-        let progress_bar = format!(
-            "\n\n[{}{}]",
-            "█".repeat(filled),
-            "░".repeat(empty)
-        );
+        let progress_bar = format!("\n\n[{}{}]", "█".repeat(filled), "░".repeat(empty));
         content.push_str(&progress_bar);
 
         // Add footer hint

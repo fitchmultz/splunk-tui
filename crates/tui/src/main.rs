@@ -330,7 +330,7 @@ async fn main() -> Result<()> {
                     let state = app.get_persisted_state();
                     let cm = config_manager.clone();
                     tokio::task::spawn(async move {
-                        let manager = cm.lock().await;
+                        let mut manager = cm.lock().await;
                         if let Err(e) = manager.save(&state) {
                             tracing::error!("Failed to persist state: {}", e);
                         }

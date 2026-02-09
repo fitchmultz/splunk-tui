@@ -254,6 +254,7 @@ pub async fn handle_open_edit_profile(
 }
 
 /// Handle saving/creating a profile.
+#[allow(clippy::too_many_arguments)]
 pub async fn handle_save_profile(
     config_manager: Arc<Mutex<ConfigManager>>,
     tx: Sender<Action>,
