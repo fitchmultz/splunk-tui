@@ -20,7 +20,7 @@
 //! ```
 
 use opentelemetry::trace::TracerProvider;
-use opentelemetry_sdk::runtime::Tokio;
+use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::time::Duration;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -96,24 +96,27 @@ impl TracingConfig {
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
         // Add OpenTelemetry layer if OTLP endpoint is configured
-        let tracer = if let Some(ref endpoint) = self.otlp_endpoint {
-            Some(self.create_tracer(endpoint)?)
+        let provider = if let Some(ref endpoint) = self.otlp_endpoint {
+            let provider = self.create_tracer_provider(endpoint)?;
+            Some(provider)
         } else {
             None
         };
 
         // Build and initialize subscriber based on configuration
-        match (tracer.as_ref(), self.enable_stdout) {
-            (Some(tracer), true) => {
-                let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer.clone());
+        match (provider.as_ref(), self.enable_stdout) {
+            (Some(provider), true) => {
+                let tracer = provider.tracer("splunk-client");
+                let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
                 tracing_subscriber::registry()
                     .with(env_filter)
                     .with(otel_layer)
                     .with(fmt::layer())
                     .init();
             }
-            (Some(tracer), false) => {
-                let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer.clone());
+            (Some(provider), false) => {
+                let tracer = provider.tracer("splunk-client");
+                let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
                 tracing_subscriber::registry()
                     .with(env_filter)
                     .with(otel_layer)
@@ -130,13 +133,10 @@ impl TracingConfig {
             }
         }
 
-        Ok(TracingGuard { tracer })
+        Ok(TracingGuard { provider })
     }
 
-    fn create_tracer(
-        &self,
-        endpoint: &str,
-    ) -> Result<opentelemetry_sdk::trace::Tracer, TracingError> {
+    fn create_tracer_provider(&self, endpoint: &str) -> Result<SdkTracerProvider, TracingError> {
         use opentelemetry_otlp::{Protocol, WithExportConfig};
         use opentelemetry_sdk::trace::{BatchConfig, BatchSpanProcessor, Sampler};
 
@@ -150,18 +150,20 @@ impl TracingConfig {
 
         let batch_config = BatchConfig::default();
 
-        let batch_processor = BatchSpanProcessor::builder(otlp_exporter, Tokio)
+        let batch_processor = BatchSpanProcessor::builder(otlp_exporter)
             .with_batch_config(batch_config)
             .build();
 
-        let resource = opentelemetry_sdk::Resource::new(vec![
-            opentelemetry::KeyValue::new("service.name", self.service_name.clone()),
-            opentelemetry::KeyValue::new("service.version", self.service_version.clone()),
-            opentelemetry::KeyValue::new("telemetry.sdk.name", "opentelemetry-rust"),
-            opentelemetry::KeyValue::new("telemetry.sdk.language", "rust"),
-        ]);
+        let resource = opentelemetry_sdk::Resource::builder()
+            .with_attributes(vec![
+                opentelemetry::KeyValue::new("service.name", self.service_name.clone()),
+                opentelemetry::KeyValue::new("service.version", self.service_version.clone()),
+                opentelemetry::KeyValue::new("telemetry.sdk.name", "opentelemetry-rust"),
+                opentelemetry::KeyValue::new("telemetry.sdk.language", "rust"),
+            ])
+            .build();
 
-        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        let provider = SdkTracerProvider::builder()
             .with_span_processor(batch_processor)
             .with_resource(resource)
             .with_sampler(Sampler::ParentBased(Box::new(Sampler::TraceIdRatioBased(
@@ -169,7 +171,7 @@ impl TracingConfig {
             ))))
             .build();
 
-        Ok(provider.tracer("splunk-client"))
+        Ok(provider)
     }
 }
 
@@ -178,9 +180,9 @@ impl TracingConfig {
 /// Must be kept alive until application shutdown to ensure all
 /// pending spans are exported.
 pub struct TracingGuard {
-    /// Tracer instance - held to keep tracer alive during application lifecycle.
-    #[allow(dead_code)]
-    tracer: Option<opentelemetry_sdk::trace::Tracer>,
+    /// Tracer provider - held to keep provider alive during application lifecycle
+    /// and to allow proper shutdown on exit.
+    provider: Option<SdkTracerProvider>,
 }
 
 impl TracingGuard {
@@ -189,7 +191,10 @@ impl TracingGuard {
     /// This should be called before application exit to ensure all
     /// spans are exported.
     pub fn shutdown(&self) {
-        opentelemetry::global::shutdown_tracer_provider();
+        // In opentelemetry 0.31+, shutdown is handled via the SdkTracerProvider directly
+        if let Some(ref provider) = self.provider {
+            let _ = provider.shutdown();
+        }
     }
 }
 

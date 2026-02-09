@@ -1,8 +1,9 @@
 //! Benchmarks for SPL syntax highlighting.
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use splunk_config::Theme;
 use splunk_tui::ui::syntax::highlight_spl;
+use std::hint::black_box;
 
 fn simple_query() -> &'static str {
     "search index=main | stats count by sourcetype"

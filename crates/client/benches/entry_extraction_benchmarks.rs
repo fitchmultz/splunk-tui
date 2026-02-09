@@ -2,7 +2,8 @@
 //!
 //! Tests `extract_entry_content` pattern and `attach_entry_name` functions.
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 
 // Simulated version of extract_entry_content for benchmarking
 fn extract_entry_content(resp: &serde_json::Value) -> Option<&serde_json::Value> {

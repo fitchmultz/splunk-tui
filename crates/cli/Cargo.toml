@@ -22,7 +22,7 @@ futures = { workspace = true }
 clap = { workspace = true }
 clap_complete = "4.5"
 clap_mangen = "0.2"
-dialoguer = "0.11"
+dialoguer = "0.12"
 
 # Serialization
 serde = { workspace = true }
@@ -46,7 +46,7 @@ opentelemetry-otlp = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 
 # Progress indicators (stderr-only via ProgressDrawTarget::stderr())
-indicatif = "0.17"
+indicatif = "0.18"
 
 # File operations
 tempfile = "3"
@@ -55,10 +55,10 @@ tempfile = "3"
 chrono = { workspace = true }
 
 # Bundle compression
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "7", default-features = false, features = ["deflate"] }
 
 # Cache directory resolution
-directories = "5"
+directories = "6"
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
@@ -68,7 +68,7 @@ keyring = { workspace = true }
 wiremock = { workspace = true }
 serde_json = { workspace = true }
 dotenvy = { workspace = true }
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "7", default-features = false, features = ["deflate"] }
 criterion = { workspace = true }
 splunk-client = { path = "../client", features = ["test-utils"] }
 

@@ -2,9 +2,10 @@
 //!
 //! Tests parsing of large result sets (1k/10k/100k rows).
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use splunk_client::IndexListResponse;
 use splunk_client::models::{ClusterInfo, SearchJobResults};
+use std::hint::black_box;
 
 fn generate_search_results(count: usize) -> String {
     let results: Vec<serde_json::Value> = (0..count)

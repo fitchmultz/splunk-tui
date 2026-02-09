@@ -61,10 +61,10 @@ metrics = "0.24"
 clap = { workspace = true }
 
 # UUID for unique tracking
-uuid = { version = "1.12", features = ["v4"] }
+uuid = { version = "1.20", features = ["v4"] }
 
 # Clipboard
-arboard = "3.5"
+arboard = "3.6"
 
 # Secrets handling
 secrecy = { workspace = true }
@@ -85,8 +85,8 @@ tui-big-text = "0.7"
 
 
 [dev-dependencies]
-insta = { version = "1.42", features = ["filters"] }
-tempfile = "3.10"
+insta = { version = "1.46", features = ["filters"] }
+tempfile = "3"
 serial_test = { workspace = true }
 wiremock = "0.6"
 reqwest = { workspace = true }

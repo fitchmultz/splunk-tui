@@ -262,7 +262,7 @@ fn test_doctor_bundle_dir_creation_error_has_context() {
         .stderr(predicate::str::contains(
             "Failed to create support bundle directory at",
         ))
-        .stderr(predicate::str::contains(
+        .stderr(predicate::str::contains::<&str>(
             parent_file.to_string_lossy().as_ref(),
         ));
 }
@@ -285,7 +285,7 @@ fn test_doctor_bundle_file_creation_error_has_context() {
         .stderr(predicate::str::contains(
             "Failed to create support bundle file at",
         ))
-        .stderr(predicate::str::contains(
+        .stderr(predicate::str::contains::<&str>(
             bundle_path.to_string_lossy().as_ref(),
         ));
 }

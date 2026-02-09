@@ -2,8 +2,9 @@
 //!
 //! These helpers handle Splunk's inconsistent JSON typing (numbers as strings).
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use serde::Deserialize;
+use std::hint::black_box;
 
 // Wrapper structs for benchmarking the serde helpers
 // Fields are used by serde but not directly accessed, hence allow(dead_code)

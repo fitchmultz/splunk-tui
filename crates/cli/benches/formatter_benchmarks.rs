@@ -2,7 +2,8 @@
 //!
 //! Tests CSV, table, and JSON formatting performance using public APIs.
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 
 // Use splunk_client directly for model types
 use splunk_client::models::LogLevel;
