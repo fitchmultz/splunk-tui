@@ -11,12 +11,12 @@ expression: harness.render()
 │ No job┌Help──────────────────┐efresh.│
 │       │Global Keys:          ↑       │
 │       │  ?               Help█       │
+│       │  Ctrl+P              ║       │
+│       │Command palette       ║       │
 │       │  q               Quit║       │
 │       │  Ctrl+Q          Quit║       │
 │       │(global)              ║       │
-│       │  Tab             Next║       │
-│       │screen                ║       │
-│       │  Shift+Tab           ↓       │
+│       │  Tab             Next↓       │
 │       └──────────────────────┘       │
 │                                      │
 └──────────────────────────────────────┘

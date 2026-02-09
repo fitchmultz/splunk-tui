@@ -329,6 +329,11 @@ impl PopupBuilder {
                 *selected_field,
             ),
             PopupType::TutorialWizard { state } => self.build_tutorial_wizard_defaults(state),
+            PopupType::CommandPalette {
+                input,
+                selected_index,
+                filtered_items,
+            } => self.build_command_palette_defaults(input, *selected_index, filtered_items),
         }
     }
 
@@ -892,6 +897,55 @@ impl PopupBuilder {
         content.push_str(&format!("{}IsEval: {}\n", iseval_marker, iseval));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
+        (title, content)
+    }
+
+    fn build_command_palette_defaults(
+        &self,
+        input: &str,
+        selected_index: usize,
+        items: &[crate::app::command_palette::CommandPaletteItem],
+    ) -> (String, String) {
+        let title = "Command Palette".to_string();
+        let mut content = String::new();
+
+        // Search prompt
+        content.push_str("> ");
+        if input.is_empty() {
+            content.push_str("Type to search commands...");
+        } else {
+            content.push_str(input);
+        }
+        content.push('\n');
+        content.push_str(&"─".repeat(50));
+        content.push('\n');
+
+        if items.is_empty() {
+            content.push_str("No matching commands\n");
+        } else {
+            for (i, item) in items.iter().enumerate().take(15) {
+                let marker = if i == selected_index { "> " } else { "  " };
+                let recent_marker = if item.is_recent { "★ " } else { "  " };
+
+                content.push_str(marker);
+                content.push_str(recent_marker);
+                content.push_str(&item.name);
+
+                if let Some(ref shortcut) = item.shortcut {
+                    content.push_str(&format!(" [{}]", shortcut));
+                }
+
+                content.push('\n');
+            }
+
+            if items.len() > 15 {
+                content.push_str(&format!("\n... and {} more\n", items.len() - 15));
+            }
+        }
+
+        content.push('\n');
+        content.push_str("↑/↓ or j/k: Navigate  Enter: Execute  Esc: Close");
+
         (title, content)
     }
 }

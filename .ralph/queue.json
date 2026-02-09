@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0436",
-      "status": "todo",
-      "title": "Add TUI command palette for quick navigation",
-      "description": "Implement a command palette (Ctrl+P) that provides quick access to all TUI actions, screens, and commands via fuzzy search. Reduces cognitive load by not requiring users to remember all keybindings.\n\nFeatures:\n- Fuzzy search through all available actions\n- Context-aware suggestions based on current screen\n- Recent commands history\n- Keyboard shortcut hints\n- Quick navigation to any screen\n- Action preview/description\n\nPattern inspired by VS Code command palette and vim's : command. Uses existing popup infrastructure.",
-      "priority": "low",
-      "tags": [
-        "innovation",
-        "tui",
-        "ux",
-        "navigation"
-      ],
-      "scope": [
-        "crates/tui/src/app/popups/command_palette.rs",
-        "crates/tui/src/input/keymap/"
-      ],
-      "evidence": [
-        "TUI has 20+ screens with 100+ keybindings - hard to remember all",
-        "Current help system (? key) is static and requires reading",
-        "No quick navigation between distant screens (must Tab through)",
-        "Popup infrastructure exists and can be extended"
-      ],
-      "plan": [
-        "Create CommandPalette popup with fuzzy search input",
-        "Define CommandPaletteItem struct for actions with metadata",
-        "Implement fuzzy matching algorithm (fuse-rust or similar)",
-        "Add Ctrl+P binding to global keymap",
-        "Populate palette with all available actions from current context",
-        "Add recent commands tracking and prioritization",
-        "Add visual keyboard shortcut hints in palette",
-        "Write tests for palette filtering and selection",
-        "Verify by running: splunk-tui, press Ctrl+P, search 'export'"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0437",
       "status": "todo",
       "title": "Add YAML and Markdown export formats",

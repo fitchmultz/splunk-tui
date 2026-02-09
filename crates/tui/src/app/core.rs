@@ -293,6 +293,7 @@ impl App {
             focus_navigation_mode: false,
             tutorial_state: None,
             tutorial_completed,
+            command_palette_state: crate::app::command_palette::CommandPaletteState::new(),
         }
     }
 

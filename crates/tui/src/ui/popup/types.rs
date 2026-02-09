@@ -223,4 +223,13 @@ pub enum PopupType {
         /// Current tutorial state
         state: TutorialState,
     },
+    /// Command palette for quick navigation and action execution
+    CommandPalette {
+        /// Current search input
+        input: String,
+        /// Currently selected index in filtered results
+        selected_index: usize,
+        /// Filtered command items (cached from fuzzy search)
+        filtered_items: Vec<crate::app::command_palette::CommandPaletteItem>,
+    },
 }

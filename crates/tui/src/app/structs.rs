@@ -275,6 +275,8 @@ pub struct App {
     pub tutorial_state: Option<TutorialState>,
     /// Whether the tutorial has been completed (persisted)
     pub tutorial_completed: bool,
+    /// Command palette state for fuzzy search and recent commands
+    pub command_palette_state: crate::app::command_palette::CommandPaletteState,
 }
 
 /// SPL validation state for real-time feedback in the search screen.

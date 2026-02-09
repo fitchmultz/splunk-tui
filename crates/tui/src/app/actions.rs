@@ -36,6 +36,7 @@ impl App {
         match action {
             // Navigation actions
             Action::OpenHelpPopup
+            | Action::OpenCommandPalette
             | Action::SwitchToSearch
             | Action::SwitchToSettingsScreen
             | Action::NextScreen

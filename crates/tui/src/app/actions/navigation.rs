@@ -17,6 +17,9 @@ impl App {
             Action::OpenHelpPopup => {
                 self.open_help_popup();
             }
+            Action::OpenCommandPalette => {
+                self.open_command_palette();
+            }
             Action::SwitchToSearch => {
                 self.current_screen = CurrentScreen::Search;
                 self.init_focus_manager_for_screen(CurrentScreen::Search);

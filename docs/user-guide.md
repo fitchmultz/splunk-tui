@@ -189,6 +189,7 @@ Launch the interactive interface with `splunk-tui`.
 ### Navigation
 
 - `?`: Help
+- `Ctrl+P`: Command palette
 - `q`: Quit
 - `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen

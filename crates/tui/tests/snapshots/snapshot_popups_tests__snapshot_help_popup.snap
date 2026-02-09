@@ -12,14 +12,14 @@ expression: harness.render()
 │               ┌Help──────────────────────────────────────────┐               │
 │               │Global Keys:                                  ↑               │
 │               │  ?               Help                        █               │
+│               │  Ctrl+P          Command palette             ║               │
 │               │  q               Quit                        ║               │
 │               │  Ctrl+Q          Quit (global)               ║               │
 │               │  Tab             Next screen                 ║               │
 │               │  Shift+Tab       Previous screen             ║               │
 │               │  Ctrl+Tab        Next focus                  ║               │
 │               │  Ctrl+Shift+Tab  Previous focus              ║               │
-│               │  Ctrl+c          Copy to clipboard           ║               │
-│               │  e               Show error details (when an ↓               │
+│               │  Ctrl+c          Copy to clipboard           ↓               │
 │               └──────────────────────────────────────────────┘               │
 │                                                                              │
 │                                                                              │

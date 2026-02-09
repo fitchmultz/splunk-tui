@@ -35,6 +35,18 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         },
         Keybinding {
             section: Section::Global,
+            keys: "Ctrl+P",
+            description: "Command palette",
+            scope: BindingScope::Global,
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('p'),
+                modifiers: KeyModifiers::CONTROL,
+            }),
+            action: Some(Action::OpenCommandPalette),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Global,
             keys: "q",
             description: "Quit",
             scope: BindingScope::Global,

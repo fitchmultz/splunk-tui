@@ -1305,6 +1305,7 @@ Before the server info is loaded, the header shows "Connecting..." as a placehol
 ### Navigation
 
 - `?`: Help
+- `Ctrl+P`: Command palette
 - `q`: Quit
 - `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen

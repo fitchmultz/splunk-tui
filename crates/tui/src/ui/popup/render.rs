@@ -50,7 +50,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateSavedSearch { .. }
         | PopupType::CreateMacro { .. }
         | PopupType::EditMacro { .. }
-        | PopupType::TutorialWizard { .. } => theme.border,
+        | PopupType::TutorialWizard { .. }
+        | PopupType::CommandPalette { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -90,7 +91,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::CreateSavedSearch { .. }
         | PopupType::CreateMacro { .. }
         | PopupType::EditMacro { .. }
-        | PopupType::TutorialWizard { .. } => Wrap { trim: false },
+        | PopupType::TutorialWizard { .. }
+        | PopupType::CommandPalette { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)

@@ -253,6 +253,7 @@ The `.env` file is loaded early (before CLI parsing) to populate environment var
 ### Navigation
 
 - `?`: Help
+- `Ctrl+P`: Command palette
 - `q`: Quit
 - `Ctrl+Q`: Quit (global)
 - `Tab`: Next screen

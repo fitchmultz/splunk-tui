@@ -14,6 +14,7 @@ use crate::app::App;
 use crate::ui::popup::PopupType;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+mod command_palette;
 mod confirm;
 mod export;
 mod index;
@@ -116,6 +117,9 @@ impl App {
 
             // Tutorial wizard
             Some(PopupType::TutorialWizard { .. }) => self.handle_tutorial_popup(key),
+
+            // Command palette
+            Some(PopupType::CommandPalette { .. }) => self.handle_command_palette_popup(key),
 
             // No popup active
             None => None,

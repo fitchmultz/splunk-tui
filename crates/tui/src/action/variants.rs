@@ -132,6 +132,8 @@ pub enum Action {
 
     /// Open the help popup.
     OpenHelpPopup,
+    /// Open the command palette for quick navigation.
+    OpenCommandPalette,
     /// Switch to the Search screen without triggering a load.
     SwitchToSearch,
     /// Switch to the Settings screen without reloading settings.

@@ -18,6 +18,7 @@
 //! - `render`: Rendering logic
 
 pub mod clipboard;
+pub mod command_palette;
 pub mod core;
 pub mod state;
 pub mod structs;
