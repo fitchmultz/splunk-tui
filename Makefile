@@ -2,7 +2,7 @@
 	test test-all test-unit test-integration test-chaos test-live test-live-manual \
 	bench bench-client bench-cli bench-tui \
 	build release generate lint-docs ci help lint-secrets install-hooks \
-	_generate-docs _lint-docs-check
+	_generate-docs _lint-docs-check examples-test
 
 # Binaries and Installation
 BINS := splunk-cli splunk-tui generate-tui-docs
@@ -185,9 +185,20 @@ ci:
 	$(MAKE) test                 || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
 	$(MAKE) test-live            || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
 	$(MAKE) release PROFILE=ci   || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
-	$(MAKE) _lint-docs-check     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }
+	$(MAKE) _lint-docs-check     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }; \
+	$(MAKE) examples-test        || { echo ""; echo "✗ CI failed at: examples-test"; exit 1; }
 	@echo ""
 	@echo "✓ CI completed successfully"
+
+# Validate example scripts (syntax check and executable permissions)
+examples-test:
+	@echo "→ Validating example scripts..."
+	@find examples -name "*.sh" -type f | while read script; do \
+		echo "  Checking $$script..."; \
+		bash -n "$$script" || { echo ""; echo "✗ Syntax error in $$script"; exit 1; }; \
+		[ -x "$$script" ] || { echo ""; echo "✗ Not executable: $$script"; exit 1; }; \
+	done
+	@echo "  ✓ All example scripts validated"
 
 # Display help for each target
 help:

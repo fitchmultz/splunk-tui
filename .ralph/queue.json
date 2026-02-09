@@ -2,50 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0435",
-      "status": "todo",
-      "title": "Create examples directory with common workflow scripts",
-      "description": "Create a comprehensive examples/ directory with executable workflow scripts demonstrating real-world Splunk operations. Currently docs describe commands but don't show complete workflows.\n\nExample categories:\n1. Daily Operations: health checks, disk usage reports, job cleanup\n2. Incident Response: rapid search, alert investigation, log export\n3. Capacity Planning: index growth, license usage, retention analysis\n4. Security Auditing: login tracking, permission review, config changes\n5. Automation: scheduled reports, bulk operations, data onboarding\n\nEach example includes: README, executable script, sample output, and explanation of key concepts. Examples serve as copy-paste starting points for users.",
-      "priority": "medium",
-      "tags": [
-        "innovation",
-        "docs",
-        "examples",
-        "workflows",
-        "scripting"
-      ],
-      "scope": [
-        "examples/",
-        "docs/workflows.md"
-      ],
-      "evidence": [
-        "No examples/ directory exists in repository root",
-        "README shows individual commands but not complete workflows",
-        "Users must construct complex operations from scratch",
-        "No automation examples for CI/CD or scheduled tasks"
-      ],
-      "plan": [
-        "Create examples/ directory structure with category subdirectories",
-        "Write 01-basic/ examples: first search, export results, job management",
-        "Write 02-intermediate/ examples: incident response, health monitoring",
-        "Write 03-advanced/ examples: bulk operations, automation scripts",
-        "Add example-specific README files with explanations",
-        "Create examples/README.md with navigation and prerequisites",
-        "Add make examples-test to validate examples in CI",
-        "Verify by running: ls examples/ and seeing complete structure"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-08T15:07:26Z",
-      "updated_at": "2026-02-08T15:07:26Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0436",
       "status": "todo",
       "title": "Add TUI command palette for quick navigation",
