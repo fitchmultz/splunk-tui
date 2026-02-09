@@ -147,6 +147,7 @@ impl SplunkClient {
                 DEFAULT_MAX_WAIT_SECS,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await?;
         }
@@ -199,6 +200,7 @@ impl SplunkClient {
                 self.max_retries,
                 progress_cb,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await?;
         }
@@ -227,6 +229,7 @@ impl SplunkClient {
                 options,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -252,6 +255,7 @@ impl SplunkClient {
                 endpoints::search::OutputMode::Json,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -269,6 +273,7 @@ impl SplunkClient {
                 sid,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -291,6 +296,7 @@ impl SplunkClient {
                 offset,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -309,6 +315,7 @@ impl SplunkClient {
                 search,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -326,6 +333,7 @@ impl SplunkClient {
                 name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -349,6 +357,7 @@ impl SplunkClient {
                 name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -389,6 +398,7 @@ impl SplunkClient {
                 &params,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -432,6 +442,7 @@ impl SplunkClient {
                 search,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )

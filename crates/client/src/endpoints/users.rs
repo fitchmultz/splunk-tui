@@ -3,6 +3,7 @@
 use reqwest::{Client, Url};
 use secrecy::ExposeSecret;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::form_params;
@@ -11,6 +12,7 @@ use crate::models::{CreateUserParams, ModifyUserParams, User, UserListResponse};
 use crate::name_merge::attach_entry_name;
 
 /// List all users.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_users(
     client: &Client,
     base_url: &str,
@@ -19,6 +21,7 @@ pub async fn list_users(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<User>> {
     let url = format!("{}/services/authentication/users", base_url);
 
@@ -41,6 +44,7 @@ pub async fn list_users(
         "/services/authentication/users",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -54,6 +58,7 @@ pub async fn list_users(
 }
 
 /// Create a new user.
+#[allow(clippy::too_many_arguments)]
 pub async fn create_user(
     client: &Client,
     base_url: &str,
@@ -61,6 +66,7 @@ pub async fn create_user(
     params: &CreateUserParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<User> {
     let url = format!("{}/services/authentication/users", base_url);
 
@@ -87,6 +93,7 @@ pub async fn create_user(
         "/services/authentication/users",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -114,6 +121,7 @@ pub async fn create_user(
 }
 
 /// Modify an existing user.
+#[allow(clippy::too_many_arguments)]
 pub async fn modify_user(
     client: &Client,
     base_url: &str,
@@ -122,6 +130,7 @@ pub async fn modify_user(
     params: &ModifyUserParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<User> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -150,6 +159,7 @@ pub async fn modify_user(
         &format!("/services/authentication/users/{}", user_name),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -183,6 +193,7 @@ pub async fn modify_user(
 }
 
 /// Delete a user by name.
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_user(
     client: &Client,
     base_url: &str,
@@ -190,6 +201,7 @@ pub async fn delete_user(
     user_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -206,6 +218,7 @@ pub async fn delete_user(
         &format!("/services/authentication/users/{}", user_name),
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

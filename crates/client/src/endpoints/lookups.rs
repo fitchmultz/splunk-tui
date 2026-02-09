@@ -3,6 +3,7 @@
 use reqwest::Client;
 use reqwest::Url;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -12,6 +13,7 @@ use crate::models::{LookupTable, LookupTableListResponse, UploadLookupParams};
 ///
 /// This endpoint returns CSV-based lookup files stored in Splunk.
 /// KV store lookups are managed via a different endpoint.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_lookup_tables(
     client: &Client,
     base_url: &str,
@@ -20,6 +22,7 @@ pub async fn list_lookup_tables(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<LookupTable>> {
     let url = format!("{}/services/data/lookup-table-files", base_url);
 
@@ -44,6 +47,7 @@ pub async fn list_lookup_tables(
         "/services/data/lookup-table-files",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -78,6 +82,7 @@ pub async fn download_lookup_table(
     owner: Option<&str>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<String> {
     let ns_owner = owner.unwrap_or("-");
     let ns_app = app.unwrap_or("search");
@@ -99,6 +104,7 @@ pub async fn download_lookup_table(
         "/servicesNS/-/search/data/lookup-table-files",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -127,6 +133,7 @@ pub async fn download_lookup_table(
 ///
 /// # Returns
 /// The created/updated lookup table metadata
+#[allow(clippy::too_many_arguments)]
 pub async fn upload_lookup_table(
     client: &Client,
     base_url: &str,
@@ -134,6 +141,7 @@ pub async fn upload_lookup_table(
     params: &UploadLookupParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LookupTable> {
     let ns_owner = params.owner.as_deref().unwrap_or("-");
     let ns_app = params.app.as_deref().unwrap_or("search");
@@ -172,6 +180,7 @@ pub async fn upload_lookup_table(
         "/servicesNS/-/search/data/lookup-table-files",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -215,6 +224,7 @@ pub async fn delete_lookup_table(
     owner: Option<&str>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let ns_owner = owner.unwrap_or("-");
     let ns_app = app.unwrap_or("search");
@@ -237,6 +247,7 @@ pub async fn delete_lookup_table(
         "/servicesNS/-/search/data/lookup-table-files",
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

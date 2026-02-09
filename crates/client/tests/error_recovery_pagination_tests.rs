@@ -111,6 +111,7 @@ async fn test_pagination_partial_failure_retry() {
         endpoints::OutputMode::Json,
         3,
         None,
+        None,
     )
     .await;
     assert!(result1.is_ok(), "Page 1 should succeed");
@@ -130,6 +131,7 @@ async fn test_pagination_partial_failure_retry() {
                 Some(2),
                 endpoints::OutputMode::Json,
                 3,
+                None,
                 None,
             )
             .await
@@ -155,6 +157,7 @@ async fn test_pagination_partial_failure_retry() {
         Some(4),
         endpoints::OutputMode::Json,
         3,
+        None,
         None,
     )
     .await;
@@ -367,6 +370,7 @@ async fn test_pagination_retry_after_header() {
         endpoints::OutputMode::Json,
         3,
         None,
+        None,
     )
     .await;
     assert!(result1.is_ok());
@@ -385,6 +389,7 @@ async fn test_pagination_retry_after_header() {
                 Some(1),
                 endpoints::OutputMode::Json,
                 3,
+                None,
                 None,
             )
             .await
@@ -406,6 +411,7 @@ async fn test_pagination_retry_after_header() {
         Some(2),
         endpoints::OutputMode::Json,
         3,
+        None,
         None,
     )
     .await;
@@ -463,6 +469,7 @@ async fn test_pagination_retry_exhaustion() {
         endpoints::OutputMode::Json,
         2, // max_retries = 2
         None,
+        None,
     )
     .await;
     assert!(result1.is_ok());
@@ -481,6 +488,7 @@ async fn test_pagination_retry_exhaustion() {
                 Some(1),
                 endpoints::OutputMode::Json,
                 2, // max_retries = 2 (3 total attempts)
+                None,
                 None,
             )
             .await
@@ -588,6 +596,7 @@ async fn test_pagination_mixed_error_types() {
                     endpoints::OutputMode::Json,
                     3,
                     None,
+                    None,
                 )
                 .await
             }
@@ -618,6 +627,7 @@ async fn test_pagination_mixed_error_types() {
         Some(2),
         endpoints::OutputMode::Json,
         3,
+        None,
         None,
     )
     .await;

@@ -215,6 +215,33 @@ fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'st
         }
     }
 
+    if let Some(cb_states) = &health.circuit_breaker_states {
+        if !cb_states.is_empty() {
+            push_section_lines(&mut lines, "Circuit Breakers", theme);
+            let mut sorted_states: Vec<_> = cb_states.iter().collect();
+            sorted_states.sort_by_key(|(k, _)| *k);
+
+            for (endpoint, state) in sorted_states {
+                let state_color = match state.as_str() {
+                    "closed" => theme.success,
+                    "open" => theme.error,
+                    "half_open" => theme.warning,
+                    _ => theme.warning,
+                };
+
+                lines.push(Line::from(vec![
+                    Span::raw(format!("  {}: ", endpoint)),
+                    Span::styled(
+                        state.to_uppercase(),
+                        Style::default()
+                            .fg(state_color)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                ]));
+            }
+        }
+    }
+
     if lines.is_empty() {
         lines.push(Line::from("No health data available."));
     }
@@ -279,6 +306,7 @@ mod tests {
             license_usage: None,
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: None,
         };
         let lines = build_health_lines(&health, &Theme::default());
         assert_eq!(lines.len(), 1);
@@ -304,6 +332,7 @@ mod tests {
             license_usage: None,
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: None,
         };
         let lines = build_health_lines(&health, &Theme::default());
         let text = flatten_lines(lines);
@@ -326,6 +355,7 @@ mod tests {
             }]),
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: None,
         };
         let lines = build_health_lines(&health, &Theme::default());
         let text = flatten_lines(lines);
@@ -371,6 +401,7 @@ mod tests {
                 ],
                 time_window: "-24h".to_string(),
             }),
+            circuit_breaker_states: None,
         };
         let lines = build_health_lines(&health, &Theme::default());
         let text = flatten_lines(lines);

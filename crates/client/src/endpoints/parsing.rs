@@ -3,6 +3,7 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::search::{
     CreateJobOptions, OutputMode, create_job, get_results, wait_for_job,
 };
@@ -36,12 +37,14 @@ const PARSING_ERROR_SEARCH_QUERY: &str = r#"search index=_internal (component=Tu
 /// - `total_errors`: count of parsing errors found
 /// - `errors`: vector of individual error details
 /// - `time_window`: the search time window used
+#[allow(clippy::too_many_arguments)]
 pub async fn check_log_parsing_health(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LogParsingHealth> {
     debug!("Checking log parsing health");
 
@@ -61,6 +64,7 @@ pub async fn check_log_parsing_health(
         &options,
         max_retries,
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -76,6 +80,7 @@ pub async fn check_log_parsing_health(
         60,
         max_retries,
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -91,6 +96,7 @@ pub async fn check_log_parsing_health(
         OutputMode::Json,
         max_retries,
         metrics,
+        circuit_breaker,
     )
     .await?;
 

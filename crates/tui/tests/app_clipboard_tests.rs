@@ -238,6 +238,7 @@ fn test_ctrl_c_copies_health_status() {
         license_usage: None,
         kvstore_status: None,
         log_parsing_health: None,
+        circuit_breaker_states: None,
     });
 
     let action = app.handle_input(ctrl_key('c'));

@@ -70,6 +70,14 @@ pub struct SplunkClientBuilder {
     circuit_breaker: Option<Arc<CircuitBreaker>>,
     /// Whether to disable circuit breaker.
     disable_circuit_breaker: bool,
+    /// Circuit breaker failure threshold.
+    circuit_failure_threshold: u32,
+    /// Circuit breaker failure window.
+    circuit_failure_window: Duration,
+    /// Circuit breaker reset timeout.
+    circuit_reset_timeout: Duration,
+    /// Circuit breaker half-open requests.
+    circuit_half_open_requests: u32,
 }
 
 impl Default for SplunkClientBuilder {
@@ -87,6 +95,14 @@ impl Default for SplunkClientBuilder {
             disable_cache: false,
             circuit_breaker: None,
             disable_circuit_breaker: false,
+            circuit_failure_threshold: splunk_config::default_circuit_failure_threshold(),
+            circuit_failure_window: Duration::from_secs(
+                splunk_config::default_circuit_failure_window(),
+            ),
+            circuit_reset_timeout: Duration::from_secs(
+                splunk_config::default_circuit_reset_timeout(),
+            ),
+            circuit_half_open_requests: splunk_config::default_circuit_half_open_requests(),
         }
     }
 }
@@ -289,6 +305,13 @@ impl SplunkClientBuilder {
         self.timeout = config.connection.timeout;
         self.session_ttl_seconds = config.connection.session_ttl_seconds;
         self.session_expiry_buffer_seconds = config.connection.session_expiry_buffer_seconds;
+        self.disable_circuit_breaker = !config.connection.circuit_breaker_enabled;
+        self.circuit_failure_threshold = config.connection.circuit_failure_threshold;
+        self.circuit_failure_window =
+            Duration::from_secs(config.connection.circuit_failure_window_seconds);
+        self.circuit_reset_timeout =
+            Duration::from_secs(config.connection.circuit_reset_timeout_seconds);
+        self.circuit_half_open_requests = config.connection.circuit_half_open_requests;
         self
     }
 
@@ -352,11 +375,21 @@ impl SplunkClientBuilder {
         let circuit_breaker = if self.disable_circuit_breaker {
             None
         } else {
-            self.circuit_breaker.or_else(|| {
-                self.metrics.as_ref().map(|m| {
-                    Arc::new(CircuitBreaker::with_metrics(m.clone()))
-                })
-            })
+            let config = crate::client::circuit_breaker::CircuitBreakerConfig {
+                failure_threshold: self.circuit_failure_threshold,
+                failure_window: self.circuit_failure_window,
+                reset_timeout: self.circuit_reset_timeout,
+                half_open_requests: self.circuit_half_open_requests,
+            };
+
+            Some(self.circuit_breaker.unwrap_or_else(|| {
+                let cb = if let Some(ref m) = self.metrics {
+                    CircuitBreaker::with_metrics(m.clone())
+                } else {
+                    CircuitBreaker::new()
+                };
+                Arc::new(cb.with_default_config(config))
+            }))
         };
 
         Ok(SplunkClient {

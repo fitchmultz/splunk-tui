@@ -17,6 +17,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::{form_params_str, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -26,12 +27,14 @@ use crate::models::{
 };
 
 /// Get license usage information.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_license_usage(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<LicenseUsage>> {
     let url = format!("{}/services/licenser/usage", base_url);
 
@@ -45,6 +48,7 @@ pub async fn get_license_usage(
         "/services/licenser/usage",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -62,12 +66,14 @@ pub async fn get_license_usage(
 }
 
 /// List all license pools.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_license_pools(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<LicensePool>> {
     let url = format!("{}/services/licenser/pools", base_url);
 
@@ -81,6 +87,7 @@ pub async fn list_license_pools(
         "/services/licenser/pools",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -98,12 +105,14 @@ pub async fn list_license_pools(
 }
 
 /// List all license stacks.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_license_stacks(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<LicenseStack>> {
     let url = format!("{}/services/licenser/stacks", base_url);
 
@@ -117,6 +126,7 @@ pub async fn list_license_stacks(
         "/services/licenser/stacks",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -136,12 +146,14 @@ pub async fn list_license_stacks(
 /// List all installed licenses.
 ///
 /// GET /services/licenser/licenses
+#[allow(clippy::too_many_arguments)]
 pub async fn list_installed_licenses(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<crate::models::InstalledLicense>> {
     let url = format!("{}/services/licenser/licenses", base_url);
 
@@ -155,6 +167,7 @@ pub async fn list_installed_licenses(
         "/services/licenser/licenses",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -188,6 +201,7 @@ pub async fn list_installed_licenses(
 /// # Returns
 ///
 /// Result indicating success or failure of the installation
+#[allow(clippy::too_many_arguments)]
 pub async fn install_license(
     client: &Client,
     base_url: &str,
@@ -196,6 +210,7 @@ pub async fn install_license(
     filename: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicenseInstallResult> {
     let url = format!("{}/services/licenser/licenses", base_url);
 
@@ -220,6 +235,7 @@ pub async fn install_license(
         "/services/licenser/licenses",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -257,6 +273,7 @@ pub async fn install_license(
 /// Create a new license pool.
 ///
 /// POST /services/licenser/pools
+#[allow(clippy::too_many_arguments)]
 pub async fn create_license_pool(
     client: &Client,
     base_url: &str,
@@ -264,6 +281,7 @@ pub async fn create_license_pool(
     params: &CreatePoolParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicensePool> {
     let url = format!("{}/services/licenser/pools", base_url);
 
@@ -288,6 +306,7 @@ pub async fn create_license_pool(
         "/services/licenser/pools",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -307,6 +326,7 @@ pub async fn create_license_pool(
 /// Delete a license pool.
 ///
 /// DELETE /services/licenser/pools/{name}
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_license_pool(
     client: &Client,
     base_url: &str,
@@ -314,6 +334,7 @@ pub async fn delete_license_pool(
     pool_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!("{}/services/licenser/pools/{}", base_url, pool_name);
 
@@ -328,6 +349,7 @@ pub async fn delete_license_pool(
         "/services/licenser/pools/{pool_name}",
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -337,6 +359,7 @@ pub async fn delete_license_pool(
 /// Modify an existing license pool.
 ///
 /// POST /services/licenser/pools/{name}
+#[allow(clippy::too_many_arguments)]
 pub async fn modify_license_pool(
     client: &Client,
     base_url: &str,
@@ -345,6 +368,7 @@ pub async fn modify_license_pool(
     params: &ModifyPoolParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicensePool> {
     let url = format!("{}/services/licenser/pools/{}", base_url, pool_name);
 
@@ -367,6 +391,7 @@ pub async fn modify_license_pool(
         "/services/licenser/pools/{pool_name}",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -386,6 +411,7 @@ pub async fn modify_license_pool(
 /// Activate a license.
 ///
 /// POST /services/licenser/licenses/{name}/enable
+#[allow(clippy::too_many_arguments)]
 pub async fn activate_license(
     client: &Client,
     base_url: &str,
@@ -393,6 +419,7 @@ pub async fn activate_license(
     license_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicenseActivationResult> {
     let url = format!(
         "{}/services/licenser/licenses/{}/enable",
@@ -410,6 +437,7 @@ pub async fn activate_license(
         "/services/licenser/licenses/{name}/enable",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -422,6 +450,7 @@ pub async fn activate_license(
 /// Deactivate a license.
 ///
 /// POST /services/licenser/licenses/{name}/disable
+#[allow(clippy::too_many_arguments)]
 pub async fn deactivate_license(
     client: &Client,
     base_url: &str,
@@ -429,6 +458,7 @@ pub async fn deactivate_license(
     license_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicenseActivationResult> {
     let url = format!(
         "{}/services/licenser/licenses/{}/disable",
@@ -446,6 +476,7 @@ pub async fn deactivate_license(
         "/services/licenser/licenses/{name}/disable",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

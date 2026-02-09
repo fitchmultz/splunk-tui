@@ -75,9 +75,15 @@ async fn test_check_log_parsing_health() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::check_log_parsing_health(&client, &mock_server.uri(), "test-token", 3, None)
-            .await;
+    let result = endpoints::check_log_parsing_health(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
     let health = result.unwrap();
@@ -144,9 +150,15 @@ async fn test_check_log_parsing_health_no_errors() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::check_log_parsing_health(&client, &mock_server.uri(), "test-token", 3, None)
-            .await;
+    let result = endpoints::check_log_parsing_health(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
     let health = result.unwrap();

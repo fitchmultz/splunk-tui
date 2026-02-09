@@ -43,6 +43,7 @@ async fn test_list_saved_searches() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -80,6 +81,7 @@ async fn test_create_saved_search() {
         "| makeresults",
         3,
         None,
+        None,
     )
     .await;
 
@@ -104,6 +106,7 @@ async fn test_delete_saved_search() {
         "test-token",
         "my-search",
         3,
+        None,
         None,
     )
     .await;
@@ -167,8 +170,10 @@ async fn test_list_saved_searches_with_pagination() {
         None,
         3,
         None,
+        None,
     )
     .await;
+
     assert!(result.is_ok());
 
     // Test with offset
@@ -189,8 +194,10 @@ async fn test_list_saved_searches_with_pagination() {
         Some(5),
         3,
         None,
+        None,
     )
     .await;
+
     assert!(result.is_ok());
 }
 
@@ -216,6 +223,7 @@ async fn test_get_saved_search_success() {
         "test-token",
         "Errors in the last 24 hours",
         3,
+        None,
         None,
     )
     .await;
@@ -252,6 +260,7 @@ async fn test_get_saved_search_not_found() {
         "test-token",
         "NonExistentSearch",
         3,
+        None,
         None,
     )
     .await;
@@ -330,6 +339,7 @@ async fn test_update_saved_search_success() {
         &params,
         3,
         None,
+        None,
     )
     .await;
 
@@ -361,6 +371,7 @@ async fn test_update_saved_search_not_found() {
         "NonExistentSearch",
         &params,
         3,
+        None,
         None,
     )
     .await;

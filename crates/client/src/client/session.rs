@@ -88,6 +88,7 @@ impl SplunkClient {
                 password.expose_secret(),
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await?;
 

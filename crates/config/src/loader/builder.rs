@@ -44,6 +44,11 @@ pub struct ConfigLoader {
     session_expiry_buffer_seconds: Option<u64>,
     session_ttl_seconds: Option<u64>,
     health_check_interval_seconds: Option<u64>,
+    circuit_breaker_enabled: Option<bool>,
+    circuit_failure_threshold: Option<u32>,
+    circuit_failure_window_seconds: Option<u64>,
+    circuit_reset_timeout_seconds: Option<u64>,
+    circuit_half_open_requests: Option<u32>,
     profile_name: Option<String>,
     profile_missing: Option<String>,
     config_path: Option<PathBuf>,
@@ -74,6 +79,11 @@ impl ConfigLoader {
             session_expiry_buffer_seconds: None,
             session_ttl_seconds: None,
             health_check_interval_seconds: None,
+            circuit_breaker_enabled: None,
+            circuit_failure_threshold: None,
+            circuit_failure_window_seconds: None,
+            circuit_reset_timeout_seconds: None,
+            circuit_half_open_requests: None,
             profile_name: None,
             profile_missing: None,
             config_path: None,
@@ -204,6 +214,36 @@ impl ConfigLoader {
         self
     }
 
+    /// Set whether the circuit breaker is enabled.
+    pub fn with_circuit_breaker_enabled(mut self, enabled: bool) -> Self {
+        self.circuit_breaker_enabled = Some(enabled);
+        self
+    }
+
+    /// Set the circuit breaker failure threshold.
+    pub fn with_circuit_failure_threshold(mut self, threshold: u32) -> Self {
+        self.circuit_failure_threshold = Some(threshold);
+        self
+    }
+
+    /// Set the circuit breaker failure window in seconds.
+    pub fn with_circuit_failure_window_seconds(mut self, window: u64) -> Self {
+        self.circuit_failure_window_seconds = Some(window);
+        self
+    }
+
+    /// Set the circuit breaker reset timeout in seconds.
+    pub fn with_circuit_reset_timeout_seconds(mut self, timeout: u64) -> Self {
+        self.circuit_reset_timeout_seconds = Some(timeout);
+        self
+    }
+
+    /// Set the circuit breaker half-open requests.
+    pub fn with_circuit_half_open_requests(mut self, requests: u32) -> Self {
+        self.circuit_half_open_requests = Some(requests);
+        self
+    }
+
     /// Check if we have a complete configuration (base_url + auth).
     ///
     /// A complete configuration requires:
@@ -260,6 +300,19 @@ impl ConfigLoader {
             health_check_interval_seconds: self
                 .health_check_interval_seconds
                 .unwrap_or(DEFAULT_HEALTH_CHECK_INTERVAL_SECS),
+            circuit_breaker_enabled: self.circuit_breaker_enabled.unwrap_or(true),
+            circuit_failure_threshold: self
+                .circuit_failure_threshold
+                .unwrap_or(crate::types::connection::default_circuit_failure_threshold()),
+            circuit_failure_window_seconds: self
+                .circuit_failure_window_seconds
+                .unwrap_or(crate::types::connection::default_circuit_failure_window()),
+            circuit_reset_timeout_seconds: self
+                .circuit_reset_timeout_seconds
+                .unwrap_or(crate::types::connection::default_circuit_reset_timeout()),
+            circuit_half_open_requests: self
+                .circuit_half_open_requests
+                .unwrap_or(crate::types::connection::default_circuit_half_open_requests()),
         };
 
         // Validate timeout configuration
@@ -446,6 +499,26 @@ impl ConfigLoader {
 
     pub(crate) fn set_health_check_interval_seconds(&mut self, interval: Option<u64>) {
         self.health_check_interval_seconds = interval;
+    }
+
+    pub(crate) fn set_circuit_breaker_enabled(&mut self, enabled: Option<bool>) {
+        self.circuit_breaker_enabled = enabled;
+    }
+
+    pub(crate) fn set_circuit_failure_threshold(&mut self, threshold: Option<u32>) {
+        self.circuit_failure_threshold = threshold;
+    }
+
+    pub(crate) fn set_circuit_failure_window_seconds(&mut self, window: Option<u64>) {
+        self.circuit_failure_window_seconds = window;
+    }
+
+    pub(crate) fn set_circuit_reset_timeout_seconds(&mut self, timeout: Option<u64>) {
+        self.circuit_reset_timeout_seconds = timeout;
+    }
+
+    pub(crate) fn set_circuit_half_open_requests(&mut self, requests: Option<u32>) {
+        self.circuit_half_open_requests = requests;
     }
 
     pub(crate) fn set_earliest_time(&mut self, earliest: Option<String>) {

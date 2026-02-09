@@ -80,6 +80,7 @@ impl SplunkClient {
                 offset,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -107,6 +108,7 @@ impl SplunkClient {
                 name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -134,6 +136,7 @@ impl SplunkClient {
                 name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )

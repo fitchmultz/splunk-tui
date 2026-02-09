@@ -58,6 +58,18 @@ impl App {
             HealthState::Unknown => Span::styled("[?]", Style::default().fg(theme.health_unknown)),
         };
 
+        // Check if any circuits are open
+        let mut open_circuits = Vec::new();
+        if let Some(ref health) = self.health_info {
+            if let Some(ref cb_states) = health.circuit_breaker_states {
+                for (endpoint, state) in cb_states {
+                    if state == "open" {
+                        open_circuits.push(endpoint.clone());
+                    }
+                }
+            }
+        }
+
         let health_label = match self.health_state {
             HealthState::Healthy => "Healthy",
             HealthState::Unhealthy => "Unhealthy",
@@ -73,60 +85,69 @@ impl App {
         // Build connection context line for header (RQ-0134)
         let connection_line = self.format_connection_context();
 
-        let header = Paragraph::new(vec![
-            Line::from(vec![
-                Span::styled(
-                    "Splunk TUI",
-                    Style::default()
-                        .fg(theme.title)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::raw(" - "),
-                Span::styled(
-                    match self.current_screen {
-                        CurrentScreen::Search => "Search",
-                        CurrentScreen::Indexes => "Indexes",
-                        CurrentScreen::Cluster => "Cluster",
-                        CurrentScreen::Jobs => "Jobs",
-                        CurrentScreen::JobInspect => "Job Details",
-                        CurrentScreen::Health => "Health",
-                        CurrentScreen::License => "License",
-                        CurrentScreen::Kvstore => "KVStore",
-                        CurrentScreen::SavedSearches => "Saved Searches",
-                        CurrentScreen::Macros => "Macros",
-                        CurrentScreen::InternalLogs => "Internal Logs",
-                        CurrentScreen::Apps => "Apps",
-                        CurrentScreen::Users => "Users",
-                        CurrentScreen::Roles => "Roles",
-                        CurrentScreen::SearchPeers => "Search Peers",
-                        CurrentScreen::Inputs => "Data Inputs",
-                        CurrentScreen::Configs => "Config Files",
-                        CurrentScreen::FiredAlerts => "Fired Alerts",
-                        CurrentScreen::Forwarders => "Forwarders",
-                        CurrentScreen::Lookups => "Lookups",
-                        CurrentScreen::Audit => "Audit Events",
-                        CurrentScreen::Dashboards => "Dashboards",
-                        CurrentScreen::DataModels => "Data Models",
-                        CurrentScreen::WorkloadManagement => "Workload Management",
-                        CurrentScreen::Shc => "SHC",
-                        CurrentScreen::Settings => "Settings",
-                        CurrentScreen::Overview => "Overview",
-                        CurrentScreen::MultiInstance => "Multi-Instance",
-                    },
-                    Style::default().fg(theme.accent),
-                ),
-                Span::raw(" | "),
-                health_indicator,
-                Span::raw(" "),
-                Span::styled(health_label, health_label_style),
-            ]),
-            Line::from(connection_line),
-        ])
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(theme.border)),
-        );
+        let mut header_spans = vec![
+            Span::styled(
+                "Splunk TUI",
+                Style::default()
+                    .fg(theme.title)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(" - "),
+            Span::styled(
+                match self.current_screen {
+                    CurrentScreen::Search => "Search",
+                    CurrentScreen::Indexes => "Indexes",
+                    CurrentScreen::Cluster => "Cluster",
+                    CurrentScreen::Jobs => "Jobs",
+                    CurrentScreen::JobInspect => "Job Details",
+                    CurrentScreen::Health => "Health",
+                    CurrentScreen::License => "License",
+                    CurrentScreen::Kvstore => "KVStore",
+                    CurrentScreen::SavedSearches => "Saved Searches",
+                    CurrentScreen::Macros => "Macros",
+                    CurrentScreen::InternalLogs => "Internal Logs",
+                    CurrentScreen::Apps => "Apps",
+                    CurrentScreen::Users => "Users",
+                    CurrentScreen::Roles => "Roles",
+                    CurrentScreen::SearchPeers => "Search Peers",
+                    CurrentScreen::Inputs => "Data Inputs",
+                    CurrentScreen::Configs => "Config Files",
+                    CurrentScreen::FiredAlerts => "Fired Alerts",
+                    CurrentScreen::Forwarders => "Forwarders",
+                    CurrentScreen::Lookups => "Lookups",
+                    CurrentScreen::Audit => "Audit Events",
+                    CurrentScreen::Dashboards => "Dashboards",
+                    CurrentScreen::DataModels => "Data Models",
+                    CurrentScreen::WorkloadManagement => "Workload Management",
+                    CurrentScreen::Shc => "SHC",
+                    CurrentScreen::Settings => "Settings",
+                    CurrentScreen::Overview => "Overview",
+                    CurrentScreen::MultiInstance => "Multi-Instance",
+                },
+                Style::default().fg(theme.accent),
+            ),
+            Span::raw(" | "),
+            health_indicator,
+            Span::raw(" "),
+            Span::styled(health_label, health_label_style),
+        ];
+
+        if !open_circuits.is_empty() {
+            header_spans.push(Span::raw(" | "));
+            header_spans.push(Span::styled(
+                format!("CIRCUIT OPEN ({})", open_circuits.len()),
+                Style::default()
+                    .fg(theme.error)
+                    .add_modifier(Modifier::BOLD),
+            ));
+        }
+
+        let header = Paragraph::new(vec![Line::from(header_spans), Line::from(connection_line)])
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(theme.border)),
+            );
         f.render_widget(header, chunks[0]);
 
         // Main content

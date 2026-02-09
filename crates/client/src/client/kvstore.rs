@@ -27,6 +27,7 @@ impl SplunkClient {
                 &__token,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -53,6 +54,7 @@ impl SplunkClient {
                 offset,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -73,6 +75,7 @@ impl SplunkClient {
                 params,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -99,6 +102,7 @@ impl SplunkClient {
                 params,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -118,6 +122,7 @@ impl SplunkClient {
                 owner,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -148,6 +153,7 @@ impl SplunkClient {
                 offset,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -174,6 +180,7 @@ impl SplunkClient {
                 record,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -200,6 +207,7 @@ impl SplunkClient {
                 record_key,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )

@@ -91,6 +91,7 @@ fn test_redact_health_loaded() {
         license_usage: None,
         kvstore_status: None,
         log_parsing_health: None,
+        circuit_breaker_states: None,
     };
     let action = Action::HealthLoaded(Box::new(Ok(health)));
     let output = redacted_debug(&action);

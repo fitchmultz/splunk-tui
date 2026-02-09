@@ -55,7 +55,7 @@ async fn test_status_code_flapping_200_503() {
 
     // Should eventually succeed on an odd-numbered attempt
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None, None).await;
     assert!(
         result.is_ok(),
         "Should eventually succeed despite flapping: {:?}",
@@ -100,7 +100,7 @@ async fn test_rate_limit_flapping() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None, None).await;
     assert!(
         result.is_ok(),
         "Should succeed after handling rate limit flapping: {:?}",
@@ -143,7 +143,7 @@ async fn test_cascading_failure_recovery() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None, None).await;
     assert!(
         result.is_ok(),
         "Should recover from cascading failures: {:?}",
@@ -195,7 +195,7 @@ async fn test_random_status_code_chaos() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 10, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 10, None, None).await;
     assert!(
         result.is_ok(),
         "Should eventually succeed with random chaos: {:?}",
@@ -241,7 +241,7 @@ async fn test_load_balancer_flapping() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None, None).await;
     assert!(
         result.is_ok(),
         "Should succeed despite load balancer flapping: {:?}",
@@ -286,7 +286,7 @@ async fn test_flapping_retry_exhaustion() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 2, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 2, None, None).await;
     assert!(result.is_err(), "Should fail after retry exhaustion");
 
     let err = result.unwrap_err();
@@ -343,7 +343,7 @@ async fn test_flapping_with_varying_error_messages() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 5, None, None).await;
     assert!(
         result.is_ok(),
         "Should succeed despite varying error messages: {:?}",

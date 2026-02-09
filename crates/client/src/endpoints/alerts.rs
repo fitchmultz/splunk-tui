@@ -13,6 +13,7 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -22,6 +23,7 @@ use crate::name_merge::attach_entry_name;
 /// List fired alerts.
 ///
 /// Returns a summary of triggered alerts from `/services/alerts/fired_alerts`.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_fired_alerts(
     client: &Client,
     base_url: &str,
@@ -30,6 +32,7 @@ pub async fn list_fired_alerts(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<FiredAlert>> {
     debug!("Listing fired alerts");
 
@@ -56,6 +59,7 @@ pub async fn list_fired_alerts(
         "/services/alerts/fired_alerts",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -73,6 +77,7 @@ pub async fn list_fired_alerts(
 /// Get a specific fired alert by name.
 ///
 /// Retrieves details about a specific triggered alert instance.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_fired_alert(
     client: &Client,
     base_url: &str,
@@ -80,6 +85,7 @@ pub async fn get_fired_alert(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<FiredAlert> {
     debug!("Getting fired alert: {}", name);
 
@@ -96,6 +102,7 @@ pub async fn get_fired_alert(
         "/services/alerts/fired_alerts/{name}",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

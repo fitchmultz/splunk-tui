@@ -11,6 +11,7 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::{form_params_str, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -93,12 +94,14 @@ impl<'a> UpdateMacroRequest<'a> {
 }
 
 /// List all search macros.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_macros(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<crate::models::Macro>> {
     debug!("Listing search macros");
 
@@ -117,6 +120,7 @@ pub async fn list_macros(
         "/services/admin/macros",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -143,6 +147,7 @@ pub async fn list_macros(
 ///
 /// # Returns
 /// The `Macro` if found, or `ClientError::NotFound` if it doesn't exist.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_macro(
     client: &Client,
     base_url: &str,
@@ -150,6 +155,7 @@ pub async fn get_macro(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<crate::models::Macro> {
     debug!("Getting macro: {}", name);
 
@@ -166,6 +172,7 @@ pub async fn get_macro(
         "/services/admin/macros/{name}",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await
     {
@@ -199,6 +206,7 @@ pub async fn get_macro(
 /// * `request` - Request parameters for creating the macro
 /// * `max_retries` - Maximum number of retries
 /// * `metrics` - Optional metrics collector
+#[allow(clippy::too_many_arguments)]
 pub async fn create_macro(
     client: &Client,
     base_url: &str,
@@ -206,6 +214,7 @@ pub async fn create_macro(
     request: &CreateMacroRequest<'_>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     debug!("Creating macro: {}", request.name);
 
@@ -236,6 +245,7 @@ pub async fn create_macro(
         "/services/admin/macros",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -256,6 +266,7 @@ pub async fn create_macro(
 ///
 /// # Returns
 /// Ok(()) on success, or `ClientError::NotFound` if the macro doesn't exist.
+#[allow(clippy::too_many_arguments)]
 pub async fn update_macro(
     client: &Client,
     base_url: &str,
@@ -263,6 +274,7 @@ pub async fn update_macro(
     request: &UpdateMacroRequest<'_>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     debug!("Updating macro: {}", request.name);
 
@@ -292,6 +304,7 @@ pub async fn update_macro(
         "/services/admin/macros/{name}",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await
     {
@@ -316,6 +329,7 @@ pub async fn update_macro(
 ///
 /// # Returns
 /// Ok(()) on success, or `ClientError::NotFound` if the macro doesn't exist.
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_macro(
     client: &Client,
     base_url: &str,
@@ -323,6 +337,7 @@ pub async fn delete_macro(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     debug!("Deleting macro: {}", name);
 
@@ -339,6 +354,7 @@ pub async fn delete_macro(
         "/services/admin/macros/{name}",
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await
     {

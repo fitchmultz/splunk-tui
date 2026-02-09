@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -9,6 +10,7 @@ use crate::models::audit::{AuditEvent, AuditEventListResponse, ListAuditEventsPa
 use crate::name_merge::attach_entry_name;
 
 /// List audit events with optional filters.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_audit_events(
     client: &Client,
     base_url: &str,
@@ -16,6 +18,7 @@ pub async fn list_audit_events(
     params: &ListAuditEventsParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<AuditEvent>> {
     let url = format!("{}/services/admin/audit", base_url);
 
@@ -46,6 +49,7 @@ pub async fn list_audit_events(
         "/services/admin/audit",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -59,6 +63,7 @@ pub async fn list_audit_events(
 }
 
 /// Get recent audit events (convenience wrapper).
+#[allow(clippy::too_many_arguments)]
 pub async fn get_recent_audit_events(
     client: &Client,
     base_url: &str,
@@ -66,6 +71,7 @@ pub async fn get_recent_audit_events(
     count: usize,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<AuditEvent>> {
     let params = ListAuditEventsParams {
         earliest: Some("-24h".to_string()),
@@ -75,7 +81,16 @@ pub async fn get_recent_audit_events(
         user: None,
         action: None,
     };
-    list_audit_events(client, base_url, auth_token, &params, max_retries, metrics).await
+    list_audit_events(
+        client,
+        base_url,
+        auth_token,
+        &params,
+        max_retries,
+        metrics,
+        circuit_breaker,
+    )
+    .await
 }
 
 #[cfg(test)]

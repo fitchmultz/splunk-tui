@@ -38,6 +38,7 @@ async fn test_list_lookup_tables() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -80,6 +81,7 @@ async fn test_list_lookup_tables_with_pagination() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -110,6 +112,7 @@ async fn test_list_lookup_tables_empty_response() {
         None,
         None,
         3,
+        None,
         None,
     )
     .await;
@@ -174,6 +177,7 @@ async fn test_list_lookup_tables_unauthorized() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -202,6 +206,7 @@ async fn test_list_lookup_tables_forbidden() {
         None,
         None,
         3,
+        None,
         None,
     )
     .await;
@@ -235,6 +240,7 @@ async fn test_download_lookup_table_not_found() {
         Some("-"),
         3,
         None,
+        None,
     )
     .await;
 
@@ -267,6 +273,7 @@ async fn test_delete_lookup_table_not_found() {
         Some("-"),
         3,
         None,
+        None,
     )
     .await;
 
@@ -293,6 +300,7 @@ async fn test_list_lookup_tables_malformed_response() {
         None,
         None,
         3,
+        None,
         None,
     )
     .await;

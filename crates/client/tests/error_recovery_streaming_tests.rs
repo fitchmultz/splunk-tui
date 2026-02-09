@@ -77,6 +77,7 @@ async fn test_non_cloneable_body_single_attempt() {
                 &options,
                 3,
                 None,
+                None,
             )
             .await
         }

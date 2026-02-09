@@ -24,7 +24,7 @@ pub(crate) enum ConfigCommandContext {
     /// Used for actual Splunk API operations.
     /// Includes search defaults for applying env var overrides to search parameters.
     /// Includes no_cache flag for disabling client-side response caching.
-    Real(splunk_config::Config, SearchDefaultConfig, bool),
+    Real(Box<splunk_config::Config>, SearchDefaultConfig, bool),
     /// A placeholder config for commands that don't need real connection details.
     /// Only valid for Config commands and multi-profile ListAll operations.
     Placeholder,
@@ -36,7 +36,7 @@ impl ConfigCommandContext {
     /// Use this for commands that require actual connection details.
     pub(crate) fn into_real_config(self) -> anyhow::Result<splunk_config::Config> {
         match self {
-            ConfigCommandContext::Real(config, _, _) => Ok(config),
+            ConfigCommandContext::Real(config, _, _) => Ok(*config),
             ConfigCommandContext::Placeholder => {
                 anyhow::bail!(
                     "Internal error: attempted to use placeholder config for an operation requiring real connection details"
@@ -53,7 +53,9 @@ impl ConfigCommandContext {
         self,
     ) -> anyhow::Result<(splunk_config::Config, SearchDefaultConfig)> {
         match self {
-            ConfigCommandContext::Real(config, search_defaults, _) => Ok((config, search_defaults)),
+            ConfigCommandContext::Real(config, search_defaults, _) => {
+                Ok((*config, search_defaults))
+            }
             ConfigCommandContext::Placeholder => {
                 anyhow::bail!(
                     "Internal error: attempted to use placeholder config for an operation requiring real connection details"
@@ -71,7 +73,7 @@ impl ConfigCommandContext {
     ) -> anyhow::Result<(splunk_config::Config, SearchDefaultConfig, bool)> {
         match self {
             ConfigCommandContext::Real(config, search_defaults, no_cache) => {
-                Ok((config, search_defaults, no_cache))
+                Ok((*config, search_defaults, no_cache))
             }
             ConfigCommandContext::Placeholder => {
                 anyhow::bail!(

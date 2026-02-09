@@ -46,6 +46,7 @@ async fn test_unauthorized_access() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -68,7 +69,7 @@ async fn test_forbidden_access() {
 
     let client = Client::new();
     let result =
-        endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -96,6 +97,7 @@ async fn test_internal_server_error() {
         &Default::default(),
         3,
         None,
+        None,
     )
     .await;
 
@@ -122,6 +124,7 @@ async fn test_malformed_json_response() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -174,6 +177,7 @@ async fn test_timeout_handling() {
         endpoints::OutputMode::Json,
         3, // Default retry count
         None,
+        None,
     )
     .await;
 
@@ -221,6 +225,7 @@ async fn test_api_error_details() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -275,6 +280,7 @@ async fn test_connection_refused_error() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -307,6 +313,7 @@ async fn test_invalid_url_error_at_request_time() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -350,6 +357,7 @@ async fn test_not_found_error() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -454,6 +462,7 @@ async fn test_request_builder_clone_failure_single_attempt() {
         &options,
         3,
         None,
+        None,
     )
     .await;
 
@@ -482,6 +491,7 @@ async fn test_connection_error_fails_quickly() {
         Some(10),
         Some(0),
         3, // max_retries = 3
+        None,
         None,
     )
     .await;
@@ -519,6 +529,7 @@ async fn test_connection_refused_completes_quickly() {
         "test-token",
         "test-sid",
         3,
+        None,
         None,
     )
     .await;
@@ -669,6 +680,7 @@ async fn test_splunk_error_message_parsing() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -713,6 +725,7 @@ async fn test_multiple_splunk_error_messages() {
         &Default::default(),
         3,
         None,
+        None,
     )
     .await;
 
@@ -755,6 +768,7 @@ async fn test_non_json_error_response_fallback() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;

@@ -17,6 +17,7 @@ use tracing::debug;
 
 use crate::redact_query;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::{extract_entry_content, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -25,6 +26,7 @@ use crate::models::{SearchJobResults, SearchJobStatus};
 use super::types::{CreateJobOptions, OutputMode};
 
 /// Create a new search job.
+#[allow(clippy::too_many_arguments)]
 pub async fn create_job(
     client: &Client,
     base_url: &str,
@@ -33,6 +35,7 @@ pub async fn create_job(
     options: &CreateJobOptions,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<String> {
     // Security: Log only redacted query to avoid exposing sensitive data (tokens, PII, etc.)
     debug!("Creating search job: {}", redact_query(query));
@@ -104,6 +107,7 @@ pub async fn create_job(
         "/services/search/jobs",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -128,6 +132,7 @@ pub async fn create_job(
 }
 
 /// Get the status of a search job.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_job_status(
     client: &Client,
     base_url: &str,
@@ -135,6 +140,7 @@ pub async fn get_job_status(
     sid: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SearchJobStatus> {
     debug!("Getting status for job: {}", sid);
 
@@ -150,6 +156,7 @@ pub async fn get_job_status(
         "/services/search/jobs/{sid}",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -171,6 +178,7 @@ pub async fn wait_for_job(
     max_wait_secs: u64,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SearchJobStatus> {
     wait_for_job_with_progress(
         client,
@@ -182,6 +190,7 @@ pub async fn wait_for_job(
         max_retries,
         None,
         metrics,
+        circuit_breaker,
     )
     .await
 }
@@ -201,13 +210,22 @@ pub async fn wait_for_job_with_progress(
     max_retries: usize,
     mut progress_cb: Option<&mut (dyn FnMut(f64) + Send)>,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SearchJobStatus> {
     let start = std::time::Instant::now();
     let max_wait = std::time::Duration::from_secs(max_wait_secs);
 
     loop {
-        let status =
-            get_job_status(client, base_url, auth_token, sid, max_retries, metrics).await?;
+        let status = get_job_status(
+            client,
+            base_url,
+            auth_token,
+            sid,
+            max_retries,
+            metrics,
+            circuit_breaker,
+        )
+        .await?;
 
         if let Some(cb) = progress_cb.as_deref_mut() {
             cb(status.done_progress);
@@ -238,6 +256,7 @@ pub async fn get_results(
     output_mode: OutputMode,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SearchJobResults> {
     debug!("Getting results for job: {}", sid);
 
@@ -263,6 +282,7 @@ pub async fn get_results(
         "/services/search/jobs/{sid}/results",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

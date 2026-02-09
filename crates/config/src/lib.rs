@@ -18,7 +18,9 @@ pub use persistence::{
 };
 pub use types::{
     AuthConfig, AuthStrategy, ColorTheme, Config, ConnectionConfig, KeybindAction,
-    KeybindOverrides, ProfileConfig, SecureValue, Theme,
+    KeybindOverrides, ProfileConfig, SecureValue, Theme, default_circuit_breaker_enabled,
+    default_circuit_failure_threshold, default_circuit_failure_window,
+    default_circuit_half_open_requests, default_circuit_reset_timeout,
 };
 
 #[cfg(test)]

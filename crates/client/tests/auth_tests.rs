@@ -40,6 +40,7 @@ async fn test_login_success() {
         "testpassword",
         3,
         None,
+        None,
     )
     .await;
 
@@ -71,6 +72,7 @@ async fn test_login_invalid_credentials() {
         "wrongpassword",
         3,
         None,
+        None,
     )
     .await;
 
@@ -99,6 +101,7 @@ async fn test_login_response_format_regression() {
         "admin",
         "testpassword",
         3,
+        None,
         None,
     )
     .await;

@@ -59,6 +59,7 @@ async fn test_retry_on_429_success() {
                 &options,
                 3, // max_retries
                 None,
+                None,
             )
             .await
         }
@@ -95,7 +96,16 @@ async fn test_retry_on_429_exhaustion() {
         let client = client.clone();
         let server_uri = server_uri.clone();
         async move {
-            endpoints::get_job_status(&client, &server_uri, "test-token", "test-sid", 2, None).await
+            endpoints::get_job_status(
+                &client,
+                &server_uri,
+                "test-token",
+                "test-sid",
+                2,
+                None,
+                None,
+            )
+            .await
         }
     });
 

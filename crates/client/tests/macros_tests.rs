@@ -27,7 +27,8 @@ async fn test_list_macros() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::list_macros(&client, &mock_server.uri(), "test-token", 3, None).await;
+    let result =
+        endpoints::list_macros(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(result.is_ok());
     let macros = result.unwrap();
@@ -87,8 +88,16 @@ async fn test_create_macro_endpoint() {
     let client = Client::new();
     let request = CreateMacroRequest::new("test_macro", "| makeresults");
 
-    let result =
-        endpoints::create_macro(&client, &mock_server.uri(), "test-token", &request, 3, None).await;
+    let result = endpoints::create_macro(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &request,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
 }
@@ -149,8 +158,16 @@ async fn test_update_macro_endpoint() {
         ..Default::default()
     };
 
-    let result =
-        endpoints::update_macro(&client, &mock_server.uri(), "test-token", &request, 3, None).await;
+    let result = endpoints::update_macro(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &request,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
 }
@@ -173,6 +190,7 @@ async fn test_delete_macro() {
         "test-token",
         "test_macro",
         3,
+        None,
         None,
     )
     .await;
@@ -201,6 +219,7 @@ async fn test_get_macro() {
         "test_macro",
         3,
         None,
+        None,
     )
     .await;
 
@@ -227,6 +246,7 @@ async fn test_get_macro_not_found() {
         "test-token",
         "nonexistent",
         3,
+        None,
         None,
     )
     .await;

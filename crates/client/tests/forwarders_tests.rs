@@ -38,6 +38,7 @@ async fn test_list_forwarders() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -78,6 +79,7 @@ async fn test_list_forwarders_with_pagination() {
         Some(1),
         3,
         None,
+        None,
     )
     .await;
 
@@ -109,6 +111,7 @@ async fn test_list_forwarders_empty_response() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -137,6 +140,7 @@ async fn test_list_forwarders_unauthorized() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -167,6 +171,7 @@ async fn test_list_forwarders_forbidden() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -196,6 +201,7 @@ async fn test_list_forwarders_not_found() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -222,6 +228,7 @@ async fn test_list_forwarders_malformed_response() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;

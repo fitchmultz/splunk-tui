@@ -41,6 +41,7 @@ async fn test_list_config_stanzas() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -87,6 +88,7 @@ async fn test_list_config_stanzas_with_pagination() {
         Some(5),
         3,
         None,
+        None,
     )
     .await;
 
@@ -119,6 +121,7 @@ async fn test_list_config_stanzas_empty_response() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -147,6 +150,7 @@ async fn test_get_config_stanza() {
         "props",
         "source::...",
         3,
+        None,
         None,
     )
     .await;
@@ -190,6 +194,7 @@ async fn test_get_config_stanza_not_found() {
         "nonexistent",
         3,
         None,
+        None,
     )
     .await;
 
@@ -206,8 +211,15 @@ async fn test_get_config_stanza_not_found() {
 async fn test_list_config_files() {
     // list_config_files returns a static list, no mock server needed
     let client = Client::new();
-    let result =
-        endpoints::list_config_files(&client, "http://localhost:8080", "test-token", 3, None).await;
+    let result = endpoints::list_config_files(
+        &client,
+        "http://localhost:8080",
+        "test-token",
+        3,
+        None,
+        None,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("List config files error: {:?}", e);

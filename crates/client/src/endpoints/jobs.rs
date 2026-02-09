@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::extract_entry_content;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -9,6 +10,7 @@ use crate::metrics::MetricsCollector;
 use crate::models::{SearchJobListResponse, SearchJobStatus};
 
 /// Get a specific search job.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_job(
     client: &Client,
     base_url: &str,
@@ -16,6 +18,7 @@ pub async fn get_job(
     sid: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SearchJobStatus> {
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
@@ -29,6 +32,7 @@ pub async fn get_job(
         "/services/search/jobs/{sid}",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -40,6 +44,7 @@ pub async fn get_job(
 }
 
 /// List all search jobs.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_jobs(
     client: &Client,
     base_url: &str,
@@ -48,6 +53,7 @@ pub async fn list_jobs(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<SearchJobStatus>> {
     let url = format!("{}/services/search/jobs", base_url);
 
@@ -71,6 +77,7 @@ pub async fn list_jobs(
         "/services/search/jobs",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -97,6 +104,7 @@ pub async fn list_jobs(
 }
 
 /// Cancel a search job.
+#[allow(clippy::too_many_arguments)]
 pub async fn cancel_job(
     client: &Client,
     base_url: &str,
@@ -104,6 +112,7 @@ pub async fn cancel_job(
     sid: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!("{}/services/search/jobs/{}/control", base_url, sid);
 
@@ -117,6 +126,7 @@ pub async fn cancel_job(
         "/services/search/jobs/{sid}/control",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -124,6 +134,7 @@ pub async fn cancel_job(
 }
 
 /// Delete a search job.
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_job(
     client: &Client,
     base_url: &str,
@@ -131,6 +142,7 @@ pub async fn delete_job(
     sid: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!("{}/services/search/jobs/{}", base_url, sid);
 
@@ -143,6 +155,7 @@ pub async fn delete_job(
         "/services/search/jobs/{sid}",
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

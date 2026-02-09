@@ -29,6 +29,7 @@ impl SplunkClient {
                 &__token,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -51,6 +52,7 @@ impl SplunkClient {
                 earliest,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )

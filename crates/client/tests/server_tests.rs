@@ -32,7 +32,7 @@ async fn test_get_server_info() {
 
     let client = Client::new();
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(result.is_ok());
     let info = result.unwrap();
@@ -56,7 +56,8 @@ async fn test_get_health() {
         .await;
 
     let client = Client::new();
-    let result = endpoints::get_health(&client, &mock_server.uri(), "test-token", 3, None).await;
+    let result =
+        endpoints::get_health(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(result.is_ok());
     let health = result.unwrap();

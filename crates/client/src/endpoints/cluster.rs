@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::endpoints::{extract_entry_content, extract_entry_message};
 use crate::error::{ClientError, Result};
@@ -12,12 +13,14 @@ use crate::models::{
 };
 
 /// Get cluster configuration/status.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_cluster_info(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ClusterInfo> {
     let url = format!("{}/services/cluster/master/config", base_url);
 
@@ -31,6 +34,7 @@ pub async fn get_cluster_info(
         "/services/cluster/master/config",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -45,12 +49,14 @@ pub async fn get_cluster_info(
 }
 
 /// Get cluster peer information.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_cluster_peers(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<ClusterPeer>> {
     let url = format!("{}/services/cluster/master/peers", base_url);
 
@@ -64,6 +70,7 @@ pub async fn get_cluster_peers(
         "/services/cluster/master/peers",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -87,6 +94,7 @@ pub async fn get_cluster_peers(
 }
 
 /// Set maintenance mode on the cluster manager.
+#[allow(clippy::too_many_arguments)]
 pub async fn set_maintenance_mode(
     client: &Client,
     base_url: &str,
@@ -94,6 +102,7 @@ pub async fn set_maintenance_mode(
     params: &MaintenanceModeParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ClusterManagementResponse> {
     let url = format!(
         "{}/services/cluster/master/control/default/maintenance",
@@ -116,6 +125,7 @@ pub async fn set_maintenance_mode(
         "/services/cluster/master/control/default/maintenance",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -142,12 +152,14 @@ pub async fn set_maintenance_mode(
 }
 
 /// Rebalance primary buckets across all peers.
+#[allow(clippy::too_many_arguments)]
 pub async fn rebalance_cluster(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ClusterManagementResponse> {
     let url = format!(
         "{}/services/cluster/master/control/control/rebalance_primaries",
@@ -167,6 +179,7 @@ pub async fn rebalance_cluster(
         "/services/cluster/master/control/control/rebalance_primaries",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -190,6 +203,7 @@ pub async fn rebalance_cluster(
 }
 
 /// Remove one or more peers from the cluster.
+#[allow(clippy::too_many_arguments)]
 pub async fn remove_peers(
     client: &Client,
     base_url: &str,
@@ -197,6 +211,7 @@ pub async fn remove_peers(
     params: &RemovePeersParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ClusterManagementResponse> {
     let url = format!(
         "{}/services/cluster/master/control/control/remove_peers",
@@ -219,6 +234,7 @@ pub async fn remove_peers(
         "/services/cluster/master/control/control/remove_peers",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -242,6 +258,7 @@ pub async fn remove_peers(
 }
 
 /// Decommission a specific peer.
+#[allow(clippy::too_many_arguments)]
 pub async fn decommission_peer(
     client: &Client,
     base_url: &str,
@@ -250,6 +267,7 @@ pub async fn decommission_peer(
     params: &DecommissionPeerParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ClusterPeer> {
     let url = format!("{}/services/cluster/master/peers/{}", base_url, peer_name);
 
@@ -269,6 +287,7 @@ pub async fn decommission_peer(
         &format!("/services/cluster/master/peers/{}", peer_name),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

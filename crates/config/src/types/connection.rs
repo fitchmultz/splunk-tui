@@ -17,6 +17,8 @@
 //! - `Config::default()` provides sensible development defaults (localhost:8089).
 
 use crate::constants::{
+    DEFAULT_CIRCUIT_FAILURE_THRESHOLD, DEFAULT_CIRCUIT_FAILURE_WINDOW_SECS,
+    DEFAULT_CIRCUIT_HALF_OPEN_REQUESTS, DEFAULT_CIRCUIT_RESET_TIMEOUT_SECS,
     DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_MAX_RETRIES,
     DEFAULT_SESSION_TTL_SECS, DEFAULT_SPLUNK_PORT, DEFAULT_TIMEOUT_SECS,
 };
@@ -80,6 +82,21 @@ pub struct ConnectionConfig {
     /// Default: 60 seconds
     #[serde(default = "default_health_check_interval")]
     pub health_check_interval_seconds: u64,
+    /// Whether the circuit breaker is enabled
+    #[serde(default = "default_circuit_breaker_enabled")]
+    pub circuit_breaker_enabled: bool,
+    /// Number of failures within window to open circuit
+    #[serde(default = "default_circuit_failure_threshold")]
+    pub circuit_failure_threshold: u32,
+    /// Time window for failure counting in seconds
+    #[serde(default = "default_circuit_failure_window")]
+    pub circuit_failure_window_seconds: u64,
+    /// Time to wait before attempting half-open in seconds
+    #[serde(default = "default_circuit_reset_timeout")]
+    pub circuit_reset_timeout_seconds: u64,
+    /// Number of requests allowed in half-open state
+    #[serde(default = "default_circuit_half_open_requests")]
+    pub circuit_half_open_requests: u32,
 }
 
 /// Default session expiry buffer in seconds.
@@ -95,6 +112,31 @@ pub(crate) fn default_session_ttl() -> u64 {
 /// Default health check interval in seconds.
 pub(crate) fn default_health_check_interval() -> u64 {
     DEFAULT_HEALTH_CHECK_INTERVAL_SECS
+}
+
+/// Default circuit breaker enabled.
+pub fn default_circuit_breaker_enabled() -> bool {
+    true
+}
+
+/// Default circuit failure threshold.
+pub fn default_circuit_failure_threshold() -> u32 {
+    DEFAULT_CIRCUIT_FAILURE_THRESHOLD
+}
+
+/// Default circuit failure window in seconds.
+pub fn default_circuit_failure_window() -> u64 {
+    DEFAULT_CIRCUIT_FAILURE_WINDOW_SECS
+}
+
+/// Default circuit reset timeout in seconds.
+pub fn default_circuit_reset_timeout() -> u64 {
+    DEFAULT_CIRCUIT_RESET_TIMEOUT_SECS
+}
+
+/// Default circuit half-open requests.
+pub fn default_circuit_half_open_requests() -> u32 {
+    DEFAULT_CIRCUIT_HALF_OPEN_REQUESTS
 }
 
 /// Main configuration structure.
@@ -138,6 +180,11 @@ impl Default for Config {
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
                 health_check_interval_seconds: default_health_check_interval(),
+                circuit_breaker_enabled: default_circuit_breaker_enabled(),
+                circuit_failure_threshold: default_circuit_failure_threshold(),
+                circuit_failure_window_seconds: default_circuit_failure_window(),
+                circuit_reset_timeout_seconds: default_circuit_reset_timeout(),
+                circuit_half_open_requests: default_circuit_half_open_requests(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken {
@@ -183,6 +230,11 @@ impl Config {
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
                 health_check_interval_seconds: default_health_check_interval(),
+                circuit_breaker_enabled: default_circuit_breaker_enabled(),
+                circuit_failure_threshold: default_circuit_failure_threshold(),
+                circuit_failure_window_seconds: default_circuit_failure_window(),
+                circuit_reset_timeout_seconds: default_circuit_reset_timeout(),
+                circuit_half_open_requests: default_circuit_half_open_requests(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::ApiToken { token },
@@ -201,6 +253,11 @@ impl Config {
                 session_expiry_buffer_seconds: default_session_expiry_buffer(),
                 session_ttl_seconds: default_session_ttl(),
                 health_check_interval_seconds: default_health_check_interval(),
+                circuit_breaker_enabled: default_circuit_breaker_enabled(),
+                circuit_failure_threshold: default_circuit_failure_threshold(),
+                circuit_failure_window_seconds: default_circuit_failure_window(),
+                circuit_reset_timeout_seconds: default_circuit_reset_timeout(),
+                circuit_half_open_requests: default_circuit_half_open_requests(),
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken { username, password },
@@ -254,6 +311,11 @@ mod tests {
             session_expiry_buffer_seconds: default_session_expiry_buffer(),
             session_ttl_seconds: default_session_ttl(),
             health_check_interval_seconds: default_health_check_interval(),
+            circuit_breaker_enabled: default_circuit_breaker_enabled(),
+            circuit_failure_threshold: default_circuit_failure_threshold(),
+            circuit_failure_window_seconds: default_circuit_failure_window(),
+            circuit_reset_timeout_seconds: default_circuit_reset_timeout(),
+            circuit_half_open_requests: default_circuit_half_open_requests(),
         };
 
         let json = serde_json::to_string(&config).unwrap();
@@ -312,6 +374,11 @@ mod tests {
             session_expiry_buffer_seconds: default_session_expiry_buffer(),
             session_ttl_seconds: default_session_ttl(),
             health_check_interval_seconds: default_health_check_interval(),
+            circuit_breaker_enabled: default_circuit_breaker_enabled(),
+            circuit_failure_threshold: default_circuit_failure_threshold(),
+            circuit_failure_window_seconds: default_circuit_failure_window(),
+            circuit_reset_timeout_seconds: default_circuit_reset_timeout(),
+            circuit_half_open_requests: default_circuit_half_open_requests(),
         };
 
         let debug_output = format!("{:?}", config);

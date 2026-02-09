@@ -40,6 +40,7 @@ async fn test_list_indexes() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -79,8 +80,16 @@ async fn test_create_index() {
         cold_to_frozen_dir: None,
     };
 
-    let result =
-        endpoints::create_index(&client, &mock_server.uri(), "test-token", &params, 3, None).await;
+    let result = endpoints::create_index(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &params,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("Create index error: {:?}", e);
@@ -123,6 +132,7 @@ async fn test_modify_index() {
         &params,
         3,
         None,
+        None,
     )
     .await;
 
@@ -152,6 +162,7 @@ async fn test_delete_index() {
         "test-token",
         "test_index",
         3,
+        None,
         None,
     )
     .await;
@@ -183,6 +194,7 @@ async fn test_list_indexes_unauthorized() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -211,6 +223,7 @@ async fn test_list_indexes_forbidden() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -252,6 +265,7 @@ async fn test_create_index_unauthorized() {
         &params,
         3,
         None,
+        None,
     )
     .await;
 
@@ -292,6 +306,7 @@ async fn test_modify_index_not_found() {
         &params,
         3,
         None,
+        None,
     )
     .await;
 
@@ -320,6 +335,7 @@ async fn test_delete_index_not_found() {
         "nonexistent",
         3,
         None,
+        None,
     )
     .await;
 
@@ -346,6 +362,7 @@ async fn test_list_indexes_malformed_response() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;

@@ -18,13 +18,17 @@
 //! - `KEYRING_SERVICE` is the canonical service name for all keyring operations.
 
 mod auth;
-mod connection;
+pub(crate) mod connection;
 pub mod keybind;
 mod profile;
 mod theme;
 
 pub use auth::{AuthConfig, AuthStrategy, KEYRING_SERVICE, SecureValue};
-pub use connection::{Config, ConnectionConfig};
+pub use connection::{
+    Config, ConnectionConfig, default_circuit_breaker_enabled, default_circuit_failure_threshold,
+    default_circuit_failure_window, default_circuit_half_open_requests,
+    default_circuit_reset_timeout,
+};
 pub use keybind::{KeybindAction, KeybindOverrides};
 pub use profile::ProfileConfig;
 pub use theme::{ColorTheme, Theme};

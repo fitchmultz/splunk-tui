@@ -102,6 +102,46 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
             }
         })?));
     }
+    if let Some(enabled) = env_var_or_none("SPLUNK_CIRCUIT_BREAKER_ENABLED") {
+        loader.set_circuit_breaker_enabled(Some(enabled.parse().map_err(|_| {
+            ConfigError::InvalidValue {
+                var: "SPLUNK_CIRCUIT_BREAKER_ENABLED".to_string(),
+                message: "must be true or false".to_string(),
+            }
+        })?));
+    }
+    if let Some(threshold) = env_var_or_none("SPLUNK_CIRCUIT_FAILURE_THRESHOLD") {
+        loader.set_circuit_failure_threshold(Some(threshold.parse().map_err(|_| {
+            ConfigError::InvalidValue {
+                var: "SPLUNK_CIRCUIT_FAILURE_THRESHOLD".to_string(),
+                message: "must be a number".to_string(),
+            }
+        })?));
+    }
+    if let Some(window) = env_var_or_none("SPLUNK_CIRCUIT_FAILURE_WINDOW") {
+        loader.set_circuit_failure_window_seconds(Some(window.parse().map_err(|_| {
+            ConfigError::InvalidValue {
+                var: "SPLUNK_CIRCUIT_FAILURE_WINDOW".to_string(),
+                message: "must be a number".to_string(),
+            }
+        })?));
+    }
+    if let Some(timeout) = env_var_or_none("SPLUNK_CIRCUIT_RESET_TIMEOUT") {
+        loader.set_circuit_reset_timeout_seconds(Some(timeout.parse().map_err(|_| {
+            ConfigError::InvalidValue {
+                var: "SPLUNK_CIRCUIT_RESET_TIMEOUT".to_string(),
+                message: "must be a number".to_string(),
+            }
+        })?));
+    }
+    if let Some(requests) = env_var_or_none("SPLUNK_CIRCUIT_HALF_OPEN_REQUESTS") {
+        loader.set_circuit_half_open_requests(Some(requests.parse().map_err(|_| {
+            ConfigError::InvalidValue {
+                var: "SPLUNK_CIRCUIT_HALF_OPEN_REQUESTS".to_string(),
+                message: "must be a number".to_string(),
+            }
+        })?));
+    }
     // Search defaults
     if let Some(earliest) = env_var_or_none("SPLUNK_EARLIEST_TIME") {
         loader.set_earliest_time(Some(earliest));

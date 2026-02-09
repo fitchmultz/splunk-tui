@@ -27,6 +27,7 @@ async fn test_list_fired_alerts() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -69,6 +70,7 @@ async fn test_list_fired_alerts_with_pagination() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -102,6 +104,7 @@ async fn test_get_fired_alert() {
         alert_name,
         3,
         None,
+        None,
     )
     .await;
 
@@ -134,6 +137,7 @@ async fn test_get_fired_alert_not_found() {
         "NonExistentAlert",
         3,
         None,
+        None,
     )
     .await;
 
@@ -161,6 +165,7 @@ async fn test_list_fired_alerts_empty_response() {
         None,
         None,
         3,
+        None,
         None,
     )
     .await;

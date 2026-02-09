@@ -120,17 +120,17 @@ impl EndpointCircuit {
         self.clean_old_failures(now);
 
         // Check if we should open the circuit
-        if self.failures.len() >= self.config.failure_threshold as usize {
-            if self.state != CircuitState::Open {
-                warn!(
-                    endpoint = endpoint,
-                    failures = self.failures.len(),
-                    threshold = self.config.failure_threshold,
-                    "Circuit breaker opened due to failure threshold exceeded"
-                );
-                self.state = CircuitState::Open;
-                self.opened_at = Some(now);
-            }
+        if self.failures.len() >= self.config.failure_threshold as usize
+            && self.state != CircuitState::Open
+        {
+            warn!(
+                endpoint = endpoint,
+                failures = self.failures.len(),
+                threshold = self.config.failure_threshold,
+                "Circuit breaker opened due to failure threshold exceeded"
+            );
+            self.state = CircuitState::Open;
+            self.opened_at = Some(now);
         }
 
         self.state
@@ -337,7 +337,7 @@ impl CircuitBreaker {
     pub fn reset_all(&self) {
         let mut circuits = self.circuits.lock().unwrap();
         info!("Resetting all circuit breakers");
-        for (endpoint, circuit) in circuits.iter_mut() {
+        for (_endpoint, circuit) in circuits.iter_mut() {
             circuit.state = CircuitState::Closed;
             circuit.failures.clear();
             circuit.half_open_attempts = 0;
@@ -369,12 +369,7 @@ pub enum CircuitBreakerError {
 /// Extension trait for MetricsCollector to add circuit breaker metrics.
 pub trait CircuitBreakerMetrics {
     /// Record a circuit breaker state transition.
-    fn record_circuit_state_transition(
-        &self,
-        endpoint: &str,
-        from: CircuitState,
-        to: CircuitState,
-    );
+    fn record_circuit_state_transition(&self, endpoint: &str, from: CircuitState, to: CircuitState);
 
     /// Record a blocked request due to open circuit.
     fn record_circuit_blocked(&self, endpoint: &str);

@@ -40,7 +40,7 @@ async fn test_truncated_json_response() {
 
     let client = Client::new();
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     // Should fail - JSON parse errors are not retryable
     assert!(
@@ -66,7 +66,7 @@ async fn test_malformed_json_response() {
 
     let client = Client::new();
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     // Should fail - JSON parse errors are not retryable
     assert!(
@@ -90,7 +90,7 @@ async fn test_empty_response_body() {
 
     let client = Client::new();
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     // Empty body causes JSON parse error - not retryable
     assert!(result.is_err(), "Should fail on empty body (not retryable)");
@@ -135,7 +135,7 @@ async fn test_connection_error_recovery() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(
         result.is_ok(),
@@ -182,6 +182,7 @@ async fn test_large_response_handling() {
         endpoints::search::OutputMode::Json,
         3,
         None,
+        None,
     )
     .await;
 
@@ -211,7 +212,7 @@ async fn test_partial_schema_response() {
 
     let client = Client::new();
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     // Should fail with InvalidResponse - schema mismatch is not retryable
     assert!(
@@ -262,7 +263,7 @@ async fn test_server_unavailable_retry() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(
         result.is_ok(),
@@ -297,7 +298,7 @@ async fn test_unexpected_content_type() {
 
     let client = Client::new();
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     // Plain text causes JSON parse error - not retryable
     assert!(
@@ -343,7 +344,7 @@ async fn test_bad_gateway_retry() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(
         result.is_ok(),
@@ -390,7 +391,7 @@ async fn test_gateway_timeout_retry() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(
         result.is_ok(),
@@ -425,7 +426,7 @@ async fn test_retry_exhaustion() {
     let client = Client::new();
 
     let result =
-        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 2, None).await;
+        endpoints::get_server_info(&client, &mock_server.uri(), "test-token", 2, None, None).await;
 
     assert!(result.is_err(), "Should fail after retry exhaustion");
 

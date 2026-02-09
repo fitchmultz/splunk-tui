@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::endpoints::{extract_entry_content, extract_entry_message};
 use crate::error::{ClientError, Result};
@@ -12,12 +13,14 @@ use crate::models::{
 };
 
 /// Get SHC members.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_shc_members(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<ShcMember>> {
     let url = format!("{}/services/shcluster/member/members", base_url);
 
@@ -32,6 +35,7 @@ pub async fn get_shc_members(
         "/services/shcluster/member/members",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -66,12 +70,14 @@ pub async fn get_shc_members(
 }
 
 /// Get SHC captain information.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_shc_captain(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcCaptain> {
     let url = format!("{}/services/shcluster/captain/info", base_url);
 
@@ -86,6 +92,7 @@ pub async fn get_shc_captain(
         "/services/shcluster/captain/info",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -106,12 +113,14 @@ pub async fn get_shc_captain(
 }
 
 /// Get SHC status.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_shc_status(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcStatus> {
     let url = format!("{}/services/shcluster/member/info", base_url);
 
@@ -126,6 +135,7 @@ pub async fn get_shc_status(
         "/services/shcluster/member/info",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -149,12 +159,14 @@ pub async fn get_shc_status(
 }
 
 /// Get SHC configuration.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_shc_config(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcConfig> {
     let url = format!("{}/services/shcluster/config/config", base_url);
 
@@ -169,6 +181,7 @@ pub async fn get_shc_config(
         "/services/shcluster/config/config",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -189,6 +202,7 @@ pub async fn get_shc_config(
 }
 
 /// Add a member to the SHC.
+#[allow(clippy::too_many_arguments)]
 pub async fn add_shc_member(
     client: &Client,
     base_url: &str,
@@ -196,6 +210,7 @@ pub async fn add_shc_member(
     params: &AddShcMemberParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcManagementResponse> {
     let url = format!("{}/services/shcluster/captain/members", base_url);
 
@@ -215,6 +230,7 @@ pub async fn add_shc_member(
         "/services/shcluster/captain/members",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -237,6 +253,7 @@ pub async fn add_shc_member(
 }
 
 /// Remove a member from the SHC.
+#[allow(clippy::too_many_arguments)]
 pub async fn remove_shc_member(
     client: &Client,
     base_url: &str,
@@ -244,6 +261,7 @@ pub async fn remove_shc_member(
     params: &RemoveShcMemberParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcManagementResponse> {
     let url = format!(
         "{}/services/shcluster/captain/members/{}",
@@ -261,6 +279,7 @@ pub async fn remove_shc_member(
         &format!("/services/shcluster/captain/members/{}", params.member),
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -283,6 +302,7 @@ pub async fn remove_shc_member(
 }
 
 /// Trigger a rolling restart of the SHC.
+#[allow(clippy::too_many_arguments)]
 pub async fn rolling_restart_shc(
     client: &Client,
     base_url: &str,
@@ -290,6 +310,7 @@ pub async fn rolling_restart_shc(
     params: &RollingRestartParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcManagementResponse> {
     let url = format!(
         "{}/services/shcluster/captain/control/default/rolling_restart",
@@ -312,6 +333,7 @@ pub async fn rolling_restart_shc(
         "/services/shcluster/captain/control/default/rolling_restart",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -334,6 +356,7 @@ pub async fn rolling_restart_shc(
 }
 
 /// Set a specific member as captain.
+#[allow(clippy::too_many_arguments)]
 pub async fn set_shc_captain(
     client: &Client,
     base_url: &str,
@@ -341,6 +364,7 @@ pub async fn set_shc_captain(
     params: &SetCaptainParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcManagementResponse> {
     let url = format!(
         "{}/services/shcluster/member/control/default/set_captain",
@@ -363,6 +387,7 @@ pub async fn set_shc_captain(
         "/services/shcluster/member/control/default/set_captain",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

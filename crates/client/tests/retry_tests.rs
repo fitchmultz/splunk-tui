@@ -69,6 +69,7 @@ async fn test_retry_mixed_503_and_429() {
                 &options,
                 3, // max_retries
                 None,
+                None,
             )
             .await
         }
@@ -146,6 +147,7 @@ async fn test_retry_on_timeout() {
         "search index=main",
         &options,
         3, // max_retries
+        None,
         None,
     )
     .await;

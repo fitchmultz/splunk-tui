@@ -184,6 +184,8 @@ pub struct HealthCheckOutput {
     pub kvstore_status: Option<KvStoreStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub log_parsing_health: Option<LogParsingHealth>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub circuit_breaker_states: Option<std::collections::HashMap<String, String>>,
 }
 
 #[cfg(test)]

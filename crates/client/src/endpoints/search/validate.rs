@@ -17,6 +17,7 @@ use tracing::debug;
 
 use crate::redact_query;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -42,6 +43,7 @@ use crate::models::ValidateSplResponse;
 /// # Note
 /// This endpoint returns HTTP 200 for valid SPL and HTTP 400 for syntax errors.
 /// Both are considered "successful" responses from a validation perspective.
+#[allow(clippy::too_many_arguments)]
 pub async fn validate_spl(
     client: &Client,
     base_url: &str,
@@ -49,6 +51,7 @@ pub async fn validate_spl(
     search: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ValidateSplResponse> {
     // Security: Log only redacted query to avoid exposing sensitive data (tokens, PII, etc.)
     debug!("Validating SPL syntax: {}", redact_query(search));
@@ -68,6 +71,7 @@ pub async fn validate_spl(
         "/services/search/parser",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

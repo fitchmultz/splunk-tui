@@ -15,6 +15,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -54,6 +55,7 @@ pub async fn list_inputs_by_type(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Input>> {
     let url = format!("{}/services/data/inputs/{}", base_url, input_type);
 
@@ -76,6 +78,7 @@ pub async fn list_inputs_by_type(
         &format!("/services/data/inputs/{}", input_type),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -105,6 +108,7 @@ pub async fn list_inputs_by_type(
 /// # Errors
 ///
 /// Returns a `ClientError` if the request fails.
+#[allow(clippy::too_many_arguments)]
 pub async fn enable_input(
     client: &Client,
     base_url: &str,
@@ -113,6 +117,7 @@ pub async fn enable_input(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!(
         "{}/services/data/inputs/{}/{}/enable",
@@ -128,6 +133,7 @@ pub async fn enable_input(
         &format!("/services/data/inputs/{}/{{name}}/enable", input_type),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -151,6 +157,7 @@ pub async fn enable_input(
 /// # Errors
 ///
 /// Returns a `ClientError` if the request fails.
+#[allow(clippy::too_many_arguments)]
 pub async fn disable_input(
     client: &Client,
     base_url: &str,
@@ -159,6 +166,7 @@ pub async fn disable_input(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!(
         "{}/services/data/inputs/{}/{}/disable",
@@ -174,6 +182,7 @@ pub async fn disable_input(
         &format!("/services/data/inputs/{}/{{name}}/disable", input_type),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

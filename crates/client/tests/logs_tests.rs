@@ -72,9 +72,17 @@ async fn test_get_internal_logs() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::get_internal_logs(&client, &mock_server.uri(), "test-token", 10, None, 3, None)
-            .await;
+    let result = endpoints::get_internal_logs(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        10,
+        None,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("Get internal logs error: {:?}", e);
@@ -145,9 +153,17 @@ async fn test_get_internal_logs_empty() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::get_internal_logs(&client, &mock_server.uri(), "test-token", 10, None, 3, None)
-            .await;
+    let result = endpoints::get_internal_logs(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        10,
+        None,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
     let logs = result.unwrap();
@@ -214,6 +230,7 @@ async fn test_get_internal_logs_with_earliest() {
         5,
         Some("-1h"),
         3,
+        None,
         None,
     )
     .await;

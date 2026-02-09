@@ -37,15 +37,12 @@ use time::format_description::well_known::Rfc2822;
 use tracing::field::Empty;
 use tracing::{debug, instrument, warn};
 
-use crate::client::circuit_breaker::{CircuitBreaker, CircuitBreakerError};
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
 use crate::models::SplunkMessages;
 use crate::tracing::inject_trace_context;
 use opentelemetry::trace::TraceContextExt;
-
-/// Maximum number of retry attempts for rate-limited requests.
-const DEFAULT_MAX_RETRIES: usize = 3;
 
 /// Parses the Retry-After header from an HTTP response.
 ///
@@ -191,6 +188,7 @@ fn parse_splunk_error_response(body: &str) -> String {
     ),
     level = "debug"
 )]
+#[allow(clippy::too_many_arguments)]
 pub async fn send_request_with_retry(
     builder: RequestBuilder,
     max_retries: usize,
@@ -199,20 +197,6 @@ pub async fn send_request_with_retry(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Response> {
-    let max_retries = if max_retries == 0 {
-        DEFAULT_MAX_RETRIES
-    } else {
-        max_retries
-    };
-
-    // Check circuit breaker before attempting request
-    if let Some(cb) = circuit_breaker {
-        if let Err(e) = cb.check(endpoint) {
-            warn!(endpoint = endpoint, "Circuit breaker open, failing fast");
-            return Err(ClientError::from(e));
-        }
-    }
-
     let start_time = Instant::now();
 
     // Record trace_id if OTel is enabled
@@ -232,6 +216,18 @@ pub async fn send_request_with_retry(
     }
 
     for attempt in 0..=max_retries {
+        // Check circuit breaker before each attempt (fail fast if opened during retry sleep)
+        if let Some(cb) = circuit_breaker {
+            if let Err(e) = cb.check(endpoint) {
+                warn!(
+                    endpoint = endpoint,
+                    attempt = attempt + 1,
+                    "Circuit breaker open, failing fast"
+                );
+                return Err(ClientError::from(e));
+            }
+        }
+
         // Record current attempt number in span
         tracing::Span::current().record("attempt", attempt as i64 + 1);
 
@@ -303,7 +299,12 @@ pub async fn send_request_with_retry(
                     return Ok(response);
                 }
 
-                let status_u16 = status.as_u16();
+                // Record failure in circuit breaker for server errors and 429
+                if status.is_server_error() || status_u16 == 429 {
+                    if let Some(cb) = circuit_breaker {
+                        cb.record_failure(endpoint);
+                    }
+                }
 
                 // Check for retryable status codes (429 or 5xx)
                 if ClientError::is_retryable_status(status_u16) {
@@ -395,10 +396,6 @@ pub async fn send_request_with_retry(
                             m.record_request_duration(endpoint, method, duration, Some(status_u16));
                             m.record_client_error(endpoint, method, &err);
                         }
-                        // Record failure in circuit breaker
-                        if let Some(cb) = circuit_breaker {
-                            cb.record_failure(endpoint);
-                        }
                         return Err(err);
                     }
                 } else {
@@ -430,14 +427,15 @@ pub async fn send_request_with_retry(
                         m.record_request_duration(endpoint, method, duration, Some(status_u16));
                         m.record_client_error(endpoint, method, &err);
                     }
-                    // Record failure in circuit breaker
-                    if let Some(cb) = circuit_breaker {
-                        cb.record_failure(endpoint);
-                    }
                     return Err(err);
                 }
             }
             Err(e) => {
+                // Record failure in circuit breaker for transport errors
+                if let Some(cb) = circuit_breaker {
+                    cb.record_failure(endpoint);
+                }
+
                 // Check if this is a retryable transport error
                 if is_retryable_transport_error(&e) && attempt < max_retries {
                     // Record retry metric
@@ -468,10 +466,6 @@ pub async fn send_request_with_retry(
                         let duration = start_time.elapsed();
                         m.record_request_duration(endpoint, method, duration, None);
                         m.record_client_error(endpoint, method, &err);
-                    }
-                    // Record failure in circuit breaker
-                    if let Some(cb) = circuit_breaker {
-                        cb.record_failure(endpoint);
                     }
                     return Err(err);
                 }
@@ -523,6 +517,7 @@ fn extract_cacheable_headers(response: &Response) -> Vec<(String, String)> {
 /// - `Ok(None)` if cache miss or not cacheable
 /// - `Err(...)` only for unexpected errors (should not happen in normal operation)
 #[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
 pub async fn check_cache(
     cache: &crate::client::cache::ResponseCache,
     method: &str,
@@ -558,6 +553,7 @@ pub async fn check_cache(
 /// * `headers` - Response headers
 /// * `body` - Response body
 #[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
 pub async fn store_in_cache(
     cache: &crate::client::cache::ResponseCache,
     method: &str,
@@ -588,6 +584,7 @@ pub async fn store_in_cache(
 ///
 /// Called after POST/PUT/DELETE operations to clear related cache entries.
 #[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
 pub async fn invalidate_cache_for_mutation(
     cache: &crate::client::cache::ResponseCache,
     method: &str,

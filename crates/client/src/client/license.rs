@@ -33,6 +33,7 @@ impl SplunkClient {
                 &__token,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -49,6 +50,7 @@ impl SplunkClient {
                 &__token,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -65,6 +67,7 @@ impl SplunkClient {
                 &__token,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -81,6 +84,7 @@ impl SplunkClient {
                 &__token,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -124,6 +128,7 @@ impl SplunkClient {
                 filename,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -145,6 +150,7 @@ impl SplunkClient {
                 params,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -166,6 +172,7 @@ impl SplunkClient {
                 pool_name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -193,6 +200,7 @@ impl SplunkClient {
                 params,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -214,6 +222,7 @@ impl SplunkClient {
                 license_name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )
@@ -235,6 +244,7 @@ impl SplunkClient {
                 license_name,
                 self.max_retries,
                 self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
             )
             .await
         )

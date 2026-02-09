@@ -42,6 +42,7 @@ async fn test_list_inputs_by_type_tcp() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -82,6 +83,7 @@ async fn test_list_inputs_by_type_monitor() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -118,6 +120,7 @@ async fn test_list_inputs_by_type_with_pagination() {
         Some(10),
         3,
         None,
+        None,
     )
     .await;
 
@@ -150,6 +153,7 @@ async fn test_list_inputs_by_type_empty_response() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -177,6 +181,7 @@ async fn test_enable_input() {
         "tcp/raw",
         "9997",
         3,
+        None,
         None,
     )
     .await;
@@ -207,6 +212,7 @@ async fn test_disable_input() {
         "9998",
         3,
         None,
+        None,
     )
     .await;
 
@@ -234,6 +240,7 @@ async fn test_enable_input_monitor() {
         "monitor",
         "/var/log",
         3,
+        None,
         None,
     )
     .await;
@@ -277,6 +284,7 @@ async fn test_list_inputs_by_type_with_special_characters_in_name() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -309,6 +317,7 @@ async fn test_list_inputs_by_type_unauthorized() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -338,6 +347,7 @@ async fn test_list_inputs_by_type_forbidden() {
         Some(30),
         None,
         3,
+        None,
         None,
     )
     .await;
@@ -369,6 +379,7 @@ async fn test_list_inputs_by_type_not_found() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -397,6 +408,7 @@ async fn test_enable_input_not_found() {
         "tcp/raw",
         "9999",
         3,
+        None,
         None,
     )
     .await;
@@ -427,6 +439,7 @@ async fn test_disable_input_not_found() {
         "9999",
         3,
         None,
+        None,
     )
     .await;
 
@@ -454,6 +467,7 @@ async fn test_list_inputs_malformed_response() {
         Some(30),
         None,
         3,
+        None,
         None,
     )
     .await;

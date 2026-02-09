@@ -2,6 +2,7 @@
 
 use reqwest::{Client, Url};
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::form_params;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -10,6 +11,7 @@ use crate::models::{CreateIndexParams, Index, IndexListResponse, ModifyIndexPara
 use crate::name_merge::attach_entry_name;
 
 /// List all indexes.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_indexes(
     client: &Client,
     base_url: &str,
@@ -18,6 +20,7 @@ pub async fn list_indexes(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Index>> {
     let url = format!("{}/services/data/indexes", base_url);
 
@@ -40,6 +43,7 @@ pub async fn list_indexes(
         "/services/data/indexes",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -53,6 +57,7 @@ pub async fn list_indexes(
 }
 
 /// Create a new index.
+#[allow(clippy::too_many_arguments)]
 pub async fn create_index(
     client: &Client,
     base_url: &str,
@@ -60,6 +65,7 @@ pub async fn create_index(
     params: &CreateIndexParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Index> {
     let url = format!("{}/services/data/indexes", base_url);
 
@@ -89,6 +95,7 @@ pub async fn create_index(
         "/services/data/indexes",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -116,6 +123,7 @@ pub async fn create_index(
 }
 
 /// Modify an existing index.
+#[allow(clippy::too_many_arguments)]
 pub async fn modify_index(
     client: &Client,
     base_url: &str,
@@ -124,6 +132,7 @@ pub async fn modify_index(
     params: &ModifyIndexParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Index> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -155,6 +164,7 @@ pub async fn modify_index(
         &format!("/services/data/indexes/{}", index_name),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -188,6 +198,7 @@ pub async fn modify_index(
 }
 
 /// Delete an index by name.
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_index(
     client: &Client,
     base_url: &str,
@@ -195,6 +206,7 @@ pub async fn delete_index(
     index_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -211,6 +223,7 @@ pub async fn delete_index(
         &format!("/services/data/indexes/{}", index_name),
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

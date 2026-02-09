@@ -87,8 +87,15 @@ async fn test_send_request_with_retry_records_metrics() {
         .header("Authorization", "Bearer test-token")
         .query(&[("output_mode", "json")]);
 
-    let result =
-        send_request_with_retry(request, 3, "/services/server/info", "GET", Some(&collector)).await;
+    let result = send_request_with_retry(
+        request,
+        3,
+        "/services/server/info",
+        "GET",
+        Some(&collector),
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
 }
@@ -127,6 +134,7 @@ async fn test_send_request_with_retry_records_error_metrics() {
         "/services/search/jobs/{sid}",
         "GET",
         Some(&collector),
+        None,
     )
     .await;
 
@@ -168,6 +176,7 @@ async fn test_send_request_with_retry_records_retry_metrics() {
         "/services/search/jobs",
         "POST",
         Some(&collector),
+        None,
     )
     .await;
 
@@ -263,6 +272,7 @@ async fn test_send_request_with_no_metrics() {
         "/services/server/info",
         "GET",
         None, // No metrics collector
+        None,
     )
     .await;
 

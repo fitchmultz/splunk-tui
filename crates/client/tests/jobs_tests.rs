@@ -47,6 +47,7 @@ async fn test_create_search_job() {
         &options,
         3,
         None,
+        None,
     )
     .await;
 
@@ -81,6 +82,7 @@ async fn test_create_search_job_sid_only_response() {
         "search index=main",
         &options,
         3,
+        None,
         None,
     )
     .await;
@@ -125,6 +127,7 @@ async fn test_get_job_status() {
         "test-sid-123",
         3,
         None,
+        None,
     )
     .await;
 
@@ -155,6 +158,7 @@ async fn test_list_jobs() {
         Some(10),
         Some(0),
         3,
+        None,
         None,
     )
     .await;
@@ -193,6 +197,7 @@ async fn test_cancel_job() {
         "test-sid",
         3,
         None,
+        None,
     )
     .await;
 
@@ -216,6 +221,7 @@ async fn test_delete_job() {
         "test-token",
         "test-sid",
         3,
+        None,
         None,
     )
     .await;

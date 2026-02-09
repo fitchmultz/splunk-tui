@@ -76,6 +76,11 @@ fn connection_config_strategy() -> impl Strategy<Value = ConnectionConfig> {
         30u64..=300u64,   // session_expiry_buffer_seconds
         600u64..=7200u64, // session_ttl_seconds
         10u64..=300u64,   // health_check_interval_seconds
+        any::<bool>(),    // circuit_breaker_enabled
+        1u32..=20u32,     // circuit_failure_threshold
+        10u64..=300u64,   // circuit_failure_window_seconds
+        10u64..=300u64,   // circuit_reset_timeout_seconds
+        1u32..=10u32,     // circuit_half_open_requests
     )
         .prop_map(
             |(
@@ -86,6 +91,11 @@ fn connection_config_strategy() -> impl Strategy<Value = ConnectionConfig> {
                 session_expiry_buffer,
                 session_ttl,
                 health_check_interval,
+                circuit_breaker_enabled,
+                circuit_failure_threshold,
+                circuit_failure_window,
+                circuit_reset_timeout,
+                circuit_half_open_requests,
             )| {
                 ConnectionConfig {
                     base_url,
@@ -95,6 +105,11 @@ fn connection_config_strategy() -> impl Strategy<Value = ConnectionConfig> {
                     session_expiry_buffer_seconds: session_expiry_buffer,
                     session_ttl_seconds: session_ttl,
                     health_check_interval_seconds: health_check_interval,
+                    circuit_breaker_enabled,
+                    circuit_failure_threshold,
+                    circuit_failure_window_seconds: circuit_failure_window,
+                    circuit_reset_timeout_seconds: circuit_reset_timeout,
+                    circuit_half_open_requests,
                 }
             },
         )
@@ -142,6 +157,11 @@ proptest! {
         prop_assert_eq!(deserialized.session_expiry_buffer_seconds, config.session_expiry_buffer_seconds);
         prop_assert_eq!(deserialized.session_ttl_seconds, config.session_ttl_seconds);
         prop_assert_eq!(deserialized.health_check_interval_seconds, config.health_check_interval_seconds);
+        prop_assert_eq!(deserialized.circuit_breaker_enabled, config.circuit_breaker_enabled);
+        prop_assert_eq!(deserialized.circuit_failure_threshold, config.circuit_failure_threshold);
+        prop_assert_eq!(deserialized.circuit_failure_window_seconds, config.circuit_failure_window_seconds);
+        prop_assert_eq!(deserialized.circuit_reset_timeout_seconds, config.circuit_reset_timeout_seconds);
+        prop_assert_eq!(deserialized.circuit_half_open_requests, config.circuit_half_open_requests);
     }
 
     /// Test that AuthConfig with ApiToken preserves the strategy type.

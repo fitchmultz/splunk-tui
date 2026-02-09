@@ -87,6 +87,29 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub no_cache: bool,
 
+    /// Disable the circuit breaker for API calls.
+    ///
+    /// When enabled (default), the client will fail fast when an endpoint
+    /// exceeds failure thresholds to prevent cascading failures.
+    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_BREAKER_DISABLED")]
+    pub no_circuit_breaker: bool,
+
+    /// Number of failures within window to open circuit.
+    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_FAILURE_THRESHOLD")]
+    pub circuit_failure_threshold: Option<u32>,
+
+    /// Time window for failure counting in seconds.
+    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_FAILURE_WINDOW")]
+    pub circuit_failure_window: Option<u64>,
+
+    /// Time to wait before attempting half-open in seconds.
+    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_RESET_TIMEOUT")]
+    pub circuit_reset_timeout: Option<u64>,
+
+    /// Number of requests allowed in half-open state.
+    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_HALF_OPEN_REQUESTS")]
+    pub circuit_half_open_requests: Option<u32>,
+
     /// Enable Prometheus metrics endpoint and bind address (e.g., "localhost:9090")
     ///
     /// When enabled, exposes /metrics endpoint for Prometheus scraping.

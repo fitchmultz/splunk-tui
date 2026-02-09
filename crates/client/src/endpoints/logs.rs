@@ -3,12 +3,14 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::search::{CreateJobOptions, OutputMode, create_job, get_results};
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
 use crate::models::LogEntry;
 
 /// Get internal logs from Splunk.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_internal_logs(
     client: &Client,
     base_url: &str,
@@ -17,6 +19,7 @@ pub async fn get_internal_logs(
     earliest: Option<&str>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<LogEntry>> {
     debug!("Fetching internal logs (count={})", count);
 
@@ -42,6 +45,7 @@ pub async fn get_internal_logs(
         &options,
         max_retries,
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -55,6 +59,7 @@ pub async fn get_internal_logs(
         OutputMode::Json,
         max_retries,
         metrics,
+        circuit_breaker,
     )
     .await?;
 

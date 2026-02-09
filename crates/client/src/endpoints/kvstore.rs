@@ -2,6 +2,7 @@
 
 use reqwest::{Client, Url};
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::{form_params, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -12,12 +13,14 @@ use crate::models::{
 use crate::name_merge::attach_entry_name;
 
 /// Get KVStore status.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_kvstore_status(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<KvStoreStatus> {
     let url = format!("{}/services/kvstore/status", base_url);
 
@@ -31,6 +34,7 @@ pub async fn get_kvstore_status(
         "/services/kvstore/status",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -125,6 +129,7 @@ pub async fn list_collections(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<KvStoreCollection>> {
     let app = app.unwrap_or("-");
     let owner = owner.unwrap_or("nobody");
@@ -153,6 +158,7 @@ pub async fn list_collections(
         &format!("/servicesNS/{}/{}/storage/collections", owner, app),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -166,6 +172,7 @@ pub async fn list_collections(
 }
 
 /// Create a new KVStore collection.
+#[allow(clippy::too_many_arguments)]
 pub async fn create_collection(
     client: &Client,
     base_url: &str,
@@ -173,6 +180,7 @@ pub async fn create_collection(
     params: &CreateCollectionParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<KvStoreCollection> {
     let app = params.app.as_deref().unwrap_or("search");
     let owner = params.owner.as_deref().unwrap_or("nobody");
@@ -201,6 +209,7 @@ pub async fn create_collection(
         &format!("/servicesNS/{}/{}/storage/collections", owner, app),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -241,6 +250,7 @@ pub async fn modify_collection(
     params: &ModifyCollectionParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<KvStoreCollection> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -273,6 +283,7 @@ pub async fn modify_collection(
         ),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -316,6 +327,7 @@ pub async fn delete_collection(
     owner: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -338,6 +350,7 @@ pub async fn delete_collection(
         ),
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -358,6 +371,7 @@ pub async fn list_collection_records(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<KvStoreRecord>> {
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections/{}/data",
@@ -390,6 +404,7 @@ pub async fn list_collection_records(
         ),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -409,6 +424,7 @@ pub async fn insert_collection_record(
     record: &serde_json::Value,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<KvStoreRecord> {
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections/{}/data",
@@ -430,6 +446,7 @@ pub async fn insert_collection_record(
         ),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -449,6 +466,7 @@ pub async fn delete_collection_record(
     record_key: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections/{}/data/{}",
@@ -468,6 +486,7 @@ pub async fn delete_collection_record(
         ),
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

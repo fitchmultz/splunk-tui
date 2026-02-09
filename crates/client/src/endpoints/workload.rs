@@ -14,6 +14,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -44,6 +45,7 @@ use crate::name_merge::attach_entry_name;
 /// # Errors
 ///
 /// Returns a `ClientError` if the request fails or the response cannot be parsed.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_workload_pools(
     client: &Client,
     base_url: &str,
@@ -52,6 +54,7 @@ pub async fn list_workload_pools(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<WorkloadPool>> {
     let url = format!("{}/services/workloads/pools", base_url);
 
@@ -75,6 +78,7 @@ pub async fn list_workload_pools(
         "/services/workloads/pools",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -109,6 +113,7 @@ pub async fn list_workload_pools(
 /// # Errors
 ///
 /// Returns a `ClientError` if the request fails or the response cannot be parsed.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_workload_rules(
     client: &Client,
     base_url: &str,
@@ -117,6 +122,7 @@ pub async fn list_workload_rules(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<WorkloadRule>> {
     let url = format!("{}/services/workloads/rules", base_url);
 
@@ -140,6 +146,7 @@ pub async fn list_workload_rules(
         "/services/workloads/rules",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

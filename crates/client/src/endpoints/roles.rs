@@ -2,6 +2,7 @@
 
 use reqwest::{Client, Url};
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::form_params;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -10,6 +11,7 @@ use crate::models::{CreateRoleParams, ModifyRoleParams, Role, RoleListResponse};
 use crate::name_merge::attach_entry_name;
 
 /// List all roles.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_roles(
     client: &Client,
     base_url: &str,
@@ -18,6 +20,7 @@ pub async fn list_roles(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Role>> {
     let url = format!("{}/services/authorization/roles", base_url);
 
@@ -40,6 +43,7 @@ pub async fn list_roles(
         "/services/authorization/roles",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -53,6 +57,7 @@ pub async fn list_roles(
 }
 
 /// Create a new role.
+#[allow(clippy::too_many_arguments)]
 pub async fn create_role(
     client: &Client,
     base_url: &str,
@@ -60,6 +65,7 @@ pub async fn create_role(
     params: &CreateRoleParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Role> {
     let url = format!("{}/services/authorization/roles", base_url);
 
@@ -86,6 +92,7 @@ pub async fn create_role(
         "/services/authorization/roles",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -113,6 +120,7 @@ pub async fn create_role(
 }
 
 /// Modify an existing role.
+#[allow(clippy::too_many_arguments)]
 pub async fn modify_role(
     client: &Client,
     base_url: &str,
@@ -121,6 +129,7 @@ pub async fn modify_role(
     params: &ModifyRoleParams,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Role> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -149,6 +158,7 @@ pub async fn modify_role(
         &format!("/services/authorization/roles/{}", role_name),
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -182,6 +192,7 @@ pub async fn modify_role(
 }
 
 /// Delete a role by name.
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_role(
     client: &Client,
     base_url: &str,
@@ -189,6 +200,7 @@ pub async fn delete_role(
     role_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
@@ -205,6 +217,7 @@ pub async fn delete_role(
         &format!("/services/authorization/roles/{}", role_name),
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

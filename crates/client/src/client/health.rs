@@ -66,6 +66,12 @@ impl SplunkClient {
             license_usage: None,
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: self.circuit_breaker.as_ref().map(|cb| {
+                cb.all_states()
+                    .into_iter()
+                    .map(|(k, v)| (k, v.as_str().to_string()))
+                    .collect()
+            }),
         };
         let mut partial_errors = Vec::new();
 
@@ -117,6 +123,7 @@ mod tests {
             license_usage: None,
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: None,
         };
 
         let aggregated = AggregatedHealth {
@@ -147,6 +154,7 @@ mod tests {
             license_usage: None,
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: None,
         };
 
         let partial_errors = vec![

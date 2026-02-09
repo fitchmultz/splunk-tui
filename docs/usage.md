@@ -102,6 +102,11 @@ The `.env` file is loaded before CLI parsing to populate environment variable de
 | `SPLUNK_MAX_RESULTS` | Default maximum number of results per search [default: `1000`] |
 | `SPLUNK_INTERNAL_LOGS_COUNT` | Default number of internal log entries to fetch in TUI [default: `100`] |
 | `SPLUNK_INTERNAL_LOGS_EARLIEST` | Default earliest time for internal logs in TUI [default: `-15m`] |
+| `SPLUNK_CIRCUIT_BREAKER_ENABLED` | Enable circuit breaker for API calls [default: `true`] |
+| `SPLUNK_CIRCUIT_FAILURE_THRESHOLD` | Number of failures to open circuit [default: `5`] |
+| `SPLUNK_CIRCUIT_FAILURE_WINDOW` | Time window for failure counting in seconds [default: `60`] |
+| `SPLUNK_CIRCUIT_RESET_TIMEOUT` | Time to wait before reset attempt in seconds [default: `30`] |
+| `SPLUNK_CIRCUIT_HALF_OPEN_REQUESTS` | Max requests allowed during reset test [default: `1`] |
 
 #### Retry Behavior
 
@@ -135,6 +140,32 @@ Requests with streaming bodies (e.g., file uploads, large data streams) **cannot
 - A warning is logged indicating the request cannot be cloned for retry
 
 Applications requiring retry guarantees for large uploads should buffer the data in memory or use non-streaming request bodies.
+
+#### Circuit Breaker Pattern
+
+The client implements a circuit breaker pattern to prevent cascading failures when a Splunk instance is struggling. This prevents the client from overwhelming a failing server with repeated requests and retries.
+
+**States:**
+- **Closed**: Normal operation. Requests pass through to the server.
+- **Open**: Failure threshold exceeded. Requests "fail fast" immediately without reaching the server.
+- **Half-Open**: After a reset timeout, the client allowed a limited number of requests to test if the service has recovered.
+
+**Default Configuration:**
+- `failure_threshold`: 5 errors within 60 seconds
+- `reset_timeout`: 30 seconds
+- `half_open_requests`: 1 test request
+
+**What triggers a failure:**
+- HTTP 502, 503, 504 (Server-side transient errors)
+- HTTP 429 (Rate limiting)
+- Transport errors (Connection refused, timeouts, etc.)
+
+Note: Client errors (400, 401, 403, 404) do **not** trigger circuit breaker failures.
+
+**Monitoring:**
+- **TUI Header**: Shows `CIRCUIT OPEN (N)` when one or more endpoints are failing fast.
+- **Health Screen**: Shows the current state of all endpoint circuit breakers.
+- **Metrics**: Exposes state transition and blocked request counts via the Prometheus endpoint.
 
 **Error Handling Example:**
 

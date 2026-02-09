@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -9,6 +10,7 @@ use crate::models::{Dashboard, DashboardListResponse};
 use crate::name_merge::attach_entry_name;
 
 /// List all dashboards.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_dashboards(
     client: &Client,
     base_url: &str,
@@ -17,6 +19,7 @@ pub async fn list_dashboards(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Dashboard>> {
     let url = format!("{}/services/data/ui/views", base_url);
 
@@ -40,6 +43,7 @@ pub async fn list_dashboards(
         "/services/data/ui/views",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -53,6 +57,7 @@ pub async fn list_dashboards(
 }
 
 /// Get a single dashboard by name (includes XML data).
+#[allow(clippy::too_many_arguments)]
 pub async fn get_dashboard(
     client: &Client,
     base_url: &str,
@@ -60,6 +65,7 @@ pub async fn get_dashboard(
     dashboard_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Dashboard> {
     let url = format!("{}/services/data/ui/views/{}", base_url, dashboard_name);
 
@@ -76,6 +82,7 @@ pub async fn get_dashboard(
         &format!("/services/data/ui/views/{}", dashboard_name),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

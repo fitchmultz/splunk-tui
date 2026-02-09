@@ -171,6 +171,23 @@ async fn main() {
             loader = loader.with_skip_verify(true);
         }
 
+        // Apply circuit breaker overrides
+        if cli.no_circuit_breaker {
+            loader = loader.with_circuit_breaker_enabled(false);
+        }
+        if let Some(threshold) = cli.circuit_failure_threshold {
+            loader = loader.with_circuit_failure_threshold(threshold);
+        }
+        if let Some(window) = cli.circuit_failure_window {
+            loader = loader.with_circuit_failure_window_seconds(window);
+        }
+        if let Some(timeout) = cli.circuit_reset_timeout {
+            loader = loader.with_circuit_reset_timeout_seconds(timeout);
+        }
+        if let Some(requests) = cli.circuit_half_open_requests {
+            loader = loader.with_circuit_half_open_requests(requests);
+        }
+
         // Build search defaults with env var overrides (matching TUI behavior)
         // Must be done before loader.build() since build() consumes the loader
         let search_defaults = loader.build_search_defaults(None);
@@ -210,7 +227,7 @@ async fn main() {
 
     // Wrap config in appropriate context based on command type
     let config_context = if let Some((config, search_defaults)) = config {
-        ConfigCommandContext::Real(config, search_defaults, cli.no_cache)
+        ConfigCommandContext::Real(Box::new(config), search_defaults, cli.no_cache)
     } else {
         ConfigCommandContext::Placeholder
     };

@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -9,12 +10,14 @@ use crate::models::{App, AppListResponse, ServerInfo, SplunkHealth};
 use crate::name_merge::attach_entry_name;
 
 /// Get server information.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_server_info(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ServerInfo> {
     let url = format!("{}/services/server/info", base_url);
 
@@ -28,6 +31,7 @@ pub async fn get_server_info(
         "/services/server/info",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -50,12 +54,14 @@ pub async fn get_server_info(
 }
 
 /// Get system-wide health information.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_health(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SplunkHealth> {
     let url = format!("{}/services/server/health/splunkd", base_url);
 
@@ -69,6 +75,7 @@ pub async fn get_health(
         "/services/server/health/splunkd",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -89,6 +96,7 @@ pub async fn get_health(
 }
 
 /// List all installed apps.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_apps(
     client: &Client,
     base_url: &str,
@@ -97,6 +105,7 @@ pub async fn list_apps(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<App>> {
     let url = format!("{}/services/apps/local", base_url);
 
@@ -113,9 +122,15 @@ pub async fn list_apps(
         .get(&url)
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
-    let response =
-        send_request_with_retry(builder, max_retries, "/services/apps/local", "GET", metrics)
-            .await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/apps/local",
+        "GET",
+        metrics,
+        circuit_breaker,
+    )
+    .await?;
 
     let resp: AppListResponse = response.json().await?;
 
@@ -127,6 +142,7 @@ pub async fn list_apps(
 }
 
 /// Get specific app details by name.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_app(
     client: &Client,
     base_url: &str,
@@ -134,6 +150,7 @@ pub async fn get_app(
     app_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<App> {
     let url = format!("{}/services/apps/local/{}", base_url, app_name);
 
@@ -147,6 +164,7 @@ pub async fn get_app(
         "/services/apps/local/{app_name}",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -181,6 +199,7 @@ pub async fn get_app(
 }
 
 /// Enable an app by name.
+#[allow(clippy::too_many_arguments)]
 pub async fn enable_app(
     client: &Client,
     base_url: &str,
@@ -188,6 +207,7 @@ pub async fn enable_app(
     app_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!("{}/services/apps/local/{}/enable", base_url, app_name);
 
@@ -200,6 +220,7 @@ pub async fn enable_app(
         "/services/apps/local/{app_name}/enable",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -207,6 +228,7 @@ pub async fn enable_app(
 }
 
 /// Disable an app by name.
+#[allow(clippy::too_many_arguments)]
 pub async fn disable_app(
     client: &Client,
     base_url: &str,
@@ -214,6 +236,7 @@ pub async fn disable_app(
     app_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!("{}/services/apps/local/{}/disable", base_url, app_name);
 
@@ -226,6 +249,7 @@ pub async fn disable_app(
         "/services/apps/local/{app_name}/disable",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -246,6 +270,7 @@ pub async fn disable_app(
 /// * `file_path` - Path to the .spl package file
 /// * `max_retries` - Maximum number of retries for authentication failures
 /// * `metrics` - Optional metrics collector
+#[allow(clippy::too_many_arguments)]
 pub async fn install_app(
     client: &Client,
     base_url: &str,
@@ -253,6 +278,7 @@ pub async fn install_app(
     file_path: &std::path::Path,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<App> {
     let url = format!("{}/services/apps/appinstall", base_url);
 
@@ -291,6 +317,7 @@ pub async fn install_app(
         "/services/apps/appinstall",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -321,6 +348,7 @@ pub async fn install_app(
 /// Remove (uninstall) a Splunk app by name.
 ///
 /// DELETE /services/apps/local/{app_name}
+#[allow(clippy::too_many_arguments)]
 pub async fn remove_app(
     client: &Client,
     base_url: &str,
@@ -328,6 +356,7 @@ pub async fn remove_app(
     app_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     let url = format!("{}/services/apps/local/{}", base_url, app_name);
 
@@ -341,6 +370,7 @@ pub async fn remove_app(
         "/services/apps/local/{app_name}",
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

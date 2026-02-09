@@ -15,6 +15,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -55,6 +56,7 @@ pub async fn list_config_stanzas(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<ConfigStanza>> {
     let url = format!("{}/services/configs/conf-{}", base_url, config_file);
 
@@ -77,6 +79,7 @@ pub async fn list_config_stanzas(
         &format!("/services/configs/conf-{}", config_file),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -123,6 +126,7 @@ pub async fn get_config_stanza(
     stanza_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ConfigStanza> {
     // URL encode the stanza name as it may contain special characters
     let encoded_stanza = encode_stanza_name(stanza_name);
@@ -143,6 +147,7 @@ pub async fn get_config_stanza(
         &format!("/services/configs/conf-{}/{{stanza}}", config_file),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -188,16 +193,25 @@ pub async fn get_config_stanza(
 /// # Errors
 ///
 /// Returns a `ClientError` if the request fails.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_config_files(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<ConfigFile>> {
     // The Splunk API doesn't have a direct endpoint to list all config files,
     // so we return the supported config files with their titles
-    let _ = (client, base_url, auth_token, max_retries, metrics);
+    let _ = (
+        client,
+        base_url,
+        auth_token,
+        max_retries,
+        metrics,
+        circuit_breaker,
+    );
 
     // Return the list of supported config files
     let config_files: Vec<ConfigFile> = crate::models::SUPPORTED_CONFIG_FILES

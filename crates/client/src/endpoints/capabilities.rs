@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -12,12 +13,14 @@ use crate::name_merge::attach_entry_name;
 ///
 /// Capabilities are read-only in Splunk. They represent the set of
 /// permissions that can be assigned to roles.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_capabilities(
     client: &Client,
     base_url: &str,
     auth_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Capability>> {
     let url = format!("{}/services/authorization/capabilities", base_url);
 
@@ -33,6 +36,7 @@ pub async fn list_capabilities(
         "/services/authorization/capabilities",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

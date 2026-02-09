@@ -55,6 +55,7 @@ impl SplunkClient {
             event,
             self.max_retries,
             self.metrics.as_ref(),
+            self.circuit_breaker.as_deref(),
         )
         .await
     }
@@ -98,6 +99,7 @@ impl SplunkClient {
             use_ndjson,
             self.max_retries,
             self.metrics.as_ref(),
+            self.circuit_breaker.as_deref(),
         )
         .await
     }
@@ -126,6 +128,7 @@ impl SplunkClient {
             hec_token,
             self.max_retries,
             self.metrics.as_ref(),
+            self.circuit_breaker.as_deref(),
         )
         .await
     }
@@ -165,6 +168,7 @@ impl SplunkClient {
             ack_ids,
             self.max_retries,
             self.metrics.as_ref(),
+            self.circuit_breaker.as_deref(),
         )
         .await
     }

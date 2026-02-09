@@ -43,6 +43,7 @@ async fn test_list_users() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -84,6 +85,7 @@ async fn test_list_users_with_pagination() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -121,8 +123,16 @@ async fn test_create_user() {
         default_app: Some("search".to_string()),
     };
 
-    let result =
-        endpoints::create_user(&client, &mock_server.uri(), "test-token", &params, 3, None).await;
+    let result = endpoints::create_user(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &params,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("Create user error: {:?}", e);
@@ -157,8 +167,16 @@ async fn test_create_user_validation_error() {
         default_app: None,
     };
 
-    let result =
-        endpoints::create_user(&client, &mock_server.uri(), "test-token", &params, 3, None).await;
+    let result = endpoints::create_user(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &params,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_err());
 }
@@ -195,6 +213,7 @@ async fn test_modify_user() {
         "user1",
         &params,
         3,
+        None,
         None,
     )
     .await;
@@ -241,6 +260,7 @@ async fn test_modify_user_with_password() {
         &params,
         3,
         None,
+        None,
     )
     .await;
 
@@ -274,6 +294,7 @@ async fn test_modify_user_not_found() {
         &params,
         3,
         None,
+        None,
     )
     .await;
 
@@ -291,8 +312,16 @@ async fn test_delete_user() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::delete_user(&client, &mock_server.uri(), "test-token", "user1", 3, None).await;
+    let result = endpoints::delete_user(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "user1",
+        3,
+        None,
+        None,
+    )
+    .await;
 
     if let Err(ref e) = result {
         eprintln!("Delete user error: {:?}", e);
@@ -317,6 +346,7 @@ async fn test_delete_user_not_found() {
         "test-token",
         "nonexistent",
         3,
+        None,
         None,
     )
     .await;

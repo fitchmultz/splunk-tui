@@ -134,6 +134,10 @@ splunk-cli cluster show
 splunk-cli cluster show --detailed
 ```
 
+### Circuit Breaker
+
+The CLI also respects the circuit breaker settings. If an endpoint is in an "Open" state, the CLI will return a `CircuitBreakerOpen` error and a non-zero exit code. You can disable this behavior with `--no-circuit-breaker` if needed.
+
 ### Configuration Profiles
 
 If you manage multiple Splunk environments, use profiles in `~/.config/splunk-tui/config.json`:
@@ -589,7 +593,8 @@ The bundle contains redacted diagnostic information safe to share:
 - **`ApiError (404)`**: The endpoint might not exist on your version of Splunk. Ensure you are running v9.0+.
 - **`SessionExpired`**: The TUI handles auto-renewal, but if you leave it idle for a very long time, you might need to restart.
 - **`RateLimited (429)`**: Splunk is throttling requests. The client automatically retries with exponential backoff, respecting the `Retry-After` header if present. If retries are exhausted, you'll see a `MaxRetriesExceeded` error. Reduce search frequency or increase `SPLUNK_MAX_RETRIES` if this occurs frequently.
-- **`MaxRetriesExceeded`**: All retry attempts were exhausted. This can occur due to sustained rate limiting (429), transient server errors (502/503/504), or network issues. The error includes the underlying cause and the number of attempts made. Consider increasing `SPLUNK_MAX_RETRIES` or implementing application-level circuit breaking.
+- **`MaxRetriesExceeded`**: All retry attempts were exhausted. This can occur due to sustained rate limiting (429), transient server errors (502/503/504), or network issues. The error includes the underlying cause and the number of attempts made.
+- **`CircuitBreakerOpen`**: The circuit breaker has opened due to too many recent failures. Requests will fail fast for a short period to allow the server to recover. Check the TUI header or Health screen for details.
 
 ### Connectivity Check
 

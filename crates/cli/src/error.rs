@@ -133,6 +133,7 @@ impl From<&ClientError> for ExitCode {
             ClientError::ApiError { status: 503, .. } => ExitCode::ServiceUnavailable,
             ClientError::ApiError { status: 502, .. } => ExitCode::ServiceUnavailable,
             ClientError::ApiError { status: 504, .. } => ExitCode::ServiceUnavailable,
+            ClientError::CircuitBreakerOpen(_) => ExitCode::ServiceUnavailable,
 
             // Max retries exceeded - check the underlying error recursively
             ClientError::MaxRetriesExceeded(_, inner) => Self::from(inner.as_ref()),

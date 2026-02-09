@@ -2,6 +2,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -9,6 +10,7 @@ use crate::models::{DataModel, DataModelListResponse};
 use crate::name_merge::attach_entry_name;
 
 /// List all data models.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_datamodels(
     client: &Client,
     base_url: &str,
@@ -17,6 +19,7 @@ pub async fn list_datamodels(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<DataModel>> {
     let url = format!("{}/services/datamodel", base_url);
 
@@ -34,9 +37,15 @@ pub async fn list_datamodels(
         .header("Authorization", format!("Bearer {}", auth_token))
         .query(&query_params);
 
-    let response =
-        send_request_with_retry(builder, max_retries, "/services/datamodel", "GET", metrics)
-            .await?;
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        "/services/datamodel",
+        "GET",
+        metrics,
+        circuit_breaker,
+    )
+    .await?;
 
     let resp: DataModelListResponse = response.json().await?;
 
@@ -48,6 +57,7 @@ pub async fn list_datamodels(
 }
 
 /// Get a single data model by name (includes JSON data).
+#[allow(clippy::too_many_arguments)]
 pub async fn get_datamodel(
     client: &Client,
     base_url: &str,
@@ -55,6 +65,7 @@ pub async fn get_datamodel(
     datamodel_name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<DataModel> {
     let url = format!("{}/services/datamodel/{}", base_url, datamodel_name);
 
@@ -71,6 +82,7 @@ pub async fn get_datamodel(
         &format!("/services/datamodel/{}", datamodel_name),
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

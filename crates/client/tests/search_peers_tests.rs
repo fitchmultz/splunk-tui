@@ -38,6 +38,7 @@ async fn test_list_search_peers() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -81,6 +82,7 @@ async fn test_list_search_peers_with_pagination() {
         Some(0),
         3,
         None,
+        None,
     )
     .await;
 
@@ -112,6 +114,7 @@ async fn test_list_search_peers_empty_response() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -138,6 +141,7 @@ async fn test_list_search_peers_error() {
         Some(30),
         None,
         3,
+        None,
         None,
     )
     .await;

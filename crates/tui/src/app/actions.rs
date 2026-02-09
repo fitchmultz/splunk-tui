@@ -323,6 +323,7 @@ mod tests {
             license_usage: None,
             kvstore_status: None,
             log_parsing_health: None,
+            circuit_breaker_states: None,
         };
 
         app.update(Action::HealthLoaded(Box::new(Ok(health_output))));

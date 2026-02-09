@@ -27,6 +27,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -57,6 +58,7 @@ use crate::models::hec::{
 /// let event = HecEvent::new(serde_json::json!({"message": "Hello"}));
 /// let response = send_event(&client, "https://localhost:8088", "token", &event, 3, None).await?;
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub async fn send_event(
     client: &Client,
     hec_url: &str,
@@ -64,6 +66,7 @@ pub async fn send_event(
     event: &HecEvent,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<HecResponse> {
     let url = format!("{}/services/collector/event", hec_url);
 
@@ -79,6 +82,7 @@ pub async fn send_event(
         "/services/collector/event",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -143,6 +147,7 @@ pub async fn send_event(
 /// ];
 /// let response = send_batch(&client, "https://localhost:8088", "token", &events, false, 3, None).await?;
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub async fn send_batch(
     client: &Client,
     hec_url: &str,
@@ -151,6 +156,7 @@ pub async fn send_batch(
     use_ndjson: bool,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<HecBatchResponse> {
     let url = format!("{}/services/collector/event", hec_url);
 
@@ -182,6 +188,7 @@ pub async fn send_batch(
         "/services/collector/event",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -236,12 +243,14 @@ pub async fn send_batch(
 /// let health = health_check(&client, "https://localhost:8088", "token", 3, None).await?;
 /// println!("HEC is healthy: {}", health.is_healthy());
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub async fn health_check(
     client: &Client,
     hec_url: &str,
     hec_token: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<HecHealth> {
     let url = format!("{}/services/collector/health", hec_url);
 
@@ -255,6 +264,7 @@ pub async fn health_check(
         "/services/collector/health",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -296,6 +306,7 @@ pub async fn health_check(
 /// let status = check_ack_status(&client, "https://localhost:8088", "token", &ack_ids, 3, None).await?;
 /// println!("All indexed: {}", status.all_indexed());
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub async fn check_ack_status(
     client: &Client,
     hec_url: &str,
@@ -303,6 +314,7 @@ pub async fn check_ack_status(
     ack_ids: &[u64],
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<HecAckStatus> {
     let url = format!("{}/services/collector/ack", hec_url);
 
@@ -322,6 +334,7 @@ pub async fn check_ack_status(
         "/services/collector/ack",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

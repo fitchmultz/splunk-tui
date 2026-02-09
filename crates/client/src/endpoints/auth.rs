@@ -3,11 +3,13 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
 
 /// Login to Splunk with username and password.
+#[allow(clippy::too_many_arguments)]
 pub async fn login(
     client: &Client,
     base_url: &str,
@@ -15,6 +17,7 @@ pub async fn login(
     password: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<String> {
     debug!("Logging in to Splunk as {}", username);
 
@@ -29,6 +32,7 @@ pub async fn login(
         "/services/auth/login",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

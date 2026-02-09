@@ -50,6 +50,7 @@ async fn test_send_single_event() {
         &event,
         3,
         None,
+        None,
     )
     .await;
 
@@ -96,6 +97,7 @@ async fn test_send_batch_json_array() {
         false, // JSON array format
         3,
         None,
+        None,
     )
     .await;
 
@@ -140,6 +142,7 @@ async fn test_send_batch_ndjson() {
         true, // NDJSON format
         3,
         None,
+        None,
     )
     .await;
 
@@ -164,7 +167,8 @@ async fn test_hec_health_check() {
 
     let client = Client::new();
     let result =
-        endpoints::hec::health_check(&client, &mock_server.uri(), "test-hec-token", 3, None).await;
+        endpoints::hec::health_check(&client, &mock_server.uri(), "test-hec-token", 3, None, None)
+            .await;
 
     if let Err(ref e) = result {
         eprintln!("Health check error: {:?}", e);
@@ -207,6 +211,7 @@ async fn test_hec_check_acks() {
         &ack_ids,
         3,
         None,
+        None,
     )
     .await;
 
@@ -240,9 +245,16 @@ async fn test_hec_auth_header_format() {
     let client = Client::new();
     let event = HecEvent::new(json!({"test": "data"}));
 
-    let result =
-        endpoints::hec::send_event(&client, &mock_server.uri(), "test-token", &event, 3, None)
-            .await;
+    let result = endpoints::hec::send_event(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        &event,
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
 }
@@ -269,6 +281,7 @@ async fn test_hec_error_response() {
         "invalid-token",
         &event,
         3,
+        None,
         None,
     )
     .await;
@@ -387,6 +400,7 @@ async fn test_send_event_invalid_json_response() {
         &event,
         3,
         None,
+        None,
     )
     .await;
 
@@ -432,6 +446,7 @@ async fn test_send_batch_invalid_json_response() {
         false,
         3,
         None,
+        None,
     )
     .await;
 
@@ -472,6 +487,7 @@ async fn test_check_ack_status_invalid_json_response() {
         "test-hec-token",
         &ack_ids,
         3,
+        None,
         None,
     )
     .await;

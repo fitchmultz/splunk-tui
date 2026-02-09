@@ -67,6 +67,7 @@ async fn test_retry_respects_retry_after_header() {
                 &options,
                 3,
                 None,
+                None,
             )
             .await
         }
@@ -125,6 +126,7 @@ async fn test_retry_with_max_of_backoff_and_retry_after() {
                 &options,
                 3,
                 None,
+                None,
             )
             .await
         }
@@ -180,6 +182,7 @@ async fn test_retry_falls_back_to_exponential_backoff() {
                 "search index=main",
                 &options,
                 3,
+                None,
                 None,
             )
             .await
@@ -238,6 +241,7 @@ async fn test_retry_with_invalid_retry_after_header() {
                 "search index=main",
                 &options,
                 3,
+                None,
                 None,
             )
             .await
@@ -306,6 +310,7 @@ async fn test_retry_respects_retry_after_http_date() {
                 &options,
                 3,
                 None,
+                None,
             )
             .await
         }
@@ -366,6 +371,7 @@ async fn test_retry_with_past_http_date() {
                 &options,
                 3,
                 None,
+                None,
             )
             .await
         }
@@ -423,6 +429,7 @@ async fn test_retry_with_invalid_http_date() {
                 "search index=main",
                 &options,
                 3,
+                None,
                 None,
             )
             .await

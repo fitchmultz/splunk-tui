@@ -14,6 +14,7 @@
 
 use reqwest::Client;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -42,6 +43,7 @@ use crate::name_merge::attach_entry_name;
 /// # Errors
 ///
 /// Returns a `ClientError` if the request fails or the response cannot be parsed.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_search_peers(
     client: &Client,
     base_url: &str,
@@ -50,6 +52,7 @@ pub async fn list_search_peers(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<SearchPeer>> {
     let url = format!("{}/services/search/distributed/peers", base_url);
 
@@ -72,6 +75,7 @@ pub async fn list_search_peers(
         "/services/search/distributed/peers",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 

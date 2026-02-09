@@ -32,7 +32,7 @@ async fn test_get_cluster_info() {
 
     let client = Client::new();
     let result =
-        endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3, None).await;
+        endpoints::get_cluster_info(&client, &mock_server.uri(), "test-token", 3, None, None).await;
 
     assert!(result.is_ok());
     let info = result.unwrap();

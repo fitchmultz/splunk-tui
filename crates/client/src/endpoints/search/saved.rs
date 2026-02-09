@@ -16,6 +16,7 @@
 use reqwest::Client;
 use tracing::debug;
 
+use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::form_params_str;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -24,6 +25,7 @@ use crate::models::SavedSearchListResponse;
 use crate::name_merge::attach_entry_name;
 
 /// List saved searches.
+#[allow(clippy::too_many_arguments)]
 pub async fn list_saved_searches(
     client: &Client,
     base_url: &str,
@@ -32,6 +34,7 @@ pub async fn list_saved_searches(
     offset: Option<usize>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<crate::models::SavedSearch>> {
     debug!("Listing saved searches");
 
@@ -57,6 +60,7 @@ pub async fn list_saved_searches(
         "/services/saved/searches",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await?;
 
@@ -74,6 +78,7 @@ pub async fn list_saved_searches(
 /// Create a saved search.
 ///
 /// This endpoint is used for live-test setup and for future UI/CLI parity.
+#[allow(clippy::too_many_arguments)]
 pub async fn create_saved_search(
     client: &Client,
     base_url: &str,
@@ -82,6 +87,7 @@ pub async fn create_saved_search(
     search: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     debug!("Creating saved search: {}", name);
 
@@ -99,6 +105,7 @@ pub async fn create_saved_search(
         "/services/saved/searches",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await?;
     Ok(())
@@ -107,6 +114,7 @@ pub async fn create_saved_search(
 /// Delete a saved search by name.
 ///
 /// This endpoint is used for live-test cleanup and for future UI/CLI parity.
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_saved_search(
     client: &Client,
     base_url: &str,
@@ -114,6 +122,7 @@ pub async fn delete_saved_search(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     debug!("Deleting saved search: {}", name);
 
@@ -130,6 +139,7 @@ pub async fn delete_saved_search(
         "/services/saved/searches/{name}",
         "DELETE",
         metrics,
+        circuit_breaker,
     )
     .await?;
     Ok(())
@@ -150,6 +160,7 @@ pub async fn delete_saved_search(
 ///
 /// # Returns
 /// The `SavedSearch` if found, or `ClientError::NotFound` if it doesn't exist.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_saved_search(
     client: &Client,
     base_url: &str,
@@ -157,6 +168,7 @@ pub async fn get_saved_search(
     name: &str,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<crate::models::SavedSearch> {
     debug!("Getting saved search: {}", name);
 
@@ -173,6 +185,7 @@ pub async fn get_saved_search(
         "/services/saved/searches/{name}",
         "GET",
         metrics,
+        circuit_breaker,
     )
     .await
     {
@@ -230,6 +243,7 @@ pub struct SavedSearchUpdateParams<'a> {
 ///
 /// # Returns
 /// Ok(()) on success, or `ClientError::NotFound` if the saved search doesn't exist.
+#[allow(clippy::too_many_arguments)]
 pub async fn update_saved_search(
     client: &Client,
     base_url: &str,
@@ -238,6 +252,7 @@ pub async fn update_saved_search(
     params: &SavedSearchUpdateParams<'_>,
     max_retries: usize,
     metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
     debug!("Updating saved search: {}", name);
 
@@ -263,6 +278,7 @@ pub async fn update_saved_search(
         "/services/saved/searches/{name}",
         "POST",
         metrics,
+        circuit_breaker,
     )
     .await
     {

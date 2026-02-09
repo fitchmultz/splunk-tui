@@ -46,6 +46,7 @@ async fn test_list_apps() {
         None,
         3,
         None,
+        None,
     )
     .await;
 
@@ -89,6 +90,7 @@ async fn test_list_apps_with_pagination() {
         Some(5),
         3,
         None,
+        None,
     )
     .await;
 
@@ -111,8 +113,16 @@ async fn test_get_app() {
         .await;
 
     let client = Client::new();
-    let result =
-        endpoints::get_app(&client, &mock_server.uri(), "test-token", "search", 3, None).await;
+    let result = endpoints::get_app(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "search",
+        3,
+        None,
+        None,
+    )
+    .await;
 
     assert!(result.is_ok());
     let app = result.unwrap();
@@ -143,6 +153,7 @@ async fn test_get_app_not_found() {
         "nonexistent",
         3,
         None,
+        None,
     )
     .await;
 
@@ -172,6 +183,7 @@ async fn test_enable_app() {
         "test_app",
         3,
         None,
+        None,
     )
     .await;
 
@@ -197,6 +209,7 @@ async fn test_disable_app() {
         "test-token",
         "test_app",
         3,
+        None,
         None,
     )
     .await;
@@ -226,6 +239,7 @@ async fn test_list_apps_empty() {
         None,
         None,
         3,
+        None,
         None,
     )
     .await;
@@ -270,6 +284,7 @@ async fn test_install_app() {
         &spl_file_path,
         3,
         None,
+        None,
     )
     .await;
 
@@ -297,6 +312,7 @@ async fn test_install_app_file_not_found() {
         "test-token",
         &nonexistent_path,
         3,
+        None,
         None,
     )
     .await;
@@ -326,6 +342,7 @@ async fn test_remove_app() {
         "test_app",
         3,
         None,
+        None,
     )
     .await;
 
@@ -349,6 +366,7 @@ async fn test_remove_app_not_found() {
         "test-token",
         "nonexistent",
         3,
+        None,
         None,
     )
     .await;
