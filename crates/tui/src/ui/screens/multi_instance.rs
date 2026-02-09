@@ -94,9 +94,11 @@ fn render_instance_list(
     selected_index: usize,
     theme: &Theme,
 ) {
+    use crate::action::InstanceStatus;
+
     let header = Row::new(vec![
         Cell::from("Instance").style(theme.table_header()),
-        Cell::from("Health").style(theme.table_header()),
+        Cell::from("Status").style(theme.table_header()),
         Cell::from("Jobs").style(theme.table_header()),
     ])
     .height(1);
@@ -107,25 +109,26 @@ fn render_instance_list(
         .enumerate()
         .map(|(idx, instance)| {
             let is_selected = idx == selected_index;
-            let health_color = theme.status_color(&instance.health_status);
+
+            let (status_text, status_color) = match instance.status {
+                InstanceStatus::Healthy => (
+                    instance.health_status.clone(),
+                    theme.status_color(&instance.health_status),
+                ),
+                InstanceStatus::Cached => ("Cached".to_string(), theme.warning),
+                InstanceStatus::Failed => ("Failed".to_string(), theme.error),
+                InstanceStatus::Loading => ("Loading...".to_string(), theme.info),
+            };
+
             let row_style = if is_selected {
                 theme.highlight()
             } else {
                 Style::default()
             };
 
-            let health_indicator = if instance.error.is_some() {
-                "✗ Error"
-            } else {
-                &instance.health_status
-            };
-
             Row::new(vec![
                 Cell::from(instance.profile_name.clone()),
-                Cell::from(Span::styled(
-                    health_indicator.to_string(),
-                    Style::default().fg(health_color),
-                )),
+                Cell::from(Span::styled(status_text, Style::default().fg(status_color))),
                 Cell::from(instance.job_count.to_string()),
             ])
             .height(1)
@@ -161,6 +164,8 @@ fn render_instance_details(
     selected_index: usize,
     theme: &Theme,
 ) {
+    use crate::action::InstanceStatus;
+
     let instance = match data.instances.get(selected_index) {
         Some(i) => i,
         None => {
@@ -172,6 +177,13 @@ fn render_instance_details(
         }
     };
 
+    let status_str = match instance.status {
+        InstanceStatus::Healthy => "Healthy",
+        InstanceStatus::Cached => "Cached (Instance Unreachable)",
+        InstanceStatus::Failed => "Failed",
+        InstanceStatus::Loading => "Loading...",
+    };
+
     // Build the content
     let mut text_lines: Vec<Line> = vec![
         // Instance header
@@ -180,22 +192,42 @@ fn render_instance_details(
             Span::raw(&instance.profile_name),
         ]),
         Line::from(vec![
-            Span::styled("URL: ", theme.title()),
+            Span::styled("URL:      ", theme.title()),
             Span::raw(&instance.base_url),
         ]),
         Line::from(vec![
-            Span::styled("Health: ", theme.title()),
+            Span::styled("Status:   ", theme.title()),
+            Span::styled(
+                status_str,
+                Style::default().fg(match instance.status {
+                    InstanceStatus::Healthy => theme.success,
+                    InstanceStatus::Cached => theme.warning,
+                    InstanceStatus::Failed => theme.error,
+                    InstanceStatus::Loading => theme.info,
+                }),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Health:   ", theme.title()),
             Span::styled(
                 &instance.health_status,
                 Style::default().fg(theme.status_color(&instance.health_status)),
             ),
         ]),
-        Line::from(vec![
-            Span::styled("Active Jobs: ", theme.title()),
-            Span::raw(instance.job_count.to_string()),
-        ]),
-        Line::from(""),
     ];
+
+    if let Some(ref last_success) = instance.last_success_at {
+        text_lines.push(Line::from(vec![
+            Span::styled("Last Success: ", theme.title()),
+            Span::raw(last_success),
+        ]));
+    }
+
+    text_lines.push(Line::from(vec![
+        Span::styled("Active Jobs:  ", theme.title()),
+        Span::raw(instance.job_count.to_string()),
+    ]));
+    text_lines.push(Line::from(""));
 
     // Show error if present
     if let Some(ref error) = instance.error {
@@ -247,6 +279,7 @@ mod tests {
     use ratatui::backend::TestBackend;
 
     fn create_test_multi_instance_data() -> MultiInstanceOverviewData {
+        use crate::action::InstanceStatus;
         MultiInstanceOverviewData {
             timestamp: "2024-01-01T00:00:00Z".to_string(),
             instances: vec![
@@ -270,6 +303,8 @@ mod tests {
                     error: None,
                     health_status: "green".to_string(),
                     job_count: 5,
+                    status: InstanceStatus::Healthy,
+                    last_success_at: Some("2024-01-01T00:00:00Z".to_string()),
                 },
                 InstanceOverview {
                     profile_name: "dev".to_string(),
@@ -283,6 +318,8 @@ mod tests {
                     error: None,
                     health_status: "green".to_string(),
                     job_count: 1,
+                    status: InstanceStatus::Healthy,
+                    last_success_at: Some("2024-01-01T00:00:00Z".to_string()),
                 },
             ],
         }

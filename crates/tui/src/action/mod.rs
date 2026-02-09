@@ -32,7 +32,7 @@ pub mod variants;
 pub use format::ExportFormat;
 pub use redaction::RedactedAction;
 pub use variants::{
-    Action, InstanceOverview, LicenseData, MultiInstanceOverviewData, OverviewData,
+    Action, InstanceOverview, InstanceStatus, LicenseData, MultiInstanceOverviewData, OverviewData,
     OverviewResource,
 };
 

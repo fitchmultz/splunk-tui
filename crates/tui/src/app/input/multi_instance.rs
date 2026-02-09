@@ -25,8 +25,30 @@ impl App {
                 }
                 None
             }
-            // Refresh data
-            KeyCode::Char('r') => Some(Action::LoadMultiInstanceOverview),
+            // Refresh data: 'R' (global) or 'r' (per-instance)
+            KeyCode::Char('R') => Some(Action::LoadMultiInstanceOverview),
+            KeyCode::Char('r') => {
+                let profile_name = self.multi_instance_data.as_ref().and_then(|data| {
+                    data.instances
+                        .get(self.multi_instance_selected_index)
+                        .map(|i| i.profile_name.clone())
+                });
+
+                if let Some(name) = profile_name {
+                    // Mark as loading in UI immediately
+                    if let Some(ref mut data) = self.multi_instance_data {
+                        if let Some(instance) =
+                            data.instances.iter_mut().find(|i| i.profile_name == name)
+                        {
+                            instance.status = crate::action::InstanceStatus::Loading;
+                        }
+                    }
+
+                    return Some(Action::RetryInstance(name));
+                }
+                Some(Action::LoadMultiInstanceOverview)
+            }
+
             // Ctrl+C or 'y': copy instance summary (vim-style)
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 let content = self.multi_instance_data.as_ref().map(|d| {
@@ -89,6 +111,7 @@ mod tests {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn create_test_multi_instance_data() -> MultiInstanceOverviewData {
+        use crate::action::InstanceStatus;
         MultiInstanceOverviewData {
             timestamp: "2024-01-01T00:00:00Z".to_string(),
             instances: vec![
@@ -104,6 +127,8 @@ mod tests {
                     error: None,
                     health_status: "green".to_string(),
                     job_count: 5,
+                    status: InstanceStatus::Healthy,
+                    last_success_at: Some("2024-01-01T00:00:00Z".to_string()),
                 },
                 InstanceOverview {
                     profile_name: "dev".to_string(),
@@ -117,6 +142,8 @@ mod tests {
                     error: None,
                     health_status: "green".to_string(),
                     job_count: 1,
+                    status: InstanceStatus::Healthy,
+                    last_success_at: Some("2024-01-01T00:00:00Z".to_string()),
                 },
             ],
         }

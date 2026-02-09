@@ -378,11 +378,79 @@ impl App {
                 self.loading = false;
             }
             Action::MultiInstanceOverviewLoaded(data) => {
-                self.multi_instance_data = Some(data);
-                self.loading = false;
+                self.handle_multi_instance_overview_loaded(data);
+            }
+            Action::MultiInstanceInstanceLoaded(instance) => {
+                self.handle_multi_instance_instance_loaded(instance);
             }
 
             _ => {}
+        }
+    }
+
+    fn handle_multi_instance_overview_loaded(
+        &mut self,
+        data: crate::action::MultiInstanceOverviewData,
+    ) {
+        if let Some(ref mut existing) = self.multi_instance_data {
+            existing.timestamp = data.timestamp;
+            // If the incoming data actually has instances (e.g. from a legacy caller), use them
+            if !data.instances.is_empty() {
+                existing.instances = data.instances;
+            }
+        } else {
+            self.multi_instance_data = Some(data);
+        }
+        self.loading = false;
+    }
+
+    pub fn handle_multi_instance_instance_loaded(
+        &mut self,
+        new_instance: crate::action::InstanceOverview,
+    ) {
+        use crate::action::InstanceStatus;
+
+        if self.multi_instance_data.is_none() {
+            self.multi_instance_data = Some(crate::action::MultiInstanceOverviewData {
+                timestamp: chrono::Utc::now().to_rfc3339(),
+                instances: Vec::new(),
+            });
+        }
+
+        if let Some(ref mut data) = self.multi_instance_data {
+            if let Some(existing) = data
+                .instances
+                .iter_mut()
+                .find(|i| i.profile_name == new_instance.profile_name)
+            {
+                // Graceful degradation logic:
+                // If the new fetch failed but we have healthy cached data, transition to Cached
+                if new_instance.error.is_some() && existing.status == InstanceStatus::Healthy {
+                    existing.status = InstanceStatus::Cached;
+                    existing.error = new_instance.error;
+                    // Keep old resources and job_count
+                } else {
+                    // Update with new data (Success or hard Failure)
+                    let mut updated = new_instance;
+                    if updated.error.is_none() {
+                        updated.status = InstanceStatus::Healthy;
+                        updated.last_success_at = Some(chrono::Utc::now().to_rfc3339());
+                    } else {
+                        updated.status = InstanceStatus::Failed;
+                    }
+                    *existing = updated;
+                }
+            } else {
+                // New instance discovered or first load
+                let mut updated = new_instance;
+                if updated.error.is_none() {
+                    updated.status = InstanceStatus::Healthy;
+                    updated.last_success_at = Some(chrono::Utc::now().to_rfc3339());
+                } else {
+                    updated.status = InstanceStatus::Failed;
+                }
+                data.instances.push(updated);
+            }
         }
     }
 
@@ -1207,7 +1275,7 @@ mod tests {
 
     #[test]
     fn test_settings_loaded_handles_zero_max_results() {
-        let mut app = App::new(None, ConnectionContext::default());
+        let mut app = App::new(None, crate::ConnectionContext::default());
         app.loading = true;
 
         // Create persisted state with max_results = 0 (invalid, should default to 1000)
@@ -1241,5 +1309,98 @@ mod tests {
 
         // But search_results_page_size should default to 1000 (validation applied)
         assert_eq!(app.search_results_page_size, 1000);
+    }
+
+    #[test]
+    fn test_multi_instance_instance_loaded_incremental() {
+        let mut app = App::new(None, crate::ConnectionContext::default());
+        use crate::action::{InstanceOverview, InstanceStatus};
+
+        let instance1 = InstanceOverview {
+            profile_name: "prod".to_string(),
+            base_url: "url1".to_string(),
+            resources: vec![],
+            error: None,
+            health_status: "green".to_string(),
+            job_count: 5,
+            status: InstanceStatus::Healthy,
+            last_success_at: None,
+        };
+
+        app.handle_data_loading_action(Action::MultiInstanceInstanceLoaded(instance1.clone()));
+
+        assert!(app.multi_instance_data.is_some());
+        assert_eq!(app.multi_instance_data.as_ref().unwrap().instances.len(), 1);
+        assert_eq!(
+            app.multi_instance_data.as_ref().unwrap().instances[0].profile_name,
+            "prod"
+        );
+        assert_eq!(
+            app.multi_instance_data.as_ref().unwrap().instances[0].status,
+            InstanceStatus::Healthy
+        );
+
+        // Load second instance
+        let instance2 = InstanceOverview {
+            profile_name: "dev".to_string(),
+            base_url: "url2".to_string(),
+            resources: vec![],
+            error: None,
+            health_status: "green".to_string(),
+            job_count: 1,
+            status: InstanceStatus::Healthy,
+            last_success_at: None,
+        };
+
+        app.handle_data_loading_action(Action::MultiInstanceInstanceLoaded(instance2));
+        assert_eq!(app.multi_instance_data.as_ref().unwrap().instances.len(), 2);
+    }
+
+    #[test]
+    fn test_multi_instance_cached_fallback() {
+        let mut app = App::new(None, crate::ConnectionContext::default());
+        use crate::action::{InstanceOverview, InstanceStatus, OverviewResource};
+
+        // 1. Load healthy data
+        let healthy = InstanceOverview {
+            profile_name: "prod".to_string(),
+            base_url: "url1".to_string(),
+            resources: vec![OverviewResource {
+                resource_type: "jobs".to_string(),
+                count: 10,
+                status: "ok".to_string(),
+                error: None,
+            }],
+            error: None,
+            health_status: "green".to_string(),
+            job_count: 10,
+            status: InstanceStatus::Healthy,
+            last_success_at: None,
+        };
+        app.handle_data_loading_action(Action::MultiInstanceInstanceLoaded(healthy));
+
+        // 2. Load failing data for same instance
+        let failing = InstanceOverview {
+            profile_name: "prod".to_string(),
+            base_url: "url1".to_string(),
+            resources: vec![],
+            error: Some("Connection timed out".to_string()),
+            health_status: "error".to_string(),
+            job_count: 0,
+            status: InstanceStatus::Failed,
+            last_success_at: None,
+        };
+        app.handle_data_loading_action(Action::MultiInstanceInstanceLoaded(failing));
+
+        let data = app.multi_instance_data.as_ref().unwrap();
+        let instance = &data.instances[0];
+
+        // Should be Cached, not Failed
+        assert_eq!(instance.status, InstanceStatus::Cached);
+        // Should preserve old resources
+        assert_eq!(instance.resources.len(), 1);
+        assert_eq!(instance.job_count, 10);
+        // Should show the new error
+        assert_eq!(instance.error, Some("Connection timed out".to_string()));
     }
 }

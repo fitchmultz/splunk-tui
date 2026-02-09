@@ -155,10 +155,14 @@ impl ThemeExt for Theme {
             "ok" | "healthy" | "green" | "active" | "installed" | "available" | "up"
             | "running" | "ready" => self.success,
             // Warning states
-            "warning" | "yellow" | "degraded" | "pending" | "starting" | "stopping" => self.warning,
+            "warning" | "yellow" | "degraded" | "pending" | "starting" | "stopping" | "cached" => {
+                self.warning
+            }
             // Error states
             "error" | "unhealthy" | "red" | "timeout" | "down" | "critical" | "failed"
             | "stopped" => self.error,
+            // Info/Neutral states
+            "loading" => self.info,
             // Unknown/default
             _ => self.text,
         }

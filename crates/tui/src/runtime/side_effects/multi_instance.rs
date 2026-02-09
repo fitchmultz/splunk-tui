@@ -12,9 +12,12 @@
 //! Invariants:
 //! - Profile-level errors are captured in InstanceOverview, not propagated.
 //! - Timestamp is always RFC3339 format.
-//! - All futures are joined for concurrent execution.
+//! - Futures are executed concurrently using FuturesUnordered for streaming results.
 
-use crate::action::{Action, InstanceOverview, MultiInstanceOverviewData, OverviewResource};
+use crate::action::{
+    Action, InstanceOverview, InstanceStatus, MultiInstanceOverviewData, OverviewResource,
+};
+use futures_util::stream::{FuturesUnordered, StreamExt};
 use splunk_config::ConfigManager;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -35,23 +38,58 @@ pub async fn handle_load_multi_instance_overview(
         let profiles = cm.list_profiles().clone();
         drop(cm); // Release lock before async operations
 
-        let timestamp = chrono::Utc::now().to_rfc3339();
-        let mut futures = Vec::new();
+        let mut futures = FuturesUnordered::new();
 
         for (profile_name, profile_config) in profiles {
-            let future = fetch_single_instance(profile_name, profile_config);
-            futures.push(future);
+            futures.push(fetch_single_instance(profile_name, profile_config));
         }
 
-        let results = futures_util::future::join_all(futures).await;
-        let instances: Vec<InstanceOverview> = results.into_iter().collect();
+        while let Some(instance) = futures.next().await {
+            let _ = tx.send(Action::MultiInstanceInstanceLoaded(instance)).await;
+        }
 
+        // Final aggregate loaded to signal completion and update aggregate timestamp
         let data = MultiInstanceOverviewData {
-            timestamp,
-            instances,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            instances: vec![], // App state already has the instances from incremental updates
         };
-
         let _ = tx.send(Action::MultiInstanceOverviewLoaded(data)).await;
+    });
+}
+
+/// Handle retrying a specific instance with exponential backoff.
+pub async fn handle_retry_instance(
+    profile_name: String,
+    config_manager: Arc<Mutex<ConfigManager>>,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+) {
+    task_tracker.spawn(async move {
+        let cm = config_manager.lock().await;
+        let profile_config = match cm.list_profiles().get(&profile_name) {
+            Some(p) => p.clone(),
+            None => return,
+        };
+        drop(cm);
+
+        let mut delay = std::time::Duration::from_millis(500);
+        let mut last_instance = None;
+
+        for _ in 0..3 {
+            let instance =
+                fetch_single_instance(profile_name.clone(), profile_config.clone()).await;
+            if instance.error.is_none() {
+                let _ = tx.send(Action::MultiInstanceInstanceLoaded(instance)).await;
+                return;
+            }
+            last_instance = Some(instance);
+            tokio::time::sleep(delay).await;
+            delay *= 2;
+        }
+
+        if let Some(instance) = last_instance {
+            let _ = tx.send(Action::MultiInstanceInstanceLoaded(instance)).await;
+        }
     });
 }
 
@@ -73,6 +111,8 @@ async fn fetch_single_instance(
                 error: Some(error_msg),
                 health_status: "error".to_string(),
                 job_count: 0,
+                status: InstanceStatus::Failed,
+                last_success_at: None,
             };
         }
     };
@@ -87,6 +127,8 @@ async fn fetch_single_instance(
         error: None,
         health_status,
         job_count,
+        status: InstanceStatus::Healthy,
+        last_success_at: Some(chrono::Utc::now().to_rfc3339()),
     }
 }
 

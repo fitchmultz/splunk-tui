@@ -87,6 +87,19 @@ pub struct OverviewData {
     pub resources: Vec<OverviewResource>,
 }
 
+/// Health status for a single Splunk instance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum InstanceStatus {
+    /// Instance is reachable and data is fresh
+    Healthy,
+    /// Instance is unreachable, displaying cached data
+    Cached,
+    /// Instance is unreachable and no cached data is available
+    Failed,
+    /// Data is currently being fetched
+    Loading,
+}
+
 /// Per-instance overview data for multi-instance dashboard.
 ///
 /// Represents the health and resource status of a single Splunk instance
@@ -106,6 +119,10 @@ pub struct InstanceOverview {
     pub health_status: String,
     /// Job count (for quick reference)
     pub job_count: usize,
+    /// Current status of the instance
+    pub status: InstanceStatus,
+    /// Timestamp of the last successful data fetch (RFC3339)
+    pub last_success_at: Option<String>,
 }
 
 /// Aggregated multi-instance overview data.
@@ -243,6 +260,10 @@ pub enum Action {
     LoadOverview,
     /// Load multi-instance overview from all profiles
     LoadMultiInstanceOverview,
+    /// Incremental update for a single instance in the multi-instance dashboard
+    MultiInstanceInstanceLoaded(InstanceOverview),
+    /// Retry loading data for a specific instance
+    RetryInstance(String),
     /// Load cluster peers (detailed view)
     LoadClusterPeers,
     /// Load more indexes (pagination)

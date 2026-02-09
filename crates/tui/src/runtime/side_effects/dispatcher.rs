@@ -121,6 +121,7 @@ fn action_type_name(action: &Action) -> &'static str {
         Action::LoadKvstore => "LoadKvstore",
         Action::LoadOverview => "LoadOverview",
         Action::LoadMultiInstanceOverview => "LoadMultiInstanceOverview",
+        Action::RetryInstance(_) => "RetryInstance",
         Action::ExportData(_, _, _) => "ExportData",
         Action::OpenProfileSwitcher => "OpenProfileSwitcher",
         Action::ProfileSelected(_) => "ProfileSelected",
@@ -482,6 +483,15 @@ async fn handle_action(
         }
         Action::LoadMultiInstanceOverview => {
             multi_instance::handle_load_multi_instance_overview(
+                config_manager,
+                tx,
+                task_tracker.clone(),
+            )
+            .await;
+        }
+        Action::RetryInstance(profile_name) => {
+            multi_instance::handle_retry_instance(
+                profile_name,
                 config_manager,
                 tx,
                 task_tracker.clone(),
