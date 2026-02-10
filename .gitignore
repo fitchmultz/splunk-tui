@@ -47,3 +47,4 @@ proptest-regressions/
 .ralph/cache/session.json
 .ralph/cache/stop_requested
 .ralph/config.json
+logs/
