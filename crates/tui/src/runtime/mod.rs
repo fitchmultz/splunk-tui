@@ -5,6 +5,7 @@
 //! - Client creation and authentication
 //! - Configuration loading and persistence
 //! - Async side effect handlers for API calls
+//! - Startup phase management for bootstrap mode
 //!
 //! Does NOT handle:
 //! - UI rendering or input handling (see `splunk_tui::app` and `splunk_tui::ui`).
@@ -17,4 +18,5 @@
 pub mod client;
 pub mod config;
 pub mod side_effects;
+pub mod startup;
 pub mod terminal;

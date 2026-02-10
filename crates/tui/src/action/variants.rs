@@ -989,6 +989,27 @@ pub enum Action {
     LoadSearchScreenForTutorial,
 
     // =========================================================================
+    // Bootstrap Mode
+    // =========================================================================
+    /// Request to connect from bootstrap mode (after profile creation or explicit connect)
+    BootstrapConnectRequested,
+    /// Bootstrap connection completed
+    BootstrapConnectFinished {
+        /// Whether connection was successful
+        ok: bool,
+        /// Error message if connection failed
+        error: Option<String>,
+    },
+    /// Enter main mode with authenticated client
+    EnterMainMode {
+        /// The authenticated client to use for API calls
+        #[allow(clippy::type_complexity)]
+        client: Arc<splunk_client::SplunkClient>,
+        /// Connection context for the UI
+        connection_ctx: crate::ConnectionContext,
+    },
+
+    // =========================================================================
     // State Persistence
     // =========================================================================
     /// Persist application state to disk

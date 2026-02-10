@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0454",
-      "status": "todo",
-      "title": "Introduce pre-auth bootstrap mode so onboarding is reachable",
-      "description": "Opportunity type: feature gap + UX improvement. Why it matters: first-run users with missing/invalid credentials cannot enter the TUI at all, so onboarding and recovery UX are bypassed. Proposed approach (minimal slice): split startup into a bootstrap mode that can render onboarding/profile setup before attempting authenticated client initialization. Incremental path: start by allowing read-only bootstrap shell + profile creation; later add guided connection check and one-click launch into main app once auth succeeds. Risks/mitigations: startup complexity and state divergence, mitigated by a single startup state machine with explicit transitions and tests. Acceptance criteria: missing-auth startup opens bootstrap UI instead of exiting and enables users to resolve auth from inside the TUI.",
-      "priority": "critical",
-      "tags": [
-        "innovation",
-        "tui",
-        "onboarding",
-        "auth",
-        "feature-gap"
-      ],
-      "scope": [
-        "crates/tui/src/main.rs",
-        "crates/tui/src/runtime/client.rs",
-        "crates/tui/src/runtime/config.rs",
-        "crates/tui/src/onboarding/mod.rs",
-        "crates/tui/tests/first_run_tests.rs",
-        "crates/tui/tests/tutorial_app_tests.rs",
-        "make test",
-        "make ci SKIP_LIVE_TESTS=1"
-      ],
-      "evidence": [
-        "crates/tui/src/main.rs:117-133 creates/authenticates client before tutorial first-run checks",
-        "crates/tui/src/main.rs:260-322 first-run tutorial gating executes only after successful startup",
-        "crates/config/src/loader/error.rs:31-35 and crates/tui/src/runtime/config.rs:116-119 surface missing-auth as startup failure",
-        "crates/tui/tests/first_run_tests.rs:10-127 only validates first-run detection logic, not startup-to-onboarding flow when auth is missing"
-      ],
-      "plan": [
-        "Define startup phases (bootstrap, auth-ready, main-run) and implement explicit transition guards",
-        "Allow bootstrap rendering without authenticated client and route users to profile/auth setup flow",
-        "Trigger client initialization only after setup completion or explicit connect action",
-        "Add integration tests for missing-auth startup and successful transition into normal run mode",
-        "Document bootstrap mode behavior and recovery flow in README.md and docs/user-guide.md",
-        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming missing-auth path enters bootstrap UI with passing new tests"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-10T16:29:08Z",
-      "updated_at": "2026-02-10T16:29:08Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0455",
       "status": "todo",
       "title": "Unify auth and TLS error classification across all TUI flows",

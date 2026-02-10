@@ -94,6 +94,29 @@ export SPLUNK_CONFIG_KEY_VAR=MY_SECRET_KEY
 
 Copy `.env.example` to `.env` and configure as needed.
 
+### First-Run Bootstrap Mode
+
+When starting `splunk-tui` without valid credentials, the application enters **bootstrap mode** instead of exiting. This allows first-time users to:
+
+1. Access the interactive tutorial and profile setup
+2. Create connection profiles from within the TUI
+3. Test connections before entering full operation
+
+**Bootstrap behavior:**
+- Missing `SPLUNK_BASE_URL` or authentication → Bootstrap mode with profile creation UI
+- Invalid credentials → Bootstrap mode with error message and retry option
+- Profile not found → Bootstrap mode with profile selector
+
+**Recovery flow:**
+1. Start TUI without credentials: `splunk-tui`
+2. Tutorial opens automatically (or press `?` for help)
+3. Follow profile creation wizard (Enter → Create Profile)
+4. Enter Splunk server URL and credentials
+5. Connection test runs automatically
+6. On success, TUI transitions to full operation mode
+
+Skip the tutorial with `--skip-tutorial` or mark it complete to suppress first-run detection.
+
 ## CLI Usage
 
 ### Search

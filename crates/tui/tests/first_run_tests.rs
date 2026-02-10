@@ -2,14 +2,18 @@
 //!
 //! Tests for verifying the first-run detection logic that triggers
 //! the tutorial on initial startup.
+//!
+//! Note: Uses the shared `should_launch_tutorial` helper from the startup module
+//! to ensure consistency with main.rs startup logic (RQ-0454).
 
 use splunk_config::{ConfigManager, PersistedState};
+use splunk_tui::runtime::startup::should_launch_tutorial;
 use std::io::Write;
 use tempfile::NamedTempFile;
 
-/// Helper function to check if conditions indicate first run
+/// Local alias for the shared helper to maintain test readability
 fn is_first_run(profiles_empty: bool, skip_tutorial_flag: bool, tutorial_completed: bool) -> bool {
-    profiles_empty && !skip_tutorial_flag && !tutorial_completed
+    should_launch_tutorial(profiles_empty, skip_tutorial_flag, tutorial_completed)
 }
 
 #[test]

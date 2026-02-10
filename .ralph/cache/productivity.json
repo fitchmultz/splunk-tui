@@ -1,7 +1,7 @@
 {
   "version": 1,
   "first_task_completed_at": "2026-02-02T17:12:52.375533947Z",
-  "last_updated_at": "2026-02-10T19:09:24.882377829Z",
+  "last_updated_at": "2026-02-10T20:50:20.554640946Z",
   "daily": {
     "2026-02-02": {
       "date": "2026-02-02",
@@ -858,7 +858,7 @@
     },
     "2026-02-10": {
       "date": "2026-02-10",
-      "completed_count": 2,
+      "completed_count": 3,
       "tasks": [
         {
           "id": "RQ-0452",
@@ -869,6 +869,11 @@
           "id": "RQ-0453",
           "title": "Ship actionable auth recovery panel in TUI",
           "completed_at": "2026-02-10T19:09:24.882376423Z"
+        },
+        {
+          "id": "RQ-0454",
+          "title": "Introduce pre-auth bootstrap mode so onboarding is reachable",
+          "completed_at": "2026-02-10T20:50:20.554638827Z"
         }
       ]
     }
@@ -878,7 +883,7 @@
     "longest_streak": 9,
     "last_completed_date": "2026-02-10"
   },
-  "total_completed": 163,
+  "total_completed": 164,
   "milestones": [
     {
       "threshold": 10,

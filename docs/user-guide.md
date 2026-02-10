@@ -58,6 +58,48 @@ Before using the tools, you need to configure your connection to Splunk.
 
 Refer to the [README](../README.md) for full installation instructions.
 
+### First-Run Bootstrap Mode
+
+Starting with RQ-0454, `splunk-tui` supports a **bootstrap mode** that allows the UI to start even when authentication credentials are missing or invalid. This enables first-time users to complete onboarding without pre-configuring credentials.
+
+**When bootstrap mode activates:**
+- No `SPLUNK_BASE_URL` configured
+- No valid username/password or API token
+- Requested profile doesn't exist
+- Authentication fails (expired credentials)
+
+**In bootstrap mode, you can:**
+- Navigate the UI (screens will be empty)
+- Access the tutorial via the `?` key
+- Create and save connection profiles
+- Test connections before committing
+
+**Typical bootstrap flow:**
+
+1. Start TUI without credentials:
+   ```bash
+   splunk-tui
+   ```
+
+2. The tutorial wizard opens automatically (if no profiles exist)
+
+3. Press Enter to advance from Welcome → Profile Creation
+
+4. Create a profile:
+   - Profile name: `production`
+   - Base URL: `https://splunk.company.com:8089`
+   - Username: `admin`
+   - Password: `your-password`
+
+5. The connection test runs automatically
+
+6. On success, TUI transitions to full mode with health monitoring enabled
+
+**Skipping bootstrap:**
+- Use `--skip-tutorial` to skip the first-run tutorial
+- Use `--fresh` to start with default state (no profiles)
+- Set `SPLUNK_CONFIG_NO_MIGRATE=1` to disable config migration
+
 ---
 
 ## CLI Deep Dive

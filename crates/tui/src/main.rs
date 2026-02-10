@@ -16,6 +16,7 @@
 //! - `load_dotenv()` is called at startup to support `.env` configuration.
 //! - Configuration precedence: CLI args > env vars > profile config > defaults.
 //! - Mouse capture is enabled by default unless `--no-mouse` is specified.
+//! - Bootstrap mode allows UI to start without valid auth credentials (RQ-0454).
 
 use anyhow::Result;
 use clap::Parser;
@@ -30,6 +31,10 @@ use splunk_tui::action::Action;
 use splunk_tui::app::{App, ConnectionContext};
 use splunk_tui::cli::Cli;
 use splunk_tui::onboarding::TutorialState;
+use splunk_tui::runtime::config::ConfigLoadResult;
+use splunk_tui::runtime::startup::{
+    BootstrapReason, StartupPhase, action_requires_client, should_launch_tutorial,
+};
 use splunk_tui::ui::popup::{Popup, PopupType};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::channel};
@@ -41,13 +46,13 @@ use splunk_config::constants::{
 };
 use splunk_config::{
     AuthStrategy as ConfigAuthStrategy, ConfigManager, InternalLogsDefaults, PersistedState,
-    SearchDefaults,
+    SearchDefaultConfig, SearchDefaults,
 };
 
 use splunk_tui::runtime::{
     client::create_client,
-    config::{load_config_with_defaults, save_and_quit},
-    side_effects::{SharedClient, TaskTracker, handle_side_effects},
+    config::{load_config_with_defaults, save_and_quit, try_load_config_with_bootstrap_fallback},
+    side_effects::{TaskTracker, handle_side_effects},
     terminal::TerminalGuard,
 };
 
@@ -114,21 +119,105 @@ async fn main() -> Result<()> {
         None
     };
 
-    // Load config at startup with CLI overrides
-    // Also get search defaults and internal logs defaults with env var overrides applied
-    let (search_default_config, internal_logs_default_config, config, resolved_profile_name) =
-        load_config_with_defaults(&cli)?;
-
-    // Warn if using default credentials (security check)
-    if config.is_using_default_credentials() {
-        tracing::warn!(
-            "Using default Splunk credentials (admin/changeme). \
-             These are for local development only - change before production use."
-        );
+    // Try to load configuration with bootstrap fallback (RQ-0454)
+    // This allows the UI to start even if auth is missing/invalid
+    struct StartupState {
+        phase: StartupPhase,
+        client: Option<Arc<splunk_client::SplunkClient>>,
+        search_defaults: SearchDefaultConfig,
+        internal_logs_defaults: InternalLogsDefaults,
+        bootstrap_reason: Option<BootstrapReason>,
+        connection_ctx: ConnectionContext,
     }
 
-    // Build and authenticate client
-    let client: SharedClient = Arc::new(create_client(&config).await?);
+    let startup_state = match try_load_config_with_bootstrap_fallback(&cli)? {
+        ConfigLoadResult::Success {
+            search_defaults,
+            internal_logs_defaults,
+            config,
+            resolved_profile_name,
+        } => {
+            // Config loaded successfully - try to create client
+            match create_client(&config).await {
+                Ok(new_client) => {
+                    tracing::info!("Successfully authenticated with Splunk server");
+                    let auth_mode = match &config.auth.strategy {
+                        ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),
+                        ConfigAuthStrategy::SessionToken { username, .. } => {
+                            format!("session ({username})")
+                        }
+                    };
+                    let connection_ctx = ConnectionContext {
+                        profile_name: resolved_profile_name.clone(),
+                        base_url: config.connection.base_url.clone(),
+                        auth_mode,
+                    };
+                    StartupState {
+                        phase: StartupPhase::Main,
+                        client: Some(Arc::new(new_client)),
+                        search_defaults,
+                        internal_logs_defaults,
+                        bootstrap_reason: None,
+                        connection_ctx,
+                    }
+                }
+                Err(e) => {
+                    // Authentication failed - enter bootstrap mode
+                    tracing::warn!("Authentication failed, entering bootstrap mode: {}", e);
+                    StartupState {
+                        phase: StartupPhase::Bootstrap {
+                            reason: BootstrapReason::InvalidAuth,
+                        },
+                        client: None,
+                        search_defaults,
+                        internal_logs_defaults,
+                        bootstrap_reason: Some(BootstrapReason::InvalidAuth),
+                        connection_ctx: ConnectionContext {
+                            profile_name: None,
+                            base_url: "Not connected".to_string(),
+                            auth_mode: "bootstrap".to_string(),
+                        },
+                    }
+                }
+            }
+        }
+        ConfigLoadResult::Bootstrap {
+            reason,
+            search_defaults,
+            internal_logs_defaults,
+        } => {
+            // Missing/invalid auth - enter bootstrap mode
+            tracing::info!(
+                "Entering bootstrap mode due to missing/invalid auth: {:?}",
+                reason
+            );
+            StartupState {
+                phase: StartupPhase::Bootstrap { reason },
+                client: None,
+                search_defaults,
+                internal_logs_defaults,
+                bootstrap_reason: Some(reason),
+                connection_ctx: ConnectionContext {
+                    profile_name: None,
+                    base_url: "Not connected".to_string(),
+                    auth_mode: "bootstrap".to_string(),
+                },
+            }
+        }
+    };
+
+    // Destructure the startup state
+    let StartupState {
+        phase,
+        client,
+        search_defaults,
+        internal_logs_defaults,
+        bootstrap_reason,
+        connection_ctx,
+    } = startup_state;
+
+    let mut startup_phase = phase;
+    let mut client: Option<std::sync::Arc<splunk_client::SplunkClient>> = client;
 
     // Create task tracker for managing spawned tasks
     let task_tracker = TaskTracker::new();
@@ -259,18 +348,20 @@ async fn main() -> Result<()> {
 
     // Check if this is first run (no profiles exist and tutorial not completed)
     let config_manager_for_first_run = config_manager.lock().await;
-    let is_first_run = config_manager_for_first_run.list_profiles().is_empty()
-        && !cli.skip_tutorial
-        && !persisted_state.tutorial_completed;
+    let is_first_run = should_launch_tutorial(
+        config_manager_for_first_run.list_profiles().is_empty(),
+        cli.skip_tutorial,
+        persisted_state.tutorial_completed,
+    );
     drop(config_manager_for_first_run); // Release lock before creating app
 
     // Apply environment variable overrides to search defaults
     // Precedence: env vars > persisted values > hardcoded defaults
     // Sanitize to ensure invariants (non-empty times, max_results >= 1) are enforced
     persisted_state.search_defaults = SearchDefaults {
-        earliest_time: search_default_config.earliest_time,
-        latest_time: search_default_config.latest_time,
-        max_results: search_default_config.max_results,
+        earliest_time: search_defaults.earliest_time,
+        latest_time: search_defaults.latest_time,
+        max_results: search_defaults.max_results,
     }
     .sanitize();
 
@@ -278,8 +369,8 @@ async fn main() -> Result<()> {
     // Precedence: env vars > persisted values > hardcoded defaults
     // Sanitize to ensure invariants (count > 0, non-empty earliest_time) are enforced
     persisted_state.internal_logs_defaults = InternalLogsDefaults {
-        count: internal_logs_default_config.count,
-        earliest_time: internal_logs_default_config.earliest_time,
+        count: internal_logs_defaults.count,
+        earliest_time: internal_logs_defaults.earliest_time,
     }
     .sanitize();
 
@@ -296,22 +387,17 @@ async fn main() -> Result<()> {
     // Initialize footer hints cache to avoid per-frame allocations (RQ-0336)
     splunk_tui::input::keymap::init_footer_cache();
 
-    // Build connection context for TUI header display (RQ-0134)
-    let connection_ctx = ConnectionContext {
-        profile_name: resolved_profile_name,
-        base_url: config.connection.base_url.clone(),
-        auth_mode: match &config.auth.strategy {
-            ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),
-            ConfigAuthStrategy::SessionToken { username, .. } => {
-                format!("session ({username})")
-            }
-        },
-    };
-
-    // Create app with persisted state (now includes env var overrides for search defaults)
+    // Create app with persisted state and pre-built connection context
     let mut app = App::new(Some(persisted_state), connection_ctx);
 
+    // Set bootstrap message if in bootstrap mode
+    if let Some(reason) = bootstrap_reason {
+        app.toasts
+            .push(splunk_tui::ui::Toast::warning(reason.to_string()));
+    }
+
     // Launch tutorial on first run
+    // This now works in bootstrap mode - tutorial opens before auth is required
     if is_first_run {
         app.popup = Some(
             Popup::builder(PopupType::TutorialWizard {
@@ -321,47 +407,52 @@ async fn main() -> Result<()> {
         );
     }
 
-    // Spawn background health monitoring task (configurable interval, default 60s)
-    let tx_health = tx.clone();
-    let client_health = client.clone();
-    let health_check_interval = config.connection.health_check_interval_seconds;
-    task_tracker.spawn(async move {
-        use tokio::sync::mpsc::error::TrySendError;
+    // Track if health check task is already running to prevent duplicates
+    let mut health_check_running = client.is_some();
 
-        let mut interval =
-            tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
-        loop {
-            interval.tick().await;
-            match client_health.get_health().await {
-                Ok(health) => {
-                    match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
-                        Ok(()) => {}
-                        Err(TrySendError::Full(_)) => {
-                            // Drop health status update if channel full - next tick will send another
-                            tracing::debug!("Health status channel full, dropping update");
-                        }
-                        Err(TrySendError::Closed(_)) => {
-                            // Channel closed, exit task
-                            break;
+    // Spawn background health monitoring task (only if we have a client)
+    if let Some(client_health) = client.clone() {
+        let tx_health = tx.clone();
+        // Get health check interval from client or use default
+        let health_check_interval = 60; // Default 60s
+        task_tracker.spawn(async move {
+            use tokio::sync::mpsc::error::TrySendError;
+
+            let mut interval =
+                tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
+            loop {
+                interval.tick().await;
+                match client_health.get_health().await {
+                    Ok(health) => {
+                        match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
+                            Ok(()) => {}
+                            Err(TrySendError::Full(_)) => {
+                                // Drop health status update if channel full - next tick will send another
+                                tracing::debug!("Health status channel full, dropping update");
+                            }
+                            Err(TrySendError::Closed(_)) => {
+                                // Channel closed, exit task
+                                break;
+                            }
                         }
                     }
-                }
-                Err(e) => {
-                    match tx_health.try_send(Action::HealthStatusLoaded(Err(Arc::new(e)))) {
-                        Ok(()) => {}
-                        Err(TrySendError::Full(_)) => {
-                            // Drop health status update if channel full - next tick will send another
-                            tracing::debug!("Health status channel full, dropping update");
-                        }
-                        Err(TrySendError::Closed(_)) => {
-                            // Channel closed, exit task
-                            break;
+                    Err(e) => {
+                        match tx_health.try_send(Action::HealthStatusLoaded(Err(Arc::new(e)))) {
+                            Ok(()) => {}
+                            Err(TrySendError::Full(_)) => {
+                                // Drop health status update if channel full - next tick will send another
+                                tracing::debug!("Health status channel full, dropping update");
+                            }
+                            Err(TrySendError::Closed(_)) => {
+                                // Channel closed, exit task
+                                break;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 
     // Create UI tick interval for smooth animations
     let mut tick_interval =
@@ -406,6 +497,154 @@ async fn main() -> Result<()> {
                         tracing::error!(error = %e, "Failed to save config");
                     }
                     break;
+                }
+
+                // Handle bootstrap connect request
+                if matches!(action, Action::BootstrapConnectRequested) {
+                    // Prevent multiple concurrent connection attempts
+                    match startup_phase {
+                        StartupPhase::Bootstrap { .. } => {
+                            startup_phase = StartupPhase::Connecting;
+                            app.loading = true;
+
+                            // Attempt to load config and create client
+                            let config_result = load_config_with_defaults(&cli);
+                            let tx_connect = tx.clone();
+
+                            tokio::spawn(async move {
+                                match config_result {
+                                    Ok((_, _, config, resolved_profile_name)) => {
+                                        match create_client(&config).await {
+                                            Ok(new_client) => {
+                                                // Build connection context
+                                                let auth_mode = match &config.auth.strategy {
+                                                    ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),
+                                                    ConfigAuthStrategy::SessionToken { username, .. } => {
+                                                        format!("session ({username})")
+                                                    }
+                                                };
+                                                let connection_ctx = ConnectionContext {
+                                                    profile_name: resolved_profile_name,
+                                                    base_url: config.connection.base_url.clone(),
+                                                    auth_mode,
+                                                };
+
+                                                let _ = tx_connect.send(Action::EnterMainMode {
+                                                    client: Arc::new(new_client),
+                                                    connection_ctx,
+                                                }).await;
+                                            }
+                                            Err(e) => {
+                                                let _ = tx_connect.send(Action::BootstrapConnectFinished {
+                                                    ok: false,
+                                                    error: Some(e.to_string()),
+                                                }).await;
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        let _ = tx_connect.send(Action::BootstrapConnectFinished {
+                                            ok: false,
+                                            error: Some(e.to_string()),
+                                        }).await;
+                                    }
+                                }
+                            });
+                        }
+                        StartupPhase::Connecting => {
+                            // Already connecting - show info toast and skip
+                            app.toasts.push(splunk_tui::ui::Toast::info(
+                                "Connection already in progress...".to_string()
+                            ));
+                        }
+                        _ => {
+                            // Not in bootstrap/connecting - ignore
+                            tracing::debug!("Ignoring BootstrapConnectRequested in {:?} phase", startup_phase);
+                        }
+                    }
+                    continue;
+                }
+
+                // Handle bootstrap connect finished (error case only)
+                let is_bootstrap_finished = matches!(action, Action::BootstrapConnectFinished { .. });
+                if is_bootstrap_finished {
+                    if let Action::BootstrapConnectFinished { ok, error } = &action {
+                        app.loading = false;
+                        if !*ok {
+                            // Connection failed - stay in bootstrap mode
+                            startup_phase = StartupPhase::Bootstrap {
+                                reason: BootstrapReason::InvalidAuth,
+                            };
+                            if let Some(err) = error {
+                                app.toasts.push(splunk_tui::ui::Toast::error(format!(
+                                    "Connection failed: {}",
+                                    err
+                                )));
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                // Handle enter main mode (bootstrap -> main transition)
+                let is_enter_main = matches!(action, Action::EnterMainMode { .. });
+                if is_enter_main {
+                    if let Action::EnterMainMode { client: new_client, connection_ctx } = action {
+                        app.loading = false;
+                        startup_phase = StartupPhase::Main;
+                        client = Some(new_client);
+                        // Update app connection context
+                        app.profile_name = connection_ctx.profile_name.clone();
+                        app.base_url = Some(connection_ctx.base_url.clone());
+                        app.auth_mode = Some(connection_ctx.auth_mode.clone());
+                        app.toasts.push(splunk_tui::ui::Toast::success(
+                            "Connected successfully! Welcome to Splunk TUI.".to_string()
+                        ));
+
+                        // Spawn health check task now that we have a client (if not already running)
+                        if !health_check_running {
+                            if let Some(ref client_health) = client {
+                                health_check_running = true;
+                                let tx_health = tx.clone();
+                                let health_check_interval = 60; // Default 60s
+                                let client_health = client_health.clone();
+                                task_tracker.spawn(async move {
+                                    use tokio::sync::mpsc::error::TrySendError;
+
+                                    let mut interval =
+                                        tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
+                                    loop {
+                                        interval.tick().await;
+                                        match client_health.get_health().await {
+                                            Ok(health) => {
+                                                match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
+                                                    Ok(()) => {}
+                                                    Err(TrySendError::Full(_)) => {
+                                                        tracing::debug!("Health status channel full, dropping update");
+                                                    }
+                                                    Err(TrySendError::Closed(_)) => {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            Err(e) => {
+                                                match tx_health.try_send(Action::HealthStatusLoaded(Err(Arc::new(e)))) {
+                                                    Ok(()) => {}
+                                                    Err(TrySendError::Full(_)) => {
+                                                        tracing::debug!("Health status channel full, dropping update");
+                                                    }
+                                                    Err(TrySendError::Closed(_)) => {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    continue;
                 }
 
                 // Handle PersistState specially - needs access to app
@@ -457,22 +696,34 @@ async fn main() -> Result<()> {
 
                         let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
-                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+
+                        // Only handle side effects if we have a client or action doesn't require one
+                        if client.is_some() || !action_requires_client(&a) {
+                            if let Some(ref c) = client {
+                                handle_side_effects(a, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            }
+                        }
 
                         // Execute follow-up action for workload pagination if derived
                         if let Some(followup) = followup_action {
-                            handle_side_effects(followup, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            if let Some(ref c) = client {
+                                handle_side_effects(followup, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            }
                         }
 
                         // If navigation action, trigger load for new screen
                         if is_navigation
                             && let Some(load_action) = app.load_action_for_screen()
                         {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            if let Some(ref c) = client {
+                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            }
                         }
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            if let Some(ref c) = client {
+                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            }
                         }
                     }
                 } else if let Action::Mouse(mouse) = action {
@@ -488,32 +739,50 @@ async fn main() -> Result<()> {
                         let a = app.translate_load_more_action(a);
                         let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
                         app.update(a.clone());
-                        handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+
+                        // Only handle side effects if we have a client or action doesn't require one
+                        if let Some(ref c) = client {
+                            handle_side_effects(a, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                        }
+
                         // If navigation action, trigger load for new screen
                         if is_navigation
                             && let Some(load_action) = app.load_action_for_screen()
                         {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            if let Some(ref c) = client {
+                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            }
                         }
                         // Check if we need to load more results after navigation
                         if let Some(load_action) = app.maybe_fetch_more_results() {
-                            handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            if let Some(ref c) = client {
+                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                            }
                         }
                     }
                 } else {
                     let was_toggle = matches!(action, Action::ToggleClusterViewMode);
                     let was_profile_switch = matches!(action, Action::ProfileSwitchResult(Ok(_)));
                     app.update(action.clone());
-                    handle_side_effects(action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+
+                    // Only handle side effects if we have a client or action doesn't require one
+                    if let Some(ref c) = client {
+                        handle_side_effects(action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                    }
+
                     // After toggle, if we're now in Peers view, trigger peers load
                     if was_toggle && app.cluster_view_mode == splunk_tui::app::ClusterViewMode::Peers {
-                        handle_side_effects(Action::LoadClusterPeers, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                        if let Some(ref c) = client {
+                            handle_side_effects(Action::LoadClusterPeers, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                        }
                     }
                     // After successful profile switch, trigger reload for current screen
                     if was_profile_switch
                         && let Some(load_action) = app.load_action_for_screen()
                     {
-                        handle_side_effects(load_action, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                        if let Some(ref c) = client {
+                            handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                        }
                     }
                 }
             }
@@ -523,9 +792,14 @@ async fn main() -> Result<()> {
             }
             _ = refresh_interval.tick() => {
                 // Data refresh is separate from UI tick
-                if let Some(a) = app.handle_tick() {
-                    app.update(a.clone());
-                    handle_side_effects(a, client.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                // Only process if we have a client (not in bootstrap mode)
+                if client.is_some() {
+                    if let Some(a) = app.handle_tick() {
+                        app.update(a.clone());
+                        if let Some(ref c) = client {
+                            handle_side_effects(a, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
+                        }
+                    }
                 }
             }
             _ = auto_save_interval.tick() => {
