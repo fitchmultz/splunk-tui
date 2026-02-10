@@ -845,10 +845,22 @@ impl App {
         resource_name: &str,
         error: std::sync::Arc<splunk_client::ClientError>,
     ) {
+        use crate::ui::popup::{Popup, PopupType};
+
         let error_msg = format!("Failed to load {}: {}", resource_name, error);
-        self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
-            error.as_ref(),
-        ));
+        let error_details = crate::error_details::ErrorDetails::from_client_error(error.as_ref());
+
+        // Check if this is an auth error and open recovery popup
+        if let Some(ref auth_recovery) = error_details.auth_recovery {
+            self.popup = Some(
+                Popup::builder(PopupType::AuthRecovery {
+                    kind: auth_recovery.kind,
+                })
+                .build(),
+            );
+        }
+
+        self.current_error = Some(error_details);
         self.toasts.push(Toast::error(error_msg));
         self.loading = false;
         self.loading_since = None;

@@ -569,8 +569,11 @@ This will validate your configuration, test connectivity, and report any issues 
 - Test network connectivity: `curl $SPLUNK_BASE_URL`
 
 **Authentication failures**
+- In the TUI: An **Authentication Recovery Panel** will appear automatically with actionable recovery options
+- Press `r` to retry, `p` to switch profiles, or `n` to create a new profile
 - For API tokens: Ensure the token has not expired
 - For username/password: Verify credentials work in the Splunk web UI
+- Check the `SPLUNK_CONFIG_PATH` environment variable if profiles aren't loading
 
 ### Generating Support Bundles
 
@@ -588,8 +591,9 @@ The bundle contains redacted diagnostic information safe to share:
 
 ### Common Errors
 
-- **`AuthFailed`**: Verify your username/password or API token. If using session auth, ensure your password hasn't expired.
-- **`HttpError / TlsError`**: Usually caused by connectivity issues or untrusted SSL certificates. Try setting `SPLUNK_SKIP_VERIFY=true`.
+- **`AuthFailed`**: Verify your username/password or API token. If using session auth, ensure your password hasn't expired. The TUI will show an Authentication Recovery Panel with options to retry or switch profiles.
+- **`SessionExpired`**: Your session has expired. In the TUI, press `r` to retry (which will re-authenticate) or switch to a different profile with `p`.
+- **`HttpError / TlsError`**: Usually caused by connectivity issues or untrusted SSL certificates. Try setting `SPLUNK_SKIP_VERIFY=true`. The Authentication Recovery Panel provides specific guidance for TLS issues.
 - **`ApiError (404)`**: The endpoint might not exist on your version of Splunk. Ensure you are running v9.0+.
 - **`SessionExpired`**: The TUI handles auto-renewal, but if you leave it idle for a very long time, you might need to restart.
 - **`RateLimited (429)`**: Splunk is throttling requests. The client automatically retries with exponential backoff, respecting the `Retry-After` header if present. If retries are exhausted, you'll see a `MaxRetriesExceeded` error. Reduce search frequency or increase `SPLUNK_MAX_RETRIES` if this occurs frequently.

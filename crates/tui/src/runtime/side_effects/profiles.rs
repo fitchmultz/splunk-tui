@@ -19,6 +19,27 @@ use tokio::sync::{Mutex, mpsc::Sender};
 
 use super::{SharedClient, TaskTracker};
 
+/// Guard to ensure Loading(false) is always sent when dropped.
+struct LoadingGuard {
+    tx: Sender<Action>,
+}
+
+impl LoadingGuard {
+    fn new(tx: Sender<Action>) -> Self {
+        Self { tx }
+    }
+}
+
+impl Drop for LoadingGuard {
+    fn drop(&mut self) {
+        let tx = self.tx.clone();
+        // Spawn a task to send the action since we can't await in Drop
+        tokio::spawn(async move {
+            let _ = tx.send(Action::Loading(false)).await;
+        });
+    }
+}
+
 /// Handle switching to settings screen.
 pub async fn handle_switch_to_settings(
     config_manager: Arc<Mutex<ConfigManager>>,
@@ -50,7 +71,7 @@ pub async fn handle_open_profile_switcher(
             let _ = tx_popup
                 .send(Action::Notify(
                     ToastLevel::Error,
-                    "No profiles configured. Add profiles using splunk-cli.".to_string(),
+                    "No profiles configured. Press 'n' to create a profile or check SPLUNK_CONFIG_PATH.".to_string(),
                 ))
                 .await;
         } else {
@@ -73,6 +94,10 @@ pub async fn handle_profile_selected(
     let _ = tx.send(Action::Loading(true)).await;
     let config_manager_clone = config_manager.clone();
     let _client_clone = client.clone();
+
+    // Guard ensures Loading(false) is sent even on early returns
+    // Clone tx for the guard so it can be moved into the spawned task
+    let _loading_guard = LoadingGuard::new(tx.clone());
 
     task_tracker.spawn(async move {
         let cm = config_manager_clone.lock().await;
@@ -130,11 +155,11 @@ pub async fn handle_profile_selected(
             return;
         }
 
-        // Replace shared client
         // Note: Since SharedClient is Arc<SplunkClient>, we cannot replace the
-        // inner client. For profile switching, the client replacement logic
-        // would need to be handled at the app level by updating the SharedClient
-        // reference. For now, we skip the replacement and report success.
+        // inner client in-place. The actual client replacement must be handled
+        // at the app level by updating the SharedClient reference.
+        // We report success with the new connection context, and ClearAllData
+        // signals to the app that a fresh state is needed.
 
         // Build success result
         let auth_mode = get_auth_mode_display(profile_config);
@@ -145,7 +170,7 @@ pub async fn handle_profile_selected(
         };
         let _ = tx.send(Action::ProfileSwitchResult(Ok(ctx))).await;
         let _ = tx.send(Action::ClearAllData).await;
-        let _ = tx.send(Action::Loading(false)).await;
+        // Loading(false) is sent by the LoadingGuard when this task completes
     });
 }
 

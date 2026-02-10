@@ -3,6 +3,7 @@
 //! This module provides the `Popup` struct and `PopupBuilder` for constructing
 //! popup dialogs with customizable titles and content.
 
+use crate::error_details::AuthRecoveryKind;
 use crate::input::help;
 use crate::onboarding::{TutorialState, TutorialSteps};
 use crate::ui::popup::{MacroField, PopupType, ProfileField, SavedSearchField};
@@ -338,6 +339,7 @@ impl PopupBuilder {
                 "Undo History".to_string(),
                 "Recent operations (press Esc to close, j/k to scroll)".to_string(),
             ),
+            PopupType::AuthRecovery { kind } => self.build_auth_recovery_defaults(kind),
         }
     }
 
@@ -949,6 +951,64 @@ impl PopupBuilder {
 
         content.push('\n');
         content.push_str("↑/↓ or j/k: Navigate  Enter: Execute  Esc: Close");
+
+        (title, content)
+    }
+
+    fn build_auth_recovery_defaults(&self, kind: &AuthRecoveryKind) -> (String, String) {
+        let title = "Authentication Error".to_string();
+
+        let (diagnosis, next_steps) = match kind {
+            AuthRecoveryKind::InvalidCredentials => (
+                "Invalid credentials detected. The username, password, or API token is incorrect.",
+                "• Check your username and password\n• Verify your API token is valid\n• Ensure your account has not been locked",
+            ),
+            AuthRecoveryKind::SessionExpired => (
+                "Your session has expired due to inactivity.",
+                "• Re-authenticate with your credentials\n• Consider using an API token for persistent sessions",
+            ),
+            AuthRecoveryKind::MissingAuthConfig => (
+                "No authentication configuration found.",
+                "• Create a new profile with 'n'\n• Select an existing profile with 'p'\n• Set SPLUNK_USERNAME and SPLUNK_PASSWORD environment variables",
+            ),
+            AuthRecoveryKind::TlsOrCertificate => (
+                "TLS certificate verification failed.",
+                "• Verify the server's TLS certificate is valid\n• Check system time is correct\n• Consider enabling 'Skip TLS Verify' for self-signed certificates (development only)",
+            ),
+            AuthRecoveryKind::ConnectionRefused => (
+                "Unable to connect to the Splunk server.",
+                "• Verify the Splunk server is running\n• Check the base URL in your profile\n• Ensure network connectivity to the server",
+            ),
+            AuthRecoveryKind::Timeout => (
+                "Connection timed out while authenticating.",
+                "• Check network connectivity\n• Verify the Splunk server is responsive\n• Consider increasing the timeout setting in your profile",
+            ),
+            AuthRecoveryKind::Unknown => (
+                "An unknown authentication error occurred.",
+                "• Check the error details for more information\n• Verify your profile configuration\n• Try re-authenticating",
+            ),
+        };
+
+        let content = format!(
+            "{diagnosis}
+
+Next Steps:
+{next_steps}
+
+───
+
+Keybindings:
+  r  Retry authentication
+  p  Open profile selector
+  n  Create new profile
+  e  View error details
+  Esc  Close this panel
+
+───
+
+Configuration:
+  Set SPLUNK_CONFIG_PATH env var to specify a custom config file location."
+        );
 
         (title, content)
     }

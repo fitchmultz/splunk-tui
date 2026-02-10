@@ -1698,6 +1698,30 @@ Navigate error details popup:
 
 Note: The `e` key is globally bound to show error details when an error toast is visible. This takes precedence over screen-specific bindings (like "enable app" on the Apps screen) because viewing error details is more urgent.
 
+### Authentication Recovery Panel
+
+When authentication or connection errors occur, the TUI displays an **Authentication Recovery Panel** instead of the generic error details. This panel provides:
+
+- **Clear classification** of the auth failure type:
+  - Invalid credentials (wrong username/password or expired API token)
+  - Session expired (session token needs refresh)
+  - TLS/Certificate issues (SSL handshake or certificate validation failures)
+  - Connection refused (server unreachable)
+  - Missing auth configuration (no profiles configured)
+
+- **Actionable next steps** specific to the error type
+
+- **One-key recovery actions**:
+  - `r` - **Retry** the current operation (reloads current screen data)
+  - `p` - **Open Profile Selector** to switch to a different profile
+  - `n` - **Create New Profile** to add a new connection profile
+  - `e` - **View Error Details** to see technical error information
+  - `Esc` or `q` - Close the recovery panel
+
+The recovery panel automatically appears when auth-related errors are detected, providing immediate guidance without requiring you to leave the TUI. For example, if your session expires, you'll see a panel explaining the issue with options to retry or switch profiles.
+
+> **Security Note:** The recovery panel never displays credential values (passwords, tokens) and follows the same redaction rules as error logs.
+
 See the keybindings section above for screen-specific shortcuts.
 - `a`: Toggle auto-refresh (polls every 5 seconds)
 - `Ctrl+c`: Copy selected log message to clipboard

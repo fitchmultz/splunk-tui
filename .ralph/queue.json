@@ -2,54 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0453",
-      "status": "todo",
-      "title": "Ship actionable auth recovery panel in TUI",
-      "description": "Opportunity type: reliability + UX improvement. Why it matters: auth failures block every core workflow and currently force guesswork, increasing time-to-recovery and abandonment. Proposed approach (minimal slice): add a dedicated in-app auth recovery panel triggered from auth-related toasts/errors that shows cause classification (invalid creds, expired session, missing auth, TLS/cert), exact next steps, and safe one-key actions (retry, open profile editor, show env/profile path guidance). Incremental path: start with read-only remediation copy + retry action, then add direct navigation actions into profile/settings forms. Risks/mitigations: avoid secret leakage by reusing redaction paths and never echo credential values. Acceptance criteria: auth failures always include actionable remediation and at least one in-app recovery action without leaving the TUI.",
-      "priority": "critical",
-      "tags": [
-        "innovation",
-        "tui",
-        "ux",
-        "auth",
-        "reliability"
-      ],
-      "scope": [
-        "crates/tui/src/error_details.rs",
-        "crates/tui/src/ui/error_details.rs",
-        "crates/tui/src/ui/toast.rs",
-        "crates/tui/src/app/popups/mod.rs",
-        "crates/tui/tests/app_error_tests.rs",
-        "crates/tui/tests/snapshot_popups_tests.rs",
-        "make test",
-        "make ci SKIP_LIVE_TESTS=1"
-      ],
-      "evidence": [
-        "crates/tui/src/error_details.rs:197-216 maps search auth failures to generic messages (\"Authentication failed\", \"Session expired\")",
-        "crates/tui/src/app/actions/data_loading.rs:842-855 uses inconsistent generic load-failure toasts for auth failures across screens",
-        "crates/tui/src/ui/toast.rs:283-289 only provides generic \"Press 'e' for details\" hint with no remediation guidance",
-        "crates/tui/src/runtime/side_effects/profiles.rs:152-181 returns \"Profile has no authentication configured\" without in-app fix path"
-      ],
-      "plan": [
-        "Define an auth-specific UX model (error class, user-facing diagnosis, recommended actions) reused by search and non-search handlers",
-        "Add an Auth Recovery popup/view reachable from error toast and error details, with context-aware actions for retry and profile/settings navigation",
-        "Wire action handlers so remediation actions execute side effects safely and keep focus predictable",
-        "Add snapshot and integration tests for each auth class and recovery action path",
-        "Update docs/usage.md and docs/user-guide.md with the new auth recovery flow",
-        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming auth error tests/snapshots pass with remediation hints visible"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-10T16:29:08Z",
-      "updated_at": "2026-02-10T16:29:08Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0454",
       "status": "todo",
       "title": "Introduce pre-auth bootstrap mode so onboarding is reachable",

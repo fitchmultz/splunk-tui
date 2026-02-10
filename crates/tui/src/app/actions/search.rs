@@ -72,6 +72,18 @@ impl App {
         error_msg: String,
         details: crate::error_details::ErrorDetails,
     ) {
+        use crate::ui::popup::{Popup, PopupType};
+
+        // Check if this is an auth error and open recovery popup
+        if let Some(ref auth_recovery) = details.auth_recovery {
+            self.popup = Some(
+                Popup::builder(PopupType::AuthRecovery {
+                    kind: auth_recovery.kind,
+                })
+                .build(),
+            );
+        }
+
         self.current_error = Some(details);
         self.toasts.push(Toast::error(error_msg));
         self.running_query = None; // Clear the running query on error

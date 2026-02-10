@@ -374,16 +374,39 @@ impl App {
 
     fn show_error_details(&mut self, details: crate::error_details::ErrorDetails) {
         use crate::ui::popup::{Popup, PopupType};
-        self.current_error = Some(details);
         self.error_scroll_offset = 0; // Reset scroll on open
-        self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+
+        // Route auth errors to AuthRecovery popup, others to ErrorDetails
+        if let Some(ref auth_recovery) = details.auth_recovery {
+            self.popup = Some(
+                Popup::builder(PopupType::AuthRecovery {
+                    kind: auth_recovery.kind,
+                })
+                .build(),
+            );
+        } else {
+            self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+        }
+
+        self.current_error = Some(details);
     }
 
     fn show_error_details_from_current(&mut self) {
         use crate::ui::popup::{Popup, PopupType};
-        if self.current_error.is_some() {
+        if let Some(ref details) = self.current_error {
             self.error_scroll_offset = 0; // Reset scroll on open
-            self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+
+            // Route auth errors to AuthRecovery popup, others to ErrorDetails
+            if let Some(ref auth_recovery) = details.auth_recovery {
+                self.popup = Some(
+                    Popup::builder(PopupType::AuthRecovery {
+                        kind: auth_recovery.kind,
+                    })
+                    .build(),
+                );
+            } else {
+                self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+            }
         }
     }
 

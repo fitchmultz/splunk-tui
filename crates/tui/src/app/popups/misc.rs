@@ -110,4 +110,39 @@ impl App {
             _ => None,
         }
     }
+
+    /// Handle AuthRecovery popup.
+    pub fn handle_auth_recovery_popup(&mut self, key: KeyEvent) -> Option<Action> {
+        match key.code {
+            // Close popup
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.popup = None;
+                None
+            }
+            // Retry current screen load
+            KeyCode::Char('r') => {
+                self.popup = None;
+                self.load_action_for_screen()
+            }
+            // Open profile selector
+            KeyCode::Char('p') => {
+                self.popup = None;
+                Some(Action::OpenProfileSwitcher)
+            }
+            // Open create profile dialog
+            KeyCode::Char('n') => {
+                self.popup = None;
+                Some(Action::OpenCreateProfileDialog {
+                    from_tutorial: false,
+                })
+            }
+            // Show raw error details
+            KeyCode::Char('e') => {
+                // Keep popup open but switch to error details
+                self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
+                None
+            }
+            _ => None,
+        }
+    }
 }

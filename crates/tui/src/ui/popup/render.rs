@@ -65,7 +65,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::DeleteSavedSearchConfirm { .. }
         | PopupType::DeleteLookupConfirm { .. }
         | PopupType::ConfirmRemoveApp(_)
-        | PopupType::DeleteProfileConfirm { .. } => theme.error,
+        | PopupType::DeleteProfileConfirm { .. }
+        | PopupType::AuthRecovery { .. } => theme.error,
     };
 
     // Determine wrapping behavior based on popup type
@@ -94,7 +95,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::EditMacro { .. }
         | PopupType::TutorialWizard { .. }
         | PopupType::CommandPalette { .. }
-        | PopupType::UndoHistory { .. } => Wrap { trim: false },
+        | PopupType::UndoHistory { .. }
+        | PopupType::AuthRecovery { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -109,7 +111,7 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
     // Determine alignment based on popup type
     // Help popup uses left alignment for better readability of keybindings
     let alignment = match &popup.kind {
-        PopupType::Help => Alignment::Left,
+        PopupType::Help | PopupType::AuthRecovery { .. } => Alignment::Left,
         _ => Alignment::Center,
     };
 

@@ -3,6 +3,7 @@
 //! This module contains the `PopupType` enum which defines all possible
 //! popup dialog types used throughout the TUI application.
 
+use crate::error_details::AuthRecoveryKind;
 use crate::onboarding::TutorialState;
 use crate::ui::popup::{MacroField, ProfileField, SavedSearchField};
 
@@ -236,5 +237,10 @@ pub enum PopupType {
     UndoHistory {
         /// Current scroll offset for viewing history
         scroll_offset: usize,
+    },
+    /// Authentication recovery panel with actionable error recovery
+    AuthRecovery {
+        /// Classification of the authentication error for targeted recovery
+        kind: AuthRecoveryKind,
     },
 }

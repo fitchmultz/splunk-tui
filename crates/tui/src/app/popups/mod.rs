@@ -114,6 +114,9 @@ impl App {
             // Undo history popup
             Some(PopupType::UndoHistory { .. }) => self.handle_undo_history_popup(key),
 
+            // Auth recovery popup
+            Some(PopupType::AuthRecovery { .. }) => self.handle_auth_recovery_popup(key),
+
             // No popup active
             None => None,
         }
