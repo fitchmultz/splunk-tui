@@ -183,7 +183,12 @@ async fn test_list_lookup_tables_unauthorized() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // 401 is now classified as Unauthorized variant
+    assert!(
+        matches!(err, ClientError::Unauthorized(_)),
+        "Expected Unauthorized, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -246,7 +251,12 @@ async fn test_download_lookup_table_not_found() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    // 404 is now classified as NotFound variant
+    assert!(
+        matches!(err, ClientError::NotFound(_)),
+        "Expected NotFound, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -279,7 +289,12 @@ async fn test_delete_lookup_table_not_found() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    // 404 is now classified as NotFound variant
+    assert!(
+        matches!(err, ClientError::NotFound(_)),
+        "Expected NotFound, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]

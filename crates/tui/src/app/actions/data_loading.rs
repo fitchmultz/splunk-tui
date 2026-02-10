@@ -847,8 +847,12 @@ impl App {
     ) {
         use crate::ui::popup::{Popup, PopupType};
 
-        let error_msg = format!("Failed to load {}: {}", resource_name, error);
+        // Use shared classifier for consistent error messaging
         let error_details = crate::error_details::ErrorDetails::from_client_error(error.as_ref());
+        let error_msg = format!(
+            "Failed to load {}: {}",
+            resource_name, error_details.summary
+        );
 
         // Check if this is an auth error and open recovery popup
         if let Some(ref auth_recovery) = error_details.auth_recovery {

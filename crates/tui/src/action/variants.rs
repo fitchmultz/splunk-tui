@@ -926,7 +926,7 @@ pub enum Action {
     /// Profile selected by user (contains profile name)
     ProfileSelected(String),
     /// Result of profile switch operation (contains new connection context or error)
-    ProfileSwitchResult(Result<ConnectionContext, String>),
+    ProfileSwitchResult(Result<ConnectionContext, Arc<splunk_client::ClientError>>),
     /// Clear all cached data after profile switch
     ClearAllData,
 

@@ -23,6 +23,25 @@ pub enum AuthRecoveryKind {
     Unknown,
 }
 
+impl From<splunk_client::FailureCategory> for AuthRecoveryKind {
+    /// Map client failure categories to TUI auth recovery kinds.
+    fn from(category: splunk_client::FailureCategory) -> Self {
+        match category {
+            splunk_client::FailureCategory::AuthInvalidCredentials => {
+                AuthRecoveryKind::InvalidCredentials
+            }
+            splunk_client::FailureCategory::AuthInsufficientPermissions => {
+                AuthRecoveryKind::InvalidCredentials
+            }
+            splunk_client::FailureCategory::SessionExpired => AuthRecoveryKind::SessionExpired,
+            splunk_client::FailureCategory::TlsCertificate => AuthRecoveryKind::TlsOrCertificate,
+            splunk_client::FailureCategory::Connection => AuthRecoveryKind::ConnectionRefused,
+            splunk_client::FailureCategory::Timeout => AuthRecoveryKind::Timeout,
+            _ => AuthRecoveryKind::Unknown,
+        }
+    }
+}
+
 /// Details for authentication recovery.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthRecoveryDetails {
@@ -32,6 +51,17 @@ pub struct AuthRecoveryDetails {
     pub diagnosis: String,
     /// Actionable steps to resolve the issue.
     pub next_steps: Vec<String>,
+}
+
+impl From<&splunk_client::UserFacingFailure> for AuthRecoveryDetails {
+    /// Convert a client user-facing failure to TUI auth recovery details.
+    fn from(failure: &splunk_client::UserFacingFailure) -> Self {
+        Self {
+            kind: failure.category.into(),
+            diagnosis: failure.diagnosis.clone(),
+            next_steps: failure.action_hints.clone(),
+        }
+    }
 }
 
 /// Structured error information captured from failed operations.
@@ -67,29 +97,36 @@ pub struct ErrorDetails {
 
 impl ErrorDetails {
     /// Create ErrorDetails from ClientError.
+    ///
+    /// This method uses the shared `UserFacingFailure` classifier from the client
+    /// to ensure consistent error messaging across all TUI flows.
     pub fn from_client_error(error: &splunk_client::ClientError) -> Self {
+        // Get the unified user-facing failure classification
+        let failure = error.to_user_facing_failure();
+
         let mut details = Self {
-            summary: error.to_string(),
-            status_code: None,
+            summary: failure.title.to_string(),
+            status_code: failure.status_code,
             url: None,
-            request_id: None,
+            request_id: failure.request_id.clone(),
             messages: Vec::new(),
             raw_body: None,
             timestamp: chrono::Utc::now().to_rfc3339(),
             context: HashMap::new(),
-            auth_recovery: classify_auth_recovery(error),
+            auth_recovery: Self::should_show_auth_recovery(&failure).then(|| (&failure).into()),
         };
 
+        // Extract additional metadata based on specific error variants
         match error {
             splunk_client::ClientError::ApiError {
-                status,
+                status: _,
                 url,
                 message,
                 request_id,
             } => {
-                details.status_code = Some(*status);
                 details.url = Some(url.clone());
                 details.request_id = request_id.clone();
+                // For API errors, use the detailed message as summary
                 details.summary = message.clone();
 
                 // Try to parse SplunkMessages from message if it's JSON
@@ -102,68 +139,34 @@ impl ErrorDetails {
                         .collect();
                 }
             }
-            splunk_client::ClientError::AuthFailed(msg) => {
-                details.summary = msg.clone();
-            }
             splunk_client::ClientError::HttpError(e) => {
-                details.summary = format!("HTTP error: {}", e);
-                if let Some(status) = e.status() {
-                    details.status_code = Some(status.as_u16());
-                }
                 if let Some(url) = e.url() {
                     details.url = Some(url.to_string());
                 }
             }
-            splunk_client::ClientError::SessionExpired { username } => {
-                details.summary =
-                    format!("Session expired for user '{username}', please re-authenticate");
-            }
-            splunk_client::ClientError::InvalidResponse(msg) => {
-                details.summary = msg.clone();
-            }
-            splunk_client::ClientError::Timeout(duration) => {
-                details.summary = format!("Request timed out after {:?}", duration);
-            }
-            splunk_client::ClientError::RateLimited(duration) => {
-                details.summary = format!("Rate limited, retry after {:?}", duration);
-                details.status_code = Some(429);
-            }
             splunk_client::ClientError::ConnectionRefused(addr) => {
-                details.summary = format!("Connection refused to {}", addr);
-            }
-            splunk_client::ClientError::TlsError(msg) => {
-                details.summary = format!("TLS error: {}", msg);
-            }
-            splunk_client::ClientError::MaxRetriesExceeded(count, source) => {
-                details.summary =
-                    format!("Maximum retries exceeded ({} attempts): {}", count, source);
-            }
-            splunk_client::ClientError::InvalidUrl(msg) => {
-                details.summary = format!("Invalid URL: {}", msg);
+                details.url = Some(addr.clone());
             }
             splunk_client::ClientError::NotFound(resource) => {
-                details.summary = format!("Resource not found: {}", resource);
-                details.status_code = Some(404);
+                details.url = Some(resource.clone());
             }
-            splunk_client::ClientError::Unauthorized(msg) => {
-                details.summary = format!("Unauthorized: {}", msg);
-                details.status_code = Some(401);
-            }
-            splunk_client::ClientError::InvalidRequest(msg) => {
-                details.summary = format!("Invalid request: {}", msg);
-            }
-            splunk_client::ClientError::ValidationError(msg) => {
-                details.summary = format!("Validation error: {}", msg);
-            }
-            splunk_client::ClientError::CircuitBreakerOpen(endpoint) => {
-                details.summary = format!("Circuit breaker open for endpoint: {}", endpoint);
-                details
-                    .context
-                    .insert("endpoint".to_string(), endpoint.clone());
-            }
+            _ => {}
         }
 
         details
+    }
+
+    /// Determine if auth recovery should be shown for this failure.
+    fn should_show_auth_recovery(failure: &splunk_client::UserFacingFailure) -> bool {
+        matches!(
+            failure.category,
+            splunk_client::FailureCategory::AuthInvalidCredentials
+                | splunk_client::FailureCategory::AuthInsufficientPermissions
+                | splunk_client::FailureCategory::SessionExpired
+                | splunk_client::FailureCategory::TlsCertificate
+                | splunk_client::FailureCategory::Connection
+                | splunk_client::FailureCategory::Timeout
+        )
     }
 
     /// Create ErrorDetails from error string (for backward compatibility).
@@ -204,6 +207,10 @@ impl ErrorDetails {
 /// This function analyzes client errors and maps them to specific authentication
 /// recovery scenarios with actionable guidance for users.
 ///
+/// **Deprecated**: This function is kept for backward compatibility.
+/// New code should use `ErrorDetails::from_client_error()` which uses the shared
+/// `UserFacingFailure` classifier from the client crate.
+///
 /// # Arguments
 ///
 /// * `error` - The client error to classify
@@ -212,97 +219,12 @@ impl ErrorDetails {
 ///
 /// `Some(AuthRecoveryDetails)` if the error is auth-related, `None` otherwise.
 pub fn classify_auth_recovery(error: &splunk_client::ClientError) -> Option<AuthRecoveryDetails> {
-    match error {
-        splunk_client::ClientError::AuthFailed(_) => Some(AuthRecoveryDetails {
-            kind: AuthRecoveryKind::InvalidCredentials,
-            diagnosis: "Authentication failed. The provided credentials were rejected by Splunk."
-                .to_string(),
-            next_steps: vec![
-                "Verify your username and password are correct".to_string(),
-                "Check that your API token has not expired".to_string(),
-                "Ensure your account has not been locked or disabled".to_string(),
-            ],
-        }),
-        splunk_client::ClientError::SessionExpired { .. } => Some(AuthRecoveryDetails {
-            kind: AuthRecoveryKind::SessionExpired,
-            diagnosis: "Your session has expired and needs to be refreshed."
-                .to_string(),
-            next_steps: vec![
-                "Re-authenticate to establish a new session".to_string(),
-                "Check if your session timeout settings need adjustment".to_string(),
-            ],
-        }),
-        splunk_client::ClientError::TlsError(msg) => {
-            let diagnosis = if msg.contains("certificate") {
-                "A TLS certificate validation error occurred."
-            } else {
-                "A TLS/SSL connection error occurred."
-            };
-            Some(AuthRecoveryDetails {
-                kind: AuthRecoveryKind::TlsOrCertificate,
-                diagnosis: diagnosis.to_string(),
-                next_steps: vec![
-                    "Verify the Splunk server's TLS certificate is valid".to_string(),
-                    "Check system time is correctly synchronized".to_string(),
-                    "If using self-signed certificates, ensure they are trusted".to_string(),
-                    "Consider setting SPLUNK_SKIP_VERIFY=true for development (not recommended for production)".to_string(),
-                ],
-            })
-        }
-        splunk_client::ClientError::Unauthorized(_) => Some(AuthRecoveryDetails {
-            kind: AuthRecoveryKind::InvalidCredentials,
-            diagnosis: "The request was unauthorized. Your credentials may be invalid or expired."
-                .to_string(),
-            next_steps: vec![
-                "Verify your authentication credentials are correct".to_string(),
-                "Check that your API token has the required permissions".to_string(),
-                "Ensure your account has access to the requested resource".to_string(),
-            ],
-        }),
-        splunk_client::ClientError::ApiError { status, .. } => {
-            match status {
-                401 => Some(AuthRecoveryDetails {
-                    kind: AuthRecoveryKind::InvalidCredentials,
-                    diagnosis: "Authentication required. Valid credentials must be provided."
-                        .to_string(),
-                    next_steps: vec![
-                        "Provide valid username and password or API token".to_string(),
-                        "Check that your credentials are correctly configured".to_string(),
-                    ],
-                }),
-                403 => Some(AuthRecoveryDetails {
-                    kind: AuthRecoveryKind::InvalidCredentials,
-                    diagnosis: "Access forbidden. Your credentials are valid but insufficient for this resource."
-                        .to_string(),
-                    next_steps: vec![
-                        "Verify your account has the required permissions".to_string(),
-                        "Contact your Splunk administrator for access".to_string(),
-                    ],
-                }),
-                _ => None,
-            }
-        }
-        splunk_client::ClientError::HttpError(e) => {
-            let error_text = e.to_string().to_lowercase();
-            if error_text.contains("tls") 
-                || error_text.contains("ssl") 
-                || error_text.contains("certificate")
-                || error_text.contains("cert")
-            {
-                Some(AuthRecoveryDetails {
-                    kind: AuthRecoveryKind::TlsOrCertificate,
-                    diagnosis: "A TLS/SSL connection error occurred.".to_string(),
-                    next_steps: vec![
-                        "Verify the Splunk server's TLS certificate is valid".to_string(),
-                        "Check system time is correctly synchronized".to_string(),
-                        "If using self-signed certificates, ensure they are trusted".to_string(),
-                    ],
-                })
-            } else {
-                None
-            }
-        }
-        _ => None,
+    // Use the shared classifier and convert to TUI-specific format
+    let failure = error.to_user_facing_failure();
+    if ErrorDetails::should_show_auth_recovery(&failure) {
+        Some((&failure).into())
+    } else {
+        None
     }
 }
 
@@ -341,6 +263,9 @@ pub fn build_search_error_details(
 /// This function maps client errors to concise, user-friendly messages
 /// suitable for toast notifications and UI display.
 ///
+/// Uses the shared `UserFacingFailure` classifier for consistent messaging
+/// across all TUI flows.
+///
 /// # Arguments
 ///
 /// * `error` - The client error to map
@@ -349,14 +274,7 @@ pub fn build_search_error_details(
 ///
 /// A string suitable for display to the user.
 pub fn search_error_message(error: &splunk_client::ClientError) -> String {
-    match error {
-        splunk_client::ClientError::Timeout(_) => "Search timeout".to_string(),
-        splunk_client::ClientError::AuthFailed(_) => "Authentication failed".to_string(),
-        splunk_client::ClientError::SessionExpired { .. } => "Session expired".to_string(),
-        splunk_client::ClientError::RateLimited(_) => "Rate limited".to_string(),
-        splunk_client::ClientError::ConnectionRefused(_) => "Connection refused".to_string(),
-        _ => error.to_string(),
-    }
+    error.to_user_facing_failure().title.to_string()
 }
 
 #[cfg(test)]
@@ -412,7 +330,7 @@ mod tests {
         assert!(recovery.is_some());
         let recovery = recovery.unwrap();
         assert_eq!(recovery.kind, AuthRecoveryKind::InvalidCredentials);
-        assert!(recovery.diagnosis.contains("credentials"));
+        assert!(recovery.diagnosis.contains("Invalid password"));
         assert!(!recovery.next_steps.is_empty());
     }
 
@@ -425,7 +343,7 @@ mod tests {
         assert!(recovery.is_some());
         let recovery = recovery.unwrap();
         assert_eq!(recovery.kind, AuthRecoveryKind::SessionExpired);
-        assert!(recovery.diagnosis.contains("expired"));
+        assert!(recovery.diagnosis.contains("admin"));
         assert!(!recovery.next_steps.is_empty());
     }
 
@@ -500,33 +418,40 @@ mod tests {
             request_id: None,
         };
         let recovery = classify_auth_recovery(&error);
-        assert!(recovery.is_none());
-    }
-
-    #[test]
-    fn test_classify_auth_recovery_http_error_tls() {
-        // Note: We can't easily create an HttpError with TLS text without reqwest,
-        // but we test the non-TLS case to ensure fallthrough works
-        let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
-        let recovery = classify_auth_recovery(&error);
+        // Server errors don't show auth recovery
         assert!(recovery.is_none());
     }
 
     #[test]
     fn test_classify_auth_recovery_non_auth_errors() {
         // Test various non-auth errors return None
-        let timeout_error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
-        assert!(classify_auth_recovery(&timeout_error).is_none());
+        // Note: Timeout and Connection errors now DO have auth recovery (for unified UX)
 
         let not_found_error = splunk_client::ClientError::NotFound("job_123".to_string());
         assert!(classify_auth_recovery(&not_found_error).is_none());
 
         let rate_limited_error = splunk_client::ClientError::RateLimited(None);
         assert!(classify_auth_recovery(&rate_limited_error).is_none());
+    }
 
+    #[test]
+    fn test_classify_auth_recovery_timeout() {
+        // Timeout errors now have auth recovery (for unified UX)
+        let timeout_error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+        let recovery = classify_auth_recovery(&timeout_error);
+        assert!(recovery.is_some());
+        let recovery = recovery.unwrap();
+        assert_eq!(recovery.kind, AuthRecoveryKind::Timeout);
+    }
+
+    #[test]
+    fn test_classify_auth_recovery_connection_refused() {
         let connection_error =
             splunk_client::ClientError::ConnectionRefused("localhost:8089".to_string());
-        assert!(classify_auth_recovery(&connection_error).is_none());
+        let recovery = classify_auth_recovery(&connection_error);
+        assert!(recovery.is_some());
+        let recovery = recovery.unwrap();
+        assert_eq!(recovery.kind, AuthRecoveryKind::ConnectionRefused);
     }
 
     #[test]
@@ -536,6 +461,17 @@ mod tests {
         assert!(details.auth_recovery.is_some());
         let recovery = details.auth_recovery.unwrap();
         assert_eq!(recovery.kind, AuthRecoveryKind::InvalidCredentials);
+    }
+
+    #[test]
+    fn test_error_details_from_client_error_uses_shared_classifier() {
+        let error = splunk_client::ClientError::SessionExpired {
+            username: "admin".to_string(),
+        };
+        let details = ErrorDetails::from_client_error(&error);
+        // Should use the shared classifier's title
+        assert_eq!(details.summary, "Session expired");
+        assert_eq!(details.status_code, Some(401));
     }
 
     #[test]
@@ -588,5 +524,50 @@ mod tests {
         assert_eq!(deserialized.kind, AuthRecoveryKind::MissingAuthConfig);
         assert_eq!(deserialized.diagnosis, "No authentication configured");
         assert_eq!(deserialized.next_steps.len(), 1);
+    }
+
+    #[test]
+    fn test_search_error_message_uses_classifier() {
+        let error = splunk_client::ClientError::AuthFailed("test".to_string());
+        let msg = search_error_message(&error);
+        assert_eq!(msg, "Authentication failed");
+
+        let error = splunk_client::ClientError::SessionExpired {
+            username: "admin".to_string(),
+        };
+        let msg = search_error_message(&error);
+        assert_eq!(msg, "Session expired");
+
+        let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+        let msg = search_error_message(&error);
+        assert_eq!(msg, "Request timeout");
+    }
+
+    #[test]
+    fn test_failure_category_to_auth_recovery_kind_mapping() {
+        assert_eq!(
+            AuthRecoveryKind::from(splunk_client::FailureCategory::AuthInvalidCredentials),
+            AuthRecoveryKind::InvalidCredentials
+        );
+        assert_eq!(
+            AuthRecoveryKind::from(splunk_client::FailureCategory::SessionExpired),
+            AuthRecoveryKind::SessionExpired
+        );
+        assert_eq!(
+            AuthRecoveryKind::from(splunk_client::FailureCategory::TlsCertificate),
+            AuthRecoveryKind::TlsOrCertificate
+        );
+        assert_eq!(
+            AuthRecoveryKind::from(splunk_client::FailureCategory::Connection),
+            AuthRecoveryKind::ConnectionRefused
+        );
+        assert_eq!(
+            AuthRecoveryKind::from(splunk_client::FailureCategory::Timeout),
+            AuthRecoveryKind::Timeout
+        );
+        assert_eq!(
+            AuthRecoveryKind::from(splunk_client::FailureCategory::Unknown),
+            AuthRecoveryKind::Unknown
+        );
     }
 }

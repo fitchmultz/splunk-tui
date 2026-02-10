@@ -2,56 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0455",
-      "status": "todo",
-      "title": "Unify auth and TLS error classification across all TUI flows",
-      "description": "Opportunity type: reliability + modernization. Why it matters: inconsistent error wording across search, data loading, and profile switching causes users to misdiagnose failures and increases support burden. Proposed approach (minimal slice): create one shared classifier/formatter for auth/TLS/session errors and route all TUI action handlers through it. Incremental path: first centralize formatting + request-id/context rendering; then standardize remediation hints and follow-up actions. Risks/mitigations: behavior change in error strings can break snapshots; mitigate with explicit golden updates and migration notes. Acceptance criteria: equivalent auth/TLS failures render consistent title, diagnosis, and action hints regardless of source screen.",
-      "priority": "high",
-      "tags": [
-        "innovation",
-        "tui",
-        "auth",
-        "tls",
-        "modernization",
-        "reliability"
-      ],
-      "scope": [
-        "crates/tui/src/error_details.rs",
-        "crates/tui/src/app/actions/search.rs",
-        "crates/tui/src/app/actions/data_loading.rs",
-        "crates/tui/src/app/actions/profiles.rs",
-        "crates/client/src/error.rs",
-        "crates/client/src/endpoints/request.rs",
-        "crates/tui/tests/app_error_tests.rs",
-        "make test",
-        "make ci SKIP_LIVE_TESTS=1"
-      ],
-      "evidence": [
-        "crates/tui/src/error_details.rs:197-216 returns short auth strings for search while other paths expose verbose raw client errors",
-        "crates/tui/src/app/actions/data_loading.rs:842-855 formats \"Failed to load {resource}: {error}\" directly from ClientError",
-        "crates/tui/src/app/actions/profiles.rs:31-34 shows \"Failed to switch profile\" without structured error details",
-        "crates/client/src/error.rs:49-51 defines ClientError::TlsError but request path primarily emits HttpError (see crates/client/src/endpoints/request.rs:458-470), reducing TLS-specific UX"
-      ],
-      "plan": [
-        "Design a shared `UserFacingFailure` mapper that normalizes auth/session/TLS/http categories and metadata",
-        "Refactor search, data loading, and profile action handlers to consume the shared mapper",
-        "Add TLS-specific detection heuristics so certificate failures are diagnosed explicitly",
-        "Update snapshots/tests to enforce consistent messaging across flows",
-        "Add a short troubleshooting section in docs/user-guide.md mirroring the unified categories",
-        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming cross-flow auth/TLS error tests pass with consistent strings"
-      ],
-      "notes": [],
-      "request": "innovation scan finding",
-      "created_at": "2026-02-10T16:29:08Z",
-      "updated_at": "2026-02-10T16:29:08Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-innovation"
-      }
-    },
-    {
       "id": "RQ-0456",
       "status": "todo",
       "title": "Generate tutorial and docs from keymap to eliminate guidance drift",

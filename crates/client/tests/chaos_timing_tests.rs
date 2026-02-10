@@ -322,9 +322,10 @@ async fn test_api_token_no_reauth() {
     );
 
     let err = result.unwrap_err();
+    // 401 is now classified as Unauthorized variant (not ApiError)
     assert!(
-        matches!(err, ClientError::ApiError { status: 401, .. }),
-        "Expected 401 ApiError, got {:?}",
+        matches!(err, ClientError::Unauthorized(_)),
+        "Expected Unauthorized error, got {:?}",
         err
     );
 

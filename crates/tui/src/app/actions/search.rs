@@ -28,12 +28,27 @@ impl App {
                 self.loading = false;
             }
             Action::MoreSearchResultsLoaded(Err(e)) => {
-                let error_msg = format!("Failed to load more results: {}", e);
-                self.current_error = Some(crate::error_details::ErrorDetails::from_client_error(
-                    e.as_ref(),
-                ));
+                use crate::ui::popup::{Popup, PopupType};
+
+                // Use shared classifier for consistent error messaging
+                let error_details =
+                    crate::error_details::ErrorDetails::from_client_error(e.as_ref());
+                let error_msg = format!("Failed to load more results: {}", error_details.summary);
+
+                // Check if this is an auth error and open recovery popup
+                if let Some(ref auth_recovery) = error_details.auth_recovery {
+                    self.popup = Some(
+                        Popup::builder(PopupType::AuthRecovery {
+                            kind: auth_recovery.kind,
+                        })
+                        .build(),
+                    );
+                }
+
+                self.current_error = Some(error_details);
                 self.toasts.push(Toast::error(error_msg));
                 self.loading = false;
+                self.loading_since = None;
             }
             _ => {}
         }

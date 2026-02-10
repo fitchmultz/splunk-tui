@@ -12,7 +12,7 @@
 use crate::action::Action;
 use crate::app::ConnectionContext;
 use crate::ui::ToastLevel;
-use splunk_client::{AuthStrategy, SplunkClient};
+use splunk_client::{AuthStrategy, ClientError, SplunkClient};
 use splunk_config::{ConfigManager, ProfileConfig};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc::Sender};
@@ -106,9 +106,8 @@ pub async fn handle_profile_selected(
         let profiles = cm.list_profiles();
         let Some(profile_config) = profiles.get(&profile_name) else {
             let _ = tx
-                .send(Action::ProfileSwitchResult(Err(format!(
-                    "Profile '{}' not found",
-                    profile_name
+                .send(Action::ProfileSwitchResult(Err(Arc::new(
+                    ClientError::NotFound(format!("Profile '{}' not found", profile_name)),
                 ))))
                 .await;
             return;
@@ -126,9 +125,9 @@ pub async fn handle_profile_selected(
         // Get base_url
         let Some(base_url) = profile_config.base_url.clone() else {
             let _ = tx
-                .send(Action::ProfileSwitchResult(Err(
-                    "Profile has no base_url configured".to_string(),
-                )))
+                .send(Action::ProfileSwitchResult(Err(Arc::new(
+                    ClientError::InvalidRequest("Profile has no base_url configured".to_string()),
+                ))))
                 .await;
             return;
         };
@@ -146,12 +145,7 @@ pub async fn handle_profile_selected(
         if !new_client.is_api_token_auth()
             && let Err(e) = new_client.login().await
         {
-            let _ = tx
-                .send(Action::ProfileSwitchResult(Err(format!(
-                    "Authentication failed: {}",
-                    e
-                ))))
-                .await;
+            let _ = tx.send(Action::ProfileSwitchResult(Err(Arc::new(e)))).await;
             return;
         }
 
@@ -175,15 +169,20 @@ pub async fn handle_profile_selected(
 }
 
 /// Build authentication strategy from profile configuration.
-/// Returns Err with user-friendly message if auth cannot be built.
+/// Returns Err with ClientError if auth cannot be built.
 fn build_auth_strategy_from_profile(
     profile_config: &ProfileConfig,
-) -> Result<AuthStrategy, String> {
+) -> Result<AuthStrategy, Arc<ClientError>> {
     // Check for API token first
     if let Some(ref token_secure) = profile_config.api_token {
         match token_secure.resolve() {
             Ok(token) => return Ok(AuthStrategy::ApiToken { token }),
-            Err(e) => return Err(format!("Failed to resolve API token: {}", e)),
+            Err(e) => {
+                return Err(Arc::new(ClientError::InvalidRequest(format!(
+                    "Failed to resolve API token: {}",
+                    e
+                ))));
+            }
         }
     }
 
@@ -198,22 +197,30 @@ fn build_auth_strategy_from_profile(
                     password,
                 });
             }
-            Err(e) => return Err(format!("Failed to resolve password: {}", e)),
+            Err(e) => {
+                return Err(Arc::new(ClientError::InvalidRequest(format!(
+                    "Failed to resolve password: {}",
+                    e
+                ))));
+            }
         }
     }
 
-    Err("Profile has no authentication configured".to_string())
+    Err(Arc::new(ClientError::AuthFailed(
+        "Profile has no authentication configured".to_string(),
+    )))
 }
 
 /// Build SplunkClient from profile configuration.
 fn build_client_for_profile(
     profile_config: &ProfileConfig,
     auth_strategy: AuthStrategy,
-) -> Result<SplunkClient, String> {
-    let base_url = profile_config
-        .base_url
-        .clone()
-        .ok_or_else(|| "Profile has no base_url configured".to_string())?;
+) -> Result<SplunkClient, Arc<ClientError>> {
+    let base_url = profile_config.base_url.clone().ok_or_else(|| {
+        Arc::new(ClientError::InvalidRequest(
+            "Profile has no base_url configured".to_string(),
+        ))
+    })?;
 
     SplunkClient::builder()
         .base_url(base_url)
@@ -223,7 +230,12 @@ fn build_client_for_profile(
             profile_config.timeout_seconds.unwrap_or(30),
         ))
         .build()
-        .map_err(|e| format!("Failed to build client: {}", e))
+        .map_err(|e| {
+            Arc::new(ClientError::InvalidRequest(format!(
+                "Failed to build client: {}",
+                e
+            )))
+        })
 }
 
 /// Determine auth mode display string for connection context.

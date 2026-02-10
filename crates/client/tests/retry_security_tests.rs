@@ -133,5 +133,10 @@ async fn test_api_token_no_session_retry_on_401() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // 401 is now classified as Unauthorized variant
+    assert!(
+        matches!(err, ClientError::Unauthorized(_)),
+        "Expected Unauthorized, got {:?}",
+        err
+    );
 }

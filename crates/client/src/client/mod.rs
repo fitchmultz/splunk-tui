@@ -89,12 +89,12 @@ macro_rules! retry_call {
 
         match result {
             Ok(data) => Ok(data),
-            Err($crate::error::ClientError::ApiError { status, .. })
-                if (status == 401 || status == 403) && !$self.is_api_token_auth() =>
-            {
+            // Handle classified auth errors (SessionExpired, Unauthorized, AuthFailed)
+            // as well as legacy ApiError with 401/403 status codes
+            Err(ref e) if e.is_auth_error() && !$self.is_api_token_auth() => {
                 ::tracing::debug!(
-                    "Session expired (status {}), clearing and re-authenticating...",
-                    status
+                    "Auth error ({}), clearing session and re-authenticating...",
+                    e
                 );
                 $self.session_manager.clear_session().await;
                 let $token = $self.get_auth_token().await?;

@@ -166,17 +166,21 @@ fn test_profile_switch_success_updates_context() {
 
 #[test]
 fn test_profile_switch_failure_shows_error() {
+    use splunk_client::ClientError;
+    use std::sync::Arc;
+
     let mut app = App::new(None, ConnectionContext::default());
 
-    // Simulate failed profile switch
-    app.update(Action::ProfileSwitchResult(Err(
-        "Authentication failed".to_string()
-    )));
+    // Simulate failed profile switch with ClientError for unified classification
+    let error = Arc::new(ClientError::AuthFailed("Invalid credentials".to_string()));
+    app.update(Action::ProfileSwitchResult(Err(error)));
 
-    // Should have an error toast
+    // Should have an error toast with unified error message
     assert!(!app.toasts.is_empty());
     assert!(app.toasts[0].message.contains("Failed to switch profile"));
     assert!(app.toasts[0].message.contains("Authentication failed"));
+    // Should have auth recovery for auth errors
+    assert!(app.current_error.as_ref().unwrap().auth_recovery.is_some());
 }
 
 #[test]

@@ -196,7 +196,12 @@ async fn test_no_retry_on_401_api_token() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // "Invalid token" message is classified as Unauthorized variant
+    assert!(
+        matches!(err, ClientError::Unauthorized(_)),
+        "Expected Unauthorized, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -242,5 +247,10 @@ async fn test_retry_fails_on_second_401() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // "Session expired" message is classified as SessionExpired variant
+    assert!(
+        matches!(err, ClientError::SessionExpired { .. }),
+        "Expected SessionExpired, got {:?}",
+        err
+    );
 }

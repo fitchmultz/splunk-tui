@@ -323,7 +323,12 @@ async fn test_list_inputs_by_type_unauthorized() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // 401 is now classified as Unauthorized variant
+    assert!(
+        matches!(err, ClientError::Unauthorized(_)),
+        "Expected Unauthorized, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -385,7 +390,12 @@ async fn test_list_inputs_by_type_not_found() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    // 404 is now classified as NotFound variant
+    assert!(
+        matches!(err, ClientError::NotFound(_)),
+        "Expected NotFound, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -415,7 +425,12 @@ async fn test_enable_input_not_found() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    // 404 is now classified as NotFound variant
+    assert!(
+        matches!(err, ClientError::NotFound(_)),
+        "Expected NotFound, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -445,7 +460,12 @@ async fn test_disable_input_not_found() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    // 404 is now classified as NotFound variant
+    assert!(
+        matches!(err, ClientError::NotFound(_)),
+        "Expected NotFound, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]

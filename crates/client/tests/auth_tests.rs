@@ -78,7 +78,15 @@ async fn test_login_invalid_credentials() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // 401 is now classified to AuthFailed/Unauthorized variant
+    assert!(
+        matches!(
+            err,
+            ClientError::AuthFailed(_) | ClientError::Unauthorized(_)
+        ),
+        "Expected auth error, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]

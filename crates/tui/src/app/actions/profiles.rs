@@ -29,8 +29,27 @@ impl App {
                 self.handle_profile_switch_success(ctx);
             }
             Action::ProfileSwitchResult(Err(e)) => {
-                self.toasts
-                    .push(Toast::error(format!("Failed to switch profile: {}", e)));
+                use crate::ui::popup::{Popup, PopupType};
+
+                // Use shared classifier for consistent error messaging
+                let error_details =
+                    crate::error_details::ErrorDetails::from_client_error(e.as_ref());
+                let error_msg = format!("Failed to switch profile: {}", error_details.summary);
+
+                // Check if this is an auth error and open recovery popup
+                if let Some(ref auth_recovery) = error_details.auth_recovery {
+                    self.popup = Some(
+                        Popup::builder(PopupType::AuthRecovery {
+                            kind: auth_recovery.kind,
+                        })
+                        .build(),
+                    );
+                }
+
+                self.current_error = Some(error_details);
+                self.toasts.push(Toast::error(error_msg));
+                self.loading = false;
+                self.loading_since = None;
             }
             Action::ClearAllData => {
                 self.clear_all_cached_data();
@@ -64,13 +83,24 @@ impl App {
                 self.handle_profile_saved(profile_name);
             }
             Action::ProfileSaved(Err(error_msg)) => {
-                self.toasts.push(Toast::error(error_msg));
+                // Parse error_msg if it's a serialized error, otherwise use as-is
+                let details = crate::error_details::ErrorDetails::from_error_string(&error_msg);
+                self.current_error = Some(details);
+                self.toasts.push(Toast::error(format!(
+                    "Failed to save profile: {}",
+                    error_msg
+                )));
             }
             Action::ProfileDeleted(Ok(profile_name)) => {
                 self.handle_profile_deleted(profile_name);
             }
             Action::ProfileDeleted(Err(error_msg)) => {
-                self.toasts.push(Toast::error(error_msg));
+                let details = crate::error_details::ErrorDetails::from_error_string(&error_msg);
+                self.current_error = Some(details);
+                self.toasts.push(Toast::error(format!(
+                    "Failed to delete profile: {}",
+                    error_msg
+                )));
             }
             _ => {}
         }
@@ -244,14 +274,20 @@ mod tests {
 
     #[test]
     fn test_profile_switch_result_error_shows_toast() {
+        use splunk_client::ClientError;
+        use std::sync::Arc;
+
         let mut app = App::new(None, ConnectionContext::default());
 
-        app.handle_profile_action(Action::ProfileSwitchResult(Err(
-            "Connection failed".to_string()
-        )));
+        // Test with a ClientError for connection refused
+        let error = Arc::new(ClientError::ConnectionRefused("localhost:8089".to_string()));
+        app.handle_profile_action(Action::ProfileSwitchResult(Err(error)));
 
         assert_eq!(app.toasts.len(), 1);
         assert!(app.toasts[0].message.contains("Failed to switch profile"));
+        assert!(app.toasts[0].message.contains("Connection refused"));
+        // Should have auth recovery for connection errors
+        assert!(app.current_error.as_ref().unwrap().auth_recovery.is_some());
     }
 
     #[test]

@@ -49,15 +49,19 @@ fn test_redact_profile_switch_result_ok() {
 
 #[test]
 fn test_redact_profile_switch_result_err() {
-    let action =
-        Action::ProfileSwitchResult(Err("Failed to connect with token abc123".to_string()));
+    use splunk_client::ClientError;
+    use std::sync::Arc;
+
+    // Use ClientError instead of plain String for unified error classification
+    let error = Arc::new(ClientError::ConnectionRefused("localhost:8089".to_string()));
+    let action = Action::ProfileSwitchResult(Err(error));
     let output = redacted_debug(&action);
 
+    // Error details should be redacted for security
     assert!(
-        !output.contains("Failed to connect"),
-        "Should not contain error message"
+        !output.contains("localhost"),
+        "Should not contain connection details"
     );
-    assert!(!output.contains("abc123"), "Should not contain token");
     assert!(
         output.contains("ProfileSwitchResult"),
         "Should contain action name"

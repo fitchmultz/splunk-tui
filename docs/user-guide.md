@@ -633,14 +633,47 @@ The bundle contains redacted diagnostic information safe to share:
 
 ### Common Errors
 
-- **`AuthFailed`**: Verify your username/password or API token. If using session auth, ensure your password hasn't expired. The TUI will show an Authentication Recovery Panel with options to retry or switch profiles.
-- **`SessionExpired`**: Your session has expired. In the TUI, press `r` to retry (which will re-authenticate) or switch to a different profile with `p`.
-- **`HttpError / TlsError`**: Usually caused by connectivity issues or untrusted SSL certificates. Try setting `SPLUNK_SKIP_VERIFY=true`. The Authentication Recovery Panel provides specific guidance for TLS issues.
-- **`ApiError (404)`**: The endpoint might not exist on your version of Splunk. Ensure you are running v9.0+.
-- **`SessionExpired`**: The TUI handles auto-renewal, but if you leave it idle for a very long time, you might need to restart.
-- **`RateLimited (429)`**: Splunk is throttling requests. The client automatically retries with exponential backoff, respecting the `Retry-After` header if present. If retries are exhausted, you'll see a `MaxRetriesExceeded` error. Reduce search frequency or increase `SPLUNK_MAX_RETRIES` if this occurs frequently.
-- **`MaxRetriesExceeded`**: All retry attempts were exhausted. This can occur due to sustained rate limiting (429), transient server errors (502/503/504), or network issues. The error includes the underlying cause and the number of attempts made.
-- **`CircuitBreakerOpen`**: The circuit breaker has opened due to too many recent failures. Requests will fail fast for a short period to allow the server to recover. Check the TUI header or Health screen for details.
+All errors in the TUI now use unified classification with consistent messaging, diagnosis, and recovery guidance across all screens. When an error occurs, you'll see:
+- A concise **title** (e.g., "Authentication failed")
+- A detailed **diagnosis** explaining what went wrong
+- **Action hints** with specific steps to resolve the issue
+
+#### Unified Error Categories
+
+| Error | Title | What It Means | How to Fix |
+|-------|-------|---------------|------------|
+| **Authentication Failed** | "Authentication failed" | Invalid username, password, or API token | Verify credentials, check token expiry, ensure account is not locked |
+| **Session Expired** | "Session expired" | Your session token has expired | Re-authenticate to establish a new session; check session timeout settings |
+| **Access Denied** | "Access forbidden" | Valid credentials but insufficient permissions | Verify account has required permissions; contact your Splunk administrator |
+| **TLS Certificate Error** | "TLS certificate error" | Certificate validation or SSL handshake failed | Verify server certificate validity; check system time; trust self-signed certs if needed |
+| **Connection Refused** | "Connection refused" | Cannot connect to Splunk server | Verify server is running; check SPLUNK_BASE_URL; test with curl |
+| **Request Timeout** | "Request timeout" | Request took too long to complete | Check network connectivity; increase SPLUNK_TIMEOUT; verify server load |
+| **Rate Limited** | "Rate limited" | Too many requests (HTTP 429) | Reduce request frequency; client auto-retries with exponential backoff |
+| **Resource Not Found** | "Resource not found" | Requested resource doesn't exist (HTTP 404) | Verify resource name/ID; check that resource exists |
+| **Server Error** | "Server error" | Splunk server encountered an error (5xx) | Check Splunk server logs; verify server health |
+
+#### Legacy Error Names
+
+For reference, the unified categories above map to these internal error types:
+
+- **`AuthFailed`**: Now shows "Authentication failed" with unified recovery guidance
+- **`SessionExpired`**: Now shows "Session expired" with specific user context
+- **`TlsError`**: Now shows "TLS certificate error" with certificate-specific hints
+- **`HttpError`**: Classified into Connection, Timeout, or TLS categories based on the underlying cause
+- **`ApiError (401/403)`**: Classified as "Authentication required" or "Access forbidden"
+- **`ApiError (404)`**: Classified as "Resource not found"
+- **`RateLimited (429)`**: Classified as "Rate limited" with retry guidance
+- **`MaxRetriesExceeded`**: Shows the underlying error category with retry count
+- **`CircuitBreakerOpen`**: Classified as "Service temporarily unavailable"
+
+#### Authentication Recovery Panel
+
+When authentication or connection errors occur, the TUI automatically displays an **Authentication Recovery Panel** with:
+- **Specific diagnosis** based on the error category
+- **Actionable next steps** tailored to the failure type
+- **Quick actions**: Press `r` to retry, `p` to switch profiles, or `n` to create a new profile
+
+This panel appears consistently across all flows (search, data loading, profile switching) for the same root cause.
 
 ### Connectivity Check
 

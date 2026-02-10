@@ -158,9 +158,9 @@ async fn test_get_app_not_found() {
     .await;
 
     assert!(result.is_err());
-    // Should be an API error with 404 status
+    // Should be classified as NotFound (404 is now classified to NotFound variant)
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    assert!(matches!(err, ClientError::NotFound(_)));
 }
 
 #[tokio::test]
@@ -372,7 +372,7 @@ async fn test_remove_app_not_found() {
     .await;
 
     assert!(result.is_err());
-    // Should be an API error with 404 status
+    // Should be classified as NotFound (404 is now classified to NotFound variant)
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 404, .. }));
+    assert!(matches!(err, ClientError::NotFound(_)));
 }

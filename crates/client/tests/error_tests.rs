@@ -52,7 +52,12 @@ async fn test_unauthorized_access() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 401, .. }));
+    // 401 is now classified as Unauthorized variant (not ApiError)
+    assert!(
+        matches!(err, ClientError::Unauthorized(_)),
+        "Expected Unauthorized, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -73,7 +78,12 @@ async fn test_forbidden_access() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 403, .. }));
+    // 403 is kept as ApiError (not classified) so CLI can map to PermissionDenied exit code
+    assert!(
+        matches!(err, ClientError::ApiError { status: 403, .. }),
+        "Expected ApiError with 403, got {:?}",
+        err
+    );
 }
 
 #[tokio::test]
@@ -205,13 +215,14 @@ async fn test_api_error_details() {
     let mock_server = MockServer::start().await;
     let request_id = "test-request-id-999";
 
+    // Use 500 status to test ApiError details (404 would be classified as NotFound)
     Mock::given(method("GET"))
         .and(path("/services/data/indexes"))
         .respond_with(
-            ResponseTemplate::new(404)
+            ResponseTemplate::new(500)
                 .insert_header("X-Splunk-Request-Id", request_id)
                 .set_body_json(serde_json::json!({
-                    "messages": [{"type": "ERROR", "text": "Not Found"}]
+                    "messages": [{"type": "ERROR", "text": "Internal Server Error"}]
                 })),
         )
         .mount(&mock_server)
@@ -239,9 +250,9 @@ async fn test_api_error_details() {
         request_id: rid,
     } = err
     {
-        assert_eq!(status, 404);
+        assert_eq!(status, 500);
         assert!(url.contains("/services/data/indexes"));
-        assert!(message.contains("Not Found"));
+        assert!(message.contains("Internal Server Error"));
         assert_eq!(rid, Some(request_id.to_string()));
 
         // Check if Display implementation includes details
@@ -254,7 +265,7 @@ async fn test_api_error_details() {
                 request_id: rid,
             }
         );
-        assert!(display.contains("404"));
+        assert!(display.contains("500"));
         assert!(display.contains(&url));
         assert!(display.contains(&message));
         assert!(display.contains(request_id));
@@ -333,10 +344,10 @@ async fn test_invalid_url_error_at_request_time() {
     );
 }
 
-/// Test that 404 Not Found errors are properly mapped to ApiError.
+/// Test that 404 Not Found errors are properly classified to NotFound variant.
 ///
 /// This test verifies that when a resource is not found (404),
-/// the client returns a ClientError::ApiError with status 404.
+/// the client returns a ClientError::NotFound (not ApiError).
 #[tokio::test]
 async fn test_not_found_error() {
     let mock_server = MockServer::start().await;
@@ -365,18 +376,18 @@ async fn test_not_found_error() {
     assert!(result.is_err());
     let err = result.unwrap_err();
 
-    // 404 should return ApiError, not NotFound variant
+    // 404 is now classified as NotFound variant (not ApiError)
     assert!(
-        matches!(err, ClientError::ApiError { status: 404, .. }),
-        "Expected ApiError with status 404, got {:?}",
+        matches!(err, ClientError::NotFound(_)),
+        "Expected NotFound variant, got {:?}",
         err
     );
 
     // Verify error message contains resource info
     let display = format!("{}", err);
     assert!(
-        display.contains("404") || display.contains("not found") || display.contains("Not found"),
-        "Error display should contain 404 or not found. Got: {}",
+        display.contains("not found") || display.contains("Not found"),
+        "Error display should contain 'not found'. Got: {}",
         display
     );
 }
@@ -663,10 +674,11 @@ async fn test_client_with_trailing_slash_base_url() {
 async fn test_splunk_error_message_parsing() {
     let mock_server = MockServer::start().await;
 
+    // Use 500 status to test error message parsing (400 would be classified as InvalidRequest)
     Mock::given(method("GET"))
         .and(path("/services/data/indexes"))
-        .respond_with(ResponseTemplate::new(400).set_body_json(serde_json::json!({
-            "messages": [{"type": "ERROR", "text": "Invalid search query"}]
+        .respond_with(ResponseTemplate::new(500).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Internal server error"}]
         })))
         .mount(&mock_server)
         .await;
@@ -692,7 +704,7 @@ async fn test_splunk_error_message_parsing() {
             "Message should contain error type"
         );
         assert!(
-            message.contains("Invalid search query"),
+            message.contains("Internal server error"),
             "Message should contain error text"
         );
     } else {
@@ -705,9 +717,10 @@ async fn test_splunk_error_message_parsing() {
 async fn test_multiple_splunk_error_messages() {
     let mock_server = MockServer::start().await;
 
+    // Use 500 status to test error message parsing (400 would be classified as InvalidRequest)
     Mock::given(method("POST"))
         .and(path("/services/search/jobs"))
-        .respond_with(ResponseTemplate::new(400).set_body_json(serde_json::json!({
+        .respond_with(ResponseTemplate::new(500).set_body_json(serde_json::json!({
             "messages": [
                 {"type": "ERROR", "text": "First problem"},
                 {"type": "WARN", "text": "Second issue"}

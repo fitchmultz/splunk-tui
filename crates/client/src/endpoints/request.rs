@@ -377,14 +377,12 @@ pub async fn send_request_with_retry(
 
                         let message = parse_splunk_error_response(&body);
 
+                        let classified_err =
+                            ClientError::from_status_response(status_u16, url, message, request_id);
+
                         let err = ClientError::MaxRetriesExceeded(
                             max_retries + 1,
-                            Box::new(ClientError::ApiError {
-                                status: status_u16,
-                                url,
-                                message,
-                                request_id,
-                            }),
+                            Box::new(classified_err),
                         );
                         // Record error in span
                         tracing::Span::current().record(
@@ -413,12 +411,12 @@ pub async fn send_request_with_retry(
 
                     let message = parse_splunk_error_response(&body);
 
-                    let err = ClientError::ApiError {
-                        status: status_u16,
+                    let err = ClientError::from_status_response(
+                        status_u16,
                         url,
-                        message: message.clone(),
+                        message.clone(),
                         request_id,
-                    };
+                    );
                     // Record error in span
                     tracing::Span::current()
                         .record("error", format!("ApiError: {}", message).as_str());
@@ -455,8 +453,8 @@ pub async fn send_request_with_retry(
 
                     tokio::time::sleep(tokio::time::Duration::from_secs(backoff_secs)).await;
                 } else {
-                    // Non-retryable error: propagate immediately
-                    let err = ClientError::from(e);
+                    // Non-retryable error: classify and propagate immediately
+                    let err = ClientError::from_reqwest_error_classified(e);
                     let error_str = err.to_string();
                     // Record error in span
                     tracing::Span::current().record("error", error_str.as_str());
