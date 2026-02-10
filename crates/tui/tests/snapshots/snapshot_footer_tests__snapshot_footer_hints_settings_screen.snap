@@ -9,6 +9,7 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Theme:          Default                                                       │
+│                █ success  █ warning  █ error  █ info                         │
 │Auto-refresh:   [Off]                                                         │
 │Sort column:    sid                                                           │
 │Sort direction: asc                                                           │
@@ -21,7 +22,6 @@ expression: harness.render()
 │  Max results:   1000                                                         │
 │                                                                              │
 │Internal Logs Defaults                                                        │
-│  Count:         100                                                          │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Tab:Next Screen | Shift+Tab:Previous Screen | t:Theme a:Auto ...| ?:Help | q:│

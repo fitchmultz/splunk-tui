@@ -8,6 +8,7 @@ use crate::ui::theme::ThemeExt;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
@@ -85,6 +86,18 @@ pub fn render_settings(f: &mut Frame, area: Rect, config: SettingsRenderConfig) 
         Line::from(vec![
             Span::styled("Theme:          ", theme.title()),
             Span::styled(config.selected_theme.to_string(), theme.text()),
+        ]),
+        // Theme preview showing key semantic colors
+        Line::from(vec![
+            Span::styled("                ", theme.text()), // Indent to align with theme value
+            Span::styled("█", Style::default().fg(theme.success)),
+            Span::styled(" success  ", theme.text_dim()),
+            Span::styled("█", Style::default().fg(theme.warning)),
+            Span::styled(" warning  ", theme.text_dim()),
+            Span::styled("█", Style::default().fg(theme.error)),
+            Span::styled(" error  ", theme.text_dim()),
+            Span::styled("█", Style::default().fg(theme.info)),
+            Span::styled(" info", theme.text_dim()),
         ]),
         Line::from(vec![
             Span::styled("Auto-refresh:   ", theme.title()),

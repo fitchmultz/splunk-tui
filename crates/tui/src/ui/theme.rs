@@ -6,6 +6,33 @@
 use ratatui::style::{Color, Modifier, Style};
 use splunk_config::Theme;
 
+/// Pattern indicators for accessibility (used with Monochrome theme or as additional cues).
+#[derive(Debug, Clone, Copy)]
+pub struct PatternIndicators {
+    /// Success indicator (e.g., '✓', '+', '●')
+    pub success: char,
+    /// Warning indicator (e.g., '!', '~', '◐')
+    pub warning: char,
+    /// Error indicator (e.g., '✗', '×', '●')
+    pub error: char,
+    /// Info indicator (e.g., 'ℹ', 'i', '○')
+    pub info: char,
+    /// Unknown/loading indicator (e.g., '?', '…', '◯')
+    pub unknown: char,
+}
+
+impl Default for PatternIndicators {
+    fn default() -> Self {
+        Self {
+            success: '●',
+            warning: '◐',
+            error: '✗',
+            info: 'ℹ',
+            unknown: '?',
+        }
+    }
+}
+
 /// Spinner characters for animated loading indicator.
 ///
 /// These Braille patterns create a smooth spinning animation when cycled.
@@ -73,6 +100,14 @@ pub trait ThemeExt {
     /// Get style for a status string.
     /// Returns a complete Style for the given status.
     fn status_style(&self, status: &str) -> Style;
+
+    /// Get pattern indicators for accessibility.
+    /// These provide non-color cues for users with color vision deficiencies.
+    fn pattern_indicators(&self) -> PatternIndicators;
+
+    /// Get status indicator character for a status string.
+    /// Returns a character indicator suitable for users who cannot distinguish colors.
+    fn status_indicator(&self, status: &str) -> char;
 }
 
 impl ThemeExt for Theme {
@@ -170,6 +205,30 @@ impl ThemeExt for Theme {
 
     fn status_style(&self, status: &str) -> Style {
         Style::default().fg(self.status_color(status))
+    }
+
+    fn pattern_indicators(&self) -> PatternIndicators {
+        PatternIndicators::default()
+    }
+
+    fn status_indicator(&self, status: &str) -> char {
+        let patterns = self.pattern_indicators();
+        match status.to_lowercase().as_str() {
+            // Success states
+            "ok" | "healthy" | "green" | "active" | "installed" | "available" | "up"
+            | "running" | "ready" => patterns.success,
+            // Warning states
+            "warning" | "yellow" | "degraded" | "pending" | "starting" | "stopping" | "cached" => {
+                patterns.warning
+            }
+            // Error states
+            "error" | "unhealthy" | "red" | "timeout" | "down" | "critical" | "failed"
+            | "stopped" => patterns.error,
+            // Info/Neutral states
+            "loading" | "info" => patterns.info,
+            // Unknown/default
+            _ => patterns.unknown,
+        }
     }
 }
 
@@ -330,6 +389,10 @@ mod tests {
             ColorTheme::Light,
             ColorTheme::Dark,
             ColorTheme::HighContrast,
+            ColorTheme::Deuteranopia,
+            ColorTheme::Protanopia,
+            ColorTheme::Tritanopia,
+            ColorTheme::Monochrome,
         ] {
             let theme = Theme::from_color_theme(color_theme);
 
@@ -350,6 +413,15 @@ mod tests {
             let _ = theme.syntax_string();
             let _ = theme.syntax_number();
             let _ = theme.syntax_comment();
+
+            // NEW: Pattern indicators should be available
+            let patterns = theme.pattern_indicators();
+            assert_ne!(patterns.success, patterns.error);
+
+            // NEW: Status indicators should work
+            let _ = theme.status_indicator("ok");
+            let _ = theme.status_indicator("error");
+            let _ = theme.status_indicator("warning");
         }
     }
 
@@ -432,5 +504,62 @@ mod tests {
 
         let unknown_style = theme.status_style("unknown");
         assert_eq!(unknown_style.fg, Some(theme.text));
+    }
+
+    #[test]
+    fn test_pattern_indicators_default() {
+        let patterns = PatternIndicators::default();
+        assert_eq!(patterns.success, '●');
+        assert_eq!(patterns.warning, '◐');
+        assert_eq!(patterns.error, '✗');
+        assert_eq!(patterns.info, 'ℹ');
+        assert_eq!(patterns.unknown, '?');
+    }
+
+    #[test]
+    fn test_pattern_indicators_from_theme() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+        let patterns = theme.pattern_indicators();
+
+        // Verify we get the default patterns
+        assert_eq!(patterns.success, '●');
+        assert_eq!(patterns.error, '✗');
+    }
+
+    #[test]
+    fn test_status_indicator_success() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_indicator("ok"), '●');
+        assert_eq!(theme.status_indicator("healthy"), '●');
+        assert_eq!(theme.status_indicator("running"), '●');
+        assert_eq!(theme.status_indicator("OK"), '●'); // case insensitive
+    }
+
+    #[test]
+    fn test_status_indicator_warning() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_indicator("warning"), '◐');
+        assert_eq!(theme.status_indicator("pending"), '◐');
+        assert_eq!(theme.status_indicator("degraded"), '◐');
+    }
+
+    #[test]
+    fn test_status_indicator_error() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_indicator("error"), '✗');
+        assert_eq!(theme.status_indicator("failed"), '✗');
+        assert_eq!(theme.status_indicator("critical"), '✗');
+    }
+
+    #[test]
+    fn test_status_indicator_unknown() {
+        let theme = Theme::from_color_theme(ColorTheme::Default);
+
+        assert_eq!(theme.status_indicator("unknown"), '?');
+        assert_eq!(theme.status_indicator(""), '?');
+        assert_eq!(theme.status_indicator("foobar"), '?');
     }
 }

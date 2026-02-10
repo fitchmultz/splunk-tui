@@ -29,6 +29,10 @@ pub enum ColorTheme {
     Light,
     Dark,
     HighContrast,
+    Deuteranopia,
+    Protanopia,
+    Tritanopia,
+    Monochrome,
 }
 
 impl ColorTheme {
@@ -39,6 +43,10 @@ impl ColorTheme {
             Self::Light => "Light",
             Self::Dark => "Dark",
             Self::HighContrast => "High Contrast",
+            Self::Deuteranopia => "Deuteranopia (Blue/Yellow)",
+            Self::Protanopia => "Protanopia (Blue/Orange)",
+            Self::Tritanopia => "Tritanopia (Red/Teal)",
+            Self::Monochrome => "Monochrome",
         }
     }
 
@@ -48,7 +56,11 @@ impl ColorTheme {
             Self::Default => Self::Light,
             Self::Light => Self::Dark,
             Self::Dark => Self::HighContrast,
-            Self::HighContrast => Self::Default,
+            Self::HighContrast => Self::Deuteranopia,
+            Self::Deuteranopia => Self::Protanopia,
+            Self::Protanopia => Self::Tritanopia,
+            Self::Tritanopia => Self::Monochrome,
+            Self::Monochrome => Self::Default,
         }
     }
 }
@@ -277,6 +289,142 @@ impl Theme {
                 syntax_pipe: Color::Yellow,
                 syntax_comparison: Color::Red,
             },
+            ColorTheme::Deuteranopia => Self {
+                background: Color::Black,
+                text: Color::White,
+                text_dim: Color::Indexed(250),
+                border: Color::Indexed(75), // Blue
+                title: Color::Indexed(75),
+                accent: Color::Indexed(226), // Yellow
+                highlight_fg: Color::Black,
+                highlight_bg: Color::Indexed(226), // Yellow
+                success: Color::Indexed(33),       // Blue (instead of green)
+                warning: Color::Indexed(226),      // Yellow
+                error: Color::Indexed(208),        // Orange-red
+                info: Color::Indexed(75),          // Blue
+                disabled: Color::Indexed(242),
+                table_header_fg: Color::Black,
+                table_header_bg: Color::Indexed(226),
+                health_healthy: Color::Indexed(33),
+                health_unhealthy: Color::Indexed(208),
+                health_unknown: Color::Indexed(226),
+                log_error: Color::Indexed(208),
+                log_warn: Color::Indexed(226),
+                log_info: Color::Indexed(33),
+                log_debug: Color::Indexed(75),
+                log_component: Color::Indexed(189),
+                syntax_command: Color::Indexed(75),
+                syntax_operator: Color::Indexed(226),
+                syntax_function: Color::Indexed(33),
+                syntax_string: Color::Indexed(189),
+                syntax_number: Color::Indexed(75),
+                syntax_comment: Color::Indexed(242),
+                syntax_punctuation: Color::Indexed(250),
+                syntax_pipe: Color::Indexed(226),
+                syntax_comparison: Color::Indexed(208),
+            },
+            ColorTheme::Protanopia => Self {
+                background: Color::Black,
+                text: Color::White,
+                text_dim: Color::Indexed(250),
+                border: Color::Indexed(39), // Bright blue
+                title: Color::Indexed(39),
+                accent: Color::Indexed(214), // Orange
+                highlight_fg: Color::Black,
+                highlight_bg: Color::Indexed(214), // Orange
+                success: Color::Indexed(39),       // Blue
+                warning: Color::Indexed(214),      // Orange
+                error: Color::Indexed(202),        // Deep orange/red
+                info: Color::Indexed(39),
+                disabled: Color::Indexed(242),
+                table_header_fg: Color::Black,
+                table_header_bg: Color::Indexed(214),
+                health_healthy: Color::Indexed(39),
+                health_unhealthy: Color::Indexed(202),
+                health_unknown: Color::Indexed(214),
+                log_error: Color::Indexed(202),
+                log_warn: Color::Indexed(214),
+                log_info: Color::Indexed(39),
+                log_debug: Color::Indexed(75),
+                log_component: Color::Indexed(189),
+                syntax_command: Color::Indexed(39),
+                syntax_operator: Color::Indexed(214),
+                syntax_function: Color::Indexed(33),
+                syntax_string: Color::Indexed(189),
+                syntax_number: Color::Indexed(39),
+                syntax_comment: Color::Indexed(242),
+                syntax_punctuation: Color::Indexed(250),
+                syntax_pipe: Color::Indexed(214),
+                syntax_comparison: Color::Indexed(202),
+            },
+            ColorTheme::Tritanopia => Self {
+                background: Color::Black,
+                text: Color::White,
+                text_dim: Color::Indexed(250),
+                border: Color::Indexed(197), // Pink-red
+                title: Color::Indexed(197),
+                accent: Color::Indexed(37), // Teal/cyan
+                highlight_fg: Color::Black,
+                highlight_bg: Color::Indexed(37), // Teal
+                success: Color::Indexed(37),      // Teal
+                warning: Color::Indexed(197),     // Pink-red
+                error: Color::Indexed(161),       // Magenta/deep pink
+                info: Color::Indexed(37),
+                disabled: Color::Indexed(242),
+                table_header_fg: Color::Black,
+                table_header_bg: Color::Indexed(37),
+                health_healthy: Color::Indexed(37),
+                health_unhealthy: Color::Indexed(161),
+                health_unknown: Color::Indexed(197),
+                log_error: Color::Indexed(161),
+                log_warn: Color::Indexed(197),
+                log_info: Color::Indexed(37),
+                log_debug: Color::Indexed(44),
+                log_component: Color::Indexed(213),
+                syntax_command: Color::Indexed(37),
+                syntax_operator: Color::Indexed(197),
+                syntax_function: Color::Indexed(44),
+                syntax_string: Color::Indexed(213),
+                syntax_number: Color::Indexed(37),
+                syntax_comment: Color::Indexed(242),
+                syntax_punctuation: Color::Indexed(250),
+                syntax_pipe: Color::Indexed(197),
+                syntax_comparison: Color::Indexed(161),
+            },
+            ColorTheme::Monochrome => Self {
+                background: Color::Black,
+                text: Color::White,
+                text_dim: Color::Indexed(245),
+                border: Color::Indexed(250),
+                title: Color::White,
+                accent: Color::Indexed(255),
+                highlight_fg: Color::Black,
+                highlight_bg: Color::White,
+                success: Color::Indexed(250), // Very light
+                warning: Color::Indexed(245), // Light
+                error: Color::Indexed(255),   // Brightest
+                info: Color::Indexed(245),
+                disabled: Color::Indexed(238),
+                table_header_fg: Color::Black,
+                table_header_bg: Color::White,
+                health_healthy: Color::Indexed(250),
+                health_unhealthy: Color::Indexed(255),
+                health_unknown: Color::Indexed(245),
+                log_error: Color::Indexed(255),
+                log_warn: Color::Indexed(245),
+                log_info: Color::Indexed(250),
+                log_debug: Color::Indexed(238),
+                log_component: Color::Indexed(245),
+                syntax_command: Color::White,
+                syntax_operator: Color::Indexed(250),
+                syntax_function: Color::Indexed(245),
+                syntax_string: Color::Indexed(250),
+                syntax_number: Color::Indexed(245),
+                syntax_comment: Color::Indexed(238),
+                syntax_punctuation: Color::Indexed(245),
+                syntax_pipe: Color::Indexed(250),
+                syntax_comparison: Color::Indexed(255),
+            },
         }
     }
 }
@@ -303,6 +451,19 @@ mod tests {
         assert_eq!(ColorTheme::Light.display_name(), "Light");
         assert_eq!(ColorTheme::Dark.display_name(), "Dark");
         assert_eq!(ColorTheme::HighContrast.display_name(), "High Contrast");
+        assert_eq!(
+            ColorTheme::Deuteranopia.display_name(),
+            "Deuteranopia (Blue/Yellow)"
+        );
+        assert_eq!(
+            ColorTheme::Protanopia.display_name(),
+            "Protanopia (Blue/Orange)"
+        );
+        assert_eq!(
+            ColorTheme::Tritanopia.display_name(),
+            "Tritanopia (Red/Teal)"
+        );
+        assert_eq!(ColorTheme::Monochrome.display_name(), "Monochrome");
     }
 
     #[test]
@@ -318,6 +479,22 @@ mod tests {
         ));
         assert!(matches!(
             ColorTheme::HighContrast.cycle_next(),
+            ColorTheme::Deuteranopia
+        ));
+        assert!(matches!(
+            ColorTheme::Deuteranopia.cycle_next(),
+            ColorTheme::Protanopia
+        ));
+        assert!(matches!(
+            ColorTheme::Protanopia.cycle_next(),
+            ColorTheme::Tritanopia
+        ));
+        assert!(matches!(
+            ColorTheme::Tritanopia.cycle_next(),
+            ColorTheme::Monochrome
+        ));
+        assert!(matches!(
+            ColorTheme::Monochrome.cycle_next(),
             ColorTheme::Default
         ));
     }
@@ -345,8 +522,72 @@ mod tests {
     }
 
     #[test]
+    fn test_color_theme_serde_all_variants() {
+        // Verify all theme variants serialize and deserialize correctly
+        for theme in [
+            ColorTheme::Default,
+            ColorTheme::Light,
+            ColorTheme::Dark,
+            ColorTheme::HighContrast,
+            ColorTheme::Deuteranopia,
+            ColorTheme::Protanopia,
+            ColorTheme::Tritanopia,
+            ColorTheme::Monochrome,
+        ] {
+            let json = serde_json::to_string(&theme).unwrap();
+            let deserialized: ColorTheme = serde_json::from_str(&json).unwrap();
+            assert_eq!(theme, deserialized, "Serde failed for {:?}", theme);
+        }
+    }
+
+    #[test]
+    fn test_color_theme_serde_snake_case() {
+        // Verify snake_case serialization
+        assert_eq!(
+            serde_json::to_string(&ColorTheme::HighContrast).unwrap(),
+            "\"high_contrast\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ColorTheme::Deuteranopia).unwrap(),
+            "\"deuteranopia\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ColorTheme::Protanopia).unwrap(),
+            "\"protanopia\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ColorTheme::Tritanopia).unwrap(),
+            "\"tritanopia\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ColorTheme::Monochrome).unwrap(),
+            "\"monochrome\""
+        );
+    }
+
+    #[test]
     fn test_color_theme_display() {
         assert_eq!(format!("{}", ColorTheme::Default), "Default");
         assert_eq!(format!("{}", ColorTheme::Light), "Light");
+    }
+
+    #[test]
+    fn test_all_themes_convertible() {
+        // Verify all themes can be converted to runtime Theme
+        for theme in [
+            ColorTheme::Default,
+            ColorTheme::Light,
+            ColorTheme::Dark,
+            ColorTheme::HighContrast,
+            ColorTheme::Deuteranopia,
+            ColorTheme::Protanopia,
+            ColorTheme::Tritanopia,
+            ColorTheme::Monochrome,
+        ] {
+            let runtime_theme = Theme::from_color_theme(theme);
+            // Basic sanity checks
+            assert_ne!(runtime_theme.background, runtime_theme.text);
+            assert_ne!(runtime_theme.success, runtime_theme.error);
+        }
     }
 }
