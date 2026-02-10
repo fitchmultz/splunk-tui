@@ -73,12 +73,17 @@ async fn test_create_saved_search() {
         .await;
 
     let client = Client::new();
+    let params = splunk_client::models::SavedSearchCreateParams {
+        name: "my-search".to_string(),
+        search: "| makeresults".to_string(),
+        ..Default::default()
+    };
     let result = endpoints::create_saved_search(
         &client,
         &mock_server.uri(),
         "test-token",
-        "my-search",
-        "| makeresults",
+        &params.name,
+        &params.search,
         3,
         None,
         None,
@@ -415,9 +420,11 @@ async fn test_splunk_client_update_saved_search() {
     let result = client
         .update_saved_search(
             "my-search",
-            Some("index=main"),
-            Some("Updated description"),
-            Some(true),
+            splunk_client::models::SavedSearchUpdateParams {
+                search: Some("index=main".to_string()),
+                description: Some("Updated description".to_string()),
+                disabled: Some(true),
+            },
         )
         .await;
 

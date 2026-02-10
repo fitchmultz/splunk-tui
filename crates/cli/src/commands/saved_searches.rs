@@ -306,14 +306,16 @@ async fn run_edit(
 
     let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
-    cancellable_with!(
-        client.update_saved_search(name, search, description, disabled),
-        cancel,
-        |_res| {
-            eprintln!("Saved search '{}' updated successfully", name);
-            Ok(())
-        }
-    )?;
+    let params = splunk_client::models::SavedSearchUpdateParams {
+        search: search.map(|s| s.to_string()),
+        description: description.map(|s| s.to_string()),
+        disabled,
+    };
+
+    cancellable_with!(client.update_saved_search(name, params), cancel, |_res| {
+        eprintln!("Saved search '{}' updated successfully", name);
+        Ok(())
+    })?;
 
     Ok(())
 }
@@ -332,22 +334,14 @@ async fn run_create(
     let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     // First create the saved search
-    cancellable!(client.create_saved_search(name, search), cancel)
+    let params = splunk_client::models::SavedSearchCreateParams {
+        name: name.to_string(),
+        search: search.to_string(),
+        description: description.map(|s| s.to_string()),
+        disabled,
+    };
+    cancellable!(client.create_saved_search(params), cancel)
         .with_context(|| format!("Failed to create saved search '{}'", name))?;
-
-    // If description or disabled flag provided, update the saved search
-    if description.is_some() || disabled {
-        cancellable!(
-            client.update_saved_search(name, None, description, Some(disabled)),
-            cancel
-        )
-        .with_context(|| {
-            format!(
-                "Failed to update saved search '{}' with description/disabled",
-                name
-            )
-        })?;
-    }
 
     println!("Saved search '{}' created successfully.", name);
     Ok(())
@@ -390,11 +384,13 @@ async fn run_enable_disable(
 
     let status = if disabled { "disabled" } else { "enabled" };
 
-    cancellable!(
-        client.update_saved_search(name, None, None, Some(disabled)),
-        cancel
-    )
-    .with_context(|| format!("Failed to {} saved search '{}'", status, name))?;
+    let params = splunk_client::models::SavedSearchUpdateParams {
+        disabled: Some(disabled),
+        ..Default::default()
+    };
+
+    cancellable!(client.update_saved_search(name, params), cancel)
+        .with_context(|| format!("Failed to {} saved search '{}'", status, name))?;
 
     println!("Saved search '{}' {} successfully.", name, status);
 

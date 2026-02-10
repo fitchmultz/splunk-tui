@@ -222,14 +222,14 @@ async fn run_create(
     let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = MacroCreateParams {
-        name: &name,
-        definition: &definition,
-        args: args.as_deref(),
-        description: description.as_deref(),
+        name: name.clone(),
+        definition: definition.clone(),
+        args: args.clone(),
+        description: description.clone(),
         disabled,
         iseval,
-        validation: validation.as_deref(),
-        errormsg: errormsg.as_deref(),
+        validation: validation.clone(),
+        errormsg: errormsg.clone(),
     };
 
     cancellable_with!(client.create_macro(params), cancel, |_res| {
@@ -304,17 +304,16 @@ async fn run_update(
     let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
 
     let params = MacroUpdateParams {
-        name: &name,
-        definition: definition.as_deref(),
-        args: args.as_deref(),
-        description: description.as_deref(),
+        definition: definition.clone(),
+        args: args.clone(),
+        description: description.clone(),
         disabled,
         iseval: iseval_flag,
-        validation: validation.as_deref(),
-        errormsg: errormsg.as_deref(),
+        validation: validation.clone(),
+        errormsg: errormsg.clone(),
     };
 
-    cancellable_with!(client.update_macro(params), cancel, |_res| {
+    cancellable_with!(client.update_macro(&name, params), cancel, |_res| {
         eprintln!("Macro '{}' updated successfully", name);
         Ok(())
     })?;

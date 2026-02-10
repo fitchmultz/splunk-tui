@@ -8,49 +8,7 @@ use crate::client::SplunkClient;
 use crate::endpoints;
 use crate::endpoints::{CreateMacroRequest, UpdateMacroRequest};
 use crate::error::Result;
-use crate::models::Macro;
-
-/// Parameters for creating a new macro.
-#[derive(Debug, Clone, Default)]
-pub struct MacroCreateParams<'a> {
-    /// The name of the macro
-    pub name: &'a str,
-    /// The SPL snippet or eval expression
-    pub definition: &'a str,
-    /// Optional comma-separated argument names
-    pub args: Option<&'a str>,
-    /// Optional description
-    pub description: Option<&'a str>,
-    /// Whether the macro is disabled
-    pub disabled: bool,
-    /// Whether the macro is an eval expression
-    pub iseval: bool,
-    /// Optional validation expression
-    pub validation: Option<&'a str>,
-    /// Optional error message for validation failure
-    pub errormsg: Option<&'a str>,
-}
-
-/// Parameters for updating an existing macro.
-#[derive(Debug, Clone, Default)]
-pub struct MacroUpdateParams<'a> {
-    /// The name of the macro to update
-    pub name: &'a str,
-    /// Optional new definition
-    pub definition: Option<&'a str>,
-    /// Optional new arguments
-    pub args: Option<&'a str>,
-    /// Optional new description
-    pub description: Option<&'a str>,
-    /// Optional enable/disable flag
-    pub disabled: Option<bool>,
-    /// Optional eval expression flag
-    pub iseval: Option<bool>,
-    /// Optional new validation expression
-    pub validation: Option<&'a str>,
-    /// Optional new error message
-    pub errormsg: Option<&'a str>,
-}
+use crate::models::{Macro, MacroCreateParams, MacroUpdateParams};
 
 impl SplunkClient {
     /// List all search macros.
@@ -98,16 +56,16 @@ impl SplunkClient {
     ///
     /// # Arguments
     /// * `params` - Parameters for creating the macro
-    pub async fn create_macro(&self, params: MacroCreateParams<'_>) -> Result<()> {
+    pub async fn create_macro(&self, params: MacroCreateParams) -> Result<()> {
         let request = CreateMacroRequest {
-            name: params.name,
-            definition: params.definition,
-            args: params.args,
-            description: params.description,
+            name: &params.name,
+            definition: &params.definition,
+            args: params.args.as_deref(),
+            description: params.description.as_deref(),
             disabled: params.disabled,
             iseval: params.iseval,
-            validation: params.validation,
-            errormsg: params.errormsg,
+            validation: params.validation.as_deref(),
+            errormsg: params.errormsg.as_deref(),
         };
 
         crate::retry_call!(
@@ -131,20 +89,21 @@ impl SplunkClient {
     /// Only provided fields are updated; omitted fields retain their current values.
     ///
     /// # Arguments
+    /// * `name` - The name of the macro to update
     /// * `params` - Parameters for updating the macro
     ///
     /// # Returns
     /// Ok(()) on success, or `ClientError::NotFound` if the macro doesn't exist.
-    pub async fn update_macro(&self, params: MacroUpdateParams<'_>) -> Result<()> {
+    pub async fn update_macro(&self, name: &str, params: MacroUpdateParams) -> Result<()> {
         let request = UpdateMacroRequest {
-            name: params.name,
-            definition: params.definition,
-            args: params.args,
-            description: params.description,
+            name,
+            definition: params.definition.as_deref(),
+            args: params.args.as_deref(),
+            description: params.description.as_deref(),
             disabled: params.disabled,
             iseval: params.iseval,
-            validation: params.validation,
-            errormsg: params.errormsg,
+            validation: params.validation.as_deref(),
+            errormsg: params.errormsg.as_deref(),
         };
 
         crate::retry_call!(

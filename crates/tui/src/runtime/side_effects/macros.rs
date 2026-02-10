@@ -77,10 +77,10 @@ pub async fn handle_create_macro(
     let _ = action_tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
         let macro_params = MacroCreateParams {
-            name: &params.name,
-            definition: &params.definition,
-            args: params.args.as_deref(),
-            description: params.description.as_deref(),
+            name: params.name,
+            definition: params.definition,
+            args: params.args,
+            description: params.description,
             disabled: params.disabled,
             iseval: params.iseval,
             validation: None,
@@ -110,17 +110,16 @@ pub async fn handle_update_macro(
     let _ = action_tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
         let macro_params = MacroUpdateParams {
-            name: &params.name,
-            definition: params.definition.as_deref(),
-            args: params.args.as_deref(),
-            description: params.description.as_deref(),
+            definition: params.definition,
+            args: params.args,
+            description: params.description,
             disabled: params.disabled,
             iseval: params.iseval,
             validation: None,
             errormsg: None,
         };
 
-        match client.update_macro(macro_params).await {
+        match client.update_macro(&params.name, macro_params).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::MacroUpdated(Ok(()))).await;
                 // Refresh macros list on success

@@ -15,6 +15,7 @@ pub mod metrics_exporter;
 pub mod models;
 mod name_merge;
 pub mod tracing;
+pub mod transaction;
 
 /// Serde helper functions for deserializing Splunk's inconsistent JSON types.
 ///
@@ -33,7 +34,6 @@ pub use client::SplunkClient;
 pub use client::builder::SplunkClientBuilder;
 pub use client::cache::{CacheConfig, CachePolicy, CacheStats, ResponseCache};
 pub use client::health::AggregatedHealth;
-pub use client::macros::{MacroCreateParams, MacroUpdateParams};
 pub use error::{ClientError, Result};
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use metrics_exporter::{MetricsExporter, MetricsExporterError};
@@ -46,12 +46,13 @@ pub use models::{
     InstalledLicense, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus,
     LicenseActivationResult, LicenseInstallResult, LicensePool, LicenseStack, LicenseUsage,
     LogEntry, LogParsingHealth, LookupTable, LookupTableEntry, LookupTableListResponse, Macro,
-    MacroEntry, MacroListResponse, MaintenanceModeParams, ModifyIndexParams, ModifyPoolParams,
-    ModifyRoleParams, ModifyUserParams, RemovePeersParams, RemoveShcMemberParams, Role,
-    RoleListResponse, RollingRestartParams, SavedSearch, SearchJob, SearchJobListResponse,
-    SearchJobResults, SearchJobStatus, SendBatchParams, ServerInfo, SetCaptainParams, ShcCaptain,
-    ShcConfig, ShcManagementResponse, ShcMember, ShcStatus, SplunkHealth, SplunkResponse,
-    UploadLookupParams, User, UserListResponse, WorkloadPool, WorkloadRule,
+    MacroCreateParams, MacroEntry, MacroListResponse, MacroUpdateParams, MaintenanceModeParams,
+    ModifyIndexParams, ModifyPoolParams, ModifyRoleParams, ModifyUserParams, RemovePeersParams,
+    RemoveShcMemberParams, Role, RoleListResponse, RollingRestartParams, SavedSearch, SearchJob,
+    SearchJobListResponse, SearchJobResults, SearchJobStatus, SendBatchParams, ServerInfo,
+    SetCaptainParams, ShcCaptain, ShcConfig, ShcManagementResponse, ShcMember, ShcStatus,
+    SplunkHealth, SplunkResponse, UploadLookupParams, User, UserListResponse, WorkloadPool,
+    WorkloadRule,
 };
 pub use tracing::{
     TracingConfig, TracingError, TracingGuard, extract_trace_context, inject_trace_context,

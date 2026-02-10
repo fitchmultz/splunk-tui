@@ -231,10 +231,12 @@ pub async fn handle_update_saved_search(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client
-            .update_saved_search(&name, search.as_deref(), description.as_deref(), disabled)
-            .await
-        {
+        let params = splunk_client::models::SavedSearchUpdateParams {
+            search,
+            description,
+            disabled,
+        };
+        match client.update_saved_search(&name, params).await {
             Ok(()) => {
                 let _ = tx.send(Action::SavedSearchUpdated(Ok(()))).await;
             }
@@ -258,33 +260,17 @@ pub async fn handle_create_saved_search(
     let _ = action_tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
         // First create the saved search
-        match client.create_saved_search(&name, &search).await {
+        let create_params = splunk_client::models::SavedSearchCreateParams {
+            name: name.clone(),
+            search,
+            description: description.clone(),
+            disabled,
+        };
+        match client.create_saved_search(create_params).await {
             Ok(()) => {
-                // If description or disabled provided, update the saved search
-                if description.is_some() || disabled {
-                    match client
-                        .update_saved_search(&name, None, description.as_deref(), Some(disabled))
-                        .await
-                    {
-                        Ok(()) => {
-                            let _ = action_tx.send(Action::SavedSearchCreated(Ok(()))).await;
-                            // Refresh saved searches list on success
-                            let _ = action_tx.send(Action::LoadSavedSearches).await;
-                        }
-                        Err(e) => {
-                            // Saved search was created but update failed
-                            let _ = action_tx
-                                .send(Action::SavedSearchCreated(Err(Arc::new(e))))
-                                .await;
-                            // Still refresh since the saved search was created
-                            let _ = action_tx.send(Action::LoadSavedSearches).await;
-                        }
-                    }
-                } else {
-                    let _ = action_tx.send(Action::SavedSearchCreated(Ok(()))).await;
-                    // Refresh saved searches list on success
-                    let _ = action_tx.send(Action::LoadSavedSearches).await;
-                }
+                let _ = action_tx.send(Action::SavedSearchCreated(Ok(()))).await;
+                // Refresh saved searches list on success
+                let _ = action_tx.send(Action::LoadSavedSearches).await;
             }
             Err(e) => {
                 let _ = action_tx
@@ -329,10 +315,11 @@ pub async fn handle_toggle_saved_search(
 ) {
     let _ = action_tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client
-            .update_saved_search(&name, None, None, Some(disabled))
-            .await
-        {
+        let params = splunk_client::models::SavedSearchUpdateParams {
+            disabled: Some(disabled),
+            ..Default::default()
+        };
+        match client.update_saved_search(&name, params).await {
             Ok(()) => {
                 let _ = action_tx.send(Action::SavedSearchToggled(Ok(()))).await;
                 // Refresh saved searches list on success

@@ -511,7 +511,11 @@ mod apps_live_tests {
 
         let search = r#"| makeresults | eval foo="saved-search" | table foo"#;
         client
-            .create_saved_search(&name, search)
+            .create_saved_search(splunk_client::models::SavedSearchCreateParams {
+                name: name.clone(),
+                search: search.to_string(),
+                ..Default::default()
+            })
             .await
             .expect("Failed to create saved search");
 
@@ -554,7 +558,11 @@ mod apps_live_tests {
 
         let search = r#"| makeresults | eval foo="get-saved-search" | table foo"#;
         client
-            .create_saved_search(&name, search)
+            .create_saved_search(splunk_client::models::SavedSearchCreateParams {
+                name: name.clone(),
+                search: search.to_string(),
+                ..Default::default()
+            })
             .await
             .expect("Failed to create saved search");
 

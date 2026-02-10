@@ -27,11 +27,12 @@ impl App {
                 if name_input.is_empty() {
                     return None;
                 }
-                let name = name_input.clone();
+                let _name = name_input.clone();
                 // Extract other fields from the popup state
                 if let Some(Popup {
                     kind:
                         PopupType::CreateUser {
+                            name_input,
                             password_input,
                             roles_input,
                             realname_input,
@@ -42,6 +43,7 @@ impl App {
                     ..
                 }) = self.popup.take()
                 {
+                    let name = name_input;
                     let password = secrecy::SecretString::from(password_input);
                     let roles: Vec<String> = roles_input
                         .split(',')
@@ -137,10 +139,11 @@ impl App {
             }
             // ModifyUser - submit
             (Some(PopupType::ModifyUser { user_name, .. }), KeyCode::Enter) => {
-                let name = user_name.clone();
+                let _name = user_name.clone();
                 if let Some(Popup {
                     kind:
                         PopupType::ModifyUser {
+                            user_name,
                             password_input,
                             roles_input,
                             realname_input,
@@ -151,6 +154,7 @@ impl App {
                     ..
                 }) = self.popup.take()
                 {
+                    let name = user_name;
                     let password = if password_input.is_empty() {
                         None
                     } else {

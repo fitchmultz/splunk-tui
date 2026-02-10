@@ -43,10 +43,11 @@ pub mod saved_searches;
 pub mod search;
 pub mod search_peers;
 pub mod shc;
+pub mod transaction;
 pub mod users;
 pub mod workload;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use splunk_client::SplunkClient;
 
 /// Build a SplunkClient from configuration.
@@ -75,6 +76,14 @@ pub fn build_client_from_config(
     }
 
     builder.build().map_err(|e| e.into())
+}
+
+/// Get the transaction manager for the current environment.
+pub fn get_transaction_manager() -> Result<splunk_client::transaction::TransactionManager> {
+    let proj_dirs = directories::ProjectDirs::from("", "", "splunk-tui")
+        .context("Failed to determine project directories")?;
+    let log_dir = proj_dirs.config_dir().join("transactions");
+    Ok(splunk_client::transaction::TransactionManager::new(log_dir))
 }
 
 #[cfg(test)]

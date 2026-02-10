@@ -70,6 +70,10 @@ pub enum ClientError {
     #[error("Invalid request: {0}")]
     InvalidRequest(String),
 
+    /// Validation error.
+    #[error("Validation error: {0}")]
+    ValidationError(String),
+
     /// Circuit breaker is open.
     #[error("Circuit breaker open: {0}")]
     CircuitBreakerOpen(String),

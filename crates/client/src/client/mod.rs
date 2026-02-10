@@ -226,6 +226,36 @@ impl SplunkClient {
     pub async fn clear_cache(&self) {
         self.cache.invalidate_all().await;
     }
+
+    /// Get the transaction manager for the current environment.
+    pub fn transaction_manager(
+        &self,
+    ) -> crate::error::Result<crate::transaction::TransactionManager> {
+        let proj_dirs = directories::ProjectDirs::from("", "", "splunk-tui").ok_or_else(|| {
+            crate::error::ClientError::ValidationError(
+                "Failed to determine project directories".into(),
+            )
+        })?;
+        let log_dir = proj_dirs.config_dir().join("transactions");
+        Ok(crate::transaction::TransactionManager::new(log_dir))
+    }
+
+    /// Begin a new transaction for multi-step operations.
+    pub fn begin_transaction(&self) -> crate::transaction::Transaction {
+        crate::transaction::Transaction::new()
+    }
+
+    /// Commit a transaction, executing all staged operations.
+    ///
+    /// If any operation fails, the transaction is automatically rolled back.
+    pub async fn commit_transaction(
+        &self,
+        transaction: &crate::transaction::Transaction,
+    ) -> crate::error::Result<()> {
+        let manager = self.transaction_manager()?;
+        manager.validate(self, transaction).await?;
+        manager.commit(self, transaction).await
+    }
 }
 
 #[cfg(test)]

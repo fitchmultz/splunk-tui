@@ -23,6 +23,7 @@ clap = { version = "4.5", features = ["derive", "env"] }
 # TUI
 ratatui = { version = "0.29", features = ["all-widgets"] }
 crossterm = "0.28"
+uuid = { version = "1.20", features = ["v4", "serde"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -41,6 +42,7 @@ keyring = "3.6"
 # Config
 dotenvy = "0.15"
 url = "2.5"
+directories = "6"
 
 # Logging
 tracing = "0.1"

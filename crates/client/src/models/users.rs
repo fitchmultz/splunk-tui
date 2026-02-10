@@ -74,11 +74,13 @@ pub struct UserListResponse {
 }
 
 /// Parameters for creating a new user.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CreateUserParams {
     /// The username for the new user (required).
     pub name: String,
     /// The initial password for the user (required).
+    #[serde(serialize_with = "crate::serde_helpers::serialize_secret_redacted")]
+    #[serde(deserialize_with = "crate::serde_helpers::deserialize_secret_from_string")]
     pub password: SecretString,
     /// Roles to assign to the user (required, at least one).
     pub roles: Vec<String>,
@@ -91,9 +93,11 @@ pub struct CreateUserParams {
 }
 
 /// Parameters for modifying an existing user.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ModifyUserParams {
     /// New password for the user (optional).
+    #[serde(serialize_with = "crate::serde_helpers::serialize_opt_secret_redacted")]
+    #[serde(deserialize_with = "crate::serde_helpers::deserialize_opt_secret_from_string")]
     pub password: Option<SecretString>,
     /// Roles to assign to the user (replaces existing roles, optional).
     pub roles: Option<Vec<String>>,

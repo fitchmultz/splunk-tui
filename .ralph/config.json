@@ -29,20 +29,6 @@
       "sound_enabled": true,
       "suppress_when_active": true,
       "timeout_ms": 5000
-    },
-    "phase_overrides": {
-      "phase1": {
-        "runner": "opencode",
-        "model": "google/gemini-3-flash-preview"
-      },
-      "phase2": {
-        "runner": "opencode",
-        "model": "google/gemini-3-flash-preview"
-      },
-      "phase3": {
-        "runner": "opencode",
-        "model": "google/gemini-3-flash-preview"
-      }
     }
   }
 }

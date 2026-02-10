@@ -137,6 +137,14 @@ pub struct Cli {
     #[arg(long, global = true, env = "SPLUNK_OTEL_SERVICE_NAME")]
     pub otel_service_name: Option<String>,
 
+    /// Execute command as part of a transaction.
+    ///
+    /// When enabled, the operation is staged in a local transaction log instead
+    /// of being executed immediately. Use 'splunk-cli transaction commit' to
+    /// execute all staged operations atomically.
+    #[arg(long, global = true)]
+    pub transaction: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -487,4 +495,32 @@ pub enum Commands {
 
     /// Generate manpage
     Man,
+
+    /// Manage multi-step configuration transactions
+    Transaction {
+        #[command(subcommand)]
+        command: TransactionCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum TransactionCommand {
+    /// Start a new transaction session
+    Begin,
+    /// Validate and execute all staged operations
+    Commit {
+        /// Preview planned changes without executing
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Clear all staged operations
+    Rollback,
+    /// Show currently staged operations
+    Status,
+    /// Mark a savepoint for partial rollback
+    Savepoint {
+        /// Name of the savepoint
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
 }

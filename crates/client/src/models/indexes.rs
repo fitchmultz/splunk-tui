@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Parameters for creating a new index.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CreateIndexParams {
     /// The name of the index to create (required).
     pub name: String,
@@ -28,7 +28,7 @@ pub struct CreateIndexParams {
 }
 
 /// Parameters for modifying an existing index.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ModifyIndexParams {
     /// Maximum data size in MB.
     pub max_data_size_mb: Option<usize>,

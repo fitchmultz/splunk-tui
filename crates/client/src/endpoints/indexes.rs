@@ -56,6 +56,47 @@ pub async fn list_indexes(
         .collect())
 }
 
+/// Get a specific index by name.
+#[allow(clippy::too_many_arguments)]
+pub async fn get_index(
+    client: &Client,
+    base_url: &str,
+    auth_token: &str,
+    index_name: &str,
+    max_retries: usize,
+    metrics: Option<&MetricsCollector>,
+    circuit_breaker: Option<&CircuitBreaker>,
+) -> Result<Index> {
+    let url = Url::parse(base_url)
+        .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
+        .join(&format!("/services/data/indexes/{}", index_name))
+        .map_err(|e| ClientError::InvalidUrl(format!("Invalid index name: {}", e)))?;
+
+    let builder = client
+        .get(url)
+        .header("Authorization", format!("Bearer {}", auth_token))
+        .query(&[("output_mode", "json")]);
+    let response = send_request_with_retry(
+        builder,
+        max_retries,
+        &format!("/services/data/indexes/{}", index_name),
+        "GET",
+        metrics,
+        circuit_breaker,
+    )
+    .await?;
+
+    let resp: IndexListResponse = response.json().await?;
+
+    let entry = resp
+        .entry
+        .into_iter()
+        .next()
+        .ok_or_else(|| ClientError::NotFound(format!("Index '{}' not found", index_name)))?;
+
+    Ok(attach_entry_name(entry.name, entry.content))
+}
+
 /// Create a new index.
 #[allow(clippy::too_many_arguments)]
 pub async fn create_index(

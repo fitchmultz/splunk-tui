@@ -54,7 +54,7 @@ pub struct RoleListResponse {
 }
 
 /// Parameters for creating a new role.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CreateRoleParams {
     /// The role name (required).
     pub name: String,
@@ -71,7 +71,7 @@ pub struct CreateRoleParams {
 }
 
 /// Parameters for modifying an existing role.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ModifyRoleParams {
     /// Capabilities to assign to the role (replaces existing).
     pub capabilities: Option<Vec<String>>,

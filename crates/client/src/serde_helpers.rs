@@ -12,6 +12,7 @@
 //! - Splunk may return numeric fields as `"123"` strings or as `123` numbers depending on endpoint/version.
 //! - These helpers must not log or print secrets; errors should be generic parse errors.
 
+use secrecy::SecretString;
 use serde::Deserialize;
 use serde::de::Error as _;
 use std::collections::HashMap;
@@ -180,6 +181,51 @@ where
         out.insert(k, parsed);
     }
     Ok(out)
+}
+
+/// Serialize a SecretString as redacted text ("***").
+pub fn serialize_secret_redacted<S>(
+    _secret: &SecretString,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str("***")
+}
+
+/// Deserialize a SecretString from a string value.
+pub fn deserialize_secret_from_string<'de, D>(deserializer: D) -> Result<SecretString, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(SecretString::from(s))
+}
+
+/// Serialize an optional SecretString as redacted text.
+pub fn serialize_opt_secret_redacted<S>(
+    secret: &Option<SecretString>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match secret {
+        Some(_) => serializer.serialize_some("***"),
+        None => serializer.serialize_none(),
+    }
+}
+
+/// Deserialize an optional SecretString from a string value.
+pub fn deserialize_opt_secret_from_string<'de, D>(
+    deserializer: D,
+) -> Result<Option<SecretString>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let opt_s = Option::<String>::deserialize(deserializer)?;
+    Ok(opt_s.map(SecretString::from))
 }
 
 #[cfg(test)]

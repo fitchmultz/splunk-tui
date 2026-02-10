@@ -27,3 +27,27 @@ pub struct SavedSearchEntry {
 pub struct SavedSearchListResponse {
     pub entry: Vec<SavedSearchEntry>,
 }
+
+/// Parameters for creating a new saved search.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SavedSearchCreateParams {
+    /// The name of the saved search (required).
+    pub name: String,
+    /// The search query (required).
+    pub search: String,
+    /// Optional description.
+    pub description: Option<String>,
+    /// Whether the search is disabled.
+    pub disabled: bool,
+}
+
+/// Parameters for updating an existing saved search.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SavedSearchUpdateParams {
+    /// New search query (SPL).
+    pub search: Option<String>,
+    /// New description.
+    pub description: Option<String>,
+    /// Enable/disable flag.
+    pub disabled: Option<bool>,
+}

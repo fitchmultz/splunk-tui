@@ -20,6 +20,7 @@ use crate::args::{Cli, Commands};
 use crate::cancellation::CancellationToken;
 use crate::commands;
 use crate::config_context::ConfigCommandContext;
+use splunk_client::transaction::{Transaction, TransactionOperation};
 
 /// Dispatch CLI commands to their respective handlers.
 ///
@@ -40,6 +41,10 @@ pub(crate) async fn run_command(
     cancel_token: &CancellationToken,
 ) -> Result<()> {
     trace!("Dispatching command");
+
+    if cli.transaction && !matches!(cli.command, Commands::Transaction { .. }) {
+        return stage_operation(cli.command).await;
+    }
 
     match cli.command {
         Commands::Config { command } => {
@@ -615,8 +620,267 @@ pub(crate) async fn run_command(
             // Manpage command doesn't need config - works offline
             commands::manpage::run()?;
         }
+        Commands::Transaction { command } => {
+            trace!("Routing to transaction command");
+            let (config, _, no_cache) = config.into_real_config_with_cache()?;
+            commands::transaction::run(config, command, no_cache).await?;
+        }
     }
 
     trace!("Command execution completed successfully");
+    Ok(())
+}
+
+async fn stage_operation(command: Commands) -> Result<()> {
+    let manager = crate::commands::get_transaction_manager()?;
+    let mut transaction = manager.load_pending()?.unwrap_or_else(Transaction::new);
+
+    let op = match command {
+        Commands::Indexes { command } => match command {
+            commands::indexes::IndexesCommand::Create {
+                name,
+                max_data_size_mb,
+                max_hot_buckets,
+                max_warm_db_count,
+                frozen_time_period_secs,
+                home_path,
+                cold_db_path,
+                thawed_path,
+                cold_to_frozen_dir,
+            } => TransactionOperation::CreateIndex(splunk_client::CreateIndexParams {
+                name,
+                max_data_size_mb,
+                max_hot_buckets,
+                max_warm_db_count,
+                frozen_time_period_in_secs: frozen_time_period_secs,
+                home_path,
+                cold_db_path,
+                thawed_path,
+                cold_to_frozen_dir,
+            }),
+            commands::indexes::IndexesCommand::Modify {
+                name,
+                max_data_size_mb,
+                max_hot_buckets,
+                max_warm_db_count,
+                frozen_time_period_secs,
+                home_path,
+                cold_db_path,
+                thawed_path,
+                cold_to_frozen_dir,
+            } => TransactionOperation::ModifyIndex(
+                name,
+                splunk_client::ModifyIndexParams {
+                    max_data_size_mb,
+                    max_hot_buckets,
+                    max_warm_db_count,
+                    frozen_time_period_in_secs: frozen_time_period_secs,
+                    home_path,
+                    cold_db_path,
+                    thawed_path,
+                    cold_to_frozen_dir,
+                },
+            ),
+            commands::indexes::IndexesCommand::Delete { name, .. } => {
+                TransactionOperation::DeleteIndex(name)
+            }
+            _ => anyhow::bail!("Operation not supported in transactions"),
+        },
+        Commands::Users { command } => match command {
+            commands::users::UsersCommand::Create {
+                name,
+                password,
+                roles,
+                realname,
+                email,
+                default_app,
+            } => {
+                let password = match password {
+                    Some(p) => secrecy::SecretString::from(p),
+                    None => {
+                        print!("Enter password for user '{}': ", name);
+                        use std::io::Write;
+                        std::io::stdout().flush()?;
+                        let mut input = String::new();
+                        std::io::stdin().read_line(&mut input)?;
+                        secrecy::SecretString::from(input.trim().to_string())
+                    }
+                };
+                TransactionOperation::CreateUser(splunk_client::CreateUserParams {
+                    name,
+                    password,
+                    roles,
+                    realname,
+                    email,
+                    default_app,
+                })
+            }
+            commands::users::UsersCommand::Modify {
+                name,
+                password,
+                roles,
+                realname,
+                email,
+                default_app,
+            } => TransactionOperation::ModifyUser(
+                name,
+                splunk_client::ModifyUserParams {
+                    password: password.map(secrecy::SecretString::from),
+                    roles,
+                    realname,
+                    email,
+                    default_app,
+                },
+            ),
+            commands::users::UsersCommand::Delete { name, .. } => {
+                TransactionOperation::DeleteUser(name)
+            }
+            _ => anyhow::bail!("Operation not supported in transactions"),
+        },
+        Commands::Roles { command } => match command {
+            commands::roles::RolesCommand::Create {
+                name,
+                capabilities,
+                search_indexes,
+                search_filter,
+                imported_roles,
+                default_app,
+            } => TransactionOperation::CreateRole(splunk_client::CreateRoleParams {
+                name,
+                capabilities,
+                search_indexes,
+                search_filter,
+                imported_roles,
+                default_app,
+            }),
+            commands::roles::RolesCommand::Update {
+                name,
+                capabilities,
+                search_indexes,
+                search_filter,
+                imported_roles,
+                default_app,
+            } => TransactionOperation::ModifyRole(
+                name,
+                splunk_client::ModifyRoleParams {
+                    capabilities,
+                    search_indexes,
+                    search_filter,
+                    imported_roles,
+                    default_app,
+                },
+            ),
+            commands::roles::RolesCommand::Delete { name, .. } => {
+                TransactionOperation::DeleteRole(name)
+            }
+            _ => anyhow::bail!("Operation not supported in transactions"),
+        },
+        Commands::Macros { command } => match command {
+            commands::macros::MacrosCommand::Create {
+                name,
+                definition,
+                args,
+                description,
+                disabled,
+                iseval,
+                validation,
+                errormsg,
+            } => TransactionOperation::CreateMacro(splunk_client::MacroCreateParams {
+                name,
+                definition,
+                args,
+                description,
+                disabled,
+                iseval,
+                validation,
+                errormsg,
+            }),
+            commands::macros::MacrosCommand::Update {
+                name,
+                definition,
+                args,
+                description,
+                disable,
+                enable,
+                iseval,
+                no_iseval,
+                validation,
+                errormsg,
+            } => {
+                let disabled = if disable {
+                    Some(true)
+                } else if enable {
+                    Some(false)
+                } else {
+                    None
+                };
+                let iseval_flag = if iseval {
+                    Some(true)
+                } else if no_iseval {
+                    Some(false)
+                } else {
+                    None
+                };
+                TransactionOperation::UpdateMacro(
+                    name,
+                    splunk_client::MacroUpdateParams {
+                        definition,
+                        args,
+                        description,
+                        disabled,
+                        iseval: iseval_flag,
+                        validation,
+                        errormsg,
+                    },
+                )
+            }
+            commands::macros::MacrosCommand::Delete { name, .. } => {
+                TransactionOperation::DeleteMacro(name)
+            }
+            _ => anyhow::bail!("Operation not supported in transactions"),
+        },
+        Commands::SavedSearches { command } => match command {
+            commands::saved_searches::SavedSearchesCommand::Create {
+                name,
+                search,
+                description,
+                disabled,
+            } => TransactionOperation::CreateSavedSearch(
+                splunk_client::models::SavedSearchCreateParams {
+                    name,
+                    search,
+                    description,
+                    disabled,
+                },
+            ),
+            commands::saved_searches::SavedSearchesCommand::Edit {
+                name,
+                search,
+                description,
+                disabled,
+            } => TransactionOperation::UpdateSavedSearch(
+                name,
+                splunk_client::models::SavedSearchUpdateParams {
+                    search,
+                    description,
+                    disabled,
+                },
+            ),
+            commands::saved_searches::SavedSearchesCommand::Delete { name, .. } => {
+                TransactionOperation::DeleteSavedSearch(name)
+            }
+            _ => anyhow::bail!("Operation not supported in transactions"),
+        },
+        _ => anyhow::bail!("Operation not supported in transactions"),
+    };
+
+    transaction.add_operation(op);
+    manager.save_pending(&transaction)?;
+
+    println!(
+        "Staged operation in transaction {}. Total staged: {}",
+        transaction.id,
+        transaction.operations.len()
+    );
     Ok(())
 }

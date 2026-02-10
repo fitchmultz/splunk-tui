@@ -303,7 +303,10 @@ impl SplunkClient {
     }
 
     /// Create a saved search.
-    pub async fn create_saved_search(&self, name: &str, search: &str) -> Result<()> {
+    pub async fn create_saved_search(
+        &self,
+        params: crate::models::SavedSearchCreateParams,
+    ) -> Result<()> {
         crate::retry_call!(
             self,
             __token,
@@ -311,8 +314,8 @@ impl SplunkClient {
                 &self.http,
                 &self.base_url,
                 &__token,
-                name,
-                search,
+                &params.name,
+                &params.search,
                 self.max_retries,
                 self.metrics.as_ref(),
                 self.circuit_breaker.as_deref(),
@@ -369,23 +372,19 @@ impl SplunkClient {
     ///
     /// # Arguments
     /// * `name` - The name of the saved search to update
-    /// * `search` - Optional new search query (SPL)
-    /// * `description` - Optional new description
-    /// * `disabled` - Optional enable/disable flag
+    /// * `params` - Update parameters
     ///
     /// # Returns
     /// Ok(()) on success, or `ClientError::NotFound` if the saved search doesn't exist.
     pub async fn update_saved_search(
         &self,
         name: &str,
-        search: Option<&str>,
-        description: Option<&str>,
-        disabled: Option<bool>,
+        params: crate::models::SavedSearchUpdateParams,
     ) -> Result<()> {
-        let params = endpoints::SavedSearchUpdateParams {
-            search,
-            description,
-            disabled,
+        let endpoint_params = endpoints::SavedSearchUpdateParams {
+            search: params.search.as_deref(),
+            description: params.description.as_deref(),
+            disabled: params.disabled,
         };
         crate::retry_call!(
             self,
@@ -395,7 +394,7 @@ impl SplunkClient {
                 &self.base_url,
                 &__token,
                 name,
-                &params,
+                &endpoint_params,
                 self.max_retries,
                 self.metrics.as_ref(),
                 self.circuit_breaker.as_deref(),

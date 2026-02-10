@@ -445,7 +445,11 @@ fn test_live_cli_saved_searches_info_and_run_json() {
         .expect("Failed to build tokio runtime");
     rt.block_on(async {
         client
-            .create_saved_search(&name, search)
+            .create_saved_search(splunk_client::models::SavedSearchCreateParams {
+                name: name.clone(),
+                search: search.to_string(),
+                ..Default::default()
+            })
             .await
             .expect("Failed to create saved search");
     });

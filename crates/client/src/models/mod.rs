@@ -75,9 +75,12 @@ pub use license::{
 };
 pub use logs::{HealthCheckOutput, LogEntry, LogLevel, LogParsingError, LogParsingHealth};
 pub use lookups::{LookupTable, LookupTableEntry, LookupTableListResponse, UploadLookupParams};
-pub use macros::{Macro, MacroEntry, MacroListResponse};
+pub use macros::{Macro, MacroCreateParams, MacroEntry, MacroListResponse, MacroUpdateParams};
 pub use roles::{CreateRoleParams, ModifyRoleParams, Role, RoleEntry, RoleListResponse};
-pub use saved_searches::{SavedSearch, SavedSearchEntry, SavedSearchListResponse};
+pub use saved_searches::{
+    SavedSearch, SavedSearchCreateParams, SavedSearchEntry, SavedSearchListResponse,
+    SavedSearchUpdateParams,
+};
 pub use search_peers::{SearchPeer, SearchPeerEntry, SearchPeerListResponse, SearchPeerStatus};
 pub use server::{
     FeatureStatus, HealthFeature, HealthStatus, ServerInfo, ServerMode, SplunkHealth,

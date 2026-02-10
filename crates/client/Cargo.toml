@@ -16,6 +16,7 @@ splunk-config = { path = "../config" }
 
 # Async Runtime
 tokio = { workspace = true }
+directories = { workspace = true }
 
 # HTTP
 reqwest = { workspace = true, features = ["multipart"] }
@@ -30,6 +31,10 @@ anyhow = { workspace = true }
 
 # Secrets
 secrecy = { workspace = true }
+uuid = { workspace = true }
+
+# Time
+chrono = { workspace = true }
 
 # Logging
 tracing = { workspace = true }

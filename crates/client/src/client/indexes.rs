@@ -38,6 +38,24 @@ impl SplunkClient {
         )
     }
 
+    /// Get a specific index by name.
+    pub async fn get_index(&self, name: &str) -> Result<Index> {
+        crate::retry_call!(
+            self,
+            __token,
+            endpoints::get_index(
+                &self.http,
+                &self.base_url,
+                &__token,
+                name,
+                self.max_retries,
+                self.metrics.as_ref(),
+                self.circuit_breaker.as_deref(),
+            )
+            .await
+        )
+    }
+
     /// Create a new index with the specified parameters.
     pub async fn create_index(&self, params: &CreateIndexParams) -> Result<Index> {
         crate::retry_call!(

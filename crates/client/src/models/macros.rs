@@ -51,3 +51,43 @@ pub struct MacroListResponse {
     #[serde(default)]
     pub entry: Vec<MacroEntry>,
 }
+
+/// Parameters for creating a new search macro.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MacroCreateParams {
+    /// The name of the macro (required).
+    pub name: String,
+    /// The SPL snippet or eval expression (required).
+    pub definition: String,
+    /// Optional comma-separated argument names.
+    pub args: Option<String>,
+    /// Optional description.
+    pub description: Option<String>,
+    /// Whether the macro is disabled.
+    pub disabled: bool,
+    /// Whether the macro is an eval expression.
+    pub iseval: bool,
+    /// Optional validation expression.
+    pub validation: Option<String>,
+    /// Optional error message for validation failure.
+    pub errormsg: Option<String>,
+}
+
+/// Parameters for updating an existing search macro.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MacroUpdateParams {
+    /// Optional new definition.
+    pub definition: Option<String>,
+    /// Optional new arguments.
+    pub args: Option<String>,
+    /// Optional new description.
+    pub description: Option<String>,
+    /// Optional enable/disable flag.
+    pub disabled: Option<bool>,
+    /// Optional eval expression flag.
+    pub iseval: Option<bool>,
+    /// Optional new validation expression.
+    pub validation: Option<String>,
+    /// Optional new error message.
+    pub errormsg: Option<String>,
+}

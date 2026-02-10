@@ -118,6 +118,9 @@ impl ErrorDetails {
             splunk_client::ClientError::InvalidRequest(msg) => {
                 details.summary = format!("Invalid request: {}", msg);
             }
+            splunk_client::ClientError::ValidationError(msg) => {
+                details.summary = format!("Validation error: {}", msg);
+            }
             splunk_client::ClientError::CircuitBreakerOpen(endpoint) => {
                 details.summary = format!("Circuit breaker open for endpoint: {}", endpoint);
                 details

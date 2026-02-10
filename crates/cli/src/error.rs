@@ -115,6 +115,7 @@ impl From<&ClientError> for ExitCode {
 
             // Validation errors (exit code 5)
             ClientError::InvalidRequest(_) => ExitCode::ValidationError,
+            ClientError::ValidationError(_) => ExitCode::ValidationError,
             ClientError::InvalidResponse(_) => ExitCode::ValidationError,
             ClientError::ApiError { status: 400, .. } => ExitCode::ValidationError,
 
