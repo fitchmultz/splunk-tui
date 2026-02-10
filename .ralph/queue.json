@@ -1,4 +1,584 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "RQ-0453",
+      "status": "todo",
+      "title": "Ship actionable auth recovery panel in TUI",
+      "description": "Opportunity type: reliability + UX improvement. Why it matters: auth failures block every core workflow and currently force guesswork, increasing time-to-recovery and abandonment. Proposed approach (minimal slice): add a dedicated in-app auth recovery panel triggered from auth-related toasts/errors that shows cause classification (invalid creds, expired session, missing auth, TLS/cert), exact next steps, and safe one-key actions (retry, open profile editor, show env/profile path guidance). Incremental path: start with read-only remediation copy + retry action, then add direct navigation actions into profile/settings forms. Risks/mitigations: avoid secret leakage by reusing redaction paths and never echo credential values. Acceptance criteria: auth failures always include actionable remediation and at least one in-app recovery action without leaving the TUI.",
+      "priority": "critical",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "auth",
+        "reliability"
+      ],
+      "scope": [
+        "crates/tui/src/error_details.rs",
+        "crates/tui/src/ui/error_details.rs",
+        "crates/tui/src/ui/toast.rs",
+        "crates/tui/src/app/popups/mod.rs",
+        "crates/tui/tests/app_error_tests.rs",
+        "crates/tui/tests/snapshot_popups_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/error_details.rs:197-216 maps search auth failures to generic messages (\"Authentication failed\", \"Session expired\")",
+        "crates/tui/src/app/actions/data_loading.rs:842-855 uses inconsistent generic load-failure toasts for auth failures across screens",
+        "crates/tui/src/ui/toast.rs:283-289 only provides generic \"Press 'e' for details\" hint with no remediation guidance",
+        "crates/tui/src/runtime/side_effects/profiles.rs:152-181 returns \"Profile has no authentication configured\" without in-app fix path"
+      ],
+      "plan": [
+        "Define an auth-specific UX model (error class, user-facing diagnosis, recommended actions) reused by search and non-search handlers",
+        "Add an Auth Recovery popup/view reachable from error toast and error details, with context-aware actions for retry and profile/settings navigation",
+        "Wire action handlers so remediation actions execute side effects safely and keep focus predictable",
+        "Add snapshot and integration tests for each auth class and recovery action path",
+        "Update docs/usage.md and docs/user-guide.md with the new auth recovery flow",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming auth error tests/snapshots pass with remediation hints visible"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0454",
+      "status": "todo",
+      "title": "Introduce pre-auth bootstrap mode so onboarding is reachable",
+      "description": "Opportunity type: feature gap + UX improvement. Why it matters: first-run users with missing/invalid credentials cannot enter the TUI at all, so onboarding and recovery UX are bypassed. Proposed approach (minimal slice): split startup into a bootstrap mode that can render onboarding/profile setup before attempting authenticated client initialization. Incremental path: start by allowing read-only bootstrap shell + profile creation; later add guided connection check and one-click launch into main app once auth succeeds. Risks/mitigations: startup complexity and state divergence, mitigated by a single startup state machine with explicit transitions and tests. Acceptance criteria: missing-auth startup opens bootstrap UI instead of exiting and enables users to resolve auth from inside the TUI.",
+      "priority": "critical",
+      "tags": [
+        "innovation",
+        "tui",
+        "onboarding",
+        "auth",
+        "feature-gap"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/runtime/client.rs",
+        "crates/tui/src/runtime/config.rs",
+        "crates/tui/src/onboarding/mod.rs",
+        "crates/tui/tests/first_run_tests.rs",
+        "crates/tui/tests/tutorial_app_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:117-133 creates/authenticates client before tutorial first-run checks",
+        "crates/tui/src/main.rs:260-322 first-run tutorial gating executes only after successful startup",
+        "crates/config/src/loader/error.rs:31-35 and crates/tui/src/runtime/config.rs:116-119 surface missing-auth as startup failure",
+        "crates/tui/tests/first_run_tests.rs:10-127 only validates first-run detection logic, not startup-to-onboarding flow when auth is missing"
+      ],
+      "plan": [
+        "Define startup phases (bootstrap, auth-ready, main-run) and implement explicit transition guards",
+        "Allow bootstrap rendering without authenticated client and route users to profile/auth setup flow",
+        "Trigger client initialization only after setup completion or explicit connect action",
+        "Add integration tests for missing-auth startup and successful transition into normal run mode",
+        "Document bootstrap mode behavior and recovery flow in README.md and docs/user-guide.md",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming missing-auth path enters bootstrap UI with passing new tests"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0455",
+      "status": "todo",
+      "title": "Unify auth and TLS error classification across all TUI flows",
+      "description": "Opportunity type: reliability + modernization. Why it matters: inconsistent error wording across search, data loading, and profile switching causes users to misdiagnose failures and increases support burden. Proposed approach (minimal slice): create one shared classifier/formatter for auth/TLS/session errors and route all TUI action handlers through it. Incremental path: first centralize formatting + request-id/context rendering; then standardize remediation hints and follow-up actions. Risks/mitigations: behavior change in error strings can break snapshots; mitigate with explicit golden updates and migration notes. Acceptance criteria: equivalent auth/TLS failures render consistent title, diagnosis, and action hints regardless of source screen.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "auth",
+        "tls",
+        "modernization",
+        "reliability"
+      ],
+      "scope": [
+        "crates/tui/src/error_details.rs",
+        "crates/tui/src/app/actions/search.rs",
+        "crates/tui/src/app/actions/data_loading.rs",
+        "crates/tui/src/app/actions/profiles.rs",
+        "crates/client/src/error.rs",
+        "crates/client/src/endpoints/request.rs",
+        "crates/tui/tests/app_error_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/error_details.rs:197-216 returns short auth strings for search while other paths expose verbose raw client errors",
+        "crates/tui/src/app/actions/data_loading.rs:842-855 formats \"Failed to load {resource}: {error}\" directly from ClientError",
+        "crates/tui/src/app/actions/profiles.rs:31-34 shows \"Failed to switch profile\" without structured error details",
+        "crates/client/src/error.rs:49-51 defines ClientError::TlsError but request path primarily emits HttpError (see crates/client/src/endpoints/request.rs:458-470), reducing TLS-specific UX"
+      ],
+      "plan": [
+        "Design a shared `UserFacingFailure` mapper that normalizes auth/session/TLS/http categories and metadata",
+        "Refactor search, data loading, and profile action handlers to consume the shared mapper",
+        "Add TLS-specific detection heuristics so certificate failures are diagnosed explicitly",
+        "Update snapshots/tests to enforce consistent messaging across flows",
+        "Add a short troubleshooting section in docs/user-guide.md mirroring the unified categories",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming cross-flow auth/TLS error tests pass with consistent strings"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0456",
+      "status": "todo",
+      "title": "Generate tutorial and docs from keymap to eliminate guidance drift",
+      "description": "Opportunity type: UX improvement + modernization. Why it matters: onboarding currently teaches keys that do not match runtime behavior, which immediately erodes trust and slows adoption. Proposed approach (minimal slice): replace hard-coded tutorial keybinding prose with generated strings sourced from the same keymap/help catalog used by runtime and docs generation. Incremental path: ship global navigation section first, then migrate per-screen tutorial/help snippets and docs references. Risks/mitigations: generated text can become verbose; mitigate with curated label aliases and snapshot tests. Acceptance criteria: tutorial, help popup, and docs show the same effective keybindings (including overrides) with zero contradictory instructions.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "docs",
+        "modernization"
+      ],
+      "scope": [
+        "crates/tui/src/onboarding/steps.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/input/docs.rs",
+        "docs/usage.md",
+        "docs/user-guide.md",
+        "README.md",
+        "make generate",
+        "make lint-docs",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/onboarding/steps.rs:148-151 states screen navigation as \"←/→ or h/l\" and Tab as element cycling",
+        "crates/tui/src/input/keymap/bindings/global_search.rs:72-119 defines Tab/Shift+Tab for screen navigation and Ctrl+Tab for focus navigation",
+        "crates/tui/src/ui/screens/settings.rs:200-204 advertises tutorial replay with '?' but settings keybinding docs omit it (README.md:492-503, docs/usage.md:1607-1617, docs/user-guide.md:412-422)",
+        "crates/tui/src/input/docs.rs:54-60 already provides generated docs path, but tutorial prose is still hard-coded separately"
+      ],
+      "plan": [
+        "Create a tutorial-keybinding rendering helper backed by keymap metadata and effective override labels",
+        "Replace hard-coded navigation text in onboarding steps with generated snippets",
+        "Regenerate docs sections and add drift tests that compare tutorial/help/docs keybinding claims",
+        "Update settings/help docs to include tutorial replay behavior",
+        "Add regression snapshots for tutorial content across default and overridden keymaps",
+        "Verify by running `make generate && make lint-docs && make ci SKIP_LIVE_TESTS=1` and confirming no keybinding drift failures"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0457",
+      "status": "todo",
+      "title": "Add explicit navigation state model and always-visible mode cues",
+      "description": "Opportunity type: UX improvement. Why it matters: users cannot predict whether Tab changes screen or focus, causing accidental context switches and reduced task throughput. Proposed approach (minimal slice): add explicit mode badges (screen cycle mode vs local focus mode), current-screen breadcrumb, and dynamic footer hints that reflect the active mode and next action outcome. Incremental path: ship search-mode cueing first, then extend to all screens with focusable components. Risks/mitigations: footer crowding in narrow terminals; mitigate with responsive hint prioritization and truncation tests. Acceptance criteria: users can always infer what Tab/Shift+Tab/Esc will do from on-screen cues without opening help.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "navigation"
+      ],
+      "scope": [
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/app/input/search.rs",
+        "crates/tui/tests/snapshot_footer_tests.rs",
+        "crates/tui/tests/app_navigation_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/app/input/search.rs:81-93 intercepts Tab in QueryFocused mode instead of screen navigation",
+        "crates/tui/src/app/render.rs:792-820 contains special-case footer logic for Search mode, indicating implicit hidden behavior",
+        "crates/tui/src/input/keymap/mod.rs:319-321 notes footer hints do not distinguish QueryFocused vs ResultsFocused behavior",
+        "crates/tui/tests/app_navigation_tests.rs:203-225 verifies divergent Tab behavior on Search screen"
+      ],
+      "plan": [
+        "Define explicit navigation state primitives exposed to rendering (active mode, Tab behavior, fallback key)",
+        "Render compact mode indicator and breadcrumb in header/footer with per-mode key outcomes",
+        "Update keybinding hint selection to be mode-aware and terminal-width aware",
+        "Add snapshot coverage for narrow/wide layouts and all search focus modes",
+        "Update docs/user-guide.md navigation basics with the new explicit mode model",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming navigation snapshots and tests pass for each mode"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0458",
+      "status": "todo",
+      "title": "Make screen cycling deterministic by decoupling Search focus toggle from Tab",
+      "description": "Opportunity type: UX improvement + strategic refactor. Why it matters: overloading Tab for both global navigation and local Search focus switching is the highest recurring navigation confusion source. Proposed approach (minimal slice): introduce a dedicated Search focus-toggle shortcut (and footer cue), then make Tab/Shift+Tab consistently switch screens across all contexts. Incremental path: first support both bindings with deprecation hint, then remove Tab focus toggle after migration window. Risks/mitigations: user muscle-memory disruption; mitigate via inline migration notice, docs updates, and keybind override compatibility. Acceptance criteria: Tab always changes screen, Search focus toggles via explicit key, and help/tutorial/docs reflect the same behavior.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "navigation",
+        "refactor",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/search.rs",
+        "crates/tui/src/input/keymap/bindings/global_search.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/tests/app_navigation_tests.rs",
+        "crates/tui/tests/app_input_tests.rs",
+        "docs/usage.md",
+        "docs/user-guide.md",
+        "README.md",
+        "make generate",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/tests/app_navigation_tests.rs:255-266 documents Tab behavior diverging on Search in QueryFocused mode",
+        "README.md:294-296 and docs/user-guide.md:214-216 explain special Search Tab behavior, increasing cognitive branch cost",
+        "crates/tui/src/input/keymap/bindings/global_search.rs:72-95 declares Tab as global screen navigation while Search input overrides it",
+        "crates/tui/src/app/input/search.rs:81-93 consumes Tab for focus switch in QueryFocused mode"
+      ],
+      "plan": [
+        "Add a dedicated Search focus toggle keybinding and expose it in keymap/help/docs",
+        "Change Search QueryFocused input handling so Tab/Shift+Tab dispatch screen navigation actions",
+        "Provide transition messaging (toast/help note) and maintain override support during migration",
+        "Update navigation and input regression tests plus snapshots for new deterministic Tab semantics",
+        "Regenerate keybinding docs and onboarding references",
+        "Verify by running `make generate && make ci SKIP_LIVE_TESTS=1` and confirming Tab consistently navigates screens in all tests"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0459",
+      "status": "todo",
+      "title": "Implement in-TUI profile creation/edit flow",
+      "description": "Opportunity type: feature gap. Why it matters: onboarding currently instructs users to create profiles in-TUI but no creation path exists, forcing context switch to CLI and causing setup failure for new users. Proposed approach (minimal slice): add profile create/edit popup forms in Settings with validation for base URL and auth method, writing to the same profile store. Incremental path: create-only first, then edit/delete and optional secure field masking enhancements. Risks/mitigations: config corruption risk mitigated with transactional writes and rollback on validation failure. Acceptance criteria: a first-time user can create a profile, authenticate, and enter core screens without leaving TUI.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "feature-gap",
+        "profiles",
+        "onboarding"
+      ],
+      "scope": [
+        "crates/tui/src/app/input/settings.rs",
+        "crates/tui/src/ui/screens/settings.rs",
+        "crates/tui/src/app/popups/profile.rs",
+        "crates/tui/src/runtime/side_effects/profiles.rs",
+        "crates/config/src/profiles.rs",
+        "crates/tui/tests/profile_switch_tests.rs",
+        "crates/tui/tests/tutorial_app_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/onboarding/steps.rs:78-91 tells users to press 'p' to create a profile",
+        "crates/tui/src/runtime/side_effects/profiles.rs:36-55 shows toast \"No profiles configured. Add profiles using splunk-cli.\"",
+        "crates/tui/src/ui/screens/settings.rs:191-199 mentions profile editing but no profile creation UI is presented",
+        "crates/tui/src/app/input/settings.rs:74-97 handles editing current profile fields only"
+      ],
+      "plan": [
+        "Add profile create/edit popup models with field validation and auth-mode selection",
+        "Persist profile changes through centralized config/profile APIs with atomic save semantics",
+        "Wire onboarding and settings actions to open profile create flow when none exist",
+        "Add integration tests for create/edit success and failure validation paths",
+        "Update onboarding/tutorial copy and user-guide profile section to document the new flow",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming profile workflow tests pass with no CLI dependency"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0460",
+      "status": "todo",
+      "title": "Add real connection diagnostic action to onboarding and settings",
+      "description": "Opportunity type: feature gap + reliability. Why it matters: tutorial asks users to test connection but there is no executable connection-test action, leaving users unable to validate fixes quickly. Proposed approach (minimal slice): implement a non-destructive connection diagnostics action (auth check + TLS reachability + Splunk version endpoint) accessible from tutorial and settings. Incremental path: start with one-shot diagnostics, then add persistent report export/copy. Risks/mitigations: noisy retries can mask failures; mitigate with single controlled probe and clear pass/fail breakdown. Acceptance criteria: users can run a connection test from inside TUI and receive actionable pass/fail diagnostics.",
+      "priority": "high",
+      "tags": [
+        "innovation",
+        "tui",
+        "feature-gap",
+        "reliability",
+        "onboarding"
+      ],
+      "scope": [
+        "crates/tui/src/app/popups/tutorial.rs",
+        "crates/tui/src/onboarding/steps.rs",
+        "crates/tui/src/app/input/settings.rs",
+        "crates/tui/src/runtime/side_effects/health.rs",
+        "crates/tui/src/runtime/side_effects/profiles.rs",
+        "crates/tui/tests/tutorial_app_tests.rs",
+        "crates/tui/tests/side_effects_connection_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/onboarding/steps.rs:94-115 includes a Connection Test tutorial step",
+        "crates/tui/src/app/popups/tutorial.rs:48-52 marks ConnectionTest as display-only and returns no side effect action",
+        "crates/tui/src/main.rs:324-360 already has health polling infrastructure that can back a diagnostics command",
+        "docs/user-guide.md:572-596 provides troubleshooting guidance but no in-app test flow"
+      ],
+      "plan": [
+        "Define a `RunConnectionDiagnostics` action and side effect returning structured checks (reachability, auth, TLS, endpoint metadata)",
+        "Bind diagnostics trigger in tutorial connection step and settings screen",
+        "Render diagnostic result panel with remediation hints and copy-to-clipboard summary",
+        "Add side-effect and popup regression tests for success/failure branches",
+        "Document the diagnostics workflow in README.md and docs/user-guide.md",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming diagnostics tests pass with visible structured outcomes"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0461",
+      "status": "todo",
+      "title": "Add progressive onboarding checklist with session-aware hints",
+      "description": "Opportunity type: UX improvement. Why it matters: one-time tutorial is easy to skip/forget and does not adapt to user progress, leaving new users without guardrails. Proposed approach (minimal slice): add a dismissible checklist widget for first N sessions (profile ready, connection verified, first search run, first navigation cycle, help opened) with contextual nudges. Incremental path: start with static checklist + completion persistence, then add behavior-triggered hints and opt-out controls. Risks/mitigations: hint fatigue; mitigate via strict rate limiting and per-item dismissal. Acceptance criteria: first-time users receive contextual cues until critical setup tasks are completed, then checklist auto-hides.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "onboarding",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/src/onboarding/state.rs",
+        "crates/tui/src/app/render.rs",
+        "crates/tui/src/app/state.rs",
+        "crates/tui/src/app/actions/tutorial.rs",
+        "crates/tui/tests/tutorial_app_tests.rs",
+        "crates/tui/tests/snapshot_screens_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/onboarding/state.rs and crates/tui/src/onboarding/tests/mod.rs focus on linear tutorial state but not ongoing contextual coaching",
+        "crates/tui/src/main.rs:260-322 only gates a first-run popup decision and does not support multi-session progressive guidance",
+        "crates/tui/src/ui/screens/settings.rs:200-204 exposes manual tutorial replay, implying discoverability gap after initial run",
+        "crates/tui/tests/tutorial_app_tests.rs covers popup flow but not persistent onboarding progress UI"
+      ],
+      "plan": [
+        "Define checklist milestone model persisted in app state and tied to observable user actions",
+        "Render compact onboarding checklist in key screens for users below completion threshold",
+        "Add rate-limited contextual hint toasts tied to unresolved milestones",
+        "Add tests for milestone progression, persistence, dismissal, and auto-hide behavior",
+        "Document checklist behavior and how to disable/replay onboarding",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming checklist state transitions and snapshots pass"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0462",
+      "status": "todo",
+      "title": "Redesign help popup into contextual task-oriented command guide",
+      "description": "Opportunity type: UX improvement. Why it matters: current help is a long static key list, which increases cognitive load and slows task completion during incident handling. Proposed approach (minimal slice): add contextual help sections prioritized by current screen and mode (top tasks first, secondary keys collapsed), with quick filter and override-aware key labels. Incremental path: ship mode-aware prioritized sections first, then add search/filter and jump-to-action hooks. Risks/mitigations: feature sprawl; mitigate by reusing existing keymap metadata and keeping initial UI read-only. Acceptance criteria: help opens with top 5 relevant actions for current context and users can find critical actions in under one page of content.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "ux",
+        "help"
+      ],
+      "scope": [
+        "crates/tui/src/input/help.rs",
+        "crates/tui/src/input/keymap/mod.rs",
+        "crates/tui/src/ui/popup/render.rs",
+        "crates/tui/src/app/popups/mod.rs",
+        "crates/tui/tests/snapshot_popups_tests.rs",
+        "crates/tui/tests/keybind_override_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/input/help.rs:17-45 renders a full catalog-like list without context prioritization",
+        "crates/tui/src/ui/popup/render.rs:109-147 provides generic scrollable text help, implying manual scanning burden",
+        "crates/tui/tests/app_popup_tests.rs:168-229 validates open/close behavior but not contextual relevance",
+        "crates/tui/src/input/keymap/mod.rs:315-321 already computes prioritized footer hints that can seed contextual help ordering"
+      ],
+      "plan": [
+        "Refactor help generation to produce screen/mode-specific prioritized sections",
+        "Render concise task-oriented help layout with collapsed secondary bindings",
+        "Integrate effective override labels so displayed keys match user customizations",
+        "Add popup snapshots for multiple screens/modes and key override scenarios",
+        "Update docs/user-guide.md help section with new contextual behavior",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming help snapshots/tests pass with context-specific ordering"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0463",
+      "status": "todo",
+      "title": "Instrument UX telemetry for auth recovery and navigation friction",
+      "description": "Opportunity type: reliability + performance/cost insight. Why it matters: without UX telemetry, improvements cannot be prioritized by real friction points and regressions remain invisible. Proposed approach (minimal slice): add privacy-safe counters/histograms for auth failure classes, recovery-action success, help opens by screen/mode, and navigation reversal loops. Incremental path: start local metrics emission + logs, then add docs dashboard queries and SLO thresholds. Risks/mitigations: PII leakage and cardinality explosion; mitigate by strict label allowlist and no freeform error strings in metrics. Acceptance criteria: operators can quantify top UX failure modes and verify post-change reductions.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "telemetry",
+        "reliability",
+        "performance"
+      ],
+      "scope": [
+        "crates/tui/src/main.rs",
+        "crates/tui/src/runtime/side_effects/dispatcher.rs",
+        "crates/tui/src/app/actions/navigation.rs",
+        "crates/tui/src/app/actions/search.rs",
+        "docs/observability.md",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "crates/tui/src/main.rs:382-399 exports render duration and action queue depth but no UX outcome metrics",
+        "crates/tui/src/runtime/side_effects/dispatcher.rs:46-59 traces action duration without user-flow success/failure dimensions",
+        "crates/tui/tests inventory reports no validation for telemetry on UX transitions (onboarding/help/auth/navigation)",
+        "Current navigation/auth confusion issues lack measurable baselines, blocking impact-driven prioritization"
+      ],
+      "plan": [
+        "Define low-cardinality UX metric schema and event emission points for auth recovery and navigation confusion",
+        "Emit counters/histograms in action handlers and side-effect completions with redacted labels only",
+        "Add unit/integration tests validating metric emission for key UX transitions",
+        "Document metric names, labels, and sample dashboards in docs/observability.md",
+        "Set initial target thresholds (for example reduced repeated auth-failure loops) in docs",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming telemetry tests pass and docs include new metric definitions"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    },
+    {
+      "id": "RQ-0464",
+      "status": "todo",
+      "title": "Build dedicated UX regression suite for onboarding/help/auth/navigation",
+      "description": "Opportunity type: reliability + strategic refactor enabler. Why it matters: several critical UX surfaces currently lack regression tests, making high-impact UX changes risky and slow. Proposed approach (minimal slice): add focused snapshot/integration suite for tutorial rendering, first-run startup wiring, error-details popup, and mode-aware navigation cues. Incremental path: start with highest-risk missing snapshots, then add startup and telemetry assertions. Risks/mitigations: snapshot brittleness; mitigate with deterministic fixtures and stable formatting helpers. Acceptance criteria: every critical TUI guidance path has deterministic regression coverage that fails on behavior drift.",
+      "priority": "medium",
+      "tags": [
+        "innovation",
+        "tui",
+        "tests",
+        "reliability",
+        "ux"
+      ],
+      "scope": [
+        "crates/tui/tests/snapshot_popups_tests.rs",
+        "crates/tui/tests/snapshot_footer_tests.rs",
+        "crates/tui/tests/tutorial_app_tests.rs",
+        "crates/tui/tests/first_run_tests.rs",
+        "crates/tui/tests/app_error_tests.rs",
+        "crates/tui/tests/app_navigation_tests.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "Test audit found no tutorial wizard UI snapshots despite onboarding complexity (crates/tui/src/onboarding/steps.rs and tutorial popup rendering)",
+        "Test audit found no first-run startup integration test proving onboarding opens in real startup path (crates/tui/src/main.rs:260-322)",
+        "Test audit found no ErrorDetails popup snapshot coverage even though error details are central to remediation",
+        "Test audit found limited coverage for mode-specific help/nav rendering and keybind override interactions"
+      ],
+      "plan": [
+        "Create new UX regression test modules grouped by concept (tutorial, auth details, navigation cues)",
+        "Add deterministic snapshots for tutorial popup steps, error details popup, and mode-aware footer/help hints",
+        "Add integration tests for startup first-run wiring and navigation mode transitions",
+        "Add targeted assertions for keybind override impact on help/footer guidance",
+        "Document new UX regression suite in docs/testing.md",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming new UX regression tests are stable and passing"
+      ],
+      "notes": [],
+      "request": "innovation scan finding",
+      "created_at": "2026-02-10T16:29:08Z",
+      "updated_at": "2026-02-10T16:29:08Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-innovation"
+      }
+    }
+  ]
 }
