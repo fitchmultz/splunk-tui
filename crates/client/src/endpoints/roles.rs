@@ -3,6 +3,7 @@
 use reqwest::{Client, Url};
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::form_params;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -131,9 +132,13 @@ pub async fn modify_role(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Role> {
+    let encoded_role_name = encode_path_segment(role_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
-        .join(&format!("/services/authorization/roles/{}", role_name))
+        .join(&format!(
+            "/services/authorization/roles/{}",
+            encoded_role_name
+        ))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid role name: {}", e)))?;
 
     let mut form_params: Vec<(String, String)> =
@@ -155,7 +160,7 @@ pub async fn modify_role(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/authorization/roles/{}", role_name),
+        &format!("/services/authorization/roles/{}", encoded_role_name),
         "POST",
         metrics,
         circuit_breaker,
@@ -202,9 +207,13 @@ pub async fn delete_role(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
+    let encoded_role_name = encode_path_segment(role_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
-        .join(&format!("/services/authorization/roles/{}", role_name))
+        .join(&format!(
+            "/services/authorization/roles/{}",
+            encoded_role_name
+        ))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid role name: {}", e)))?;
 
     let builder = client
@@ -214,7 +223,7 @@ pub async fn delete_role(
     let _response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/authorization/roles/{}", role_name),
+        &format!("/services/authorization/roles/{}", encoded_role_name),
         "DELETE",
         metrics,
         circuit_breaker,

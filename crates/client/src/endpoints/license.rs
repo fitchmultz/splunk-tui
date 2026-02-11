@@ -18,6 +18,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::{form_params_str, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -336,7 +337,8 @@ pub async fn delete_license_pool(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let url = format!("{}/services/licenser/pools/{}", base_url, pool_name);
+    let encoded_pool_name = encode_path_segment(pool_name);
+    let url = format!("{}/services/licenser/pools/{}", base_url, encoded_pool_name);
 
     let builder = client
         .delete(&url)
@@ -370,7 +372,8 @@ pub async fn modify_license_pool(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicensePool> {
-    let url = format!("{}/services/licenser/pools/{}", base_url, pool_name);
+    let encoded_pool_name = encode_path_segment(pool_name);
+    let url = format!("{}/services/licenser/pools/{}", base_url, encoded_pool_name);
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
@@ -421,9 +424,10 @@ pub async fn activate_license(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicenseActivationResult> {
+    let encoded_license_name = encode_path_segment(license_name);
     let url = format!(
         "{}/services/licenser/licenses/{}/enable",
-        base_url, license_name
+        base_url, encoded_license_name
     );
 
     let builder = client
@@ -460,9 +464,10 @@ pub async fn deactivate_license(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<LicenseActivationResult> {
+    let encoded_license_name = encode_path_segment(license_name);
     let url = format!(
         "{}/services/licenser/licenses/{}/disable",
-        base_url, license_name
+        base_url, encoded_license_name
     );
 
     let builder = client

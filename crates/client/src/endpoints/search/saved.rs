@@ -17,6 +17,7 @@ use reqwest::Client;
 use tracing::debug;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::form_params_str;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -126,7 +127,8 @@ pub async fn delete_saved_search(
 ) -> Result<()> {
     debug!("Deleting saved search: {}", name);
 
-    let url = format!("{}/services/saved/searches/{}", base_url, name);
+    let encoded_name = encode_path_segment(name);
+    let url = format!("{}/services/saved/searches/{}", base_url, encoded_name);
 
     let builder = client
         .delete(&url)
@@ -172,7 +174,8 @@ pub async fn get_saved_search(
 ) -> Result<crate::models::SavedSearch> {
     debug!("Getting saved search: {}", name);
 
-    let url = format!("{}/services/saved/searches/{}", base_url, name);
+    let encoded_name = encode_path_segment(name);
+    let url = format!("{}/services/saved/searches/{}", base_url, encoded_name);
 
     let builder = client
         .get(&url)
@@ -256,7 +259,8 @@ pub async fn update_saved_search(
 ) -> Result<()> {
     debug!("Updating saved search: {}", name);
 
-    let url = format!("{}/services/saved/searches/{}", base_url, name);
+    let encoded_name = encode_path_segment(name);
+    let url = format!("{}/services/saved/searches/{}", base_url, encoded_name);
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 

@@ -26,8 +26,12 @@ pub mod search;
 mod search_peers;
 mod server;
 mod shc;
+mod url_encoding;
 mod users;
 mod workload;
+
+// Internal helper for percent-encoding URL path segments
+pub(crate) use url_encoding::encode_path_segment;
 
 // Re-export form parameter macros for use by endpoint modules
 pub use crate::{form_params, form_params_str};

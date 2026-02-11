@@ -4,6 +4,7 @@ use reqwest::Client;
 use reqwest::Url;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -86,9 +87,12 @@ pub async fn download_lookup_table(
 ) -> Result<String> {
     let ns_owner = owner.unwrap_or("-");
     let ns_app = app.unwrap_or("search");
+    let encoded_owner = encode_path_segment(ns_owner);
+    let encoded_app = encode_path_segment(ns_app);
+    let encoded_name = encode_path_segment(name);
     let url = format!(
         "{}/servicesNS/{}/{}/data/lookup-table-files/{}",
-        base_url, ns_owner, ns_app, name
+        base_url, encoded_owner, encoded_app, encoded_name
     );
 
     let query_params = vec![("output_mode".to_string(), "raw".to_string())];
@@ -145,9 +149,11 @@ pub async fn upload_lookup_table(
 ) -> Result<LookupTable> {
     let ns_owner = params.owner.as_deref().unwrap_or("-");
     let ns_app = params.app.as_deref().unwrap_or("search");
+    let encoded_owner = encode_path_segment(ns_owner);
+    let encoded_app = encode_path_segment(ns_app);
     let url = format!(
         "{}/servicesNS/{}/{}/data/lookup-table-files",
-        base_url, ns_owner, ns_app
+        base_url, encoded_owner, encoded_app
     );
 
     // Build multipart form
@@ -228,12 +234,15 @@ pub async fn delete_lookup_table(
 ) -> Result<()> {
     let ns_owner = owner.unwrap_or("-");
     let ns_app = app.unwrap_or("search");
+    let encoded_owner = encode_path_segment(ns_owner);
+    let encoded_app = encode_path_segment(ns_app);
+    let encoded_name = encode_path_segment(name);
 
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
         .join(&format!(
             "/servicesNS/{}/{}/data/lookup-table-files/{}",
-            ns_owner, ns_app, name
+            encoded_owner, encoded_app, encoded_name
         ))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid lookup name: {}", e)))?;
 

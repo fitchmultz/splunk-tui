@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::endpoints::{extract_entry_content, extract_entry_message};
 use crate::error::{ClientError, Result};
@@ -263,9 +264,10 @@ pub async fn remove_shc_member(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ShcManagementResponse> {
+    let encoded_member = encode_path_segment(&params.member);
     let url = format!(
         "{}/services/shcluster/captain/members/{}",
-        base_url, params.member
+        base_url, encoded_member
     );
 
     let builder = client
@@ -276,7 +278,7 @@ pub async fn remove_shc_member(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/shcluster/captain/members/{}", params.member),
+        &format!("/services/shcluster/captain/members/{}", encoded_member),
         "DELETE",
         metrics,
         circuit_breaker,

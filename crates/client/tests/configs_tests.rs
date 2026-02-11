@@ -136,8 +136,10 @@ async fn test_get_config_stanza() {
 
     let fixture = load_fixture("configs/get_config_stanza.json");
 
+    // Note: Colons in stanza names (like "source::...") are NOT encoded per RFC 3986
+    // as they are allowed in path segments and Splunk handles them correctly
     Mock::given(method("GET"))
-        .and(path("/services/configs/conf-props/source%3A%3A..."))
+        .and(path("/services/configs/conf-props/source::..."))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;

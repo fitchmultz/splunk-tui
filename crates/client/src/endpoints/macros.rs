@@ -12,6 +12,7 @@ use reqwest::Client;
 use tracing::debug;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::{form_params_str, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -159,7 +160,8 @@ pub async fn get_macro(
 ) -> Result<crate::models::Macro> {
     debug!("Getting macro: {}", name);
 
-    let url = format!("{}/services/admin/macros/{}", base_url, name);
+    let encoded_name = encode_path_segment(name);
+    let url = format!("{}/services/admin/macros/{}", base_url, encoded_name);
 
     let builder = client
         .get(&url)
@@ -278,7 +280,8 @@ pub async fn update_macro(
 ) -> Result<()> {
     debug!("Updating macro: {}", request.name);
 
-    let url = format!("{}/services/admin/macros/{}", base_url, request.name);
+    let encoded_name = encode_path_segment(request.name);
+    let url = format!("{}/services/admin/macros/{}", base_url, encoded_name);
 
     let mut form_params: Vec<(&str, String)> = Vec::new();
 
@@ -341,7 +344,8 @@ pub async fn delete_macro(
 ) -> Result<()> {
     debug!("Deleting macro: {}", name);
 
-    let url = format!("{}/services/admin/macros/{}", base_url, name);
+    let encoded_name = encode_path_segment(name);
+    let url = format!("{}/services/admin/macros/{}", base_url, encoded_name);
 
     let builder = client
         .delete(&url)

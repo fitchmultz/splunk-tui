@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::endpoints::{extract_entry_content, extract_entry_message};
 use crate::error::{ClientError, Result};
@@ -269,7 +270,11 @@ pub async fn decommission_peer(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ClusterPeer> {
-    let url = format!("{}/services/cluster/master/peers/{}", base_url, peer_name);
+    let encoded_peer_name = encode_path_segment(peer_name);
+    let url = format!(
+        "{}/services/cluster/master/peers/{}",
+        base_url, encoded_peer_name
+    );
 
     let form_params: Vec<(String, String)> = vec![
         ("decommission".to_string(), params.decommission.to_string()),
@@ -284,7 +289,7 @@ pub async fn decommission_peer(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/cluster/master/peers/{}", peer_name),
+        &format!("/services/cluster/master/peers/{}", encoded_peer_name),
         "POST",
         metrics,
         circuit_breaker,

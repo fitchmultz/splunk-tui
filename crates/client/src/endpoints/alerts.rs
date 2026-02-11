@@ -14,6 +14,7 @@ use reqwest::Client;
 use tracing::debug;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -89,7 +90,8 @@ pub async fn get_fired_alert(
 ) -> Result<FiredAlert> {
     debug!("Getting fired alert: {}", name);
 
-    let url = format!("{}/services/alerts/fired_alerts/{}", base_url, name);
+    let encoded_name = encode_path_segment(name);
+    let url = format!("{}/services/alerts/fired_alerts/{}", base_url, encoded_name);
 
     let builder = client
         .get(&url)

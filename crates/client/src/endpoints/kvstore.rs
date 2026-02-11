@@ -3,6 +3,7 @@
 use reqwest::{Client, Url};
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::{form_params, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -133,9 +134,11 @@ pub async fn list_collections(
 ) -> Result<Vec<KvStoreCollection>> {
     let app = app.unwrap_or("-");
     let owner = owner.unwrap_or("nobody");
+    let encoded_app = encode_path_segment(app);
+    let encoded_owner = encode_path_segment(owner);
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections",
-        base_url, owner, app
+        base_url, encoded_owner, encoded_app
     );
 
     let mut query_params: Vec<(String, String)> = vec![
@@ -155,7 +158,10 @@ pub async fn list_collections(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/servicesNS/{}/{}/storage/collections", owner, app),
+        &format!(
+            "/servicesNS/{}/{}/storage/collections",
+            encoded_owner, encoded_app
+        ),
         "GET",
         metrics,
         circuit_breaker,
@@ -184,9 +190,11 @@ pub async fn create_collection(
 ) -> Result<KvStoreCollection> {
     let app = params.app.as_deref().unwrap_or("search");
     let owner = params.owner.as_deref().unwrap_or("nobody");
+    let encoded_app = encode_path_segment(app);
+    let encoded_owner = encode_path_segment(owner);
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections",
-        base_url, owner, app
+        base_url, encoded_owner, encoded_app
     );
 
     let mut form_params: Vec<(String, String)> =
@@ -206,7 +214,10 @@ pub async fn create_collection(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/servicesNS/{}/{}/storage/collections", owner, app),
+        &format!(
+            "/servicesNS/{}/{}/storage/collections",
+            encoded_owner, encoded_app
+        ),
         "POST",
         metrics,
         circuit_breaker,
@@ -252,11 +263,14 @@ pub async fn modify_collection(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<KvStoreCollection> {
+    let encoded_owner = encode_path_segment(owner);
+    let encoded_app = encode_path_segment(app);
+    let encoded_collection_name = encode_path_segment(collection_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
         .join(&format!(
             "/servicesNS/{}/{}/storage/collections/{}",
-            owner, app, collection_name
+            encoded_owner, encoded_app, encoded_collection_name
         ))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid collection name: {}", e)))?;
 
@@ -279,7 +293,7 @@ pub async fn modify_collection(
         max_retries,
         &format!(
             "/servicesNS/{}/{}/storage/collections/{}",
-            owner, app, collection_name
+            encoded_owner, encoded_app, encoded_collection_name
         ),
         "POST",
         metrics,
@@ -329,11 +343,14 @@ pub async fn delete_collection(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
+    let encoded_owner = encode_path_segment(owner);
+    let encoded_app = encode_path_segment(app);
+    let encoded_collection_name = encode_path_segment(collection_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
         .join(&format!(
             "/servicesNS/{}/{}/storage/collections/{}",
-            owner, app, collection_name
+            encoded_owner, encoded_app, encoded_collection_name
         ))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid collection name: {}", e)))?;
 
@@ -346,7 +363,7 @@ pub async fn delete_collection(
         max_retries,
         &format!(
             "/servicesNS/{}/{}/storage/collections/{}",
-            owner, app, collection_name
+            encoded_owner, encoded_app, encoded_collection_name
         ),
         "DELETE",
         metrics,
@@ -373,9 +390,12 @@ pub async fn list_collection_records(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<KvStoreRecord>> {
+    let encoded_owner = encode_path_segment(owner);
+    let encoded_app = encode_path_segment(app);
+    let encoded_collection_name = encode_path_segment(collection_name);
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections/{}/data",
-        base_url, owner, app, collection_name
+        base_url, encoded_owner, encoded_app, encoded_collection_name
     );
 
     let mut query_params: Vec<(String, String)> = vec![
@@ -400,7 +420,7 @@ pub async fn list_collection_records(
         max_retries,
         &format!(
             "/servicesNS/{}/{}/storage/collections/{}/data",
-            owner, app, collection_name
+            encoded_owner, encoded_app, encoded_collection_name
         ),
         "GET",
         metrics,
@@ -426,9 +446,12 @@ pub async fn insert_collection_record(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<KvStoreRecord> {
+    let encoded_owner = encode_path_segment(owner);
+    let encoded_app = encode_path_segment(app);
+    let encoded_collection_name = encode_path_segment(collection_name);
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections/{}/data",
-        base_url, owner, app, collection_name
+        base_url, encoded_owner, encoded_app, encoded_collection_name
     );
 
     let builder = client
@@ -442,7 +465,7 @@ pub async fn insert_collection_record(
         max_retries,
         &format!(
             "/servicesNS/{}/{}/storage/collections/{}/data",
-            owner, app, collection_name
+            encoded_owner, encoded_app, encoded_collection_name
         ),
         "POST",
         metrics,
@@ -468,9 +491,13 @@ pub async fn delete_collection_record(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
+    let encoded_owner = encode_path_segment(owner);
+    let encoded_app = encode_path_segment(app);
+    let encoded_collection_name = encode_path_segment(collection_name);
+    let encoded_record_key = encode_path_segment(record_key);
     let url = format!(
         "{}/servicesNS/{}/{}/storage/collections/{}/data/{}",
-        base_url, owner, app, collection_name, record_key
+        base_url, encoded_owner, encoded_app, encoded_collection_name, encoded_record_key
     );
 
     let builder = client
@@ -482,7 +509,7 @@ pub async fn delete_collection_record(
         max_retries,
         &format!(
             "/servicesNS/{}/{}/storage/collections/{}/data/{}",
-            owner, app, collection_name, record_key
+            encoded_owner, encoded_app, encoded_collection_name, encoded_record_key
         ),
         "DELETE",
         metrics,

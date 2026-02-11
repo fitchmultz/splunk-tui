@@ -18,6 +18,7 @@ use tracing::debug;
 use crate::redact_query;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::{extract_entry_content, send_request_with_retry};
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -144,7 +145,8 @@ pub async fn get_job_status(
 ) -> Result<SearchJobStatus> {
     debug!("Getting status for job: {}", sid);
 
-    let url = format!("{}/services/search/jobs/{}", base_url, sid);
+    let encoded_sid = encode_path_segment(sid);
+    let url = format!("{}/services/search/jobs/{}", base_url, encoded_sid);
 
     let builder = client
         .get(&url)
@@ -260,7 +262,8 @@ pub async fn get_results(
 ) -> Result<SearchJobResults> {
     debug!("Getting results for job: {}", sid);
 
-    let url = format!("{}/services/search/jobs/{}/results", base_url, sid);
+    let encoded_sid = encode_path_segment(sid);
+    let url = format!("{}/services/search/jobs/{}/results", base_url, encoded_sid);
 
     let mut query_params: Vec<(String, String)> =
         vec![("output_mode".to_string(), output_mode.to_string())];

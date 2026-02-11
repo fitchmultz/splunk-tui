@@ -20,6 +20,9 @@ use splunk_client::error::ClientError;
 use splunk_client::models::InputType;
 use wiremock::matchers::{method, path};
 
+// Note: Input types containing "/" (like "tcp/raw") are percent-encoded to "tcp%2Fraw"
+// to prevent path traversal. Tests use the encoded paths in mock server expectations.
+
 #[tokio::test]
 async fn test_list_inputs_by_type_tcp() {
     let mock_server = MockServer::start().await;
@@ -27,7 +30,7 @@ async fn test_list_inputs_by_type_tcp() {
     let fixture = load_fixture("inputs/list_inputs_tcp.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -105,7 +108,7 @@ async fn test_list_inputs_by_type_with_pagination() {
     let fixture = load_fixture("inputs/list_inputs_tcp.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -168,7 +171,7 @@ async fn test_enable_input() {
 
     // Enable endpoint returns 200 with empty body or minimal response
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp/raw/9997/enable"))
+        .and(path("/services/data/inputs/tcp%2Fraw/9997/enable"))
         .respond_with(ResponseTemplate::new(200).set_body_string(""))
         .mount(&mock_server)
         .await;
@@ -198,7 +201,7 @@ async fn test_disable_input() {
 
     // Disable endpoint returns 200 with empty body or minimal response
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp/raw/9998/disable"))
+        .and(path("/services/data/inputs/tcp%2Fraw/9998/disable"))
         .respond_with(ResponseTemplate::new(200).set_body_string(""))
         .mount(&mock_server)
         .await;
@@ -226,8 +229,9 @@ async fn test_disable_input() {
 async fn test_enable_input_monitor() {
     let mock_server = MockServer::start().await;
 
+    // Note: "/var/log" contains "/" which is encoded to "%2Fvar%2Flog"
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/monitor//var/log/enable"))
+        .and(path("/services/data/inputs/monitor/%2Fvar%2Flog/enable"))
         .respond_with(ResponseTemplate::new(200).set_body_string(""))
         .mount(&mock_server)
         .await;
@@ -300,7 +304,7 @@ async fn test_list_inputs_by_type_unauthorized() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .respond_with(ResponseTemplate::new(401).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Unauthorized"}]
         })))
@@ -336,7 +340,7 @@ async fn test_list_inputs_by_type_forbidden() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .respond_with(ResponseTemplate::new(403).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Forbidden"}]
         })))
@@ -403,7 +407,7 @@ async fn test_enable_input_not_found() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp/raw/9999/enable"))
+        .and(path("/services/data/inputs/tcp%2Fraw/9999/enable"))
         .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Not Found"}]
         })))
@@ -438,7 +442,7 @@ async fn test_disable_input_not_found() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp/raw/9999/disable"))
+        .and(path("/services/data/inputs/tcp%2Fraw/9999/disable"))
         .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Not Found"}]
         })))
@@ -473,7 +477,7 @@ async fn test_list_inputs_malformed_response() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .respond_with(ResponseTemplate::new(200).set_body_string("invalid json"))
         .mount(&mock_server)
         .await;

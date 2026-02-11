@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -67,7 +68,11 @@ pub async fn get_dashboard(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Dashboard> {
-    let url = format!("{}/services/data/ui/views/{}", base_url, dashboard_name);
+    let encoded_dashboard_name = encode_path_segment(dashboard_name);
+    let url = format!(
+        "{}/services/data/ui/views/{}",
+        base_url, encoded_dashboard_name
+    );
 
     let query_params: Vec<(String, String)> = vec![("output_mode".to_string(), "json".to_string())];
 
@@ -79,7 +84,7 @@ pub async fn get_dashboard(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/data/ui/views/{}", dashboard_name),
+        &format!("/services/data/ui/views/{}", encoded_dashboard_name),
         "GET",
         metrics,
         circuit_breaker,

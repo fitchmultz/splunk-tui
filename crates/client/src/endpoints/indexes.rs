@@ -3,6 +3,7 @@
 use reqwest::{Client, Url};
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::form_params;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -67,9 +68,10 @@ pub async fn get_index(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Index> {
+    let encoded_index_name = encode_path_segment(index_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
-        .join(&format!("/services/data/indexes/{}", index_name))
+        .join(&format!("/services/data/indexes/{}", encoded_index_name))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid index name: {}", e)))?;
 
     let builder = client
@@ -79,7 +81,7 @@ pub async fn get_index(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/data/indexes/{}", index_name),
+        &format!("/services/data/indexes/{}", encoded_index_name),
         "GET",
         metrics,
         circuit_breaker,
@@ -175,9 +177,10 @@ pub async fn modify_index(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Index> {
+    let encoded_index_name = encode_path_segment(index_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
-        .join(&format!("/services/data/indexes/{}", index_name))
+        .join(&format!("/services/data/indexes/{}", encoded_index_name))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid index name: {}", e)))?;
 
     let mut form_params: Vec<(String, String)> =
@@ -202,7 +205,7 @@ pub async fn modify_index(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/data/indexes/{}", index_name),
+        &format!("/services/data/indexes/{}", encoded_index_name),
         "POST",
         metrics,
         circuit_breaker,
@@ -249,9 +252,10 @@ pub async fn delete_index(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
+    let encoded_index_name = encode_path_segment(index_name);
     let url = Url::parse(base_url)
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid base URL: {}", e)))?
-        .join(&format!("/services/data/indexes/{}", index_name))
+        .join(&format!("/services/data/indexes/{}", encoded_index_name))
         .map_err(|e| ClientError::InvalidUrl(format!("Invalid index name: {}", e)))?;
 
     let builder = client
@@ -261,7 +265,7 @@ pub async fn delete_index(
     let _response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/data/indexes/{}", index_name),
+        &format!("/services/data/indexes/{}", encoded_index_name),
         "DELETE",
         metrics,
         circuit_breaker,

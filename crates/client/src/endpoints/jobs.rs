@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::extract_entry_content;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
@@ -20,7 +21,8 @@ pub async fn get_job(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<SearchJobStatus> {
-    let url = format!("{}/services/search/jobs/{}", base_url, sid);
+    let encoded_sid = encode_path_segment(sid);
+    let url = format!("{}/services/search/jobs/{}", base_url, encoded_sid);
 
     let builder = client
         .get(&url)
@@ -114,7 +116,8 @@ pub async fn cancel_job(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let url = format!("{}/services/search/jobs/{}/control", base_url, sid);
+    let encoded_sid = encode_path_segment(sid);
+    let url = format!("{}/services/search/jobs/{}/control", base_url, encoded_sid);
 
     let builder = client
         .post(&url)
@@ -144,7 +147,8 @@ pub async fn delete_job(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let url = format!("{}/services/search/jobs/{}", base_url, sid);
+    let encoded_sid = encode_path_segment(sid);
+    let url = format!("{}/services/search/jobs/{}", base_url, encoded_sid);
 
     let builder = client
         .delete(&url)

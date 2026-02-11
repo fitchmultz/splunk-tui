@@ -140,6 +140,7 @@ async fn test_inputs_list_mock_server() {
 }
 
 /// Test inputs list with specific type using mock server (tcp/raw type).
+/// Note: The `/` in `tcp/raw` is percent-encoded to `tcp%2Fraw` to prevent path traversal.
 #[tokio::test]
 async fn test_inputs_list_with_type_mock_server() {
     let mock_server = MockServer::start().await;
@@ -147,7 +148,7 @@ async fn test_inputs_list_with_type_mock_server() {
     let fixture_data = include_str!("../../client/fixtures/inputs/list_inputs_tcp.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .and(query_param("output_mode", "json"))
         .and(query_param("count", "100"))
         .and(header("Authorization", "Bearer test-token"))
@@ -307,6 +308,7 @@ async fn test_inputs_output_file() {
 }
 
 /// Test inputs with detailed output using mock server.
+/// Note: The `/` in `tcp/raw` is percent-encoded to `tcp%2Fraw` to prevent path traversal.
 #[tokio::test]
 async fn test_inputs_detailed_mock_server() {
     let mock_server = MockServer::start().await;
@@ -314,7 +316,7 @@ async fn test_inputs_detailed_mock_server() {
     let fixture_data = include_str!("../../client/fixtures/inputs/list_inputs_tcp.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp/raw"))
+        .and(path("/services/data/inputs/tcp%2Fraw"))
         .and(query_param("output_mode", "json"))
         .and(query_param("count", "100"))
         .and(header("Authorization", "Bearer test-token"))

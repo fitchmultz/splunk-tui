@@ -16,6 +16,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
@@ -57,7 +58,8 @@ pub async fn list_inputs_by_type(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Input>> {
-    let url = format!("{}/services/data/inputs/{}", base_url, input_type);
+    let encoded_input_type = encode_path_segment(input_type);
+    let url = format!("{}/services/data/inputs/{}", base_url, encoded_input_type);
 
     let mut query_params: Vec<(String, String)> = vec![
         ("output_mode".to_string(), "json".to_string()),
@@ -75,7 +77,7 @@ pub async fn list_inputs_by_type(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/data/inputs/{}", input_type),
+        &format!("/services/data/inputs/{}", encoded_input_type),
         "GET",
         metrics,
         circuit_breaker,
@@ -119,9 +121,11 @@ pub async fn enable_input(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
+    let encoded_input_type = encode_path_segment(input_type);
+    let encoded_name = encode_path_segment(name);
     let url = format!(
         "{}/services/data/inputs/{}/{}/enable",
-        base_url, input_type, name
+        base_url, encoded_input_type, encoded_name
     );
 
     let builder = client
@@ -168,9 +172,11 @@ pub async fn disable_input(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
+    let encoded_input_type = encode_path_segment(input_type);
+    let encoded_name = encode_path_segment(name);
     let url = format!(
         "{}/services/data/inputs/{}/{}/disable",
-        base_url, input_type, name
+        base_url, encoded_input_type, encoded_name
     );
 
     let builder = client

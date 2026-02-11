@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -152,7 +153,8 @@ pub async fn get_app(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<App> {
-    let url = format!("{}/services/apps/local/{}", base_url, app_name);
+    let encoded_app_name = encode_path_segment(app_name);
+    let url = format!("{}/services/apps/local/{}", base_url, encoded_app_name);
 
     let builder = client
         .get(&url)
@@ -209,7 +211,11 @@ pub async fn enable_app(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let url = format!("{}/services/apps/local/{}/enable", base_url, app_name);
+    let encoded_app_name = encode_path_segment(app_name);
+    let url = format!(
+        "{}/services/apps/local/{}/enable",
+        base_url, encoded_app_name
+    );
 
     let builder = client
         .post(&url)
@@ -238,7 +244,11 @@ pub async fn disable_app(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let url = format!("{}/services/apps/local/{}/disable", base_url, app_name);
+    let encoded_app_name = encode_path_segment(app_name);
+    let url = format!(
+        "{}/services/apps/local/{}/disable",
+        base_url, encoded_app_name
+    );
 
     let builder = client
         .post(&url)
@@ -358,7 +368,8 @@ pub async fn remove_app(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let url = format!("{}/services/apps/local/{}", base_url, app_name);
+    let encoded_app_name = encode_path_segment(app_name);
+    let url = format!("{}/services/apps/local/{}", base_url, encoded_app_name);
 
     let builder = client
         .delete(&url)

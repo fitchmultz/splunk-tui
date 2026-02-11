@@ -16,12 +16,12 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
 use crate::models::{ConfigFile, ConfigListResponse, ConfigStanza};
 use crate::name_merge::attach_entry_name;
-use percent_encoding::{AsciiSet, CONTROLS, percent_encode};
 
 /// List configuration stanzas for a specific config file.
 ///
@@ -58,7 +58,8 @@ pub async fn list_config_stanzas(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<ConfigStanza>> {
-    let url = format!("{}/services/configs/conf-{}", base_url, config_file);
+    let encoded_config_file = encode_path_segment(config_file);
+    let url = format!("{}/services/configs/conf-{}", base_url, encoded_config_file);
 
     let mut query_params: Vec<(String, String)> = vec![
         ("output_mode".to_string(), "json".to_string()),
@@ -76,7 +77,7 @@ pub async fn list_config_stanzas(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/configs/conf-{}", config_file),
+        &format!("/services/configs/conf-{}", encoded_config_file),
         "GET",
         metrics,
         circuit_breaker,
@@ -129,10 +130,11 @@ pub async fn get_config_stanza(
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<ConfigStanza> {
     // URL encode the stanza name as it may contain special characters
-    let encoded_stanza = encode_stanza_name(stanza_name);
+    let encoded_config_file = encode_path_segment(config_file);
+    let encoded_stanza = encode_path_segment(stanza_name);
     let url = format!(
         "{}/services/configs/conf-{}/{}",
-        base_url, config_file, encoded_stanza
+        base_url, encoded_config_file, encoded_stanza
     );
 
     let query_params: Vec<(String, String)> = vec![("output_mode".to_string(), "json".to_string())];
@@ -144,7 +146,7 @@ pub async fn get_config_stanza(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/configs/conf-{}/{{stanza}}", config_file),
+        &format!("/services/configs/conf-{}/{{stanza}}", encoded_config_file),
         "GET",
         metrics,
         circuit_breaker,
@@ -233,50 +235,6 @@ fn capitalize_first(s: &str) -> String {
         None => String::new(),
         Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
     }
-}
-
-/// ASCII character set for encoding stanza names in URLs.
-///
-/// Includes control characters plus special characters that may appear
-/// in Splunk stanza names (e.g., spaces, brackets, colons in `source::...` patterns).
-const STANZA_ENCODE_SET: &AsciiSet = &CONTROLS
-    .add(b' ')
-    .add(b'[')
-    .add(b']')
-    .add(b':')
-    .add(b'/')
-    .add(b'?')
-    .add(b'&')
-    .add(b'=')
-    .add(b'%')
-    .add(b'#')
-    .add(b'@')
-    .add(b'!')
-    .add(b'$')
-    .add(b'\'')
-    .add(b'(')
-    .add(b')')
-    .add(b'*')
-    .add(b'+')
-    .add(b',')
-    .add(b';')
-    .add(b'<')
-    .add(b'>')
-    .add(b'"')
-    .add(b'{')
-    .add(b'}')
-    .add(b'|')
-    .add(b'\\')
-    .add(b'^')
-    .add(b'`')
-    .add(b'~');
-
-/// URL-encode a stanza name for use in API requests.
-///
-/// Stanza names may contain special characters like spaces, brackets, etc.
-/// Uses percent-encoding to ensure the URL is valid.
-fn encode_stanza_name(name: &str) -> String {
-    percent_encode(name.as_bytes(), STANZA_ENCODE_SET).to_string()
 }
 
 /// Get a description for a config file.

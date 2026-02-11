@@ -3,6 +3,7 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
+use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
@@ -67,7 +68,8 @@ pub async fn get_datamodel(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<DataModel> {
-    let url = format!("{}/services/datamodel/{}", base_url, datamodel_name);
+    let encoded_datamodel_name = encode_path_segment(datamodel_name);
+    let url = format!("{}/services/datamodel/{}", base_url, encoded_datamodel_name);
 
     let query_params: Vec<(String, String)> = vec![("output_mode".to_string(), "json".to_string())];
 
@@ -79,7 +81,7 @@ pub async fn get_datamodel(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/datamodel/{}", datamodel_name),
+        &format!("/services/datamodel/{}", encoded_datamodel_name),
         "GET",
         metrics,
         circuit_breaker,
