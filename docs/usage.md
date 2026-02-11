@@ -97,6 +97,7 @@ The `.env` file is loaded before CLI parsing to populate environment variable de
 | `SPLUNK_PROFILE` | Name of profile to load from the configuration file |
 | `SPLUNK_SESSION_TTL` | Session token lifetime in seconds (default: 3600) |
 | `SPLUNK_SESSION_EXPIRY_BUFFER` | Buffer before expiry to refresh tokens (default: 60) |
+| `SPLUNK_HEALTH_CHECK_INTERVAL` | Health check polling interval in seconds (TUI only) [default: `60`] |
 | `SPLUNK_EARLIEST_TIME` | Default earliest time for searches (e.g., `-24h`, `2024-01-01T00:00:00`) [default: `-24h`] |
 | `SPLUNK_LATEST_TIME` | Default latest time for searches (e.g., `now`) [default: `now`] |
 | `SPLUNK_MAX_RESULTS` | Default maximum number of results per search [default: `1000`] |
@@ -698,7 +699,7 @@ splunk-cli forwarders --output json
 ```
 
 - `-d, --detailed`: Show detailed information about each forwarder (includes client name, utsname, repository location, and server classes)
-- `-c, --count <NUMBER>`: Maximum number of forwarders to list [default: 30]
+- `-c, --count <NUMBER>`: Maximum number of forwarders to list [default: 100]
 - `--offset <NUMBER>`: Offset into the forwarder list (zero-based) [default: 0]
 
 **Note (table output):** table output includes a pagination footer (e.g., `Showing 1-30 (page 1)`).
@@ -765,12 +766,12 @@ splunk-cli shc config
 - `show` [options]: Show SHC status and information (default)
   - `-d, --detailed`: Show detailed SHC information with members
   - `--offset <NUMBER>`: Offset into the SHC member list (zero-based) [default: 0] (only applies with `--detailed`)
-  - `-c, --count <NUMBER>`: Number of members per page [default: 50] (only applies with `--detailed`)
+  - `-c, --count <NUMBER>`: Number of members per page [default: 100] (only applies with `--detailed`)
   - `--page-size <NUMBER>`: Deprecated alias for `--count`
 
 - `members` [options]: Show SHC members
   - `--offset <NUMBER>`: Offset into the member list (zero-based) [default: 0]
-  - `-c, --count <NUMBER>`: Number of members per page [default: 50]
+  - `-c, --count <NUMBER>`: Number of members per page [default: 100]
   - `--page-size <NUMBER>`: Deprecated alias for `--count`
 
 - `captain`: Show SHC captain information
@@ -786,7 +787,32 @@ splunk-cli shc config
 #### `jobs`
 Manage search jobs.
 
-**Note:** The `jobs` command uses flat flags (not subcommands) for actions.
+The `jobs` command supports both subcommands (recommended) and flat flags (legacy) for operations.
+
+**Subcommands (recommended):**
+
+```bash
+# Cancel one or more jobs
+splunk-cli jobs cancel "1705852800.123"
+splunk-cli jobs cancel "1705852800.123" "1705852800.456"
+splunk-cli jobs cancel --file jobs.txt
+splunk-cli jobs cancel "1705852800.123" --force
+
+# Delete one or more jobs
+splunk-cli jobs delete "1705852800.123"
+splunk-cli jobs delete "1705852800.123" "1705852800.456"
+splunk-cli jobs delete --file jobs.txt
+splunk-cli jobs delete "1705852800.123" --force
+```
+
+- `cancel [SIDS]...`: Cancel one or more search jobs by SID
+  - `--file <FILE>`: Read SIDs from file (one per line, comments start with #)
+  - `--force`: Skip confirmation prompt
+- `delete [SIDS]...`: Delete one or more search jobs by SID
+  - `--file <FILE>`: Read SIDs from file (one per line, comments start with #)
+  - `--force`: Skip confirmation prompt
+
+**Flat flags (legacy):**
 
 ```bash
 # List all jobs
