@@ -220,7 +220,10 @@ impl App {
                 .find(|idx| idx.name == name)
                 .map(|idx| crate::undo::IndexSettings {
                     max_data_size_mb: idx.max_total_data_size_mb,
-                    max_hot_buckets: idx.max_hot_buckets.as_ref().and_then(|s| s.parse().ok()),
+                    max_hot_buckets: idx
+                        .max_hot_buckets
+                        .as_ref()
+                        .and_then(|s| Self::parse_max_hot_buckets(s, &idx.name)),
                     max_warm_db_count: idx.max_warm_db_count,
                     frozen_time_period_secs: idx.frozen_time_period_in_secs,
                     home_path: idx.home_path.clone(),

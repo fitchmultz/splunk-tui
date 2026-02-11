@@ -15,6 +15,7 @@
 //! - `popups`: Popup input handling
 //! - `input`: Per-screen input handlers
 //! - `actions`: Action handling
+//! - `parsing`: Parsing helpers for API string values
 //! - `render`: Rendering logic
 
 pub mod clipboard;
@@ -30,6 +31,7 @@ pub mod input;
 mod jobs;
 mod mouse;
 mod navigation;
+mod parsing;
 mod popups;
 mod render;
 

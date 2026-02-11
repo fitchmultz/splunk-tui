@@ -95,7 +95,7 @@ impl App {
                             current_max_hot_buckets: index
                                 .max_hot_buckets
                                 .as_ref()
-                                .and_then(|s| s.parse().ok()),
+                                .and_then(|s| Self::parse_max_hot_buckets(s, &index.name)),
                             current_max_warm_db_count: index.max_warm_db_count,
                             current_frozen_time_period_secs: index.frozen_time_period_in_secs,
                             current_home_path: index.home_path.clone(),
@@ -106,7 +106,7 @@ impl App {
                             new_max_hot_buckets: index
                                 .max_hot_buckets
                                 .as_ref()
-                                .and_then(|s| s.parse().ok()),
+                                .and_then(|s| Self::parse_max_hot_buckets(s, &index.name)),
                             new_max_warm_db_count: index.max_warm_db_count,
                             new_frozen_time_period_secs: index.frozen_time_period_in_secs,
                             new_home_path: index.home_path.clone(),
