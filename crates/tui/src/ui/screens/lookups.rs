@@ -13,7 +13,7 @@ use ratatui::{
     layout::{Constraint, Rect},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
-use splunk_client::models::LookupTable;
+use splunk_client::{format_bytes, models::LookupTable};
 
 use splunk_config::Theme;
 
@@ -81,7 +81,7 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
     let rows: Vec<Row> = lookups
         .iter()
         .map(|lookup| {
-            let size_str = humanize_size(lookup.size);
+            let size_str = format_bytes(lookup.size);
             let cells = vec![
                 Cell::from(lookup.name.clone()),
                 Cell::from(lookup.filename.clone()),
@@ -113,29 +113,17 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
     f.render_stateful_widget(table, area, lookups_state);
 }
 
-/// Convert size in bytes to human-readable string.
-fn humanize_size(size: usize) -> String {
-    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
-    if size == 0 {
-        return "0 B".to_string();
-    }
-    let size_f = size as f64;
-    let exp = (size_f.log2() / 1024_f64.log2()).min(UNITS.len() as f64 - 1.0) as usize;
-    let value = size_f / 1024_f64.powi(exp as i32);
-    format!("{:.1} {}", value, UNITS[exp])
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_humanize_size() {
-        assert_eq!(humanize_size(0), "0 B");
-        assert_eq!(humanize_size(512), "512.0 B");
-        assert_eq!(humanize_size(1024), "1.0 KB");
-        assert_eq!(humanize_size(1536), "1.5 KB");
-        assert_eq!(humanize_size(1024 * 1024), "1.0 MB");
-        assert_eq!(humanize_size(1024 * 1024 * 1024), "1.0 GB");
+    fn test_format_bytes() {
+        assert_eq!(format_bytes(0), "0 B");
+        assert_eq!(format_bytes(512), "512.0 B");
+        assert_eq!(format_bytes(1024), "1.0 KB");
+        assert_eq!(format_bytes(1536), "1.5 KB");
+        assert_eq!(format_bytes(1024 * 1024), "1.0 MB");
+        assert_eq!(format_bytes(1024 * 1024 * 1024), "1.0 GB");
     }
 }

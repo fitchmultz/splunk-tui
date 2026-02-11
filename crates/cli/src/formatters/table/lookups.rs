@@ -7,7 +7,7 @@
 //! - Other resource types.
 
 use anyhow::Result;
-use splunk_client::LookupTable;
+use splunk_client::{LookupTable, format_bytes};
 
 /// Format lookup tables as a tab-separated table.
 pub fn format_lookups(lookups: &[LookupTable]) -> Result<String> {
@@ -28,25 +28,11 @@ pub fn format_lookups(lookups: &[LookupTable]) -> Result<String> {
             lookup.owner,
             lookup.app,
             lookup.sharing,
-            format_size(lookup.size)
+            format_bytes(lookup.size)
         ));
     }
 
     Ok(output)
-}
-
-/// Format byte size to human-readable string.
-fn format_size(size: usize) -> String {
-    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
-    let mut size = size as f64;
-    let mut unit_index = 0;
-
-    while size >= 1024.0 && unit_index < UNITS.len() - 1 {
-        size /= 1024.0;
-        unit_index += 1;
-    }
-
-    format!("{:.1} {}", size, UNITS[unit_index])
 }
 
 #[cfg(test)]
@@ -88,13 +74,13 @@ mod tests {
     }
 
     #[test]
-    fn test_format_size() {
-        assert_eq!(format_size(0), "0.0 B");
-        assert_eq!(format_size(512), "512.0 B");
-        assert_eq!(format_size(1024), "1.0 KB");
-        assert_eq!(format_size(1536), "1.5 KB");
-        assert_eq!(format_size(1024 * 1024), "1.0 MB");
-        assert_eq!(format_size(5 * 1024 * 1024), "5.0 MB");
-        assert_eq!(format_size(1024 * 1024 * 1024), "1.0 GB");
+    fn test_format_bytes() {
+        assert_eq!(format_bytes(0), "0 B");
+        assert_eq!(format_bytes(512), "512.0 B");
+        assert_eq!(format_bytes(1024), "1.0 KB");
+        assert_eq!(format_bytes(1536), "1.5 KB");
+        assert_eq!(format_bytes(1024 * 1024), "1.0 MB");
+        assert_eq!(format_bytes(5 * 1024 * 1024), "5.0 MB");
+        assert_eq!(format_bytes(1024 * 1024 * 1024), "1.0 GB");
     }
 }

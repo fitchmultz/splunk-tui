@@ -10,6 +10,7 @@ use std::hash::{Hash, Hasher};
 mod auth;
 pub mod client;
 pub mod error;
+pub mod format;
 pub mod metrics;
 pub mod metrics_exporter;
 pub mod models;
@@ -35,6 +36,7 @@ pub use client::builder::SplunkClientBuilder;
 pub use client::cache::{CacheConfig, CachePolicy, CacheStats, ResponseCache};
 pub use client::health::AggregatedHealth;
 pub use error::{ClientError, FailureCategory, Result, RollbackFailure, UserFacingFailure};
+pub use format::format_bytes;
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use metrics_exporter::{MetricsExporter, MetricsExporterError};
 pub use models::{
