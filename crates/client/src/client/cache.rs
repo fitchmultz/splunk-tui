@@ -26,7 +26,7 @@ use moka::policy::EvictionPolicy;
 use reqwest::Method;
 use tracing::{debug, trace};
 
-use crate::metrics::MetricsCollector;
+use crate::metrics::{METRIC_CACHE_HITS, METRIC_CACHE_MISSES, MetricsCollector};
 
 /// Default cache size (number of entries).
 pub const DEFAULT_CACHE_SIZE: u64 = 100;
@@ -45,12 +45,6 @@ pub const DEFAULT_SERVER_INFO_TTL_SECONDS: u64 = 300;
 
 /// Default TTL for general list endpoints (120 seconds).
 pub const DEFAULT_LIST_TTL_SECONDS: u64 = 120;
-
-/// Metric name for cache hit counter.
-pub const METRIC_CACHE_HITS: &str = "splunk_api_cache_hits_total";
-
-/// Metric name for cache miss counter.
-pub const METRIC_CACHE_MISSES: &str = "splunk_api_cache_misses_total";
 
 /// Metric name for cache eviction counter.
 pub const METRIC_CACHE_EVICTIONS: &str = "splunk_api_cache_evictions_total";
