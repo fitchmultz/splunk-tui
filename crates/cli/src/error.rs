@@ -150,6 +150,9 @@ impl From<&ClientError> for ExitCode {
 
             // Default: general error
             ClientError::ApiError { .. } => ExitCode::GeneralError,
+
+            // Transaction rollback error - data integrity issue (exit code 1)
+            ClientError::TransactionRollbackError { .. } => ExitCode::GeneralError,
         }
     }
 }

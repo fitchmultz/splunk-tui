@@ -34,7 +34,7 @@ pub use client::SplunkClient;
 pub use client::builder::SplunkClientBuilder;
 pub use client::cache::{CacheConfig, CachePolicy, CacheStats, ResponseCache};
 pub use client::health::AggregatedHealth;
-pub use error::{ClientError, FailureCategory, Result, UserFacingFailure};
+pub use error::{ClientError, FailureCategory, Result, RollbackFailure, UserFacingFailure};
 pub use metrics::{ErrorCategory, MetricsCollector};
 pub use metrics_exporter::{MetricsExporter, MetricsExporterError};
 pub use models::{

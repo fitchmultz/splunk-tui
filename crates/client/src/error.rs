@@ -7,6 +7,27 @@ use thiserror::Error;
 /// Result type alias for client operations.
 pub type Result<T> = std::result::Result<T, ClientError>;
 
+/// Represents a single failed rollback operation.
+#[derive(Debug)]
+pub struct RollbackFailure {
+    /// The name of the resource that failed to be cleaned up.
+    pub resource_name: String,
+    /// The type of operation that failed (e.g., "delete_index", "delete_user").
+    pub operation: String,
+    /// The error that occurred during rollback.
+    pub error: ClientError,
+}
+
+impl std::fmt::Display for RollbackFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Failed to {} '{}' during rollback: {}",
+            self.operation, self.resource_name, self.error
+        )
+    }
+}
+
 /// Classification of user-facing failure categories.
 ///
 /// This enum provides a stable, high-level categorization of errors that can be
@@ -130,6 +151,13 @@ pub enum ClientError {
     /// Circuit breaker is open.
     #[error("Circuit breaker open: {0}")]
     CircuitBreakerOpen(String),
+
+    /// Transaction rollback failed for one or more operations.
+    #[error("Transaction rollback failed with {count} error(s): {}", failures.iter().map(|f| f.to_string()).collect::<Vec<_>>().join("; "))]
+    TransactionRollbackError {
+        count: usize,
+        failures: Vec<RollbackFailure>,
+    },
 }
 
 impl ClientError {
@@ -523,6 +551,27 @@ impl ClientError {
                     "Too many recent failures have triggered protection".to_string(),
                     "Wait a moment before retrying".to_string(),
                     "Check the Health screen for server status".to_string(),
+                ],
+                status_code: None,
+                request_id: None,
+            },
+
+            Self::TransactionRollbackError { count, failures } => UserFacingFailure {
+                category: FailureCategory::Server,
+                title: "Transaction rollback failed",
+                diagnosis: format!(
+                    "Rollback of {} operation(s) failed. Resources may be in an inconsistent state: {}",
+                    count,
+                    failures
+                        .iter()
+                        .map(|f| f.resource_name.clone())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+                action_hints: vec![
+                    "Review the failed resources and manually verify their state".to_string(),
+                    "Check Splunk server logs for details on cleanup failures".to_string(),
+                    "Consider manually removing any orphaned resources".to_string(),
                 ],
                 status_code: None,
                 request_id: None,
@@ -969,5 +1018,100 @@ mod tests {
             FailureCategory::AuthInvalidCredentials,
             FailureCategory::SessionExpired
         );
+    }
+
+    #[test]
+    fn test_rollback_failure_display() {
+        let failure = RollbackFailure {
+            resource_name: "test_index".to_string(),
+            operation: "delete_index".to_string(),
+            error: ClientError::NotFound("test_index".to_string()),
+        };
+
+        let display = format!("{}", failure);
+        assert!(display.contains("delete_index"));
+        assert!(display.contains("test_index"));
+        assert!(display.contains("rollback"));
+    }
+
+    #[test]
+    fn test_transaction_rollback_error_display() {
+        let failures = vec![
+            RollbackFailure {
+                resource_name: "index1".to_string(),
+                operation: "delete_index".to_string(),
+                error: ClientError::Timeout(Duration::from_secs(30)),
+            },
+            RollbackFailure {
+                resource_name: "user1".to_string(),
+                operation: "delete_user".to_string(),
+                error: ClientError::ConnectionRefused("localhost:8089".to_string()),
+            },
+        ];
+
+        let error = ClientError::TransactionRollbackError {
+            count: failures.len(),
+            failures,
+        };
+
+        let display = format!("{}", error);
+        assert!(display.contains("2 error(s)"));
+    }
+
+    #[test]
+    fn test_transaction_rollback_error_not_retryable() {
+        let error = ClientError::TransactionRollbackError {
+            count: 1,
+            failures: vec![RollbackFailure {
+                resource_name: "test".to_string(),
+                operation: "delete_index".to_string(),
+                error: ClientError::NotFound("test".to_string()),
+            }],
+        };
+
+        // Rollback failures are not retryable
+        assert!(!error.is_retryable());
+    }
+
+    #[test]
+    fn test_transaction_rollback_error_not_auth_error() {
+        let error = ClientError::TransactionRollbackError {
+            count: 1,
+            failures: vec![RollbackFailure {
+                resource_name: "test".to_string(),
+                operation: "delete_index".to_string(),
+                error: ClientError::NotFound("test".to_string()),
+            }],
+        };
+
+        // Rollback failures are not auth errors
+        assert!(!error.is_auth_error());
+    }
+
+    #[test]
+    fn test_user_facing_failure_transaction_rollback_error() {
+        let error = ClientError::TransactionRollbackError {
+            count: 2,
+            failures: vec![
+                RollbackFailure {
+                    resource_name: "index1".to_string(),
+                    operation: "delete_index".to_string(),
+                    error: ClientError::Timeout(Duration::from_secs(30)),
+                },
+                RollbackFailure {
+                    resource_name: "user1".to_string(),
+                    operation: "delete_user".to_string(),
+                    error: ClientError::ConnectionRefused("localhost:8089".to_string()),
+                },
+            ],
+        };
+
+        let failure = error.to_user_facing_failure();
+        assert_eq!(failure.category, FailureCategory::Server);
+        assert_eq!(failure.title, "Transaction rollback failed");
+        assert!(failure.diagnosis.contains("2"));
+        assert!(failure.diagnosis.contains("index1"));
+        assert!(failure.diagnosis.contains("user1"));
+        assert!(!failure.action_hints.is_empty());
     }
 }

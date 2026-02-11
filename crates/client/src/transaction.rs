@@ -6,12 +6,12 @@
 //! 2. Execution: Sequentially execute operations with automatic rollback on failure.
 
 use crate::client::SplunkClient;
-use crate::error::Result;
+use crate::error::{ClientError, Result, RollbackFailure};
 use crate::models::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 /// Represents a single reversible operation in a transaction.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -252,6 +252,7 @@ impl TransactionManager {
     ///
     /// Executes operations sequentially. If any operation fails, it initiates
     /// an automatic rollback of all previously completed operations in this transaction.
+    /// Returns a TransactionRollbackError if rollback fails for any operations.
     pub async fn commit(&self, client: &SplunkClient, transaction: &Transaction) -> Result<()> {
         info!(
             "Committing transaction {} with {} operations",
@@ -270,11 +271,18 @@ impl TransactionManager {
                         "Operation failed in transaction {}: {}. Initiating rollback.",
                         transaction.id, e
                     );
-                    if let Err(rollback_err) = self.rollback(client, completed_ops).await {
-                        warn!(
-                            "Rollback failed for transaction {}: {}",
-                            transaction.id, rollback_err
+                    let rollback_failures = self.rollback(client, completed_ops).await?;
+
+                    if !rollback_failures.is_empty() {
+                        error!(
+                            transaction_id = %transaction.id,
+                            failure_count = rollback_failures.len(),
+                            "Rollback completed with failures"
                         );
+                        return Err(ClientError::TransactionRollbackError {
+                            count: rollback_failures.len(),
+                            failures: rollback_failures,
+                        });
                     }
                     return Err(e);
                 }
@@ -341,24 +349,93 @@ impl TransactionManager {
     }
 
     /// Rollback a list of completed operations in reverse order.
-    async fn rollback(&self, client: &SplunkClient, ops: Vec<TransactionOperation>) -> Result<()> {
+    ///
+    /// Returns a vector of any failures that occurred during rollback.
+    /// Callers MUST handle rollback failures to ensure data integrity issues are visible.
+    async fn rollback(
+        &self,
+        client: &SplunkClient,
+        ops: Vec<TransactionOperation>,
+    ) -> Result<Vec<RollbackFailure>> {
         info!("Rolling back {} operations", ops.len());
+        let mut failures = Vec::new();
+
         for op in ops.into_iter().rev() {
             match op {
                 TransactionOperation::CreateIndex(params) => {
-                    let _ = client.delete_index(&params.name).await;
+                    if let Err(e) = client.delete_index(&params.name).await {
+                        error!(
+                            operation = "delete_index",
+                            resource = %params.name,
+                            error = %e,
+                            "Rollback operation failed"
+                        );
+                        failures.push(RollbackFailure {
+                            resource_name: params.name.clone(),
+                            operation: "delete_index".to_string(),
+                            error: e,
+                        });
+                    }
                 }
                 TransactionOperation::CreateUser(params) => {
-                    let _ = client.delete_user(&params.name).await;
+                    if let Err(e) = client.delete_user(&params.name).await {
+                        error!(
+                            operation = "delete_user",
+                            resource = %params.name,
+                            error = %e,
+                            "Rollback operation failed"
+                        );
+                        failures.push(RollbackFailure {
+                            resource_name: params.name.clone(),
+                            operation: "delete_user".to_string(),
+                            error: e,
+                        });
+                    }
                 }
                 TransactionOperation::CreateRole(params) => {
-                    let _ = client.delete_role(&params.name).await;
+                    if let Err(e) = client.delete_role(&params.name).await {
+                        error!(
+                            operation = "delete_role",
+                            resource = %params.name,
+                            error = %e,
+                            "Rollback operation failed"
+                        );
+                        failures.push(RollbackFailure {
+                            resource_name: params.name.clone(),
+                            operation: "delete_role".to_string(),
+                            error: e,
+                        });
+                    }
                 }
                 TransactionOperation::CreateMacro(params) => {
-                    let _ = client.delete_macro(&params.name).await;
+                    if let Err(e) = client.delete_macro(&params.name).await {
+                        error!(
+                            operation = "delete_macro",
+                            resource = %params.name,
+                            error = %e,
+                            "Rollback operation failed"
+                        );
+                        failures.push(RollbackFailure {
+                            resource_name: params.name.clone(),
+                            operation: "delete_macro".to_string(),
+                            error: e,
+                        });
+                    }
                 }
                 TransactionOperation::CreateSavedSearch(params) => {
-                    let _ = client.delete_saved_search(&params.name).await;
+                    if let Err(e) = client.delete_saved_search(&params.name).await {
+                        error!(
+                            operation = "delete_saved_search",
+                            resource = %params.name,
+                            error = %e,
+                            "Rollback operation failed"
+                        );
+                        failures.push(RollbackFailure {
+                            resource_name: params.name.clone(),
+                            operation: "delete_saved_search".to_string(),
+                            error: e,
+                        });
+                    }
                 }
                 // For Modify/Update operations, full rollback would require original state.
                 // For Delete operations, full rollback would require recreation.
@@ -368,6 +445,7 @@ impl TransactionManager {
                 }
             }
         }
-        Ok(())
+
+        Ok(failures)
     }
 }

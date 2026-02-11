@@ -2,47 +2,6 @@
   "version": 1,
   "tasks": [
     {
-      "id": "RQ-0465",
-      "status": "todo",
-      "title": "Fix transaction rollback errors being silently discarded",
-      "description": "Transaction rollback operations in `transaction.rs` silently discard all errors using `let _ =`. When rollback fails (network error, permission denied), the error is completely lost, leaving the system in an inconsistent state with no audit trail. This violates the Fail Fast principle and creates data integrity risks.",
-      "priority": "critical",
-      "tags": [
-        "maintenance",
-        "reliability",
-        "data-integrity",
-        "error-handling"
-      ],
-      "scope": [
-        "crates/client/src/transaction.rs",
-        "crates/client/src/error.rs",
-        "make test",
-        "make ci SKIP_LIVE_TESTS=1"
-      ],
-      "evidence": [
-        "path: crates/client/src/transaction.rs :: rollback() :: lines 349-362 use `let _ =` for all delete operations",
-        "path: crates/client/src/transaction.rs :: lines 349, 352, 355, 358, 361 discard errors from delete_index, delete_user, delete_role, delete_macro, delete_saved_search",
-        "principle: Fail Fast - errors swallowed silently, no audit trail of rollback failures"
-      ],
-      "plan": [
-        "Change rollback() to collect all rollback errors instead of discarding with `let _ =`",
-        "Create a TransactionRollbackError type that contains Vec<(String, ClientError)> for failed operations",
-        "Log rollback failures at error level with full context",
-        "Add test verifying rollback errors are properly captured and reported",
-        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming new rollback error tests pass"
-      ],
-      "notes": [],
-      "request": "scan: maintenance",
-      "created_at": "2026-02-11T00:00:00Z",
-      "updated_at": "2026-02-11T00:00:00Z",
-      "depends_on": [],
-      "blocks": [],
-      "relates_to": [],
-      "custom_fields": {
-        "scan_agent": "scan-maintenance"
-      }
-    },
-    {
       "id": "RQ-0466",
       "status": "todo",
       "title": "Fix silent plaintext credential fallback when keyring fails",
