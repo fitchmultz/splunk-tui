@@ -20,6 +20,41 @@ use std::path::PathBuf;
 use crate::commands;
 use crate::dynamic_complete::CompletionType;
 
+// =============================================================================
+// Value Parsers for Range Validation
+// =============================================================================
+
+/// Value parser for timeout seconds with range validation.
+fn parse_timeout_secs(s: &str) -> Result<u64, String> {
+    let value: u64 = s
+        .parse()
+        .map_err(|_| "Must be a non-negative integer".to_string())?;
+    if value == 0 {
+        return Err("Timeout must be greater than 0 seconds".to_string());
+    }
+    if value > MAX_TIMEOUT_SECS {
+        return Err(format!(
+            "Timeout must not exceed {} seconds (got {})",
+            MAX_TIMEOUT_SECS, value
+        ));
+    }
+    Ok(value)
+}
+
+/// Value parser for max retries with range validation.
+fn parse_max_retries(s: &str) -> Result<usize, String> {
+    let value: usize = s
+        .parse()
+        .map_err(|_| "Must be a non-negative integer".to_string())?;
+    if value > MAX_MAX_RETRIES {
+        return Err(format!(
+            "Max retries must not exceed {} (got {})",
+            MAX_MAX_RETRIES, value
+        ));
+    }
+    Ok(value)
+}
+
 #[derive(Parser)]
 #[command(name = "splunk-cli")]
 #[command(about = "Splunk CLI - Manage Splunk Enterprise from the command line", long_about = None)]
@@ -44,12 +79,12 @@ pub struct Cli {
     #[arg(long, global = true, env = "SPLUNK_API_TOKEN")]
     pub api_token: Option<String>,
 
-    /// Connection timeout in seconds
-    #[arg(long, global = true, env = "SPLUNK_TIMEOUT")]
+    /// Connection timeout in seconds (1-3600)
+    #[arg(long, global = true, env = "SPLUNK_TIMEOUT", value_parser = parse_timeout_secs)]
     pub timeout: Option<u64>,
 
-    /// Maximum number of retries for failed requests
-    #[arg(long, global = true, env = "SPLUNK_MAX_RETRIES")]
+    /// Maximum number of retries for failed requests (0-10)
+    #[arg(long, global = true, env = "SPLUNK_MAX_RETRIES", value_parser = parse_max_retries)]
     pub max_retries: Option<usize>,
 
     /// Skip TLS certificate verification (for self-signed certificates)

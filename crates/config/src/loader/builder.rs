@@ -27,7 +27,7 @@ use super::profile::apply_profile;
 use crate::constants::{
     DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_MAX_RETRIES,
     DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS, MAX_HEALTH_CHECK_INTERVAL_SECS,
-    MAX_SESSION_TTL_SECS, MAX_TIMEOUT_SECS,
+    MAX_MAX_RETRIES, MAX_SESSION_TTL_SECS, MAX_TIMEOUT_SECS,
 };
 use crate::persistence::{InternalLogsDefaults, SearchDefaults};
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
@@ -344,6 +344,7 @@ impl ConfigLoader {
     ///
     /// Checks:
     /// - timeout is greater than 0 and not exceeding MAX_TIMEOUT_SECS
+    /// - max_retries does not exceed MAX_MAX_RETRIES
     /// - session_ttl_seconds is greater than session_expiry_buffer_seconds
     /// - session_ttl_seconds does not exceed MAX_SESSION_TTL_SECS
     /// - health_check_interval_seconds is greater than 0 and not exceeding MAX_HEALTH_CHECK_INTERVAL_SECS
@@ -363,6 +364,16 @@ impl ConfigLoader {
                 message: format!(
                     "timeout exceeds maximum allowed value of {} seconds",
                     MAX_TIMEOUT_SECS
+                ),
+            });
+        }
+
+        // Validate max_retries <= MAX_MAX_RETRIES
+        if connection.max_retries > MAX_MAX_RETRIES {
+            return Err(ConfigError::InvalidMaxRetries {
+                message: format!(
+                    "max_retries exceeds maximum allowed value of {} (got {})",
+                    MAX_MAX_RETRIES, connection.max_retries
                 ),
             });
         }

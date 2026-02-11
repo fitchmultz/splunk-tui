@@ -21,6 +21,7 @@ use std::time::Duration;
 
 use super::builder::ConfigLoader;
 use super::error::ConfigError;
+use crate::constants::MAX_MAX_RETRIES;
 
 /// Read an environment variable, returning None if unset, empty, or whitespace-only.
 /// Returns the trimmed value (leading/trailing whitespace removed) if present.
@@ -71,12 +72,16 @@ pub fn apply_env(loader: &mut ConfigLoader) -> Result<(), ConfigError> {
         loader.set_timeout(Some(Duration::from_secs(secs)));
     }
     if let Some(retries) = env_var_or_none("SPLUNK_MAX_RETRIES") {
-        loader.set_max_retries(Some(retries.parse().map_err(|_| {
-            ConfigError::InvalidValue {
-                var: "SPLUNK_MAX_RETRIES".to_string(),
-                message: "must be a number".to_string(),
-            }
-        })?));
+        let value: usize = retries.parse().map_err(|_| ConfigError::InvalidValue {
+            var: "SPLUNK_MAX_RETRIES".to_string(),
+            message: "must be a non-negative integer".to_string(),
+        })?;
+        if value > MAX_MAX_RETRIES {
+            return Err(ConfigError::InvalidMaxRetries {
+                message: format!("must be between 0 and {} (got {})", MAX_MAX_RETRIES, value),
+            });
+        }
+        loader.set_max_retries(Some(value));
     }
     if let Some(buffer) = env_var_or_none("SPLUNK_SESSION_EXPIRY_BUFFER") {
         loader.set_session_expiry_buffer_seconds(Some(buffer.parse().map_err(|_| {

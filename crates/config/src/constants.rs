@@ -33,6 +33,14 @@ pub const MAX_SESSION_TTL_SECS: u64 = 86400;
 /// Maximum allowed health check interval in seconds (1 hour).
 pub const MAX_HEALTH_CHECK_INTERVAL_SECS: u64 = 3600;
 
+/// Minimum allowed session TTL in seconds.
+/// Must be at least 2 minutes to allow meaningful token lifetime.
+pub const MIN_SESSION_TTL_SECS: u64 = 120;
+
+/// Minimum allowed session expiry buffer in seconds.
+/// Must be positive to provide meaningful proactive refresh window.
+pub const MIN_EXPIRY_BUFFER_SECS: u64 = 10;
+
 /// Default Splunk management port.
 pub const DEFAULT_SPLUNK_PORT: u16 = 8089;
 
@@ -41,6 +49,18 @@ pub const DEFAULT_MAX_REDIRECTS: usize = 5;
 
 /// Default maximum number of retries for failed requests.
 pub const DEFAULT_MAX_RETRIES: usize = 3;
+
+// =============================================================================
+// Retry Configuration Bounds
+// =============================================================================
+
+/// Minimum allowed value for max_retries.
+/// Zero is allowed to support "no retry" scenarios intentionally.
+pub const MIN_MAX_RETRIES: usize = 0;
+
+/// Maximum allowed value for max_retries.
+/// Prevents excessive retry loops that could hang the application.
+pub const MAX_MAX_RETRIES: usize = 10;
 
 // =============================================================================
 // Search & Polling Defaults

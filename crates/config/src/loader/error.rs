@@ -64,6 +64,9 @@ pub enum ConfigError {
     #[error("invalid health check interval: {message}")]
     InvalidHealthCheckInterval { message: String },
 
+    #[error("invalid max retries: {message}")]
+    InvalidMaxRetries { message: String },
+
     /// Failed to parse the `.env` file due to invalid syntax.
     ///
     /// SAFETY: This error only includes the byte index of the parse failure,
