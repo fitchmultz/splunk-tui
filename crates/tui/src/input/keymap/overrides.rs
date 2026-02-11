@@ -19,7 +19,6 @@ use std::sync::OnceLock;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use splunk_config::keybind::{KeyCodeName, ModifierFlags, ParsedKey, parse_key};
 use splunk_config::{KeybindAction, KeybindOverrides};
-use tracing;
 
 use crate::action::Action;
 
@@ -80,7 +79,9 @@ impl KeybindOverrideTable {
     }
 
     /// Returns the number of active overrides.
-    /// Note: Only used in tests, but kept for test convenience.
+    ///
+    /// This method is only used in tests for verifying override table construction.
+    /// It is intentionally kept for test ergonomics despite having no production callers.
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.overrides.len()

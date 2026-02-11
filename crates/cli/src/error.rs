@@ -66,7 +66,6 @@ pub enum ExitCode {
     ///
     /// This matches the Unix convention where exit code 128 + signal number
     /// indicates termination by that signal.
-    #[allow(dead_code)]
     Interrupted = 130,
 }
 
@@ -74,20 +73,6 @@ impl ExitCode {
     /// Convert the exit code to an i32 for use with std::process::exit().
     pub const fn as_i32(self) -> i32 {
         self as u8 as i32
-    }
-
-    /// Returns true if this exit code indicates a retryable condition.
-    ///
-    /// Retryable conditions include:
-    /// - Connection errors (temporary network issues)
-    /// - Rate limiting (should retry after delay)
-    /// - Service unavailable (maintenance mode may resolve)
-    #[allow(dead_code)]
-    pub const fn is_retryable(self) -> bool {
-        matches!(
-            self,
-            ExitCode::ConnectionError | ExitCode::RateLimited | ExitCode::ServiceUnavailable
-        )
     }
 }
 
@@ -198,19 +183,6 @@ mod tests {
         assert_eq!(ExitCode::GeneralError.as_i32(), 1);
         assert_eq!(ExitCode::AuthenticationFailed.as_i32(), 2);
         assert_eq!(ExitCode::Interrupted.as_i32(), 130);
-    }
-
-    #[test]
-    fn test_is_retryable() {
-        assert!(!ExitCode::Success.is_retryable());
-        assert!(!ExitCode::GeneralError.is_retryable());
-        assert!(!ExitCode::AuthenticationFailed.is_retryable());
-        assert!(ExitCode::ConnectionError.is_retryable());
-        assert!(!ExitCode::NotFound.is_retryable());
-        assert!(!ExitCode::ValidationError.is_retryable());
-        assert!(!ExitCode::PermissionDenied.is_retryable());
-        assert!(ExitCode::RateLimited.is_retryable());
-        assert!(ExitCode::ServiceUnavailable.is_retryable());
     }
 
     #[test]

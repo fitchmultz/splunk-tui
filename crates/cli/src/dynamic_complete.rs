@@ -10,7 +10,6 @@
 //! - Static completion generation (handled by clap_complete derive macros)
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -33,8 +32,6 @@ impl<T> CacheEntry<T> {
 
 /// Completion cache with TTL support.
 pub struct CompletionCache {
-    #[allow(dead_code)]
-    cache_dir: PathBuf,
     default_ttl: Duration,
     memory_cache: Arc<Mutex<HashMap<String, CacheEntry<String>>>>,
 }
@@ -42,11 +39,7 @@ pub struct CompletionCache {
 impl CompletionCache {
     /// Create a new completion cache.
     pub fn new() -> Result<Self> {
-        let cache_dir = Self::default_cache_dir()?;
-        std::fs::create_dir_all(&cache_dir)?;
-
         Ok(Self {
-            cache_dir,
             default_ttl: Duration::from_secs(60),
             memory_cache: Arc::new(Mutex::new(HashMap::new())),
         })
@@ -57,12 +50,6 @@ impl CompletionCache {
         let mut cache = Self::new()?;
         cache.default_ttl = Duration::from_secs(ttl_seconds);
         Ok(cache)
-    }
-
-    fn default_cache_dir() -> Result<PathBuf> {
-        let dirs = directories::ProjectDirs::from("com", "splunk-tui", "splunk-tui")
-            .ok_or_else(|| anyhow::anyhow!("Failed to determine cache directory"))?;
-        Ok(dirs.cache_dir().join("completions"))
     }
 
     /// Get cached values or fetch using provided function.
@@ -104,18 +91,6 @@ impl CompletionCache {
             }
         }
     }
-
-    #[allow(dead_code)]
-    /// Get the cache directory path.
-    pub fn cache_dir(&self) -> &PathBuf {
-        &self.cache_dir
-    }
-
-    #[allow(dead_code)]
-    /// Get the default TTL.
-    pub fn ttl(&self) -> Duration {
-        self.default_ttl
-    }
 }
 
 /// Profile completer using ConfigManager.
@@ -140,14 +115,6 @@ pub struct IndexCompleter {
 }
 
 impl IndexCompleter {
-    #[allow(dead_code)]
-    /// Create a new index completer.
-    pub fn new() -> Result<Self> {
-        Ok(Self {
-            cache: Arc::new(CompletionCache::new()?),
-        })
-    }
-
     /// Create with custom TTL.
     pub fn with_ttl(ttl_seconds: u64) -> Result<Self> {
         Ok(Self {
@@ -176,14 +143,6 @@ pub struct SavedSearchCompleter {
 }
 
 impl SavedSearchCompleter {
-    #[allow(dead_code)]
-    /// Create a new saved search completer.
-    pub fn new() -> Result<Self> {
-        Ok(Self {
-            cache: Arc::new(CompletionCache::new()?),
-        })
-    }
-
     /// Create with custom TTL.
     pub fn with_ttl(ttl_seconds: u64) -> Result<Self> {
         Ok(Self {
@@ -212,14 +171,6 @@ pub struct JobCompleter {
 }
 
 impl JobCompleter {
-    #[allow(dead_code)]
-    /// Create a new job completer.
-    pub fn new() -> Result<Self> {
-        Ok(Self {
-            cache: Arc::new(CompletionCache::new()?),
-        })
-    }
-
     /// Create with custom TTL.
     pub fn with_ttl(ttl_seconds: u64) -> Result<Self> {
         Ok(Self {
@@ -248,14 +199,6 @@ pub struct AppCompleter {
 }
 
 impl AppCompleter {
-    #[allow(dead_code)]
-    /// Create a new app completer.
-    pub fn new() -> Result<Self> {
-        Ok(Self {
-            cache: Arc::new(CompletionCache::new()?),
-        })
-    }
-
     /// Create with custom TTL.
     pub fn with_ttl(ttl_seconds: u64) -> Result<Self> {
         Ok(Self {
