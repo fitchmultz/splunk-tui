@@ -2,6 +2,632 @@
   "version": 1,
   "tasks": [
     {
+      "id": "RQ-0465",
+      "status": "todo",
+      "title": "Fix transaction rollback errors being silently discarded",
+      "description": "Transaction rollback operations in `transaction.rs` silently discard all errors using `let _ =`. When rollback fails (network error, permission denied), the error is completely lost, leaving the system in an inconsistent state with no audit trail. This violates the Fail Fast principle and creates data integrity risks.",
+      "priority": "critical",
+      "tags": [
+        "maintenance",
+        "reliability",
+        "data-integrity",
+        "error-handling"
+      ],
+      "scope": [
+        "crates/client/src/transaction.rs",
+        "crates/client/src/error.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/transaction.rs :: rollback() :: lines 349-362 use `let _ =` for all delete operations",
+        "path: crates/client/src/transaction.rs :: lines 349, 352, 355, 358, 361 discard errors from delete_index, delete_user, delete_role, delete_macro, delete_saved_search",
+        "principle: Fail Fast - errors swallowed silently, no audit trail of rollback failures"
+      ],
+      "plan": [
+        "Change rollback() to collect all rollback errors instead of discarding with `let _ =`",
+        "Create a TransactionRollbackError type that contains Vec<(String, ClientError)> for failed operations",
+        "Log rollback failures at error level with full context",
+        "Add test verifying rollback errors are properly captured and reported",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming new rollback error tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0466",
+      "status": "todo",
+      "title": "Fix silent plaintext credential fallback when keyring fails",
+      "description": "When keyring storage fails in `try_store_password_in_keyring` and `try_store_token_in_keyring`, the system silently falls back to plaintext storage with only a warning log. This is a security concern - credentials may be stored in plaintext without operator awareness. There is no mechanism to force keyring-only storage or fail hard.",
+      "priority": "critical",
+      "tags": [
+        "maintenance",
+        "security",
+        "credentials",
+        "fail-fast"
+      ],
+      "scope": [
+        "crates/config/src/persistence/profiles.rs",
+        "crates/config/src/types/auth.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/config/src/persistence/profiles.rs :: try_store_password_in_keyring() :: lines 309-325 silently falls back to plaintext",
+        "path: crates/config/src/persistence/profiles.rs :: try_store_token_in_keyring() :: lines 332-347 silently falls back to plaintext",
+        "principle: Security baseline - silent fallback to less secure storage violates least astonishment"
+      ],
+      "plan": [
+        "Add configuration option to force keyring-only storage (fail on keyring error)",
+        "Change default behavior to fail hard when keyring storage is requested but fails",
+        "Add explicit opt-in for plaintext fallback with clear warning",
+        "Update tests to verify secure-by-default behavior",
+        "Document the credential storage security model",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming credential storage tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0467",
+      "status": "todo",
+      "title": "Fix URL path construction without proper percent-encoding",
+      "description": "URL construction in multiple endpoint files uses string formatting without percent-encoding. The `user_name` is interpolated directly into the URL path without encoding. Special characters in usernames (like `/`, `%`, or Unicode) could cause path traversal or incorrect URL resolution.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "security",
+        "injection",
+        "url-encoding"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/users.rs",
+        "crates/client/src/endpoints/roles.rs",
+        "crates/client/src/endpoints/indexes.rs",
+        "crates/client/src/endpoints/kvstore.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/endpoints/users.rs :: lines 135-138 uses format!(\"/services/authentication/users/{user_name}\")",
+        "path: crates/client/src/endpoints/roles.rs :: lines 135-137 similar pattern for role names",
+        "path: crates/client/src/endpoints/indexes.rs :: lines 71-73 similar pattern for index names",
+        "principle: Security baseline - injection risk via unencoded URL path segments"
+      ],
+      "plan": [
+        "Create a helper function `encode_path_segment()` for percent-encoding path components",
+        "Audit all endpoint files for URL construction using string interpolation",
+        "Replace all direct string interpolation with encoded path construction",
+        "Add tests with special characters (/, %, unicode, spaces) in names",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming URL encoding tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0468",
+      "status": "todo",
+      "title": "Fix missing boundary validation for configuration values",
+      "description": "Configuration types allow invalid states to be represented. ProfileConfig fields have no length/format validation - empty strings, zero timeouts, u64::MAX values are all accepted. This violates 'make bugs hard to write' principle and can cause runtime failures or unexpected behavior.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "validation",
+        "boundary-checks",
+        "type-safety"
+      ],
+      "scope": [
+        "crates/config/src/types/profile.rs",
+        "crates/config/src/types/connection.rs",
+        "crates/config/src/loader/builder.rs",
+        "crates/cli/src/args.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/config/src/types/profile.rs :: lines 20-47 - all fields optional with no validation",
+        "path: crates/config/src/types/connection.rs :: lines 52-100 - no validation of timeout ranges or relationships",
+        "path: crates/cli/src/args.rs :: lines 46-119 - no constraints on numeric args like --timeout, --max-retries",
+        "principle: Make bugs hard to write - illegal states are representable"
+      ],
+      "plan": [
+        "Add newtype wrappers for validated values (NonEmptyString, ValidatedUrl, PositiveU64)",
+        "Add range validation for timeout_seconds, max_retries, session_ttl",
+        "Validate URL format at deserialization time, not just at build()",
+        "Add validation at CLI argument parsing with clap value validators",
+        "Add tests verifying invalid values are rejected at boundaries",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming validation tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0469",
+      "status": "todo",
+      "title": "Fix JSON parsing errors being silently dropped in log endpoints",
+      "description": "JSON deserialization errors in log and parsing endpoints are silently filtered out with `.ok()`. If the API returns malformed log entries or parsing errors, they are simply dropped without any indication that data was lost. This violates the Fail Fast principle and creates data integrity issues.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "data-integrity",
+        "error-handling",
+        "fail-fast"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/logs.rs",
+        "crates/client/src/endpoints/parsing.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/endpoints/logs.rs :: line 69 uses filter_map(|v| serde_json::from_value(v).ok())",
+        "path: crates/client/src/endpoints/parsing.rs :: line 107 uses filter_map(|v| serde_json::from_value(v).ok())",
+        "principle: Fail Fast - data loss is silent, no indication of parsing failures"
+      ],
+      "plan": [
+        "Change from silent filtering to explicit error handling",
+        "Add option to return partial results with error summary",
+        "Log parsing failures at warn level with entry context",
+        "Add metrics counter for deserialization failures",
+        "Add tests verifying parsing errors are reported not dropped",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming error handling tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0470",
+      "status": "todo",
+      "title": "Fix documentation-code mismatches in CLI defaults and flags",
+      "description": "Multiple documentation-code mismatches exist: forwarders default count is 100 in code but documented as 30; SHC members default is 100 in code but documented as 50; jobs command documentation says flat flags are used but subcommands exist; SPLUNK_HEALTH_CHECK_INTERVAL is TUI-only but documented as general. These inconsistencies confuse users and violate least astonishment.",
+      "priority": "high",
+      "tags": [
+        "maintenance",
+        "docs",
+        "consistency",
+        "cli"
+      ],
+      "scope": [
+        "docs/usage.md",
+        "README.md",
+        "crates/cli/src/args.rs",
+        "crates/config/src/constants.rs",
+        "make lint-docs",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: docs/usage.md :: line 702 - forwarders default 30, but code uses DEFAULT_LIST_PAGE_SIZE=100",
+        "path: docs/usage.md :: line 773 - SHC members default 50, but code uses DEFAULT_LIST_PAGE_SIZE=100",
+        "path: docs/usage.md :: line 789 - says jobs uses flat flags, but subcommands exist in code",
+        "path: docs/usage.md :: line 82 - SPLUNK_HEALTH_CHECK_INTERVAL presented as general config but is TUI-only",
+        "principle: Consistency/Integrity - documentation-code mismatch"
+      ],
+      "plan": [
+        "Audit all default values in docs against code constants",
+        "Update forwarders documentation to show default 100",
+        "Update SHC members documentation to show default 100",
+        "Update jobs command documentation to reflect subcommand structure",
+        "Clarify TUI-only environment variables in documentation",
+        "Add CI check to validate documented defaults match code defaults",
+        "Verify by running `make lint-docs && make ci SKIP_LIVE_TESTS=1`"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0471",
+      "status": "todo",
+      "title": "Remove or utilize dead code flagged with #[allow(dead_code)]",
+      "description": "Multiple functions and types are marked with #[allow(dead_code)] indicating they are unused: SIGINT_EXIT_CODE constant, ExitCode::Interrupted variant, is_retryable() method, cache helper functions, completer new() constructors, len() method in keybinding overrides. This is YAGNI violation and creates maintenance burden.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "yagni",
+        "dead-code",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/cli/src/cancellation.rs",
+        "crates/cli/src/error.rs",
+        "crates/client/src/endpoints/request.rs",
+        "crates/cli/src/dynamic_complete.rs",
+        "crates/tui/src/input/keymap/overrides.rs",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/cli/src/cancellation.rs :: line 29 - SIGINT_EXIT_CODE #[allow(dead_code)]",
+        "path: crates/cli/src/error.rs :: lines 69, 85 - Interrupted variant and is_retryable() #[allow(dead_code)]",
+        "path: crates/client/src/endpoints/request.rs :: lines 490-604 - cache helper functions #[allow(dead_code)]",
+        "path: crates/cli/src/dynamic_complete.rs :: lines 36, 108, 114, 143, 179, 215, 251 - completer methods #[allow(dead_code)]",
+        "principle: YAGNI - dead code creates maintenance burden"
+      ],
+      "plan": [
+        "Remove dead code that has no callers after 30+ days",
+        "For intentionally kept code, document why it's preserved with TODO/issue reference",
+        "For speculative infrastructure, either implement usage or remove",
+        "Add CI check preventing new #[allow(dead_code)] without justification comment",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming no regressions"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0472",
+      "status": "todo",
+      "title": "Consolidate duplicated size formatting logic between CLI and TUI",
+      "description": "Human-readable size formatting logic is duplicated between CLI and TUI crates with slightly different implementations. The UNITS constant and formatting logic should be in the shared client crate to ensure consistency and reduce maintenance burden.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "dry",
+        "refactor",
+        "code-quality"
+      ],
+      "scope": [
+        "crates/tui/src/ui/screens/lookups.rs",
+        "crates/cli/src/formatters/table/lookups.rs",
+        "crates/client/src/lib.rs",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/tui/src/ui/screens/lookups.rs :: lines 117-126 - humanize_size() function",
+        "path: crates/cli/src/formatters/table/lookups.rs :: lines 38-50 - format_size() function",
+        "principle: DRY - same logic duplicated across presentation layers"
+      ],
+      "plan": [
+        "Extract size formatting to shared utility in client crate",
+        "Replace both implementations with calls to shared utility",
+        "Ensure both implementations produce identical output",
+        "Add unit tests for the shared utility",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming no output changes"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0473",
+      "status": "todo",
+      "title": "Add structured error context for token refresh failures in singleflight pattern",
+      "description": "When concurrent callers are waiting for token refresh and the leader fails, followers get a generic 'Token refresh failed' message without the original error context. This makes debugging authentication issues difficult in concurrent scenarios.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "observability",
+        "error-handling",
+        "auth"
+      ],
+      "scope": [
+        "crates/client/src/auth.rs",
+        "crates/client/src/error.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/auth.rs :: lines 260-264 - returns generic 'Token refresh failed' without original error",
+        "principle: Operational hygiene - poor error messages make debugging difficult"
+      ],
+      "plan": [
+        "Propagate original error context through singleflight pattern",
+        "Add structured error type for token refresh failures with cause chain",
+        "Include username and auth method in error context for debugging",
+        "Add test verifying error context is preserved through concurrent refresh",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming auth tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0474",
+      "status": "todo",
+      "title": "Fix timeout handling that loses original error context",
+      "description": "When a timeout occurs in overview_fetch.rs, the original error from the client is lost and replaced with a generic timeout error. This makes debugging difficult because the underlying cause (network issue, server error, etc.) is obscured.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "observability",
+        "error-handling",
+        "debugging"
+      ],
+      "scope": [
+        "crates/tui/src/runtime/side_effects/overview_fetch.rs",
+        "crates/client/src/error.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/tui/src/runtime/side_effects/overview_fetch.rs :: lines 46, 62, 78, 99, 135, 151, 167, 199, 215 - Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT))",
+        "principle: Operational hygiene - original error context lost on timeout"
+      ],
+      "plan": [
+        "Capture original error before timeout conversion",
+        "Create TimeoutError type that wraps the underlying error",
+        "Update error display to show both timeout and underlying cause",
+        "Add test verifying error chain is preserved",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming error handling tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0475",
+      "status": "todo",
+      "title": "Fix numeric parsing errors silently converted to None in index settings",
+      "description": "Numeric parsing errors for index settings (max_hot_buckets) are silently converted to None with `.ok()`. If the API returns an unexpected format, the error is lost and the field appears unset, masking potential API version mismatches.",
+      "priority": "medium",
+      "tags": [
+        "maintenance",
+        "error-handling",
+        "data-integrity",
+        "fail-fast"
+      ],
+      "scope": [
+        "crates/tui/src/app/popups/confirm.rs",
+        "crates/tui/src/app/input/indexes.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/tui/src/app/popups/confirm.rs :: line 223 - max_hot_buckets uses and_then(|s| s.parse().ok())",
+        "path: crates/tui/src/app/input/indexes.rs :: lines 98, 109 - similar parse().ok() patterns",
+        "principle: Fail Fast - parse errors silently ignored"
+      ],
+      "plan": [
+        "Replace silent .ok() with explicit error handling",
+        "Log parsing failures at appropriate level",
+        "Consider propagating parse errors to UI for visibility",
+        "Add tests verifying parse errors are handled not ignored",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming index handling tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0476",
+      "status": "todo",
+      "title": "Consolidate duplicated metric constants between metrics.rs and cache.rs",
+      "description": "Metric name constants (METRIC_CACHE_HITS, METRIC_CACHE_MISSES) are defined in both metrics.rs and cache.rs. This duplication risks inconsistency if one is changed but not the other.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "dry",
+        "metrics",
+        "cleanup"
+      ],
+      "scope": [
+        "crates/client/src/metrics.rs",
+        "crates/client/src/client/cache.rs",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/metrics.rs :: lines 34-37 - defines METRIC_CACHE_HITS, METRIC_CACHE_MISSES",
+        "path: crates/client/src/client/cache.rs :: lines 50-53 - defines same constants",
+        "principle: DRY - metric names defined in two places"
+      ],
+      "plan": [
+        "Remove duplicate definitions from cache.rs",
+        "Import constants from metrics.rs in cache.rs",
+        "Verify no other duplicated constants exist",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming metrics tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0477",
+      "status": "todo",
+      "title": "Fix fragile string-based error classification in retry logic",
+      "description": "Error classification for retryable transport errors uses string matching on error messages. If reqwest changes error message formatting, retry logic may fail silently. Additionally, errors not matching patterns are not classified, potentially causing unnecessary retries or premature failures.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "reliability",
+        "error-handling",
+        "robustness"
+      ],
+      "scope": [
+        "crates/client/src/endpoints/request.rs",
+        "crates/cli/src/commands/list_all/fetchers.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/endpoints/request.rs :: lines 98-111 - string matching on error.to_string()",
+        "path: crates/cli/src/commands/list_all/fetchers.rs :: lines 204-210 - substring matching for cluster errors",
+        "principle: Fail Fast - fragile string-based classification may misclassify"
+      ],
+      "plan": [
+        "Research reqwest's structured error types for more robust classification",
+        "Add fallback classification for unrecognized error types",
+        "Add test with various error message formats to ensure robustness",
+        "Document the classification strategy and risks",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming retry tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0478",
+      "status": "todo",
+      "title": "Add TLS warning when skip_verify is enabled for HTTPS URLs",
+      "description": "When skip_verify is true, the code only logs a warning for HTTP URLs (where it has no effect). For HTTPS URLs with danger_accept_invalid_certs(true), there is no warning logged. An operator may not realize their connection is insecure.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "security",
+        "tls",
+        "observability"
+      ],
+      "scope": [
+        "crates/client/src/client/builder.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/client/builder.rs :: lines 352-362 - warns for HTTP but not for HTTPS with skip_verify",
+        "principle: Security baseline - unsafe defaults should warn operators"
+      ],
+      "plan": [
+        "Add warning log when skip_verify is enabled for HTTPS URLs",
+        "Include the target host in the warning for clarity",
+        "Consider adding a confirmation prompt in interactive mode",
+        "Add test verifying warning is emitted",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming builder tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
+      "id": "RQ-0479",
+      "status": "todo",
+      "title": "Fix session expiry error showing 'unknown' username instead of actual username",
+      "description": "When a session expires, the error message shows 'unknown' as the username even when the client knows the username from the auth strategy. This is confusing for operators with multiple accounts.",
+      "priority": "low",
+      "tags": [
+        "maintenance",
+        "ux",
+        "error-messages",
+        "observability"
+      ],
+      "scope": [
+        "crates/client/src/error.rs",
+        "crates/client/src/auth.rs",
+        "make test",
+        "make ci SKIP_LIVE_TESTS=1"
+      ],
+      "evidence": [
+        "path: crates/client/src/error.rs :: lines 546-555 - hardcoded 'unknown' username in SessionExpired error",
+        "principle: Operational hygiene - poor error messages hinder debugging"
+      ],
+      "plan": [
+        "Pass actual username to SessionExpired error construction",
+        "Update error classification to extract username from auth context",
+        "Add test verifying username is present in session expiry errors",
+        "Verify by running `make ci SKIP_LIVE_TESTS=1` and confirming error tests pass"
+      ],
+      "notes": [],
+      "request": "scan: maintenance",
+      "created_at": "2026-02-11T00:00:00Z",
+      "updated_at": "2026-02-11T00:00:00Z",
+      "depends_on": [],
+      "blocks": [],
+      "relates_to": [],
+      "custom_fields": {
+        "scan_agent": "scan-maintenance"
+      }
+    },
+    {
       "id": "RQ-0456",
       "status": "todo",
       "title": "Generate tutorial and docs from keymap to eliminate guidance drift",
