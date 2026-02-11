@@ -314,3 +314,99 @@ async fn test_splunk_client_get_internal_logs() {
     assert_eq!(logs[0].level, LogLevel::Info);
     assert_eq!(logs[1].level, LogLevel::Warn);
 }
+
+#[tokio::test]
+async fn test_get_internal_logs_with_malformed_entry_logs_warning() {
+    use splunk_client::metrics::MetricsCollector;
+    use wiremock::matchers::{method, path, query_param};
+
+    let mock_server = MockServer::start().await;
+
+    let create_job_fixture = serde_json::json!({
+        "entry": [{
+            "content": {
+                "sid": "test-logs-sid-malformed"
+            }
+        }]
+    });
+
+    let job_status_fixture = serde_json::json!({
+        "entry": [{
+            "content": {
+                "sid": "test-logs-sid-malformed",
+                "isDone": true,
+                "doneProgress": 1.0,
+                "runDuration": 1.0,
+                "scanCount": 3,
+                "eventCount": 3,
+                "resultCount": 3,
+                "diskUsage": 256
+            }
+        }]
+    });
+
+    let results_fixture = serde_json::json!([
+        {
+            "_time": "2025-01-20T10:30:00.000+00:00",
+            "log_level": "INFO",
+            "component": "Metrics",
+            "_raw": "valid entry 1"
+        },
+        {
+            "log_level": "INFO",
+            "component": "BadComponent",
+            "_raw": "malformed entry"
+        },
+        {
+            "_time": "2025-01-20T10:29:00.000+00:00",
+            "log_level": "WARN",
+            "component": "Indexer",
+            "_raw": "valid entry 2"
+        }
+    ]);
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&create_job_fixture))
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-logs-sid-malformed"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&job_status_fixture))
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/services/search/jobs/test-logs-sid-malformed/results",
+        ))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&results_fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let metrics = MetricsCollector::new();
+    let result = endpoints::get_internal_logs(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        10,
+        None,
+        3,
+        Some(&metrics),
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+    let logs = result.unwrap();
+
+    assert_eq!(logs.len(), 2);
+    assert_eq!(logs[0].component, "Metrics");
+    assert_eq!(logs[1].component, "Indexer");
+
+    assert!(logs.iter().all(|l| l.component != "BadComponent"));
+}

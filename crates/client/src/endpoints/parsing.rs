@@ -1,7 +1,7 @@
 //! Log parsing health check endpoints.
 
 use reqwest::Client;
-use tracing::debug;
+use tracing::{debug, warn};
 
 use crate::client::circuit_breaker::CircuitBreaker;
 use crate::endpoints::search::{
@@ -100,15 +100,41 @@ pub async fn check_log_parsing_health(
     )
     .await?;
 
-    // Parse results into LogParsingError structs
+    let endpoint = "/services/search/jobs/results";
+    let mut parse_failures = 0usize;
     let errors: Vec<LogParsingError> = results
         .results
         .into_iter()
-        .filter_map(|v| serde_json::from_value(v).ok())
+        .filter_map(
+            |v| match serde_json::from_value::<LogParsingError>(v.clone()) {
+                Ok(entry) => Some(entry),
+                Err(e) => {
+                    parse_failures += 1;
+                    warn!(
+                        "Failed to deserialize LogParsingError from {}: error={}, value_preview={}",
+                        endpoint,
+                        e,
+                        serde_json::to_string(&v).unwrap_or_else(|_| format!("{:?}", v))
+                    );
+                    if let Some(m) = metrics {
+                        m.record_deserialization_failure(endpoint, "LogParsingError");
+                    }
+                    None
+                }
+            },
+        )
         .collect();
 
     let total_errors = errors.len();
     let is_healthy = total_errors == 0;
+
+    if parse_failures > 0 {
+        debug!(
+            "Completed check_log_parsing_health with {} errors and {} parse failures",
+            errors.len(),
+            parse_failures
+        );
+    }
 
     debug!(
         "Log parsing health check complete: {} errors found, healthy: {}",

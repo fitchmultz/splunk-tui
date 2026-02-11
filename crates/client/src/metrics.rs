@@ -45,6 +45,9 @@ pub const METRIC_TUI_FRAME_RENDER_DURATION: &str = "splunk_tui_frame_render_dura
 /// Metric name for TUI action queue depth gauge.
 pub const METRIC_TUI_ACTION_QUEUE_DEPTH: &str = "splunk_tui_action_queue_depth";
 
+/// Metric name for deserialization failure counter.
+pub const METRIC_DESERIALIZATION_FAILURES: &str = "splunk_api_deserialization_failures_total";
+
 /// Error categories for metrics labeling.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCategory {
@@ -277,6 +280,22 @@ impl MetricsCollector {
             return;
         }
         metrics::gauge!(METRIC_CACHE_SIZE).set(size as f64);
+    }
+
+    /// Record a deserialization failure.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The API endpoint path
+    /// * `model_type` - The type name that failed to deserialize (e.g., "LogEntry", "LogParsingError")
+    pub fn record_deserialization_failure(&self, endpoint: &str, model_type: &'static str) {
+        if !self.enabled {
+            return;
+        }
+        metrics::counter!(METRIC_DESERIALIZATION_FAILURES,
+            "endpoint" => endpoint.to_string(),
+            "model_type" => model_type.to_string(),
+        )
+        .increment(1);
     }
 
     /// Record TUI frame render duration.

@@ -359,3 +359,110 @@ async fn test_splunk_client_check_log_parsing_health_session_retry() {
     // Should have called login twice (initial + retry)
     assert_eq!(login_count.load(Ordering::SeqCst), 2);
 }
+
+#[tokio::test]
+async fn test_check_log_parsing_health_with_malformed_entry_logs_warning() {
+    use splunk_client::metrics::MetricsCollector;
+
+    let mock_server = MockServer::start().await;
+
+    let create_job_fixture = serde_json::json!({
+        "entry": [{
+            "content": {
+                "sid": "test-parsing-sid-malformed"
+            }
+        }]
+    });
+
+    let job_status_fixture = serde_json::json!({
+        "entry": [{
+            "content": {
+                "sid": "test-parsing-sid-malformed",
+                "isDone": true,
+                "doneProgress": 1.0,
+                "runDuration": 1.0,
+                "scanCount": 3,
+                "eventCount": 3,
+                "resultCount": 3,
+                "diskUsage": 256
+            }
+        }]
+    });
+
+    let results_fixture = serde_json::json!([
+        {
+            "_time": "2025-01-20T10:30:00.000-05:00",
+            "source": "/opt/splunk/var/log/splunk/metrics.log",
+            "sourcetype": "splunkd",
+            "message": "Valid error 1",
+            "log_level": "ERROR",
+            "component": "DateParserVerbose"
+        },
+        {
+            "source": "/opt/splunk/var/log/splunk/metrics.log",
+            "sourcetype": "splunkd",
+            "message": "Malformed error",
+            "log_level": "ERROR",
+            "component": "BadComponent"
+        },
+        {
+            "_time": "2025-01-20T10:29:00.000-05:00",
+            "source": "/opt/splunk/var/log/splunk/metrics.log",
+            "sourcetype": "splunkd",
+            "message": "Valid error 2",
+            "log_level": "WARN",
+            "component": "TuningParser"
+        }
+    ]);
+
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&create_job_fixture))
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/test-parsing-sid-malformed"))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&job_status_fixture))
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/services/search/jobs/test-parsing-sid-malformed/results",
+        ))
+        .and(query_param("output_mode", "json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&results_fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let metrics = MetricsCollector::new();
+    let result = endpoints::check_log_parsing_health(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        3,
+        Some(&metrics),
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+    let health = result.unwrap();
+
+    assert_eq!(health.errors.len(), 2);
+    assert_eq!(health.total_errors, 2);
+    assert!(!health.is_healthy);
+
+    assert!(health.errors.iter().all(|e| e.component != "BadComponent"));
+
+    assert!(
+        health
+            .errors
+            .iter()
+            .any(|e| e.component == "DateParserVerbose")
+    );
+    assert!(health.errors.iter().any(|e| e.component == "TuningParser"));
+}
