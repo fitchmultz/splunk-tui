@@ -49,3 +49,4 @@ proptest-regressions/
 .ralph/config.json
 logs/
 .ralph/config.jsonc
+CLAUDE.md
