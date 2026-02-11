@@ -50,3 +50,4 @@ proptest-regressions/
 logs/
 .ralph/config.jsonc
 CLAUDE.md
+.ralph/cache/execution_history.json
