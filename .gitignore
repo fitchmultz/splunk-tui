@@ -48,6 +48,6 @@ proptest-regressions/
 .ralph/cache/stop_requested
 .ralph/config.json
 logs/
-.ralph/config.jsonc
+.ralph
 CLAUDE.md
 .ralph/cache/execution_history.json
