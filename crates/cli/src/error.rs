@@ -91,7 +91,7 @@ impl From<&ClientError> for ExitCode {
 
             // Connection errors (exit code 3)
             ClientError::ConnectionRefused(_) => ExitCode::ConnectionError,
-            ClientError::Timeout(_) => ExitCode::ConnectionError,
+            ClientError::OperationTimeout { .. } => ExitCode::ConnectionError,
             ClientError::InvalidUrl(_) => ExitCode::ConnectionError,
             ClientError::TlsError(_) => ExitCode::ConnectionError,
 
@@ -214,7 +214,10 @@ mod tests {
 
     #[test]
     fn test_from_client_error_timeout() {
-        let err = ClientError::Timeout(Duration::from_secs(30));
+        let err = ClientError::OperationTimeout {
+            operation: "fetch_cluster",
+            timeout: Duration::from_secs(30),
+        };
         assert_eq!(ExitCode::from(&err), ExitCode::ConnectionError);
     }
 

@@ -301,7 +301,10 @@ fn test_more_search_results_loaded_error_handling() {
     app.loading = true;
 
     // Simulate error loading more results
-    let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+    let error = splunk_client::ClientError::OperationTimeout {
+        operation: "load_more_results",
+        timeout: std::time::Duration::from_secs(30),
+    };
     app.update(Action::MoreSearchResultsLoaded(Err(Arc::new(error))));
 
     // Results should be unchanged

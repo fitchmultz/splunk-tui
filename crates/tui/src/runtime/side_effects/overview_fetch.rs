@@ -43,7 +43,10 @@ pub async fn fetch_indexes(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_indexes",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -59,7 +62,10 @@ pub async fn fetch_jobs(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_jobs",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -75,7 +81,10 @@ pub async fn fetch_apps(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_apps",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -96,7 +105,10 @@ pub async fn fetch_users(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_users",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -132,7 +144,10 @@ pub async fn fetch_cluster(
             }),
             _ => Err(e),
         },
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_cluster",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -148,7 +163,10 @@ pub async fn fetch_health(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_health",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -164,7 +182,10 @@ pub async fn fetch_kvstore(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_kvstore",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -196,7 +217,10 @@ pub async fn fetch_license(
             })
         }
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_license",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -212,7 +236,10 @@ pub async fn fetch_saved_searches(
             error: None,
         }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(ClientError::Timeout(FETCH_TIMEOUT)),
+        Err(_) => Err(ClientError::OperationTimeout {
+            operation: "fetch_saved_searches",
+            timeout: FETCH_TIMEOUT,
+        }),
     }
 }
 
@@ -222,14 +249,17 @@ mod tests {
 
     #[test]
     fn test_resource_error_creates_correct_resource() {
-        let error = ClientError::Timeout(FETCH_TIMEOUT);
+        let error = ClientError::OperationTimeout {
+            operation: "fetch_indexes",
+            timeout: FETCH_TIMEOUT,
+        };
         let resource = resource_error("indexes", error);
 
         assert_eq!(resource.resource_type, "indexes");
         assert_eq!(resource.count, 0);
         assert_eq!(resource.status, "error");
         assert!(resource.error.is_some());
-        // Error message format is "Request timed out after ..." (lowercase "timed out")
+        // Error message format is "Operation '...' timed out after ..."
         assert!(resource.error.unwrap().to_lowercase().contains("timed out"));
     }
 

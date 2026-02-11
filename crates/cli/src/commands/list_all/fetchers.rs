@@ -371,7 +371,10 @@ mod tests {
         // These errors should NOT be treated as "not clustered"
         let errors = vec![
             ClientError::AuthFailed("Invalid credentials".to_string()),
-            ClientError::Timeout(Duration::from_secs(30)),
+            ClientError::OperationTimeout {
+                operation: "test_operation",
+                timeout: Duration::from_secs(30),
+            },
             ClientError::ConnectionRefused("localhost:8089".to_string()),
             ClientError::ApiError {
                 status: 500,

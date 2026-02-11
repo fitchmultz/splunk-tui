@@ -133,7 +133,10 @@ fn test_progress_update() {
 
 #[test]
 fn test_search_error_message_timeout() {
-    let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(300));
+    let error = splunk_client::ClientError::OperationTimeout {
+        operation: "search",
+        timeout: std::time::Duration::from_secs(300),
+    };
     let message = error_details::search_error_message(&error);
     assert_eq!(
         message, "Request timeout",
@@ -205,7 +208,10 @@ fn test_search_error_message_unauthorized() {
 
 #[test]
 fn test_build_search_error_details_includes_all_context() {
-    let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(300));
+    let error = splunk_client::ClientError::OperationTimeout {
+        operation: "search",
+        timeout: std::time::Duration::from_secs(300),
+    };
     let details = error_details::build_search_error_details(
         &error,
         "index=_internal | head 10".to_string(),
@@ -422,7 +428,10 @@ fn test_connection_error_classification() {
 /// Test timeout error classification
 #[test]
 fn test_timeout_error_classification() {
-    let timeout_error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+    let timeout_error = splunk_client::ClientError::OperationTimeout {
+        operation: "search",
+        timeout: std::time::Duration::from_secs(30),
+    };
 
     let details = error_details::ErrorDetails::from_client_error(&timeout_error);
     let message = error_details::search_error_message(&timeout_error);

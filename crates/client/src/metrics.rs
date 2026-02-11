@@ -86,7 +86,7 @@ impl From<&ClientError> for ErrorCategory {
     /// Categorize a ClientError for metrics purposes.
     fn from(error: &ClientError) -> Self {
         match error {
-            ClientError::Timeout(_) => ErrorCategory::Timeout,
+            ClientError::OperationTimeout { .. } => ErrorCategory::Timeout,
             ClientError::ConnectionRefused(_) => ErrorCategory::Transport,
             ClientError::TlsError(_) => ErrorCategory::Tls,
             ClientError::ApiError { status, .. } => {
@@ -338,7 +338,10 @@ mod tests {
 
     #[test]
     fn test_error_categorization() {
-        let timeout_err = ClientError::Timeout(Duration::from_secs(1));
+        let timeout_err = ClientError::OperationTimeout {
+            operation: "test",
+            timeout: Duration::from_secs(1),
+        };
         assert_eq!(ErrorCategory::from(&timeout_err), ErrorCategory::Timeout);
 
         let conn_err = ClientError::ConnectionRefused("localhost:8089".to_string());
@@ -374,7 +377,10 @@ mod tests {
 
     #[test]
     fn test_max_retries_exceeded_categorization() {
-        let inner = ClientError::Timeout(Duration::from_secs(1));
+        let inner = ClientError::OperationTimeout {
+            operation: "test",
+            timeout: Duration::from_secs(1),
+        };
         let outer = ClientError::MaxRetriesExceeded(3, Box::new(inner));
         assert_eq!(ErrorCategory::from(&outer), ErrorCategory::Timeout);
     }

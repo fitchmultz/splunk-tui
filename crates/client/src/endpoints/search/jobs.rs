@@ -239,7 +239,10 @@ pub async fn wait_for_job_with_progress(
         }
 
         if start.elapsed() > max_wait {
-            return Err(ClientError::Timeout(max_wait));
+            return Err(ClientError::OperationTimeout {
+                operation: "wait_for_job",
+                timeout: max_wait,
+            });
         }
 
         tokio::time::sleep(std::time::Duration::from_millis(poll_interval_ms)).await;

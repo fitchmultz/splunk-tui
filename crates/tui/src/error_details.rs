@@ -437,7 +437,10 @@ mod tests {
     #[test]
     fn test_classify_auth_recovery_timeout() {
         // Timeout errors now have auth recovery (for unified UX)
-        let timeout_error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+        let timeout_error = splunk_client::ClientError::OperationTimeout {
+            operation: "test",
+            timeout: std::time::Duration::from_secs(30),
+        };
         let recovery = classify_auth_recovery(&timeout_error);
         assert!(recovery.is_some());
         let recovery = recovery.unwrap();
@@ -538,7 +541,10 @@ mod tests {
         let msg = search_error_message(&error);
         assert_eq!(msg, "Session expired");
 
-        let error = splunk_client::ClientError::Timeout(std::time::Duration::from_secs(30));
+        let error = splunk_client::ClientError::OperationTimeout {
+            operation: "search",
+            timeout: std::time::Duration::from_secs(30),
+        };
         let msg = search_error_message(&error);
         assert_eq!(msg, "Request timeout");
     }

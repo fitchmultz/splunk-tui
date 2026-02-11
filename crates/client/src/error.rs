@@ -108,9 +108,14 @@ pub enum ClientError {
     #[error("Invalid response format: {0}")]
     InvalidResponse(String),
 
-    /// Request timed out.
-    #[error("Request timed out after {0:?}")]
-    Timeout(Duration),
+    /// Request timed out during a specific operation.
+    #[error("Operation '{operation}' timed out after {timeout:?}")]
+    OperationTimeout {
+        /// Name of the operation that timed out (e.g., "fetch_indexes", "list_jobs").
+        operation: &'static str,
+        /// The configured timeout duration.
+        timeout: Duration,
+    },
 
     /// Rate limited - too many requests.
     #[error("Rate limited: retry after {0:?}")]
@@ -190,7 +195,10 @@ impl Clone for ClientError {
                 username: username.clone(),
             },
             Self::InvalidResponse(msg) => Self::InvalidResponse(msg.clone()),
-            Self::Timeout(d) => Self::Timeout(*d),
+            Self::OperationTimeout { operation, timeout } => Self::OperationTimeout {
+                operation,
+                timeout: *timeout,
+            },
             Self::RateLimited(d) => Self::RateLimited(*d),
             Self::ConnectionRefused(addr) => Self::ConnectionRefused(addr.clone()),
             Self::TlsError(msg) => Self::TlsError(msg.clone()),
@@ -225,7 +233,7 @@ impl ClientError {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            Self::HttpError(_) | Self::Timeout(_) | Self::RateLimited(_)
+            Self::HttpError(_) | Self::OperationTimeout { .. } | Self::RateLimited(_)
         )
     }
 
@@ -373,14 +381,15 @@ impl ClientError {
                 request_id: None,
             },
 
-            Self::Timeout(duration) => UserFacingFailure {
+            Self::OperationTimeout { operation, timeout } => UserFacingFailure {
                 category: FailureCategory::Timeout,
                 title: "Request timeout",
-                diagnosis: format!("The request timed out after {:?}", duration),
+                diagnosis: format!("Operation '{}' timed out after {:?}", operation, timeout),
                 action_hints: vec![
-                    "Check network connectivity to the Splunk server".to_string(),
+                    format!("Check if the '{}' endpoint is responding", operation),
                     "Consider increasing SPLUNK_TIMEOUT for slow connections".to_string(),
                     "Verify the Splunk server is not overloaded".to_string(),
+                    "Check network connectivity to the Splunk server".to_string(),
                 ],
                 status_code: None,
                 request_id: None,
@@ -723,7 +732,10 @@ impl ClientError {
     pub(crate) fn from_reqwest_error_classified(error: reqwest::Error) -> Self {
         // Check for timeout first
         if error.is_timeout() {
-            return Self::Timeout(Duration::from_secs(0));
+            return Self::OperationTimeout {
+                operation: "http_request",
+                timeout: Duration::from_secs(0),
+            };
         }
 
         // Analyze error text for specific patterns
@@ -779,7 +791,10 @@ mod tests {
 
     #[test]
     fn test_error_is_retryable() {
-        let err = ClientError::Timeout(Duration::from_secs(1));
+        let err = ClientError::OperationTimeout {
+            operation: "test",
+            timeout: Duration::from_secs(1),
+        };
         assert!(err.is_retryable());
 
         let err = ClientError::AuthFailed("test".to_string());
@@ -796,7 +811,10 @@ mod tests {
         };
         assert!(err.is_auth_error());
 
-        let err = ClientError::Timeout(Duration::from_secs(1));
+        let err = ClientError::OperationTimeout {
+            operation: "test",
+            timeout: Duration::from_secs(1),
+        };
         assert!(!err.is_auth_error());
     }
 
@@ -1065,10 +1083,14 @@ mod tests {
 
     #[test]
     fn test_user_facing_failure_timeout() {
-        let err = ClientError::Timeout(Duration::from_secs(30));
+        let err = ClientError::OperationTimeout {
+            operation: "fetch_indexes",
+            timeout: Duration::from_secs(30),
+        };
         let failure = err.to_user_facing_failure();
         assert_eq!(failure.category, FailureCategory::Timeout);
         assert_eq!(failure.title, "Request timeout");
+        assert!(failure.diagnosis.contains("fetch_indexes"));
     }
 
     #[test]
@@ -1122,7 +1144,10 @@ mod tests {
             RollbackFailure {
                 resource_name: "index1".to_string(),
                 operation: "delete_index".to_string(),
-                error: ClientError::Timeout(Duration::from_secs(30)),
+                error: ClientError::OperationTimeout {
+                    operation: "delete_index",
+                    timeout: Duration::from_secs(30),
+                },
             },
             RollbackFailure {
                 resource_name: "user1".to_string(),
@@ -1178,7 +1203,10 @@ mod tests {
                 RollbackFailure {
                     resource_name: "index1".to_string(),
                     operation: "delete_index".to_string(),
-                    error: ClientError::Timeout(Duration::from_secs(30)),
+                    error: ClientError::OperationTimeout {
+                        operation: "delete_index",
+                        timeout: Duration::from_secs(30),
+                    },
                 },
                 RollbackFailure {
                     resource_name: "user1".to_string(),
@@ -1229,5 +1257,50 @@ mod tests {
             source: Box::new(ClientError::AuthFailed("test".to_string())),
         };
         assert!(!err.is_retryable());
+    }
+
+    #[test]
+    fn test_operation_timeout_includes_operation_name() {
+        let err = ClientError::OperationTimeout {
+            operation: "fetch_indexes",
+            timeout: Duration::from_secs(30),
+        };
+        let msg = err.to_string();
+        assert!(
+            msg.contains("fetch_indexes"),
+            "Error message should contain operation name: {}",
+            msg
+        );
+        assert!(
+            msg.contains("30"),
+            "Error message should contain timeout duration: {}",
+            msg
+        );
+    }
+
+    #[test]
+    fn test_operation_timeout_is_retryable() {
+        let err = ClientError::OperationTimeout {
+            operation: "test",
+            timeout: Duration::from_secs(1),
+        };
+        assert!(err.is_retryable(), "OperationTimeout should be retryable");
+    }
+
+    #[test]
+    fn test_operation_timeout_user_facing_includes_operation() {
+        let err = ClientError::OperationTimeout {
+            operation: "fetch_jobs",
+            timeout: Duration::from_secs(60),
+        };
+        let failure = err.to_user_facing_failure();
+        assert_eq!(failure.category, FailureCategory::Timeout);
+        assert!(failure.diagnosis.contains("fetch_jobs"));
+        assert!(
+            failure
+                .action_hints
+                .iter()
+                .any(|h| h.contains("fetch_jobs"))
+        );
     }
 }
