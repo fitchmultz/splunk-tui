@@ -8,7 +8,7 @@ use thiserror::Error;
 pub type Result<T> = std::result::Result<T, ClientError>;
 
 /// Represents a single failed rollback operation.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RollbackFailure {
     /// The name of the resource that failed to be cleaned up.
     pub resource_name: String,
@@ -140,6 +140,16 @@ pub enum ClientError {
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
 
+    /// Token refresh failed during concurrent singleflight operation.
+    /// Contains the original error from the leader's refresh attempt.
+    #[error("Token refresh failed for user '{username}' using {auth_method}: {source}")]
+    TokenRefreshFailed {
+        username: String,
+        auth_method: String,
+        #[source]
+        source: Box<ClientError>,
+    },
+
     /// Invalid request parameters.
     #[error("Invalid request: {0}")]
     InvalidRequest(String),
@@ -158,6 +168,56 @@ pub enum ClientError {
         count: usize,
         failures: Vec<RollbackFailure>,
     },
+}
+
+impl Clone for ClientError {
+    fn clone(&self) -> Self {
+        match self {
+            Self::AuthFailed(msg) => Self::AuthFailed(msg.clone()),
+            Self::HttpError(e) => Self::ConnectionRefused(format!("HTTP error: {}", e)),
+            Self::ApiError {
+                status,
+                url,
+                message,
+                request_id,
+            } => Self::ApiError {
+                status: *status,
+                url: url.clone(),
+                message: message.clone(),
+                request_id: request_id.clone(),
+            },
+            Self::SessionExpired { username } => Self::SessionExpired {
+                username: username.clone(),
+            },
+            Self::InvalidResponse(msg) => Self::InvalidResponse(msg.clone()),
+            Self::Timeout(d) => Self::Timeout(*d),
+            Self::RateLimited(d) => Self::RateLimited(*d),
+            Self::ConnectionRefused(addr) => Self::ConnectionRefused(addr.clone()),
+            Self::TlsError(msg) => Self::TlsError(msg.clone()),
+            Self::MaxRetriesExceeded(count, source) => {
+                Self::MaxRetriesExceeded(*count, Box::new(source.as_ref().clone()))
+            }
+            Self::InvalidUrl(url) => Self::InvalidUrl(url.clone()),
+            Self::NotFound(resource) => Self::NotFound(resource.clone()),
+            Self::Unauthorized(msg) => Self::Unauthorized(msg.clone()),
+            Self::InvalidRequest(msg) => Self::InvalidRequest(msg.clone()),
+            Self::ValidationError(msg) => Self::ValidationError(msg.clone()),
+            Self::CircuitBreakerOpen(endpoint) => Self::CircuitBreakerOpen(endpoint.clone()),
+            Self::TransactionRollbackError { count, failures } => Self::TransactionRollbackError {
+                count: *count,
+                failures: failures.clone(),
+            },
+            Self::TokenRefreshFailed {
+                username,
+                auth_method,
+                source,
+            } => Self::TokenRefreshFailed {
+                username: username.clone(),
+                auth_method: auth_method.clone(),
+                source: Box::new(source.as_ref().clone()),
+            },
+        }
+    }
 }
 
 impl ClientError {
@@ -196,7 +256,10 @@ impl ClientError {
     pub fn is_auth_error(&self) -> bool {
         matches!(
             self,
-            Self::AuthFailed(_) | Self::SessionExpired { .. } | Self::Unauthorized(_)
+            Self::AuthFailed(_)
+                | Self::SessionExpired { .. }
+                | Self::Unauthorized(_)
+                | Self::TokenRefreshFailed { .. }
         ) || matches!(self, Self::ApiError { status, .. } if *status == 401 || *status == 403)
     }
 
@@ -246,6 +309,25 @@ impl ClientError {
                 status_code: Some(403),
                 request_id: None,
             },
+
+            Self::TokenRefreshFailed {
+                username,
+                auth_method,
+                source,
+            } => {
+                let source_failure = source.to_user_facing_failure();
+                UserFacingFailure {
+                    category: source_failure.category,
+                    title: "Token refresh failed",
+                    diagnosis: format!(
+                        "Failed to refresh token for user '{}' ({}): {}",
+                        username, auth_method, source_failure.diagnosis
+                    ),
+                    action_hints: source_failure.action_hints,
+                    status_code: source_failure.status_code,
+                    request_id: source_failure.request_id,
+                }
+            }
 
             Self::TlsError(msg) => {
                 let (diagnosis, hints) = if msg.to_lowercase().contains("certificate") {
@@ -1113,5 +1195,39 @@ mod tests {
         assert!(failure.diagnosis.contains("index1"));
         assert!(failure.diagnosis.contains("user1"));
         assert!(!failure.action_hints.is_empty());
+    }
+
+    #[test]
+    fn test_token_refresh_failed_is_auth_error() {
+        let err = ClientError::TokenRefreshFailed {
+            username: "admin".to_string(),
+            auth_method: "session token".to_string(),
+            source: Box::new(ClientError::AuthFailed("bad password".to_string())),
+        };
+        assert!(err.is_auth_error());
+    }
+
+    #[test]
+    fn test_token_refresh_failed_user_facing() {
+        let err = ClientError::TokenRefreshFailed {
+            username: "admin".to_string(),
+            auth_method: "session token".to_string(),
+            source: Box::new(ClientError::ConnectionRefused("localhost:8089".to_string())),
+        };
+        let failure = err.to_user_facing_failure();
+        assert_eq!(failure.category, FailureCategory::Connection);
+        assert_eq!(failure.title, "Token refresh failed");
+        assert!(failure.diagnosis.contains("admin"));
+        assert!(failure.diagnosis.contains("session token"));
+    }
+
+    #[test]
+    fn test_token_refresh_failed_not_retryable() {
+        let err = ClientError::TokenRefreshFailed {
+            username: "admin".to_string(),
+            auth_method: "session token".to_string(),
+            source: Box::new(ClientError::AuthFailed("test".to_string())),
+        };
+        assert!(!err.is_retryable());
     }
 }

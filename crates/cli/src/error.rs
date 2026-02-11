@@ -87,6 +87,7 @@ impl From<&ClientError> for ExitCode {
             ClientError::AuthFailed(_) => ExitCode::AuthenticationFailed,
             ClientError::SessionExpired { .. } => ExitCode::AuthenticationFailed,
             ClientError::Unauthorized(_) => ExitCode::AuthenticationFailed,
+            ClientError::TokenRefreshFailed { .. } => ExitCode::AuthenticationFailed,
 
             // Connection errors (exit code 3)
             ClientError::ConnectionRefused(_) => ExitCode::ConnectionError,

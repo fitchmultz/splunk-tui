@@ -31,6 +31,9 @@ pub struct SessionManager {
     /// Singleflight refresh: ensures only one login call at a time.
     /// The Mutex guards an optional Arc<Notify> that waiting tasks can subscribe to.
     refresh_notify: Mutex<Option<Arc<tokio::sync::Notify>>>,
+    /// Stores the error from a failed refresh so waiting followers can access it.
+    /// Cleared when a new refresh starts or succeeds.
+    refresh_error: Mutex<Option<Arc<crate::error::ClientError>>>,
     /// Session TTL in seconds for newly created tokens.
     session_ttl_seconds: u64,
     /// Buffer in seconds before expiry when proactive refresh should occur.
@@ -97,6 +100,7 @@ impl SessionManager {
             auth_strategy: strategy,
             session_token: RwLock::new(None),
             refresh_notify: Mutex::new(None),
+            refresh_error: Mutex::new(None),
             session_ttl_seconds,
             expiry_buffer_seconds,
         }
@@ -222,15 +226,31 @@ impl SessionManager {
                     // We are the leader - create a new Notify
                     let new_notify = Arc::new(tokio::sync::Notify::new());
                     *notify_guard = Some(new_notify.clone());
+
+                    // Clear any previous error before starting new refresh
+                    {
+                        let mut error_guard = self.refresh_error.lock().await;
+                        *error_guard = None;
+                    }
                     drop(notify_guard);
 
                     // Perform the actual login
                     let result = login_fn().await;
 
-                    // Store the token if successful
-                    if let Ok(ref token) = result {
-                        self.set_session_token(token.clone(), Some(self.session_ttl_seconds))
-                            .await;
+                    match &result {
+                        Ok(token) => {
+                            // Store the token on success
+                            self.set_session_token(token.clone(), Some(self.session_ttl_seconds))
+                                .await;
+                            // Clear any previous error
+                            let mut error_guard = self.refresh_error.lock().await;
+                            *error_guard = None;
+                        }
+                        Err(err) => {
+                            // Store the error for followers to access
+                            let mut error_guard = self.refresh_error.lock().await;
+                            *error_guard = Some(Arc::new(err.clone()));
+                        }
                     }
 
                     // Notify all waiting tasks
@@ -257,11 +277,36 @@ impl SessionManager {
         }
         drop(token_guard);
 
-        // Token still not valid - the leader's refresh must have failed
-        // Return a generic auth error since we don't have access to the original error
-        Err(crate::error::ClientError::AuthFailed(
-            "Token refresh failed".to_string(),
-        ))
+        // Token still not valid - retrieve the stored error from the leader
+        let stored_error = {
+            let mut error_guard = self.refresh_error.lock().await;
+            error_guard.take()
+        };
+
+        match stored_error {
+            Some(original_error) => {
+                // Wrap with context about who was trying to authenticate
+                let (username, auth_method) = match &self.auth_strategy {
+                    AuthStrategy::SessionToken { username, .. } => {
+                        (username.clone(), "session token".to_string())
+                    }
+                    AuthStrategy::ApiToken { .. } => {
+                        ("api-token".to_string(), "api token".to_string())
+                    }
+                };
+                Err(crate::error::ClientError::TokenRefreshFailed {
+                    username,
+                    auth_method,
+                    source: Box::new((*original_error).clone()),
+                })
+            }
+            None => {
+                // No stored error - this shouldn't happen, but provide a fallback
+                Err(crate::error::ClientError::AuthFailed(
+                    "Token refresh failed with unknown error".to_string(),
+                ))
+            }
+        }
     }
 }
 
@@ -849,14 +894,97 @@ mod tests {
             }));
         }
 
-        // All should fail with the same error
+        // All should fail - leader gets AuthFailed, followers get TokenRefreshFailed
         for handle in handles {
             let result = handle.await.unwrap();
-            assert!(matches!(
-                result,
-                Err(crate::error::ClientError::AuthFailed(_))
-            ));
+            match result {
+                Err(crate::error::ClientError::AuthFailed(_)) => {
+                    // Leader returns raw error
+                }
+                Err(crate::error::ClientError::TokenRefreshFailed { .. }) => {
+                    // Followers get wrapped error
+                }
+                Err(e) => panic!("Unexpected error type: {:?}", e),
+                Ok(_) => panic!("Expected error, got success"),
+            }
         }
+
+        // Token should not be set
+        assert!(manager.get_bearer_token().await.is_none());
+    }
+
+    /// Test that error context is preserved through concurrent refresh failures.
+    #[tokio::test]
+    async fn test_singleflight_error_context_preserved() {
+        let strategy = AuthStrategy::SessionToken {
+            username: "testuser".to_string(),
+            password: SecretString::new("wrong-pass".to_string().into()),
+        };
+        let manager = Arc::new(SessionManager::new(
+            strategy,
+            DEFAULT_SESSION_TTL_SECS,
+            DEFAULT_EXPIRY_BUFFER_SECS,
+        ));
+
+        let original_error =
+            crate::error::ClientError::AuthFailed("Invalid credentials: bad password".to_string());
+
+        // Spawn 5 concurrent tasks
+        let mut handles = vec![];
+        for _ in 0..5 {
+            let manager = manager.clone();
+            let err_msg = original_error.to_string();
+            handles.push(tokio::spawn(async move {
+                manager
+                    .get_or_refresh_token(move || {
+                        let err_msg = err_msg.clone();
+                        async move {
+                            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                            Err(crate::error::ClientError::AuthFailed(err_msg))
+                        }
+                    })
+                    .await
+            }));
+        }
+
+        // All should fail with structured error containing original context
+        // Note: The leader returns the raw error, followers get TokenRefreshFailed
+        let mut found_leader = false;
+        let mut found_followers = 0;
+        for handle in handles {
+            let result = handle.await.unwrap();
+            match result {
+                Err(crate::error::ClientError::TokenRefreshFailed {
+                    username,
+                    auth_method,
+                    source,
+                }) => {
+                    assert_eq!(username, "testuser");
+                    assert_eq!(auth_method, "session token");
+                    assert!(
+                        source.to_string().contains("Invalid credentials"),
+                        "Original error should be preserved in source"
+                    );
+                    found_followers += 1;
+                }
+                Err(crate::error::ClientError::AuthFailed(_msg)) => {
+                    // Leader returns raw error
+                    found_leader = true;
+                }
+                Err(e) => {
+                    panic!("Expected TokenRefreshFailed or AuthFailed, got {:?}", e);
+                }
+                Ok(_) => panic!("Expected error, got success"),
+            }
+        }
+
+        // Verify we got both leader and follower responses
+        assert!(found_leader, "Expected at least one leader task");
+        assert!(
+            found_followers >= 1,
+            "Expected at least one follower task, got {}",
+            found_followers
+        );
 
         // Token should not be set
         assert!(manager.get_bearer_token().await.is_none());

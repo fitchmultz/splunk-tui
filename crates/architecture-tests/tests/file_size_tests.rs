@@ -51,6 +51,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "app/actions/data_loading.rs",
         "Data loading action handlers - handles 30+ data loading actions with comprehensive tests",
     ),
+    (
+        "client/src/error.rs",
+        "Error types with comprehensive user-facing failure mapping - exhaustive match arms for all error categories with CLI/TUI display logic",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.
