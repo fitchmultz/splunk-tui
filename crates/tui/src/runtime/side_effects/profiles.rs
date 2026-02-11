@@ -312,7 +312,17 @@ pub async fn handle_save_profile(
 
         // Store credentials in keyring if enabled
         let profile_to_save = if use_keyring {
-            store_profile_credentials_in_keyring(&cm, &tx_clone, &name_clone, profile).await
+            match store_profile_credentials_in_keyring(&cm, &name_clone, profile).await {
+                Ok(p) => p,
+                Err(e) => {
+                    // Send error notification - this is now an ERROR not a warning
+                    let _ = tx_clone
+                        .send(Action::Notify(ToastLevel::Error, e.clone()))
+                        .await;
+                    let _ = tx_clone.send(Action::ProfileSaved(Err(e))).await;
+                    return;
+                }
+            }
         } else {
             profile
         };
@@ -344,44 +354,45 @@ pub async fn handle_save_profile(
 
 /// Store profile credentials in keyring if enabled.
 /// Returns the profile with credentials potentially converted to keyring storage.
-/// Sends warning notifications for any failures.
+/// Returns an error if keyring storage fails.
 async fn store_profile_credentials_in_keyring(
     cm: &ConfigManager,
-    tx: &Sender<Action>,
     profile_name: &str,
     mut profile: ProfileConfig,
-) -> ProfileConfig {
+) -> Result<ProfileConfig, String> {
     // Store password in keyring
     if let (Some(username), Some(splunk_config::types::SecureValue::Plain(pw))) =
         (&profile.username, &profile.password)
     {
-        let keyring_value = cm.try_store_password_in_keyring(profile_name, username, pw);
-        if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
-            let _ = tx
-                .send(Action::Notify(
-                    ToastLevel::Warning,
-                    "Failed to store password in keyring. Saving as plaintext.".to_string(),
-                ))
-                .await;
+        match cm.strict_store_password_in_keyring(profile_name, username, pw) {
+            Ok(keyring_value) => {
+                profile.password = Some(keyring_value);
+            }
+            Err(e) => {
+                return Err(format!(
+                    "Failed to store password in keyring: {}. To store credentials as plaintext, disable 'Use Keyring' in the profile dialog.",
+                    e
+                ));
+            }
         }
-        profile.password = Some(keyring_value);
     }
 
     // Store API token in keyring
     if let Some(splunk_config::types::SecureValue::Plain(token)) = &profile.api_token {
-        let keyring_value = cm.try_store_token_in_keyring(profile_name, token);
-        if matches!(keyring_value, splunk_config::types::SecureValue::Plain(_)) {
-            let _ = tx
-                .send(Action::Notify(
-                    ToastLevel::Warning,
-                    "Failed to store API token in keyring. Saving as plaintext.".to_string(),
-                ))
-                .await;
+        match cm.strict_store_token_in_keyring(profile_name, token) {
+            Ok(keyring_value) => {
+                profile.api_token = Some(keyring_value);
+            }
+            Err(e) => {
+                return Err(format!(
+                    "Failed to store API token in keyring: {}. To store credentials as plaintext, disable 'Use Keyring' in the profile dialog.",
+                    e
+                ));
+            }
         }
-        profile.api_token = Some(keyring_value);
     }
 
-    profile
+    Ok(profile)
 }
 
 /// Handle profile rename: delete old profile after successful save.

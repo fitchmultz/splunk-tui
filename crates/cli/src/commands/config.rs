@@ -336,48 +336,44 @@ fn read_secret_from_file(path: &PathBuf) -> Result<SecureValue> {
 }
 
 /// Store password with optional keyring fallback.
+/// Returns an error if keyring storage fails and plaintext is not explicitly requested.
 fn store_password(
     manager: &ConfigManager,
     profile_name: &str,
     username: Option<&String>,
     password: Option<SecureValue>,
     plaintext: bool,
-) -> Option<SecureValue> {
+) -> Result<Option<SecureValue>, splunk_config::persistence::CredentialStorageError> {
     if plaintext {
-        return password;
+        return Ok(password);
     }
 
     if let (Some(u), Some(SecureValue::Plain(pw))) = (username, &password) {
-        let keyring_value = manager.try_store_password_in_keyring(profile_name, u, pw);
-        if matches!(keyring_value, SecureValue::Plain(_)) {
-            eprintln!("Warning: Failed to store password in keyring. Storing as plaintext.");
-        }
-        return Some(keyring_value);
+        let keyring_value = manager.strict_store_password_in_keyring(profile_name, u, pw)?;
+        return Ok(Some(keyring_value));
     }
 
-    password
+    Ok(password)
 }
 
 /// Store API token with optional keyring fallback.
+/// Returns an error if keyring storage fails and plaintext is not explicitly requested.
 fn store_api_token(
     manager: &ConfigManager,
     profile_name: &str,
     api_token: Option<SecureValue>,
     plaintext: bool,
-) -> Option<SecureValue> {
+) -> Result<Option<SecureValue>, splunk_config::persistence::CredentialStorageError> {
     if plaintext {
-        return api_token;
+        return Ok(api_token);
     }
 
     if let Some(SecureValue::Plain(token)) = &api_token {
-        let keyring_value = manager.try_store_token_in_keyring(profile_name, token);
-        if matches!(keyring_value, SecureValue::Plain(_)) {
-            eprintln!("Warning: Failed to store API token in keyring. Storing as plaintext.");
-        }
-        return Some(keyring_value);
+        let keyring_value = manager.strict_store_token_in_keyring(profile_name, token)?;
+        return Ok(Some(keyring_value));
     }
 
-    api_token
+    Ok(api_token)
 }
 
 /// Validate that required fields are present for profile creation/update.
@@ -523,15 +519,17 @@ fn run_set(
         ..Default::default()
     };
 
-    // Store credentials with keyring fallback
+    // Store credentials with keyring (fails if keyring unavailable unless --plaintext)
     let password = store_password(
         manager,
         profile_name,
         resolved_username.as_ref(),
         password,
         plaintext,
-    );
-    let api_token = store_api_token(manager, profile_name, api_token, plaintext);
+    )
+    .map_err(|e| anyhow::anyhow!("Failed to store password: {}", e))?;
+    let api_token = store_api_token(manager, profile_name, api_token, plaintext)
+        .map_err(|e| anyhow::anyhow!("Failed to store API token: {}", e))?;
 
     profile_config.password = password.or(profile.password);
     profile_config.api_token = api_token.or(profile.api_token);
@@ -725,15 +723,17 @@ fn run_edit(manager: &mut ConfigManager, profile_name: &str, plaintext: bool) ->
         ..Default::default()
     };
 
-    // Store credentials with keyring fallback
+    // Store credentials with keyring (fails if keyring unavailable unless --plaintext)
     let password = store_password(
         manager,
         profile_name,
         gathered.username.as_ref(),
         gathered.password,
         plaintext,
-    );
-    let api_token = store_api_token(manager, profile_name, gathered.api_token, plaintext);
+    )
+    .map_err(|e| anyhow::anyhow!("Failed to store password: {}", e))?;
+    let api_token = store_api_token(manager, profile_name, gathered.api_token, plaintext)
+        .map_err(|e| anyhow::anyhow!("Failed to store API token: {}", e))?;
 
     profile_config.password = password.or(existing_profile.password.clone());
     profile_config.api_token = api_token.or(existing_profile.api_token.clone());

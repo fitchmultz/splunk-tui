@@ -26,6 +26,29 @@ use crate::encryption::{Encryptor, MasterKeySource};
 use crate::types::{KEYRING_SERVICE, ProfileConfig, SecureValue};
 
 use super::create_corrupt_backup;
+
+/// Error type for credential storage operations when keyring storage fails.
+#[derive(Debug, thiserror::Error)]
+pub enum CredentialStorageError {
+    /// Failed to store password in keyring.
+    #[error("Failed to store password in keyring for profile '{profile}': {source}")]
+    PasswordStoreFailed {
+        /// The profile name for which storage failed.
+        profile: String,
+        /// The underlying error.
+        #[source]
+        source: anyhow::Error,
+    },
+    /// Failed to store API token in keyring.
+    #[error("Failed to store API token in keyring for profile '{profile}': {source}")]
+    TokenStoreFailed {
+        /// The profile name for which storage failed.
+        profile: String,
+        /// The underlying error.
+        #[source]
+        source: anyhow::Error,
+    },
+}
 use super::migration::migrate_config_file_if_needed;
 use super::path::{default_config_path, legacy_config_path};
 use super::state::{ConfigFile, ConfigFileError, ConfigStorage, PersistedState, read_config_file};
@@ -344,6 +367,45 @@ impl ConfigManager {
                 SecureValue::Plain(token.clone())
             }
         }
+    }
+
+    /// Stores a password in the system keyring, returning an error on failure.
+    ///
+    /// This is the secure-by-default version that does NOT fall back to plaintext.
+    /// Use this when you want to fail if keyring storage is unavailable.
+    ///
+    /// # Errors
+    /// Returns `CredentialStorageError::PasswordStoreFailed` if keyring storage fails.
+    pub fn strict_store_password_in_keyring(
+        &self,
+        profile_name: &str,
+        username: &str,
+        password: &SecretString,
+    ) -> Result<SecureValue, CredentialStorageError> {
+        self.store_password_in_keyring(profile_name, username, password)
+            .map_err(|e| CredentialStorageError::PasswordStoreFailed {
+                profile: profile_name.to_string(),
+                source: e,
+            })
+    }
+
+    /// Stores an API token in the system keyring, returning an error on failure.
+    ///
+    /// This is the secure-by-default version that does NOT fall back to plaintext.
+    /// Use this when you want to fail if keyring storage is unavailable.
+    ///
+    /// # Errors
+    /// Returns `CredentialStorageError::TokenStoreFailed` if keyring storage fails.
+    pub fn strict_store_token_in_keyring(
+        &self,
+        profile_name: &str,
+        token: &SecretString,
+    ) -> Result<SecureValue, CredentialStorageError> {
+        self.store_token_in_keyring(profile_name, token)
+            .map_err(|e| CredentialStorageError::TokenStoreFailed {
+                profile: profile_name.to_string(),
+                source: e,
+            })
     }
 
     /// Returns a reference to all configured profiles.
@@ -1123,6 +1185,98 @@ mod tests {
                 // Keyring failed - verify the token value is preserved
                 use secrecy::ExposeSecret;
                 assert_eq!(stored.expose_secret(), token_str);
+            }
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_strict_store_password_in_keyring_never_returns_plain() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-strict-password-never-plain";
+        let username = "admin";
+        let password_str = "test-password-strict";
+        let password = SecretString::new(password_str.to_string().into());
+
+        let result = manager.strict_store_password_in_keyring(profile_name, username, &password);
+
+        match result {
+            Ok(SecureValue::Keyring { keyring_account }) => {
+                // Keyring succeeded - verify the account name
+                assert_eq!(keyring_account, format!("{}-{}", profile_name, username));
+                // Clean up
+                let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account).unwrap();
+                let _ = entry.delete_credential();
+            }
+            Err(CredentialStorageError::PasswordStoreFailed { profile, .. }) => {
+                // Expected when keyring is unavailable - this is the SECURE behavior
+                assert_eq!(profile, profile_name);
+            }
+            Err(CredentialStorageError::TokenStoreFailed { .. }) => {
+                panic!("Password storage should not return TokenStoreFailed error");
+            }
+            Ok(SecureValue::Plain(_)) => {
+                panic!("strict_store_password_in_keyring must NEVER return Plain variant");
+            }
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_strict_store_token_in_keyring_never_returns_plain() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-strict-token-never-plain";
+        let token_str = "test-token-strict-xyz";
+        let token = SecretString::new(token_str.to_string().into());
+
+        let result = manager.strict_store_token_in_keyring(profile_name, &token);
+
+        match result {
+            Ok(SecureValue::Keyring { keyring_account }) => {
+                // Keyring succeeded
+                assert_eq!(keyring_account, format!("{}-token", profile_name));
+                // Clean up
+                let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account).unwrap();
+                let _ = entry.delete_credential();
+            }
+            Err(CredentialStorageError::TokenStoreFailed { profile, .. }) => {
+                // Expected when keyring is unavailable - this is the SECURE behavior
+                assert_eq!(profile, profile_name);
+            }
+            Err(CredentialStorageError::PasswordStoreFailed { .. }) => {
+                panic!("Token storage should not return PasswordStoreFailed error");
+            }
+            Ok(SecureValue::Plain(_)) => {
+                panic!("strict_store_token_in_keyring must NEVER return Plain variant");
+            }
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_try_store_functions_still_provide_fallback_for_backwards_compat() {
+        // Verify that try_store_* functions still provide fallback behavior
+        // for any existing callers that depend on it
+        let temp_file = NamedTempFile::new().unwrap();
+        let manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+
+        let profile_name = "test-try-fallback-compat";
+        let password = SecretString::new("test-password".to_string().into());
+
+        let result = manager.try_store_password_in_keyring(profile_name, "admin", &password);
+
+        // Result must be either Keyring (success) or Plain (fallback) - never an error
+        match result {
+            SecureValue::Keyring { keyring_account } => {
+                let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_account).unwrap();
+                let _ = entry.delete_credential();
+            }
+            SecureValue::Plain(_) => {
+                // Fallback occurred - this is expected behavior for try_* functions
             }
         }
     }

@@ -25,7 +25,7 @@ mod path;
 mod profiles;
 mod state;
 
-pub use profiles::ConfigManager;
+pub use profiles::{ConfigManager, CredentialStorageError};
 pub use state::{
     ConfigFileError, InternalLogsDefaults, ListDefaults, ListType, PersistedState, ScrollPositions,
     SearchDefaults,
