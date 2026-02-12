@@ -5,6 +5,9 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{Mutex, RwLock};
 
+/// Username placeholder for API token authentication when displaying error messages.
+pub(crate) const API_TOKEN_USERNAME: &str = "api-token";
+
 /// Strategy for authenticating with Splunk.
 #[derive(Debug, Clone)]
 pub enum AuthStrategy {
@@ -291,7 +294,7 @@ impl SessionManager {
                         (username.clone(), "session token".to_string())
                     }
                     AuthStrategy::ApiToken { .. } => {
-                        ("api-token".to_string(), "api token".to_string())
+                        (API_TOKEN_USERNAME.to_string(), "api token".to_string())
                     }
                 };
                 Err(crate::error::ClientError::TokenRefreshFailed {

@@ -98,9 +98,11 @@ macro_rules! retry_call {
                 );
                 $self.session_manager.clear_session().await;
                 let $token = $self.get_auth_token().await?;
-                $call
+                let retry_result = $call;
+                // Enrich error with username if retry also failed
+                retry_result.map_err(|err| $self.enrich_auth_error(err))
             }
-            Err(e) => Err(e),
+            Err(e) => Err($self.enrich_auth_error(e)),
         }
     }};
 }
@@ -255,6 +257,24 @@ impl SplunkClient {
         let manager = self.transaction_manager()?;
         manager.validate(self, transaction).await?;
         manager.commit(self, transaction).await
+    }
+
+    /// Enrich auth-related errors with username from the auth strategy.
+    ///
+    /// This replaces "unknown" username in SessionExpired errors with the actual
+    /// username, making error messages more actionable for operators with multiple accounts.
+    fn enrich_auth_error(&self, error: crate::error::ClientError) -> crate::error::ClientError {
+        if matches!(error, crate::error::ClientError::SessionExpired { .. }) {
+            let username = match self.session_manager.strategy() {
+                crate::auth::AuthStrategy::SessionToken { username, .. } => username.clone(),
+                crate::auth::AuthStrategy::ApiToken { .. } => {
+                    crate::auth::API_TOKEN_USERNAME.to_string()
+                }
+            };
+            error.with_username(&username)
+        } else {
+            error
+        }
     }
 }
 

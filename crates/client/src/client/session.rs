@@ -56,7 +56,7 @@ impl SplunkClient {
             .ok_or_else(|| {
                 let username = match self.session_manager.strategy() {
                     AuthStrategy::SessionToken { username, .. } => username.clone(),
-                    AuthStrategy::ApiToken { .. } => "api-token".to_string(),
+                    AuthStrategy::ApiToken { .. } => crate::auth::API_TOKEN_USERNAME.to_string(),
                 };
                 ClientError::SessionExpired { username }
             })

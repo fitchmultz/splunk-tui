@@ -271,6 +271,22 @@ impl ClientError {
         ) || matches!(self, Self::ApiError { status, .. } if *status == 401 || *status == 403)
     }
 
+    /// Enrich SessionExpired error with actual username if it contains "unknown".
+    ///
+    /// This is used to replace the placeholder "unknown" username with the actual
+    /// username from the auth strategy when the error propagates to a context
+    /// that has access to that information.
+    pub(crate) fn with_username(self, username: &str) -> Self {
+        match self {
+            Self::SessionExpired {
+                username: ref existing,
+            } if existing == "unknown" => Self::SessionExpired {
+                username: username.to_string(),
+            },
+            other => other,
+        }
+    }
+
     /// Convert this error to a user-facing failure with consistent messaging.
     ///
     /// This is the single source of truth for error classification and user guidance
@@ -1299,5 +1315,63 @@ mod tests {
                 .iter()
                 .any(|h| h.contains("fetch_jobs"))
         );
+    }
+
+    #[test]
+    fn test_with_username_replaces_unknown() {
+        let err = ClientError::SessionExpired {
+            username: "unknown".to_string(),
+        };
+        let enriched = err.with_username("admin");
+        match enriched {
+            ClientError::SessionExpired { username } => {
+                assert_eq!(username, "admin");
+            }
+            _ => panic!("Expected SessionExpired variant"),
+        }
+    }
+
+    #[test]
+    fn test_with_username_preserves_known_username() {
+        let err = ClientError::SessionExpired {
+            username: "existing_user".to_string(),
+        };
+        let enriched = err.with_username("different_user");
+        match enriched {
+            ClientError::SessionExpired { username } => {
+                assert_eq!(
+                    username, "existing_user",
+                    "Should not replace non-unknown username"
+                );
+            }
+            _ => panic!("Expected SessionExpired variant"),
+        }
+    }
+
+    #[test]
+    fn test_with_username_returns_other_errors_unchanged() {
+        let err = ClientError::AuthFailed("test".to_string());
+        let enriched = err.with_username("admin");
+        match enriched {
+            ClientError::AuthFailed(msg) => {
+                assert_eq!(msg, "test");
+            }
+            _ => panic!("Expected AuthFailed variant"),
+        }
+    }
+
+    #[test]
+    fn test_with_username_preserves_empty_string() {
+        // Empty string is not "unknown", so it should be preserved
+        let err = ClientError::SessionExpired {
+            username: "".to_string(),
+        };
+        let enriched = err.with_username("admin");
+        match enriched {
+            ClientError::SessionExpired { username } => {
+                assert_eq!(username, "", "Empty string should not be replaced");
+            }
+            _ => panic!("Expected SessionExpired variant"),
+        }
     }
 }

@@ -248,9 +248,14 @@ async fn test_retry_fails_on_second_401() {
     assert!(result.is_err());
     let err = result.unwrap_err();
     // "Session expired" message is classified as SessionExpired variant
-    assert!(
-        matches!(err, ClientError::SessionExpired { .. }),
-        "Expected SessionExpired, got {:?}",
-        err
-    );
+    // Verify the username is enriched from the auth strategy, not "unknown"
+    match err {
+        ClientError::SessionExpired { username } => {
+            assert_eq!(
+                username, "admin",
+                "Username should be enriched from auth strategy, not 'unknown'"
+            );
+        }
+        _ => panic!("Expected SessionExpired, got {:?}", err),
+    }
 }
