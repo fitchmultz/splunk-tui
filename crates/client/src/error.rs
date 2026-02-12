@@ -521,38 +521,8 @@ impl ClientError {
             }
 
             Self::HttpError(e) => {
-                // Check for TLS-related errors in HTTP errors
-                let error_text = format!(
-                    "{} {}",
-                    e.to_string().to_lowercase(),
-                    e.source()
-                        .map(|s| s.to_string().to_lowercase())
-                        .unwrap_or_default()
-                );
-
-                if error_text.contains("tls")
-                    || error_text.contains("ssl")
-                    || error_text.contains("certificate")
-                    || error_text.contains("cert")
-                    || error_text.contains("x509")
-                    || error_text.contains("handshake")
-                    || error_text.contains("unknown ca")
-                {
-                    UserFacingFailure {
-                        category: FailureCategory::TlsCertificate,
-                        title: "TLS certificate error",
-                        diagnosis: format!("TLS/SSL connection error: {}", e),
-                        action_hints: vec![
-                            "Verify the Splunk server's TLS certificate is valid".to_string(),
-                            "Check system time is correctly synchronized".to_string(),
-                            "If using self-signed certificates, ensure they are trusted"
-                                .to_string(),
-                            "Consider setting SPLUNK_SKIP_VERIFY=true for development".to_string(),
-                        ],
-                        status_code: e.status().map(|s| s.as_u16()),
-                        request_id: None,
-                    }
-                } else if e.is_timeout() {
+                // Use structured classification first
+                if e.is_timeout() {
                     UserFacingFailure {
                         category: FailureCategory::Timeout,
                         title: "Request timeout",
@@ -564,11 +534,7 @@ impl ClientError {
                         status_code: None,
                         request_id: None,
                     }
-                } else if error_text.contains("connection refused")
-                    || error_text.contains("connection reset")
-                    || error_text.contains("dns")
-                    || error_text.contains("no such host")
-                {
+                } else if e.is_connect() {
                     UserFacingFailure {
                         category: FailureCategory::Connection,
                         title: "Connection error",
@@ -581,16 +547,50 @@ impl ClientError {
                         request_id: None,
                     }
                 } else {
-                    UserFacingFailure {
-                        category: FailureCategory::Unknown,
-                        title: "Request failed",
-                        diagnosis: format!("HTTP request failed: {}", e),
-                        action_hints: vec![
-                            "Check network connectivity".to_string(),
-                            "Verify SPLUNK_BASE_URL configuration".to_string(),
-                        ],
-                        status_code: e.status().map(|s| s.as_u16()),
-                        request_id: None,
+                    // TLS and other errors still need string matching
+                    let error_text = format!(
+                        "{} {}",
+                        e.to_string().to_lowercase(),
+                        e.source()
+                            .map(|s| s.to_string().to_lowercase())
+                            .unwrap_or_default()
+                    );
+
+                    if error_text.contains("tls")
+                        || error_text.contains("ssl")
+                        || error_text.contains("certificate")
+                        || error_text.contains("cert")
+                        || error_text.contains("x509")
+                        || error_text.contains("handshake")
+                        || error_text.contains("unknown ca")
+                    {
+                        UserFacingFailure {
+                            category: FailureCategory::TlsCertificate,
+                            title: "TLS certificate error",
+                            diagnosis: format!("TLS/SSL connection error: {}", e),
+                            action_hints: vec![
+                                "Verify the Splunk server's TLS certificate is valid".to_string(),
+                                "Check system time is correctly synchronized".to_string(),
+                                "If using self-signed certificates, ensure they are trusted"
+                                    .to_string(),
+                                "Consider setting SPLUNK_SKIP_VERIFY=true for development"
+                                    .to_string(),
+                            ],
+                            status_code: e.status().map(|s| s.as_u16()),
+                            request_id: None,
+                        }
+                    } else {
+                        UserFacingFailure {
+                            category: FailureCategory::Unknown,
+                            title: "Request failed",
+                            diagnosis: format!("HTTP request failed: {}", e),
+                            action_hints: vec![
+                                "Check network connectivity".to_string(),
+                                "Verify SPLUNK_BASE_URL configuration".to_string(),
+                            ],
+                            status_code: e.status().map(|s| s.as_u16()),
+                            request_id: None,
+                        }
                     }
                 }
             }
@@ -728,9 +728,11 @@ impl ClientError {
 
     /// Create a ClientError from a reqwest error with transport-level classification.
     ///
-    /// This helper analyzes transport errors to detect TLS, connection, and timeout issues.
+    /// Uses reqwest's structured error classification methods (`is_timeout()`, `is_connect()`)
+    /// for timeout and connection errors, with string-based fallback for TLS/certificate errors
+    /// (which lack dedicated classification methods).
     pub(crate) fn from_reqwest_error_classified(error: reqwest::Error) -> Self {
-        // Check for timeout first
+        // Use structured classification for timeout
         if error.is_timeout() {
             return Self::OperationTimeout {
                 operation: "http_request",
@@ -738,7 +740,14 @@ impl ClientError {
             };
         }
 
-        // Analyze error text for specific patterns
+        // Use structured classification for connection errors
+        if error.is_connect() {
+            return Self::ConnectionRefused(error.to_string());
+        }
+
+        // TLS/certificate errors still require string matching because
+        // reqwest doesn't expose a dedicated is_tls() method.
+        // This is acceptable because TLS error messages are stable.
         let text = format!(
             "{} {}",
             error.to_string().to_lowercase(),
@@ -748,7 +757,6 @@ impl ClientError {
                 .unwrap_or_default()
         );
 
-        // Check for TLS/certificate errors
         if text.contains("tls")
             || text.contains("ssl")
             || text.contains("certificate")
@@ -757,17 +765,6 @@ impl ClientError {
             || text.contains("unknown ca")
         {
             return Self::TlsError(error.to_string());
-        }
-
-        // Check for connection errors
-        if text.contains("connection refused")
-            || text.contains("connection reset")
-            || text.contains("broken pipe")
-            || text.contains("network unreachable")
-            || text.contains("no such host")
-            || text.contains("dns")
-        {
-            return Self::ConnectionRefused(error.to_string());
         }
 
         // Default to wrapping the reqwest error

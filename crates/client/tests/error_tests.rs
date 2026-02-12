@@ -298,11 +298,13 @@ async fn test_connection_refused_error() {
     assert!(result.is_err());
     let err = result.unwrap_err();
 
-    // Connection refused is a retryable transport error, but returns immediately from OS
-    // It may come through as HttpError wrapping the connection error
+    // Connection refused is classified as ConnectionRefused variant
+    // The debug format shows "ConnectionRefused(...)" (no space)
     let err_string = format!("{:?}", err);
     assert!(
-        err_string.contains("Connection refused") || err_string.contains("connection refused"),
+        err_string.contains("ConnectionRefused")
+            || err_string.contains("Connection refused")
+            || err_string.contains("connection refused"),
         "Error should indicate connection refused. Got: {}",
         err_string
     );

@@ -87,27 +87,23 @@ fn parse_retry_after(response: &Response) -> Option<Duration> {
         })
 }
 
-/// Check if a reqwest error is retryable.
+/// Check if a reqwest error is retryable using structured error classification.
 ///
-/// Retryable transport errors:
-/// - Connection refused (server may be temporarily down)
-/// - Connection reset (transient network issue)
-/// - Broken pipe (transient network issue)
-/// - Timeout (request may succeed on retry)
-/// - DNS resolution failures (transient DNS issue)
+/// Uses reqwest's `is_timeout()` method for robust detection of transient
+/// transport errors that may succeed on retry.
+///
+/// # Retryable Conditions
+/// - Timeout errors (`is_timeout()`): Request or response timeout
+///
+/// # Non-Retryable Conditions
+/// - Connection errors (`is_connect()`): DNS resolution failures, connection refused,
+///   connection reset, network unreachable - these indicate the server is not
+///   reachable or not running, and retrying won't help
+/// - TLS/SSL errors (certificate validation, handshake failures)
+/// - Request construction errors
+/// - Response decoding errors
 fn is_retryable_transport_error(error: &reqwest::Error) -> bool {
-    if error.is_timeout() {
-        return true;
-    }
-
-    // Check for specific connection errors by examining the error message
-    // reqwest doesn't expose structured error types for connection failures,
-    // so we use string matching as a pragmatic approach
-    let error_string = error.to_string().to_lowercase();
-    error_string.contains("connection refused")
-        || error_string.contains("connection reset")
-        || error_string.contains("broken pipe")
-        || error_string.contains("dns")
+    error.is_timeout()
 }
 
 /// Parses a Splunk error response body into a displayable message string.
