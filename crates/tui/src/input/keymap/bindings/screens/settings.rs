@@ -129,5 +129,17 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             action: None, // Handled by input handler
             handles_input: false,
         },
+        Keybinding {
+            section: Section::Settings,
+            keys: "?",
+            description: "Replay tutorial",
+            scope: BindingScope::Screen(Settings),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('?'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::StartTutorial { is_replay: true }),
+            handles_input: true,
+        },
     ]
 }

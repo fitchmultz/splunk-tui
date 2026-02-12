@@ -34,9 +34,7 @@ impl TutorialSteps {
     /// These hints are context-sensitive based on the current step.
     pub fn footer_hint(step: &TutorialStep) -> String {
         match step {
-            TutorialStep::Welcome => {
-                "Press → or Enter to continue | Press q to skip tutorial".to_string()
-            }
+            TutorialStep::Welcome => super::tutorial_keybindings::welcome_footer_hint(),
             TutorialStep::ProfileCreation => {
                 "Press → to continue after creating profile | ← to go back".to_string()
             }
@@ -141,35 +139,7 @@ Run a search and then press → to continue."#
     }
 
     fn keybinding_tutorial_content() -> String {
-        r#"Step 4: Learn the Keybindings
-
-Splunk TUI is designed to be keyboard-driven for efficiency. Here are the essential shortcuts:
-
-Navigation:
-  • Tab / Shift+Tab  Cycle between screen elements
-  • ←/→ or h/l     Navigate between screens
-  • g               Go to top of list
-  • G               Go to bottom of list
-
-Search:
-  • /               Focus search input
-  • Enter           Execute search
-  • Ctrl+c          Cancel running search
-
-Actions:
-  • r               Refresh current view
-  • e               Export results
-  • ?               Show help
-  • q               Quit or go back
-
-Screen-specific:
-  • p               Profile manager
-  • s               Saved searches
-  • j               Jobs screen
-  • i               Indexes screen
-
-Use ↑/↓ to scroll this help text. Press → to continue."#
-            .to_string()
+        super::tutorial_keybindings::generate_keybinding_section()
     }
 
     fn export_demo_content() -> String {
@@ -195,7 +165,11 @@ Try exporting some results and then press → to continue."#.to_string()
     }
 
     fn complete_content() -> String {
-        r#"You're All Set! 🎉
+        let screen_nav_keys = super::tutorial_keybindings::screen_navigation_keys_text();
+        let help_key = super::tutorial_keybindings::help_key_text();
+
+        format!(
+            r#"You're All Set! 🎉
 
 Congratulations! You've completed the Splunk TUI tutorial.
 
@@ -207,16 +181,16 @@ You now know how to:
   ✓ Export results to various formats
 
 What's Next?
-  • Explore the different screens with ←/→
+  • Explore the different screens with {screen_nav_keys}
   • Check out cluster health monitoring
   • Browse indexes and saved searches
   • View system jobs and their status
   • Customize your experience in Settings
 
-Remember: Press '?' at any time to see available keybindings for the current screen.
+Remember: Press '{help_key}' at any time to see available keybindings for the current screen.
 
 Happy Splunking!"#
-            .to_string()
+        )
     }
 }
 

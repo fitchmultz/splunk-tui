@@ -462,6 +462,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `n`: Create new profile
 - `e`: Edit selected profile
 - `x`: Delete selected profile
+- `?`: Replay tutorial
 
 #### Overview Screen
 - `r`: Refresh overview
