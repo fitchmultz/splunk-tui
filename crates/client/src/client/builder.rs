@@ -14,7 +14,7 @@
 //! # Invariants
 //! - `base_url` and `auth_strategy` are required fields and must be provided before calling `build()`
 //! - The base URL is always normalized to have no trailing slashes
-//! - `skip_verify` only affects HTTPS connections; HTTP connections log a warning
+//! - `skip_verify` logs a warning for both HTTPS (security risk) and HTTP (no effect) URLs
 
 use std::time::Duration;
 
@@ -353,9 +353,12 @@ impl SplunkClientBuilder {
             let is_https = base_url.starts_with("https://");
             if is_https {
                 http_builder = http_builder.danger_accept_invalid_certs(true);
+                tracing::warn!(
+                    host = %base_url,
+                    "TLS certificate verification is DISABLED. Connection to {} is vulnerable to man-in-the-middle attacks. Use only in development/testing environments.",
+                    base_url
+                );
             } else {
-                // skip_verify only affects TLS certificate verification.
-                // It has no effect on HTTP connections since there is no TLS layer.
                 tracing::warn!(
                     "skip_verify=true has no effect on HTTP URLs. TLS verification only applies to HTTPS connections."
                 );

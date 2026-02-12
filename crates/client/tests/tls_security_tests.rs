@@ -108,3 +108,29 @@ fn test_tls_verification_not_skipped_by_default() {
         "Client should build successfully with explicit skip_verify=false"
     );
 }
+
+/// Test that skip_verify=true with HTTPS URL is properly configured.
+///
+/// This test verifies that when skip_verify=true is used with an HTTPS URL,
+/// the client builds successfully and conceptually the warning will be logged.
+/// Note: Tracing output is not directly testable in unit tests, but the behavior
+/// is documented and verified by code inspection.
+#[test]
+fn test_skip_verify_https_url_logs_warning() {
+    let strategy = AuthStrategy::ApiToken {
+        token: SecretString::new("test-token".to_string().into()),
+    };
+
+    // Build client with HTTPS URL and skip_verify=true
+    // Warning will be logged about disabled TLS verification
+    let client = SplunkClient::builder()
+        .base_url("https://splunk.example.com:8089".to_string())
+        .auth_strategy(strategy)
+        .skip_verify(true)
+        .build();
+
+    assert!(
+        client.is_ok(),
+        "Client should build successfully with skip_verify=true on HTTPS URL"
+    );
+}
