@@ -3,17 +3,17 @@ source: crates/tui/tests/snapshot_footer_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────┐
-│Splunk TUI - Jobs | [?] Unknown                           │
+│Splunk TUI - Search [FOCUS] | [?] Unknown                 │
 │ |                                                        │
 └──────────────────────────────────────────────────────────┘
-┌Search Jobs───────────────────────────────────────────────┐
-│Sel  SID  Status          Duration   Results    Events    │
-│[ ]  sche Done            5.23s      100        500       │
-│[ ]  admi Running (65%)   12.45s     450        2000      │
-│                                                          │
-│                                                          │
-│                                                          │
-│                                                          │
+┌Search Query──────────────────────────────────────────────┐
+│index=main                                                │
+└──────────────────────────────────────────────────────────┘
+┌Status────────────────────────────────────────────────────┐
+│Press Enter to execute search                             │
+└──────────────────────────────────────────────────────────┘
+┌Results───────────────────────────────────────────────────┐
+│     No results. Enter a search query and press Enter.    │
 │                                                          │
 │                                                          │
 │                                                          │
@@ -24,5 +24,5 @@ expression: harness.render()
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────┐
-│ Tab:Next | Shift+Tab:Prev | r:Refresh ...| ?:Help | q:Qui│
+│[FOCUS]  Tab:Toggle | Shift+Tab:Prev | Enter:Run ...| ?:He│
 └──────────────────────────────────────────────────────────┘

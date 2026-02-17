@@ -21,6 +21,7 @@ use predicates::{Predicate, prelude::*};
 /// - "client error (Connect)" (reqwest connection error)
 /// - "invalid peer certificate" (TLS certificate errors)
 /// - "API error (401)" (authentication errors when a real server responds)
+/// - "Unauthorized" (authentication rejected by a running Splunk server)
 ///
 /// Use this in tests that expect connection failures when no Splunk server is running.
 #[allow(dead_code)]
@@ -29,6 +30,7 @@ pub fn connection_error_predicate() -> impl Predicate<str> {
         .or(predicate::str::contains("client error (Connect)"))
         .or(predicate::str::contains("invalid peer certificate"))
         .or(predicate::str::contains("API error (401)"))
+        .or(predicate::str::contains("Unauthorized"))
 }
 
 /// Returns a hermetic `splunk-cli` command for integration testing.

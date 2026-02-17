@@ -1,5 +1,5 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_screens_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -24,5 +24,5 @@ expression: harness.render()
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Next Screen | Shift+Tab:Previous Screen | r:Refresh ...| ?:Help | q:Quit │
+│ Tab:Next | Shift+Tab:Prev | r:Refresh j/k or Up/Down:Navigate ...| ?:Help | q│
 └──────────────────────────────────────────────────────────────────────────────┘

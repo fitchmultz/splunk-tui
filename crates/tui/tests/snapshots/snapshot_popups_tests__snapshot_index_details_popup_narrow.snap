@@ -1,5 +1,5 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_popups_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -24,5 +24,5 @@ expression: harness.render()
 │ │Cold DB Path: /opt/splunk/cold                                            ║ │
 └─│                                                                          ↓─┘
 ┌─└──────────────────────────────────────────────────────────────────────────┘─┐
-│ Tab:Next Screen | Shift+Tab:Previous Screen | r:Refresh ...| ?:Help | q:Quit │
+│ Shift+Tab:Prev  | Esc:Close| r:Refresh Enter:Details ...| ?:Help | q:Quit    │
 └──────────────────────────────────────────────────────────────────────────────┘

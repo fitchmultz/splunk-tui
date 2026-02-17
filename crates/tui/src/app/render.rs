@@ -10,7 +10,10 @@
 //! - Does NOT mutate app state (except for ListState/TableState selection)
 
 use crate::app::App;
-use crate::app::state::{CurrentScreen, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState};
+use crate::app::state::{
+    CurrentScreen, EscAction, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, NavigationContext,
+    NavigationMode, TabAction,
+};
 use crate::input::keymap::footer_hints;
 use crate::input::keymap::overrides;
 use crate::ui::popup::PopupType;
@@ -29,6 +32,18 @@ use ratatui::{
 };
 
 impl App {
+    /// Get the current navigation context for rendering.
+    ///
+    /// Returns a NavigationContext containing the current mode, Tab action,
+    /// Shift+Tab action, and Esc action for display in the UI.
+    pub fn navigation_context(&self) -> NavigationContext {
+        NavigationContext::from_app(
+            self.current_screen,
+            self.search_input_mode,
+            self.popup.is_some(),
+        )
+    }
+
     /// Render the application UI.
     pub fn render(&mut self, f: &mut Frame) {
         self.last_area = f.area();
@@ -85,6 +100,9 @@ impl App {
         // Build connection context line for header (RQ-0134)
         let connection_line = self.format_connection_context();
 
+        // Get navigation context for mode indicator (RQ-0457)
+        let nav_ctx = self.navigation_context();
+
         let mut header_spans = vec![
             Span::styled(
                 "Splunk TUI",
@@ -126,11 +144,26 @@ impl App {
                 },
                 Style::default().fg(theme.accent),
             ),
-            Span::raw(" | "),
-            health_indicator,
-            Span::raw(" "),
-            Span::styled(health_label, health_label_style),
         ];
+
+        // Add mode badge for screens with special navigation behavior (RQ-0457)
+        if self.current_screen == CurrentScreen::Search {
+            let mode_style = match nav_ctx.mode {
+                NavigationMode::LocalFocus => Style::default()
+                    .fg(theme.warning)
+                    .add_modifier(Modifier::BOLD),
+                NavigationMode::ScreenCycle => Style::default().fg(theme.accent),
+            };
+            header_spans.push(Span::styled(
+                format!(" [{}]", nav_ctx.mode_label()),
+                mode_style,
+            ));
+        }
+
+        header_spans.push(Span::raw(" | "));
+        header_spans.push(health_indicator);
+        header_spans.push(Span::raw(" "));
+        header_spans.push(Span::styled(health_label, health_label_style));
 
         if !open_circuits.is_empty() {
             header_spans.push(Span::raw(" | "));
@@ -714,42 +747,59 @@ impl App {
         spinner_char(self.spinner_frame)
     }
 
-    /// Build footer text with navigation hints, screen-specific hints, and controls.
+    /// Build footer text with navigation hints, mode indicator, and controls.
     ///
-    /// Layout: [Loading] | Tab:Next | Shift+Tab:Prev | [Screen Hints] | ?:Help | q:Quit
-    /// Handles narrow terminals by truncating screen hints with ellipsis.
+    /// Layout: [MODE] | [Loading] | Tab:Action | Esc:Action | [Screen Hints] | ?:Help | q:Quit
     ///
-    /// Note: Navigation hints are context-aware. In Search screen with QueryFocused mode,
-    /// Tab toggles focus instead of navigating to the next screen.
+    /// Mode indicator appears on screens with special navigation (Search).
+    /// Handles narrow terminals by responsive truncation.
     fn build_footer_text(&self, theme: splunk_config::Theme) -> Vec<Line<'_>> {
         let hints = footer_hints(self.current_screen);
         let available_width = self.last_area.width as usize;
+        let nav_ctx = self.navigation_context();
 
-        // Determine navigation text based on current screen and mode
-        let (nav_text, nav_width) = self.get_navigation_hint();
-
-        // Calculate minimum required width for fixed elements
-        // Loading format: " {spinner} Loading... {:.0}% " = original + 2 chars for spinner
-        let loading_width = if self.loading {
-            format!(" ⠋ Loading... {:.0}% |", self.progress * 100.0).len()
+        // Build mode indicator (Search screen only)
+        let mode_text = if self.current_screen == CurrentScreen::Search {
+            format!("[{}] ", nav_ctx.mode_label())
         } else {
-            0
+            String::new()
         };
-        let help_quit_width = " ?:Help | q:Quit ".len();
+        let mode_width = mode_text.len();
 
-        let fixed_width = loading_width + nav_width + help_quit_width;
+        // Build navigation hint text
+        let (nav_text, nav_width) = self.format_navigation_hint(&nav_ctx);
+
+        // Build Esc hint
+        let esc_text = match nav_ctx.esc_action {
+            EscAction::DefaultFocusMode => " | Esc:Query".to_string(),
+            EscAction::BackToPreviousScreen => " | Esc:Back".to_string(),
+            EscAction::ClosePopup => " | Esc:Close".to_string(),
+            EscAction::None => String::new(),
+        };
+        let esc_width = esc_text.len();
+
+        // Build loading indicator
+        let loading_text = if self.loading {
+            let spinner = self.spinner_char();
+            format!(" {} Loading... {:.0}% |", spinner, self.progress * 100.0)
+        } else {
+            String::new()
+        };
+        let loading_width = loading_text.len();
+
+        let help_quit_width = " | ?:Help | q:Quit ".len();
+
+        let fixed_width = mode_width + loading_width + nav_width + esc_width + help_quit_width;
         let hints_available_width = available_width.saturating_sub(fixed_width);
 
-        // Build screen hints string
+        // Build screen hints string (truncated for narrow terminals)
         let hints_text = if hints.is_empty() {
             String::new()
         } else {
             let mut text = String::new();
             for (key, desc) in hints {
                 let hint = format!(" {}:{}", key, desc);
-                // Check if adding this hint would exceed available width
                 if text.len() + hint.len() > hints_available_width && !text.is_empty() {
-                    // Truncate with ellipsis
                     text.push_str(" ...");
                     break;
                 }
@@ -761,18 +811,32 @@ impl App {
         // Build the footer line
         let mut spans = Vec::new();
 
-        // Loading indicator (if active)
+        // Mode indicator (Search screen only)
+        if self.current_screen == CurrentScreen::Search {
+            let mode_style = match nav_ctx.mode {
+                NavigationMode::LocalFocus => Style::default()
+                    .fg(theme.warning)
+                    .add_modifier(Modifier::BOLD),
+                NavigationMode::ScreenCycle => Style::default().fg(theme.accent),
+            };
+            spans.push(Span::styled(mode_text, mode_style));
+        }
+
+        // Loading indicator
         if self.loading {
-            let spinner = self.spinner_char();
             spans.push(Span::styled(
-                format!(" {} Loading... {:.0}% ", spinner, self.progress * 100.0),
+                loading_text,
                 Style::default().fg(theme.warning),
             ));
-            spans.push(Span::raw("|"));
         }
 
         // Navigation hints (context-aware)
         spans.push(Span::raw(nav_text));
+
+        // Esc hint
+        if !esc_text.is_empty() {
+            spans.push(Span::styled(esc_text, Style::default().fg(theme.text)));
+        }
 
         // Screen-specific hints
         if !hints_text.is_empty() {
@@ -789,34 +853,22 @@ impl App {
         vec![Line::from(spans)]
     }
 
-    /// Get the navigation hint text and width based on current screen and mode.
+    /// Format navigation hint based on current navigation context (RQ-0457).
     ///
-    /// Returns a tuple of (navigation_text, navigation_width).
-    /// - In Search screen with QueryFocused mode: "Tab:Toggle Focus | Shift+Tab:Previous Screen"
-    /// - All other cases: "Tab:Next Screen | Shift+Tab:Previous Screen"
-    ///
-    /// Also checks for keybinding overrides and updates the displayed keys accordingly.
-    fn get_navigation_hint(&self) -> (String, usize) {
+    /// Returns (navigation_text, navigation_width) for footer layout calculation.
+    fn format_navigation_hint(&self, nav_ctx: &NavigationContext) -> (String, usize) {
         use crate::action::Action;
-        use crate::app::state::SearchInputMode;
 
-        // Get effective keys (considering overrides)
         let next_key = overrides::get_effective_key_display(Action::NextScreen, "Tab");
         let prev_key = overrides::get_effective_key_display(Action::PreviousScreen, "Shift+Tab");
 
-        if self.current_screen == CurrentScreen::Search
-            && matches!(self.search_input_mode, SearchInputMode::QueryFocused)
-        {
-            // In Search QueryFocused mode, Tab toggles focus instead of navigating
-            // Still show the actual keys that are bound
-            let text = format!(" {}:Toggle Focus | {}:Previous Screen ", next_key, prev_key);
-            let width = text.len();
-            (text, width)
-        } else {
-            // Default navigation hint with potentially overridden keys
-            let text = format!(" {}:Next Screen | {}:Previous Screen ", next_key, prev_key);
-            let width = text.len();
-            (text, width)
-        }
+        let text = match nav_ctx.tab_action {
+            TabAction::ToggleFocus => format!(" {}:Toggle | {}:Prev ", next_key, prev_key),
+            TabAction::NextScreen => format!(" {}:Next | {}:Prev ", next_key, prev_key),
+            TabAction::PreviousScreen => format!(" {}:Prev ", prev_key),
+            TabAction::None => format!(" {}:Prev ", prev_key),
+        };
+
+        (text.clone(), text.len())
     }
 }

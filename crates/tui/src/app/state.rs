@@ -381,6 +381,121 @@ impl SearchInputMode {
     }
 }
 
+/// Navigation mode categories for display in mode indicator.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NavigationMode {
+    /// Screen cycling mode - Tab/Shift+Tab navigate between screens.
+    ScreenCycle,
+    /// Local focus mode - Tab toggles focus within the current screen.
+    LocalFocus,
+}
+
+impl NavigationMode {
+    /// Short label for mode display in header/footer (e.g., "FOCUS", "NAV").
+    pub fn label(&self) -> &'static str {
+        match self {
+            NavigationMode::ScreenCycle => "NAV",
+            NavigationMode::LocalFocus => "FOCUS",
+        }
+    }
+}
+
+/// Tab/Shift+Tab action outcome for footer hint display.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TabAction {
+    /// Navigate to next screen in cycle.
+    NextScreen,
+    /// Navigate to previous screen in cycle.
+    PreviousScreen,
+    /// Toggle focus within current screen (e.g., query <-> results).
+    ToggleFocus,
+    /// No action available (disabled).
+    None,
+}
+
+/// Esc action outcome for footer hint display.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EscAction {
+    /// Return to previous screen (e.g., JobInspect -> Jobs).
+    BackToPreviousScreen,
+    /// Switch to default focus mode (e.g., ResultsFocused -> QueryFocused).
+    DefaultFocusMode,
+    /// Close current popup/overlay.
+    ClosePopup,
+    /// No action (already at base state).
+    None,
+}
+
+/// Navigation context exposed to rendering layer.
+///
+/// Provides explicit state for mode indicators and keybinding hints.
+/// This enables users to predict what Tab/Shift+Tab/Esc will do from
+/// on-screen cues without opening help.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NavigationContext {
+    /// Current navigation mode for the active screen.
+    pub mode: NavigationMode,
+    /// What Tab will do when pressed.
+    pub tab_action: TabAction,
+    /// What Shift+Tab will do when pressed.
+    pub shift_tab_action: TabAction,
+    /// What Esc will do when pressed.
+    pub esc_action: EscAction,
+}
+
+impl NavigationContext {
+    /// Create navigation context for the current app state.
+    pub fn from_app(
+        screen: CurrentScreen,
+        search_input_mode: SearchInputMode,
+        has_popup: bool,
+    ) -> Self {
+        // Popup takes precedence over everything
+        if has_popup {
+            return Self {
+                mode: NavigationMode::ScreenCycle,
+                tab_action: TabAction::None,
+                shift_tab_action: TabAction::None,
+                esc_action: EscAction::ClosePopup,
+            };
+        }
+
+        match screen {
+            CurrentScreen::Search => match search_input_mode {
+                SearchInputMode::QueryFocused => Self {
+                    mode: NavigationMode::LocalFocus,
+                    tab_action: TabAction::ToggleFocus,
+                    shift_tab_action: TabAction::PreviousScreen,
+                    esc_action: EscAction::None,
+                },
+                SearchInputMode::ResultsFocused => Self {
+                    mode: NavigationMode::ScreenCycle,
+                    tab_action: TabAction::NextScreen,
+                    shift_tab_action: TabAction::PreviousScreen,
+                    esc_action: EscAction::DefaultFocusMode,
+                },
+            },
+            CurrentScreen::JobInspect => Self {
+                mode: NavigationMode::ScreenCycle,
+                tab_action: TabAction::NextScreen,
+                shift_tab_action: TabAction::PreviousScreen,
+                esc_action: EscAction::BackToPreviousScreen,
+            },
+            _ => Self {
+                mode: NavigationMode::ScreenCycle,
+                tab_action: TabAction::NextScreen,
+                shift_tab_action: TabAction::PreviousScreen,
+                esc_action: EscAction::None,
+            },
+        }
+    }
+
+    /// Short label for mode display in header/footer (e.g., "FOCUS", "NAV").
+    pub fn mode_label(&self) -> &'static str {
+        self.mode.label()
+    }
+}
+
 /// Pagination state for list screens (indexes, jobs, apps, users).
 #[derive(Debug, Clone, Copy)]
 pub struct ListPaginationState {
@@ -795,5 +910,124 @@ mod tests {
             state.can_load_more(),
             "Should be able to load when both has_more is true and under cap"
         );
+    }
+
+    #[test]
+    fn test_navigation_context_search_query_focused() {
+        let ctx = NavigationContext::from_app(
+            CurrentScreen::Search,
+            SearchInputMode::QueryFocused,
+            false,
+        );
+
+        assert_eq!(ctx.mode, NavigationMode::LocalFocus);
+        assert_eq!(ctx.tab_action, TabAction::ToggleFocus);
+        assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
+        assert_eq!(ctx.esc_action, EscAction::None);
+        assert_eq!(ctx.mode_label(), "FOCUS");
+    }
+
+    #[test]
+    fn test_navigation_context_search_results_focused() {
+        let ctx = NavigationContext::from_app(
+            CurrentScreen::Search,
+            SearchInputMode::ResultsFocused,
+            false,
+        );
+
+        assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
+        assert_eq!(ctx.tab_action, TabAction::NextScreen);
+        assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
+        assert_eq!(ctx.esc_action, EscAction::DefaultFocusMode);
+        assert_eq!(ctx.mode_label(), "NAV");
+    }
+
+    #[test]
+    fn test_navigation_context_jobs_screen() {
+        let ctx = NavigationContext::from_app(
+            CurrentScreen::Jobs,
+            SearchInputMode::QueryFocused, // Irrelevant for Jobs
+            false,
+        );
+
+        assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
+        assert_eq!(ctx.tab_action, TabAction::NextScreen);
+        assert_eq!(ctx.esc_action, EscAction::None);
+    }
+
+    #[test]
+    fn test_navigation_context_job_inspect_screen() {
+        let ctx = NavigationContext::from_app(
+            CurrentScreen::JobInspect,
+            SearchInputMode::QueryFocused,
+            false,
+        );
+
+        assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
+        assert_eq!(ctx.tab_action, TabAction::NextScreen);
+        assert_eq!(ctx.esc_action, EscAction::BackToPreviousScreen);
+    }
+
+    #[test]
+    fn test_navigation_context_with_popup() {
+        let ctx =
+            NavigationContext::from_app(CurrentScreen::Search, SearchInputMode::QueryFocused, true);
+
+        assert_eq!(ctx.esc_action, EscAction::ClosePopup);
+        assert_eq!(ctx.tab_action, TabAction::None);
+    }
+
+    #[test]
+    fn test_navigation_context_all_non_search_screens() {
+        let screens = [
+            CurrentScreen::Indexes,
+            CurrentScreen::Cluster,
+            CurrentScreen::Jobs,
+            CurrentScreen::Health,
+            CurrentScreen::License,
+            CurrentScreen::Kvstore,
+            CurrentScreen::SavedSearches,
+            CurrentScreen::Macros,
+            CurrentScreen::InternalLogs,
+            CurrentScreen::Apps,
+            CurrentScreen::Users,
+            CurrentScreen::Roles,
+            CurrentScreen::SearchPeers,
+            CurrentScreen::Inputs,
+            CurrentScreen::Configs,
+            CurrentScreen::FiredAlerts,
+            CurrentScreen::Forwarders,
+            CurrentScreen::Lookups,
+            CurrentScreen::Audit,
+            CurrentScreen::Dashboards,
+            CurrentScreen::DataModels,
+            CurrentScreen::WorkloadManagement,
+            CurrentScreen::Shc,
+            CurrentScreen::Settings,
+            CurrentScreen::Overview,
+            CurrentScreen::MultiInstance,
+        ];
+
+        for screen in screens {
+            let ctx = NavigationContext::from_app(screen, SearchInputMode::QueryFocused, false);
+            assert_eq!(
+                ctx.mode,
+                NavigationMode::ScreenCycle,
+                "Screen {:?} should be in ScreenCycle mode",
+                screen
+            );
+            assert_eq!(
+                ctx.tab_action,
+                TabAction::NextScreen,
+                "Screen {:?} Tab should be NextScreen",
+                screen
+            );
+        }
+    }
+
+    #[test]
+    fn test_navigation_mode_label() {
+        assert_eq!(NavigationMode::ScreenCycle.label(), "NAV");
+        assert_eq!(NavigationMode::LocalFocus.label(), "FOCUS");
     }
 }

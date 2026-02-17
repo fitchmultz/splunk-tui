@@ -29,11 +29,13 @@ use tempfile::TempDir;
 /// - "client error (Connect)" (reqwest connection error)
 /// - "invalid peer certificate" (TLS certificate errors)
 /// - "API error (401)" (authentication errors when a real server responds)
+/// - "Unauthorized" (authentication rejected by a running Splunk server)
 fn connection_error_predicate() -> impl Predicate<str> {
     predicate::str::contains("Connection refused")
         .or(predicate::str::contains("client error (Connect)"))
         .or(predicate::str::contains("invalid peer certificate"))
         .or(predicate::str::contains("API error (401)"))
+        .or(predicate::str::contains("Unauthorized"))
 }
 
 /// Helper to clear all SPLUNK_* environment variables for test isolation.

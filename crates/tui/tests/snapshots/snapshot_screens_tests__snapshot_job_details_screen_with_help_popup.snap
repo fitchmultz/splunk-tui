@@ -1,6 +1,5 @@
 ---
 source: crates/tui/tests/snapshot_screens_tests.rs
-assertion_line: 89
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -25,5 +24,5 @@ expression: harness.render()
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Next Screen | Shift+Tab:Previous Screen | Esc:Back ...| ?:Help | q:Quit  │
+│ Shift+Tab:Prev  | Esc:Close| Esc:Back Ctrl+c:Copy SID| ?:Help | q:Quit       │
 └──────────────────────────────────────────────────────────────────────────────┘

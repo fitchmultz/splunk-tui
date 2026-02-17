@@ -1,6 +1,5 @@
 ---
 source: crates/tui/tests/snapshot_popups_tests.rs
-assertion_line: 24
 expression: harness.render()
 ---
 ┌──────────────────────────────────────┐
@@ -21,5 +20,5 @@ expression: harness.render()
 │                                      │
 └──────────────────────────────────────┘
 ┌──────────────────────────────────────┐
-│ Tab:Next Screen | Shift+Tab:Previous │
+│ Shift+Tab:Prev  | Esc:Close| r:Refres│
 └──────────────────────────────────────┘

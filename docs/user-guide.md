@@ -230,7 +230,33 @@ Launch the interactive interface with `splunk-tui`.
 
 ### Navigation Basics
 
-<!-- BEGIN TUI KEYBINDINGS -->
+Splunk TUI uses a consistent navigation model with visual mode cues.
+
+#### Mode Indicator
+
+On the Search screen, you'll see a mode indicator in the header and footer:
+
+- **`[FOCUS]`** - Local focus mode. Tab toggles between query input and results area.
+- **`[NAV]`** - Screen cycle mode. Tab navigates to the next screen.
+
+The footer always shows what Tab and Esc will do in the current context.
+
+#### Search Screen Modes
+
+The Search screen has two focus modes:
+
+1. **QueryFocused** (default): 
+   - Type your search query
+   - `Tab` switches to ResultsFocused mode
+   - Footer shows `[FOCUS]` indicator
+
+2. **ResultsFocused**:
+   - Navigate search results
+   - `Tab`/`Shift+Tab` cycle screens
+   - `Esc` returns to QueryFocused mode
+   - Footer shows `[NAV]` indicator and `Esc:Query` hint
+
+ <!-- BEGIN TUI KEYBINDINGS -->
 
 ### Navigation
 

@@ -95,7 +95,7 @@ fn snapshot_footer_hints_with_loading() {
 #[test]
 fn snapshot_footer_hints_search_query_focused() {
     // Test footer in Search screen with QueryFocused mode
-    // Footer should show "Tab:Toggle Focus" instead of "Tab:Next Screen"
+    // Footer should show "[FOCUS]" indicator and "Tab:Toggle"
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
     harness.app.search_input_mode = SearchInputMode::QueryFocused;
@@ -107,7 +107,7 @@ fn snapshot_footer_hints_search_query_focused() {
 #[test]
 fn snapshot_footer_hints_search_results_focused() {
     // Test footer in Search screen with ResultsFocused mode
-    // Footer should show "Tab:Next Screen" (normal navigation)
+    // Footer should show "[NAV]" indicator and "Tab:Next"
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Search;
     harness.app.search_input_mode = SearchInputMode::ResultsFocused;
@@ -117,6 +117,52 @@ fn snapshot_footer_hints_search_results_focused() {
         serde_json::json!({"_raw": "test event 1"}),
         serde_json::json!({"_raw": "test event 2"}),
     ];
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_search_narrow_terminal() {
+    // Narrow terminal (60 cols) - verify mode indicator is preserved
+    let mut harness = TuiHarness::new(60, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.search_input.set_value("index=main");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_search_very_narrow_terminal() {
+    // Very narrow terminal (40 cols) - minimal hints, mode indicator preserved
+    let mut harness = TuiHarness::new(40, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.search_input.set_value("idx");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_job_inspect_esc_hint() {
+    // JobInspect screen should show "Esc:Back" hint
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_other_screen_no_mode_indicator() {
+    // Non-Search screens should NOT show mode indicator
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
 
     insta::assert_snapshot!(harness.render());
 }

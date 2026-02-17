@@ -1,5 +1,5 @@
 ---
-source: crates/tui/tests/snapshot_tests.rs
+source: crates/tui/tests/snapshot_popups_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -30,5 +30,5 @@ expression: harness.render()
 │                   │                                                                              │                   │
 └───────────────────└──────────────────────────────────────────────────────────────────────────────┘───────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Next Screen | Shift+Tab:Previous Screen | r:Refresh Enter:Details j/k or Up/Down:Navigate ...| ?:Help | q:Quit   │
+│ Shift+Tab:Prev  | Esc:Close| r:Refresh Enter:Details j/k or Up/Down:Navigate Ctrl+c:Copy| ?:Help | q:Quit            │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

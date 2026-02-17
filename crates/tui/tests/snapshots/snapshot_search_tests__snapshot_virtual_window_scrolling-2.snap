@@ -1,10 +1,9 @@
 ---
 source: crates/tui/tests/snapshot_search_tests.rs
-assertion_line: 139
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Splunk TUI - Search | [?] Unknown                                             │
+│Splunk TUI - Search [FOCUS] | [?] Unknown                                     │
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Query──────────────────────────────────────────────────────────────────┐
@@ -25,5 +24,5 @@ expression: harness.render()
 │{                                                                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Toggle Focus | Shift+Tab:Previous Screen | Enter:Run ...| ?:Help | q:Quit│
+│[FOCUS]  Tab:Toggle | Shift+Tab:Prev | Enter:Run Ctrl+e:Export ...| ?:Help | q│
 └──────────────────────────────────────────────────────────────────────────────┘
