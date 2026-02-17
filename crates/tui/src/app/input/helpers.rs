@@ -23,8 +23,10 @@ pub fn is_printable_char(key: KeyEvent) -> bool {
 
 /// Check if a key event is used for mode switching in the search screen.
 /// These keys should bypass global bindings when in QueryFocused mode.
-pub fn is_mode_switch_key(key: KeyEvent) -> bool {
-    matches!(key.code, KeyCode::Tab | KeyCode::BackTab)
+pub fn is_mode_switch_key(_key: KeyEvent) -> bool {
+    // Tab/BackTab are now handled by global keymap for screen navigation
+    // Focus switching is done via Ctrl+Tab/Ctrl+Shift+Tab (NextFocus/PreviousFocus)
+    false
 }
 
 /// Check if a key event is used for cursor movement/editing in the search query.

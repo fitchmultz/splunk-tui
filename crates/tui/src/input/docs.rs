@@ -51,10 +51,10 @@ fn render_search_screen_docs() -> String {
     out.push_str("#### Search Screen\n\n");
     out.push_str("The Search screen has two input modes that affect how keys are handled:\n\n");
     out.push_str(
-        "**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Tab` to switch to ResultsFocused mode.\n\n"
+        "**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Ctrl+Tab` to switch focus to results.\n\n"
     );
     out.push_str(
-        "**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Tab` or `Esc` to return to QueryFocused mode.\n\n"
+        "**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Ctrl+Shift+Tab` or `Esc` to return to QueryFocused mode.\n\n"
     );
 
     // Add keybindings from the keymap

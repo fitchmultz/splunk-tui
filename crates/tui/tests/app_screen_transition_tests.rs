@@ -377,7 +377,7 @@ fn test_search_screen_tab_behavior() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
-    // In QueryFocused mode, Tab toggles input mode
+    // Tab now navigates to next screen deterministically
     assert!(matches!(
         app.search_input_mode,
         SearchInputMode::QueryFocused
@@ -385,11 +385,14 @@ fn test_search_screen_tab_behavior() {
 
     let action = app.handle_input(tab_key());
     assert!(
-        action.is_none(),
-        "Tab on Search in QueryFocused should toggle mode without action"
+        matches!(action, Some(Action::NextScreen)),
+        "Tab on Search should navigate to next screen"
     );
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+    // Mode stays as QueryFocused (Tab doesn't toggle mode anymore)
     assert!(matches!(
         app.search_input_mode,
-        SearchInputMode::ResultsFocused
+        SearchInputMode::QueryFocused
     ));
 }

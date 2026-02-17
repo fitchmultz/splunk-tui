@@ -80,10 +80,10 @@ impl App {
 
         // Handle mode switching and input based on current mode
         match key.code {
-            // Tab toggles between QueryFocused and ResultsFocused modes
-            KeyCode::Tab => {
-                self.search_input_mode = self.search_input_mode.toggle();
-                None
+            // Tab now navigates to next screen (handled by global keymap)
+            KeyCode::Tab | KeyCode::BackTab => {
+                // Let global keymap handle screen navigation
+                None // Return None so the key event propagates to keymap resolution
             }
             // Esc switches back to QueryFocused mode
             KeyCode::Esc => self.handle_search_esc(),
@@ -429,24 +429,25 @@ mod tests {
     }
 
     #[test]
-    fn test_tab_toggles_input_mode() {
+    fn test_tab_returns_none_for_global_keymap() {
+        // Tab now returns None so the global keymap can handle NextScreen action
         let mut app = App::new(None, ConnectionContext::default());
         assert!(matches!(
             app.search_input_mode,
             SearchInputMode::QueryFocused
         ));
 
-        app.handle_search_input(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
-        assert!(matches!(
-            app.search_input_mode,
-            SearchInputMode::ResultsFocused
-        ));
-
-        app.handle_search_input(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
-        assert!(matches!(
-            app.search_input_mode,
-            SearchInputMode::QueryFocused
-        ));
+        // Tab should return None (not toggle mode anymore)
+        let action = app.handle_search_input(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+        assert!(
+            action.is_none(),
+            "Tab should return None for global keymap to handle"
+        );
+        // Mode should stay as QueryFocused
+        assert!(
+            matches!(app.search_input_mode, SearchInputMode::QueryFocused),
+            "Mode should not change when Tab is pressed"
+        );
     }
 
     #[test]
@@ -460,6 +461,19 @@ mod tests {
             app.search_input_mode,
             SearchInputMode::QueryFocused
         ));
+    }
+
+    #[test]
+    fn test_backtab_returns_none_for_global_keymap() {
+        // Shift+Tab (BackTab) also returns None for global keymap to handle
+        let mut app = App::new(None, ConnectionContext::default());
+        app.search_input_mode = SearchInputMode::ResultsFocused;
+
+        let action = app.handle_search_input(KeyEvent::new(KeyCode::BackTab, KeyModifiers::NONE));
+        assert!(
+            action.is_none(),
+            "BackTab should return None for global keymap to handle"
+        );
     }
 
     #[test]

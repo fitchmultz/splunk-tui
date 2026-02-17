@@ -461,19 +461,14 @@ impl NavigationContext {
         }
 
         match screen {
-            CurrentScreen::Search => match search_input_mode {
-                SearchInputMode::QueryFocused => Self {
-                    mode: NavigationMode::LocalFocus,
-                    tab_action: TabAction::ToggleFocus,
-                    shift_tab_action: TabAction::PreviousScreen,
-                    esc_action: EscAction::None,
+            CurrentScreen::Search => Self {
+                mode: match search_input_mode {
+                    SearchInputMode::QueryFocused => NavigationMode::LocalFocus,
+                    SearchInputMode::ResultsFocused => NavigationMode::ScreenCycle,
                 },
-                SearchInputMode::ResultsFocused => Self {
-                    mode: NavigationMode::ScreenCycle,
-                    tab_action: TabAction::NextScreen,
-                    shift_tab_action: TabAction::PreviousScreen,
-                    esc_action: EscAction::DefaultFocusMode,
-                },
+                tab_action: TabAction::NextScreen,
+                shift_tab_action: TabAction::PreviousScreen,
+                esc_action: EscAction::None,
             },
             CurrentScreen::JobInspect => Self {
                 mode: NavigationMode::ScreenCycle,
@@ -921,7 +916,7 @@ mod tests {
         );
 
         assert_eq!(ctx.mode, NavigationMode::LocalFocus);
-        assert_eq!(ctx.tab_action, TabAction::ToggleFocus);
+        assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
         assert_eq!(ctx.esc_action, EscAction::None);
         assert_eq!(ctx.mode_label(), "FOCUS");
@@ -938,7 +933,7 @@ mod tests {
         assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
         assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
-        assert_eq!(ctx.esc_action, EscAction::DefaultFocusMode);
+        assert_eq!(ctx.esc_action, EscAction::None);
         assert_eq!(ctx.mode_label(), "NAV");
     }
 

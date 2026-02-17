@@ -1432,9 +1432,9 @@ Before the server info is loaded, the header shows "Connecting..." as a placehol
 
 The Search screen has two input modes that affect how keys are handled:
 
-**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Tab` to switch to ResultsFocused mode.
+**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Ctrl+Tab` to switch focus to results.
 
-**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Tab` or `Esc` to return to QueryFocused mode.
+**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Ctrl+Shift+Tab` or `Esc` to return to QueryFocused mode.
 
 - `Enter`: Run search
 - `Ctrl+e`: Export results

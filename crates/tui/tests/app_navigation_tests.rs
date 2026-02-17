@@ -201,8 +201,8 @@ fn test_tab_navigates_to_next_screen() {
 }
 
 #[test]
-fn test_tab_on_search_toggles_input_mode() {
-    // Tab on Search screen toggles between QueryFocused and ResultsFocused modes
+fn test_tab_on_search_dispatches_next_screen() {
+    // Tab on Search screen now navigates to next screen (deterministic behavior)
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
@@ -212,15 +212,18 @@ fn test_tab_on_search_toggles_input_mode() {
         splunk_tui::SearchInputMode::QueryFocused
     ));
 
-    // Tab toggles to ResultsFocused (no action returned, just mode change)
+    // Tab now dispatches NextScreen action (consistent with other screens)
     let action = app.handle_input(tab_key());
     assert!(
-        action.is_none(),
-        "Tab on Search should not return action, just toggle mode"
+        matches!(action, Some(Action::NextScreen)),
+        "Tab on Search should return NextScreen action"
     );
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+    // Mode stays as QueryFocused (Tab doesn't toggle mode anymore)
     assert!(matches!(
         app.search_input_mode,
-        splunk_tui::SearchInputMode::ResultsFocused
+        splunk_tui::SearchInputMode::QueryFocused
     ));
 }
 
@@ -252,12 +255,9 @@ fn test_tab_cycles_through_screens() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Search);
 
-    // On Search screen, Tab toggles input mode instead of navigating
-    // Switch to ResultsFocused mode first so Tab can navigate
-    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
-
-    // Tab from Search (in ResultsFocused mode) should go to Indexes
+    // Tab from Search now navigates deterministically (no mode toggle)
     let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Indexes);
 }
@@ -266,7 +266,7 @@ fn test_tab_cycles_through_screens() {
 fn test_shift_tab_cycles_backwards() {
     let mut app = App::new(None, ConnectionContext::default());
 
-    // Start from Indexes (not Search) to avoid input mode complications
+    // Start from Indexes
     app.current_screen = CurrentScreen::Indexes;
 
     // Shift+Tab from Indexes should go to Search
@@ -275,11 +275,7 @@ fn test_shift_tab_cycles_backwards() {
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Search);
 
-    // On Search screen in QueryFocused mode (default), Shift+Tab toggles input mode
-    // Switch to ResultsFocused mode first so Shift+Tab can navigate
-    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
-
-    // Shift+Tab from Search (in ResultsFocused mode) should wrap to MultiInstance
+    // Shift+Tab from Search now navigates deterministically
     let action = app.handle_input(shift_tab_key());
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::MultiInstance);
@@ -399,36 +395,30 @@ fn test_navigation_from_all_screens() {
         );
     }
 
-    // Test Search screen: Tab toggles input mode in QueryFocused mode
+    // Test Search screen: Tab navigates deterministically regardless of input mode
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
-    // In QueryFocused mode (default), Tab toggles input mode
+    // In QueryFocused mode (default), Tab now navigates to next screen
     assert!(matches!(
         app.search_input_mode,
         splunk_tui::SearchInputMode::QueryFocused
     ));
     let action = app.handle_input(tab_key());
     assert!(
-        action.is_none(),
-        "Tab on Search in QueryFocused mode should toggle input mode, not navigate"
-    );
-    assert!(
-        matches!(
-            app.search_input_mode,
-            splunk_tui::SearchInputMode::ResultsFocused
-        ),
-        "Tab should toggle to ResultsFocused mode"
-    );
-
-    // In ResultsFocused mode, Tab navigates to next screen
-    let action = app.handle_input(tab_key());
-    assert!(
         matches!(action, Some(Action::NextScreen)),
-        "Tab on Search in ResultsFocused mode should navigate"
+        "Tab on Search should navigate to next screen deterministically"
     );
     app.update(action.unwrap());
     assert_eq!(app.current_screen, CurrentScreen::Indexes);
+    // Mode stays as QueryFocused (Tab doesn't toggle mode anymore)
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Mode should stay as QueryFocused"
+    );
 }
 
 #[test]

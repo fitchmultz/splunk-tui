@@ -1,5 +1,6 @@
 ---
 source: crates/tui/tests/snapshot_footer_tests.rs
+assertion_line: 143
 expression: harness.render()
 ---
 ┌──────────────────────────────────────┐
@@ -24,5 +25,5 @@ expression: harness.render()
 │                                      │
 └──────────────────────────────────────┘
 ┌──────────────────────────────────────┐
-│[FOCUS]  Tab:Toggle | Shift+Tab:Prev |│
+│[FOCUS]  Tab:Next | Shift+Tab:Prev | E│
 └──────────────────────────────────────┘

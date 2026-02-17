@@ -236,8 +236,8 @@ Splunk TUI uses a consistent navigation model with visual mode cues.
 
 On the Search screen, you'll see a mode indicator in the header and footer:
 
-- **`[FOCUS]`** - Local focus mode. Tab toggles between query input and results area.
-- **`[NAV]`** - Screen cycle mode. Tab navigates to the next screen.
+- **`[FOCUS]`** - Query input focused. Type your search query.
+- **`[NAV]`** - Results area focused. Navigate and control the application.
 
 The footer always shows what Tab and Esc will do in the current context.
 
@@ -245,16 +245,17 @@ The footer always shows what Tab and Esc will do in the current context.
 
 The Search screen has two focus modes:
 
-1. **QueryFocused** (default): 
+1. **QueryFocused** (default):
    - Type your search query
-   - `Tab` switches to ResultsFocused mode
+   - `Tab`/`Shift+Tab` cycle screens (consistent with other screens)
+   - `Ctrl+Tab` switches focus to results
    - Footer shows `[FOCUS]` indicator
 
 2. **ResultsFocused**:
-   - Navigate search results
+   - Navigate and control the application
    - `Tab`/`Shift+Tab` cycle screens
-   - `Esc` returns to QueryFocused mode
-   - Footer shows `[NAV]` indicator and `Esc:Query` hint
+   - `Ctrl+Shift+Tab` or `Esc` returns to QueryFocused mode
+   - Footer shows `[NAV]` indicator
 
  <!-- BEGIN TUI KEYBINDINGS -->
 
@@ -279,9 +280,9 @@ The Search screen has two focus modes:
 
 The Search screen has two input modes that affect how keys are handled:
 
-**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Tab` to switch to ResultsFocused mode.
+**QueryFocused mode** (default): Type your search query. Printable characters (including `q`, `?`, digits) are inserted into the query. Use `Ctrl+Tab` to switch focus to results.
 
-**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Tab` or `Esc` to return to QueryFocused mode.
+**ResultsFocused mode**: Navigate and control the application. Global shortcuts like `q` (quit) and `?` (help) work in this mode. Use `Ctrl+Shift+Tab` or `Esc` to return to QueryFocused mode.
 
 - `Enter`: Run search
 - `Ctrl+e`: Export results

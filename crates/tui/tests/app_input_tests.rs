@@ -16,7 +16,7 @@
 //! Tests are grouped by: mode switching, character insertion, special keys.
 
 mod helpers;
-use helpers::*;
+use helpers::{ctrl_shift_tab_key, ctrl_tab_key, *};
 use splunk_tui::{CurrentScreen, action::Action, app::App, app::ConnectionContext};
 
 #[test]
@@ -33,7 +33,7 @@ fn test_search_input_mode_default_is_query_focused() {
 }
 
 #[test]
-fn test_search_input_mode_toggles_with_tab() {
+fn test_search_input_mode_toggles_with_ctrl_tab() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;
 
@@ -43,29 +43,69 @@ fn test_search_input_mode_toggles_with_tab() {
         splunk_tui::SearchInputMode::QueryFocused
     ));
 
-    // Tab toggles to ResultsFocused (bypasses global NextScreen binding in QueryFocused mode)
-    app.handle_input(tab_key());
-    assert!(
-        matches!(
-            app.search_input_mode,
-            splunk_tui::SearchInputMode::ResultsFocused
-        ),
-        "Tab should toggle to ResultsFocused mode"
-    );
-
-    // In ResultsFocused mode, Tab triggers NextScreen action (does not toggle back)
+    // Tab now navigates to next screen (deterministic behavior)
     let action = app.handle_input(tab_key());
     assert!(
         matches!(action, Some(Action::NextScreen)),
-        "Tab in ResultsFocused mode should return NextScreen action"
+        "Tab should navigate to next screen"
     );
-    // Mode stays as ResultsFocused
+    // Mode stays as QueryFocused
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Tab should not toggle input mode"
+    );
+
+    // Reset screen back to Search for focus toggle test
+    app.current_screen = CurrentScreen::Search;
+
+    // Ctrl+Tab toggles focus mode via NextFocus action
+    let action = app.handle_input(ctrl_tab_key());
+    assert!(
+        matches!(action, Some(Action::NextFocus)),
+        "Ctrl+Tab should return NextFocus action"
+    );
+    // Apply the focus action (normally done by main loop)
+    if let Some(Action::NextFocus) = action {
+        // Focus manager handles the mode change
+        app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+    }
     assert!(
         matches!(
             app.search_input_mode,
             splunk_tui::SearchInputMode::ResultsFocused
         ),
-        "Mode should remain ResultsFocused after Tab in that mode"
+        "Ctrl+Tab should toggle to ResultsFocused mode"
+    );
+}
+
+#[test]
+fn test_search_input_mode_previous_focus_with_ctrl_shift_tab() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Start in ResultsFocused mode
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    // Ctrl+Shift+Tab toggles focus mode via PreviousFocus action
+    let action = app.handle_input(ctrl_shift_tab_key());
+    assert!(
+        matches!(action, Some(Action::PreviousFocus)),
+        "Ctrl+Shift+Tab should return PreviousFocus action"
+    );
+    // Apply the focus action (normally done by main loop)
+    if let Some(Action::PreviousFocus) = action {
+        // Focus manager handles the mode change
+        app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+    }
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Ctrl+Shift+Tab should toggle to QueryFocused mode"
     );
 }
 

@@ -519,12 +519,11 @@ impl App {
 
         // When in Search screen with QueryFocused mode, skip global binding resolution
         // for printable characters to allow typing (RQ-0101 fix).
-        // Also skip Tab/BackTab to allow mode switching within the search screen.
+        // Tab/BackTab are handled by global keymap for screen navigation (deterministic behavior).
         // Also skip cursor movement/editing keys for query editing (RQ-0110).
         let skip_global_bindings = self.current_screen == CurrentScreen::Search
             && matches!(self.search_input_mode, SearchInputMode::QueryFocused)
             && (input::helpers::is_printable_char(key)
-                || input::helpers::is_mode_switch_key(key)
                 || input::helpers::is_cursor_editing_key(key));
 
         if !skip_global_bindings

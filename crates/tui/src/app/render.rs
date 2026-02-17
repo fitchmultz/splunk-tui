@@ -863,10 +863,10 @@ impl App {
         let prev_key = overrides::get_effective_key_display(Action::PreviousScreen, "Shift+Tab");
 
         let text = match nav_ctx.tab_action {
-            TabAction::ToggleFocus => format!(" {}:Toggle | {}:Prev ", next_key, prev_key),
             TabAction::NextScreen => format!(" {}:Next | {}:Prev ", next_key, prev_key),
             TabAction::PreviousScreen => format!(" {}:Prev ", prev_key),
             TabAction::None => format!(" {}:Prev ", prev_key),
+            TabAction::ToggleFocus => format!(" {}:Next | {}:Prev ", next_key, prev_key),
         };
 
         (text.clone(), text.len())

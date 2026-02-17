@@ -210,23 +210,18 @@ impl FooterLayout {
     /// "Tab:Toggle Focus" instead of "Tab:Next Screen", which has a different width.
     ///
     /// Also considers keybinding overrides which can change the navigation key display.
-    fn navigation_width(screen: CurrentScreen, search_input_mode: Option<SearchInputMode>) -> u16 {
+    fn navigation_width(
+        _screen: CurrentScreen,
+        _search_input_mode: Option<SearchInputMode>,
+    ) -> u16 {
         use crate::action::Action;
 
         // Get effective keys (considering overrides)
         let next_key = overrides::get_effective_key_display(Action::NextScreen, "Tab");
         let prev_key = overrides::get_effective_key_display(Action::PreviousScreen, "Shift+Tab");
 
-        // Calculate the actual width based on the current context
-        let text = if screen == CurrentScreen::Search
-            && matches!(search_input_mode, Some(SearchInputMode::QueryFocused))
-        {
-            // In Search QueryFocused mode: " {next}:Toggle Focus | {prev}:Previous Screen "
-            format!(" {}:Toggle Focus | {}:Previous Screen ", next_key, prev_key)
-        } else {
-            // Default: " {next}:Next Screen | {prev}:Previous Screen "
-            format!(" {}:Next Screen | {}:Previous Screen ", next_key, prev_key)
-        };
+        // All screens now show "Tab:Next Screen" consistently
+        let text = format!(" {}:Next Screen | {}:Previous Screen ", next_key, prev_key);
 
         text.len() as u16
     }
