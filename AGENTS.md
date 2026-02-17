@@ -158,6 +158,31 @@ cargo test -p splunk-tui --test snapshot_tests
 - If a test needs to validate dotenv behavior, it must explicitly unset `DOTENV_DISABLED` for the spawned process.
 - Live tests should use `.env.test` (copy from `.env.test.example`) or environment variables.
 
+### Temp File Hygiene
+
+All temporary files in tests must use the `tempfile` crate with RAII types to ensure deterministic cleanup:
+
+- **`tempfile::TempDir`** - For temporary directories, auto-cleaned on drop
+- **`tempfile::NamedTempFile`** - For temporary files, auto-deleted on drop
+
+**Never use:**
+- `std::env::temp_dir()` with manual cleanup
+- Hardcoded `/tmp` paths
+- `std::fs::remove_file` for cleanup in tests (fragile on panics)
+
+**Correct Pattern:**
+```rust
+#[test]
+fn test_with_temp_file() {
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let config_path = temp_dir.path().join("config.json");
+    // Write to config_path, run test...
+    // temp_dir auto-cleaned when it goes out of scope (even on panic)
+}
+```
+
+The architecture test `crates/architecture-tests/tests/temp_file_hygiene_tests.rs` enforces these patterns and will fail the build if violations are introduced.
+
 ## Configuration & Secrets
 
 ### Local Development
