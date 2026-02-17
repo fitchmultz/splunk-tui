@@ -74,23 +74,23 @@ Tip: You can skip this tutorial at any time by pressing 'q'. You can always rest
     }
 
     fn profile_creation_content() -> String {
-        r#"Step 1: Create a Connection Profile
+        r#"Step 2: Create a Connection Profile
 
 Before you can use Splunk TUI, you need to create a connection profile that stores your Splunk server connection details.
 
-To create a profile:
-  1. Press 'p' to open the profile manager
+Press Enter to open the profile creation form, then:
+  1. Enter a memorable profile name
   2. Enter your Splunk server URL (e.g., https://localhost:8089)
   3. Enter your username and password, or API token
-  4. Save the profile with a memorable name
+  4. Press Enter to save
 
 Your credentials are stored securely and are only used to connect to your Splunk server.
 
-Once you've created a profile, press → to continue."#.to_string()
+After saving, press → to continue."#.to_string()
     }
 
     fn connection_test_content() -> String {
-        r#"Step 2: Test Your Connection
+        r#"Step 3: Test Your Connection
 
 Now that you have created a profile, let's verify that we can connect to your Splunk server.
 
@@ -115,7 +115,7 @@ Once the connection test passes, press → to continue."#
     }
 
     fn first_search_content() -> String {
-        r#"Step 3: Run Your First Search
+        r#"Step 4: Run Your First Search
 
 Now let's run a search to see Splunk TUI in action!
 

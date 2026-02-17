@@ -317,3 +317,107 @@ async fn test_switch_to_settings() {
         "Should send SettingsLoaded"
     );
 }
+
+#[tokio::test]
+async fn test_save_profile_from_tutorial_emits_tutorial_action() {
+    // This test verifies that when a profile is saved with from_tutorial=true,
+    // the TutorialProfileCreated action is emitted.
+    let mut harness = SideEffectsTestHarness::new().await;
+
+    // Create profile and save with from_tutorial=true
+    let profile = ProfileConfig {
+        base_url: Some("https://tutorial.example.com:8089".to_string()),
+        username: Some("admin".to_string()),
+        password: Some(splunk_config::SecureValue::Plain(
+            secrecy::SecretString::new("password".to_string().into()),
+        )),
+        api_token: None,
+        skip_verify: Some(true),
+        timeout_seconds: Some(30),
+        max_retries: Some(3),
+        session_expiry_buffer_seconds: Some(60),
+        session_ttl_seconds: Some(3600),
+        health_check_interval_seconds: Some(60),
+    };
+
+    let actions = harness
+        .handle_and_collect(
+            Action::SaveProfile {
+                name: "tutorial-profile".to_string(),
+                profile,
+                use_keyring: false,
+                original_name: None,
+                from_tutorial: true,
+            },
+            1,
+        )
+        .await;
+
+    // Verify TutorialProfileCreated action was sent
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::TutorialProfileCreated { profile_name } if profile_name == "tutorial-profile")),
+        "Should send TutorialProfileCreated action with correct profile name"
+    );
+
+    // Also verify ProfileSaved was sent
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::ProfileSaved(Ok(name)) if name == "tutorial-profile")),
+        "Should also send ProfileSaved success"
+    );
+}
+
+#[tokio::test]
+async fn test_save_profile_without_tutorial_does_not_emit_tutorial_action() {
+    // This test verifies that when a profile is saved with from_tutorial=false,
+    // the TutorialProfileCreated action is NOT emitted.
+    let mut harness = SideEffectsTestHarness::new().await;
+
+    // Create profile and save with from_tutorial=false
+    let profile = ProfileConfig {
+        base_url: Some("https://regular.example.com:8089".to_string()),
+        username: Some("admin".to_string()),
+        password: Some(splunk_config::SecureValue::Plain(
+            secrecy::SecretString::new("password".to_string().into()),
+        )),
+        api_token: None,
+        skip_verify: Some(true),
+        timeout_seconds: Some(30),
+        max_retries: Some(3),
+        session_expiry_buffer_seconds: Some(60),
+        session_ttl_seconds: Some(3600),
+        health_check_interval_seconds: Some(60),
+    };
+
+    let actions = harness
+        .handle_and_collect(
+            Action::SaveProfile {
+                name: "regular-profile".to_string(),
+                profile,
+                use_keyring: false,
+                original_name: None,
+                from_tutorial: false,
+            },
+            1,
+        )
+        .await;
+
+    // Verify TutorialProfileCreated action was NOT sent
+    assert!(
+        !actions
+            .iter()
+            .any(|a| matches!(a, Action::TutorialProfileCreated { .. })),
+        "Should NOT send TutorialProfileCreated action when from_tutorial=false"
+    );
+
+    // But ProfileSaved should still be sent
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::ProfileSaved(Ok(name)) if name == "regular-profile")),
+        "Should still send ProfileSaved success"
+    );
+}

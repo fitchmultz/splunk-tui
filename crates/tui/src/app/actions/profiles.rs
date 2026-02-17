@@ -54,8 +54,8 @@ impl App {
             Action::ClearAllData => {
                 self.clear_all_cached_data();
             }
-            Action::OpenCreateProfileDialog { .. } => {
-                self.open_create_profile_dialog();
+            Action::OpenCreateProfileDialog { from_tutorial } => {
+                self.open_create_profile_dialog(from_tutorial);
             }
             Action::OpenEditProfileDialogWithData {
                 original_name,
@@ -173,7 +173,7 @@ impl App {
         // The load action will be sent by main.rs after this
     }
 
-    fn open_create_profile_dialog(&mut self) {
+    fn open_create_profile_dialog(&mut self, from_tutorial: bool) {
         use crate::ui::popup::{Popup, PopupType, ProfileField};
         self.popup = Some(
             Popup::builder(PopupType::CreateProfile {
@@ -187,7 +187,7 @@ impl App {
                 max_retries: 3,
                 use_keyring: true,
                 selected_field: ProfileField::Name,
-                from_tutorial: false,
+                from_tutorial,
             })
             .build(),
         );

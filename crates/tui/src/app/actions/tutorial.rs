@@ -43,14 +43,12 @@ impl App {
                 self.current_screen = CurrentScreen::Search;
                 None
             }
-            Action::OpenCreateProfileDialog { from_tutorial } => {
-                // Store tutorial state if opening from tutorial
-                if from_tutorial {
-                    // The popup will be replaced, but we need to remember we're in tutorial mode
-                    // The tutorial state should already be in self.tutorial_state
-                }
-                // Delegate to existing profile dialog handler
-                Some(Action::OpenCreateProfileDialog { from_tutorial })
+            Action::OpenCreateProfileDialog {
+                from_tutorial: true,
+            } => {
+                // Tutorial action handled - profile dialog will be opened by profile handler
+                // Return None to prevent infinite recursion
+                None
             }
             _ => Some(action),
         }

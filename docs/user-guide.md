@@ -257,7 +257,49 @@ The Search screen has two focus modes:
    - `Ctrl+Shift+Tab` or `Esc` returns to QueryFocused mode
    - Footer shows `[NAV]` indicator
 
- <!-- BEGIN TUI KEYBINDINGS -->
+### Profile Management
+
+You can create, edit, and manage connection profiles entirely within the TUI without using the CLI.
+
+#### Creating Profiles
+
+1. Navigate to the Settings screen (press `s` from any screen, or cycle with `Tab`)
+2. Press `n` to open the profile creation form
+3. Fill in the required fields:
+   - **Name**: A memorable name for this profile (e.g., "production", "dev-local")
+   - **Base URL**: Your Splunk server URL (e.g., `https://localhost:8089`)
+   - **Username/Password** OR **API Token**: Your authentication credentials
+4. Optional settings:
+   - **Skip Verify**: Disable TLS certificate verification (useful for self-signed certs in development)
+   - **Timeout**: Connection timeout in seconds (default: 30)
+   - **Max Retries**: Number of retry attempts for failed requests (default: 3)
+   - **Use Keyring**: Store credentials in system keyring (recommended for security)
+5. Press `Enter` to save
+
+#### Editing Profiles
+
+1. In the Settings screen, press `p` to open the profile switcher
+2. Select the profile you want to edit
+3. Press `e` to open the edit dialog
+4. Modify fields as needed
+5. Press `Enter` to save changes
+
+#### Deleting Profiles
+
+1. In the Settings screen, press `p` to open the profile switcher
+2. Select the profile you want to delete
+3. Press `x` to open the delete confirmation
+4. Press `y` or `Enter` to confirm deletion
+
+#### Profile Creation from Tutorial
+
+During the first-run tutorial, you'll be guided through profile creation:
+
+1. When you reach the "Create a Connection Profile" step, press `Enter` to open the form
+2. The form works the same as creating a profile from Settings
+3. After saving, the tutorial automatically advances to test your connection
+
+  <!-- BEGIN TUI KEYBINDINGS -->
 
 ### Navigation
 
