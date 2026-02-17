@@ -59,7 +59,7 @@ impl SideEffectsTestHarness {
         let (action_tx, action_rx) = mpsc::channel::<Action>(100);
 
         let client = create_test_client(&mock_server.uri()).await;
-        let config_manager = create_test_config_manager().await;
+        let (config_manager, _temp_dir) = create_test_config_manager().await;
 
         Self {
             mock_server,
@@ -185,18 +185,16 @@ pub async fn create_test_client(mock_uri: &str) -> SharedClient {
 /// Create a test configuration manager.
 ///
 /// # Returns
-/// A shared config manager with a temporary directory
-pub async fn create_test_config_manager() -> Arc<Mutex<ConfigManager>> {
+/// A tuple of (ConfigManager, TempDir) - the caller must keep TempDir alive
+/// for the lifetime of the ConfigManager.
+pub async fn create_test_config_manager() -> (Arc<Mutex<ConfigManager>>, tempfile::TempDir) {
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
     let config_path = temp_dir.path().join("config.toml");
 
     let config_manager =
         ConfigManager::new_with_path(config_path).expect("Failed to create config manager");
 
-    // Keep temp_dir alive by storing it in the config manager's directory
-    // Note: This is a bit of a hack - in real tests you may want to manage
-    // the temp directory separately
-    Arc::new(Mutex::new(config_manager))
+    (Arc::new(Mutex::new(config_manager)), temp_dir)
 }
 
 /// Mount a mock response for a specific endpoint.

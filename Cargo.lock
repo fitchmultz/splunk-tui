@@ -173,6 +173,10 @@ dependencies = [
 [[package]]
 name = "architecture-tests"
 version = "0.1.0"
+dependencies = [
+ "tempfile",
+ "walkdir",
+]
 
 [[package]]
 name = "argon2"
@@ -3424,6 +3428,7 @@ dependencies = [
  "serde_json",
  "splunk-client",
  "splunk-config",
+ "tempfile",
  "thiserror 2.0.18",
  "time",
  "tokio",

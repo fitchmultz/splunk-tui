@@ -9,7 +9,7 @@
 
 mod common;
 
-use common::splunk_cmd;
+use common::{connection_error_predicate, splunk_cmd};
 use predicates::prelude::*;
 
 const TEST_BASE_URL: &str = "https://localhost:8089";
@@ -44,11 +44,7 @@ fn test_search_validate_with_query_attempts_connection() {
     cmd.args(["search", "validate", "index=main | stats count"])
         .assert()
         .failure()
-        .stderr(
-            predicate::str::contains("Connection refused")
-                .or(predicate::str::contains("client error (Connect)"))
-                .or(predicate::str::contains("API error")),
-        );
+        .stderr(connection_error_predicate());
 }
 
 #[test]

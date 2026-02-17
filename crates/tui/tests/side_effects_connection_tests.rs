@@ -91,7 +91,7 @@ async fn test_connection_refused_error_handling() {
 
     let (action_tx, mut action_rx) = mpsc::channel::<Action>(100);
     let client = Arc::new(client);
-    let config_manager = create_test_config_manager().await;
+    let (config_manager, _temp_dir) = create_test_config_manager().await;
 
     // Try to load indexes - should fail with connection error
     let action = Action::LoadIndexes {
@@ -210,7 +210,7 @@ async fn test_dns_resolution_failure() {
 
     let (action_tx, mut action_rx) = mpsc::channel::<Action>(100);
     let client = Arc::new(client);
-    let config_manager = create_test_config_manager().await;
+    let (config_manager, _temp_dir) = create_test_config_manager().await;
 
     let action = Action::LoadIndexes {
         count: 10,

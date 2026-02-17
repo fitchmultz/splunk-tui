@@ -258,9 +258,9 @@ async fn test_install_app() {
 
     let fixture = load_fixture("apps/install_app.json");
 
-    // Create a temporary .spl file for the test
-    let temp_dir = std::env::temp_dir();
-    let spl_file_path = temp_dir.join("test_app.spl");
+    // Create a temporary .spl file for the test using RAII
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let spl_file_path = temp_dir.path().join("test_app.spl");
     {
         let mut file = std::fs::File::create(&spl_file_path).unwrap();
         file.write_all(b"mock spl package content").unwrap();
@@ -288,15 +288,13 @@ async fn test_install_app() {
     )
     .await;
 
-    // Clean up temp file
-    let _ = std::fs::remove_file(&spl_file_path);
-
     assert!(result.is_ok());
     let app = result.unwrap();
     assert_eq!(app.name, "installed_app");
     assert_eq!(app.label, Some("Installed App".to_string()));
     assert_eq!(app.version, Some("1.0.0".to_string()));
     assert!(!app.disabled);
+    // temp_dir auto-cleaned on drop
 }
 
 #[tokio::test]

@@ -265,8 +265,8 @@ fn find_workspace_root() -> PathBuf {
 
 #[test]
 fn test_count_loc_basic() {
-    let temp_dir = std::env::temp_dir();
-    let test_file = temp_dir.join("test_loc_count.rs");
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let test_file = temp_dir.path().join("test_loc_count.rs");
 
     fs::write(
         &test_file,
@@ -284,14 +284,13 @@ fn main() {
     let loc = count_loc(&test_file);
     // Should count: fn main() {, let x = 5;, println!(...);, }
     assert_eq!(loc, 4);
-
-    let _ = fs::remove_file(&test_file);
+    // temp_dir auto-cleaned on drop
 }
 
 #[test]
 fn test_count_loc_doc_comments() {
-    let temp_dir = std::env::temp_dir();
-    let test_file = temp_dir.join("test_doc_comments.rs");
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let test_file = temp_dir.path().join("test_doc_comments.rs");
 
     fs::write(
         &test_file,
@@ -309,8 +308,7 @@ fn test() {
     let loc = count_loc(&test_file);
     // Should count: fn test() {, let x = 1;, }
     assert_eq!(loc, 3);
-
-    let _ = fs::remove_file(&test_file);
+    // temp_dir auto-cleaned on drop
 }
 
 #[test]
