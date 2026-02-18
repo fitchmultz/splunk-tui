@@ -166,3 +166,44 @@ fn snapshot_footer_other_screen_no_mode_indicator() {
 
     insta::assert_snapshot!(harness.render());
 }
+
+#[test]
+fn snapshot_footer_with_tutorial_popup() {
+    // Footer should show tutorial-specific hints when tutorial is open
+    use splunk_tui::onboarding::TutorialState;
+
+    let mut harness = TuiHarness::new(80, 24);
+    let state = TutorialState::new();
+    harness.app.popup = Some(
+        splunk_tui::Popup::builder(splunk_tui::ui::popup::PopupType::TutorialWizard { state })
+            .build(),
+    );
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_with_error_popup() {
+    // Footer should show error-specific hints when error details popup is open
+    // ErrorDetails popup requires larger terminal to avoid buffer overflow
+    let mut harness = TuiHarness::new(100, 40);
+    harness.app.current_error = Some(splunk_tui::error_details::ErrorDetails::from_error_string(
+        "Test error",
+    ));
+    harness.app.popup =
+        Some(splunk_tui::Popup::builder(splunk_tui::ui::popup::PopupType::ErrorDetails).build());
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_with_auth_recovery_popup() {
+    use splunk_tui::error_details::AuthRecoveryKind;
+
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.popup = Some(
+        splunk_tui::Popup::builder(splunk_tui::ui::popup::PopupType::AuthRecovery {
+            kind: AuthRecoveryKind::InvalidCredentials,
+        })
+        .build(),
+    );
+    insta::assert_snapshot!(harness.render());
+}

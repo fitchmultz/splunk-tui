@@ -206,3 +206,92 @@ fn test_config_file_with_existing_profiles_and_tutorial_completed() {
         assert!(!is_first);
     });
 }
+
+#[test]
+fn test_first_run_opens_tutorial_popup() {
+    temp_env::with_var("SPLUNK_CONFIG_NO_MIGRATE", Some("1"), || {
+        let temp_file = NamedTempFile::new().unwrap();
+        let config_path = temp_file.path().to_path_buf();
+
+        // Create config with NO profiles and tutorial not completed
+        let config_manager = ConfigManager::new_with_path(config_path).unwrap();
+        let persisted_state = config_manager.load();
+
+        // Verify conditions for first-run
+        assert!(
+            config_manager.list_profiles().is_empty(),
+            "Should have no profiles"
+        );
+        assert!(
+            !persisted_state.tutorial_completed,
+            "Tutorial should not be completed"
+        );
+
+        // Verify should_launch_tutorial returns true
+        let should_launch = should_launch_tutorial(
+            config_manager.list_profiles().is_empty(),
+            false, // skip_tutorial_flag
+            persisted_state.tutorial_completed,
+        );
+
+        assert!(
+            should_launch,
+            "should_launch_tutorial should return true for first-run conditions"
+        );
+
+        // Note: The actual popup opening is handled in main.rs:411-420.
+        // This test verifies the logic condition; full integration would require
+        // testing App initialization which is covered by bootstrap_startup_tests.rs
+    });
+}
+
+#[test]
+fn test_first_run_respects_skip_tutorial_flag() {
+    temp_env::with_var("SPLUNK_CONFIG_NO_MIGRATE", Some("1"), || {
+        let temp_file = NamedTempFile::new().unwrap();
+        let config_path = temp_file.path().to_path_buf();
+
+        let config_manager = ConfigManager::new_with_path(config_path).unwrap();
+        let persisted_state = config_manager.load();
+
+        // Even with empty profiles, skip_tutorial_flag should prevent launch
+        let should_launch = should_launch_tutorial(
+            config_manager.list_profiles().is_empty(),
+            true, // skip_tutorial_flag = true
+            persisted_state.tutorial_completed,
+        );
+
+        assert!(
+            !should_launch,
+            "should_launch_tutorial should return false when skip_tutorial_flag is true"
+        );
+    });
+}
+
+#[test]
+fn test_first_run_respects_completed_tutorial() {
+    temp_env::with_var("SPLUNK_CONFIG_NO_MIGRATE", Some("1"), || {
+        let temp_file = NamedTempFile::new().unwrap();
+        let config_path = temp_file.path().to_path_buf();
+
+        // Create config with tutorial completed but no profiles
+        let mut config_manager = ConfigManager::new_with_path(config_path.clone()).unwrap();
+        let mut persisted_state = config_manager.load();
+        persisted_state.tutorial_completed = true;
+        config_manager.save(&persisted_state).unwrap();
+
+        let config_manager = ConfigManager::new_with_path(config_path).unwrap();
+        let persisted_state = config_manager.load();
+
+        let should_launch = should_launch_tutorial(
+            config_manager.list_profiles().is_empty(),
+            false,
+            persisted_state.tutorial_completed,
+        );
+
+        assert!(
+            !should_launch,
+            "should_launch_tutorial should return false when tutorial already completed"
+        );
+    });
+}

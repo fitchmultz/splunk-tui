@@ -1,0 +1,24 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknow│
+│ |                                    │
+└──────────────────────────────────────┘
+┌Search Query──────────────────────────┐
+│       ┌Tutorial - Learn the K┐       │
+└───────│   Step 4: Learn the  ↑───────┘
+┌Status─│      Keybindings     █───────┐
+│Press E│                      ║       │
+└───────│Splunk TUI is designed║───────┘
+┌Results│ to be keyboard-driven║─────┐─┐
+│No resu│ for efficiency. Here ║y and│p│
+│       │   are the essential  ║     │ │
+│       │      shortcuts:      ↓     │ │
+│       └──────────────────────┘     │ │
+│         └──────────────────────────┘ │
+└──────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| En│
+└──────────────────────────────────────┘

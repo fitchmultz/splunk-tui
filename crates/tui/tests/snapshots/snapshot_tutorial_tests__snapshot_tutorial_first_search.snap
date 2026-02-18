@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Tutorial - Run Your First Search (50%)────────┐───────────────┘
+┌Status─────────│         Step 4: Run Your First Search        ↑───────────────┐
+│Press Enter to │                                              █               │
+└───────────────│  Now let's run a search to see Splunk TUI in █───────────────┘
+┌Results────────│                    action!                   █───────────────┐
+│               │                                              ║.              │
+│               │               To run a search:               ║               │
+│               │   1. Navigate to the Search screen (it's the ║               │
+│               │                 first screen)                ║─────────────┐ │
+│               │   2. Type a search query in the input box at ║0/5] 0%      │ │
+│               │                    the top                   ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

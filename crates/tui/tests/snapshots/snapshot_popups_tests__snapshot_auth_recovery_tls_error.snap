@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Authentication Error──────────────────────────┐───────────────┘
+┌Status─────────│TLS certificate verification failed.          │───────────────┐
+│Press Enter to │                                              │               │
+└───────────────│Next Steps:                                   │───────────────┘
+┌Results────────│• Verify the server's TLS certificate is valid│───────────────┐
+│               │• Check system time is correct                │.              │
+│               │• Consider enabling 'Skip TLS Verify' for     │               │
+│               │self-signed certificates (development only)   │               │
+│               │                                              │─────────────┐ │
+│               │───                                           │0/5] 0%      │ │
+│               │                                              │file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

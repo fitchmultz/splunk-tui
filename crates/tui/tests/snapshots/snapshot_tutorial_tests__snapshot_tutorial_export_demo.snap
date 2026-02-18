@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Tutorial - Export Your Results (83%)──────────┐───────────────┘
+┌Status─────────│          Step 5: Export Your Results         ↑───────────────┐
+│Press Enter to │                                              █               │
+└───────────────│Splunk TUI allows you to export search results█───────────────┘
+┌Results────────│  to various formats for use in other tools.  █───────────────┐
+│               │                                              ║.              │
+│               │           Supported export formats:          ║               │
+│               │   • CSV  - Comma-separated values (great for ║               │
+│               │                    Excel)                    ║─────────────┐ │
+│               │   • JSON - Structured JSON format (great for ║0/5] 0%      │ │
+│               │                     APIs)                    ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

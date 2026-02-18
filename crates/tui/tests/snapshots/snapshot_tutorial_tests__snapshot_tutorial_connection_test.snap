@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Tutorial - Test Your Connection (33%)─────────┐───────────────┘
+┌Status─────────│         Step 3: Test Your Connection         ↑───────────────┐
+│Press Enter to │                                              █               │
+└───────────────│  Now that you have created a profile, let's  █───────────────┘
+┌Results────────│   verify that we can connect to your Splunk  ║───────────────┐
+│               │                    server.                   ║.              │
+│               │                                              ║               │
+│               │           The connection test will:          ║               │
+│               │        • Verify the server is reachable      ║─────────────┐ │
+│               │     • Check your authentication credentials  ║0/5] 0%      │ │
+│               │        • Confirm TLS certificate status      ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

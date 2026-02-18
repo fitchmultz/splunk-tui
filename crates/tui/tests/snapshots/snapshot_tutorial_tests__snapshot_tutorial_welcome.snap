@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Tutorial - Welcome to Splunk TUI (0%)─────────┐───────────────┘
+┌Status─────────│            Welcome to Splunk TUI!            ↑───────────────┐
+│Press Enter to │                                              █               │
+└───────────────│   This interactive tutorial will guide you   █───────────────┘
+┌Results────────│    through the basics of using the Splunk    █───────────────┐
+│               │           Terminal User Interface.           ║.              │
+│               │                                              ║               │
+│               │   In this tutorial, you will learn how to:   ║               │
+│               │  • Create a connection profile to your Splunk║─────────────┐ │
+│               │                    server                    ║0/5] 0%      │ │
+│               │             • Test your connection           ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

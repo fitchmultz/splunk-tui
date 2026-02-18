@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_footer_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Authentication Error──────────────────────────┐───────────────┘
+┌Status─────────│Invalid credentials detected. The username,   │───────────────┐
+│Press Enter to │password, or API token is incorrect.          │               │
+└───────────────│                                              │───────────────┘
+┌Results────────│Next Steps:                                   │───────────────┐
+│               │• Check your username and password            │.              │
+│               │• Verify your API token is valid              │               │
+│               │• Ensure your account has not been locked     │               │
+│               │                                              │─────────────┐ │
+│               │───                                           │0/5] 0%      │ │
+│               │                                              │file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

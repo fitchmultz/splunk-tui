@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Tutorial - Learn the Keybindings (66%)────────┐───────────────┘
+┌Status─────────│         Step 4: Learn the Keybindings        ↑───────────────┐
+│Press Enter to │                                              █               │
+└───────────────│ Splunk TUI is designed to be keyboard-driven █───────────────┘
+┌Results────────│    for efficiency. Here are the essential    ║───────────────┐
+│               │                  shortcuts:                  ║.              │
+│               │                                              ║               │
+│               │                  Navigation:                 ║               │
+│               │    • Tab / Shift+Tab  Switch between screens ║─────────────┐ │
+│               │    • Ctrl+Tab / Ctrl+Shift+Tab  Cycle focus  ║0/5] 0%      │ │
+│               │               between elements               ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

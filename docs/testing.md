@@ -272,8 +272,52 @@ If a chaos test fails:
 
 5. **Verify mock setup**: Are the mock responses configured correctly with `up_to_n_times()`?
 
+## TUI UX Regression Suite
+
+The TUI includes a comprehensive snapshot-based UX regression suite to prevent silent behavior drift in critical user-facing surfaces.
+
+### Test Files
+
+| File | Tests | Purpose |
+|------|-------|---------|
+| `snapshot_tutorial_tests.rs` | 8 | Tutorial wizard popup (all 7 steps + small terminal) |
+| `snapshot_error_details_tests.rs` | 5 | ErrorDetails popup (basic, context, messages, JSON, scrollable) |
+| `snapshot_popups_tests.rs` | 20 | Auth recovery, connection diagnostics, help, confirm, index details |
+| `snapshot_footer_tests.rs` | 18 | Footer hints per screen/mode, popup context hints |
+| `first_run_tests.rs` | 10 | First-run detection, tutorial wiring, persistence |
+| `tutorial_app_tests.rs` | 17 | Tutorial action handling, state persistence |
+| `app_error_tests.rs` | 31 | Error classification, auth recovery flows |
+| `app_navigation_tests.rs` | 23 | Screen cycling, list navigation |
+
+### Running TUX UX Tests
+
+```bash
+# Run all snapshot tests
+cargo test -p splunk-tui --test snapshot_
+
+# Run specific UX test files
+cargo test -p splunk-tui --test snapshot_tutorial_tests
+cargo test -p splunk-tui --test snapshot_error_details_tests
+cargo test -p splunk-tui --test first_run_tests
+```
+
+### Snapshot Best Practices
+
+1. **Determinism**: Avoid timestamps, random data, or HashMap ordering in snapshots
+2. **Terminal size**: Use appropriate sizes (80x24 for standard, 120x50 for complex popups)
+3. **Review changes**: When snapshots change, use `cargo insta review` to accept/reject
+
+### Adding New UX Snapshots
+
+1. Create a `TuiHarness` with appropriate terminal dimensions
+2. Set up the app state (popup, current_error, etc.)
+3. Call `harness.render()` and use `insta::assert_snapshot!`
+4. Run `cargo test` to generate the initial snapshot
+5. Review the snapshot in `crates/tui/tests/snapshots/`
+
 ## References
 
 - [Wiremock Documentation](https://docs.rs/wiremock/)
 - [Tokio Testing](https://tokio.rs/tokio/topics/testing)
 - [Chaos Engineering Principles](https://principlesofchaos.org/)
+- [Insta Snapshot Testing](https://insta.rs/)
