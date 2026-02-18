@@ -52,7 +52,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::EditMacro { .. }
         | PopupType::TutorialWizard { .. }
         | PopupType::CommandPalette { .. }
-        | PopupType::UndoHistory { .. } => theme.border,
+        | PopupType::UndoHistory { .. }
+        | PopupType::ConnectionDiagnostics { .. } => theme.border,
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -96,7 +97,8 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
         | PopupType::TutorialWizard { .. }
         | PopupType::CommandPalette { .. }
         | PopupType::UndoHistory { .. }
-        | PopupType::AuthRecovery { .. } => Wrap { trim: false },
+        | PopupType::AuthRecovery { .. }
+        | PopupType::ConnectionDiagnostics { .. } => Wrap { trim: false },
         PopupType::ConfirmCancel(_)
         | PopupType::ConfirmDelete(_)
         | PopupType::ConfirmCancelBatch(_)
@@ -111,7 +113,9 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
     // Determine alignment based on popup type
     // Help popup uses left alignment for better readability of keybindings
     let alignment = match &popup.kind {
-        PopupType::Help | PopupType::AuthRecovery { .. } => Alignment::Left,
+        PopupType::Help
+        | PopupType::AuthRecovery { .. }
+        | PopupType::ConnectionDiagnostics { .. } => Alignment::Left,
         _ => Alignment::Center,
     };
 

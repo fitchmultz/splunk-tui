@@ -27,7 +27,8 @@ Welcome to the comprehensive user guide for Splunk TUI and CLI. This guide is de
     - [The Users Screen](#the-users-screen)
     - [Mouse Support](#mouse-support)
 5. [Search Syntax Tips](#search-syntax-tips)
-6. [Troubleshooting](#troubleshooting)
+6. [Connection Diagnostics](#connection-diagnostics)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -521,7 +522,8 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy captain URI
 
 #### Settings Screen
-- `t`: Cycle theme
+- `t`: Run connection diagnostics
+- `T`: Cycle theme
 - `a`: Toggle auto-refresh
 - `s`: Cycle sort column
 - `d`: Toggle sort direction
@@ -654,6 +656,36 @@ Splunk TUI uses standard SPL (Search Processing Language). Here are a few tips f
 - **Limit your results**: Always include `| head 100` or similar when testing new queries to avoid overloading the TUI.
 - **Use `fields`**: Reduce visual noise by selecting only the fields you need: `index=main | fields _time, host, source, msg`.
 - **Streaming vs. Non-streaming**: Remember that commands like `stats` or `sort` require the search to finish before showing full results.
+
+---
+
+## Connection Diagnostics
+
+You can test your connection to Splunk at any time using the built-in diagnostics tool.
+
+### Running Diagnostics
+
+- **From the Tutorial**: On the Connection Test step, press `t` to run diagnostics
+- **From Settings**: Press `t` on the Settings screen to run ad-hoc diagnostics
+
+### What Diagnostics Check
+
+The diagnostics panel performs a single controlled probe (no retries) and shows:
+
+| Check | What It Tests |
+|-------|---------------|
+| **Reachability** | Whether the server is reachable (TCP/TLS handshake) |
+| **Authentication** | Whether your credentials are valid |
+| **TLS Certificate** | Certificate validation status |
+| **Server Info** | Splunk version and mode |
+
+### Interpreting Results
+
+- **✓ PASS**: The check succeeded
+- **✗ FAIL**: The check failed - see remediation hints
+- **○ SKIP**: The check was skipped because a dependency failed
+
+If any check fails, the diagnostics panel displays actionable remediation hints to help you resolve the issue.
 
 ---
 

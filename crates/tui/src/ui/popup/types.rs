@@ -3,6 +3,7 @@
 //! This module contains the `PopupType` enum which defines all possible
 //! popup dialog types used throughout the TUI application.
 
+use crate::action::variants::ConnectionDiagnosticsResult;
 use crate::error_details::AuthRecoveryKind;
 use crate::onboarding::TutorialState;
 use crate::ui::popup::{MacroField, ProfileField, SavedSearchField};
@@ -242,5 +243,10 @@ pub enum PopupType {
     AuthRecovery {
         /// Classification of the authentication error for targeted recovery
         kind: AuthRecoveryKind,
+    },
+    /// Connection diagnostics result popup
+    ConnectionDiagnostics {
+        /// The diagnostics result to display
+        result: ConnectionDiagnosticsResult,
     },
 }

@@ -302,6 +302,25 @@ impl App {
                     self.recent_export_paths.truncate(MAX_RECENT_EXPORTS);
                 }
             }
+            Action::ConnectionDiagnosticsLoaded(result) => {
+                self.loading = false;
+                match result {
+                    Ok(diagnostics) => {
+                        self.popup = Some(
+                            crate::ui::popup::Popup::builder(
+                                crate::ui::popup::PopupType::ConnectionDiagnostics {
+                                    result: diagnostics,
+                                },
+                            )
+                            .build(),
+                        );
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Diagnostics failed: {}", e)));
+                    }
+                }
+            }
             _ => {}
         }
     }

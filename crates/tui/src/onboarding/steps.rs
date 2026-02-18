@@ -39,7 +39,7 @@ impl TutorialSteps {
                 "Press → to continue after creating profile | ← to go back".to_string()
             }
             TutorialStep::ConnectionTest => {
-                "Press → to continue after testing | ← to go back".to_string()
+                "Press 't' to test connection | → to continue | ← to go back".to_string()
             }
             TutorialStep::FirstSearch => {
                 "Press → to continue after running search | ← to go back".to_string()
@@ -97,12 +97,12 @@ Now that you have created a profile, let's verify that we can connect to your Sp
 The connection test will:
   • Verify the server is reachable
   • Check your authentication credentials
-  • Confirm API access permissions
+  • Confirm TLS certificate status
 
 To test the connection:
   1. Select your profile from the list
-  2. Press Enter to test the connection
-  3. Wait for the health check to complete
+  2. Press 't' to run connection diagnostics
+  3. Review the pass/fail status for each check
 
 If the test fails, check:
   • Your Splunk server is running

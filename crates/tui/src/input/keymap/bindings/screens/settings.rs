@@ -22,10 +22,22 @@ pub(super) fn bindings() -> Vec<Keybinding> {
         Keybinding {
             section: Section::Settings,
             keys: "t",
-            description: "Cycle theme",
+            description: "Run connection diagnostics",
             scope: BindingScope::Screen(Settings),
             matcher: Some(Matcher::Key {
                 code: KeyCode::Char('t'),
+                modifiers: KeyModifiers::NONE,
+            }),
+            action: Some(Action::RunConnectionDiagnostics),
+            handles_input: true,
+        },
+        Keybinding {
+            section: Section::Settings,
+            keys: "T",
+            description: "Cycle theme",
+            scope: BindingScope::Screen(Settings),
+            matcher: Some(Matcher::Key {
+                code: KeyCode::Char('T'),
                 modifiers: KeyModifiers::NONE,
             }),
             action: Some(Action::CycleTheme),

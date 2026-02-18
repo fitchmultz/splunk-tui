@@ -513,7 +513,8 @@ The Search screen has two input modes that affect how keys are handled:
 - `Ctrl+c`: Copy captain URI
 
 #### Settings Screen
-- `t`: Cycle theme
+- `t`: Run connection diagnostics
+- `T`: Cycle theme
 - `a`: Toggle auto-refresh
 - `s`: Cycle sort column
 - `d`: Toggle sort direction

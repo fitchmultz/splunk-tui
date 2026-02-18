@@ -46,7 +46,7 @@ impl App {
                         })
                     }
                     TutorialStep::ConnectionTest => {
-                        // Should not be editable - this step is for display only
+                        // Press 't' to run diagnostics, Enter to continue
                         None
                     }
                     TutorialStep::FirstSearch => {
@@ -181,6 +181,15 @@ impl App {
                     );
                 }
                 None
+            }
+
+            // 't' to run connection diagnostics on ConnectionTest step
+            KeyCode::Char('t') => {
+                if tutorial_state.current_step == TutorialStep::ConnectionTest {
+                    Some(Action::RunConnectionDiagnostics)
+                } else {
+                    None
+                }
             }
 
             _ => None,

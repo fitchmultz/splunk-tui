@@ -188,7 +188,8 @@ impl App {
             | Action::OpenDeleteLookupConfirm { .. }
             | Action::LookupDownloaded(_)
             | Action::LookupDeleted(_)
-            | Action::ExportSuccess(_) => {
+            | Action::ExportSuccess(_)
+            | Action::ConnectionDiagnosticsLoaded(_) => {
                 self.handle_system_action(action);
             }
 

@@ -30,6 +30,7 @@ impl App {
             KeyCode::Char('x') => self.open_delete_profile(),
             KeyCode::Char('u') => self.show_undo_history(),
             KeyCode::Char('?') => Some(Action::StartTutorial { is_replay: true }),
+            KeyCode::Char('T') => Some(Action::CycleTheme),
             _ => None,
         }
     }

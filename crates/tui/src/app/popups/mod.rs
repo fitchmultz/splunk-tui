@@ -117,6 +117,17 @@ impl App {
             // Auth recovery popup
             Some(PopupType::AuthRecovery { .. }) => self.handle_auth_recovery_popup(key),
 
+            // Connection diagnostics popup (close on Enter/Esc/q)
+            Some(PopupType::ConnectionDiagnostics { .. }) => {
+                if key.code == KeyCode::Enter
+                    || key.code == KeyCode::Esc
+                    || key.code == KeyCode::Char('q')
+                {
+                    self.popup = None;
+                }
+                None
+            }
+
             // No popup active
             None => None,
         }
@@ -874,5 +885,132 @@ mod tests {
 
         let action = app.handle_popup_input(ctrl_key('q'));
         assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    // Connection diagnostics popup tests
+
+    #[test]
+    fn test_popup_connection_diagnostics_close_with_enter() {
+        use crate::action::variants::{
+            ConnectionDiagnosticsResult, DiagnosticCheck, DiagnosticStatus, ServerInfoSummary,
+        };
+        use crate::ui::popup::Popup;
+
+        let result = ConnectionDiagnosticsResult {
+            reachable: DiagnosticCheck {
+                name: "Reachability".to_string(),
+                status: DiagnosticStatus::Pass,
+                error: None,
+                duration_ms: 42,
+            },
+            auth: DiagnosticCheck {
+                name: "Authentication".to_string(),
+                status: DiagnosticStatus::Pass,
+                error: None,
+                duration_ms: 0,
+            },
+            tls: DiagnosticCheck {
+                name: "TLS Certificate".to_string(),
+                status: DiagnosticStatus::Pass,
+                error: None,
+                duration_ms: 0,
+            },
+            server_info: Some(ServerInfoSummary {
+                version: "9.0.0".to_string(),
+                build: "abc123".to_string(),
+                server_name: "test-server".to_string(),
+                mode: Some("standalone".to_string()),
+            }),
+            overall_status: DiagnosticStatus::Pass,
+            remediation_hints: vec![],
+            timestamp: "2024-01-01T00:00:00Z".to_string(),
+        };
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ConnectionDiagnostics { result }).build());
+
+        let action = app.handle_popup_input(key(KeyCode::Enter));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_connection_diagnostics_close_with_esc() {
+        use crate::action::variants::{
+            ConnectionDiagnosticsResult, DiagnosticCheck, DiagnosticStatus,
+        };
+        use crate::ui::popup::Popup;
+
+        let result = ConnectionDiagnosticsResult {
+            reachable: DiagnosticCheck {
+                name: "Reachability".to_string(),
+                status: DiagnosticStatus::Fail,
+                error: Some("Connection refused".to_string()),
+                duration_ms: 100,
+            },
+            auth: DiagnosticCheck {
+                name: "Authentication".to_string(),
+                status: DiagnosticStatus::Skip,
+                error: None,
+                duration_ms: 0,
+            },
+            tls: DiagnosticCheck {
+                name: "TLS Certificate".to_string(),
+                status: DiagnosticStatus::Skip,
+                error: None,
+                duration_ms: 0,
+            },
+            server_info: None,
+            overall_status: DiagnosticStatus::Fail,
+            remediation_hints: vec!["Check that the Splunk server is running".to_string()],
+            timestamp: "2024-01-01T00:00:00Z".to_string(),
+        };
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ConnectionDiagnostics { result }).build());
+
+        let action = app.handle_popup_input(key(KeyCode::Esc));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_popup_connection_diagnostics_close_with_q() {
+        use crate::action::variants::{
+            ConnectionDiagnosticsResult, DiagnosticCheck, DiagnosticStatus,
+        };
+        use crate::ui::popup::Popup;
+
+        let result = ConnectionDiagnosticsResult {
+            reachable: DiagnosticCheck {
+                name: "Reachability".to_string(),
+                status: DiagnosticStatus::Pass,
+                error: None,
+                duration_ms: 50,
+            },
+            auth: DiagnosticCheck {
+                name: "Authentication".to_string(),
+                status: DiagnosticStatus::Pass,
+                error: None,
+                duration_ms: 0,
+            },
+            tls: DiagnosticCheck {
+                name: "TLS Certificate".to_string(),
+                status: DiagnosticStatus::Pass,
+                error: None,
+                duration_ms: 0,
+            },
+            server_info: None,
+            overall_status: DiagnosticStatus::Pass,
+            remediation_hints: vec![],
+            timestamp: "2024-01-01T00:00:00Z".to_string(),
+        };
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.popup = Some(Popup::builder(PopupType::ConnectionDiagnostics { result }).build());
+
+        let action = app.handle_popup_input(key(KeyCode::Char('q')));
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
     }
 }

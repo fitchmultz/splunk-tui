@@ -117,6 +117,8 @@ fn action_type_name(action: &Action) -> &'static str {
         Action::InstallApp { .. } => "InstallApp",
         Action::RemoveApp { .. } => "RemoveApp",
         Action::LoadHealth => "LoadHealth",
+        Action::RunConnectionDiagnostics => "RunConnectionDiagnostics",
+        Action::ConnectionDiagnosticsLoaded(_) => "ConnectionDiagnosticsLoaded",
         Action::LoadLicense => "LoadLicense",
         Action::LoadKvstore => "LoadKvstore",
         Action::LoadOverview => "LoadOverview",
@@ -471,6 +473,9 @@ async fn handle_action(
         }
         Action::LoadHealth => {
             health::handle_load_health(client, tx, task_tracker.clone()).await;
+        }
+        Action::RunConnectionDiagnostics => {
+            health::handle_run_connection_diagnostics(client, tx, task_tracker.clone()).await;
         }
         Action::LoadLicense => {
             license::handle_load_license(client, tx, task_tracker.clone()).await;

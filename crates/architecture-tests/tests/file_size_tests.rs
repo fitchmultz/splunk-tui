@@ -55,6 +55,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "client/src/error.rs",
         "Error types with comprehensive user-facing failure mapping - exhaustive match arms for all error categories with CLI/TUI display logic",
     ),
+    (
+        "ui/popup/builder.rs",
+        "Popup builder with content generation for all popup types - each popup type requires dedicated builder method for form content",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

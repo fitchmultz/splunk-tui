@@ -287,3 +287,54 @@ fn test_tutorial_state_stored_in_app() {
     // After starting, tutorial_state should be populated
     // Note: tutorial_state is set when certain steps are reached
 }
+
+fn t_key() -> KeyEvent {
+    KeyEvent::new(KeyCode::Char('t'), KeyModifiers::NONE)
+}
+
+#[test]
+fn test_tutorial_connection_test_triggers_diagnostics() {
+    let mut app = create_test_app();
+
+    // Open tutorial and navigate to ConnectionTest step
+    let mut state = TutorialState::new();
+    state.current_step = TutorialStep::ConnectionTest;
+    app.popup =
+        Some(splunk_tui::ui::popup::Popup::builder(PopupType::TutorialWizard { state }).build());
+
+    // Verify we're on ConnectionTest step
+    if let Some(popup) = &app.popup {
+        if let PopupType::TutorialWizard { state } = &popup.kind {
+            assert_eq!(state.current_step, TutorialStep::ConnectionTest);
+        }
+    }
+
+    // Press 't' to trigger diagnostics
+    let action = app.handle_tutorial_popup(t_key());
+    assert!(
+        matches!(action, Some(Action::RunConnectionDiagnostics)),
+        "Pressing 't' on ConnectionTest should trigger RunConnectionDiagnostics"
+    );
+}
+
+#[test]
+fn test_tutorial_other_steps_ignore_t_key() {
+    let mut app = create_test_app();
+
+    // Open tutorial on Welcome step
+    app.update(Action::StartTutorial { is_replay: false });
+
+    // Verify we're on Welcome step
+    if let Some(popup) = &app.popup {
+        if let PopupType::TutorialWizard { state } = &popup.kind {
+            assert_eq!(state.current_step, TutorialStep::Welcome);
+        }
+    }
+
+    // Press 't' - should do nothing on Welcome step
+    let action = app.handle_tutorial_popup(t_key());
+    assert!(
+        action.is_none(),
+        "Pressing 't' on Welcome should not produce action"
+    );
+}

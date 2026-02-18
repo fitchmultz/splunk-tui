@@ -47,6 +47,61 @@ use crate::ConnectionContext;
 use crate::action::format::ExportFormat;
 use crate::ui::ToastLevel;
 
+/// Result of a connection diagnostics check.
+///
+/// Each field represents a specific check that can pass, fail, or be skipped.
+/// The overall status is derived from individual check results.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct ConnectionDiagnosticsResult {
+    /// Whether the server is reachable (TCP/TLS handshake)
+    pub reachable: DiagnosticCheck,
+    /// Whether authentication succeeded
+    pub auth: DiagnosticCheck,
+    /// TLS certificate validation result
+    pub tls: DiagnosticCheck,
+    /// Server info if available
+    pub server_info: Option<ServerInfoSummary>,
+    /// Overall pass/fail status
+    pub overall_status: DiagnosticStatus,
+    /// Human-readable remediation hints for failures
+    pub remediation_hints: Vec<String>,
+    /// Timestamp of the diagnostics run
+    pub timestamp: String,
+}
+
+/// Individual diagnostic check result.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct DiagnosticCheck {
+    /// Check name (e.g., "Reachability", "Authentication")
+    pub name: String,
+    /// Status of this check
+    pub status: DiagnosticStatus,
+    /// Optional error message if failed
+    pub error: Option<String>,
+    /// Duration of the check in milliseconds
+    pub duration_ms: u64,
+}
+
+/// Status of a diagnostic check.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum DiagnosticStatus {
+    /// Check passed
+    Pass,
+    /// Check failed
+    Fail,
+    /// Check was skipped (dependency failed)
+    Skip,
+}
+
+/// Summarized server info for diagnostics display.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct ServerInfoSummary {
+    pub version: String,
+    pub build: String,
+    pub server_name: String,
+    pub mode: Option<String>,
+}
+
 /// Aggregated license data from multiple API endpoints.
 ///
 /// This struct combines license usage, pools, and stacks into a single
@@ -227,6 +282,10 @@ pub enum Action {
     LoadClusterInfo,
     /// Load health check information
     LoadHealth,
+    /// Run connection diagnostics (auth, TLS, reachability, server info)
+    RunConnectionDiagnostics,
+    /// Result of connection diagnostics
+    ConnectionDiagnosticsLoaded(Result<ConnectionDiagnosticsResult, Arc<ClientError>>),
     /// Load license information (usage, pools, stacks)
     LoadLicense,
     /// Load KVStore status information

@@ -3,6 +3,7 @@
 //! This module provides the `Popup` struct and `PopupBuilder` for constructing
 //! popup dialogs with customizable titles and content.
 
+use crate::action::variants::{ConnectionDiagnosticsResult, DiagnosticStatus};
 use crate::error_details::AuthRecoveryKind;
 use crate::input::help;
 use crate::onboarding::{TutorialState, TutorialSteps};
@@ -340,6 +341,9 @@ impl PopupBuilder {
                 "Recent operations (press Esc to close, j/k to scroll)".to_string(),
             ),
             PopupType::AuthRecovery { kind } => self.build_auth_recovery_defaults(kind),
+            PopupType::ConnectionDiagnostics { result } => {
+                self.build_connection_diagnostics_defaults(result)
+            }
         }
     }
 
@@ -1009,6 +1013,95 @@ Keybindings:
 Configuration:
   Set SPLUNK_CONFIG_PATH env var to specify a custom config file location."
         );
+
+        (title, content)
+    }
+
+    fn build_connection_diagnostics_defaults(
+        &self,
+        result: &ConnectionDiagnosticsResult,
+    ) -> (String, String) {
+        let title = "Connection Diagnostics".to_string();
+        let mut content = String::new();
+
+        fn status_icon(status: DiagnosticStatus) -> &'static str {
+            match status {
+                DiagnosticStatus::Pass => "✓",
+                DiagnosticStatus::Fail => "✗",
+                DiagnosticStatus::Skip => "○",
+            }
+        }
+
+        fn status_text(status: DiagnosticStatus) -> &'static str {
+            match status {
+                DiagnosticStatus::Pass => "PASS",
+                DiagnosticStatus::Fail => "FAIL",
+                DiagnosticStatus::Skip => "SKIP",
+            }
+        }
+
+        // Reachability
+        content.push_str(&format!(
+            "{} {}",
+            status_icon(result.reachable.status),
+            result.reachable.name
+        ));
+        if result.reachable.status != DiagnosticStatus::Skip {
+            content.push_str(&format!(" ({}ms)", result.reachable.duration_ms));
+        }
+        if let Some(ref err) = result.reachable.error {
+            content.push_str(&format!(": {}", err));
+        }
+        content.push('\n');
+
+        // Authentication
+        content.push_str(&format!(
+            "{} {}",
+            status_icon(result.auth.status),
+            result.auth.name
+        ));
+        if let Some(ref err) = result.auth.error {
+            content.push_str(&format!(": {}", err));
+        }
+        content.push('\n');
+
+        // TLS
+        content.push_str(&format!(
+            "{} {}",
+            status_icon(result.tls.status),
+            result.tls.name
+        ));
+        if let Some(ref err) = result.tls.error {
+            content.push_str(&format!(": {}", err));
+        }
+        content.push('\n');
+
+        // Server info
+        if let Some(ref info) = result.server_info {
+            content.push_str(&format!(
+                "\nServer: {} (v{}, {})\n",
+                info.server_name, info.version, info.build
+            ));
+            if let Some(ref mode) = info.mode {
+                content.push_str(&format!("Mode: {}\n", mode));
+            }
+        }
+
+        content.push_str(&format!(
+            "\nStatus: {} {}\n",
+            status_icon(result.overall_status),
+            status_text(result.overall_status)
+        ));
+
+        // Remediation hints
+        if !result.remediation_hints.is_empty() {
+            content.push_str("\nRemediation:\n");
+            for hint in &result.remediation_hints {
+                content.push_str(&format!("• {}\n", hint));
+            }
+        }
+
+        content.push_str("\nPress Enter to close");
 
         (title, content)
     }

@@ -64,7 +64,7 @@ fn test_theme_cycle_from_settings() {
 
     let initial = app.color_theme;
 
-    let action = app.handle_input(key('t'));
+    let action = app.handle_input(shift_key('T'));
     assert!(matches!(action, Some(Action::CycleTheme)));
 
     app.update(action.unwrap());
@@ -77,6 +77,15 @@ fn test_theme_cycle_from_settings() {
     // New app should initialize from persisted state
     let app2 = App::new(Some(persisted), ConnectionContext::default());
     assert_eq!(app2.color_theme, app.color_theme);
+}
+
+#[test]
+fn test_connection_diagnostics_from_settings() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Settings;
+
+    let action = app.handle_input(key('t'));
+    assert!(matches!(action, Some(Action::RunConnectionDiagnostics)));
 }
 
 #[test]
