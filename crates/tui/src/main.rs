@@ -390,6 +390,10 @@ async fn main() -> Result<()> {
     // Create app with persisted state and pre-built connection context
     let mut app = App::new(Some(persisted_state), connection_ctx);
 
+    // Track session start for onboarding checklist (increments session count,
+    // resets hint counters, and updates sessions_since_completion)
+    app.on_session_start();
+
     // Set bootstrap message if in bootstrap mode
     if let Some(reason) = bootstrap_reason {
         app.toasts

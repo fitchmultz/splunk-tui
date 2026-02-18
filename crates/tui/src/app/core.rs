@@ -16,6 +16,9 @@ use crate::app::state::{
 };
 use crate::app::structs::{App, ConnectionContext, SplValidationState};
 use crate::focus::FocusManager;
+use crate::onboarding::checklist::{
+    OnboardingChecklistState, OnboardingMilestone, OnboardingMilestones,
+};
 use splunk_client::SearchMode;
 use splunk_config::{
     ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
@@ -106,6 +109,7 @@ impl App {
             scroll_positions,
             recent_export_paths,
             export_format,
+            onboarding_checklist,
         ) = match persisted {
             Some(state) => (
                 state.auto_refresh,
@@ -124,6 +128,7 @@ impl App {
                 state.scroll_positions,
                 state.recent_export_paths,
                 crate::action::ExportFormat::parse_from_str(&state.export_format),
+                restore_onboarding_checklist(&state.onboarding_checklist),
             ),
             None => (
                 false,
@@ -142,6 +147,7 @@ impl App {
                 splunk_config::ScrollPositions::default(),
                 Vec::new(),
                 crate::action::ExportFormat::Json,
+                OnboardingChecklistState::new(),
             ),
         };
 
@@ -309,6 +315,7 @@ impl App {
             focus_navigation_mode: false,
             tutorial_state: None,
             tutorial_completed,
+            onboarding_checklist,
             command_palette_state: crate::app::command_palette::CommandPaletteState::new(),
             // Undo/Redo system
             undo_buffer: crate::undo::UndoBuffer::new(),
@@ -352,6 +359,40 @@ impl App {
                     .unwrap_or_default()
                     .as_secs(),
             ),
+            onboarding_checklist: splunk_config::PersistedOnboardingChecklist {
+                milestones: self.onboarding_checklist.milestones.bits(),
+                dismissed_items: self
+                    .onboarding_checklist
+                    .dismissed_items
+                    .iter()
+                    .cloned()
+                    .collect(),
+                session_count: self.onboarding_checklist.session_count,
+                sessions_since_completion: self.onboarding_checklist.sessions_since_completion,
+                globally_dismissed: self.onboarding_checklist.globally_dismissed,
+            },
         }
     }
+
+    /// Called at session start to track sessions and auto-hide behavior.
+    pub fn on_session_start(&mut self) {
+        self.onboarding_checklist.on_session_start();
+    }
+
+    /// Mark a milestone as completed.
+    pub fn mark_onboarding_milestone(&mut self, milestone: OnboardingMilestone) -> bool {
+        self.onboarding_checklist.mark_milestone(milestone)
+    }
+}
+
+fn restore_onboarding_checklist(
+    persisted: &splunk_config::PersistedOnboardingChecklist,
+) -> OnboardingChecklistState {
+    let mut state = OnboardingChecklistState::new();
+    state.milestones = OnboardingMilestones::from_bits_truncate(persisted.milestones);
+    state.dismissed_items = persisted.dismissed_items.iter().cloned().collect();
+    state.session_count = persisted.session_count;
+    state.sessions_since_completion = persisted.sessions_since_completion;
+    state.globally_dismissed = persisted.globally_dismissed;
+    state
 }

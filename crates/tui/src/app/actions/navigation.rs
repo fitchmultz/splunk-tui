@@ -9,6 +9,7 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::state::CurrentScreen;
+use crate::onboarding::OnboardingMilestone;
 
 impl App {
     /// Handle navigation-related actions.
@@ -16,6 +17,7 @@ impl App {
         match action {
             Action::OpenHelpPopup => {
                 self.open_help_popup();
+                self.mark_onboarding_milestone(OnboardingMilestone::HelpOpened);
             }
             Action::OpenCommandPalette => {
                 self.open_command_palette();
@@ -35,12 +37,14 @@ impl App {
                 self.current_screen = next_screen;
                 self.init_focus_manager_for_screen(next_screen);
                 self.clear_error_on_navigation();
+                self.mark_onboarding_milestone(OnboardingMilestone::NavigationCycleCompleted);
             }
             Action::PreviousScreen => {
                 let prev_screen = self.current_screen.previous();
                 self.current_screen = prev_screen;
                 self.init_focus_manager_for_screen(prev_screen);
                 self.clear_error_on_navigation();
+                self.mark_onboarding_milestone(OnboardingMilestone::NavigationCycleCompleted);
             }
             Action::LoadIndexes { offset, .. } => {
                 self.current_screen = CurrentScreen::Indexes;

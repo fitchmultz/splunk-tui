@@ -8,6 +8,7 @@
 
 use crate::action::Action;
 use crate::app::App;
+use crate::onboarding::OnboardingMilestone;
 use crate::ui::Toast;
 
 impl App {
@@ -235,6 +236,7 @@ impl App {
             "Profile '{}' saved successfully",
             profile_name
         )));
+        self.mark_onboarding_milestone(OnboardingMilestone::ProfileReady);
     }
 
     fn handle_profile_deleted(&mut self, profile_name: String) {

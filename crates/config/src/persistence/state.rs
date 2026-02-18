@@ -228,6 +228,23 @@ pub struct ScrollPositions {
     pub error_scroll_offset: usize,
 }
 
+/// Persisted onboarding checklist state (serializable without Instant).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+#[derive(Default)]
+pub struct PersistedOnboardingChecklist {
+    /// Completed milestones as bitflags.
+    pub milestones: u8,
+    /// Milestone keys that have been individually dismissed.
+    pub dismissed_items: Vec<String>,
+    /// Number of sessions the app has been opened.
+    pub session_count: u8,
+    /// Sessions since all milestones were completed.
+    pub sessions_since_completion: u8,
+    /// Whether the entire checklist has been dismissed.
+    pub globally_dismissed: bool,
+}
+
 /// Default value for current_screen field.
 fn default_current_screen() -> String {
     "Search".to_string()
@@ -286,6 +303,9 @@ pub struct PersistedState {
     /// Timestamp of last state save (for debugging/auditing).
     #[serde(default)]
     pub last_saved_at: Option<u64>,
+    /// Progressive onboarding checklist state.
+    #[serde(default)]
+    pub onboarding_checklist: PersistedOnboardingChecklist,
 }
 
 impl Default for PersistedState {
@@ -308,6 +328,7 @@ impl Default for PersistedState {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         }
     }
 }
@@ -467,6 +488,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -504,6 +526,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         };
 
         writeln!(
@@ -683,6 +706,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -737,6 +761,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -910,6 +935,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -1005,6 +1031,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: PersistedOnboardingChecklist::default(),
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -1108,6 +1135,13 @@ mod tests {
             recent_export_paths: vec!["/path/to/export.json".to_string()],
             export_format: "Csv".to_string(),
             last_saved_at: Some(1234567890),
+            onboarding_checklist: PersistedOnboardingChecklist {
+                milestones: 0b00011,
+                dismissed_items: vec!["connection_verified".to_string()],
+                session_count: 5,
+                sessions_since_completion: 0,
+                globally_dismissed: false,
+            },
         };
 
         let json = serde_json::to_string(&state).unwrap();
@@ -1124,6 +1158,8 @@ mod tests {
         assert_eq!(deserialized.recent_export_paths.len(), 1);
         assert_eq!(deserialized.export_format, "Csv");
         assert_eq!(deserialized.last_saved_at, Some(1234567890));
+        assert_eq!(deserialized.onboarding_checklist.milestones, 0b00011);
+        assert_eq!(deserialized.onboarding_checklist.session_count, 5);
     }
 
     #[test]

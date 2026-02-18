@@ -1,6 +1,5 @@
 ---
 source: crates/tui/tests/snapshot_search_tests.rs
-assertion_line: 43
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -17,12 +16,12 @@ expression: harness.render()
 │{                                                                             │
 │  "_time": "2024-01-15T10:30:00.000Z",                                        │
 │  "level": "ERROR",                                                           │
-│  "message": "Connection failed"                                              │
-│}                                                                             │
-│{                                                                             │
-│  "_time": "2024-01-15T10:29:00.000Z",                                        │
-│  "level": "ERROR",                                                           │
-│  "message": "Timeout error"                                                  │
+│  "message": "Connection failed"                 ┌──────────────────────────┐ │
+│}                                                │ Onboarding [0/5] 0%      │ │
+│{                                                │ ○ Create Profile         │ │
+│  "_time": "2024-01-15T10:29:00.000Z",           │ ○ Test Connection        │ │
+│  "level": "ERROR",                              │ ○ Run Search             │ │
+│  "message": "Timeout error"                     └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │[FOCUS]  Tab:Next | Shift+Tab:Prev | Enter:Run Ctrl+e:Export ...| ?:Help | q:Q│

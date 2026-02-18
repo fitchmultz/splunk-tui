@@ -110,6 +110,7 @@ fn test_redact_settings_loaded() {
         recent_export_paths: Vec::new(),
         export_format: "Json".to_string(),
         last_saved_at: None,
+        onboarding_checklist: splunk_config::PersistedOnboardingChecklist::default(),
     };
     let action = Action::SettingsLoaded(state);
     let output = redacted_debug(&action);

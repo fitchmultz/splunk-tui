@@ -1048,6 +1048,14 @@ pub enum Action {
     LoadSearchScreenForTutorial,
 
     // =========================================================================
+    // Onboarding Checklist
+    // =========================================================================
+    /// Dismiss the current onboarding checklist item.
+    DismissOnboardingItem,
+    /// Dismiss the entire onboarding checklist.
+    DismissOnboardingAll,
+
+    // =========================================================================
     // Bootstrap Mode
     // =========================================================================
     /// Request to connect from bootstrap mode (after profile creation or explicit connect)

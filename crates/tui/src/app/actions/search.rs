@@ -7,6 +7,7 @@
 
 use crate::action::Action;
 use crate::app::App;
+use crate::onboarding::OnboardingMilestone;
 use crate::ui::Toast;
 use serde_json::Value;
 
@@ -80,6 +81,9 @@ impl App {
 
         // Auto-focus results when search completes successfully
         self.search_input_mode = crate::app::state::SearchInputMode::ResultsFocused;
+
+        // Mark first search milestone
+        self.mark_onboarding_milestone(OnboardingMilestone::FirstSearchRun);
     }
 
     fn handle_search_error(

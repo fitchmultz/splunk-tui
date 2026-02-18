@@ -63,6 +63,9 @@ clap = { workspace = true }
 # UUID for unique tracking
 uuid = { version = "1.20", features = ["v4"] }
 
+# Bitflags for efficient flag storage
+bitflags = { workspace = true }
+
 # Clipboard
 arboard = "3.6"
 

@@ -35,6 +35,9 @@ csv = "1.4"
 thiserror = "2.0"
 anyhow = "1.0"
 
+# Bitflags
+bitflags = "2.8"
+
 # Secrets
 secrecy = { version = "0.10", features = ["serde"] }
 keyring = "3.6"

@@ -450,6 +450,7 @@ fn test_config_manager_persistence_with_custom_path() {
         recent_export_paths: Vec::new(),
         export_format: "Json".to_string(),
         last_saved_at: None,
+        onboarding_checklist: splunk_config::PersistedOnboardingChecklist::default(),
     };
 
     // Save the state

@@ -1,6 +1,5 @@
 ---
 source: crates/tui/tests/snapshot_footer_tests.rs
-assertion_line: 59
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -17,12 +16,12 @@ expression: harness.render()
 │Search history: 0 items                                                       │
 │Profile:        N/A                                                           │
 │                                                                              │
-│Search Defaults                                                               │
-│  Earliest time: -24h                                                         │
-│  Latest time:   now                                                          │
-│  Max results:   1000                                                         │
-│                                                                              │
-│Internal Logs Defaults                                                        │
+│Search Defaults                                  ┌──────────────────────────┐ │
+│  Earliest time: -24h                            │ Onboarding [0/5] 0%      │ │
+│  Latest time:   now                             │ ○ Create Profile         │ │
+│  Max results:   1000                            │ ○ Test Connection        │ │
+│                                                 │ ○ Run Search             │ │
+│Internal Logs Defaults                           └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Tab:Next | Shift+Tab:Prev | t:Run connection diagnostics ...| ?:Help | q:Quit│

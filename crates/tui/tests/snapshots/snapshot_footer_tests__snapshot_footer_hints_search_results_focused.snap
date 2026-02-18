@@ -1,6 +1,5 @@
 ---
 source: crates/tui/tests/snapshot_footer_tests.rs
-assertion_line: 121
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -17,12 +16,12 @@ expression: harness.render()
 │{                                                                             │
 │  "_raw": "test event 1"                                                      │
 │}                                                                             │
-│{                                                                             │
-│  "_raw": "test event 2"                                                      │
-│}                                                                             │
-│                                                                              │
-│                                                                              │
-│                                                                              │
+│{                                                ┌──────────────────────────┐ │
+│  "_raw": "test event 2"                         │ Onboarding [0/5] 0%      │ │
+│}                                                │ ○ Create Profile         │ │
+│                                                 │ ○ Test Connection        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │[NAV]  Tab:Next | Shift+Tab:Prev | Enter:Run Ctrl+e:Export ...| ?:Help | q:Qui│

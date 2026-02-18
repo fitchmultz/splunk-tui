@@ -12,12 +12,12 @@ expression: harness.render()
 │       │  ?               Help█       │
 │       │  Ctrl+P              ║       │
 │       │Command palette       ║       │
-│       │  q               Quit║       │
-│       │  Ctrl+Q          Quit║       │
-│       │(global)              ║       │
-│       │  Tab             Next↓       │
-│       └──────────────────────┘       │
-│                                      │
+│       │  q               Quit║─────┐ │
+│       │  Ctrl+Q          Quit║     │ │
+│       │(global)              ║     │ │
+│       │  Tab             Next↓     │ │
+│       └──────────────────────┘     │ │
+│         └──────────────────────────┘ │
 └──────────────────────────────────────┘
 ┌──────────────────────────────────────┐
 │ Shift+Tab:Prev  | Esc:Close| r:Refres│

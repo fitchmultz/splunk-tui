@@ -27,8 +27,8 @@ mod state;
 
 pub use profiles::{ConfigManager, CredentialStorageError};
 pub use state::{
-    ConfigFileError, InternalLogsDefaults, ListDefaults, ListType, PersistedState, ScrollPositions,
-    SearchDefaults,
+    ConfigFileError, InternalLogsDefaults, ListDefaults, ListType, PersistedOnboardingChecklist,
+    PersistedState, ScrollPositions, SearchDefaults,
 };
 
 // Re-exports for use by other crates

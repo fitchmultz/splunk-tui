@@ -16,12 +16,12 @@ expression: harness.render()
 │Scan Count: 150│  Ctrl+Q          Quit (global)               ║               │
 │Result Count: 1│  Tab             Next screen                 ║               │
 │Disk Usage: 204│  Shift+Tab       Previous screen             ║               │
-│Priority: 5    │  Ctrl+Tab        Next focus                  ║               │
-│Label: Schedule│  Ctrl+Shift+Tab  Previous focus              ║               │
-│Cursor Time: 20│  Ctrl+c          Copy to clipboard           ↓               │
-│Finalized: No  └──────────────────────────────────────────────┘               │
-│                                                                              │
-│                                                                              │
+│Priority: 5    │  Ctrl+Tab        Next focus                  ║─────────────┐ │
+│Label: Schedule│  Ctrl+Shift+Tab  Previous focus              ║0/5] 0%      │ │
+│Cursor Time: 20│  Ctrl+c          Copy to clipboard           ↓file         │ │
+│Finalized: No  └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Shift+Tab:Prev  | Esc:Close| Esc:Back Ctrl+c:Copy SID| ?:Help | q:Quit       │

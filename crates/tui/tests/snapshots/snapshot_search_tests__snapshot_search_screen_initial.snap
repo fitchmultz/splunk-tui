@@ -1,6 +1,5 @@
 ---
 source: crates/tui/tests/snapshot_search_tests.rs
-assertion_line: 13
 expression: harness.render()
 ---
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -17,12 +16,12 @@ expression: harness.render()
 │               No results. Enter a search query and press Enter.              │
 │                                                                              │
 │                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
+│                                                 ┌──────────────────────────┐ │
+│                                                 │ Onboarding [0/5] 0%      │ │
+│                                                 │ ○ Create Profile         │ │
+│                                                 │ ○ Test Connection        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │[FOCUS]  Tab:Next | Shift+Tab:Prev | Enter:Run Ctrl+e:Export ...| ?:Help | q:Q│

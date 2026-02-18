@@ -198,6 +198,17 @@ impl App {
         // Render toasts
         crate::ui::toast::render_toasts(f, &self.toasts, self.current_error.is_some(), &self.theme);
 
+        // Render onboarding checklist (if applicable)
+        if self.onboarding_checklist.should_show_checklist() {
+            let checklist_area = crate::ui::widgets::checklist::checklist_area(f.area());
+            crate::ui::widgets::checklist::render_onboarding_checklist(
+                f,
+                &self.onboarding_checklist,
+                checklist_area,
+                &self.theme,
+            );
+        }
+
         // Render popup if active (on top of toasts)
         if let Some(ref popup) = self.popup {
             crate::ui::popup::render_popup(f, popup, &self.theme, self);

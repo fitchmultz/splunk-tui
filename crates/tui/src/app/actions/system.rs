@@ -321,6 +321,14 @@ impl App {
                     }
                 }
             }
+            Action::DismissOnboardingItem => {
+                if let Some(milestone) = self.onboarding_checklist.incomplete_milestones().first() {
+                    self.onboarding_checklist.dismiss_item(milestone);
+                }
+            }
+            Action::DismissOnboardingAll => {
+                self.onboarding_checklist.dismiss_all();
+            }
             _ => {}
         }
     }

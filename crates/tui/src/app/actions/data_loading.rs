@@ -9,6 +9,7 @@
 use crate::action::{Action, LicenseData};
 use crate::app::App;
 use crate::app::state::HealthState;
+use crate::onboarding::OnboardingMilestone;
 use crate::ui::Toast;
 use splunk_client::models::DataModel;
 
@@ -560,6 +561,7 @@ impl App {
             Ok(health) => {
                 let new_state = HealthState::from_health_str(&health.health.to_string());
                 self.set_health_state(new_state);
+                self.mark_onboarding_milestone(OnboardingMilestone::ConnectionVerified);
             }
             Err(_) => {
                 // Error getting health - mark as unhealthy
@@ -1272,6 +1274,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: splunk_config::PersistedOnboardingChecklist::default(),
         };
 
         app.handle_data_loading_action(Action::SettingsLoaded(new_state));
@@ -1316,6 +1319,7 @@ mod tests {
             recent_export_paths: Vec::new(),
             export_format: "Json".to_string(),
             last_saved_at: None,
+            onboarding_checklist: splunk_config::PersistedOnboardingChecklist::default(),
         };
 
         app.handle_data_loading_action(Action::SettingsLoaded(new_state));

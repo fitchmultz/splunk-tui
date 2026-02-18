@@ -16,12 +16,12 @@ expression: harness.render()
 │Scan Count: 5000                                                              │
 │Result Count: 450                                                             │
 │Disk Usage: 5120 MB                                                           │
-│Priority: 3                                                                   │
-│Label: Ad-hoc search                                                          │
-│Cursor Time: 2024-01-15T10:29:00.000Z                                         │
-│Finalized: No                                                                 │
-│                                                                              │
-│                                                                              │
+│Priority: 3                                      ┌──────────────────────────┐ │
+│Label: Ad-hoc search                             │ Onboarding [0/5] 0%      │ │
+│Cursor Time: 2024-01-15T10:29:00.000Z            │ ○ Create Profile         │ │
+│Finalized: No                                    │ ○ Test Connection        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Tab:Next | Shift+Tab:Prev  | Esc:Back| Esc:Back ...| ?:Help | q:Quit         │

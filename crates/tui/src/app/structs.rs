@@ -18,7 +18,7 @@ use crate::app::state::{
 };
 use crate::error_details::ErrorDetails;
 use crate::focus::FocusManager;
-use crate::onboarding::TutorialState;
+use crate::onboarding::{OnboardingChecklistState, TutorialState};
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
 use ratatui::layout::Rect;
@@ -277,6 +277,8 @@ pub struct App {
     pub tutorial_state: Option<TutorialState>,
     /// Whether the tutorial has been completed (persisted)
     pub tutorial_completed: bool,
+    /// Progressive onboarding checklist state (persisted)
+    pub onboarding_checklist: OnboardingChecklistState,
     /// Command palette state for fuzzy search and recent commands
     pub command_palette_state: crate::app::command_palette::CommandPaletteState,
 
