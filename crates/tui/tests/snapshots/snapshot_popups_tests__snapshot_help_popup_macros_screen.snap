@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Macros | [?] Unknown                                             │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ Search Macros ───────────────────────────────────────────────────────────────┐
+│                           Press 'r' to load macros                           │
+│               ┌Help - Macros─────────────────────────────────┐               │
+│               │Macros Screen:                                ↑               │
+│               │  r               Refresh macros              █               │
+│               │  e               Edit macro                  ║               │
+│               │  n               New macro                   ║               │
+│               │  d               Delete macro                ║               │
+└───────────────│  Ctrl+c          Copy definition             ║───────────────┘
+┌ Macro Definiti│  j/k or Up/Down  Navigate list               ║───────────────┐
+│Select a macro │  Ctrl+e          Export macros               ║─────────────┐ │
+│               │  End             Go to bottom                ║0/5] 0%      │ │
+│               │  Home            Go to top                   ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Shift+Tab:Prev  | Esc:Close| r:Refresh e:Edit n:New d:Delete| ?:Help | q:Quit│
+└──────────────────────────────────────────────────────────────────────────────┘

@@ -93,7 +93,7 @@ impl Keybinding {
         }
     }
 
-    fn scope_applies(&self, screen: CurrentScreen) -> bool {
+    pub fn scope_applies(&self, screen: CurrentScreen) -> bool {
         match self.scope {
             BindingScope::Global => true,
             BindingScope::Screen(s) => s == screen,
@@ -326,7 +326,7 @@ pub fn footer_hints(screen: CurrentScreen) -> ScreenHints {
 }
 
 /// Map CurrentScreen to Section enum.
-fn screen_to_section(screen: CurrentScreen) -> Section {
+pub fn screen_to_section(screen: CurrentScreen) -> Section {
     match screen {
         CurrentScreen::Search => Section::Search,
         CurrentScreen::Jobs => Section::Jobs,

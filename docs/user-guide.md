@@ -300,6 +300,23 @@ During the first-run tutorial, you'll be guided through profile creation:
 2. The form works the same as creating a profile from Settings
 3. After saving, the tutorial automatically advances to test your connection
 
+### Contextual Help
+
+The help popup (`?` key) is **context-aware** and shows the most relevant keybindings first:
+
+1. **Current Screen**: Top priority bindings for your current screen appear first, ordered by importance
+2. **Global Keys**: Always-visible navigation and utility bindings
+3. **Other Screens**: Collapsed view of bindings for other screens (scroll to see more)
+
+This means help content changes based on:
+- Which screen you're viewing (Search, Jobs, Indexes, etc.)
+- For Search screen: whether you're in QueryFocused or ResultsFocused mode
+- Your custom keybindings (if configured in `~/.config/splunk-tui/config.json`)
+
+The help popup also respects your keybinding overrides, showing your custom keys instead of defaults.
+
+For example, when viewing the Jobs screen and pressing `?`, you'll see Jobs-specific actions like refresh (`r`), filter (`/`), and job management keys at the top, followed by global navigation, then collapsed summaries for other screens.
+
   <!-- BEGIN TUI KEYBINDINGS -->
 
 ### Navigation

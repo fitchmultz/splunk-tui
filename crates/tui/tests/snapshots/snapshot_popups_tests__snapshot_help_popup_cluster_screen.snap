@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Cluster | [?] Unknown                                            │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Cluster Information───────────────────────────────────────────────────────────┐
+│                 No cluster info loaded. Press 'r' to refresh.                │
+│               ┌Help - Cluster────────────────────────────────┐               │
+│               │Cluster Screen:                               ↑               │
+│               │  r               Refresh cluster info        █               │
+│               │  p               Toggle peers view           ║               │
+│               │  j/k or Up/Down  Navigate peers list         ║               │
+│               │  Ctrl+c          Copy cluster ID             ║               │
+│               │  Ctrl+e          Export cluster info         ║               │
+│               │                                              ║               │
+│               │Global Keys:                                  ║─────────────┐ │
+│               │  ?               Help                        ║0/5] 0%      │ │
+│               │  Ctrl+P          Command palette             ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Shift+Tab:Prev  | Esc:Close| r:Refresh p:Peers ...| ?:Help | q:Quit          │
+└──────────────────────────────────────────────────────────────────────────────┘

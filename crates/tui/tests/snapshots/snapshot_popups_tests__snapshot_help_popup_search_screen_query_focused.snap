@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search [NAV] | [?] Unknown                                       │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Help - Search─────────────────────────────────┐───────────────┘
+┌Status─────────│Search Screen:                                ↑───────────────┐
+│Press Enter to │  Enter     Run search                        █               │
+└───────────────│  Ctrl+e    Export results                    ║───────────────┘
+┌Results────────│  PgDn      Page down                         ║───────────────┐
+│               │  PgUp      Page up                           ║.              │
+│               │  Ctrl+j/k  Scroll results (while typing)     ║               │
+│               │  Home      Go to top                         ║               │
+│               │  End       Go to bottom                      ║─────────────┐ │
+│               │  Ctrl+c    Copy query (or current result)    ║0/5] 0%      │ │
+│               │  Ctrl+r    Toggle real-time mode             ↓file         │ │
+│               └──────────────────────────────────────────────┘ction        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│[NAV]  Shift+Tab:Prev  | Esc:Close| Enter:Run Ctrl+e:Export ...| ?:Help | q:Qu│
+└──────────────────────────────────────────────────────────────────────────────┘

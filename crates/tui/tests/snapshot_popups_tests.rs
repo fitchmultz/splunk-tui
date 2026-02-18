@@ -3,6 +3,7 @@
 mod helpers;
 
 use helpers::{TuiHarness, create_mock_index, create_mock_jobs};
+use splunk_tui::app::state::{CurrentScreen, SearchInputMode};
 use splunk_tui::{Popup, PopupType};
 
 #[test]
@@ -91,6 +92,68 @@ fn snapshot_index_details_popup_narrow() {
     harness.app.indexes = Some(vec![create_mock_index()]);
     harness.app.indexes_state.select(Some(0));
     harness.app.popup = Some(Popup::builder(PopupType::IndexDetails).build());
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup_search_screen_results_focused() {
+    // Test contextual help on Search screen in ResultsFocused mode
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::ResultsFocused;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build_with_context(&harness.app));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup_search_screen_query_focused() {
+    // Test contextual help on Search screen in QueryFocused mode
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build_with_context(&harness.app));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup_jobs_screen() {
+    // Test contextual help on Jobs screen
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = CurrentScreen::Jobs;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build_with_context(&harness.app));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup_indexes_screen() {
+    // Test contextual help on Indexes screen
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = CurrentScreen::Indexes;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build_with_context(&harness.app));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup_cluster_screen() {
+    // Test contextual help on Cluster screen
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = CurrentScreen::Cluster;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build_with_context(&harness.app));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_help_popup_macros_screen() {
+    // Test contextual help on Macros screen
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = CurrentScreen::Macros;
+    harness.app.popup = Some(Popup::builder(PopupType::Help).build_with_context(&harness.app));
 
     insta::assert_snapshot!(harness.render());
 }

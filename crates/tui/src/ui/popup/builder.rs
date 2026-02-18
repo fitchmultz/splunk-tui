@@ -4,6 +4,7 @@
 //! popup dialogs with customizable titles and content.
 
 use crate::action::variants::{ConnectionDiagnosticsResult, DiagnosticStatus};
+use crate::app::App;
 use crate::error_details::AuthRecoveryKind;
 use crate::input::help;
 use crate::onboarding::{TutorialState, TutorialSteps};
@@ -80,9 +81,24 @@ impl PopupBuilder {
         }
     }
 
+    /// Build the `Popup` instance with app context for context-aware popups.
+    ///
+    /// This method provides the app state to popup types that need contextual
+    /// information (like Help popups that show screen-specific keybindings).
+    pub fn build_with_context(self, app: &App) -> Popup {
+        let (default_title, default_content) = self.build_defaults_with_context(app);
+
+        Popup {
+            title: self.title.unwrap_or(default_title),
+            content: self.content.unwrap_or(default_content),
+            kind: self.kind,
+        }
+    }
+
     fn build_defaults(&self) -> (String, String) {
         match &self.kind {
             PopupType::Help => ("Help".to_string(), help::help_text()),
+            // Other popup types that don't need context
             PopupType::ConfirmCancel(sid) => (
                 "Confirm Cancel".to_string(),
                 format!("Cancel job {sid}? (y/n)"),
@@ -344,6 +360,23 @@ impl PopupBuilder {
             PopupType::ConnectionDiagnostics { result } => {
                 self.build_connection_diagnostics_defaults(result)
             }
+        }
+    }
+
+    fn build_defaults_with_context(&self, app: &App) -> (String, String) {
+        match &self.kind {
+            PopupType::Help => {
+                let input_mode = match app.current_screen {
+                    crate::app::state::CurrentScreen::Search => Some(app.search_input_mode),
+                    _ => None,
+                };
+                (
+                    format!("Help - {:?}", app.current_screen),
+                    help::contextual_help_text(app.current_screen, input_mode),
+                )
+            }
+            // All other popup types use the context-free defaults
+            _ => self.build_defaults(),
         }
     }
 

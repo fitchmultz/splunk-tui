@@ -200,7 +200,7 @@ impl App {
     fn open_help_popup(&mut self) {
         use crate::ui::popup::{Popup, PopupType};
         self.help_scroll_offset = 0; // Reset scroll on open
-        self.popup = Some(Popup::builder(PopupType::Help).build());
+        self.popup = Some(Popup::builder(PopupType::Help).build_with_context(self));
     }
 
     fn toggle_cluster_view_mode(&mut self) {

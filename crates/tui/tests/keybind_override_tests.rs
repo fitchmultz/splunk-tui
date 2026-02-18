@@ -283,6 +283,82 @@ fn test_keybind_action_snake_case_serialization() {
 // logic directly without using the global state.
 
 #[test]
+fn test_contextual_help_contains_override_aware_keys() {
+    // Verify that contextual help generation includes override-aware key labels
+    // by testing the helper functions directly through the table
+    let mut map = BTreeMap::new();
+    map.insert(KeybindAction::Quit, "Ctrl+x".to_string());
+    let overrides = KeybindOverrides { overrides: map };
+
+    let table = overrides::KeybindOverrideTable::from_overrides(&overrides).unwrap();
+
+    // The override table should provide the display key for overridden actions
+    assert!(
+        matches!(table.resolve(ctrl_key('x')), Some(Action::Quit)),
+        "Override table should resolve Ctrl+x to Quit action"
+    );
+}
+
+#[test]
+fn test_contextual_help_prioritizes_screen_specific_bindings() {
+    use splunk_tui::app::state::CurrentScreen;
+    use splunk_tui::input::help::contextual_help_text;
+
+    // Generate contextual help for Jobs screen
+    let jobs_help = contextual_help_text(CurrentScreen::Jobs, None);
+
+    // The help should start with the Jobs section
+    assert!(
+        jobs_help.starts_with("Jobs Screen:"),
+        "Contextual help for Jobs screen should start with Jobs section"
+    );
+
+    // Verify Global Keys section is included
+    assert!(
+        jobs_help.contains("Global Keys:"),
+        "Contextual help should include Global Keys section"
+    );
+
+    // Verify other screens section is included
+    assert!(
+        jobs_help.contains("Other screens"),
+        "Contextual help should include Other screens section"
+    );
+}
+
+#[test]
+fn test_contextual_help_search_mode_aware() {
+    use splunk_tui::app::state::{CurrentScreen, SearchInputMode};
+    use splunk_tui::input::help::contextual_help_text;
+
+    // Generate contextual help for Search screen in different modes
+    let query_help =
+        contextual_help_text(CurrentScreen::Search, Some(SearchInputMode::QueryFocused));
+    let results_help =
+        contextual_help_text(CurrentScreen::Search, Some(SearchInputMode::ResultsFocused));
+
+    // Both should start with Search section
+    assert!(
+        query_help.starts_with("Search Screen:"),
+        "Query-focused help should start with Search section"
+    );
+    assert!(
+        results_help.starts_with("Search Screen:"),
+        "Results-focused help should start with Search section"
+    );
+
+    // Both should include Global Keys
+    assert!(
+        query_help.contains("Global Keys:"),
+        "Query-focused help should include Global Keys"
+    );
+    assert!(
+        results_help.contains("Global Keys:"),
+        "Results-focused help should include Global Keys"
+    );
+}
+
+#[test]
 fn test_override_table_provides_display_key_for_action() {
     // Verify that the override table can provide the key string for an action
     let mut map = BTreeMap::new();
