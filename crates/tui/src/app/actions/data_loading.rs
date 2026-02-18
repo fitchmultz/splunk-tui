@@ -858,6 +858,10 @@ impl App {
 
         // Check if this is an auth error and open recovery popup
         if let Some(ref auth_recovery) = error_details.auth_recovery {
+            // Emit auth recovery shown metric
+            if let Some(ref collector) = self.ux_telemetry {
+                collector.record_auth_recovery_shown(auth_recovery.kind);
+            }
             self.popup = Some(
                 Popup::builder(PopupType::AuthRecovery {
                     kind: auth_recovery.kind,

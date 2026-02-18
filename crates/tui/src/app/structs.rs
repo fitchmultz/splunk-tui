@@ -287,6 +287,10 @@ pub struct App {
     pub undo_buffer: crate::undo::UndoBuffer,
     /// Active undo toast ID for countdown updates
     pub undo_toast_id: Option<uuid::Uuid>,
+
+    // UX telemetry
+    /// UX telemetry collector for friction metrics.
+    pub ux_telemetry: Option<crate::ux_telemetry::UxTelemetryCollector>,
 }
 
 /// SPL validation state for real-time feedback in the search screen.

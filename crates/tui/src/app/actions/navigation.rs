@@ -10,6 +10,7 @@ use crate::action::Action;
 use crate::app::App;
 use crate::app::state::CurrentScreen;
 use crate::onboarding::OnboardingMilestone;
+use crate::ux_telemetry::ScreenLabel;
 
 impl App {
     /// Handle navigation-related actions.
@@ -18,6 +19,10 @@ impl App {
             Action::OpenHelpPopup => {
                 self.open_help_popup();
                 self.mark_onboarding_milestone(OnboardingMilestone::HelpOpened);
+                // Emit help opened metric
+                if let Some(ref collector) = self.ux_telemetry {
+                    collector.record_help_opened(ScreenLabel::from(self.current_screen));
+                }
             }
             Action::OpenCommandPalette => {
                 self.open_command_palette();
@@ -38,6 +43,10 @@ impl App {
                 self.init_focus_manager_for_screen(next_screen);
                 self.clear_error_on_navigation();
                 self.mark_onboarding_milestone(OnboardingMilestone::NavigationCycleCompleted);
+                // Record navigation and check for reversal
+                if let Some(ref mut collector) = self.ux_telemetry {
+                    collector.record_navigation(ScreenLabel::from(next_screen));
+                }
             }
             Action::PreviousScreen => {
                 let prev_screen = self.current_screen.previous();
@@ -45,6 +54,10 @@ impl App {
                 self.init_focus_manager_for_screen(prev_screen);
                 self.clear_error_on_navigation();
                 self.mark_onboarding_milestone(OnboardingMilestone::NavigationCycleCompleted);
+                // Record navigation and check for reversal
+                if let Some(ref mut collector) = self.ux_telemetry {
+                    collector.record_navigation(ScreenLabel::from(prev_screen));
+                }
             }
             Action::LoadIndexes { offset, .. } => {
                 self.current_screen = CurrentScreen::Indexes;

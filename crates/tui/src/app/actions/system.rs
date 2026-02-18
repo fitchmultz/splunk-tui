@@ -405,6 +405,10 @@ impl App {
 
         // Route auth errors to AuthRecovery popup, others to ErrorDetails
         if let Some(ref auth_recovery) = details.auth_recovery {
+            // Emit auth recovery shown metric
+            if let Some(ref collector) = self.ux_telemetry {
+                collector.record_auth_recovery_shown(auth_recovery.kind);
+            }
             self.popup = Some(
                 Popup::builder(PopupType::AuthRecovery {
                     kind: auth_recovery.kind,
@@ -425,6 +429,10 @@ impl App {
 
             // Route auth errors to AuthRecovery popup, others to ErrorDetails
             if let Some(ref auth_recovery) = details.auth_recovery {
+                // Emit auth recovery shown metric
+                if let Some(ref collector) = self.ux_telemetry {
+                    collector.record_auth_recovery_shown(auth_recovery.kind);
+                }
                 self.popup = Some(
                     Popup::builder(PopupType::AuthRecovery {
                         kind: auth_recovery.kind,

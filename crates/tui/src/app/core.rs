@@ -320,6 +320,8 @@ impl App {
             // Undo/Redo system
             undo_buffer: crate::undo::UndoBuffer::new(),
             undo_toast_id: None,
+            // UX telemetry - initialized to None, set from main.rs
+            ux_telemetry: None,
         }
     }
 

@@ -48,6 +48,21 @@ pub const METRIC_TUI_ACTION_QUEUE_DEPTH: &str = "splunk_tui_action_queue_depth";
 /// Metric name for deserialization failure counter.
 pub const METRIC_DESERIALIZATION_FAILURES: &str = "splunk_api_deserialization_failures_total";
 
+/// Metric name for UX auth recovery popup shown.
+pub const METRIC_UX_AUTH_RECOVERY_TOTAL: &str = "splunk_tui_ux_auth_recovery_total";
+
+/// Metric name for UX auth recovery action success.
+pub const METRIC_UX_AUTH_RECOVERY_SUCCESS: &str = "splunk_tui_ux_auth_recovery_success_total";
+
+/// Metric name for UX navigation reversal.
+pub const METRIC_UX_NAVIGATION_REVERSAL: &str = "splunk_tui_ux_navigation_reversal_total";
+
+/// Metric name for UX help opened.
+pub const METRIC_UX_HELP_OPENED: &str = "splunk_tui_ux_help_opened_total";
+
+/// Metric name for UX bootstrap connect attempts.
+pub const METRIC_UX_BOOTSTRAP_CONNECT: &str = "splunk_tui_ux_bootstrap_connect_total";
+
 /// Error categories for metrics labeling.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCategory {

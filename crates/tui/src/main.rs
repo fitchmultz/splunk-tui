@@ -119,6 +119,9 @@ async fn main() -> Result<()> {
         None
     };
 
+    // Store whether metrics are enabled for use in spawned tasks
+    let metrics_enabled = _metrics_exporter.is_some();
+
     // Try to load configuration with bootstrap fallback (RQ-0454)
     // This allows the UI to start even if auth is missing/invalid
     struct StartupState {
@@ -390,6 +393,11 @@ async fn main() -> Result<()> {
     // Create app with persisted state and pre-built connection context
     let mut app = App::new(Some(persisted_state), connection_ctx);
 
+    // Enable UX telemetry collection when metrics exporter is enabled
+    app.ux_telemetry = Some(splunk_tui::ux_telemetry::UxTelemetryCollector::new(
+        metrics_enabled,
+    ));
+
     // Track session start for onboarding checklist (increments session count,
     // resets hint counters, and updates sessions_since_completion)
     app.on_session_start();
@@ -480,7 +488,7 @@ async fn main() -> Result<()> {
         let render_duration = render_start.elapsed();
 
         // Record TUI frame render duration metric if metrics are enabled
-        if _metrics_exporter.is_some() {
+        if metrics_enabled {
             metrics::histogram!("splunk_tui_frame_render_duration_seconds")
                 .record(render_duration.as_secs_f64());
         }
@@ -488,7 +496,7 @@ async fn main() -> Result<()> {
         tokio::select! {
             Some(action) = rx.recv() => {
                 // Record action queue depth metric if metrics are enabled
-                if _metrics_exporter.is_some() {
+                if metrics_enabled {
                     let queue_depth = rx.len();
                     metrics::gauge!("splunk_tui_action_queue_depth").set(queue_depth as f64);
                 }
@@ -520,6 +528,15 @@ async fn main() -> Result<()> {
                                     Ok((_, _, config, resolved_profile_name)) => {
                                         match create_client(&config).await {
                                             Ok(new_client) => {
+                                                // Emit bootstrap connect success metric
+                                                if metrics_enabled {
+                                                    metrics::counter!(
+                                                        splunk_client::metrics::METRIC_UX_BOOTSTRAP_CONNECT,
+                                                        "success" => "true",
+                                                        "reason" => "connected",
+                                                    ).increment(1);
+                                                }
+
                                                 // Build connection context
                                                 let auth_mode = match &config.auth.strategy {
                                                     ConfigAuthStrategy::ApiToken { .. } => "token".to_string(),
@@ -539,6 +556,20 @@ async fn main() -> Result<()> {
                                                 }).await;
                                             }
                                             Err(e) => {
+                                                // Emit bootstrap connect failure metric
+                                                if metrics_enabled {
+                                                    let reason = if e.to_string().to_lowercase().contains("auth") {
+                                                        "invalid_auth"
+                                                    } else {
+                                                        "connection_error"
+                                                    };
+                                                    metrics::counter!(
+                                                        splunk_client::metrics::METRIC_UX_BOOTSTRAP_CONNECT,
+                                                        "success" => "false",
+                                                        "reason" => reason,
+                                                    ).increment(1);
+                                                }
+
                                                 let _ = tx_connect.send(Action::BootstrapConnectFinished {
                                                     ok: false,
                                                     error: Some(e.to_string()),
@@ -547,6 +578,20 @@ async fn main() -> Result<()> {
                                         }
                                     }
                                     Err(e) => {
+                                        // Emit bootstrap connect failure metric (config error)
+                                        if metrics_enabled {
+                                            let reason = if e.to_string().to_lowercase().contains("auth") {
+                                                "missing_auth"
+                                            } else {
+                                                "config_error"
+                                            };
+                                            metrics::counter!(
+                                                splunk_client::metrics::METRIC_UX_BOOTSTRAP_CONNECT,
+                                                "success" => "false",
+                                                "reason" => reason,
+                                            ).increment(1);
+                                        }
+
                                         let _ = tx_connect.send(Action::BootstrapConnectFinished {
                                             ok: false,
                                             error: Some(e.to_string()),

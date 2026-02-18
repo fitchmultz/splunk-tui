@@ -22,6 +22,7 @@ pub mod error_details;
 pub mod export;
 pub mod focus;
 pub mod ui;
+pub mod ux_telemetry;
 
 pub mod input;
 pub mod onboarding;

@@ -133,3 +133,81 @@ The project uses both:
 - **Tracing** (OpenTelemetry): Distributed request flows for debugging
 
 Use metrics for monitoring, tracing for investigation.
+
+## UX Telemetry Metrics
+
+The TUI emits privacy-safe counters to measure user friction points. These metrics help operators identify UX issues and verify improvements.
+
+### Available Metrics
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `splunk_tui_ux_auth_recovery_total` | Counter | `kind` | Auth recovery popup shown by failure type |
+| `splunk_tui_ux_auth_recovery_success_total` | Counter | `kind`, `action`, `success` | Recovery action outcome |
+| `splunk_tui_ux_navigation_reversal_total` | Counter | `from_screen`, `to_screen` | Quick back-navigation (within 2s) |
+| `splunk_tui_ux_help_opened_total` | Counter | `screen` | Help popup opened with screen context |
+| `splunk_tui_ux_bootstrap_connect_total` | Counter | `success`, `reason` | Bootstrap mode connection attempts |
+
+### Auth Recovery Kinds
+
+| Kind | Description |
+|------|-------------|
+| `invalid_credentials` | Wrong username/password or API token |
+| `session_expired` | Session token expired |
+| `missing_auth_config` | No authentication configured |
+| `tls_error` | TLS/certificate issues |
+| `connection_refused` | Server unreachable |
+| `timeout` | Request timeout |
+| `unknown` | Unclassified error |
+
+### Sample Dashboard Queries
+
+**Top auth failure types:**
+```promql
+topk(5, sum by (kind) (rate(splunk_tui_ux_auth_recovery_total[1h])))
+```
+
+**Auth recovery success rate:**
+```promql
+sum(rate(splunk_tui_ux_auth_recovery_success_total{success="true"}[1h]))
+/
+sum(rate(splunk_tui_ux_auth_recovery_total[1h]))
+```
+
+**Most confusing screens (by navigation reversal):**
+```promql
+topk(5, sum by (from_screen) (rate(splunk_tui_ux_navigation_reversal_total[1h])))
+```
+
+**Help usage by screen:**
+```promql
+sum by (screen) (rate(splunk_tui_ux_help_opened_total[1h]))
+```
+
+### SLO Examples
+
+**Auth recovery success SLO:** 90% of auth recovery attempts should lead to successful reconnection within 5 minutes.
+```promql
+sum(rate(splunk_tui_ux_auth_recovery_success_total{success="true",action!="dismiss"}[5m]))
+/
+sum(rate(splunk_tui_ux_auth_recovery_total[5m]))
+> 0.9
+```
+
+**Navigation friction SLO:** Navigation reversal rate should be < 5% of all navigations.
+```promql
+sum(rate(splunk_tui_ux_navigation_reversal_total[1h]))
+/
+(sum(rate(splunk_tui_ux_navigation_reversal_total[1h])) + count(increase(splunk_tui_action_queue_depth[1h])))
+< 0.05
+```
+
+### Enabling UX Metrics
+
+UX telemetry is emitted when the `--metrics-bind` flag is used:
+
+```bash
+splunk-tui --metrics-bind localhost:9090
+```
+
+Then scrape from `http://localhost:9090/metrics`.

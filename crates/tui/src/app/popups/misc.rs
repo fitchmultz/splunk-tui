@@ -11,7 +11,9 @@
 
 use crate::action::Action;
 use crate::app::App;
+use crate::error_details::AuthRecoveryKind;
 use crate::ui::popup::{Popup, PopupType};
+use crate::ux_telemetry::AuthRecoveryAction;
 use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
@@ -113,36 +115,78 @@ impl App {
 
     /// Handle AuthRecovery popup.
     pub fn handle_auth_recovery_popup(&mut self, key: KeyEvent) -> Option<Action> {
+        // Get the recovery kind from the current popup if available
+        let recovery_kind = self.get_auth_recovery_kind();
+
         match key.code {
             // Close popup
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.popup = None;
+                // Record dismiss action
+                if let (Some(collector), Some(kind)) = (&self.ux_telemetry, recovery_kind) {
+                    collector.record_auth_recovery_action(kind, AuthRecoveryAction::Dismiss, false);
+                }
                 None
             }
             // Retry current screen load
             KeyCode::Char('r') => {
                 self.popup = None;
+                // Record retry action (success will be determined by data load result)
+                if let (Some(collector), Some(kind)) = (&self.ux_telemetry, recovery_kind) {
+                    collector.record_auth_recovery_action(kind, AuthRecoveryAction::Retry, true);
+                }
                 self.load_action_for_screen()
             }
             // Open profile selector
             KeyCode::Char('p') => {
                 self.popup = None;
+                if let (Some(collector), Some(kind)) = (&self.ux_telemetry, recovery_kind) {
+                    collector.record_auth_recovery_action(
+                        kind,
+                        AuthRecoveryAction::SwitchProfile,
+                        true,
+                    );
+                }
                 Some(Action::OpenProfileSwitcher)
             }
             // Open create profile dialog
             KeyCode::Char('n') => {
                 self.popup = None;
+                if let (Some(collector), Some(kind)) = (&self.ux_telemetry, recovery_kind) {
+                    collector.record_auth_recovery_action(
+                        kind,
+                        AuthRecoveryAction::CreateProfile,
+                        true,
+                    );
+                }
                 Some(Action::OpenCreateProfileDialog {
                     from_tutorial: false,
                 })
             }
             // Show raw error details
             KeyCode::Char('e') => {
+                if let (Some(collector), Some(kind)) = (&self.ux_telemetry, recovery_kind) {
+                    collector.record_auth_recovery_action(
+                        kind,
+                        AuthRecoveryAction::ViewError,
+                        true,
+                    );
+                }
                 // Keep popup open but switch to error details
                 self.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
                 None
             }
             _ => None,
         }
+    }
+
+    /// Helper to extract AuthRecoveryKind from current popup
+    fn get_auth_recovery_kind(&self) -> Option<AuthRecoveryKind> {
+        if let Some(ref popup) = self.popup {
+            if let PopupType::AuthRecovery { kind } = popup.kind.clone() {
+                return Some(kind);
+            }
+        }
+        None
     }
 }
