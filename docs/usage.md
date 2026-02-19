@@ -262,6 +262,40 @@ To ensure tests are stable and not influenced by a developer's local environment
 - **Live Tests**: Tests that require a real Splunk server (run via `make test-live`) may explicitly enable dotenv loading or rely on environment variables. They should be configured via `.env.test` which is also protected by the secret-commit guard.
 - **Validation**: Regression tests prove that local `.env` values are ignored during standard test runs.
 
+### Live Test Policy
+
+Live tests require a real Splunk server and are controlled by `LIVE_TESTS_MODE`:
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `required` | Fail if env/server unavailable | CI pipelines (default) |
+| `optional` | Skip with warning if unavailable | Local development |
+| `skip` | Explicit bypass | Emergency situations |
+
+**CI Behavior:**
+
+`make ci` uses `LIVE_TESTS_MODE=required` by default. This means:
+- If `.env.test` is missing or incomplete → CI **fails** with clear error
+- If Splunk server is unreachable → CI **fails** with clear error
+- Tests run and pass → CI succeeds
+
+**Local Development:**
+
+For local development without a Splunk server:
+
+```bash
+# Skip live tests locally
+LIVE_TESTS_MODE=optional make test-live
+
+# Or set in your shell
+export LIVE_TESTS_MODE=optional
+make ci
+```
+
+**Backwards Compatibility:**
+
+`SKIP_LIVE_TESTS=1` is still supported as an alias for `LIVE_TESTS_MODE=skip`. In `required` mode (CI), this will fail with an error directing you to use the new modes instead.
+
 ---
 
 ## Diagnostics

@@ -14,6 +14,9 @@ INSTALL_DIR ?= $(HOME)/.local/bin
 # Build profile: 'release' (default) or 'ci' (faster, less optimized)
 PROFILE ?= release
 
+# Live tests mode: 'required' (CI default), 'optional' (local dev), 'skip' (explicit bypass)
+LIVE_TESTS_MODE ?= required
+
 # Map profile to target directory name
 ifeq ($(PROFILE),release)
   TARGET_DIR := release
@@ -102,13 +105,37 @@ test-chaos:
 	@echo "  ✓ Chaos tests complete"
 
 # Run live tests (requires a reachable Splunk server configured via env / .env.test)
+# Mode controlled by LIVE_TESTS_MODE: required|optional|skip
+# - required: Fail if env/server unavailable (CI default)
+# - optional: Skip with warning if unavailable (local dev)
+# - skip: Explicit bypass (same as legacy SKIP_LIVE_TESTS=1)
 test-live:
-	@if [ "$$SKIP_LIVE_TESTS" = "1" ]; then \
-		echo "Skipping live tests (SKIP_LIVE_TESTS=1)"; \
-	else \
-		cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored; \
-		cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored; \
-	fi
+	@echo "→ Running live tests (mode: $(LIVE_TESTS_MODE))..."
+	@mode="$(LIVE_TESTS_MODE)"; \
+	if [ "$$SKIP_LIVE_TESTS" = "1" ]; then \
+		mode="skip"; \
+	fi; \
+	case "$$mode" in \
+		skip) \
+			echo "  $(YELLOW)Skipping live tests (LIVE_TESTS_MODE=skip)$(NC)"; \
+			;; \
+		*) \
+			./scripts/validate-live-test-env.sh "$$mode"; \
+			code=$$?; \
+			if [ $$code -eq 2 ]; then \
+				echo "  $(YELLOW)Live tests skipped (optional mode)$(NC)"; \
+			elif [ $$code -eq 1 ]; then \
+				echo ""; \
+				echo "✗ Live tests failed: environment not configured for required mode"; \
+				exit 1; \
+			else \
+				echo "  Environment validated, running tests..."; \
+				cargo test -p splunk-client --test live_tests --all-features --locked -- --ignored && \
+				cargo test -p splunk-cli --test live_tests --all-features --locked -- --ignored; \
+			fi \
+			;; \
+	esac
+	@echo "  ✓ Live tests complete"
 
 # Manual live server test script
 test-live-manual:
@@ -186,7 +213,7 @@ ci:
 	$(MAKE) lint                 || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
 	$(MAKE) type-check           || { echo ""; echo "✗ CI failed at: type-check"; exit 1; }; \
 	$(MAKE) test                 || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
-	$(MAKE) test-live            || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
+	LIVE_TESTS_MODE=required $(MAKE) test-live || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
 	$(MAKE) release PROFILE=ci   || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
 	$(MAKE) _lint-docs-check     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }; \
 	$(MAKE) examples-test        || { echo ""; echo "✗ CI failed at: examples-test"; exit 1; }
@@ -218,7 +245,7 @@ help:
 	@echo "  make test-unit        - Run unit tests (lib and bins)"
 	@echo "  make test-integration - Run integration tests"
 	@echo "  make test-chaos       - Run chaos engineering tests"
-	@echo "  make test-live        - Run live tests (set SKIP_LIVE_TESTS=1 to skip)"
+	@echo "  make test-live        - Run live tests (LIVE_TESTS_MODE=required|optional|skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
 	@echo "  make bench            - Run all benchmarks"
 	@echo "  make bench-client     - Run client crate benchmarks"
