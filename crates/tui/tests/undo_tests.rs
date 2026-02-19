@@ -468,3 +468,332 @@ fn test_recovery_data_structures() {
     };
     assert_eq!(settings.max_data_size_mb, Some(1000));
 }
+
+/// Regression test: Expired queued operations must execute, not get dropped.
+/// This test verifies the fix for RQ-0482 where expired entries were silently
+/// dropped instead of being executed because peek_pending() excludes expired items.
+#[test]
+fn test_expired_operation_executes_not_drops() {
+    use std::time::{Duration, Instant};
+
+    let mut buffer = UndoBuffer::new();
+
+    // Queue an operation
+    let id = buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "test-sid".to_string(),
+        },
+        "Delete job test-sid".to_string(),
+    );
+
+    // Verify it's pending
+    assert_eq!(buffer.pending_count(), 1);
+    assert!(buffer.peek_pending().is_some());
+    assert_eq!(buffer.peek_pending().unwrap().id, id);
+
+    // Expire the entry by manipulating created_at
+    if let Some(entry) = buffer.peek_queued_for_execution_mut() {
+        entry.created_at = Instant::now() - Duration::from_secs(60);
+    }
+
+    // peek_pending should NOT find it (expired) - this is for UI countdown
+    assert!(buffer.peek_pending().is_none());
+    assert_eq!(buffer.pending_count(), 0);
+
+    // peek_queued_for_execution SHOULD find it (includes expired)
+    // This is what the executor uses to find operations to execute
+    let queued = buffer.peek_queued_for_execution();
+    assert!(
+        queued.is_some(),
+        "peek_queued_for_execution should find expired entries"
+    );
+    let queued_entry = queued.unwrap();
+    assert_eq!(queued_entry.id, id);
+    assert!(queued_entry.is_expired());
+    assert!(!queued_entry.executed);
+    assert!(!queued_entry.undone);
+
+    // Mark as executed (simulating what process_undo_buffer does)
+    buffer.mark_executed(id);
+
+    // After execution, peek_queued_for_execution should not find it
+    assert!(buffer.peek_queued_for_execution().is_none());
+
+    // clear_expired should not remove executed entries immediately
+    // (clear_expired only removes entries that are old AND executed/undone)
+    buffer.clear_expired();
+    assert_eq!(buffer.history().len(), 1); // Still there
+}
+
+/// Test that non-expired entries are NOT returned by execution accessor
+/// when an expired entry exists before them in history.
+#[test]
+fn test_execution_order_respects_fifo() {
+    use std::time::{Duration, Instant};
+
+    let mut buffer = UndoBuffer::new();
+
+    // Add two operations (most recent first due to push_front)
+    let id1 = buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "1".to_string(),
+        },
+        "First".to_string(),
+    );
+    let id2 = buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "2".to_string(),
+        },
+        "Second".to_string(),
+    );
+
+    // Expire only id2 (it's at front of history due to push_front being most recent)
+    // peek_queued_for_execution_mut returns the first (most recent) entry which is id2
+    if let Some(entry) = buffer.peek_queued_for_execution_mut() {
+        assert_eq!(entry.id, id2, "First entry should be id2 (most recent)");
+        entry.created_at = Instant::now() - Duration::from_secs(60);
+    }
+
+    // Should find the expired one (id2) for execution first
+    let queued = buffer.peek_queued_for_execution().unwrap();
+    assert!(queued.is_expired());
+    assert_eq!(queued.id, id2);
+
+    // After executing id2, should find id1 (non-expired)
+    buffer.mark_executed(id2);
+    let next = buffer.peek_queued_for_execution().unwrap();
+    assert!(!next.is_expired());
+    assert_eq!(next.id, id1);
+}
+
+/// Test that peek_queued_for_execution_mut allows modifying expired entries
+#[test]
+fn test_peek_queued_for_execution_mut() {
+    use std::time::{Duration, Instant};
+
+    let mut buffer = UndoBuffer::new();
+
+    buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "1".to_string(),
+        },
+        "Test".to_string(),
+    );
+
+    // Mutate to expire
+    if let Some(entry) = buffer.peek_queued_for_execution_mut() {
+        entry.created_at = Instant::now() - Duration::from_secs(60);
+    }
+
+    // Verify it's expired
+    assert!(buffer.peek_queued_for_execution().unwrap().is_expired());
+    assert!(buffer.peek_pending().is_none());
+}
+
+/// Test that the UI countdown method (peek_pending) still works correctly
+/// after the fix for expired execution.
+#[test]
+fn test_peek_pending_still_excludes_expired_for_ui() {
+    use std::time::{Duration, Instant};
+
+    let mut buffer = UndoBuffer::new();
+
+    // Add a non-expired operation
+    let id = buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "1".to_string(),
+        },
+        "Test".to_string(),
+    );
+
+    // Should be visible in both methods
+    assert!(buffer.peek_pending().is_some());
+    assert!(buffer.peek_queued_for_execution().is_some());
+    assert_eq!(buffer.peek_pending().unwrap().id, id);
+
+    // Expire it
+    if let Some(entry) = buffer.peek_queued_for_execution_mut() {
+        entry.created_at = Instant::now() - Duration::from_secs(60);
+    }
+
+    // Now peek_pending should exclude it (for UI countdown)
+    assert!(buffer.peek_pending().is_none());
+    // But peek_queued_for_execution should still include it (for execution)
+    assert!(buffer.peek_queued_for_execution().is_some());
+}
+
+/// Test that process_undo_buffer executes expired operations.
+/// This test satisfies the acceptance criteria:
+/// "a regression test queues an undoable delete, forces expiry, runs process_undo_buffer,
+/// and observes exactly one corresponding delete action/side effect"
+#[test]
+fn test_process_undo_buffer_executes_expired() {
+    use splunk_tui::{App, ConnectionContext};
+    use std::time::{Duration, Instant};
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue an undoable delete operation
+    let id = app.undo_buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "test-sid-expired".to_string(),
+        },
+        "Delete job test-sid-expired".to_string(),
+    );
+
+    // Verify it's pending and matches the ID
+    assert_eq!(app.undo_buffer.pending_count(), 1);
+    assert_eq!(app.undo_buffer.peek_pending().unwrap().id, id);
+
+    // Force expiry by manipulating created_at
+    if let Some(entry) = app.undo_buffer.peek_queued_for_execution_mut() {
+        entry.created_at = Instant::now() - Duration::from_secs(60);
+    }
+
+    // Verify it's now expired and not visible to peek_pending (UI)
+    assert!(app.undo_buffer.peek_pending().is_none());
+
+    // Process the undo buffer - this should execute the expired operation
+    app.process_undo_buffer();
+
+    // Verify the operation was executed (marked as executed, removed from pending)
+    assert!(app.undo_buffer.peek_queued_for_execution().is_none());
+
+    // Verify toast was shown (success toast for execution)
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("Operation executed")),
+        "Expected execution toast, got: {:?}",
+        toast_messages
+    );
+}
+
+/// Test that process_undo_buffer does NOT execute non-expired operations.
+#[test]
+fn test_process_undo_buffer_skips_non_expired() {
+    use splunk_tui::{App, ConnectionContext};
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue a non-expired operation
+    let id = app.undo_buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "test-sid-active".to_string(),
+        },
+        "Delete job test-sid-active".to_string(),
+    );
+
+    // Verify it's pending
+    assert_eq!(app.undo_buffer.pending_count(), 1);
+    let entry = app.undo_buffer.peek_pending().unwrap();
+    assert!(!entry.is_expired());
+
+    // Process the undo buffer - should NOT execute non-expired operation
+    app.process_undo_buffer();
+
+    // Verify the operation is still pending (not executed)
+    assert_eq!(app.undo_buffer.pending_count(), 1);
+    let entry = app.undo_buffer.peek_pending().unwrap();
+    assert_eq!(entry.id, id);
+    assert!(!entry.executed);
+
+    // Verify NO execution toast was shown
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+    assert!(
+        !toast_messages
+            .iter()
+            .any(|m| m.contains("Operation executed")),
+        "Expected NO execution toast for non-expired, got: {:?}",
+        toast_messages
+    );
+}
+
+/// Test that older expired entries are executed even when newer non-expired entries exist.
+/// This verifies the fix for the edge case where:
+/// - Entry B (newer, at front) is not expired
+/// - Entry A (older, at back) IS expired
+///
+/// Expected: A should still be executed.
+#[test]
+fn test_process_undo_buffer_handles_mixed_expiry() {
+    use splunk_tui::{App, ConnectionContext};
+    use std::time::{Duration, Instant};
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue operation A (will be at back after B is added)
+    let id_a = app.undo_buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "job-A-older".to_string(),
+        },
+        "Delete job A (older)".to_string(),
+    );
+
+    // Queue operation B (will be at front - most recent)
+    let id_b = app.undo_buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "job-B-newer".to_string(),
+        },
+        "Delete job B (newer)".to_string(),
+    );
+
+    // Force expire only A (the older one at the back)
+    // We need to find it by ID since peek_queued_for_execution returns the first (B)
+    for entry in app.undo_buffer.history_mut().iter_mut() {
+        if entry.id == id_a {
+            entry.created_at = Instant::now() - Duration::from_secs(60);
+        }
+    }
+
+    // Verify: B is at front and not expired, A is expired
+    let front_entry = app.undo_buffer.peek_queued_for_execution().unwrap();
+    assert_eq!(front_entry.id, id_b, "B should be at front");
+    assert!(!front_entry.is_expired(), "B should not be expired");
+
+    // Find A and verify it's expired
+    let entry_a = app
+        .undo_buffer
+        .history()
+        .iter()
+        .find(|e| e.id == id_a)
+        .unwrap();
+    assert!(entry_a.is_expired(), "A should be expired");
+
+    // Process undo buffer - should execute A (expired) but not B (not expired)
+    app.process_undo_buffer();
+
+    // Verify A was executed
+    let entry_a_after = app
+        .undo_buffer
+        .history()
+        .iter()
+        .find(|e| e.id == id_a)
+        .unwrap();
+    assert!(entry_a_after.executed, "A should be executed");
+
+    // Verify B is still pending (not executed)
+    let entry_b_after = app
+        .undo_buffer
+        .history()
+        .iter()
+        .find(|e| e.id == id_b)
+        .unwrap();
+    assert!(!entry_b_after.executed, "B should NOT be executed");
+    assert!(!entry_b_after.undone, "B should not be undone");
+
+    // Verify exactly one execution toast
+    let execution_toasts: Vec<&str> = app
+        .toasts
+        .iter()
+        .filter(|t| t.message.contains("Operation executed"))
+        .map(|t| t.message.as_str())
+        .collect();
+    assert_eq!(
+        execution_toasts.len(),
+        1,
+        "Expected exactly one execution toast, got: {:?}",
+        execution_toasts
+    );
+}

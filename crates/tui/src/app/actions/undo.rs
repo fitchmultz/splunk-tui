@@ -281,41 +281,38 @@ impl App {
 
     /// Process the undo buffer: execute expired operations, update toasts.
     pub fn process_undo_buffer(&mut self) {
-        // Execute any expired pending operations
         let mut operations_to_execute: Vec<(uuid::Uuid, UndoableOperation, String)> = Vec::new();
 
-        // Collect expired operations first to avoid borrow issues
-        while let Some(entry) = self.undo_buffer.peek_pending() {
-            if entry.is_expired() {
-                let id = entry.id;
-                let operation = entry.operation.clone();
-                let description = entry.description.clone();
-                operations_to_execute.push((id, operation, description));
-                // Mark as executed in the buffer
-                self.undo_buffer.mark_executed(id);
-            } else {
-                break;
+        // Collect ALL expired entries (not just until first non-expired)
+        // Iterating history directly to avoid blocking older expired entries
+        // behind newer non-expired ones (push_front adds newest at front)
+        for entry in self.undo_buffer.history().iter() {
+            if !entry.executed && !entry.undone && entry.is_expired() {
+                operations_to_execute.push((
+                    entry.id,
+                    entry.operation.clone(),
+                    entry.description.clone(),
+                ));
             }
         }
 
-        // Execute collected operations
+        // Execute and mark all expired operations
         for (id, operation, description) in operations_to_execute {
             self.execute_undoable_operation(operation);
-            // Show completion toast
             self.toasts.push(Toast::success(format!(
                 "Operation executed: {}",
                 description
             )));
-            // Clear the toast ID if this was the tracked operation
             if self.undo_toast_id == Some(id) {
                 self.undo_toast_id = None;
             }
+            self.undo_buffer.mark_executed(id);
         }
 
         // Clear fully expired entries (executed + old)
         self.undo_buffer.clear_expired();
 
-        // Update undo countdown toast if active
+        // Update undo countdown toast using peek_pending (non-expired only for UI)
         if let Some(entry) = self.undo_buffer.peek_pending() {
             let remaining = entry.remaining_secs();
             // Find and update the undo toast using the tracked ID

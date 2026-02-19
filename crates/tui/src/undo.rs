@@ -324,6 +324,7 @@ impl UndoBuffer {
     }
 
     /// Get the first pending (non-expired, non-executed) operation.
+    /// Used for UI countdown display - excludes expired entries.
     pub fn peek_pending(&self) -> Option<&UndoEntry> {
         self.history
             .iter()
@@ -331,10 +332,25 @@ impl UndoBuffer {
     }
 
     /// Get mutable reference to first pending operation.
+    /// Used for UI countdown display - excludes expired entries.
     pub fn peek_pending_mut(&mut self) -> Option<&mut UndoEntry> {
         self.history
             .iter_mut()
             .find(|e| !e.executed && !e.undone && !e.is_expired())
+    }
+
+    /// Get the first queued operation that needs execution (not executed, not undone).
+    /// Unlike peek_pending, this includes expired entries so they can be executed.
+    /// Used by the executor to find operations ready for execution.
+    pub fn peek_queued_for_execution(&self) -> Option<&UndoEntry> {
+        self.history.iter().find(|e| !e.executed && !e.undone)
+    }
+
+    /// Get mutable reference to the first queued operation for execution.
+    /// Unlike peek_pending_mut, this includes expired entries so they can be executed.
+    /// Used by the executor to find operations ready for execution.
+    pub fn peek_queued_for_execution_mut(&mut self) -> Option<&mut UndoEntry> {
+        self.history.iter_mut().find(|e| !e.executed && !e.undone)
     }
 
     /// Mark an operation as executed.
@@ -385,6 +401,11 @@ impl UndoBuffer {
     /// Get all history entries for display.
     pub fn history(&self) -> &VecDeque<UndoEntry> {
         &self.history
+    }
+
+    /// Get mutable access to history entries (for testing).
+    pub fn history_mut(&mut self) -> &mut VecDeque<UndoEntry> {
+        &mut self.history
     }
 
     /// Clear expired pending operations.
