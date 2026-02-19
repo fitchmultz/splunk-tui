@@ -146,20 +146,24 @@ async fn test_cache_invalidate_all() {
 #[tokio::test]
 async fn test_cache_ttl_expiration() {
     use splunk_client::client::cache::{CacheEntry, CacheKey};
+    use std::time::Instant;
 
     let cache = ResponseCache::new();
     let key = CacheKey::new("https://example.com/api".to_string(), vec![]);
-    // Very short TTL for testing
-    let entry = CacheEntry::new(b"test".to_vec(), 200, vec![], Duration::from_millis(10));
+
+    // Entry with short TTL created at base_time
+    let base_time = Instant::now();
+    let mut entry = CacheEntry::new(b"test".to_vec(), 200, vec![], Duration::from_millis(10));
+    entry.cached_at = base_time;
 
     cache.insert(key.clone(), entry).await;
-    assert!(cache.get(&key).await.is_some());
 
-    // Wait for expiration
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    // Check at base_time - should not be expired
+    assert!(cache.get_at(&key, base_time).await.is_some());
 
-    // Should be expired now
-    assert!(cache.get(&key).await.is_none());
+    // Check after TTL has passed - should be expired
+    let after_expiry = base_time + Duration::from_millis(50);
+    assert!(cache.get_at(&key, after_expiry).await.is_none());
 }
 
 #[test]
@@ -358,18 +362,20 @@ fn test_cache_stats_display() {
 #[test]
 fn test_cache_entry_expiration_check() {
     use splunk_client::client::cache::CacheEntry;
+    use std::time::Instant;
 
-    // Entry with short TTL
-    let entry = CacheEntry::new(b"test".to_vec(), 200, vec![], Duration::from_millis(1));
+    let base_time = Instant::now();
 
-    // Should not be expired immediately
-    assert!(!entry.is_expired());
+    // Entry with short TTL, cached_at set to base_time
+    let mut entry = CacheEntry::new(b"test".to_vec(), 200, vec![], Duration::from_millis(1));
+    entry.cached_at = base_time;
 
-    // Wait for expiration
-    std::thread::sleep(Duration::from_millis(10));
+    // Not expired at base_time
+    assert!(!entry.is_expired_at(base_time));
 
-    // Should be expired now
-    assert!(entry.is_expired());
+    // Expired after TTL
+    let later = base_time + Duration::from_millis(10);
+    assert!(entry.is_expired_at(later));
 }
 
 #[test]

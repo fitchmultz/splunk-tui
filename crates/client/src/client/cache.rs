@@ -65,9 +65,14 @@ pub struct CacheEntry {
 }
 
 impl CacheEntry {
-    /// Check if this cache entry has expired.
+    /// Check if this cache entry has expired relative to a given reference time.
+    pub fn is_expired_at(&self, now: Instant) -> bool {
+        now.duration_since(self.cached_at) > self.ttl
+    }
+
+    /// Check if this cache entry has expired (uses wall-clock time).
     pub fn is_expired(&self) -> bool {
-        self.cached_at.elapsed() > self.ttl
+        self.is_expired_at(Instant::now())
     }
 
     /// Create a cache entry from an HTTP response.
@@ -313,13 +318,18 @@ impl ResponseCache {
 
     /// Get an entry from the cache.
     pub async fn get(&self, key: &CacheKey) -> Option<CacheEntry> {
+        self.get_at(key, Instant::now()).await
+    }
+
+    /// Get an entry from the cache, checking expiration relative to a given time.
+    pub async fn get_at(&self, key: &CacheKey, now: Instant) -> Option<CacheEntry> {
         if !self.enabled {
             return None;
         }
 
         match self.inner.get(key).await {
             Some(entry) => {
-                if entry.is_expired() {
+                if entry.is_expired_at(now) {
                     trace!("Cache entry expired for key: {}", key.url);
                     self.inner.invalidate(key).await;
                     self.record_miss();

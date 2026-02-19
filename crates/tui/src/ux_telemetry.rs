@@ -155,22 +155,19 @@ impl NavigationHistory {
         Self::default()
     }
 
-    /// Record a navigation and return whether it's a reversal.
-    /// A reversal is when user navigates back to a screen they were just on.
-    pub fn record_and_check_reversal(
+    /// Record a navigation and check for reversal, using provided time source.
+    pub fn record_and_check_reversal_at(
         &mut self,
         new_screen: ScreenLabel,
+        now: Instant,
     ) -> Option<(ScreenLabel, ScreenLabel)> {
-        let now = Instant::now();
-
-        // Check for reversal BEFORE updating history
+        // Same logic as record_and_check_reversal but using `now` parameter
+        // instead of Instant::now()
         let reversal = if let Some((prev_screen, prev_time)) = self.prev {
-            // Check if this is an A→B→A pattern within threshold
             if let Some(prev_prev_screen) = self.prev_prev {
                 if new_screen == prev_prev_screen {
                     let elapsed = now.duration_since(prev_time);
                     if elapsed.as_millis() <= NAVIGATION_REVERSAL_THRESHOLD_MS {
-                        // This is a reversal: A → B → A within 2 seconds
                         Some((prev_screen, new_screen))
                     } else {
                         None
@@ -185,13 +182,20 @@ impl NavigationHistory {
             None
         };
 
-        // Update history after checking (so we track the actual navigation)
         if let Some((prev_screen, _)) = self.prev {
             self.prev_prev = Some(prev_screen);
         }
         self.prev = Some((new_screen, now));
 
         reversal
+    }
+
+    /// Record a navigation and return whether it's a reversal (wall-clock time).
+    pub fn record_and_check_reversal(
+        &mut self,
+        new_screen: ScreenLabel,
+    ) -> Option<(ScreenLabel, ScreenLabel)> {
+        self.record_and_check_reversal_at(new_screen, Instant::now())
     }
 }
 

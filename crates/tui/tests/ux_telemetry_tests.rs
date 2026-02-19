@@ -4,26 +4,24 @@ use splunk_tui::error_details::AuthRecoveryKind;
 use splunk_tui::ux_telemetry::{
     AuthRecoveryAction, NavigationHistory, ScreenLabel, UxTelemetryCollector,
 };
-use std::thread;
-use std::time::Duration;
 
 #[test]
 fn test_navigation_reversal_detects_quick_back() {
+    use std::time::{Duration, Instant};
+
     let mut history = NavigationHistory::new();
+    let base_time = Instant::now();
 
-    // Navigate A → B → A quickly
-    assert!(
-        history
-            .record_and_check_reversal(ScreenLabel::Search)
-            .is_none()
-    );
-    assert!(
-        history
-            .record_and_check_reversal(ScreenLabel::Indexes)
-            .is_none()
+    // Navigate A → B → A quickly (within threshold)
+    history.record_and_check_reversal_at(ScreenLabel::Search, base_time);
+    history
+        .record_and_check_reversal_at(ScreenLabel::Indexes, base_time + Duration::from_millis(100));
+
+    let result = history.record_and_check_reversal_at(
+        ScreenLabel::Search,
+        base_time + Duration::from_millis(500), // Well within 2s threshold
     );
 
-    let result = history.record_and_check_reversal(ScreenLabel::Search);
     assert!(result.is_some());
     let (from, to) = result.unwrap();
     assert_eq!(from, ScreenLabel::Indexes);
@@ -32,15 +30,20 @@ fn test_navigation_reversal_detects_quick_back() {
 
 #[test]
 fn test_navigation_no_reversal_after_delay() {
+    use std::time::{Duration, Instant};
+
     let mut history = NavigationHistory::new();
+    let base_time = Instant::now();
 
-    history.record_and_check_reversal(ScreenLabel::Search);
-    history.record_and_check_reversal(ScreenLabel::Indexes);
+    // Navigate: A → B
+    history.record_and_check_reversal_at(ScreenLabel::Search, base_time);
+    history
+        .record_and_check_reversal_at(ScreenLabel::Indexes, base_time + Duration::from_millis(100));
 
-    // Wait longer than threshold
-    thread::sleep(Duration::from_millis(2100));
+    // Navigate back to A after threshold (2+ seconds later)
+    let after_threshold = base_time + Duration::from_millis(2200);
+    let result = history.record_and_check_reversal_at(ScreenLabel::Search, after_threshold);
 
-    let result = history.record_and_check_reversal(ScreenLabel::Search);
     assert!(
         result.is_none(),
         "Should not detect reversal after 2 second threshold"

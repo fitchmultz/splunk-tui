@@ -128,7 +128,8 @@ pub const DEFAULT_INTERNAL_LOGS_EARLIEST_TIME: &str = "-15m";
 // Test Timing Constants
 // =============================================================================
 
-/// Delay duration for migration tests to ensure different timestamps (milliseconds).
+/// Minimum delay to ensure different Unix timestamps for backup files.
+/// Unix timestamps have 1-second granularity, so we need >1s delay.
 pub const MIGRATION_DELAY_MS: u64 = 1100;
 
 // =============================================================================
