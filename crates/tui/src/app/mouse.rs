@@ -71,48 +71,324 @@ impl App {
             return None;
         }
         match self.current_screen {
-            CurrentScreen::Jobs => {
-                // If filtering is active, the table area is pushed down by 3 rows
-                let filter_offset = if self.is_filtering || self.search_filter.is_some() {
-                    3
-                } else {
-                    0
-                };
+            // PlainList screens (ListState, no header)
+            CurrentScreen::Apps => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.apps_state.offset(),
+                    self.apps.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.apps_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Users => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.users_state.offset(),
+                    self.users.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.users_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Roles => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.roles_state.offset(),
+                    self.roles.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.roles_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Indexes => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.indexes_state.offset(),
+                    self.indexes.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.indexes_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::SavedSearches => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.saved_searches_state.offset(),
+                    self.saved_searches.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.saved_searches_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Macros => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.macros_state.offset(),
+                    self.macros.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.macros_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::FiredAlerts => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.fired_alerts_state.offset(),
+                    self.fired_alerts.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.fired_alerts_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Dashboards => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.dashboards_state.offset(),
+                    self.dashboards.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.dashboards_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::DataModels => {
+                if let Some(index) = calculate_list_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.data_models_state.offset(),
+                    self.data_models.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.data_models_state.select(Some(index));
+                }
+                None
+            }
 
-                // Jobs table has a header row at content start + 1
-                // Data starts at content start + 2
-                let data_start = HEADER_HEIGHT + filter_offset + 2;
-                if row >= data_start {
-                    let relative_row = (row - data_start) as usize;
-                    let offset = self.jobs_state.offset();
-                    let index = offset + relative_row;
+            // TableWithHeader screens (TableState, has header row)
+            CurrentScreen::Jobs => self.handle_jobs_click(row),
+            CurrentScreen::Inputs => {
+                if let Some(index) = calculate_table_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.inputs_state.offset(),
+                    self.inputs.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.inputs_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::SearchPeers => {
+                if let Some(index) = calculate_table_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.search_peers_state.offset(),
+                    self.search_peers.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.search_peers_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Forwarders => {
+                if let Some(index) = calculate_table_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.forwarders_state.offset(),
+                    self.forwarders.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.forwarders_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Lookups => {
+                if let Some(index) = calculate_table_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.lookups_state.offset(),
+                    self.lookups.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.lookups_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::Audit => {
+                if let Some(index) = calculate_table_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.audit_state.offset(),
+                    self.audit_events.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.audit_state.select(Some(index));
+                }
+                None
+            }
+            CurrentScreen::InternalLogs => {
+                if let Some(index) = calculate_table_click_index(
+                    row,
+                    HEADER_HEIGHT + 1,
+                    self.internal_logs_state.offset(),
+                    self.internal_logs.as_deref().map(|v| v.len()).unwrap_or(0),
+                ) {
+                    self.internal_logs_state.select(Some(index));
+                }
+                None
+            }
 
-                    if index < self.filtered_jobs_len() {
-                        let already_selected = self.jobs_state.selected() == Some(index);
-                        self.jobs_state.select(Some(index));
-                        if already_selected {
-                            return Some(Action::InspectJob);
+            // Multi-view screens (need view_mode check)
+            CurrentScreen::Cluster => {
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
+                    if let Some(index) = calculate_table_click_index(
+                        row,
+                        HEADER_HEIGHT + 1,
+                        self.cluster_peers_state.offset(),
+                        self.cluster_peers.as_deref().map(|v| v.len()).unwrap_or(0),
+                    ) {
+                        self.cluster_peers_state.select(Some(index));
+                    }
+                }
+                None
+            }
+            CurrentScreen::WorkloadManagement => {
+                match self.workload_view_mode {
+                    crate::app::state::WorkloadViewMode::Pools => {
+                        if let Some(index) = calculate_table_click_index(
+                            row,
+                            HEADER_HEIGHT + 1,
+                            self.workload_pools_state.offset(),
+                            self.workload_pools.as_deref().map(|v| v.len()).unwrap_or(0),
+                        ) {
+                            self.workload_pools_state.select(Some(index));
+                        }
+                    }
+                    crate::app::state::WorkloadViewMode::Rules => {
+                        if let Some(index) = calculate_table_click_index(
+                            row,
+                            HEADER_HEIGHT + 1,
+                            self.workload_rules_state.offset(),
+                            self.workload_rules.as_deref().map(|v| v.len()).unwrap_or(0),
+                        ) {
+                            self.workload_rules_state.select(Some(index));
                         }
                     }
                 }
+                None
             }
-            CurrentScreen::Indexes => {
-                // Indexes list starts at HEADER_HEIGHT + 1 (no table header)
-                let data_start = HEADER_HEIGHT + 1;
-                if row >= data_start {
-                    let relative_row = (row - data_start) as usize;
-                    let offset = self.indexes_state.offset();
-                    let index = offset + relative_row;
-
-                    if let Some(indexes) = &self.indexes
-                        && index < indexes.len()
-                    {
-                        self.indexes_state.select(Some(index));
+            CurrentScreen::Shc => {
+                if self.shc_view_mode == crate::app::state::ShcViewMode::Members {
+                    if let Some(index) = calculate_table_click_index(
+                        row,
+                        HEADER_HEIGHT + 1,
+                        self.shc_members_state.offset(),
+                        self.shc_members.as_deref().map(|v| v.len()).unwrap_or(0),
+                    ) {
+                        self.shc_members_state.select(Some(index));
                     }
                 }
+                None
             }
-            _ => {}
+            CurrentScreen::Configs => {
+                match self.config_view_mode {
+                    crate::ui::screens::configs::ConfigViewMode::FileList => {
+                        if let Some(index) = calculate_table_click_index(
+                            row,
+                            HEADER_HEIGHT + 1,
+                            self.config_files_state.offset(),
+                            self.config_files.as_deref().map(|v| v.len()).unwrap_or(0),
+                        ) {
+                            self.config_files_state.select(Some(index));
+                        }
+                    }
+                    crate::ui::screens::configs::ConfigViewMode::StanzaList
+                    | crate::ui::screens::configs::ConfigViewMode::StanzaDetail => {
+                        let (offset, total) = if self.config_search_mode {
+                            (0, self.filtered_stanza_indices.len())
+                        } else {
+                            (
+                                self.config_stanzas_state.offset(),
+                                self.config_stanzas.as_deref().map(|v| v.len()).unwrap_or(0),
+                            )
+                        };
+                        if let Some(index) =
+                            calculate_table_click_index(row, HEADER_HEIGHT + 1, offset, total)
+                        {
+                            self.config_stanzas_state.select(Some(index));
+                        }
+                    }
+                }
+                None
+            }
+
+            // Non-list screens (no mouse selection)
+            _ => None,
         }
+    }
+
+    /// Special handler for Jobs screen (has filter offset).
+    fn handle_jobs_click(&mut self, row: u16) -> Option<Action> {
+        let filter_offset = if self.is_filtering || self.search_filter.is_some() {
+            3
+        } else {
+            0
+        };
+        let header_row = HEADER_HEIGHT + filter_offset + 1;
+        let offset = self.jobs_state.offset();
+        let total = self.filtered_jobs_len();
+
+        if let Some(index) = calculate_table_click_index(row, header_row, offset, total) {
+            let already_selected = self.jobs_state.selected() == Some(index);
+            self.jobs_state.select(Some(index));
+            if already_selected {
+                return Some(Action::InspectJob);
+            }
+        }
+        None
+    }
+}
+
+/// Calculate the data index from a click row for a plain list (no table header).
+/// Returns None if the click is outside the data area.
+fn calculate_list_click_index(
+    click_row: u16,
+    data_start_row: u16,
+    offset: usize,
+    total_items: usize,
+) -> Option<usize> {
+    if click_row < data_start_row {
+        return None;
+    }
+    let relative_row = (click_row - data_start_row) as usize;
+    let index = offset + relative_row;
+    if index < total_items {
+        Some(index)
+    } else {
+        None
+    }
+}
+
+/// Calculate the data index from a click row for a table with a header row.
+/// Data starts one row below the header.
+fn calculate_table_click_index(
+    click_row: u16,
+    header_row: u16,
+    offset: usize,
+    total_items: usize,
+) -> Option<usize> {
+    let data_start = header_row + 1;
+    if click_row < data_start {
+        return None;
+    }
+    let relative_row = (click_row - data_start) as usize;
+    let index = offset + relative_row;
+    if index < total_items {
+        Some(index)
+    } else {
         None
     }
 }
@@ -543,5 +819,253 @@ mod tests {
                 progress, expected_loading_width
             );
         }
+    }
+
+    #[test]
+    fn test_calculate_list_click_index_in_bounds() {
+        assert_eq!(calculate_list_click_index(5, 5, 0, 10), Some(0));
+        assert_eq!(calculate_list_click_index(7, 5, 0, 10), Some(2));
+        assert_eq!(calculate_list_click_index(5, 5, 5, 10), Some(5));
+        assert_eq!(calculate_list_click_index(14, 5, 0, 10), Some(9));
+    }
+
+    #[test]
+    fn test_calculate_list_click_index_out_of_bounds() {
+        assert_eq!(calculate_list_click_index(4, 5, 0, 10), None);
+        assert_eq!(calculate_list_click_index(20, 5, 0, 10), None);
+        assert_eq!(calculate_list_click_index(5, 5, 10, 10), None);
+    }
+
+    #[test]
+    fn test_calculate_table_click_index_in_bounds() {
+        assert_eq!(calculate_table_click_index(6, 5, 0, 10), Some(0));
+        assert_eq!(calculate_table_click_index(8, 5, 0, 10), Some(2));
+        assert_eq!(calculate_table_click_index(6, 5, 5, 10), Some(5));
+        assert_eq!(calculate_table_click_index(15, 5, 0, 10), Some(9));
+    }
+
+    #[test]
+    fn test_calculate_table_click_index_header_click() {
+        assert_eq!(calculate_table_click_index(5, 5, 0, 10), None);
+        assert_eq!(calculate_table_click_index(4, 5, 0, 10), None);
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_apps() {
+        use splunk_client::models::App as SplunkApp;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Apps;
+        app.apps = Some(vec![
+            SplunkApp {
+                name: "app1".to_string(),
+                label: Some("App One".to_string()),
+                version: Some("1.0".to_string()),
+                is_configured: None,
+                is_visible: None,
+                disabled: false,
+                description: None,
+                author: None,
+            },
+            SplunkApp {
+                name: "app2".to_string(),
+                label: Some("App Two".to_string()),
+                version: Some("2.0".to_string()),
+                is_configured: None,
+                is_visible: None,
+                disabled: false,
+                description: None,
+                author: None,
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 2,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(action.is_none());
+        assert_eq!(app.apps_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_inputs() {
+        use splunk_client::models::{Input, InputType};
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Inputs;
+        app.inputs = Some(vec![
+            Input {
+                name: "input1".to_string(),
+                input_type: InputType::Monitor,
+                disabled: false,
+                host: None,
+                source: None,
+                sourcetype: None,
+                connection_host: None,
+                port: None,
+                path: None,
+                blacklist: None,
+                whitelist: None,
+                recursive: None,
+                command: None,
+                interval: None,
+            },
+            Input {
+                name: "input2".to_string(),
+                input_type: InputType::Udp,
+                disabled: false,
+                host: None,
+                source: None,
+                sourcetype: None,
+                connection_host: None,
+                port: None,
+                path: None,
+                blacklist: None,
+                whitelist: None,
+                recursive: None,
+                command: None,
+                interval: None,
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(action.is_none());
+        assert_eq!(app.inputs_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_cluster_peers_view() {
+        use crate::app::state::ClusterViewMode;
+        use splunk_client::models::{ClusterPeer, PeerState, PeerStatus, ReplicationStatus};
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Peers;
+        app.cluster_peers = Some(vec![
+            ClusterPeer {
+                id: "peer1".to_string(),
+                label: Some("Peer 1".to_string()),
+                status: PeerStatus::Up,
+                peer_state: PeerState::Searchable,
+                site: Some("site1".to_string()),
+                guid: "guid-1".to_string(),
+                host: "host-1".to_string(),
+                port: 8080,
+                replication_count: Some(0),
+                replication_status: Some(ReplicationStatus::Complete),
+                bundle_replication_count: None,
+                is_captain: Some(false),
+            },
+            ClusterPeer {
+                id: "peer2".to_string(),
+                label: Some("Peer 2".to_string()),
+                status: PeerStatus::Up,
+                peer_state: PeerState::Searchable,
+                site: Some("site1".to_string()),
+                guid: "guid-2".to_string(),
+                host: "host-2".to_string(),
+                port: 8080,
+                replication_count: Some(0),
+                replication_status: Some(ReplicationStatus::Complete),
+                bundle_replication_count: None,
+                is_captain: Some(false),
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(action.is_none());
+        assert_eq!(app.cluster_peers_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_cluster_summary_view() {
+        use crate::app::state::ClusterViewMode;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Cluster;
+        app.cluster_view_mode = ClusterViewMode::Summary;
+        app.cluster_peers = Some(vec![]);
+        app.cluster_peers_state.select(None);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 2,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(action.is_none());
+        assert!(app.cluster_peers_state.selected().is_none());
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_workload_pools() {
+        use crate::app::state::WorkloadViewMode;
+        use splunk_client::models::WorkloadPool;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::WorkloadManagement;
+        app.workload_view_mode = WorkloadViewMode::Pools;
+        app.workload_pools = Some(vec![
+            WorkloadPool {
+                name: "pool1".to_string(),
+                cpu_weight: None,
+                mem_weight: None,
+                default_pool: None,
+                enabled: None,
+                search_concurrency: None,
+                search_time_range: None,
+                admission_rules_enabled: None,
+                cpu_cores: None,
+                mem_limit: None,
+            },
+            WorkloadPool {
+                name: "pool2".to_string(),
+                cpu_weight: None,
+                mem_weight: None,
+                default_pool: None,
+                enabled: None,
+                search_concurrency: None,
+                search_time_range: None,
+                admission_rules_enabled: None,
+                cpu_cores: None,
+                mem_limit: None,
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(action.is_none());
+        assert_eq!(app.workload_pools_state.selected(), Some(1));
     }
 }
