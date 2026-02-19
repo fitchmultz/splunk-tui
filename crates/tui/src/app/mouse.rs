@@ -121,7 +121,7 @@ impl App {
 mod tests {
     use super::*;
     use crate::ConnectionContext;
-    use crate::app::state::CurrentScreen;
+    use crate::app::state::{CurrentScreen, HEADER_HEIGHT};
     use crossterm::event::{KeyModifiers, MouseButton, MouseEventKind};
 
     #[test]
@@ -230,6 +230,67 @@ mod tests {
         assert_eq!(app.jobs_state.selected(), Some(1));
 
         // Second click on same row should Inspect
+        let action2 = app.handle_mouse(event);
+        assert!(matches!(action2, Some(Action::InspectJob)));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_jobs_with_filter_offset() {
+        use splunk_client::models::SearchJobStatus;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Jobs;
+        app.jobs = Some(vec![
+            SearchJobStatus {
+                sid: "job1".to_string(),
+                is_done: true,
+                is_finalized: true,
+                done_progress: 1.0,
+                run_duration: 1.0,
+                cursor_time: None,
+                scan_count: 0,
+                event_count: 0,
+                result_count: 0,
+                disk_usage: 0,
+                priority: None,
+                label: None,
+            },
+            SearchJobStatus {
+                sid: "job2".to_string(),
+                is_done: true,
+                is_finalized: true,
+                done_progress: 1.0,
+                run_duration: 1.0,
+                cursor_time: None,
+                scan_count: 0,
+                event_count: 0,
+                result_count: 0,
+                disk_usage: 0,
+                priority: None,
+                label: None,
+            },
+        ]);
+        app.rebuild_filtered_indices();
+
+        app.is_filtering = true;
+        app.search_filter = Some("foo".to_string());
+
+        let filter_offset = 3;
+        let data_start = HEADER_HEIGHT + filter_offset + 2;
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: data_start + 1, // Click second row (index 1) after filter offset
+            modifiers: KeyModifiers::empty(),
+        };
+
+        // First click selects the filtered row
+        let action = app.handle_mouse(event);
+        assert!(action.is_none());
+        assert_eq!(app.jobs_state.selected(), Some(1));
+
+        // Second click on the same row should inspect
         let action2 = app.handle_mouse(event);
         assert!(matches!(action2, Some(Action::InspectJob)));
     }

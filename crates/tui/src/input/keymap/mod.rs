@@ -550,6 +550,15 @@ mod tests {
     }
 
     #[test]
+    fn resolves_ctrl_p_opens_command_palette() {
+        let action = resolve_action(CurrentScreen::Search, ctrl_key('p'));
+        assert!(
+            matches!(action, Some(Action::OpenCommandPalette)),
+            "Ctrl+P should open the command palette"
+        );
+    }
+
+    #[test]
     fn macros_footer_hints_include_expected_keys() {
         let hints = footer_hints(CurrentScreen::Macros);
         let hint_keys: Vec<_> = hints.iter().map(|(k, _)| *k).collect();
