@@ -797,3 +797,496 @@ fn test_process_undo_buffer_handles_mixed_expiry() {
         execution_toasts
     );
 }
+
+/// Test that undoing a PENDING DeleteIndex just cancels it (no create action)
+/// This satisfies the acceptance criteria for RQ-0484.
+#[test]
+fn test_undo_pending_delete_index_cancels_not_recreates() {
+    use splunk_tui::undo::{IndexSettings, UndoBuffer, UndoableOperation};
+
+    // Use UndoBuffer directly to avoid needing to intercept actions
+    let mut buffer = UndoBuffer::new();
+
+    // Queue a delete index with recovery data
+    let settings = IndexSettings {
+        max_data_size_mb: Some(500),
+        max_hot_buckets: Some(3),
+        max_warm_db_count: Some(100),
+        frozen_time_period_secs: Some(86400),
+        home_path: None,
+        cold_db_path: None,
+        thawed_path: None,
+        cold_to_frozen_dir: None,
+    };
+
+    let id = buffer.push(
+        UndoableOperation::DeleteIndex {
+            name: "test_idx".to_string(),
+            original_settings: Some(settings),
+        },
+        "Delete index 'test_idx'".to_string(),
+    );
+
+    // Verify the operation is pending and NOT executed
+    let entry = buffer.peek_pending().unwrap();
+    assert!(!entry.executed, "Entry should not be executed yet");
+    assert_eq!(entry.id, id);
+
+    // Undo BEFORE execution
+    let undone_entry = buffer.undo().unwrap();
+
+    // Verify: entry should be marked as undone but NOT executed
+    assert!(undone_entry.undone, "Entry should be marked as undone");
+    assert!(
+        !undone_entry.executed,
+        "Entry should NOT be marked as executed"
+    );
+    assert_eq!(undone_entry.id, id);
+
+    // Verify the operation type is DeleteIndex
+    match undone_entry.operation {
+        UndoableOperation::DeleteIndex {
+            name,
+            original_settings,
+        } => {
+            assert_eq!(name, "test_idx");
+            assert!(
+                original_settings.is_some(),
+                "Recovery data should be present"
+            );
+        }
+        _ => panic!("Expected DeleteIndex operation"),
+    }
+}
+
+/// Test that undoing an EXECUTED DeleteIndex would dispatch CreateIndex action.
+/// This tests the logic flow - the actual action dispatch is tested at the App level.
+#[test]
+fn test_undo_executed_delete_index_has_recovery_data() {
+    use splunk_tui::undo::{IndexSettings, UndoBuffer, UndoableOperation};
+
+    let mut buffer = UndoBuffer::new();
+
+    let settings = IndexSettings {
+        max_data_size_mb: Some(500),
+        max_hot_buckets: Some(3),
+        max_warm_db_count: Some(100),
+        frozen_time_period_secs: Some(86400),
+        home_path: Some("/opt/splunk/var/lib/splunk/testdb/db".to_string()),
+        cold_db_path: None,
+        thawed_path: None,
+        cold_to_frozen_dir: None,
+    };
+
+    // Queue and mark as executed
+    let id = buffer.push(
+        UndoableOperation::DeleteIndex {
+            name: "test_idx".to_string(),
+            original_settings: Some(settings.clone()),
+        },
+        "Delete index 'test_idx'".to_string(),
+    );
+    buffer.mark_executed(id);
+
+    // Verify entry is executed
+    let entry = buffer.history().iter().find(|e| e.id == id).unwrap();
+    assert!(entry.executed, "Entry should be marked as executed");
+
+    // Undo after execution
+    let undone_entry = buffer.undo().unwrap();
+
+    // Verify: entry should have recovery data for recreation
+    assert!(
+        undone_entry.executed,
+        "Entry should still be marked as executed"
+    );
+    assert!(undone_entry.undone, "Entry should be marked as undone");
+
+    match undone_entry.operation {
+        UndoableOperation::DeleteIndex {
+            name,
+            original_settings,
+        } => {
+            assert_eq!(name, "test_idx");
+            let recovered = original_settings.expect("Should have recovery data");
+            assert_eq!(recovered.max_data_size_mb, settings.max_data_size_mb);
+            assert_eq!(recovered.max_hot_buckets, settings.max_hot_buckets);
+            assert_eq!(recovered.home_path, settings.home_path);
+        }
+        _ => panic!("Expected DeleteIndex operation"),
+    }
+}
+
+/// Test that undoing an EXECUTED DeleteUser shows irreversible warning logic.
+/// User recovery is impossible because passwords are not stored.
+#[test]
+fn test_undo_executed_delete_user_has_recovery_data_but_no_password() {
+    use splunk_tui::undo::{UndoBuffer, UndoableOperation, UserRecoveryData};
+
+    let mut buffer = UndoBuffer::new();
+
+    // Queue with recovery data but mark as executed
+    let id = buffer.push(
+        UndoableOperation::DeleteUser {
+            name: "testuser".to_string(),
+            original: Some(UserRecoveryData {
+                roles: vec!["admin".to_string()],
+                realname: Some("Test User".to_string()),
+                email: Some("test@example.com".to_string()),
+                default_app: Some("search".to_string()),
+            }),
+        },
+        "Delete user 'testuser'".to_string(),
+    );
+    buffer.mark_executed(id);
+
+    // Verify entry is executed
+    let entry = buffer.history().iter().find(|e| e.id == id).unwrap();
+    assert!(entry.executed, "Entry should be marked as executed");
+
+    // Undo after execution
+    let undone_entry = buffer.undo().unwrap();
+
+    // Verify: entry has recovery data but password cannot be recovered
+    assert!(undone_entry.executed, "Entry should be marked as executed");
+
+    match undone_entry.operation {
+        UndoableOperation::DeleteUser { name, original } => {
+            assert_eq!(name, "testuser");
+            let data = original.expect("Should have recovery data");
+            // Verify recovery data exists but no password field (it's not stored by design)
+            assert_eq!(data.roles, vec!["admin".to_string()]);
+            assert_eq!(data.realname, Some("Test User".to_string()));
+            // No password field exists in UserRecoveryData - this is the irreversible part
+        }
+        _ => panic!("Expected DeleteUser operation"),
+    }
+}
+
+/// Test that DeleteSavedSearch undo entry has recovery data when executed.
+#[test]
+fn test_undo_executed_delete_saved_search_has_recovery_data() {
+    use splunk_tui::undo::{SavedSearchRecoveryData, UndoBuffer, UndoableOperation};
+
+    let mut buffer = UndoBuffer::new();
+
+    let id = buffer.push(
+        UndoableOperation::DeleteSavedSearch {
+            name: "my_search".to_string(),
+            original: Some(SavedSearchRecoveryData {
+                search: "index=main | stats count".to_string(),
+                description: Some("Count events".to_string()),
+                disabled: false,
+            }),
+        },
+        "Delete saved search 'my_search'".to_string(),
+    );
+    buffer.mark_executed(id);
+
+    // Undo after execution
+    let undone_entry = buffer.undo().unwrap();
+
+    match undone_entry.operation {
+        UndoableOperation::DeleteSavedSearch { name, original } => {
+            assert_eq!(name, "my_search");
+            let data = original.expect("Should have recovery data");
+            assert_eq!(data.search, "index=main | stats count");
+            assert_eq!(data.description, Some("Count events".to_string()));
+            assert!(!data.disabled);
+        }
+        _ => panic!("Expected DeleteSavedSearch operation"),
+    }
+}
+
+/// Test that DeleteProfile undo entry has recovery data (but no password).
+#[test]
+fn test_undo_executed_delete_profile_has_recovery_data_no_password() {
+    use splunk_tui::undo::{ProfileRecoveryData, UndoBuffer, UndoableOperation};
+
+    let mut buffer = UndoBuffer::new();
+
+    let id = buffer.push(
+        UndoableOperation::DeleteProfile {
+            name: "my_profile".to_string(),
+            original: Some(ProfileRecoveryData {
+                base_url: "https://localhost:8089".to_string(),
+                username: "admin".to_string(),
+                skip_verify: true,
+                timeout_seconds: 30,
+                max_retries: 3,
+                use_keyring: true,
+            }),
+        },
+        "Delete profile 'my_profile'".to_string(),
+    );
+    buffer.mark_executed(id);
+
+    // Undo after execution
+    let undone_entry = buffer.undo().unwrap();
+
+    match undone_entry.operation {
+        UndoableOperation::DeleteProfile { name, original } => {
+            assert_eq!(name, "my_profile");
+            let data = original.expect("Should have recovery data");
+            assert_eq!(data.base_url, "https://localhost:8089");
+            assert_eq!(data.username, "admin");
+            // No password field exists in ProfileRecoveryData - must be re-entered
+            assert!(data.use_keyring);
+        }
+        _ => panic!("Expected DeleteProfile operation"),
+    }
+}
+
+/// Integration test: Verify pending undo shows cancellation message via App.
+/// This tests the actual toast messages shown to users.
+#[test]
+fn test_undo_pending_delete_index_app_cancellation_toast() {
+    use splunk_tui::{
+        App, ConnectionContext,
+        action::Action,
+        undo::{IndexSettings, UndoableOperation},
+    };
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue a delete index with recovery data (NOT executed)
+    let settings = IndexSettings {
+        max_data_size_mb: Some(500),
+        max_hot_buckets: Some(3),
+        max_warm_db_count: Some(100),
+        frozen_time_period_secs: Some(86400),
+        home_path: None,
+        cold_db_path: None,
+        thawed_path: None,
+        cold_to_frozen_dir: None,
+    };
+
+    app.undo_buffer.push(
+        UndoableOperation::DeleteIndex {
+            name: "test_idx".to_string(),
+            original_settings: Some(settings),
+        },
+        "Delete index 'test_idx'".to_string(),
+    );
+
+    // Undo BEFORE execution
+    app.update(Action::Undo);
+
+    // Verify: should show cancellation toast, NOT restoration toast
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+
+    // Should have "Undone" message
+    assert!(
+        toast_messages.iter().any(|m| m.contains("Undone")),
+        "Expected 'Undone' message, got: {:?}",
+        toast_messages
+    );
+
+    // Should show cancellation message
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("cancelled") || m.contains("not executed")),
+        "Expected cancellation message, got: {:?}",
+        toast_messages
+    );
+
+    // Should NOT show restoration message
+    assert!(
+        !toast_messages.iter().any(|m| m.contains("Restoring")),
+        "Should NOT show restoration message for pending undo, got: {:?}",
+        toast_messages
+    );
+}
+
+/// Integration test: Verify executed undo shows restoration message via App.
+#[test]
+fn test_undo_executed_delete_index_app_restoration_toast() {
+    use splunk_tui::{
+        App, ConnectionContext,
+        action::Action,
+        undo::{IndexSettings, UndoableOperation},
+    };
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    let settings = IndexSettings {
+        max_data_size_mb: Some(500),
+        max_hot_buckets: Some(3),
+        max_warm_db_count: Some(100),
+        frozen_time_period_secs: Some(86400),
+        home_path: Some("/opt/splunk/var/lib/splunk/testdb/db".to_string()),
+        cold_db_path: None,
+        thawed_path: None,
+        cold_to_frozen_dir: None,
+    };
+
+    // Queue and mark as executed
+    let id = app.undo_buffer.push(
+        UndoableOperation::DeleteIndex {
+            name: "test_idx".to_string(),
+            original_settings: Some(settings.clone()),
+        },
+        "Delete index 'test_idx'".to_string(),
+    );
+    app.undo_buffer.mark_executed(id);
+
+    // Undo after execution
+    app.update(Action::Undo);
+
+    // Verify restoration toast is shown
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+
+    // Should have "Undone" message
+    assert!(
+        toast_messages.iter().any(|m| m.contains("Undone")),
+        "Expected 'Undone' message, got: {:?}",
+        toast_messages
+    );
+
+    // Should show restoration message (not cancellation)
+    assert!(
+        toast_messages.iter().any(|m| m.contains("Restoring")),
+        "Expected restoration message, got: {:?}",
+        toast_messages
+    );
+
+    // Should NOT show "cancelled" or "not executed" message
+    assert!(
+        !toast_messages
+            .iter()
+            .any(|m| m.contains("cancelled") || m.contains("was not executed")),
+        "Should NOT show cancellation message for executed undo, got: {:?}",
+        toast_messages
+    );
+}
+
+/// Integration test: Verify executed DeleteUser shows irreversible warning via App.
+#[test]
+fn test_undo_executed_delete_user_app_irreversible_warning() {
+    use splunk_tui::{
+        App, ConnectionContext,
+        action::Action,
+        undo::{UndoableOperation, UserRecoveryData},
+    };
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue with recovery data but mark as executed
+    let id = app.undo_buffer.push(
+        UndoableOperation::DeleteUser {
+            name: "testuser".to_string(),
+            original: Some(UserRecoveryData {
+                roles: vec!["admin".to_string()],
+                realname: Some("Test User".to_string()),
+                email: Some("test@example.com".to_string()),
+                default_app: Some("search".to_string()),
+            }),
+        },
+        "Delete user 'testuser'".to_string(),
+    );
+    app.undo_buffer.mark_executed(id);
+
+    // Undo after execution
+    app.update(Action::Undo);
+
+    // Verify: explicit warning about irreversibility
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+
+    // Should show warning about irreversibility
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("irreversible") || m.contains("Cannot restore")),
+        "Expected irreversible warning for user undo, got: {:?}",
+        toast_messages
+    );
+
+    // Should mention password not stored
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("password") || m.contains("password not stored")),
+        "Expected password warning for user undo, got: {:?}",
+        toast_messages
+    );
+}
+
+/// Test batch operations: Verify DeleteJobsBatch shows appropriate messages.
+#[test]
+fn test_undo_batch_operations_messages() {
+    use splunk_tui::{App, ConnectionContext, action::Action, undo::UndoableOperation};
+
+    // Test pending batch deletion
+    let mut app = App::new(None, ConnectionContext::default());
+    app.undo_buffer.push(
+        UndoableOperation::DeleteJobsBatch {
+            sids: vec!["job1".to_string(), "job2".to_string()],
+        },
+        "Batch delete 2 jobs".to_string(),
+    );
+
+    app.update(Action::Undo);
+
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("cancelled") && m.contains("2")),
+        "Expected cancellation message for batch, got: {:?}",
+        toast_messages
+    );
+
+    // Test executed batch deletion
+    let mut app = App::new(None, ConnectionContext::default());
+    let id = app.undo_buffer.push(
+        UndoableOperation::DeleteJobsBatch {
+            sids: vec!["job1".to_string(), "job2".to_string()],
+        },
+        "Batch delete 2 jobs".to_string(),
+    );
+    app.undo_buffer.mark_executed(id);
+
+    app.update(Action::Undo);
+
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("irreversible") || m.contains("Cannot restore")),
+        "Expected irreversible warning for executed batch, got: {:?}",
+        toast_messages
+    );
+}
+
+/// Test that undoing without recovery data shows appropriate warning.
+#[test]
+fn test_undo_executed_without_recovery_data_shows_warning() {
+    use splunk_tui::{App, ConnectionContext, action::Action, undo::UndoableOperation};
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue WITHOUT recovery data and mark as executed
+    let id = app.undo_buffer.push(
+        UndoableOperation::DeleteIndex {
+            name: "test_idx".to_string(),
+            original_settings: None, // No recovery data
+        },
+        "Delete index 'test_idx'".to_string(),
+    );
+    app.undo_buffer.mark_executed(id);
+
+    // Undo after execution
+    app.update(Action::Undo);
+
+    // Verify: warning about missing recovery data
+    let toast_messages: Vec<&str> = app.toasts.iter().map(|t| t.message.as_str()).collect();
+
+    assert!(
+        toast_messages
+            .iter()
+            .any(|m| m.contains("Cannot restore") || m.contains("not available")),
+        "Expected 'Cannot restore' warning when no recovery data, got: {:?}",
+        toast_messages
+    );
+}

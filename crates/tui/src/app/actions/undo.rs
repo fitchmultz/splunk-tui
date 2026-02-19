@@ -33,7 +33,8 @@ impl App {
                         self.undo_toast_id = None;
                     }
                     // Handle specific undo logic based on operation type
-                    self.perform_undo(entry.operation);
+                    // Pass whether operation was already executed (true) or just pending (false)
+                    self.perform_undo(entry.operation, entry.executed);
                 } else {
                     self.toasts.push(Toast::info("Nothing to undo"));
                 }
@@ -144,98 +145,214 @@ impl App {
     }
 
     /// Perform undo for an operation.
-    fn perform_undo(&mut self, operation: UndoableOperation) {
+    ///
+    /// # Arguments
+    /// * `operation` - The operation to undo
+    /// * `was_executed` - Whether the operation was already executed (true) or just pending (false)
+    fn perform_undo(&mut self, operation: UndoableOperation, was_executed: bool) {
         match operation {
             UndoableOperation::DeleteIndex {
                 name,
                 original_settings,
             } => {
-                if original_settings.is_some() {
-                    // Recreate the index with original settings
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
                     self.toasts.push(Toast::info(format!(
-                        "Restored index '{}' (recreating)",
+                        "Index '{}' deletion cancelled (was not executed)",
                         name
                     )));
-                    // TODO: Dispatch create index action with saved settings
-                    // This would require a new action variant or using existing CreateIndex
+                } else if let Some(settings) = original_settings {
+                    // Operation already executed, need to recreate
+                    self.toasts
+                        .push(Toast::info(format!("Restoring index '{}'...", name)));
+                    self.update(Action::CreateIndex {
+                        params: splunk_client::CreateIndexParams {
+                            name: name.clone(),
+                            max_data_size_mb: settings.max_data_size_mb,
+                            max_hot_buckets: settings.max_hot_buckets,
+                            max_warm_db_count: settings.max_warm_db_count,
+                            frozen_time_period_in_secs: settings.frozen_time_period_secs,
+                            home_path: settings.home_path,
+                            cold_db_path: settings.cold_db_path,
+                            thawed_path: settings.thawed_path,
+                            cold_to_frozen_dir: settings.cold_to_frozen_dir,
+                        },
+                    });
                 } else {
+                    // Executed but no recovery data available
                     self.toasts.push(Toast::warning(format!(
-                        "Cannot restore index '{}' - settings not available",
+                        "Cannot restore index '{}' - original settings not available",
                         name
                     )));
                 }
             }
             UndoableOperation::DeleteJob { sid } => {
-                // Jobs can't really be restored once deleted
-                // Just show a message that deletion was prevented
-                self.toasts.push(Toast::info(format!(
-                    "Job {} deletion prevented (was not executed)",
-                    sid
-                )));
-            }
-            UndoableOperation::CancelJob { sid, search_query } => {
-                if let Some(query) = search_query {
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
                     self.toasts.push(Toast::info(format!(
-                        "Cancelled job {} can be restarted with: {}",
-                        sid, query
+                        "Job '{}' deletion cancelled (was not executed)",
+                        sid
                     )));
                 } else {
-                    self.toasts.push(Toast::info(format!(
-                        "Job {} cancellation prevented (was not executed)",
+                    // Jobs cannot be restored once deleted
+                    self.toasts.push(Toast::warning(format!(
+                        "Cannot restore job '{}' - deletion is irreversible",
                         sid
                     )));
                 }
             }
-            UndoableOperation::DeleteSavedSearch { name, original } => {
-                if original.is_some() {
-                    self.toasts
-                        .push(Toast::info(format!("Restored saved search '{}'", name)));
-                    // TODO: Dispatch create saved search with original data
+            UndoableOperation::CancelJob { sid, search_query } => {
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    if let Some(query) = search_query {
+                        self.toasts.push(Toast::info(format!(
+                            "Job '{}' cancellation cancelled (was not executed). Search query: {}",
+                            sid, query
+                        )));
+                    } else {
+                        self.toasts.push(Toast::info(format!(
+                            "Job '{}' cancellation cancelled (was not executed)",
+                            sid
+                        )));
+                    }
                 } else {
+                    // Cancelled jobs can potentially be restarted
+                    if let Some(query) = search_query {
+                        self.toasts.push(Toast::info(format!(
+                            "Cancelled job '{}' can be restarted with search: {}",
+                            sid, query
+                        )));
+                    } else {
+                        self.toasts.push(Toast::warning(format!(
+                            "Cannot restore cancelled job '{}' - search query not available",
+                            sid
+                        )));
+                    }
+                }
+            }
+            UndoableOperation::DeleteSavedSearch { name, original } => {
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "Saved search '{}' deletion cancelled (was not executed)",
+                        name
+                    )));
+                } else if let Some(data) = original {
+                    // Operation already executed, need to recreate
+                    self.toasts
+                        .push(Toast::info(format!("Restoring saved search '{}'...", name)));
+                    self.update(Action::CreateSavedSearch {
+                        name: name.clone(),
+                        search: data.search,
+                        description: data.description,
+                        disabled: data.disabled,
+                    });
+                } else {
+                    // Executed but no recovery data available
                     self.toasts.push(Toast::warning(format!(
-                        "Cannot restore saved search '{}' - data not available",
+                        "Cannot restore saved search '{}' - original data not available",
                         name
                     )));
                 }
             }
             UndoableOperation::DeleteLookup { name, .. } => {
-                self.toasts.push(Toast::warning(format!(
-                    "Cannot restore lookup '{}' - recovery not implemented",
-                    name
-                )));
-            }
-            UndoableOperation::DeleteUser { name, original } => {
-                if original.is_some() {
-                    self.toasts
-                        .push(Toast::info(format!("Restored user '{}'", name)));
-                    // TODO: Dispatch create user with original data
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "Lookup '{}' deletion cancelled (was not executed)",
+                        name
+                    )));
                 } else {
+                    // Lookup file content is not captured, cannot restore
                     self.toasts.push(Toast::warning(format!(
-                        "Cannot restore user '{}' - data not available",
+                        "Cannot restore lookup '{}' - recovery not implemented",
                         name
                     )));
                 }
             }
+            UndoableOperation::DeleteUser { name, original } => {
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "User '{}' deletion cancelled (was not executed)",
+                        name
+                    )));
+                } else {
+                    // User recovery is IMPOSSIBLE - password not stored (intentional security design)
+                    // Show explicit warning that this is irreversible
+                    self.toasts.push(Toast::warning(format!(
+                        "Cannot restore user '{}' - deletion is irreversible (password not stored)",
+                        name
+                    )));
+                    if let Some(data) = original {
+                        self.toasts.push(Toast::info(format!(
+                            "To recreate user '{}', use roles: {:?}",
+                            name, data.roles
+                        )));
+                    }
+                }
+            }
             UndoableOperation::DeleteRole { name } => {
-                self.toasts.push(Toast::warning(format!(
-                    "Cannot restore role '{}' - recovery not implemented",
-                    name
-                )));
-            }
-            UndoableOperation::RemoveApp { app_name } => {
-                self.toasts.push(Toast::warning(format!(
-                    "Cannot restore app '{}' - recovery not implemented",
-                    app_name
-                )));
-            }
-            UndoableOperation::DeleteProfile { name, original } => {
-                if original.is_some() {
-                    self.toasts
-                        .push(Toast::info(format!("Restored profile '{}'", name)));
-                    // TODO: Dispatch create profile with original data
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "Role '{}' deletion cancelled (was not executed)",
+                        name
+                    )));
                 } else {
                     self.toasts.push(Toast::warning(format!(
-                        "Cannot restore profile '{}' - data not available",
+                        "Cannot restore role '{}' - recovery not implemented",
+                        name
+                    )));
+                }
+            }
+            UndoableOperation::RemoveApp { app_name } => {
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "App '{}' removal cancelled (was not executed)",
+                        app_name
+                    )));
+                } else {
+                    self.toasts.push(Toast::warning(format!(
+                        "Cannot restore app '{}' - recovery not implemented",
+                        app_name
+                    )));
+                }
+            }
+            UndoableOperation::DeleteProfile { name, original } => {
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "Profile '{}' deletion cancelled (was not executed)",
+                        name
+                    )));
+                } else if let Some(data) = original {
+                    // Operation already executed, need to recreate
+                    self.toasts
+                        .push(Toast::info(format!("Restoring profile '{}'...", name)));
+                    self.update(Action::SaveProfile {
+                        name: name.clone(),
+                        profile: splunk_config::types::ProfileConfig {
+                            base_url: Some(data.base_url),
+                            username: Some(data.username),
+                            password: None, // Passwords not stored in recovery data
+                            api_token: None,
+                            skip_verify: Some(data.skip_verify),
+                            timeout_seconds: Some(data.timeout_seconds),
+                            max_retries: Some(data.max_retries),
+                            session_expiry_buffer_seconds: None,
+                            session_ttl_seconds: None,
+                            health_check_interval_seconds: None,
+                        },
+                        use_keyring: data.use_keyring,
+                        original_name: None,
+                        from_tutorial: false,
+                    });
+                } else {
+                    // Executed but no recovery data available
+                    self.toasts.push(Toast::warning(format!(
+                        "Cannot restore profile '{}' - original data not available",
                         name
                     )));
                 }
@@ -265,16 +382,34 @@ impl App {
                 });
             }
             UndoableOperation::DeleteJobsBatch { sids } => {
-                self.toasts.push(Toast::info(format!(
-                    "Batch deletion of {} jobs prevented",
-                    sids.len()
-                )));
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "Batch deletion of {} jobs cancelled (was not executed)",
+                        sids.len()
+                    )));
+                } else {
+                    // Batch jobs cannot be restored once deleted
+                    self.toasts.push(Toast::warning(format!(
+                        "Cannot restore {} deleted jobs - deletion is irreversible",
+                        sids.len()
+                    )));
+                }
             }
             UndoableOperation::CancelJobsBatch { sids } => {
-                self.toasts.push(Toast::info(format!(
-                    "Batch cancellation of {} jobs prevented",
-                    sids.len()
-                )));
+                if !was_executed {
+                    // Operation was still pending, just cancelled it
+                    self.toasts.push(Toast::info(format!(
+                        "Batch cancellation of {} jobs cancelled (was not executed)",
+                        sids.len()
+                    )));
+                } else {
+                    // Cancelled batch jobs can potentially be restarted
+                    self.toasts.push(Toast::info(format!(
+                        "Cancelled {} jobs. To restart, resubmit the original searches",
+                        sids.len()
+                    )));
+                }
             }
         }
     }
