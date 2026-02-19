@@ -82,9 +82,10 @@ clean:
 # Run all tests
 test: test-all
 
-# Run all tests (workspace, all targets). This is the default "everything" gate.
+# Run all tests (workspace, libs/bins/tests only - excludes benchmarks).
+# Use `make bench` for performance benchmarks.
 test-all:
-	@cargo test --workspace --all-targets --all-features --locked
+	@cargo test --workspace --lib --bins --tests --all-features --locked
 
 # Run unit tests (lib and bins)
 test-unit:
@@ -240,7 +241,7 @@ help:
 	@echo "  make lint             - Clippy autofix + format check"
 	@echo "  make type-check       - Type check the workspace (cargo check)"
 	@echo "  make clean            - Remove build artifacts (keeps Cargo.lock)"
-	@echo "  make test             - Run all tests (workspace, all targets)"
+	@echo "  make test             - Run all tests (workspace, libs/bins/tests only)"
 	@echo "  make test-all         - Alias for make test"
 	@echo "  make test-unit        - Run unit tests (lib and bins)"
 	@echo "  make test-integration - Run integration tests"
