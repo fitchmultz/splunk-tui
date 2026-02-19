@@ -27,7 +27,8 @@ use super::profile::apply_profile;
 use crate::constants::{
     DEFAULT_EXPIRY_BUFFER_SECS, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_MAX_RETRIES,
     DEFAULT_SESSION_TTL_SECS, DEFAULT_TIMEOUT_SECS, MAX_HEALTH_CHECK_INTERVAL_SECS,
-    MAX_MAX_RETRIES, MAX_SESSION_TTL_SECS, MAX_TIMEOUT_SECS,
+    MAX_MAX_RETRIES, MAX_SESSION_TTL_SECS, MAX_TIMEOUT_SECS, MIN_EXPIRY_BUFFER_SECS,
+    MIN_SESSION_TTL_SECS,
 };
 use crate::persistence::{InternalLogsDefaults, SearchDefaults};
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
@@ -374,6 +375,31 @@ impl ConfigLoader {
                 message: format!(
                     "max_retries exceeds maximum allowed value of {} (got {})",
                     MAX_MAX_RETRIES, connection.max_retries
+                ),
+            });
+        }
+
+        // Validate session_ttl_seconds >= MIN_SESSION_TTL_SECS
+        if connection.session_ttl_seconds < MIN_SESSION_TTL_SECS {
+            return Err(ConfigError::InvalidSessionTtl {
+                message: format!(
+                    "session_ttl_seconds ({}) must be at least {} seconds (minimum allowed: {}s, maximum: {}s)",
+                    connection.session_ttl_seconds,
+                    MIN_SESSION_TTL_SECS,
+                    MIN_SESSION_TTL_SECS,
+                    MAX_SESSION_TTL_SECS
+                ),
+            });
+        }
+
+        // Validate session_expiry_buffer_seconds >= MIN_EXPIRY_BUFFER_SECS
+        if connection.session_expiry_buffer_seconds < MIN_EXPIRY_BUFFER_SECS {
+            return Err(ConfigError::InvalidExpiryBuffer {
+                message: format!(
+                    "session_expiry_buffer_seconds ({}) must be at least {} seconds (minimum allowed: {}s)",
+                    connection.session_expiry_buffer_seconds,
+                    MIN_EXPIRY_BUFFER_SECS,
+                    MIN_EXPIRY_BUFFER_SECS
                 ),
             });
         }

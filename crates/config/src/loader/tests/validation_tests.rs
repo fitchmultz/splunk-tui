@@ -100,10 +100,10 @@ fn test_session_ttl_less_than_buffer_invalid() {
         .with_api_token("test-token".to_string())
         .with_timeout(Duration::from_secs(30));
 
-    // Manually set invalid values using internal setters
+    // Use values above minimums but TTL < buffer
     let mut loader = loader;
-    loader.set_session_ttl_seconds(Some(60));
-    loader.set_session_expiry_buffer_seconds(Some(120)); // TTL < buffer
+    loader.set_session_ttl_seconds(Some(130)); // Above 120 minimum
+    loader.set_session_expiry_buffer_seconds(Some(200)); // Above 10 minimum, but > TTL
 
     let result = loader.build();
     match result {
@@ -211,6 +211,131 @@ fn test_session_ttl_at_max_boundary_valid() {
 
     let config = loader.build().unwrap();
     assert_eq!(config.connection.session_ttl_seconds, 86400);
+}
+
+// ============================================================================
+// Minimum Session TTL Validation Tests
+// ============================================================================
+
+#[test]
+fn test_session_ttl_below_minimum_invalid() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://localhost:8089".to_string())
+        .with_api_token("test-token".to_string())
+        .with_timeout(Duration::from_secs(30));
+
+    // Set TTL below minimum (MIN_SESSION_TTL_SECS = 120)
+    let mut loader = loader;
+    loader.set_session_ttl_seconds(Some(60)); // Below 120 minimum
+    loader.set_session_expiry_buffer_seconds(Some(10));
+
+    let result = loader.build();
+    match result {
+        Err(ConfigError::InvalidSessionTtl { message }) => {
+            assert!(
+                message.contains("must be at least"),
+                "Expected message about minimum TTL, got: {}",
+                message
+            );
+            assert!(
+                message.contains("120"),
+                "Expected minimum value in message, got: {}",
+                message
+            );
+        }
+        Ok(_) => panic!("Expected InvalidSessionTtl error when TTL below minimum, got Ok"),
+        Err(ref e) => panic!(
+            "Expected InvalidSessionTtl error when TTL below minimum, got {:?}",
+            e
+        ),
+    }
+}
+
+#[test]
+fn test_session_ttl_at_minimum_valid() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://localhost:8089".to_string())
+        .with_api_token("test-token".to_string())
+        .with_timeout(Duration::from_secs(30));
+
+    // Set TTL exactly at minimum (MIN_SESSION_TTL_SECS = 120)
+    let mut loader = loader;
+    loader.set_session_ttl_seconds(Some(120));
+    loader.set_session_expiry_buffer_seconds(Some(10)); // Below TTL, at buffer minimum
+
+    let config = loader.build().unwrap();
+    assert_eq!(config.connection.session_ttl_seconds, 120);
+}
+
+// ============================================================================
+// Minimum Expiry Buffer Validation Tests
+// ============================================================================
+
+#[test]
+fn test_expiry_buffer_below_minimum_invalid() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://localhost:8089".to_string())
+        .with_api_token("test-token".to_string())
+        .with_timeout(Duration::from_secs(30));
+
+    // Set buffer below minimum (MIN_EXPIRY_BUFFER_SECS = 10)
+    let mut loader = loader;
+    loader.set_session_ttl_seconds(Some(3600));
+    loader.set_session_expiry_buffer_seconds(Some(5)); // Below 10 minimum
+
+    let result = loader.build();
+    match result {
+        Err(ConfigError::InvalidExpiryBuffer { message }) => {
+            assert!(
+                message.contains("must be at least"),
+                "Expected message about minimum buffer, got: {}",
+                message
+            );
+            assert!(
+                message.contains("10"),
+                "Expected minimum value in message, got: {}",
+                message
+            );
+        }
+        Ok(_) => panic!("Expected InvalidExpiryBuffer error when buffer below minimum, got Ok"),
+        Err(ref e) => panic!(
+            "Expected InvalidExpiryBuffer error when buffer below minimum, got {:?}",
+            e
+        ),
+    }
+}
+
+#[test]
+fn test_expiry_buffer_at_minimum_valid() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://localhost:8089".to_string())
+        .with_api_token("test-token".to_string())
+        .with_timeout(Duration::from_secs(30));
+
+    // Set buffer exactly at minimum (MIN_EXPIRY_BUFFER_SECS = 10)
+    let mut loader = loader;
+    loader.set_session_ttl_seconds(Some(3600));
+    loader.set_session_expiry_buffer_seconds(Some(10));
+
+    let config = loader.build().unwrap();
+    assert_eq!(config.connection.session_expiry_buffer_seconds, 10);
+}
+
+#[test]
+fn test_session_values_above_minimum_valid() {
+    let loader = ConfigLoader::new()
+        .with_base_url("https://localhost:8089".to_string())
+        .with_api_token("test-token".to_string())
+        .with_timeout(Duration::from_secs(30));
+
+    // Set values comfortably above minimums
+    let mut loader = loader;
+    loader.set_session_ttl_seconds(Some(1800)); // 30 min, well above 120s min
+    loader.set_session_expiry_buffer_seconds(Some(60)); // 1 min, well above 10s min
+
+    let config = loader.build().unwrap();
+    assert_eq!(config.connection.session_ttl_seconds, 1800);
+    assert_eq!(config.connection.session_expiry_buffer_seconds, 60);
 }
 
 // ============================================================================
@@ -486,8 +611,8 @@ fn test_session_ttl_validation_via_env_var() {
         [
             ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
             ("SPLUNK_API_TOKEN", Some("test-token")),
-            ("SPLUNK_SESSION_TTL", Some("30")), // 30 seconds TTL
-            ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("60")), // 60 seconds buffer (TTL < buffer)
+            ("SPLUNK_SESSION_TTL", Some("130")), // Above 120 minimum
+            ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("200")), // Above 10 minimum, but > TTL
         ],
         || {
             let loader = ConfigLoader::new().from_env().unwrap();
@@ -612,6 +737,91 @@ fn test_max_retries_valid() {
 
     let config = loader.build().unwrap();
     assert_eq!(config.connection.max_retries, 3);
+}
+
+#[test]
+#[serial]
+fn test_session_ttl_below_minimum_via_env_var() {
+    let _lock = env_lock().lock().unwrap();
+
+    temp_env::with_vars(
+        [
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_API_TOKEN", Some("test-token")),
+            ("SPLUNK_SESSION_TTL", Some("30")), // Below 120 minimum, but > buffer
+            ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("10")), // At minimum, less than TTL
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+            let result = loader.build();
+
+            match result {
+                Err(ConfigError::InvalidSessionTtl { message }) => {
+                    assert!(
+                        message.contains("must be at least"),
+                        "Expected minimum TTL error, got: {}",
+                        message
+                    );
+                }
+                Ok(_) => panic!("Expected InvalidSessionTtl error for TTL below minimum from env"),
+                Err(ref e) => panic!("Expected InvalidSessionTtl, got {:?}", e),
+            }
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_expiry_buffer_below_minimum_via_env_var() {
+    let _lock = env_lock().lock().unwrap();
+
+    temp_env::with_vars(
+        [
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_API_TOKEN", Some("test-token")),
+            ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("5")), // Below 10 minimum
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+            let result = loader.build();
+
+            match result {
+                Err(ConfigError::InvalidExpiryBuffer { message }) => {
+                    assert!(
+                        message.contains("must be at least"),
+                        "Expected minimum buffer error, got: {}",
+                        message
+                    );
+                }
+                Ok(_) => {
+                    panic!("Expected InvalidExpiryBuffer error for buffer below minimum from env")
+                }
+                Err(ref e) => panic!("Expected InvalidExpiryBuffer, got {:?}", e),
+            }
+        },
+    );
+}
+
+#[test]
+#[serial]
+fn test_session_at_minimum_via_env_var() {
+    let _lock = env_lock().lock().unwrap();
+
+    temp_env::with_vars(
+        [
+            ("SPLUNK_BASE_URL", Some("https://localhost:8089")),
+            ("SPLUNK_API_TOKEN", Some("test-token")),
+            ("SPLUNK_SESSION_TTL", Some("120")), // Exactly MIN_SESSION_TTL_SECS
+            ("SPLUNK_SESSION_EXPIRY_BUFFER", Some("10")), // Exactly MIN_EXPIRY_BUFFER_SECS
+        ],
+        || {
+            let loader = ConfigLoader::new().from_env().unwrap();
+            let config = loader.build().unwrap();
+
+            assert_eq!(config.connection.session_ttl_seconds, 120);
+            assert_eq!(config.connection.session_expiry_buffer_seconds, 10);
+        },
+    );
 }
 
 #[test]

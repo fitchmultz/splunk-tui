@@ -129,6 +129,9 @@ pub fn classify_config_error(err: &ConfigError) -> StartupDecision {
         ConfigError::InvalidMaxRetries { .. } => {
             StartupDecision::Fatal(Error::msg(err.to_string()))
         }
+        ConfigError::InvalidExpiryBuffer { .. } => {
+            StartupDecision::Fatal(Error::msg(err.to_string()))
+        }
         ConfigError::DotenvParse { .. } => StartupDecision::Fatal(Error::msg(err.to_string())),
         ConfigError::DotenvIo { .. } => StartupDecision::Fatal(Error::msg(err.to_string())),
         ConfigError::DotenvUnknown => StartupDecision::Fatal(Error::msg(err.to_string())),

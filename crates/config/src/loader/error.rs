@@ -67,6 +67,9 @@ pub enum ConfigError {
     #[error("invalid max retries: {message}")]
     InvalidMaxRetries { message: String },
 
+    #[error("invalid session expiry buffer: {message}")]
+    InvalidExpiryBuffer { message: String },
+
     /// Failed to parse the `.env` file due to invalid syntax.
     ///
     /// SAFETY: This error only includes the byte index of the parse failure,
