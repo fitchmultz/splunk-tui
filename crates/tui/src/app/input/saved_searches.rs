@@ -79,21 +79,7 @@ impl App {
                 None
             }
             // 'n' key: Create new saved search
-            KeyCode::Char('n') => {
-                self.popup = Some(
-                    crate::ui::popup::Popup::builder(
-                        crate::ui::popup::PopupType::CreateSavedSearch {
-                            name_input: String::new(),
-                            search_input: String::new(),
-                            description_input: String::new(),
-                            disabled: false,
-                            selected_field: crate::ui::popup::SavedSearchField::Name,
-                        },
-                    )
-                    .build(),
-                );
-                None
-            }
+            KeyCode::Char('n') => Some(Action::OpenCreateSavedSearchDialog),
             // 'd' key: Delete selected saved search (with confirmation)
             KeyCode::Char('d') => {
                 if let Some(search) = self.saved_searches.as_ref().and_then(|searches| {
@@ -101,17 +87,11 @@ impl App {
                         .selected()
                         .and_then(|i| searches.get(i))
                 }) {
-                    self.popup = Some(
-                        crate::ui::popup::Popup::builder(
-                            crate::ui::popup::PopupType::DeleteSavedSearchConfirm {
-                                search_name: search.name.clone(),
-                            },
-                        )
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No saved search selected"));
+                    return Some(Action::OpenDeleteSavedSearchConfirm {
+                        name: search.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No saved search selected"));
                 None
             }
             // 't' key: Toggle enabled/disabled state of selected saved search

@@ -139,7 +139,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('m'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: None, // Handled by input handler
+            action: None,
             handles_input: false,
         },
         Keybinding {
@@ -151,7 +151,7 @@ pub(super) fn bindings() -> Vec<Keybinding> {
                 code: KeyCode::Char('d'),
                 modifiers: KeyModifiers::NONE,
             }),
-            action: None, // Handled by input handler
+            action: None,
             handles_input: false,
         },
     ]

@@ -34,10 +34,10 @@ use splunk_client::ClientError;
 use splunk_client::SearchMode;
 use splunk_client::models::{
     App as SplunkApp, AuditEvent, Capability, ClusterInfo, ClusterPeer, ConfigFile, ConfigStanza,
-    Dashboard, DataModel, FiredAlert, Forwarder, HealthCheckOutput, Index, Input,
-    KvStoreCollection, KvStoreRecord, KvStoreStatus, LicensePool, LicenseStack, LicenseUsage,
-    LogEntry, LookupTable, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, ShcCaptain,
-    ShcConfig, ShcMember, ShcStatus, SplunkHealth, User, WorkloadPool, WorkloadRule,
+    Dashboard, DataModel, FiredAlert, Forwarder, HealthCheckOutput, Index, Input, KvStoreStatus,
+    LicensePool, LicenseStack, LicenseUsage, LogEntry, LookupTable, Macro, Role, SavedSearch,
+    SearchJobStatus, SearchPeer, ShcCaptain, ShcConfig, ShcMember, ShcStatus, SplunkHealth, User,
+    WorkloadPool, WorkloadRule,
 };
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
@@ -883,14 +883,6 @@ pub enum Action {
     ActivateLicense { name: String },
     /// Deactivate a license
     DeactivateLicense { name: String },
-    /// Open license installation dialog
-    OpenInstallLicenseDialog,
-    /// Open license pool creation dialog
-    OpenCreateLicensePoolDialog,
-    /// Open license pool modification dialog
-    OpenModifyLicensePoolDialog { name: String },
-    /// Open license pool deletion confirmation
-    OpenDeleteLicensePoolConfirm { name: String },
     /// Result of installing a license
     LicenseInstalled(Result<splunk_client::LicenseInstallResult, Arc<ClientError>>),
     /// Result of creating a license pool
@@ -903,54 +895,6 @@ pub enum Action {
     LicenseActivated(Result<splunk_client::LicenseActivationResult, Arc<ClientError>>),
     /// Result of deactivating a license
     LicenseDeactivated(Result<splunk_client::LicenseActivationResult, Arc<ClientError>>),
-
-    // KVStore Collection Operations
-    /// Load KVStore collections list
-    LoadCollections {
-        /// App context (None for all apps)
-        app: Option<String>,
-        /// Owner context (None for nobody)
-        owner: Option<String>,
-        /// Number of items to load
-        count: usize,
-        /// Offset for pagination
-        offset: usize,
-    },
-    /// Create a new KVStore collection
-    CreateCollection {
-        params: splunk_client::models::CreateCollectionParams,
-    },
-    /// Delete a KVStore collection
-    DeleteCollection {
-        name: String,
-        app: String,
-        owner: String,
-    },
-    /// Load collection records
-    LoadCollectionRecords {
-        collection_name: String,
-        app: String,
-        owner: String,
-        query: Option<String>,
-        count: usize,
-        offset: usize,
-    },
-    /// Open collection creation dialog
-    OpenCreateCollectionDialog,
-    /// Open collection deletion confirmation
-    OpenDeleteCollectionConfirm {
-        name: String,
-        app: String,
-        owner: String,
-    },
-    /// Result of loading collections
-    CollectionsLoaded(Result<Vec<KvStoreCollection>, Arc<ClientError>>),
-    /// Result of creating a collection
-    CollectionCreated(Result<KvStoreCollection, Arc<ClientError>>),
-    /// Result of deleting a collection
-    CollectionDeleted(Result<(String, String, String), Arc<ClientError>>),
-    /// Result of loading collection records
-    CollectionRecordsLoaded(Result<Vec<KvStoreRecord>, Arc<ClientError>>),
 
     /// Inspect currently selected job
     InspectJob,

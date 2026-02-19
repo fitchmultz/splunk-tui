@@ -16,7 +16,6 @@ use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
 use crate::ui::Toast;
-use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl App {
@@ -52,18 +51,7 @@ impl App {
             }
             KeyCode::Char('c') => {
                 // Open create user dialog
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateUser {
-                        name_input: String::new(),
-                        password_input: String::new(),
-                        roles_input: String::new(),
-                        realname_input: String::new(),
-                        email_input: String::new(),
-                        default_app_input: String::new(),
-                    })
-                    .build(),
-                );
-                None
+                Some(Action::OpenCreateUserDialog)
             }
             KeyCode::Char('m') => {
                 // Open modify user dialog for selected user
@@ -71,24 +59,11 @@ impl App {
                     && let Some(selected) = self.users_state.selected()
                     && let Some(user) = users.get(selected)
                 {
-                    self.popup = Some(
-                        Popup::builder(PopupType::ModifyUser {
-                            user_name: user.name.clone(),
-                            current_roles: user.roles.clone(),
-                            current_realname: user.realname.clone(),
-                            current_email: user.email.clone(),
-                            current_default_app: user.default_app.clone(),
-                            password_input: String::new(),
-                            roles_input: user.roles.join(","),
-                            realname_input: user.realname.clone().unwrap_or_default(),
-                            email_input: user.email.clone().unwrap_or_default(),
-                            default_app_input: user.default_app.clone().unwrap_or_default(),
-                        })
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No user selected"));
+                    return Some(Action::OpenModifyUserDialog {
+                        name: user.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No user selected"));
                 None
             }
             KeyCode::Char('d') => {
@@ -97,15 +72,11 @@ impl App {
                     && let Some(selected) = self.users_state.selected()
                     && let Some(user) = users.get(selected)
                 {
-                    self.popup = Some(
-                        Popup::builder(PopupType::DeleteUserConfirm {
-                            user_name: user.name.clone(),
-                        })
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No user selected"));
+                    return Some(Action::OpenDeleteUserConfirm {
+                        name: user.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No user selected"));
                 None
             }
             _ => None,

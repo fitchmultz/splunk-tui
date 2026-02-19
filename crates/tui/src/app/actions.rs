@@ -83,6 +83,9 @@ impl App {
             // Data loading actions
             Action::IndexesLoaded(_)
             | Action::MoreIndexesLoaded(_)
+            | Action::IndexCreated(_)
+            | Action::IndexModified(_)
+            | Action::IndexDeleted(_)
             | Action::JobsLoaded(_)
             | Action::MoreJobsLoaded(_)
             | Action::SavedSearchesLoaded(_)
@@ -97,6 +100,9 @@ impl App {
             | Action::MoreAppsLoaded(_)
             | Action::UsersLoaded(_)
             | Action::MoreUsersLoaded(_)
+            | Action::UserCreated(_)
+            | Action::UserModified(_)
+            | Action::UserDeleted(_)
             | Action::SearchPeersLoaded(_)
             | Action::MoreSearchPeersLoaded(_)
             | Action::ForwardersLoaded(_)
@@ -117,7 +123,11 @@ impl App {
             | Action::MacrosLoaded(_)
             | Action::MacroCreated(_)
             | Action::MacroUpdated(_)
-            | Action::MacroDeleted(_) => {
+            | Action::MacroDeleted(_)
+            // Roles
+            | Action::RoleCreated(_)
+            | Action::RoleModified(_)
+            | Action::RoleDeleted(_) => {
                 self.handle_data_loading_action(action);
             }
 
@@ -175,9 +185,18 @@ impl App {
             | Action::ClearErrorDetails
             | Action::JobOperationComplete(_)
             | Action::OpenCreateIndexDialog
+            | Action::OpenModifyIndexDialog { .. }
+            | Action::OpenDeleteIndexConfirm { .. }
+            | Action::OpenCreateUserDialog
+            | Action::OpenModifyUserDialog { .. }
+            | Action::OpenDeleteUserConfirm { .. }
+            | Action::OpenCreateRoleDialog
+            | Action::OpenModifyRoleDialog { .. }
+            | Action::OpenDeleteRoleConfirm { .. }
             | Action::EditSavedSearch
             | Action::SavedSearchUpdated(_)
             | Action::OpenCreateSavedSearchDialog
+            | Action::OpenDeleteSavedSearchConfirm { .. }
             | Action::SavedSearchCreated(_)
             | Action::SavedSearchDeleted(_)
             | Action::SavedSearchToggled(_)

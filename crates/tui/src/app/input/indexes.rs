@@ -66,21 +66,7 @@ impl App {
             }
             KeyCode::Char('c') => {
                 // Open create index dialog
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateIndex {
-                        name_input: String::new(),
-                        max_data_size_mb: None,
-                        max_hot_buckets: None,
-                        max_warm_db_count: None,
-                        frozen_time_period_secs: None,
-                        home_path: None,
-                        cold_db_path: None,
-                        thawed_path: None,
-                        cold_to_frozen_dir: None,
-                    })
-                    .build(),
-                );
-                None
+                Some(Action::OpenCreateIndexDialog)
             }
             KeyCode::Char('m') => {
                 // Open modify index dialog for selected index
@@ -88,37 +74,11 @@ impl App {
                     && let Some(selected) = self.indexes_state.selected()
                     && let Some(index) = indexes.get(selected)
                 {
-                    self.popup = Some(
-                        Popup::builder(PopupType::ModifyIndex {
-                            index_name: index.name.clone(),
-                            current_max_data_size_mb: index.max_total_data_size_mb,
-                            current_max_hot_buckets: index
-                                .max_hot_buckets
-                                .as_ref()
-                                .and_then(|s| Self::parse_max_hot_buckets(s, &index.name)),
-                            current_max_warm_db_count: index.max_warm_db_count,
-                            current_frozen_time_period_secs: index.frozen_time_period_in_secs,
-                            current_home_path: index.home_path.clone(),
-                            current_cold_db_path: index.cold_db_path.clone(),
-                            current_thawed_path: index.thawed_path.clone(),
-                            current_cold_to_frozen_dir: index.cold_to_frozen_dir.clone(),
-                            new_max_data_size_mb: index.max_total_data_size_mb,
-                            new_max_hot_buckets: index
-                                .max_hot_buckets
-                                .as_ref()
-                                .and_then(|s| Self::parse_max_hot_buckets(s, &index.name)),
-                            new_max_warm_db_count: index.max_warm_db_count,
-                            new_frozen_time_period_secs: index.frozen_time_period_in_secs,
-                            new_home_path: index.home_path.clone(),
-                            new_cold_db_path: index.cold_db_path.clone(),
-                            new_thawed_path: index.thawed_path.clone(),
-                            new_cold_to_frozen_dir: index.cold_to_frozen_dir.clone(),
-                        })
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No index selected"));
+                    return Some(Action::OpenModifyIndexDialog {
+                        name: index.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No index selected"));
                 None
             }
             KeyCode::Char('d') => {
@@ -127,15 +87,11 @@ impl App {
                     && let Some(selected) = self.indexes_state.selected()
                     && let Some(index) = indexes.get(selected)
                 {
-                    self.popup = Some(
-                        Popup::builder(PopupType::DeleteIndexConfirm {
-                            index_name: index.name.clone(),
-                        })
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No index selected"));
+                    return Some(Action::OpenDeleteIndexConfirm {
+                        name: index.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No index selected"));
                 None
             }
             _ => None,

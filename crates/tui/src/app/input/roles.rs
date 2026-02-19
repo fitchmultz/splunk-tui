@@ -16,7 +16,6 @@ use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
 use crate::ui::Toast;
-use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl App {
@@ -52,18 +51,7 @@ impl App {
             }
             KeyCode::Char('c') => {
                 // Open create role dialog
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateRole {
-                        name_input: String::new(),
-                        capabilities_input: String::new(),
-                        search_indexes_input: String::new(),
-                        search_filter_input: String::new(),
-                        imported_roles_input: String::new(),
-                        default_app_input: String::new(),
-                    })
-                    .build(),
-                );
-                None
+                Some(Action::OpenCreateRoleDialog)
             }
             KeyCode::Char('m') => {
                 // Open modify role dialog for selected role
@@ -71,25 +59,11 @@ impl App {
                     && let Some(selected) = self.roles_state.selected()
                     && let Some(role) = roles.get(selected)
                 {
-                    self.popup = Some(
-                        Popup::builder(PopupType::ModifyRole {
-                            role_name: role.name.clone(),
-                            current_capabilities: role.capabilities.clone(),
-                            current_search_indexes: role.search_indexes.clone(),
-                            current_search_filter: role.search_filter.clone(),
-                            current_imported_roles: role.imported_roles.clone(),
-                            current_default_app: role.default_app.clone(),
-                            capabilities_input: role.capabilities.join(","),
-                            search_indexes_input: role.search_indexes.join(","),
-                            search_filter_input: role.search_filter.clone().unwrap_or_default(),
-                            imported_roles_input: role.imported_roles.join(","),
-                            default_app_input: role.default_app.clone().unwrap_or_default(),
-                        })
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No role selected"));
+                    return Some(Action::OpenModifyRoleDialog {
+                        name: role.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No role selected"));
                 None
             }
             KeyCode::Char('d') => {
@@ -98,15 +72,11 @@ impl App {
                     && let Some(selected) = self.roles_state.selected()
                     && let Some(role) = roles.get(selected)
                 {
-                    self.popup = Some(
-                        Popup::builder(PopupType::DeleteRoleConfirm {
-                            role_name: role.name.clone(),
-                        })
-                        .build(),
-                    );
-                } else {
-                    self.toasts.push(Toast::info("No role selected"));
+                    return Some(Action::OpenDeleteRoleConfirm {
+                        name: role.name.clone(),
+                    });
                 }
+                self.toasts.push(Toast::info("No role selected"));
                 None
             }
             _ => None,

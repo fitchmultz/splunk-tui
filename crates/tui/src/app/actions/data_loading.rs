@@ -30,6 +30,44 @@ impl App {
             Action::MoreIndexesLoaded(Err(e)) => {
                 self.handle_data_load_error("more indexes", e);
             }
+            Action::IndexCreated(Ok(index)) => {
+                self.toasts
+                    .push(Toast::success(format!("Index '{}' created", index.name)));
+                self.loading = false;
+                // Add to list if present
+                if let Some(ref mut indexes) = self.indexes {
+                    indexes.push(index);
+                }
+            }
+            Action::IndexCreated(Err(e)) => {
+                self.handle_data_load_error("create index", e);
+            }
+            Action::IndexModified(Ok(index)) => {
+                self.toasts
+                    .push(Toast::success(format!("Index '{}' modified", index.name)));
+                self.loading = false;
+                // Update in list if present
+                if let Some(ref mut indexes) = self.indexes {
+                    if let Some(idx) = indexes.iter().position(|i| i.name == index.name) {
+                        indexes[idx] = index;
+                    }
+                }
+            }
+            Action::IndexModified(Err(e)) => {
+                self.handle_data_load_error("modify index", e);
+            }
+            Action::IndexDeleted(Ok(name)) => {
+                self.toasts
+                    .push(Toast::success(format!("Index '{}' deleted", name)));
+                self.loading = false;
+                // Remove from local list if present
+                if let Some(ref mut indexes) = self.indexes {
+                    indexes.retain(|i| i.name != name);
+                }
+            }
+            Action::IndexDeleted(Err(e)) => {
+                self.handle_data_load_error("delete index", e);
+            }
 
             // Jobs
             Action::JobsLoaded(Ok(jobs)) => {
@@ -164,6 +202,44 @@ impl App {
             Action::MoreUsersLoaded(Err(e)) => {
                 self.handle_data_load_error("more users", e);
             }
+            Action::UserCreated(Ok(user)) => {
+                self.toasts
+                    .push(Toast::success(format!("User '{}' created", user.name)));
+                self.loading = false;
+                // Add to list if present
+                if let Some(ref mut users) = self.users {
+                    users.push(user);
+                }
+            }
+            Action::UserCreated(Err(e)) => {
+                self.handle_data_load_error("create user", e);
+            }
+            Action::UserModified(Ok(user)) => {
+                self.toasts
+                    .push(Toast::success(format!("User '{}' modified", user.name)));
+                self.loading = false;
+                // Update in list if present
+                if let Some(ref mut users) = self.users {
+                    if let Some(idx) = users.iter().position(|u| u.name == user.name) {
+                        users[idx] = user;
+                    }
+                }
+            }
+            Action::UserModified(Err(e)) => {
+                self.handle_data_load_error("modify user", e);
+            }
+            Action::UserDeleted(Ok(name)) => {
+                self.toasts
+                    .push(Toast::success(format!("User '{}' deleted", name)));
+                self.loading = false;
+                // Remove from local list if present
+                if let Some(ref mut users) = self.users {
+                    users.retain(|u| u.name != name);
+                }
+            }
+            Action::UserDeleted(Err(e)) => {
+                self.handle_data_load_error("delete user", e);
+            }
 
             // Roles
             Action::RolesLoaded(Ok(roles)) => {
@@ -182,6 +258,9 @@ impl App {
                 self.toasts
                     .push(Toast::success(format!("Role '{}' created", role.name)));
                 self.loading = false;
+                if let Some(ref mut roles) = self.roles {
+                    roles.push(role);
+                }
             }
             Action::RoleCreated(Err(e)) => {
                 self.handle_data_load_error("create role", e);
@@ -190,6 +269,11 @@ impl App {
                 self.toasts
                     .push(Toast::success(format!("Role '{}' modified", role.name)));
                 self.loading = false;
+                if let Some(ref mut roles) = self.roles {
+                    if let Some(idx) = roles.iter().position(|r| r.name == role.name) {
+                        roles[idx] = role;
+                    }
+                }
             }
             Action::RoleModified(Err(e)) => {
                 self.handle_data_load_error("modify role", e);
@@ -198,6 +282,9 @@ impl App {
                 self.toasts
                     .push(Toast::success(format!("Role '{}' deleted", name)));
                 self.loading = false;
+                if let Some(ref mut roles) = self.roles {
+                    roles.retain(|r| r.name != name);
+                }
             }
             Action::RoleDeleted(Err(e)) => {
                 self.handle_data_load_error("delete role", e);

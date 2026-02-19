@@ -63,6 +63,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "tui/tests/undo_tests.rs",
         "Comprehensive undo/redo regression tests - covers undo buffer, action handlers, and integration with App for multiple bug fixes",
     ),
+    (
+        "app/actions/system.rs",
+        "System action handlers for dialog operations - Create/Modify/Delete dialogs for Indexes, Users, Roles, Saved Searches with popup management and comprehensive tests",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.
