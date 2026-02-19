@@ -132,7 +132,6 @@ Try one of these example searches:
 The results will appear below the search box. You can:
   • Scroll through results with ↑/↓
   • Page up/down with PageUp/PageDown
-  • Sort columns by clicking or pressing Tab
 
 Run a search and then press → to continue."#
             .to_string()

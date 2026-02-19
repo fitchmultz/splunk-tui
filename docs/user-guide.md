@@ -660,10 +660,12 @@ View user accounts and their roles.
 ### Mouse Support
 
 Splunk TUI supports mouse interaction for most common tasks:
-- **Tab Switching**: Click the screen names in the footer to navigate.
-- **Selection**: Click rows in the Jobs or Indexes tables to select them.
-- **Inspect**: Double-click a job to enter Inspect mode.
+- **Selection**: Click rows in content lists (Jobs, Indexes, Apps, etc.) to select them.
+- **Inspect**: Click the same job row twice (without moving selection) to enter Inspect mode.
 - **Scrolling**: Use the mouse wheel to scroll through lists and search results.
+- **Quit**: Click the "q:Quit" button in the footer to exit.
+
+> **Note**: Screen navigation is keyboard-only. Use `Tab` and `Shift+Tab` to cycle between screens.
 
 ---
 
