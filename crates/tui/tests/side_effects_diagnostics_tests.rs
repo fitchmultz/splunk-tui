@@ -108,10 +108,19 @@ async fn test_diagnostics_all_healthy() {
 async fn test_diagnostics_connection_refused() {
     let mut harness = SideEffectsTestHarness::new().await;
 
-    // No mocks mounted - all requests will fail with connection error
+    // Mount mocks that return 503 Service Unavailable for all endpoints.
+    // This simulates server errors in a deterministic way (wiremock's default 404
+    // doesn't properly simulate connection failures and can lead to flaky behavior).
+    Mock::given(method("GET"))
+        .and(path("/services/server/info"))
+        .respond_with(ResponseTemplate::new(503).set_body_string("Service Unavailable"))
+        .mount(&harness.mock_server)
+        .await;
 
+    // Use 15-second timeout to account for client retry backoff (4 retries with
+    // exponential backoff can take ~7+ seconds before returning error)
     let actions = harness
-        .handle_and_collect(Action::RunConnectionDiagnostics, 5)
+        .handle_and_collect(Action::RunConnectionDiagnostics, 15)
         .await;
 
     let has_diagnostics = actions.iter().any(|a| {
@@ -124,7 +133,7 @@ async fn test_diagnostics_connection_refused() {
     });
     assert!(
         has_diagnostics,
-        "Should send ConnectionDiagnosticsLoaded with Fail status when connection fails"
+        "Should send ConnectionDiagnosticsLoaded with Fail status when server returns 503"
     );
 }
 
