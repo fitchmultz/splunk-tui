@@ -99,15 +99,18 @@ pub(super) fn bindings() -> Vec<Keybinding> {
             keys: "Ctrl+e",
             description: "Export workload",
             scope: BindingScope::Screen(WorkloadManagement),
-            matcher: Some(Matcher::Key {
-                code: KeyCode::Char('e'),
-                modifiers: KeyModifiers::CONTROL,
-            }),
-            action: Some(Action::LoadWorkloadPools {
-                count: 30,
-                offset: 0,
-            }),
-            handles_input: true,
+            matcher: None,
+            action: None,
+            handles_input: false,
+        },
+        Keybinding {
+            section: Section::Workload,
+            keys: "n",
+            description: "Load more",
+            scope: BindingScope::Screen(WorkloadManagement),
+            matcher: None,
+            action: None,
+            handles_input: false,
         },
     ]
 }

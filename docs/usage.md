@@ -1622,6 +1622,7 @@ The Search screen has two input modes that affect how keys are handled:
 - `w`: Toggle pools/rules
 - `j/k or Up/Down`: Navigate list
 - `Ctrl+e`: Export workload
+- `n`: Load more
 
 #### SHC Screen
 - `r`: Refresh SHC info
