@@ -43,11 +43,8 @@ impl App {
                 if let Some(entry) = self.undo_buffer.redo() {
                     self.toasts
                         .push(Toast::info(format!("Redone: {}", entry.description)));
-                    // Re-queue the operation
-                    self.handle_undo_action(Action::QueueUndoableOperation {
-                        operation: entry.operation,
-                        description: entry.description,
-                    });
+                    // Update the undo toast tracking to the redone entry
+                    self.undo_toast_id = Some(entry.id);
                 } else {
                     self.toasts.push(Toast::info("Nothing to redo"));
                 }

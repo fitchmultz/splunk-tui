@@ -59,6 +59,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "ui/popup/builder.rs",
         "Popup builder with content generation for all popup types - each popup type requires dedicated builder method for form content",
     ),
+    (
+        "tui/tests/undo_tests.rs",
+        "Comprehensive undo/redo regression tests - covers undo buffer, action handlers, and integration with App for multiple bug fixes",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

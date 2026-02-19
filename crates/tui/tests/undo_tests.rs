@@ -1290,3 +1290,154 @@ fn test_undo_executed_without_recovery_data_shows_warning() {
         toast_messages
     );
 }
+
+/// Regression test for RQ-0485: Redo must NOT create duplicate history entries.
+/// Before the fix, redo() added an entry to history AND QueueUndoableOperation
+/// created a second entry, resulting in duplicate pending operations.
+#[test]
+fn test_redo_does_not_duplicate_history_entries() {
+    let mut buffer = UndoBuffer::new();
+
+    let original_id = buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "test-sid".to_string(),
+        },
+        "Delete job test-sid".to_string(),
+    );
+
+    // Verify initial state
+    assert_eq!(buffer.history().len(), 1);
+    assert_eq!(buffer.pending_count(), 1);
+
+    // Undo
+    let undone = buffer.undo().unwrap();
+    assert_eq!(undone.id, original_id);
+    assert!(undone.undone);
+    assert_eq!(buffer.history().len(), 0); // Removed from history
+    assert_eq!(buffer.pending_count(), 0);
+
+    // Redo
+    let redone = buffer.redo().unwrap();
+    assert_eq!(redone.id, original_id, "Redone entry should have SAME UUID");
+    assert!(
+        !redone.undone,
+        "Redone entry should not be marked as undone"
+    );
+
+    // CRITICAL ASSERTIONS: exactly ONE entry in history
+    assert_eq!(
+        buffer.history().len(),
+        1,
+        "Redo should result in exactly ONE history entry, not two"
+    );
+    assert_eq!(
+        buffer.pending_count(),
+        1,
+        "Redo should result in exactly ONE pending entry"
+    );
+
+    // Verify it's the same entry (same UUID)
+    let history_entry = buffer.peek_pending().unwrap();
+    assert_eq!(
+        history_entry.id, original_id,
+        "Redone entry should be the SAME entry (same UUID), not a new one"
+    );
+}
+
+/// Regression test for RQ-0485: Multiple undo/redo cycles must maintain single entry.
+#[test]
+fn test_multiple_undo_redo_cycles_no_duplication() {
+    let mut buffer = UndoBuffer::new();
+
+    let original_id = buffer.push(
+        UndoableOperation::DeleteJob {
+            sid: "x".to_string(),
+        },
+        "Test".to_string(),
+    );
+
+    // Cycle 1: undo -> redo
+    buffer.undo();
+    buffer.redo();
+    assert_eq!(
+        buffer.history().len(),
+        1,
+        "After 1 undo/redo: should have 1 entry"
+    );
+    assert_eq!(buffer.pending_count(), 1);
+    assert_eq!(buffer.peek_pending().unwrap().id, original_id);
+
+    // Cycle 2: undo -> redo
+    buffer.undo();
+    buffer.redo();
+    assert_eq!(
+        buffer.history().len(),
+        1,
+        "After 2 undo/redo: should still have 1 entry"
+    );
+    assert_eq!(buffer.pending_count(), 1);
+    assert_eq!(buffer.peek_pending().unwrap().id, original_id);
+
+    // Verify redo_stack is empty after redo
+    assert_eq!(
+        buffer.redo_stack().len(),
+        0,
+        "After redo: redo stack should be empty"
+    );
+}
+
+/// Integration test for RQ-0485: Verify redo via App action handler doesn't duplicate.
+/// This tests the actual fix in handle_undo_action.
+#[test]
+fn test_redo_via_app_no_duplication() {
+    use splunk_tui::{App, ConnectionContext, action::Action};
+
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Queue an operation
+    app.update(Action::QueueUndoableOperation {
+        operation: UndoableOperation::DeleteJob {
+            sid: "app-test".to_string(),
+        },
+        description: "Delete job app-test".to_string(),
+    });
+
+    // Get the ID from the queued operation
+    let original_id = app.undo_buffer.peek_pending().unwrap().id;
+    assert_eq!(app.undo_buffer.history().len(), 1);
+    assert_eq!(app.undo_buffer.pending_count(), 1);
+
+    // Undo
+    app.update(Action::Undo);
+    assert_eq!(app.undo_buffer.history().len(), 0);
+    assert_eq!(app.undo_buffer.pending_count(), 0);
+
+    // Redo - this should NOT create a duplicate
+    app.update(Action::Redo);
+
+    // Verify: exactly one entry in history
+    assert_eq!(
+        app.undo_buffer.history().len(),
+        1,
+        "Redo via App should result in exactly ONE history entry"
+    );
+    assert_eq!(
+        app.undo_buffer.pending_count(),
+        1,
+        "Redo via App should result in exactly ONE pending entry"
+    );
+
+    // Verify it's the same entry
+    let entry = app.undo_buffer.peek_pending().unwrap();
+    assert_eq!(
+        entry.id, original_id,
+        "Redone entry should have same UUID as original"
+    );
+
+    // Verify undo_toast_id was updated
+    assert_eq!(
+        app.undo_toast_id,
+        Some(original_id),
+        "undo_toast_id should be updated to the redone entry's ID"
+    );
+}
