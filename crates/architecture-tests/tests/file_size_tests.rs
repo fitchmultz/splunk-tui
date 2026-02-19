@@ -67,6 +67,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "app/actions/system.rs",
         "System action handlers for dialog operations - Create/Modify/Delete dialogs for Indexes, Users, Roles, Saved Searches with popup management and comprehensive tests",
     ),
+    (
+        "app/mouse.rs",
+        "Mouse event handling with comprehensive coverage - includes main UI mouse handling (footer, content area selection) and popup mouse interaction support for confirmation dialogs",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

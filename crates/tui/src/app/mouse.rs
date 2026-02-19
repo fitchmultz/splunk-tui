@@ -4,6 +4,7 @@
 //! - Handle mouse scroll events
 //! - Handle footer button clicks
 //! - Handle content area clicks for selection
+//! - Handle popup dialog interactions (confirm/cancel via click)
 //!
 //! Does NOT handle:
 //! - Does NOT handle keyboard input
@@ -13,13 +14,16 @@ use crate::action::Action;
 use crate::app::App;
 use crate::app::footer_layout::FooterLayout;
 use crate::app::state::{CurrentScreen, HEADER_HEIGHT};
-use crossterm::event::{MouseEvent, MouseEventKind};
+use crate::ui::popup::{POPUP_HEIGHT_PERCENT, POPUP_WIDTH_PERCENT};
+use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 impl App {
     /// Handle mouse input - returns Action if one should be dispatched.
     pub fn handle_mouse(&mut self, mouse: MouseEvent) -> Option<Action> {
+        // Route to popup handler when popup is active
         if self.popup.is_some() {
-            return None;
+            return self.handle_popup_mouse(mouse);
         }
         match mouse.kind {
             MouseEventKind::ScrollUp => Some(Action::NavigateUp),
@@ -390,6 +394,79 @@ fn calculate_table_click_index(
         Some(index)
     } else {
         None
+    }
+}
+
+// ============================================================================
+// Popup Mouse Handling
+// ============================================================================
+
+impl App {
+    /// Handle mouse input when a popup is active.
+    fn handle_popup_mouse(&mut self, mouse: MouseEvent) -> Option<Action> {
+        match mouse.kind {
+            MouseEventKind::Down(MouseButton::Left) => {
+                self.handle_popup_click(mouse.column, mouse.row)
+            }
+            MouseEventKind::ScrollUp | MouseEventKind::ScrollDown => {
+                // Scroll events in popups - currently ignored
+                // Could be implemented for scrollable popups (Help, ErrorDetails, etc.)
+                None
+            }
+            _ => None,
+        }
+    }
+
+    /// Calculate the popup area on screen.
+    /// Uses the same calculation as render.rs:centered_rect().
+    fn get_popup_area(&self) -> Option<Rect> {
+        let popup = self.popup.as_ref()?;
+        if !popup.kind.is_confirmation() {
+            return None;
+        }
+        let screen = self.last_area;
+
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage((100 - POPUP_HEIGHT_PERCENT) / 2),
+                Constraint::Percentage(POPUP_HEIGHT_PERCENT),
+                Constraint::Percentage((100 - POPUP_HEIGHT_PERCENT) / 2),
+            ])
+            .split(screen);
+
+        Some(
+            Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - POPUP_WIDTH_PERCENT) / 2),
+                    Constraint::Percentage(POPUP_WIDTH_PERCENT),
+                    Constraint::Percentage((100 - POPUP_WIDTH_PERCENT) / 2),
+                ])
+                .split(popup_layout[1])[1],
+        )
+    }
+
+    /// Handle mouse clicks when a popup is active.
+    fn handle_popup_click(&mut self, col: u16, row: u16) -> Option<Action> {
+        let popup_area = self.get_popup_area()?;
+
+        if col < popup_area.x
+            || col >= popup_area.x + popup_area.width
+            || row < popup_area.y
+            || row >= popup_area.y + popup_area.height
+        {
+            self.popup = None;
+            return None;
+        }
+
+        let popup = self.popup.take()?;
+        if popup.kind.is_confirmation() {
+            self.execute_confirmation_action(popup.kind)
+        } else {
+            self.popup = Some(popup);
+            None
+        }
     }
 }
 

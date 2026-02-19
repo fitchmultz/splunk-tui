@@ -4,6 +4,7 @@
 //! - Handle confirmation dialogs for job/app/user/index operations
 //! - Confirm or cancel destructive actions
 //! - Queue destructive operations for undoable execution
+//! - Provide shared action execution logic for keyboard and mouse handlers
 //!
 //! Does NOT handle:
 //! - Does NOT render popups (handled by ui::popup module)
@@ -11,197 +12,130 @@
 
 use crate::action::Action;
 use crate::app::App;
-use crate::ui::popup::{Popup, PopupType};
+use crate::ui::popup::PopupType;
 use crate::undo::UndoableOperation;
 use crossterm::event::{KeyCode, KeyEvent};
 
+impl PopupType {
+    pub fn is_confirmation(&self) -> bool {
+        matches!(
+            self,
+            PopupType::ConfirmCancel(_)
+                | PopupType::ConfirmDelete(_)
+                | PopupType::ConfirmCancelBatch(_)
+                | PopupType::ConfirmDeleteBatch(_)
+                | PopupType::ConfirmEnableApp(_)
+                | PopupType::ConfirmDisableApp(_)
+                | PopupType::ConfirmRemoveApp(_)
+                | PopupType::DeleteIndexConfirm { .. }
+                | PopupType::DeleteUserConfirm { .. }
+                | PopupType::DeleteLookupConfirm { .. }
+                | PopupType::DeleteRoleConfirm { .. }
+                | PopupType::DeleteProfileConfirm { .. }
+                | PopupType::DeleteSavedSearchConfirm { .. }
+        )
+    }
+}
+
 impl App {
+    /// Execute the confirm action for a confirmation popup type.
+    ///
+    /// This is the single source of truth for mapping confirmation popups to actions.
+    /// Used by both keyboard handling (this module) and mouse handling (mouse.rs).
+    pub fn execute_confirmation_action(&mut self, popup_type: PopupType) -> Option<Action> {
+        match popup_type {
+            PopupType::ConfirmCancel(sid) => Some(Action::CancelJob(sid)),
+            PopupType::ConfirmDelete(sid) => Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteJob { sid: sid.clone() },
+                description: format!("Delete job '{}'", sid),
+            }),
+            PopupType::ConfirmCancelBatch(sids) => Some(Action::CancelJobsBatch(sids)),
+            PopupType::ConfirmDeleteBatch(sids) => Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteJobsBatch { sids: sids.clone() },
+                description: format!("Delete {} job(s)", sids.len()),
+            }),
+            PopupType::ConfirmEnableApp(name) => Some(Action::EnableApp(name)),
+            PopupType::ConfirmDisableApp(name) => Some(Action::DisableApp(name)),
+            PopupType::ConfirmRemoveApp(name) => Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::RemoveApp {
+                    app_name: name.clone(),
+                },
+                description: format!("Remove app '{}'", name),
+            }),
+            PopupType::DeleteIndexConfirm { index_name } => {
+                let original_settings = self.get_index_settings_for_undo(&index_name);
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteIndex {
+                        name: index_name.clone(),
+                        original_settings,
+                    },
+                    description: format!("Delete index '{}'", index_name),
+                })
+            }
+            PopupType::DeleteUserConfirm { user_name } => {
+                let original = self.get_user_recovery_data(&user_name);
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteUser {
+                        name: user_name.clone(),
+                        original,
+                    },
+                    description: format!("Delete user '{}'", user_name),
+                })
+            }
+            PopupType::DeleteLookupConfirm { lookup_name } => {
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteLookup {
+                        name: lookup_name.clone(),
+                        app: None,
+                        owner: None,
+                    },
+                    description: format!("Delete lookup '{}'", lookup_name),
+                })
+            }
+            PopupType::DeleteRoleConfirm { role_name } => Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteRole {
+                    name: role_name.clone(),
+                },
+                description: format!("Delete role '{}'", role_name),
+            }),
+            PopupType::DeleteProfileConfirm { profile_name } => {
+                Some(Action::DeleteProfile { name: profile_name })
+            }
+            PopupType::DeleteSavedSearchConfirm { search_name } => {
+                let name = search_name.clone();
+                let description = format!("Delete saved search '{}'", search_name);
+                let original = self.saved_searches.as_ref().and_then(|searches| {
+                    searches.iter().find(|s| s.name == name).map(|s| {
+                        crate::undo::SavedSearchRecoveryData {
+                            search: s.search.clone(),
+                            description: s.description.clone(),
+                            disabled: s.disabled,
+                        }
+                    })
+                });
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteSavedSearch { name, original },
+                    description,
+                })
+            }
+            _ => None,
+        }
+    }
+
     /// Handle confirmation dialog popups.
     ///
     /// Destructive operations are queued with the undo system instead of
     /// being executed immediately, giving users a grace period to undo.
     pub fn handle_confirm_popup(&mut self, key: KeyEvent) -> Option<Action> {
-        match (self.popup.as_ref().map(|p| &p.kind), key.code) {
-            // ConfirmCancel - not destructive, execute immediately
-            (Some(PopupType::ConfirmCancel(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let sid = if let Some(Popup {
-                    kind: PopupType::ConfirmCancel(s),
-                    ..
-                }) = self.popup.take()
-                {
-                    s
-                } else {
-                    unreachable!()
-                };
-                Some(Action::CancelJob(sid))
+        let is_confirm = matches!(key.code, KeyCode::Char('y') | KeyCode::Enter);
+        let is_reject = matches!(key.code, KeyCode::Char('n') | KeyCode::Esc);
+
+        match (self.popup.as_ref().map(|p| &p.kind), is_confirm, is_reject) {
+            (Some(kind), true, false) if kind.is_confirmation() => {
+                let popup = self.popup.take()?;
+                self.execute_confirmation_action(popup.kind)
             }
-            // ConfirmDelete - queue as undoable operation
-            (Some(PopupType::ConfirmDelete(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let sid = if let Some(Popup {
-                    kind: PopupType::ConfirmDelete(s),
-                    ..
-                }) = self.popup.take()
-                {
-                    s
-                } else {
-                    unreachable!()
-                };
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::DeleteJob { sid: sid.clone() },
-                    description: format!("Delete job '{}'", sid),
-                })
-            }
-            // ConfirmCancelBatch - not destructive, execute immediately
-            (Some(PopupType::ConfirmCancelBatch(sids)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let sids = sids.clone();
-                self.popup = None;
-                Some(Action::CancelJobsBatch(sids))
-            }
-            // ConfirmDeleteBatch - queue as undoable operation
-            (Some(PopupType::ConfirmDeleteBatch(sids)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let sids = sids.clone();
-                self.popup = None;
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::DeleteJobsBatch { sids: sids.clone() },
-                    description: format!("Delete {} job(s)", sids.len()),
-                })
-            }
-            // ConfirmEnableApp - not destructive, execute immediately
-            (Some(PopupType::ConfirmEnableApp(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let name = if let Some(Popup {
-                    kind: PopupType::ConfirmEnableApp(n),
-                    ..
-                }) = self.popup.take()
-                {
-                    n
-                } else {
-                    unreachable!()
-                };
-                Some(Action::EnableApp(name))
-            }
-            // ConfirmDisableApp - not destructive, execute immediately
-            (Some(PopupType::ConfirmDisableApp(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let name = if let Some(Popup {
-                    kind: PopupType::ConfirmDisableApp(n),
-                    ..
-                }) = self.popup.take()
-                {
-                    n
-                } else {
-                    unreachable!()
-                };
-                Some(Action::DisableApp(name))
-            }
-            // ConfirmRemoveApp - queue as undoable operation
-            (Some(PopupType::ConfirmRemoveApp(_)), KeyCode::Char('y') | KeyCode::Enter) => {
-                let name = if let Some(Popup {
-                    kind: PopupType::ConfirmRemoveApp(n),
-                    ..
-                }) = self.popup.take()
-                {
-                    n
-                } else {
-                    unreachable!()
-                };
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::RemoveApp {
-                        app_name: name.clone(),
-                    },
-                    description: format!("Remove app '{}'", name),
-                })
-            }
-            // DeleteIndexConfirm - queue as undoable operation
-            (
-                Some(PopupType::DeleteIndexConfirm { index_name }),
-                KeyCode::Char('y') | KeyCode::Enter,
-            ) => {
-                let name = index_name.clone();
-                let description = format!("Delete index '{}'", index_name);
-                self.popup = None;
-                // Try to capture original settings if we have the index data loaded
-                let original_settings = self.get_index_settings_for_undo(&name);
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::DeleteIndex {
-                        name,
-                        original_settings,
-                    },
-                    description,
-                })
-            }
-            // DeleteUserConfirm - queue as undoable operation
-            (
-                Some(PopupType::DeleteUserConfirm { user_name }),
-                KeyCode::Char('y') | KeyCode::Enter,
-            ) => {
-                let name = user_name.clone();
-                let description = format!("Delete user '{}'", user_name);
-                self.popup = None;
-                // Try to capture original user data if available
-                let original = self.get_user_recovery_data(&name);
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::DeleteUser { name, original },
-                    description,
-                })
-            }
-            // DeleteLookupConfirm - queue as undoable operation
-            (
-                Some(PopupType::DeleteLookupConfirm { lookup_name }),
-                KeyCode::Char('y') | KeyCode::Enter,
-            ) => {
-                let name = lookup_name.clone();
-                let description = format!("Delete lookup '{}'", lookup_name);
-                self.popup = None;
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::DeleteLookup {
-                        name,
-                        app: None,
-                        owner: None,
-                    },
-                    description,
-                })
-            }
-            // DeleteRoleConfirm - queue as undoable operation
-            (
-                Some(PopupType::DeleteRoleConfirm { role_name }),
-                KeyCode::Char('y') | KeyCode::Enter,
-            ) => {
-                let name = role_name.clone();
-                let description = format!("Delete role '{}'", role_name);
-                self.popup = None;
-                Some(Action::QueueUndoableOperation {
-                    operation: UndoableOperation::DeleteRole { name },
-                    description,
-                })
-            }
-            // Reject confirmations with 'n' or Esc
-            (
-                Some(
-                    PopupType::ConfirmCancel(_)
-                    | PopupType::ConfirmDelete(_)
-                    | PopupType::ConfirmCancelBatch(_)
-                    | PopupType::ConfirmDeleteBatch(_)
-                    | PopupType::ConfirmEnableApp(_)
-                    | PopupType::ConfirmDisableApp(_)
-                    | PopupType::ConfirmRemoveApp(_),
-                ),
-                KeyCode::Char('n') | KeyCode::Esc,
-            ) => {
-                self.popup = None;
-                None
-            }
-            (Some(PopupType::DeleteIndexConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
-                self.popup = None;
-                None
-            }
-            (Some(PopupType::DeleteUserConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
-                self.popup = None;
-                None
-            }
-            (Some(PopupType::DeleteLookupConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
-                self.popup = None;
-                None
-            }
-            (Some(PopupType::DeleteRoleConfirm { .. }), KeyCode::Char('n') | KeyCode::Esc) => {
+            (Some(kind), false, true) if kind.is_confirmation() => {
                 self.popup = None;
                 None
             }
@@ -213,7 +147,10 @@ impl App {
     ///
     /// Attempts to find the index in the currently loaded indexes list
     /// and extract its settings for potential recovery.
-    fn get_index_settings_for_undo(&self, name: &str) -> Option<crate::undo::IndexSettings> {
+    pub(crate) fn get_index_settings_for_undo(
+        &self,
+        name: &str,
+    ) -> Option<crate::undo::IndexSettings> {
         self.indexes.as_ref().and_then(|indexes| {
             indexes
                 .iter()
@@ -238,7 +175,10 @@ impl App {
     ///
     /// Attempts to find the user in the currently loaded users list
     /// and extract their data for potential recovery.
-    fn get_user_recovery_data(&self, name: &str) -> Option<crate::undo::UserRecoveryData> {
+    pub(crate) fn get_user_recovery_data(
+        &self,
+        name: &str,
+    ) -> Option<crate::undo::UserRecoveryData> {
         self.users.as_ref().and_then(|users| {
             users
                 .iter()
@@ -258,6 +198,7 @@ mod tests {
     use super::*;
     use crate::app::App;
     use crate::app::ConnectionContext;
+    use crate::ui::popup::Popup;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn create_test_app() -> App {
@@ -385,6 +326,86 @@ mod tests {
     fn test_confirm_esc_closes_popup() {
         let mut app = create_test_app();
         app.popup = Some(Popup::builder(PopupType::ConfirmDelete("test-sid".to_string())).build());
+
+        let action = app.handle_confirm_popup(key(KeyCode::Esc));
+
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_confirm_delete_profile_direct_action() {
+        let mut app = create_test_app();
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteProfileConfirm {
+                profile_name: "test_profile".to_string(),
+            })
+            .build(),
+        );
+
+        let action = app.handle_confirm_popup(key(KeyCode::Char('y')));
+
+        // Profile deletion is local config only, direct action
+        assert!(
+            matches!(&action, Some(Action::DeleteProfile { name }) if name == "test_profile"),
+            "Expected DeleteProfile action, got {:?}",
+            action
+        );
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_confirm_delete_profile_reject() {
+        let mut app = create_test_app();
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteProfileConfirm {
+                profile_name: "test_profile".to_string(),
+            })
+            .build(),
+        );
+
+        let action = app.handle_confirm_popup(key(KeyCode::Char('n')));
+
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_confirm_delete_saved_search_queues_undoable() {
+        let mut app = create_test_app();
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteSavedSearchConfirm {
+                search_name: "test_search".to_string(),
+            })
+            .build(),
+        );
+
+        let action = app.handle_confirm_popup(key(KeyCode::Char('y')));
+
+        // Saved search deletion should queue as undoable
+        assert!(
+            matches!(
+                &action,
+                Some(Action::QueueUndoableOperation {
+                    operation: UndoableOperation::DeleteSavedSearch { name, .. },
+                    description,
+                }) if name == "test_search" && description.contains("Delete saved search")
+            ),
+            "Expected QueueUndoableOperation for DeleteSavedSearch, got {:?}",
+            action
+        );
+        assert!(app.popup.is_none());
+    }
+
+    #[test]
+    fn test_confirm_delete_saved_search_reject() {
+        let mut app = create_test_app();
+        app.popup = Some(
+            Popup::builder(PopupType::DeleteSavedSearchConfirm {
+                search_name: "test_search".to_string(),
+            })
+            .build(),
+        );
 
         let action = app.handle_confirm_popup(key(KeyCode::Esc));
 

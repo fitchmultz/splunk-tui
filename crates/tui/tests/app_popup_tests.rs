@@ -17,6 +17,7 @@
 //! Tests are grouped by popup type and flow.
 
 mod helpers;
+use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use helpers::*;
 use splunk_client::models::SearchJobStatus;
 use splunk_tui::{
@@ -366,5 +367,331 @@ fn test_popup_cancel_disable_app() {
     // Cancel with Esc
     let action = app.handle_popup_input(esc_key());
     assert!(action.is_none());
+    assert!(app.popup.is_none());
+}
+
+// ============================================================================
+// Popup Mouse Interaction Tests
+// ============================================================================
+
+fn mouse_click(col: u16, row: u16) -> MouseEvent {
+    MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: col,
+        row,
+        modifiers: KeyModifiers::empty(),
+    }
+}
+
+#[test]
+fn test_popup_confirm_cancel_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(1));
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open cancel popup by pressing 'c'
+    app.handle_input(key('c'));
+    assert!(app.popup.is_some());
+
+    // Popup is 60% x 50% centered, so in 80x24 terminal:
+    // - popup_area: x=16, y=6, width=48, height=12
+    // Click anywhere inside popup - should confirm
+    let popup_center_x = 16 + 24; // center of popup horizontally
+    let popup_center_y = 6 + 6; // center of popup vertically
+
+    let event = mouse_click(popup_center_x, popup_center_y);
+    let action = app.handle_mouse(event);
+
+    assert!(matches!(action, Some(Action::CancelJob(sid)) if sid == "sid_1"));
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_confirm_cancel_mouse_click_outside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(1));
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open cancel popup by pressing 'c'
+    app.handle_input(key('c'));
+    assert!(app.popup.is_some());
+
+    // Click outside popup (top-left corner) - should cancel (close without action)
+    let event = mouse_click(0, 0);
+    let action = app.handle_mouse(event);
+
+    assert!(action.is_none());
+    assert!(
+        app.popup.is_none(),
+        "Popup should close when clicking outside"
+    );
+}
+
+#[test]
+fn test_popup_click_outside_closes_popup() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(1));
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open cancel popup
+    app.handle_input(key('c'));
+    assert!(app.popup.is_some());
+
+    // Click outside popup (top-left corner)
+    let event = mouse_click(0, 0);
+    let action = app.handle_mouse(event);
+
+    assert!(action.is_none());
+    assert!(
+        app.popup.is_none(),
+        "Popup should close when clicking outside"
+    );
+}
+
+#[test]
+fn test_popup_delete_confirm_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(2));
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open delete popup by pressing 'd'
+    app.handle_input(key('d'));
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ConfirmDelete(_))
+    ));
+
+    // Click anywhere inside popup - should confirm
+    let popup_center_x = 16 + 24;
+    let popup_center_y = 6 + 6;
+
+    let event = mouse_click(popup_center_x, popup_center_y);
+    let action = app.handle_mouse(event);
+
+    assert!(action.is_some(), "Clicking inside should confirm delete");
+    assert!(
+        matches!(
+            &action,
+            Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteJob { sid },
+                description,
+            }) if sid == "sid_2" && description.contains("Delete job")
+        ),
+        "Expected QueueUndoableOperation for DeleteJob, got {:?}",
+        action
+    );
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_non_confirmation_popup_ignores_mouse() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open help popup
+    let action = app.handle_input(key('?'));
+    assert!(matches!(action, Some(Action::OpenHelpPopup)));
+    app.update(action.unwrap());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::Help)
+    ));
+
+    // Click anywhere - should not close the popup (Help is not a confirmation popup)
+    let event = mouse_click(40, 12);
+    let action = app.handle_mouse(event);
+
+    assert!(action.is_none());
+    // Help popup should still be open (only confirmation popups have mouse interaction)
+    assert!(app.popup.is_some());
+}
+
+#[test]
+fn test_popup_batch_cancel_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Select multiple jobs and open batch cancel popup
+    app.jobs_state.select(Some(1));
+    app.handle_input(key(' ')); // Toggle selection
+    app.jobs_state.select(Some(2));
+    app.handle_input(key(' ')); // Toggle selection
+    app.handle_input(key('c')); // Open cancel popup
+
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ConfirmCancelBatch(_))
+    ));
+
+    // Click inside popup - should confirm batch cancel
+    let event = mouse_click(40, 12);
+    let action = app.handle_mouse(event);
+
+    assert!(
+        matches!(action, Some(Action::CancelJobsBatch(sids)) if sids.len() == 2),
+        "Expected CancelJobsBatch with 2 sids"
+    );
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_enable_app_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Apps;
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Create mock disabled app and open enable confirmation
+    let disabled_app = splunk_client::models::App {
+        name: "disabled_app".to_string(),
+        disabled: true,
+        version: Some("1.0.0".to_string()),
+        label: Some("Disabled App".to_string()),
+        is_configured: None,
+        is_visible: None,
+        description: None,
+        author: None,
+    };
+    app.update(Action::AppsLoaded(Ok(vec![disabled_app])));
+    app.apps_state.select(Some(0));
+
+    // Open enable popup
+    app.handle_input(key('e'));
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::ConfirmEnableApp(_))
+    ));
+
+    // Click inside popup - should confirm enable
+    let event = mouse_click(40, 12);
+    let action = app.handle_mouse(event);
+
+    assert!(
+        matches!(action, Some(Action::EnableApp(name)) if name == "disabled_app"),
+        "Expected EnableApp action"
+    );
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_delete_index_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Indexes;
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Create mock index
+    let index = splunk_client::models::Index {
+        name: "test_index".to_string(),
+        max_total_data_size_mb: None,
+        current_db_size_mb: 0,
+        total_event_count: 0,
+        max_warm_db_count: None,
+        max_hot_buckets: None,
+        frozen_time_period_in_secs: None,
+        cold_db_path: None,
+        home_path: None,
+        thawed_path: None,
+        cold_to_frozen_dir: None,
+        primary_index: None,
+    };
+    app.update(Action::IndexesLoaded(Ok(vec![index])));
+    app.indexes_state.select(Some(0));
+
+    // Open delete confirmation popup via action
+    app.update(Action::OpenDeleteIndexConfirm {
+        name: "test_index".to_string(),
+    });
+    assert!(app.popup.is_some());
+    assert!(matches!(
+        app.popup.as_ref().map(|p| &p.kind),
+        Some(PopupType::DeleteIndexConfirm { .. })
+    ));
+
+    // Click inside popup - should confirm delete
+    let event = mouse_click(40, 12);
+    let action = app.handle_mouse(event);
+
+    assert!(
+        matches!(
+            &action,
+            Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteIndex { name, .. },
+                ..
+            }) if name == "test_index"
+        ),
+        "Expected QueueUndoableOperation for DeleteIndex"
+    );
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_delete_profile_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open delete profile confirmation popup directly
+    app.popup = Some(
+        splunk_tui::ui::popup::Popup::builder(
+            splunk_tui::ui::popup::PopupType::DeleteProfileConfirm {
+                profile_name: "test_profile".to_string(),
+            },
+        )
+        .build(),
+    );
+
+    // Click inside popup - should confirm delete
+    let event = mouse_click(40, 12);
+    let action = app.handle_mouse(event);
+
+    assert!(
+        matches!(action, Some(Action::DeleteProfile { name }) if name == "test_profile"),
+        "Expected DeleteProfile action"
+    );
+    assert!(app.popup.is_none());
+}
+
+#[test]
+fn test_popup_delete_saved_search_mouse_click_inside() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+
+    // Open delete saved search confirmation popup directly
+    app.popup = Some(
+        splunk_tui::ui::popup::Popup::builder(
+            splunk_tui::ui::popup::PopupType::DeleteSavedSearchConfirm {
+                search_name: "test_search".to_string(),
+            },
+        )
+        .build(),
+    );
+
+    // Click inside popup - should confirm delete
+    let event = mouse_click(40, 12);
+    let action = app.handle_mouse(event);
+
+    assert!(
+        matches!(
+            &action,
+            Some(Action::QueueUndoableOperation {
+                operation: UndoableOperation::DeleteSavedSearch { name, .. },
+                ..
+            }) if name == "test_search"
+        ),
+        "Expected QueueUndoableOperation for DeleteSavedSearch"
+    );
     assert!(app.popup.is_none());
 }
