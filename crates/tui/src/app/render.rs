@@ -780,14 +780,19 @@ impl App {
         // Build navigation hint text
         let (nav_text, nav_width) = self.format_navigation_hint(&nav_ctx);
 
-        // Build Esc hint
+        // Build Esc hint (separator added conditionally during render)
         let esc_text = match nav_ctx.esc_action {
-            EscAction::DefaultFocusMode => " | Esc:Query".to_string(),
-            EscAction::BackToPreviousScreen => " | Esc:Back".to_string(),
-            EscAction::ClosePopup => " | Esc:Close".to_string(),
+            EscAction::DefaultFocusMode => "Esc:Query".to_string(),
+            EscAction::BackToPreviousScreen => "Esc:Back".to_string(),
+            EscAction::ClosePopup => "Esc:Close".to_string(),
             EscAction::None => String::new(),
         };
-        let esc_width = esc_text.len();
+        let esc_sep_width = if !nav_text.is_empty() && !esc_text.is_empty() {
+            " | ".len()
+        } else {
+            0
+        };
+        let esc_width = esc_text.len() + esc_sep_width;
 
         // Build loading indicator
         let loading_text = if self.loading {
@@ -842,10 +847,14 @@ impl App {
         }
 
         // Navigation hints (context-aware)
+        let has_nav_text = !nav_text.is_empty();
         spans.push(Span::raw(nav_text));
 
-        // Esc hint
+        // Esc hint (add separator only if nav_text precedes it)
         if !esc_text.is_empty() {
+            if has_nav_text {
+                spans.push(Span::raw(" | "));
+            }
             spans.push(Span::styled(esc_text, Style::default().fg(theme.text)));
         }
 
@@ -876,7 +885,7 @@ impl App {
         let text = match nav_ctx.tab_action {
             TabAction::NextScreen => format!(" {}:Next | {}:Prev ", next_key, prev_key),
             TabAction::PreviousScreen => format!(" {}:Prev ", prev_key),
-            TabAction::None => format!(" {}:Prev ", prev_key),
+            TabAction::None => String::new(),
             TabAction::ToggleFocus => format!(" {}:Next | {}:Prev ", next_key, prev_key),
         };
 
