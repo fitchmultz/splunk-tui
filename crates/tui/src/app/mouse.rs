@@ -69,13 +69,132 @@ impl App {
     }
 
     /// Handle clicks in the main content area.
+    /// Returns Action::SetFocus for multi-focus screens to synchronize focus state
+    /// with visible selection. This ensures keyboard navigation works on the
+    /// component that was clicked.
     fn handle_content_click(&mut self, row: u16, _col: u16) -> Option<Action> {
         // Ignore content clicks during loading
         if self.loading {
             return None;
         }
+
+        // Multi-focus screens: update selection AND emit SetFocus action
         match self.current_screen {
-            // PlainList screens (ListState, no header)
+            CurrentScreen::Search => {
+                // Search screen has search_query and search_results
+                // Search screen uses scroll_offset instead of ListState, so we just set focus
+                // The actual selection/nav happens via scroll actions
+                Some(Action::SetFocus("search_results".to_string()))
+            }
+
+            CurrentScreen::Configs => {
+                // Configs screen has multiple focusable components
+                match self.config_view_mode {
+                    crate::ui::screens::configs::ConfigViewMode::FileList => {
+                        if let Some(index) = calculate_table_click_index(
+                            row,
+                            HEADER_HEIGHT + 1,
+                            self.config_files_state.offset(),
+                            self.config_files.as_deref().map(|v| v.len()).unwrap_or(0),
+                        ) {
+                            self.config_files_state.select(Some(index));
+                        }
+                        Some(Action::SetFocus("config_files".to_string()))
+                    }
+                    crate::ui::screens::configs::ConfigViewMode::StanzaList
+                    | crate::ui::screens::configs::ConfigViewMode::StanzaDetail => {
+                        let (offset, total) = if self.config_search_mode {
+                            (0, self.filtered_stanza_indices.len())
+                        } else {
+                            (
+                                self.config_stanzas_state.offset(),
+                                self.config_stanzas.as_deref().map(|v| v.len()).unwrap_or(0),
+                            )
+                        };
+                        if let Some(index) =
+                            calculate_table_click_index(row, HEADER_HEIGHT + 1, offset, total)
+                        {
+                            self.config_stanzas_state.select(Some(index));
+                        }
+                        Some(Action::SetFocus("config_stanzas".to_string()))
+                    }
+                }
+            }
+
+            CurrentScreen::Jobs => {
+                // Jobs has special double-click handling; preserve InspectJob action
+                // but always set focus on any click
+                let action = self.handle_jobs_click(row);
+                action.or_else(|| Some(Action::SetFocus("jobs_list".to_string())))
+            }
+
+            CurrentScreen::Cluster => {
+                // Cluster has cluster_summary and cluster_peers
+                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
+                    if let Some(index) = calculate_table_click_index(
+                        row,
+                        HEADER_HEIGHT + 1,
+                        self.cluster_peers_state.offset(),
+                        self.cluster_peers.as_deref().map(|v| v.len()).unwrap_or(0),
+                    ) {
+                        self.cluster_peers_state.select(Some(index));
+                    }
+                    Some(Action::SetFocus("cluster_peers".to_string()))
+                } else {
+                    // Summary view is single focus, no need to change focus
+                    None
+                }
+            }
+
+            CurrentScreen::WorkloadManagement => {
+                // WorkloadManagement has workload_pools and workload_rules
+                let focus_id = match self.workload_view_mode {
+                    crate::app::state::WorkloadViewMode::Pools => {
+                        if let Some(index) = calculate_table_click_index(
+                            row,
+                            HEADER_HEIGHT + 1,
+                            self.workload_pools_state.offset(),
+                            self.workload_pools.as_deref().map(|v| v.len()).unwrap_or(0),
+                        ) {
+                            self.workload_pools_state.select(Some(index));
+                        }
+                        "workload_pools"
+                    }
+                    crate::app::state::WorkloadViewMode::Rules => {
+                        if let Some(index) = calculate_table_click_index(
+                            row,
+                            HEADER_HEIGHT + 1,
+                            self.workload_rules_state.offset(),
+                            self.workload_rules.as_deref().map(|v| v.len()).unwrap_or(0),
+                        ) {
+                            self.workload_rules_state.select(Some(index));
+                        }
+                        "workload_rules"
+                    }
+                };
+                Some(Action::SetFocus(focus_id.to_string()))
+            }
+
+            CurrentScreen::Shc => {
+                // SHC has shc_summary and shc_members
+                if self.shc_view_mode == crate::app::state::ShcViewMode::Members {
+                    if let Some(index) = calculate_table_click_index(
+                        row,
+                        HEADER_HEIGHT + 1,
+                        self.shc_members_state.offset(),
+                        self.shc_members.as_deref().map(|v| v.len()).unwrap_or(0),
+                    ) {
+                        self.shc_members_state.select(Some(index));
+                    }
+                    Some(Action::SetFocus("shc_members".to_string()))
+                } else {
+                    // Summary view is single focus, no need to change focus
+                    None
+                }
+            }
+
+            // Single-focus screens: only update selection, no focus change needed
+            // These screens have only one component in FocusManager, so focus is already there
             CurrentScreen::Apps => {
                 if let Some(index) = calculate_list_click_index(
                     row,
@@ -175,9 +294,6 @@ impl App {
                 }
                 None
             }
-
-            // TableWithHeader screens (TableState, has header row)
-            CurrentScreen::Jobs => self.handle_jobs_click(row),
             CurrentScreen::Inputs => {
                 if let Some(index) = calculate_table_click_index(
                     row,
@@ -245,96 +361,13 @@ impl App {
                 None
             }
 
-            // Multi-view screens (need view_mode check)
-            CurrentScreen::Cluster => {
-                if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
-                    if let Some(index) = calculate_table_click_index(
-                        row,
-                        HEADER_HEIGHT + 1,
-                        self.cluster_peers_state.offset(),
-                        self.cluster_peers.as_deref().map(|v| v.len()).unwrap_or(0),
-                    ) {
-                        self.cluster_peers_state.select(Some(index));
-                    }
-                }
-                None
-            }
-            CurrentScreen::WorkloadManagement => {
-                match self.workload_view_mode {
-                    crate::app::state::WorkloadViewMode::Pools => {
-                        if let Some(index) = calculate_table_click_index(
-                            row,
-                            HEADER_HEIGHT + 1,
-                            self.workload_pools_state.offset(),
-                            self.workload_pools.as_deref().map(|v| v.len()).unwrap_or(0),
-                        ) {
-                            self.workload_pools_state.select(Some(index));
-                        }
-                    }
-                    crate::app::state::WorkloadViewMode::Rules => {
-                        if let Some(index) = calculate_table_click_index(
-                            row,
-                            HEADER_HEIGHT + 1,
-                            self.workload_rules_state.offset(),
-                            self.workload_rules.as_deref().map(|v| v.len()).unwrap_or(0),
-                        ) {
-                            self.workload_rules_state.select(Some(index));
-                        }
-                    }
-                }
-                None
-            }
-            CurrentScreen::Shc => {
-                if self.shc_view_mode == crate::app::state::ShcViewMode::Members {
-                    if let Some(index) = calculate_table_click_index(
-                        row,
-                        HEADER_HEIGHT + 1,
-                        self.shc_members_state.offset(),
-                        self.shc_members.as_deref().map(|v| v.len()).unwrap_or(0),
-                    ) {
-                        self.shc_members_state.select(Some(index));
-                    }
-                }
-                None
-            }
-            CurrentScreen::Configs => {
-                match self.config_view_mode {
-                    crate::ui::screens::configs::ConfigViewMode::FileList => {
-                        if let Some(index) = calculate_table_click_index(
-                            row,
-                            HEADER_HEIGHT + 1,
-                            self.config_files_state.offset(),
-                            self.config_files.as_deref().map(|v| v.len()).unwrap_or(0),
-                        ) {
-                            self.config_files_state.select(Some(index));
-                        }
-                    }
-                    crate::ui::screens::configs::ConfigViewMode::StanzaList
-                    | crate::ui::screens::configs::ConfigViewMode::StanzaDetail => {
-                        let (offset, total) = if self.config_search_mode {
-                            (0, self.filtered_stanza_indices.len())
-                        } else {
-                            (
-                                self.config_stanzas_state.offset(),
-                                self.config_stanzas.as_deref().map(|v| v.len()).unwrap_or(0),
-                            )
-                        };
-                        if let Some(index) =
-                            calculate_table_click_index(row, HEADER_HEIGHT + 1, offset, total)
-                        {
-                            self.config_stanzas_state.select(Some(index));
-                        }
-                    }
-                }
-                None
-            }
-
             // Non-list screens (no mouse selection)
             _ => None,
         }
     }
 
     /// Special handler for Jobs screen (has filter offset).
+    /// Returns Some(Action::InspectJob) for double-click, None for single click.
     fn handle_jobs_click(&mut self, row: u16) -> Option<Action> {
         let filter_offset = if self.is_filtering || self.search_filter.is_some() {
             3
@@ -578,11 +611,14 @@ mod tests {
         };
 
         let action = app.handle_mouse(event);
-        // First click should just select
-        assert!(action.is_none());
+        // First click should set focus (Jobs is multi-focus screen)
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "jobs_list"),
+            "First click should return SetFocus action for jobs_list"
+        );
         assert_eq!(app.jobs_state.selected(), Some(1));
 
-        // Second click on same row should Inspect
+        // Second click on same row should Inspect (double-click)
         let action2 = app.handle_mouse(event);
         assert!(matches!(action2, Some(Action::InspectJob)));
     }
@@ -638,12 +674,15 @@ mod tests {
             modifiers: KeyModifiers::empty(),
         };
 
-        // First click selects the filtered row
+        // First click selects the filtered row and sets focus
         let action = app.handle_mouse(event);
-        assert!(action.is_none());
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "jobs_list"),
+            "First click should return SetFocus action for jobs_list"
+        );
         assert_eq!(app.jobs_state.selected(), Some(1));
 
-        // Second click on the same row should inspect
+        // Second click on the same row should inspect (double-click)
         let action2 = app.handle_mouse(event);
         assert!(matches!(action2, Some(Action::InspectJob)));
     }
@@ -965,114 +1004,11 @@ mod tests {
         };
 
         let action = app.handle_mouse(event);
-        assert!(action.is_none());
+        assert!(
+            action.is_none(),
+            "Single-focus screens should not emit SetFocus action"
+        );
         assert_eq!(app.apps_state.selected(), Some(1));
-    }
-
-    #[test]
-    fn test_handle_mouse_content_click_inputs() {
-        use splunk_client::models::{Input, InputType};
-
-        let mut app = App::new(None, ConnectionContext::default());
-        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
-        app.current_screen = CurrentScreen::Inputs;
-        app.inputs = Some(vec![
-            Input {
-                name: "input1".to_string(),
-                input_type: InputType::Monitor,
-                disabled: false,
-                host: None,
-                source: None,
-                sourcetype: None,
-                connection_host: None,
-                port: None,
-                path: None,
-                blacklist: None,
-                whitelist: None,
-                recursive: None,
-                command: None,
-                interval: None,
-            },
-            Input {
-                name: "input2".to_string(),
-                input_type: InputType::Udp,
-                disabled: false,
-                host: None,
-                source: None,
-                sourcetype: None,
-                connection_host: None,
-                port: None,
-                path: None,
-                blacklist: None,
-                whitelist: None,
-                recursive: None,
-                command: None,
-                interval: None,
-            },
-        ]);
-
-        let event = MouseEvent {
-            kind: MouseEventKind::Down(MouseButton::Left),
-            column: 10,
-            row: HEADER_HEIGHT + 3,
-            modifiers: KeyModifiers::empty(),
-        };
-
-        let action = app.handle_mouse(event);
-        assert!(action.is_none());
-        assert_eq!(app.inputs_state.selected(), Some(1));
-    }
-
-    #[test]
-    fn test_handle_mouse_content_click_cluster_peers_view() {
-        use crate::app::state::ClusterViewMode;
-        use splunk_client::models::{ClusterPeer, PeerState, PeerStatus, ReplicationStatus};
-
-        let mut app = App::new(None, ConnectionContext::default());
-        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
-        app.current_screen = CurrentScreen::Cluster;
-        app.cluster_view_mode = ClusterViewMode::Peers;
-        app.cluster_peers = Some(vec![
-            ClusterPeer {
-                id: "peer1".to_string(),
-                label: Some("Peer 1".to_string()),
-                status: PeerStatus::Up,
-                peer_state: PeerState::Searchable,
-                site: Some("site1".to_string()),
-                guid: "guid-1".to_string(),
-                host: "host-1".to_string(),
-                port: 8080,
-                replication_count: Some(0),
-                replication_status: Some(ReplicationStatus::Complete),
-                bundle_replication_count: None,
-                is_captain: Some(false),
-            },
-            ClusterPeer {
-                id: "peer2".to_string(),
-                label: Some("Peer 2".to_string()),
-                status: PeerStatus::Up,
-                peer_state: PeerState::Searchable,
-                site: Some("site1".to_string()),
-                guid: "guid-2".to_string(),
-                host: "host-2".to_string(),
-                port: 8080,
-                replication_count: Some(0),
-                replication_status: Some(ReplicationStatus::Complete),
-                bundle_replication_count: None,
-                is_captain: Some(false),
-            },
-        ]);
-
-        let event = MouseEvent {
-            kind: MouseEventKind::Down(MouseButton::Left),
-            column: 10,
-            row: HEADER_HEIGHT + 3,
-            modifiers: KeyModifiers::empty(),
-        };
-
-        let action = app.handle_mouse(event);
-        assert!(action.is_none());
-        assert_eq!(app.cluster_peers_state.selected(), Some(1));
     }
 
     #[test]
@@ -1142,7 +1078,212 @@ mod tests {
         };
 
         let action = app.handle_mouse(event);
-        assert!(action.is_none());
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "workload_pools"),
+            "Click on workload pools should return SetFocus action for workload_pools"
+        );
         assert_eq!(app.workload_pools_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_workload_rules() {
+        use crate::app::state::WorkloadViewMode;
+        use splunk_client::models::WorkloadRule;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::WorkloadManagement;
+        app.workload_view_mode = WorkloadViewMode::Rules;
+        app.workload_rules = Some(vec![
+            WorkloadRule {
+                name: "rule1".to_string(),
+                predicate: Some("cpu_usage > 80".to_string()),
+                workload_pool: Some("pool1".to_string()),
+                user: None,
+                app: None,
+                search_type: None,
+                search_time_range: None,
+                enabled: Some(true),
+                order: Some(1),
+            },
+            WorkloadRule {
+                name: "rule2".to_string(),
+                predicate: Some("memory_usage > 50".to_string()),
+                workload_pool: Some("pool2".to_string()),
+                user: None,
+                app: None,
+                search_type: None,
+                search_time_range: None,
+                enabled: Some(true),
+                order: Some(2),
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "workload_rules"),
+            "Click on workload rules should return SetFocus action for workload_rules"
+        );
+        assert_eq!(app.workload_rules_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_search() {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Search;
+        app.search_results = vec![
+            serde_json::json!({"_raw": "result1"}),
+            serde_json::json!({"_raw": "result2"}),
+        ];
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 2,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "search_results"),
+            "Click on search results should return SetFocus action for search_results"
+        );
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_configs_files() {
+        use crate::ui::screens::configs::ConfigViewMode;
+        use splunk_client::models::ConfigFile;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Configs;
+        app.config_view_mode = ConfigViewMode::FileList;
+        app.config_files = Some(vec![
+            ConfigFile {
+                name: "file1".to_string(),
+                title: "file1.conf".to_string(),
+                description: None,
+            },
+            ConfigFile {
+                name: "file2".to_string(),
+                title: "file2.conf".to_string(),
+                description: None,
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "config_files"),
+            "Click on config files should return SetFocus action for config_files"
+        );
+        assert_eq!(app.config_files_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_configs_stanzas() {
+        use crate::ui::screens::configs::ConfigViewMode;
+        use splunk_client::models::ConfigStanza;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Configs;
+        app.config_view_mode = ConfigViewMode::StanzaList;
+        app.config_stanzas = Some(vec![
+            ConfigStanza {
+                name: "stanza1".to_string(),
+                config_file: "props".to_string(),
+                settings: std::collections::HashMap::new(),
+            },
+            ConfigStanza {
+                name: "stanza2".to_string(),
+                config_file: "props".to_string(),
+                settings: std::collections::HashMap::new(),
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "config_stanzas"),
+            "Click on config stanzas should return SetFocus action for config_stanzas"
+        );
+        assert_eq!(app.config_stanzas_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_handle_mouse_content_click_shc_members() {
+        use crate::app::state::ShcViewMode;
+        use splunk_client::models::ShcMember;
+
+        let mut app = App::new(None, ConnectionContext::default());
+        app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+        app.current_screen = CurrentScreen::Shc;
+        app.shc_view_mode = ShcViewMode::Members;
+        app.shc_members = Some(vec![
+            ShcMember {
+                id: "member1".to_string(),
+                label: Some("Member 1".to_string()),
+                host: "host1".to_string(),
+                port: 8080,
+                status: splunk_client::models::ShcMemberStatus::Up,
+                is_captain: true,
+                is_dynamic_captain: None,
+                guid: "guid1".to_string(),
+                site: Some("site1".to_string()),
+                replication_port: Some(8081),
+                last_heartbeat: None,
+                pending_job_count: None,
+            },
+            ShcMember {
+                id: "member2".to_string(),
+                label: Some("Member 2".to_string()),
+                host: "host2".to_string(),
+                port: 8080,
+                status: splunk_client::models::ShcMemberStatus::Up,
+                is_captain: false,
+                is_dynamic_captain: None,
+                guid: "guid2".to_string(),
+                site: Some("site1".to_string()),
+                replication_port: Some(8081),
+                last_heartbeat: None,
+                pending_job_count: None,
+            },
+        ]);
+
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: 10,
+            row: HEADER_HEIGHT + 3,
+            modifiers: KeyModifiers::empty(),
+        };
+
+        let action = app.handle_mouse(event);
+        assert!(
+            matches!(action, Some(Action::SetFocus(id)) if id == "shc_members"),
+            "Click on SHC members should return SetFocus action for shc_members"
+        );
+        assert_eq!(app.shc_members_state.selected(), Some(1));
     }
 }

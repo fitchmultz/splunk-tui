@@ -71,6 +71,10 @@ const EXCLUDED_FILES: &[(&str, &str)] = &[
         "app/mouse.rs",
         "Mouse event handling with comprehensive coverage - includes main UI mouse handling (footer, content area selection) and popup mouse interaction support for confirmation dialogs",
     ),
+    (
+        "tui/tests/app_mouse_tests.rs",
+        "Comprehensive mouse event integration tests - covers all screen types including multi-focus screens with focus synchronization",
+    ),
 ];
 
 /// Test that enforces file size limits across the codebase.

@@ -507,3 +507,200 @@ fn test_theme_ext_text_dim() {
     let dim = theme.text_dim();
     assert_eq!(dim.fg, Some(theme.text_dim));
 }
+
+// ============================================================================
+// Mouse Click Focus Synchronization Tests (RQ-0496)
+// ============================================================================
+
+#[test]
+fn test_mouse_click_search_results_updates_focus_mode() {
+    use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+    use splunk_tui::ConnectionContext;
+    use splunk_tui::action::Action;
+    use splunk_tui::app::App;
+    use splunk_tui::app::state::{CurrentScreen, HEADER_HEIGHT, SearchInputMode};
+
+    let mut app = App::new(None, ConnectionContext::default());
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+    app.current_screen = CurrentScreen::Search;
+    app.focus_manager = FocusManager::from_ids(&["search_query", "search_results"]);
+    app.search_results = vec![
+        serde_json::json!({"_raw": "result1"}),
+        serde_json::json!({"_raw": "result2"}),
+    ];
+
+    // Initial state: focus should be on query input
+    assert_eq!(app.search_input_mode, SearchInputMode::QueryFocused);
+    assert!(app.focus_manager.is_focused("search_query"));
+
+    // Simulate mouse click on search results
+    let click_event = MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: 10,
+        row: HEADER_HEIGHT + 2,
+        modifiers: KeyModifiers::empty(),
+    };
+
+    // Get the action from mouse handler
+    let action = app.handle_mouse(click_event);
+    assert!(
+        matches!(action, Some(Action::SetFocus(ref id)) if id == "search_results"),
+        "Click on search results should return SetFocus action"
+    );
+
+    // Process the action - THIS IS THE KEY STEP
+    if let Some(a) = action {
+        app.update(a);
+    }
+
+    // Verify mode flag is updated
+    assert_eq!(
+        app.search_input_mode,
+        SearchInputMode::ResultsFocused,
+        "After clicking results and processing action, search_input_mode should be ResultsFocused"
+    );
+}
+
+#[test]
+fn test_mouse_click_config_files_updates_focus_mode() {
+    use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+    use splunk_client::models::ConfigFile;
+    use splunk_tui::ConnectionContext;
+    use splunk_tui::action::Action;
+    use splunk_tui::app::App;
+    use splunk_tui::app::state::CurrentScreen;
+    use splunk_tui::focus::FocusManager;
+    use splunk_tui::ui::screens::configs::ConfigViewMode;
+
+    let mut app = App::new(None, ConnectionContext::default());
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+    app.current_screen = CurrentScreen::Configs;
+    app.config_view_mode = ConfigViewMode::FileList;
+    app.config_files = Some(vec![
+        ConfigFile {
+            name: "file1".into(),
+            title: "file1.conf".into(),
+            description: None,
+        },
+        ConfigFile {
+            name: "file2".into(),
+            title: "file2.conf".into(),
+            description: None,
+        },
+    ]);
+
+    // Initialize focus manager for Configs screen
+    app.focus_manager =
+        FocusManager::from_ids(&["config_search", "config_files", "config_stanzas"]);
+
+    // Simulate being in search mode initially
+    app.config_search_mode = true;
+
+    // Simulate mouse click on config files (row 5 = HEADER_HEIGHT + 1)
+    let click_event = MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: 10,
+        row: 5,
+        modifiers: KeyModifiers::empty(),
+    };
+
+    let action = app.handle_mouse(click_event);
+    assert!(
+        matches!(action, Some(Action::SetFocus(ref id)) if id == "config_files"),
+        "Click on config files should return SetFocus action"
+    );
+
+    // Process the action
+    if let Some(a) = action {
+        app.update(a);
+    }
+
+    // Verify mode flag is updated
+    assert!(
+        !app.config_search_mode,
+        "After clicking config files and processing action, config_search_mode should be false"
+    );
+}
+
+#[test]
+fn test_keyboard_navigation_after_mouse_click() {
+    use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+    use splunk_tui::ConnectionContext;
+    use splunk_tui::action::Action;
+    use splunk_tui::app::App;
+    use splunk_tui::app::state::{CurrentScreen, HEADER_HEIGHT, SearchInputMode};
+    use splunk_tui::focus::FocusManager;
+
+    let mut app = App::new(None, ConnectionContext::default());
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+    app.current_screen = CurrentScreen::Search;
+    app.focus_manager = FocusManager::from_ids(&["search_query", "search_results"]);
+
+    // Click on results
+    let click_event = MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: 10,
+        row: HEADER_HEIGHT + 2,
+        modifiers: KeyModifiers::empty(),
+    };
+
+    if let Some(action) = app.handle_mouse(click_event) {
+        app.update(action);
+    }
+
+    assert!(app.focus_manager.is_focused("search_results"));
+    assert_eq!(app.search_input_mode, SearchInputMode::ResultsFocused);
+
+    // Now navigate via keyboard (PreviousFocus should go back to query)
+    app.update(Action::PreviousFocus);
+
+    assert!(
+        app.focus_manager.is_focused("search_query"),
+        "After PreviousFocus, should be on search_query"
+    );
+    assert_eq!(app.search_input_mode, SearchInputMode::QueryFocused);
+}
+
+#[test]
+fn test_jobs_click_returns_focus_action() {
+    use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+    use splunk_client::models::SearchJobStatus;
+    use splunk_tui::ConnectionContext;
+    use splunk_tui::action::Action;
+    use splunk_tui::app::App;
+    use splunk_tui::app::state::{CurrentScreen, HEADER_HEIGHT};
+
+    let mut app = App::new(None, ConnectionContext::default());
+    app.last_area = ratatui::layout::Rect::new(0, 0, 80, 24);
+    app.current_screen = CurrentScreen::Jobs;
+    app.jobs = Some(vec![SearchJobStatus {
+        sid: "job1".to_string(),
+        is_done: true,
+        is_finalized: true,
+        done_progress: 1.0,
+        run_duration: 1.0,
+        cursor_time: None,
+        scan_count: 0,
+        event_count: 0,
+        result_count: 0,
+        disk_usage: 0,
+        priority: None,
+        label: None,
+    }]);
+    // Note: rebuild_filtered_indices() is pub(crate) and not accessible from integration tests.
+    // Double-click behavior is tested in unit tests in mouse.rs.
+
+    // Click should return SetFocus for jobs_list (multi-focus screen)
+    let click_event = MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: 10,
+        row: HEADER_HEIGHT + 2,
+        modifiers: KeyModifiers::empty(),
+    };
+
+    let action = app.handle_mouse(click_event);
+    assert!(
+        matches!(action, Some(Action::SetFocus(ref id)) if id == "jobs_list"),
+        "Click on jobs list should return SetFocus action for jobs_list"
+    );
+}

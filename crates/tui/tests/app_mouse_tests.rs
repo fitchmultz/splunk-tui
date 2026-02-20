@@ -752,7 +752,10 @@ fn test_mouse_click_selects_cluster_peer_in_peers_view() {
     };
 
     let action = app.handle_mouse(event);
-    assert!(action.is_none());
+    assert!(
+        matches!(action, Some(Action::SetFocus(id)) if id == "cluster_peers"),
+        "Click on cluster peers should return SetFocus action"
+    );
     assert_eq!(app.cluster_peers_state.selected(), Some(1));
 }
 
@@ -819,7 +822,10 @@ fn test_mouse_click_selects_workload_pool() {
     };
 
     let action = app.handle_mouse(event);
-    assert!(action.is_none());
+    assert!(
+        matches!(action, Some(Action::SetFocus(id)) if id == "workload_pools"),
+        "Click on workload pools should return SetFocus action"
+    );
     assert_eq!(app.workload_pools_state.selected(), Some(1));
 }
 
@@ -862,7 +868,10 @@ fn test_mouse_click_selects_workload_rule() {
     };
 
     let action = app.handle_mouse(event);
-    assert!(action.is_none());
+    assert!(
+        matches!(action, Some(Action::SetFocus(id)) if id == "workload_rules"),
+        "Click on workload rules should return SetFocus action"
+    );
     assert_eq!(app.workload_rules_state.selected(), Some(1));
 }
 
@@ -911,7 +920,10 @@ fn test_mouse_click_selects_shc_member() {
     };
 
     let action = app.handle_mouse(event);
-    assert!(action.is_none());
+    assert!(
+        matches!(action, Some(Action::SetFocus(id)) if id == "shc_members"),
+        "Click on SHC members should return SetFocus action"
+    );
     assert_eq!(app.shc_members_state.selected(), Some(1));
 }
 
@@ -962,8 +974,8 @@ fn test_double_click_on_different_job_does_not_trigger_inspect() {
         },
     ]);
 
-    // Without filtered indices, clicks don't select items
-    // This is expected behavior - the test just verifies no panic occurs
+    // Without filtered indices, clicks don't select items but still set focus
+    // This is expected behavior - Jobs screen always sets focus on click
     let event1 = MouseEvent {
         kind: MouseEventKind::Down(MouseButton::Left),
         column: 10,
@@ -972,8 +984,8 @@ fn test_double_click_on_different_job_does_not_trigger_inspect() {
     };
     let action1 = app.handle_mouse(event1);
     assert!(
-        action1.is_none(),
-        "Without filtered indices, click should not trigger action"
+        matches!(action1, Some(Action::SetFocus(id)) if id == "jobs_list"),
+        "Click on jobs should return SetFocus action even without filtered indices"
     );
 
     let event2 = MouseEvent {
@@ -984,8 +996,8 @@ fn test_double_click_on_different_job_does_not_trigger_inspect() {
     };
     let action2 = app.handle_mouse(event2);
     assert!(
-        action2.is_none(),
-        "Clicking different row should not trigger inspect"
+        matches!(action2, Some(Action::SetFocus(id)) if id == "jobs_list"),
+        "Click on jobs should return SetFocus action for different row"
     );
 }
 
