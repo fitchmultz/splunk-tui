@@ -315,6 +315,47 @@ cargo test -p splunk-tui --test first_run_tests
 4. Run `cargo test` to generate the initial snapshot
 5. Review the snapshot in `crates/tui/tests/snapshots/`
 
+## Quick UX Validation
+
+For rapid iteration on TUI visual components, use the smoke test target:
+
+### TUI Smoke Tests
+
+```bash
+# Run only UX snapshot tests (~0.5 seconds)
+make tui-smoke
+```
+
+This runs the 8 snapshot test files (84 tests total) covering:
+- Tutorial wizard (8 tests)
+- Error details (5 tests)
+- Application popups (20 tests)
+- Footer hints (21 tests)
+- Screen layouts (12 tests)
+- Search interfaces (10 tests)
+- Job displays (5 tests)
+- Miscellaneous UI (3 tests)
+
+### When to Use Smoke vs Full CI
+
+| Target | Speed | Coverage | When to Use |
+|--------|-------|----------|-------------|
+| `make tui-smoke` | ~0.5s | UX snapshots only | Iterating on popups, layouts, visual styling |
+| `make test` | ~30-60s | All unit/integration tests | Before pushing changes |
+| `make ci` | ~3-5min | Full pipeline including release | Before merging/PR |
+
+### Manual TUI Testing
+
+For visual verification during development:
+
+```bash
+# Quick launch (requires SPLUNK_* env vars)
+make run-tui
+
+# Or directly
+cargo run --package splunk-tui
+```
+
 ## References
 
 - [Wiremock Documentation](https://docs.rs/wiremock/)

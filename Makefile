@@ -3,6 +3,7 @@
 	bench bench-client bench-cli bench-tui \
 	build release generate lint-docs ci help lint-secrets install-hooks \
 	_generate-docs _lint-docs-check examples-test \
+	tui-smoke run-tui \
 	docker-build docker-run-cli docker-run-tui docker-compose-up \
 	docker-compose-cli docker-compose-tui docker-clean \
 	helm-install helm-upgrade helm-uninstall
@@ -30,7 +31,7 @@ endif
 # Hermetic tests:
 # Prevent test runs from accidentally loading a developer's local `.env` file.
 # (The Rust config loader respects `DOTENV_DISABLED` in `crates/config/src/loader.rs`.)
-test test-all test-unit test-integration test-chaos ci: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
+test test-all test-unit test-integration test-chaos tui-smoke ci: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
 
 # Fetch all dependencies (warm caches, no build)
 install:
@@ -104,6 +105,31 @@ test-chaos:
 	@cargo test -p splunk-client --test chaos_timing_tests --features test-utils --locked
 	@cargo test -p splunk-client --test chaos_flapping_tests --features test-utils --locked
 	@echo "  ✓ Chaos tests complete"
+
+# Run TUI UX smoke tests (snapshot-based regression suite)
+# Fast feedback for UI/UX changes - runs only snapshot tests from the TUI crate.
+# Use this for rapid iteration on popups, layouts, and visual components.
+# For full validation before merging, run `make ci`.
+tui-smoke:
+	@echo "→ Running TUI UX smoke tests..."
+	@cargo test -p splunk-tui \
+		--test snapshot_tutorial_tests \
+		--test snapshot_error_details_tests \
+		--test snapshot_popups_tests \
+		--test snapshot_footer_tests \
+		--test snapshot_screens_tests \
+		--test snapshot_search_tests \
+		--test snapshot_jobs_tests \
+		--test snapshot_misc_tests \
+		--all-features --locked
+	@echo "  ✓ TUI smoke tests complete"
+
+# Run the TUI binary locally (developer convenience)
+# Builds and runs the TUI with the dev profile for quick manual testing.
+# Requires SPLUNK_* environment variables to be set (e.g., via .env file).
+run-tui:
+	@echo "→ Running TUI locally..."
+	@cargo run --package splunk-tui --bin splunk-tui --all-features
 
 # Run live tests (requires a reachable Splunk server configured via env / .env.test)
 # Mode controlled by LIVE_TESTS_MODE: required|optional|skip
@@ -248,6 +274,8 @@ help:
 	@echo "  make test-chaos       - Run chaos engineering tests"
 	@echo "  make test-live        - Run live tests (LIVE_TESTS_MODE=required|optional|skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
+	@echo "  make tui-smoke        - Run TUI UX smoke tests (snapshot suite, fast feedback)"
+	@echo "  make run-tui          - Run TUI locally for manual testing"
 	@echo "  make bench            - Run all benchmarks"
 	@echo "  make bench-client     - Run client crate benchmarks"
 	@echo "  make bench-cli        - Run CLI crate benchmarks"
