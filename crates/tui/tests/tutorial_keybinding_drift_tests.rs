@@ -129,3 +129,65 @@ fn tutorial_correctly_describes_focus_navigation() {
         "Tutorial should describe Ctrl+Tab as cycling focus between elements"
     );
 }
+
+/// Test that tutorial mentions correct keys for top/bottom navigation
+#[test]
+fn tutorial_list_navigation_matches_keymap() {
+    let tutorial = generate_keybinding_section();
+
+    // The keymap binds Home/End to GoToTop/GoToBottom
+    assert!(
+        tutorial.contains("Home"),
+        "Tutorial should mention 'Home' for go to top, not 'g'"
+    );
+    assert!(
+        tutorial.contains("End"),
+        "Tutorial should mention 'End' for go to bottom, not 'G'"
+    );
+}
+
+/// Test that tutorial does NOT claim g/G for list navigation
+#[test]
+fn tutorial_does_not_claim_g_for_navigation() {
+    let tutorial = generate_keybinding_section();
+
+    // Check that we don't claim g/G for navigation
+    assert!(
+        !tutorial.contains("• g               Go to top"),
+        "Tutorial should NOT claim 'g' for go to top (Home is bound)"
+    );
+    assert!(
+        !tutorial.contains("• G               Go to bottom"),
+        "Tutorial should NOT claim 'G' for go to bottom (End is bound)"
+    );
+}
+
+/// Test that tutorial does NOT claim / for search focus
+#[test]
+fn tutorial_does_not_claim_slash_for_search_focus() {
+    let tutorial = generate_keybinding_section();
+
+    // No / binding exists for focusing search input
+    assert!(
+        !tutorial.contains("• /               Focus search"),
+        "Tutorial should NOT claim '/' for search focus (no binding exists; input is always focused)"
+    );
+}
+
+/// Test that tutorial correctly describes search behavior
+#[test]
+fn tutorial_correctly_describes_search_behavior() {
+    let tutorial = generate_keybinding_section();
+
+    // Should mention Enter for running search
+    assert!(
+        tutorial.contains("Enter") && tutorial.contains("Execute search"),
+        "Tutorial should explain Enter executes search"
+    );
+
+    // Should mention Esc for returning to query input
+    assert!(
+        tutorial.contains("Esc") && tutorial.contains("Return to query input"),
+        "Tutorial should explain Esc returns to query input"
+    );
+}

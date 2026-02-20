@@ -42,11 +42,21 @@ pub fn help_key_text() -> String {
     get_key_for_action(Action::OpenHelpPopup, "?")
 }
 
+/// Generate list navigation keybinding text for tutorial.
+/// Returns the keys for GoToTop and GoToBottom actions.
+pub fn list_navigation_keys_text() -> (String, String) {
+    // These default to "Home" and "End" based on global_search.rs bindings
+    let go_top = get_key_for_action(Action::GoToTop, "Home");
+    let go_bottom = get_key_for_action(Action::GoToBottom, "End");
+    (go_top, go_bottom)
+}
+
 /// Generate the keybinding tutorial content section.
 /// This is the main entry point for generating tutorial keybinding text.
 pub fn generate_keybinding_section() -> String {
     let screen_nav_keys = screen_navigation_keys_text();
     let focus_nav_keys = focus_navigation_keys_text();
+    let (go_top_key, go_bottom_key) = list_navigation_keys_text();
     let quit_key = quit_key_text();
     let help_key = help_key_text();
 
@@ -58,19 +68,19 @@ Splunk TUI is designed to be keyboard-driven for efficiency. Here are the essent
 Navigation:
   • {screen_nav_keys}  Switch between screens
   • {focus_nav_keys}  Cycle focus between elements
-  • g               Go to top of list
-  • G               Go to bottom of list
+  • {go_top_key:<14} Go to top of list
+  • {go_bottom_key:<14} Go to bottom of list
 
 Search:
-  • /               Focus search input
   • Enter           Execute search
+  • Esc             Return to query input
   • Ctrl+c          Cancel running search
 
 Actions:
   • r               Refresh current view
   • e               Export results
-  • {help_key}               Show help
-  • {quit_key}               Quit or go back
+  • {help_key:<14} Show help
+  • {quit_key:<14} Quit or go back
 
 Screen-specific:
   • p               Profile manager
@@ -140,6 +150,20 @@ mod tests {
         assert!(
             !section.contains("Navigate between screens") || !section.contains("h/l"),
             "Should NOT associate h/l with screen navigation"
+        );
+        // Check for g/G drift - these should NOT appear for navigation
+        assert!(
+            !section.contains("g               Go to top"),
+            "Should NOT claim 'g' for go to top (Home is bound)"
+        );
+        assert!(
+            !section.contains("G               Go to bottom"),
+            "Should NOT claim 'G' for go to bottom (End is bound)"
+        );
+        // Check for / drift - no / binding exists for search focus
+        assert!(
+            !section.contains("/               Focus search"),
+            "Should NOT claim '/' for search focus (no binding exists)"
         );
     }
 
