@@ -34,6 +34,8 @@ pub struct FooterLayout {
     pub nav_width: u16,
     /// Width of the hints section (varies by screen and terminal width)
     pub hints_width: u16,
+    /// Width of the focus navigation section (0 if not multi-focus screen)
+    pub focus_width: u16,
 }
 
 impl FooterLayout {
@@ -65,7 +67,7 @@ impl FooterLayout {
         screen: CurrentScreen,
         terminal_width: u16,
     ) -> Self {
-        Self::calculate_with_mode(loading, progress, screen, terminal_width, None)
+        Self::calculate_with_mode(loading, progress, screen, terminal_width, None, false)
     }
 
     /// Calculate footer layout with search mode context.
@@ -88,6 +90,7 @@ impl FooterLayout {
         screen: CurrentScreen,
         terminal_width: u16,
         search_input_mode: Option<SearchInputMode>,
+        focus_navigation_mode: bool,
     ) -> Self {
         // Calculate loading width based on progress
         // Format: " Loading... {:.0}% "
@@ -111,9 +114,13 @@ impl FooterLayout {
         // Navigation section width is context-aware based on screen and mode
         let nav_width = Self::navigation_width(screen, search_input_mode);
 
-        // Calculate fixed width (loading + nav + help + quit + separators)
+        // Focus hint width based on whether focus navigation is enabled
+        let focus_width = Self::focus_hint_width(focus_navigation_mode);
+
+        // Calculate fixed width (loading + nav + focus + help + quit + separators)
         let fixed_width = loading_width
             + nav_width
+            + focus_width
             + Self::HELP_WIDTH
             + Self::QUIT_WIDTH
             + (if loading { 3 } else { 2 }) * Self::SEPARATOR_WIDTH;
@@ -126,9 +133,10 @@ impl FooterLayout {
         let hints_width = Self::calculate_hints_width(&hints, hints_available_width);
 
         // Calculate quit button position
-        // Layout: [Loading?] | Nav | [Hints?] | Help | Quit
+        // Layout: [Loading?] | Nav | [Focus?] | [Hints?] | Help | Quit
         let mut quit_start = loading_width
             + nav_width
+            + focus_width
             + hints_width
             + (if loading { 2 } else { 1 }) * Self::SEPARATOR_WIDTH
             + Self::HELP_WIDTH
@@ -136,6 +144,9 @@ impl FooterLayout {
 
         if hints_width > 0 {
             quit_start += Self::SEPARATOR_WIDTH; // Separator before hints
+        }
+        if focus_width > 0 {
+            quit_start += Self::SEPARATOR_WIDTH; // Separator before focus hints
         }
 
         let quit_end = quit_start + Self::QUIT_WIDTH;
@@ -148,6 +159,25 @@ impl FooterLayout {
             loading_width,
             nav_width,
             hints_width,
+            focus_width,
+        }
+    }
+
+    /// Get the focus hint width based on whether focus navigation is enabled.
+    ///
+    /// When focus_navigation_mode is true, the footer shows:
+    /// " Ctrl+Tab:Focus | Ctrl+Shift+Tab:Focus " (~32 chars)
+    fn focus_hint_width(focus_navigation_mode: bool) -> u16 {
+        if focus_navigation_mode {
+            use crate::action::Action;
+            let next_focus_key =
+                overrides::get_effective_key_display(Action::NextFocus, "Ctrl+Tab");
+            let prev_focus_key =
+                overrides::get_effective_key_display(Action::PreviousFocus, "Ctrl+Shift+Tab");
+            let text = format!(" {}:Focus | {}:Focus ", next_focus_key, prev_focus_key);
+            text.len() as u16
+        } else {
+            0
         }
     }
 

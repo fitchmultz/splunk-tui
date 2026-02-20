@@ -3,7 +3,7 @@ source: crates/tui/tests/snapshot_tutorial_tests.rs
 expression: harness.render()
 ---
 ┌──────────────────────────────────────┐
-│Splunk TUI - Search [NAV] | [?] Unknow│
+│Splunk TUI - Search | [?] Unknown     │
 │ |                                    │
 └──────────────────────────────────────┘
 ┌Search Query──────────────────────────┐
@@ -20,5 +20,5 @@ expression: harness.render()
 │         └──────────────────────────┘ │
 └──────────────────────────────────────┘
 ┌──────────────────────────────────────┐
-│[NAV] Esc:Close| Enter:Run ...| ?:Help│
+│Esc:Close| Enter:Run ...| ?:Help | q:Q│
 └──────────────────────────────────────┘

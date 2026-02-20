@@ -441,6 +441,8 @@ pub struct NavigationContext {
     pub shift_tab_action: TabAction,
     /// What Esc will do when pressed.
     pub esc_action: EscAction,
+    /// Whether the current screen has multiple focusable components.
+    pub has_multi_focus: bool,
 }
 
 impl NavigationContext {
@@ -449,6 +451,7 @@ impl NavigationContext {
         screen: CurrentScreen,
         search_input_mode: SearchInputMode,
         has_popup: bool,
+        focus_navigation_mode: bool,
     ) -> Self {
         // Popup takes precedence over everything
         if has_popup {
@@ -457,6 +460,7 @@ impl NavigationContext {
                 tab_action: TabAction::None,
                 shift_tab_action: TabAction::None,
                 esc_action: EscAction::ClosePopup,
+                has_multi_focus: false,
             };
         }
 
@@ -472,18 +476,21 @@ impl NavigationContext {
                     SearchInputMode::QueryFocused => EscAction::None,
                     SearchInputMode::ResultsFocused => EscAction::DefaultFocusMode,
                 },
+                has_multi_focus: true, // Search always has 2 focus targets
             },
             CurrentScreen::JobInspect => Self {
                 mode: NavigationMode::ScreenCycle,
                 tab_action: TabAction::NextScreen,
                 shift_tab_action: TabAction::PreviousScreen,
                 esc_action: EscAction::BackToPreviousScreen,
+                has_multi_focus: false, // Single focus
             },
             _ => Self {
                 mode: NavigationMode::ScreenCycle,
                 tab_action: TabAction::NextScreen,
                 shift_tab_action: TabAction::PreviousScreen,
                 esc_action: EscAction::None,
+                has_multi_focus: focus_navigation_mode, // Use passed value
             },
         }
     }
@@ -916,6 +923,7 @@ mod tests {
             CurrentScreen::Search,
             SearchInputMode::QueryFocused,
             false,
+            true, // focus_navigation_mode
         );
 
         assert_eq!(ctx.mode, NavigationMode::LocalFocus);
@@ -923,6 +931,7 @@ mod tests {
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
         assert_eq!(ctx.esc_action, EscAction::None);
         assert_eq!(ctx.mode_label(), "FOCUS");
+        assert!(ctx.has_multi_focus);
     }
 
     #[test]
@@ -931,6 +940,7 @@ mod tests {
             CurrentScreen::Search,
             SearchInputMode::ResultsFocused,
             false,
+            true, // focus_navigation_mode
         );
 
         assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
@@ -938,6 +948,7 @@ mod tests {
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
         assert_eq!(ctx.esc_action, EscAction::DefaultFocusMode);
         assert_eq!(ctx.mode_label(), "NAV");
+        assert!(ctx.has_multi_focus);
     }
 
     #[test]
@@ -946,11 +957,13 @@ mod tests {
             CurrentScreen::Jobs,
             SearchInputMode::QueryFocused, // Irrelevant for Jobs
             false,
+            true, // focus_navigation_mode
         );
 
         assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
         assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.esc_action, EscAction::None);
+        assert!(ctx.has_multi_focus);
     }
 
     #[test]
@@ -959,20 +972,27 @@ mod tests {
             CurrentScreen::JobInspect,
             SearchInputMode::QueryFocused,
             false,
+            false, // focus_navigation_mode
         );
 
         assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
         assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.esc_action, EscAction::BackToPreviousScreen);
+        assert!(!ctx.has_multi_focus);
     }
 
     #[test]
     fn test_navigation_context_with_popup() {
-        let ctx =
-            NavigationContext::from_app(CurrentScreen::Search, SearchInputMode::QueryFocused, true);
+        let ctx = NavigationContext::from_app(
+            CurrentScreen::Search,
+            SearchInputMode::QueryFocused,
+            true,
+            true, // focus_navigation_mode
+        );
 
         assert_eq!(ctx.esc_action, EscAction::ClosePopup);
         assert_eq!(ctx.tab_action, TabAction::None);
+        assert!(!ctx.has_multi_focus);
     }
 
     #[test]
@@ -1007,7 +1027,21 @@ mod tests {
         ];
 
         for screen in screens {
-            let ctx = NavigationContext::from_app(screen, SearchInputMode::QueryFocused, false);
+            // Multi-focus screens should have focus_navigation_mode=true
+            let has_multi_focus = matches!(
+                screen,
+                CurrentScreen::Cluster
+                    | CurrentScreen::Jobs
+                    | CurrentScreen::Configs
+                    | CurrentScreen::WorkloadManagement
+                    | CurrentScreen::Shc
+            );
+            let ctx = NavigationContext::from_app(
+                screen,
+                SearchInputMode::QueryFocused,
+                false,
+                has_multi_focus,
+            );
             assert_eq!(
                 ctx.mode,
                 NavigationMode::ScreenCycle,
@@ -1018,6 +1052,11 @@ mod tests {
                 ctx.tab_action,
                 TabAction::NextScreen,
                 "Screen {:?} Tab should be NextScreen",
+                screen
+            );
+            assert_eq!(
+                ctx.has_multi_focus, has_multi_focus,
+                "Screen {:?} has_multi_focus should match",
                 screen
             );
         }

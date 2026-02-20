@@ -157,12 +157,46 @@ fn snapshot_footer_job_inspect_esc_hint() {
 
 #[test]
 fn snapshot_footer_other_screen_no_mode_indicator() {
-    // Non-Search screens should NOT show mode indicator
+    // Non-Search screens with single focus should NOT show mode indicator
     let mut harness = TuiHarness::new(80, 24);
     harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
     harness.app.jobs = Some(create_mock_jobs());
     harness.app.filtered_job_indices = vec![0, 1];
     harness.app.jobs_state.select(Some(0));
+    harness.app.focus_navigation_mode = false; // Explicitly disable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_multi_focus_jobs_screen() {
+    // Jobs screen with multi-focus should show [FOCUS] indicator and focus hints
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+    harness.app.focus_navigation_mode = true; // Enable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_multi_focus_cluster_screen() {
+    // Cluster screen with multi-focus should show [FOCUS] indicator and focus hints
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Cluster;
+    harness.app.focus_navigation_mode = true; // Enable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_multi_focus_configs_screen() {
+    // Configs screen with multi-focus should show [FOCUS] indicator and focus hints
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Configs;
+    harness.app.focus_navigation_mode = true; // Enable focus navigation
 
     insta::assert_snapshot!(harness.render());
 }

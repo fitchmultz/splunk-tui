@@ -59,6 +59,7 @@ impl App {
             self.current_screen,
             self.last_area.width,
             Some(self.search_input_mode),
+            self.focus_navigation_mode,
         );
 
         if layout.is_quit_clicked(col) {

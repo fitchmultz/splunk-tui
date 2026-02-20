@@ -41,6 +41,7 @@ impl App {
             self.current_screen,
             self.search_input_mode,
             self.popup.is_some(),
+            self.focus_navigation_mode,
         )
     }
 
@@ -146,8 +147,8 @@ impl App {
             ),
         ];
 
-        // Add mode badge for screens with special navigation behavior (RQ-0457)
-        if self.current_screen == CurrentScreen::Search {
+        // Add mode badge for screens with multiple focusable components
+        if nav_ctx.has_multi_focus {
             let mode_style = match nav_ctx.mode {
                 NavigationMode::LocalFocus => Style::default()
                     .fg(theme.warning)
@@ -769,8 +770,8 @@ impl App {
         let available_width = self.last_area.width as usize;
         let nav_ctx = self.navigation_context();
 
-        // Build mode indicator (Search screen only)
-        let mode_text = if self.current_screen == CurrentScreen::Search {
+        // Build mode indicator for screens with multiple focus targets
+        let mode_text = if nav_ctx.has_multi_focus {
             format!("[{}] ", nav_ctx.mode_label())
         } else {
             String::new()
@@ -794,6 +795,9 @@ impl App {
         };
         let esc_width = esc_text.len() + esc_sep_width;
 
+        // Build focus navigation hint (for multi-focus screens)
+        let (focus_text, focus_width) = self.format_focus_hint(&nav_ctx);
+
         // Build loading indicator
         let loading_text = if self.loading {
             let spinner = self.spinner_char();
@@ -805,7 +809,8 @@ impl App {
 
         let help_quit_width = " | ?:Help | q:Quit ".len();
 
-        let fixed_width = mode_width + loading_width + nav_width + esc_width + help_quit_width;
+        let fixed_width =
+            mode_width + loading_width + nav_width + esc_width + focus_width + help_quit_width;
         let hints_available_width = available_width.saturating_sub(fixed_width);
 
         // Build screen hints string (truncated for narrow terminals)
@@ -827,8 +832,8 @@ impl App {
         // Build the footer line
         let mut spans = Vec::new();
 
-        // Mode indicator (Search screen only)
-        if self.current_screen == CurrentScreen::Search {
+        // Mode indicator for multi-focus screens
+        if nav_ctx.has_multi_focus {
             let mode_style = match nav_ctx.mode {
                 NavigationMode::LocalFocus => Style::default()
                     .fg(theme.warning)
@@ -848,11 +853,20 @@ impl App {
 
         // Navigation hints (context-aware)
         let has_nav_text = !nav_text.is_empty();
+        let has_focus_text = !focus_text.is_empty();
         spans.push(Span::raw(nav_text));
+
+        // Focus navigation hint (multi-focus screens only)
+        if has_focus_text {
+            if has_nav_text {
+                spans.push(Span::raw("|"));
+            }
+            spans.push(Span::raw(focus_text));
+        }
 
         // Esc hint (add separator only if nav_text precedes it)
         if !esc_text.is_empty() {
-            if has_nav_text {
+            if has_nav_text || has_focus_text {
                 spans.push(Span::raw(" | "));
             }
             spans.push(Span::styled(esc_text, Style::default().fg(theme.text)));
@@ -889,6 +903,23 @@ impl App {
             TabAction::ToggleFocus => format!(" {}:Next | {}:Prev ", next_key, prev_key),
         };
 
+        (text.clone(), text.len())
+    }
+
+    /// Format focus navigation hint for screens with multiple focus targets.
+    ///
+    /// Returns (focus_hint_text, focus_hint_width) for footer layout.
+    fn format_focus_hint(&self, nav_ctx: &NavigationContext) -> (String, usize) {
+        if !nav_ctx.has_multi_focus {
+            return (String::new(), 0);
+        }
+
+        use crate::action::Action;
+        let next_focus_key = overrides::get_effective_key_display(Action::NextFocus, "Ctrl+Tab");
+        let prev_focus_key =
+            overrides::get_effective_key_display(Action::PreviousFocus, "Ctrl+Shift+Tab");
+
+        let text = format!(" {}:Focus | {}:Focus ", next_focus_key, prev_focus_key);
         (text.clone(), text.len())
     }
 }
