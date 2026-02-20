@@ -468,7 +468,10 @@ impl NavigationContext {
                 },
                 tab_action: TabAction::NextScreen,
                 shift_tab_action: TabAction::PreviousScreen,
-                esc_action: EscAction::None,
+                esc_action: match search_input_mode {
+                    SearchInputMode::QueryFocused => EscAction::None,
+                    SearchInputMode::ResultsFocused => EscAction::DefaultFocusMode,
+                },
             },
             CurrentScreen::JobInspect => Self {
                 mode: NavigationMode::ScreenCycle,
@@ -933,7 +936,7 @@ mod tests {
         assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
         assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
-        assert_eq!(ctx.esc_action, EscAction::None);
+        assert_eq!(ctx.esc_action, EscAction::DefaultFocusMode);
         assert_eq!(ctx.mode_label(), "NAV");
     }
 
