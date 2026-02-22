@@ -292,10 +292,6 @@ export LIVE_TESTS_MODE=optional
 make ci
 ```
 
-**Backwards Compatibility:**
-
-`SKIP_LIVE_TESTS=1` is still supported as an alias for `LIVE_TESTS_MODE=skip`. In `required` mode (CI), this will fail with an error directing you to use the new modes instead.
-
 ---
 
 ## Diagnostics

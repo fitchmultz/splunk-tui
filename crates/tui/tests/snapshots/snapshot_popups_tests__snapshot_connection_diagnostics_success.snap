@@ -7,22 +7,22 @@ expression: harness.render()
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Query──────────────────────────────────────────────────────────────────┐
+│           ┌Connection Diagnostics────────────────────────────────┐           │
+└───────────│✓ Reachability (45ms)                                 │───────────┘
+┌Status─────│✓ Authentication                                      │───────────┐
+│Press Enter│✓ TLS Certificate                                     │           │
+└───────────│                                                      │───────────┘
+┌Results────│Server: splunk-server (v9.0.0, a1b2c3d)               │───────────┐
+│           │Mode: standalone                                      │           │
+│           │                                                      │           │
+│           │Status: ✓ PASS                                        │           │
+│           │                                                      │           │
+│           │Press Enter to close                                  │           │
+│           │                                                      │           │
+│           │                                                      │           │
+│           └──────────────────────────────────────────────────────┘           │
 │                                                                              │
-└───────────────┌Connection Diagnostics────────────────────────┐───────────────┘
-┌Status─────────│✓ Reachability (45ms)                         │───────────────┐
-│Press Enter to │✓ Authentication                              │               │
-└───────────────│✓ TLS Certificate                             │───────────────┘
-┌Results────────│                                              │───────────────┐
-│               │Server: splunk-server (v9.0.0, a1b2c3d)       │.              │
-│               │Mode: standalone                              │               │
-│               │                                              │               │
-│               │Status: ✓ PASS                                │─────────────┐ │
-│               │                                              │0/5] 0%      │ │
-│               │Press Enter to close                          │file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

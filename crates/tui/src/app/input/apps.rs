@@ -16,8 +16,8 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::ui::ToastLevel;
 use crate::ui::popup::{Popup, PopupType};
-use crate::ui::{Toast, ToastLevel};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl App {
@@ -39,7 +39,7 @@ impl App {
                 return Some(Action::CopyToClipboard(content));
             }
 
-            self.toasts.push(Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return None;
         }
 

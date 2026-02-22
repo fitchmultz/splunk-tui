@@ -154,6 +154,11 @@ impl App {
         self.search_peers = None;
         self.forwarders = None;
         self.lookups = None;
+        self.shc_status = None;
+        self.shc_members = None;
+        self.shc_captain = None;
+        self.shc_config = None;
+        self.shc_unavailable = false;
         self.inputs = None;
         self.fired_alerts = None;
         self.search_results.clear();
@@ -302,12 +307,25 @@ mod tests {
         // Populate some data
         app.indexes = Some(vec![]);
         app.jobs = Some(vec![]);
+        app.shc_status = Some(splunk_client::models::ShcStatus {
+            is_captain: false,
+            is_searchable: true,
+            captain_uri: None,
+            member_count: 0,
+            minimum_member_count: None,
+            election_timeout: None,
+            rolling_restart_flag: None,
+            service_ready_flag: None,
+        });
+        app.shc_unavailable = true;
         app.search_results.push(Default::default());
 
         app.handle_profile_action(Action::ClearAllData);
 
         assert!(app.indexes.is_none());
         assert!(app.jobs.is_none());
+        assert!(app.shc_status.is_none());
+        assert!(!app.shc_unavailable);
         assert!(app.search_results.is_empty());
     }
 

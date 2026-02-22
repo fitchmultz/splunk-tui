@@ -156,6 +156,13 @@ impl App {
                     self.data_models_pagination.reset();
                 }
             }
+            Action::LoadShcStatus
+            | Action::LoadShcMembers
+            | Action::LoadShcCaptain
+            | Action::LoadShcConfig => {
+                self.current_screen = CurrentScreen::Shc;
+                self.init_focus_manager_for_screen(CurrentScreen::Shc);
+            }
             Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
@@ -193,6 +200,9 @@ impl App {
             }
             Action::ToggleWorkloadViewMode => {
                 self.toggle_workload_view_mode();
+            }
+            Action::ToggleShcViewMode => {
+                self.toggle_shc_view_mode();
             }
             Action::NavigateDown => self.next_item(),
             Action::NavigateUp => self.previous_item(),
@@ -232,6 +242,10 @@ impl App {
         if self.workload_view_mode == WorkloadViewMode::Rules && self.workload_rules.is_none() {
             // The side effect handler will trigger the actual load
         }
+    }
+
+    fn toggle_shc_view_mode(&mut self) {
+        self.shc_view_mode = self.shc_view_mode.toggle();
     }
 
     fn enter_job_inspect_mode(&mut self) {

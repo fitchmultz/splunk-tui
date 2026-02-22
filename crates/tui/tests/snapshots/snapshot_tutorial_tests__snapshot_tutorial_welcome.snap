@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown                                             │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Search Query──────────────────────────────────────────────────────────────────┐
-│                                                                              │
-└───────────────┌Tutorial - Welcome to Splunk TUI (0%)─────────┐───────────────┘
-┌Status─────────│            Welcome to Splunk TUI!            ↑───────────────┐
-│Press Enter to │                                              █               │
-└───────────────│   This interactive tutorial will guide you   █───────────────┘
-┌Results────────│    through the basics of using the Splunk    █───────────────┐
-│               │           Terminal User Interface.           ║.              │
-│               │                                              ║               │
-│               │   In this tutorial, you will learn how to:   ║               │
-│               │  • Create a connection profile to your Splunk║─────────────┐ │
-│               │                    server                    ║0/5] 0%      │ │
-│               │             • Test your connection           ↓file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└──────────┌Tutorial - Welcome to Splunk TUI (0%)───────────────────┐──────────┘
+┌Search Que│                 Welcome to Splunk TUI!                 ↑──────────┐
+│          │                                                        █          │
+└──────────│  This interactive tutorial will guide you through the  █──────────┘
+┌Status────│   basics of using the Splunk Terminal User Interface.  █──────────┐
+│Press Ente│                                                        █          │
+└──────────│        In this tutorial, you will learn how to:        █──────────┘
+┌Results───│    • Create a connection profile to your Splunk server █──────────┐
+│          │                  • Test your connection                █          │
+│          │                  • Run your first search               ║          │
+│          │            • Navigate using keyboard shortcuts         ║          │
+│          │                  • Export search results               ║          │
+│          │                                                        ║          │
+│          │                   Let's get started!                   ║          │
+│          │                                                        ║          │
+│          │ Tip: You can skip this tutorial at any time by pressing║          │
+│          │'q'. You can always restart it from the Settings screen.↓          │
+└──────────└────────────────────────────────────────────────────────┘──────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

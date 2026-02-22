@@ -70,7 +70,7 @@ pub fn render_onboarding_checklist(
     }
 
     lines.push(Line::from(vec![Span::styled(
-        " Press 'd' to dismiss ",
+        " Shift+D to dismiss ",
         Style::default().fg(theme.text_dim),
     )]));
 

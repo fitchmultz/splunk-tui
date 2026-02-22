@@ -1,29 +1,8 @@
 #!/usr/bin/env bash
-# Validate live test environment for CI enforcement.
-# Exits 0 if tests can run, 1 if they should fail (required mode), 2 if skipped (optional mode).
-#
-# Usage: validate-live-test-env.sh [required|optional|skip]
-#
-# Exit codes:
-#   0 - Environment valid, proceed with tests
-#   1 - Environment invalid in required mode (caller should exit 1)
-#   2 - Skipped in optional/skip mode (caller should exit 0)
-#   3 - Invalid arguments
-#
-# Examples:
-#   # CI mode - fail if env/server not configured
-#   ./scripts/validate-live-test-env.sh required
-#
-#   # Local dev mode - skip gracefully if unavailable
-#   ./scripts/validate-live-test-env.sh optional
-#
-#   # Explicit skip
-#   ./scripts/validate-live-test-env.sh skip
-#
-# Required environment (set in .env.test):
-#   SPLUNK_BASE_URL - Splunk REST API URL (e.g., https://localhost:8089)
-#   SPLUNK_USERNAME - Splunk username (or SPLUNK_API_TOKEN)
-#   SPLUNK_PASSWORD - Splunk password (or SPLUNK_API_TOKEN)
+# Purpose: Validate live-test prerequisites and exit with mode-aware status codes.
+# Responsibilities: Load `.env.test` safely, validate required env vars, and check Splunk reachability.
+# Non-scope: Does not execute tests or mutate project files.
+# Invariants: Never executes `.env.test` as shell code and uses documented exit codes.
 
 set -euo pipefail
 
@@ -55,9 +34,6 @@ EXAMPLES:
     # Explicit skip
     LIVE_TESTS_MODE=skip make test-live
 
-    # Legacy (still supported)
-    SKIP_LIVE_TESTS=1 make test-live
-
 ENVIRONMENT:
     SPLUNK_BASE_URL   Splunk REST API URL (required)
     SPLUNK_USERNAME   Splunk username (required if no token)
@@ -84,21 +60,6 @@ fi
 
 MODE="${1:-required}"
 
-# Handle legacy SKIP_LIVE_TESTS for backwards compatibility
-if [[ "${SKIP_LIVE_TESTS:-0}" == "1" ]]; then
-    case "$MODE" in
-        required)
-            echo -e "${RED}ERROR: SKIP_LIVE_TESTS=1 is not allowed in required mode${NC}"
-            echo "Use LIVE_TESTS_MODE=optional or LIVE_TESTS_MODE=skip instead"
-            exit 1
-            ;;
-        optional|skip)
-            echo -e "${YELLOW}Skipping live tests (SKIP_LIVE_TESTS=1)${NC}"
-            exit 2
-            ;;
-    esac
-fi
-
 case "$MODE" in
     skip)
         echo -e "${YELLOW}Skipping live tests (LIVE_TESTS_MODE=skip)${NC}"
@@ -116,14 +77,58 @@ esac
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_TEST_PATH="${SCRIPT_DIR}/../.env.test"
 
-# Load .env.test if it exists
+trim_whitespace() {
+    local value="$1"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    printf '%s' "$value"
+}
+
+strip_surrounding_quotes() {
+    local value="$1"
+    if [[ ${#value} -ge 2 ]]; then
+        local first="${value:0:1}"
+        local last="${value: -1}"
+        if [[ "$first" == "$last" && ( "$first" == '"' || "$first" == "'" ) ]]; then
+            printf '%s' "${value:1:${#value}-2}"
+            return
+        fi
+    fi
+    printf '%s' "$value"
+}
+
+load_env_file() {
+    local path="$1"
+    local line_number=0
+    local line key raw_value value
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line_number=$((line_number + 1))
+        line="${line%$'\r'}"
+
+        if [[ -z "$(trim_whitespace "$line")" ]]; then
+            continue
+        fi
+
+        if [[ "$line" =~ ^[[:space:]]*# ]]; then
+            continue
+        fi
+
+        if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            raw_value="$(trim_whitespace "${BASH_REMATCH[2]}")"
+            value="$(strip_surrounding_quotes "$raw_value")"
+            export "$key=$value"
+        else
+            echo -e "${YELLOW}Ignoring invalid .env.test entry at line ${line_number}${NC}" >&2
+        fi
+    done < "$path"
+}
+
+# Load .env.test as key-value data (never execute as shell code)
 if [[ -f "$ENV_TEST_PATH" ]]; then
     echo "Loading test environment from .env.test"
-    # Source safely, handling potential errors
-    set -a
-    # shellcheck disable=SC1090
-    source "$ENV_TEST_PATH" 2>/dev/null || true
-    set +a
+    load_env_file "$ENV_TEST_PATH"
 fi
 
 # Check for required environment variables
@@ -190,7 +195,7 @@ if ! check_env_vars; then
             echo -e "${RED}ERROR: Live tests are REQUIRED but environment is not configured${NC}" >&2
             echo "Set SPLUNK_BASE_URL, SPLUNK_USERNAME, SPLUNK_PASSWORD (or SPLUNK_API_TOKEN)" >&2
             echo "Or create .env.test from .env.test.example" >&2
-            echo "To skip in CI, set LIVE_TESTS_MODE=optional (not recommended)" >&2
+            echo "To continue locally without a live Splunk server, use LIVE_TESTS_MODE=optional" >&2
             exit 1
             ;;
         optional)

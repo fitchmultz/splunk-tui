@@ -1,5 +1,10 @@
 //! Transaction management for multi-step Splunk configuration changes.
 //!
+//! Purpose: Execute and persist multi-step Splunk operations with rollback semantics.
+//! Responsibilities: Validate operations, commit execution, and recover or rollback on failures.
+//! Non-scope: CLI presentation concerns and long-term transaction history analytics.
+//! Invariants/Assumptions: Operations execute in-order and rollback attempts preserve failure visibility.
+//!
 //! This module provides the infrastructure for atomic multi-resource operations.
 //! It implements a two-phase commit pattern:
 //! 1. Validation: Verify all operations against the current Splunk state.
@@ -11,7 +16,23 @@ use crate::models::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::future::Future;
+use std::time::Duration;
 use tracing::{error, info, warn};
+
+/// Per-operation timeout for rollback cleanup calls.
+const ROLLBACK_OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Metric: total number of transaction commit attempts.
+pub const METRIC_TRANSACTION_COMMIT_ATTEMPTS: &str = "splunk_transaction_commit_attempts_total";
+/// Metric: successful transaction commits.
+pub const METRIC_TRANSACTION_COMMIT_SUCCESSES: &str = "splunk_transaction_commit_successes_total";
+/// Metric: failed transaction commits.
+pub const METRIC_TRANSACTION_COMMIT_FAILURES: &str = "splunk_transaction_commit_failures_total";
+/// Metric: rollback operation attempts.
+pub const METRIC_TRANSACTION_ROLLBACK_ATTEMPTS: &str = "splunk_transaction_rollback_attempts_total";
+/// Metric: rollback operation failures (includes timeout and unsupported rollback paths).
+pub const METRIC_TRANSACTION_ROLLBACK_FAILURES: &str = "splunk_transaction_rollback_failures_total";
 
 /// Represents a single reversible operation in a transaction.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -113,12 +134,17 @@ impl TransactionManager {
     }
 
     /// Load a pending transaction from disk.
-    pub fn load_pending(&self) -> Result<Option<Transaction>> {
+    pub async fn load_pending(&self) -> Result<Option<Transaction>> {
         let path = self.log_dir.join("pending_transaction.json");
-        if !path.exists() {
+        if !tokio::fs::try_exists(&path).await.map_err(|e| {
+            crate::error::ClientError::InvalidResponse(format!(
+                "Failed to check transaction log path: {}",
+                e
+            ))
+        })? {
             return Ok(None);
         }
-        let content = std::fs::read_to_string(&path).map_err(|e| {
+        let content = tokio::fs::read_to_string(&path).await.map_err(|e| {
             crate::error::ClientError::InvalidResponse(format!(
                 "Failed to read transaction log: {}",
                 e
@@ -134,15 +160,15 @@ impl TransactionManager {
     }
 
     /// Save a transaction to disk as pending.
-    pub fn save_pending(&self, transaction: &Transaction) -> Result<()> {
-        if !self.log_dir.exists() {
-            std::fs::create_dir_all(&self.log_dir).map_err(|e| {
+    pub async fn save_pending(&self, transaction: &Transaction) -> Result<()> {
+        tokio::fs::create_dir_all(&self.log_dir)
+            .await
+            .map_err(|e| {
                 crate::error::ClientError::ValidationError(format!(
                     "Failed to create log directory: {}",
                     e
                 ))
             })?;
-        }
         let path = self.log_dir.join("pending_transaction.json");
         let content = serde_json::to_string_pretty(transaction).map_err(|e| {
             crate::error::ClientError::ValidationError(format!(
@@ -150,7 +176,7 @@ impl TransactionManager {
                 e
             ))
         })?;
-        std::fs::write(path, content).map_err(|e| {
+        tokio::fs::write(path, content).await.map_err(|e| {
             crate::error::ClientError::ValidationError(format!(
                 "Failed to write transaction log: {}",
                 e
@@ -160,10 +186,15 @@ impl TransactionManager {
     }
 
     /// Clear the pending transaction from disk.
-    pub fn clear_pending(&self) -> Result<()> {
+    pub async fn clear_pending(&self) -> Result<()> {
         let path = self.log_dir.join("pending_transaction.json");
-        if path.exists() {
-            std::fs::remove_file(path).map_err(|e| {
+        if tokio::fs::try_exists(&path).await.map_err(|e| {
+            crate::error::ClientError::ValidationError(format!(
+                "Failed to check pending transaction path: {}",
+                e
+            ))
+        })? {
+            tokio::fs::remove_file(path).await.map_err(|e| {
                 crate::error::ClientError::ValidationError(format!(
                     "Failed to remove transaction log: {}",
                     e
@@ -174,16 +205,14 @@ impl TransactionManager {
     }
 
     /// Archive a completed transaction.
-    pub fn archive(&self, transaction: &Transaction, status: &str) -> Result<()> {
+    pub async fn archive(&self, transaction: &Transaction, status: &str) -> Result<()> {
         let history_dir = self.log_dir.join("history");
-        if !history_dir.exists() {
-            std::fs::create_dir_all(&history_dir).map_err(|e| {
-                crate::error::ClientError::ValidationError(format!(
-                    "Failed to create history directory: {}",
-                    e
-                ))
-            })?;
-        }
+        tokio::fs::create_dir_all(&history_dir).await.map_err(|e| {
+            crate::error::ClientError::ValidationError(format!(
+                "Failed to create history directory: {}",
+                e
+            ))
+        })?;
 
         let filename = format!(
             "{}_{}_{}.json",
@@ -199,7 +228,7 @@ impl TransactionManager {
                 e
             ))
         })?;
-        std::fs::write(path, content).map_err(|e| {
+        tokio::fs::write(path, content).await.map_err(|e| {
             crate::error::ClientError::ValidationError(format!(
                 "Failed to write transaction archive: {}",
                 e
@@ -212,10 +241,10 @@ impl TransactionManager {
     /// Validate all operations in the transaction.
     ///
     /// This performs dry-run checks and local parameter validation.
-    pub async fn validate(&self, _client: &SplunkClient, _transaction: &Transaction) -> Result<()> {
-        info!("Validating transaction {}", _transaction.id);
+    pub async fn validate(&self, _client: &SplunkClient, transaction: &Transaction) -> Result<()> {
+        info!("Validating transaction {}", transaction.id);
         // Basic validation: ensure names are not empty
-        for op in &_transaction.operations {
+        for op in &transaction.operations {
             match op {
                 TransactionOperation::CreateIndex(p) if p.name.is_empty() => {
                     return Err(crate::error::ClientError::ValidationError(
@@ -254,6 +283,7 @@ impl TransactionManager {
     /// an automatic rollback of all previously completed operations in this transaction.
     /// Returns a TransactionRollbackError if rollback fails for any operations.
     pub async fn commit(&self, client: &SplunkClient, transaction: &Transaction) -> Result<()> {
+        metrics::counter!(METRIC_TRANSACTION_COMMIT_ATTEMPTS).increment(1);
         info!(
             "Committing transaction {} with {} operations",
             transaction.id,
@@ -274,6 +304,7 @@ impl TransactionManager {
                     let rollback_failures = self.rollback(client, completed_ops).await?;
 
                     if !rollback_failures.is_empty() {
+                        metrics::counter!(METRIC_TRANSACTION_COMMIT_FAILURES).increment(1);
                         error!(
                             transaction_id = %transaction.id,
                             failure_count = rollback_failures.len(),
@@ -284,11 +315,13 @@ impl TransactionManager {
                             failures: rollback_failures,
                         });
                     }
+                    metrics::counter!(METRIC_TRANSACTION_COMMIT_FAILURES).increment(1);
                     return Err(e);
                 }
             }
         }
 
+        metrics::counter!(METRIC_TRANSACTION_COMMIT_SUCCESSES).increment(1);
         info!("Transaction {} committed successfully", transaction.id);
         Ok(())
     }
@@ -359,93 +392,124 @@ impl TransactionManager {
     ) -> Result<Vec<RollbackFailure>> {
         info!("Rolling back {} operations", ops.len());
         let mut failures = Vec::new();
+        metrics::counter!(METRIC_TRANSACTION_ROLLBACK_ATTEMPTS).increment(ops.len() as u64);
 
         for op in ops.into_iter().rev() {
             match op {
                 TransactionOperation::CreateIndex(params) => {
-                    if let Err(e) = client.delete_index(&params.name).await {
-                        error!(
-                            operation = "delete_index",
-                            resource = %params.name,
-                            error = %e,
-                            "Rollback operation failed"
-                        );
-                        failures.push(RollbackFailure {
-                            resource_name: params.name.clone(),
-                            operation: "delete_index".to_string(),
-                            error: e,
-                        });
-                    }
+                    self.record_rollback_result(
+                        "delete_index",
+                        params.name.clone(),
+                        client.delete_index(&params.name),
+                        &mut failures,
+                    )
+                    .await;
                 }
                 TransactionOperation::CreateUser(params) => {
-                    if let Err(e) = client.delete_user(&params.name).await {
-                        error!(
-                            operation = "delete_user",
-                            resource = %params.name,
-                            error = %e,
-                            "Rollback operation failed"
-                        );
-                        failures.push(RollbackFailure {
-                            resource_name: params.name.clone(),
-                            operation: "delete_user".to_string(),
-                            error: e,
-                        });
-                    }
+                    self.record_rollback_result(
+                        "delete_user",
+                        params.name.clone(),
+                        client.delete_user(&params.name),
+                        &mut failures,
+                    )
+                    .await;
                 }
                 TransactionOperation::CreateRole(params) => {
-                    if let Err(e) = client.delete_role(&params.name).await {
-                        error!(
-                            operation = "delete_role",
-                            resource = %params.name,
-                            error = %e,
-                            "Rollback operation failed"
-                        );
-                        failures.push(RollbackFailure {
-                            resource_name: params.name.clone(),
-                            operation: "delete_role".to_string(),
-                            error: e,
-                        });
-                    }
+                    self.record_rollback_result(
+                        "delete_role",
+                        params.name.clone(),
+                        client.delete_role(&params.name),
+                        &mut failures,
+                    )
+                    .await;
                 }
                 TransactionOperation::CreateMacro(params) => {
-                    if let Err(e) = client.delete_macro(&params.name).await {
-                        error!(
-                            operation = "delete_macro",
-                            resource = %params.name,
-                            error = %e,
-                            "Rollback operation failed"
-                        );
-                        failures.push(RollbackFailure {
-                            resource_name: params.name.clone(),
-                            operation: "delete_macro".to_string(),
-                            error: e,
-                        });
-                    }
+                    self.record_rollback_result(
+                        "delete_macro",
+                        params.name.clone(),
+                        client.delete_macro(&params.name),
+                        &mut failures,
+                    )
+                    .await;
                 }
                 TransactionOperation::CreateSavedSearch(params) => {
-                    if let Err(e) = client.delete_saved_search(&params.name).await {
-                        error!(
-                            operation = "delete_saved_search",
-                            resource = %params.name,
-                            error = %e,
-                            "Rollback operation failed"
-                        );
-                        failures.push(RollbackFailure {
-                            resource_name: params.name.clone(),
-                            operation: "delete_saved_search".to_string(),
-                            error: e,
-                        });
-                    }
+                    self.record_rollback_result(
+                        "delete_saved_search",
+                        params.name.clone(),
+                        client.delete_saved_search(&params.name),
+                        &mut failures,
+                    )
+                    .await;
                 }
                 // For Modify/Update operations, full rollback would require original state.
                 // For Delete operations, full rollback would require recreation.
-                // As per plan, we document these limitations.
-                _ => {
-                    warn!("No automated rollback path for operation: {:?}", op);
-                }
+                // Treat missing rollback paths as explicit failures.
+                _ => self.record_missing_rollback(op, &mut failures),
             }
         }
 
         Ok(failures)
+    }
+
+    async fn record_rollback_result<F>(
+        &self,
+        operation: &'static str,
+        resource_name: String,
+        future: F,
+        failures: &mut Vec<RollbackFailure>,
+    ) where
+        F: Future<Output = Result<()>>,
+    {
+        match tokio::time::timeout(ROLLBACK_OPERATION_TIMEOUT, future).await {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => {
+                metrics::counter!(METRIC_TRANSACTION_ROLLBACK_FAILURES).increment(1);
+                error!(
+                    operation,
+                    resource = %resource_name,
+                    error = %e,
+                    "Rollback operation failed"
+                );
+                failures.push(RollbackFailure {
+                    resource_name,
+                    operation: operation.to_string(),
+                    error: e,
+                });
+            }
+            Err(_) => {
+                metrics::counter!(METRIC_TRANSACTION_ROLLBACK_FAILURES).increment(1);
+                let timeout_error = ClientError::OperationTimeout {
+                    operation,
+                    timeout: ROLLBACK_OPERATION_TIMEOUT,
+                };
+                error!(
+                    operation,
+                    resource = %resource_name,
+                    timeout_secs = ROLLBACK_OPERATION_TIMEOUT.as_secs(),
+                    "Rollback operation timed out"
+                );
+                failures.push(RollbackFailure {
+                    resource_name,
+                    operation: operation.to_string(),
+                    error: timeout_error,
+                });
+            }
+        }
+    }
+
+    fn record_missing_rollback(
+        &self,
+        op: TransactionOperation,
+        failures: &mut Vec<RollbackFailure>,
+    ) {
+        metrics::counter!(METRIC_TRANSACTION_ROLLBACK_FAILURES).increment(1);
+        warn!("No automated rollback path for operation: {:?}", op);
+        failures.push(RollbackFailure {
+            resource_name: format!("{:?}", op),
+            operation: "missing_rollback_path".to_string(),
+            error: ClientError::ValidationError(
+                "No automated rollback path for completed operation".to_string(),
+            ),
+        });
     }
 }

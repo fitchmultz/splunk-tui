@@ -16,6 +16,8 @@ pub enum HealthState {
     Unknown,
     /// Splunk is healthy
     Healthy,
+    /// Splunk is degraded (warning state)
+    Degraded,
     /// Splunk is unhealthy
     Unhealthy,
 }
@@ -25,12 +27,13 @@ impl HealthState {
     ///
     /// Splunk returns "green", "yellow", or "red" for health status.
     /// - "green" → Healthy
-    /// - "yellow" → Unknown (degraded but not failed)
+    /// - "yellow" → Degraded
     /// - "red" → Unhealthy
     /// - any other value → Unknown
     pub fn from_health_str(health: &str) -> Self {
         match health.to_lowercase().as_str() {
             "green" => HealthState::Healthy,
+            "yellow" => HealthState::Degraded,
             "red" => HealthState::Unhealthy,
             _ => HealthState::Unknown,
         }
@@ -618,9 +621,17 @@ mod tests {
         assert_eq!(HealthState::from_health_str("RED"), HealthState::Unhealthy);
         assert_eq!(HealthState::from_health_str("Red"), HealthState::Unhealthy);
 
-        // Test "yellow" and other values map to Unknown
-        assert_eq!(HealthState::from_health_str("yellow"), HealthState::Unknown);
-        assert_eq!(HealthState::from_health_str("YELLOW"), HealthState::Unknown);
+        // Test "yellow" maps to Degraded
+        assert_eq!(
+            HealthState::from_health_str("yellow"),
+            HealthState::Degraded
+        );
+        assert_eq!(
+            HealthState::from_health_str("YELLOW"),
+            HealthState::Degraded
+        );
+
+        // Test invalid/empty values map to Unknown
         assert_eq!(
             HealthState::from_health_str("invalid"),
             HealthState::Unknown

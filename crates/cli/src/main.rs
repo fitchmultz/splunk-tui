@@ -1,5 +1,8 @@
 //! Splunk CLI - Command-line interface for Splunk Enterprise.
 //!
+//! Purpose:
+//! - Provide the binary entrypoint for `splunk-cli`.
+//!
 //! Responsibilities:
 //! - Parse command-line arguments and environment variables.
 //! - Execute Splunk REST API commands via the shared client library.
@@ -211,8 +214,8 @@ async fn main() {
         // Warn if using default credentials (security check)
         if config.is_using_default_credentials() {
             tracing::warn!(
-                "Using default Splunk credentials (admin/changeme). \
-                 These are for local development only - change before production use."
+                "Using placeholder Splunk credentials from default config. \
+                 Set real credentials before running commands."
             );
         }
 

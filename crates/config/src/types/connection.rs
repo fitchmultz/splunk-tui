@@ -1,5 +1,8 @@
 //! Connection configuration types for Splunk TUI.
 //!
+//! Purpose:
+//! - Define canonical connection/auth configuration types shared across CLI and TUI.
+//!
 //! Responsibilities:
 //! - Define connection settings (URL, TLS verification, timeouts, retries).
 //! - Define the main `Config` structure combining connection and auth.
@@ -26,6 +29,11 @@ use crate::types::auth::{AuthConfig, AuthStrategy};
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+
+/// Placeholder username used by `Config::default()`.
+pub const DEFAULT_PLACEHOLDER_USERNAME: &str = "replace-with-your-username";
+/// Placeholder password used by `Config::default()`.
+pub const DEFAULT_PLACEHOLDER_PASSWORD: &str = "replace-with-your-password";
 
 /// Module for serializing Duration as seconds (integer).
 mod duration_seconds {
@@ -149,19 +157,18 @@ pub struct Config {
 }
 
 impl Default for Config {
-    /// Creates a default configuration with development-only credentials.
+    /// Creates a default configuration with non-secret placeholder credentials.
     ///
     /// # Security Warning
     ///
-    /// The default configuration uses Splunk's default credentials (admin/changeme)
-    /// targeting localhost:8089. These credentials are **ONLY** appropriate for
-    /// local development environments and MUST be changed before any production use.
+    /// The default configuration uses explicit placeholder credentials targeting
+    /// localhost:8089 and MUST be replaced before use.
     ///
     /// # Default Values
     ///
     /// - `base_url`: `https://localhost:8089`
-    /// - `username`: `admin`
-    /// - `password`: `changeme`
+    /// - `username`: `replace-with-your-username`
+    /// - `password`: `replace-with-your-password`
     /// - `timeout`: 30 seconds
     /// - `max_retries`: 3
     ///
@@ -188,8 +195,8 @@ impl Default for Config {
             },
             auth: AuthConfig {
                 strategy: AuthStrategy::SessionToken {
-                    username: "admin".to_string(),
-                    password: SecretString::new("changeme".to_string().into()),
+                    username: DEFAULT_PLACEHOLDER_USERNAME.to_string(),
+                    password: SecretString::new(DEFAULT_PLACEHOLDER_PASSWORD.to_string().into()),
                 },
             },
         }
@@ -200,7 +207,7 @@ impl Config {
     /// Checks if this configuration is using the default development credentials.
     ///
     /// Returns `true` if the auth strategy is `SessionToken` with username "admin"
-    /// and password "changeme". This is useful for detecting potentially unsafe
+    /// and placeholder password values. This is useful for detecting potentially unsafe
     /// default configurations in production environments.
     ///
     /// # Security Note
@@ -214,8 +221,8 @@ impl Config {
         matches!(
             &self.auth.strategy,
             AuthStrategy::SessionToken { username, password }
-                if username == "admin"
-                    && password.expose_secret() == "changeme"
+                if username == DEFAULT_PLACEHOLDER_USERNAME
+                    && password.expose_secret() == DEFAULT_PLACEHOLDER_PASSWORD
         )
     }
 
@@ -406,7 +413,7 @@ mod tests {
     /// Test that custom username is not detected as default credentials.
     #[test]
     fn test_is_using_default_credentials_false_for_different_username() {
-        let password = SecretString::new("changeme".to_string().into());
+        let password = SecretString::new(DEFAULT_PLACEHOLDER_PASSWORD.to_string().into());
         let config = Config::with_session_token(
             "https://localhost:8089".to_string(),
             "customuser".to_string(),
@@ -424,7 +431,7 @@ mod tests {
         let password = SecretString::new("custompassword".to_string().into());
         let config = Config::with_session_token(
             "https://localhost:8089".to_string(),
-            "admin".to_string(),
+            DEFAULT_PLACEHOLDER_USERNAME.to_string(),
             password,
         );
         assert!(

@@ -134,6 +134,9 @@ pub struct App {
     pub shc_config: Option<splunk_client::models::ShcConfig>,
     pub shc_members_state: ratatui::widgets::TableState,
     pub shc_view_mode: ShcViewMode,
+    /// True when SHC endpoints are known unsupported for the active instance.
+    /// Used to suppress automatic reloads during screen navigation.
+    pub shc_unavailable: bool,
 
     // Configs state
     pub config_files: Option<Vec<splunk_client::models::ConfigFile>>,

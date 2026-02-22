@@ -1,4 +1,7 @@
-//! Transaction management command implementation.
+//! Purpose: Provide CLI entrypoints for transaction lifecycle commands.
+//! Responsibilities: Execute begin/status/commit/rollback/archive flows via the shared transaction manager.
+//! Non-scope: Does not implement transaction persistence/rollback internals (handled in client crate).
+//! Invariants/Assumptions: At most one pending transaction file exists per profile scope.
 
 use crate::args::TransactionCommand;
 use crate::commands::get_transaction_manager;
@@ -14,16 +17,17 @@ pub async fn run(
 
     match command {
         TransactionCommand::Begin => {
-            if manager.load_pending()?.is_some() {
+            if manager.load_pending().await?.is_some() {
                 anyhow::bail!("A transaction is already in progress. Commit or rollback first.");
             }
             let transaction = Transaction::new();
-            manager.save_pending(&transaction)?;
+            manager.save_pending(&transaction).await?;
             println!("Started new transaction: {}", transaction.id);
         }
         TransactionCommand::Commit { dry_run } => {
             let transaction = manager
-                .load_pending()?
+                .load_pending()
+                .await?
                 .context("No transaction in progress. Run 'splunk-cli transaction begin' first.")?;
 
             let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
@@ -39,12 +43,12 @@ pub async fn run(
                 println!("Committing transaction {}...", transaction.id);
                 match manager.commit(&client, &transaction).await {
                     Ok(_) => {
-                        manager.archive(&transaction, "committed")?;
-                        manager.clear_pending()?;
+                        manager.archive(&transaction, "committed").await?;
+                        manager.clear_pending().await?;
                         println!("Transaction committed successfully.");
                     }
                     Err(e) => {
-                        manager.archive(&transaction, "failed")?;
+                        manager.archive(&transaction, "failed").await?;
                         // We don't clear pending on failure to allow manual recovery or retry?
                         // Actually, the manager performs automatic rollback.
                         // If rollback succeeds, we should probably clear pending.
@@ -56,17 +60,18 @@ pub async fn run(
         }
         TransactionCommand::Rollback => {
             let transaction = manager
-                .load_pending()?
+                .load_pending()
+                .await?
                 .context("No transaction in progress.")?;
 
-            manager.archive(&transaction, "rolled_back")?;
-            manager.clear_pending()?;
+            manager.archive(&transaction, "rolled_back").await?;
+            manager.clear_pending().await?;
             println!(
                 "Transaction {} rolled back (staged operations cleared).",
                 transaction.id
             );
         }
-        TransactionCommand::Status => match manager.load_pending()? {
+        TransactionCommand::Status => match manager.load_pending().await? {
             Some(transaction) => {
                 println!("Transaction in progress: {}", transaction.id);
                 println!("Created at: {}", transaction.created_at);
@@ -85,11 +90,12 @@ pub async fn run(
         },
         TransactionCommand::Savepoint { name } => {
             let mut transaction = manager
-                .load_pending()?
+                .load_pending()
+                .await?
                 .context("No transaction in progress.")?;
 
             transaction.set_savepoint(name.clone());
-            manager.save_pending(&transaction)?;
+            manager.save_pending(&transaction).await?;
             println!(
                 "Created savepoint '{}' at position {}",
                 name,

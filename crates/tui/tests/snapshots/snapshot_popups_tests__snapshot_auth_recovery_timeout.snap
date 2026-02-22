@@ -16,13 +16,13 @@ expression: harness.render()
 │               │• Verify the Splunk server is responsive      │.              │
 │               │• Consider increasing the timeout setting in  │               │
 │               │your profile                                  │               │
-│               │                                              │─────────────┐ │
-│               │───                                           │0/5] 0%      │ │
-│               │                                              │file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
+│               │                                              │               │
+│               │───                                           │               │
+│               │                                              │               │
+│               └──────────────────────────────────────────────┘               │
+│                                                                              │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

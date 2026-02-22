@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Cluster | [?] Unknown                                            │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Cluster Information───────────────────────────────────────────────────────────┐
-│                 No cluster info loaded. Press 'r' to refresh.                │
-│               ┌Help - Cluster────────────────────────────────┐               │
-│               │Cluster Screen:                               ↑               │
-│               │  r               Refresh cluster info        █               │
-│               │  p               Toggle peers view           ║               │
-│               │  j/k or Up/Down  Navigate peers list         ║               │
-│               │  Ctrl+c          Copy cluster ID             ║               │
-│               │  Ctrl+e          Export cluster info         ║               │
-│               │                                              ║               │
-│               │Global Keys:                                  ║─────────────┐ │
-│               │  ?               Help                        ║0/5] 0%      │ │
-│               │  Ctrl+P          Command palette             ↓file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└────────┌Help - Cluster──────────────────────────────────────────────┐────────┘
+┌Cluster │Cluster Screen:                                             ↑────────┐
+│        │  r               Refresh cluster info                      █        │
+│        │  p               Toggle peers view                         ║        │
+│        │  j/k or Up/Down  Navigate peers list                       ║        │
+│        │  Ctrl+c          Copy cluster ID                           ║        │
+│        │  Ctrl+e          Export cluster info                       ║        │
+│        │                                                            ║        │
+│        │Global Keys:                                                ║        │
+│        │  ?               Help                                      ║        │
+│        │  Ctrl+P          Command palette                           ║        │
+│        │  q               Quit                                      ║        │
+│        │  Ctrl+Q          Quit (global)                             ║        │
+│        │  Tab             Next screen                               ║        │
+│        │  Shift+Tab       Previous screen                           ║        │
+│        │  Ctrl+Tab        Next focus                                ║        │
+│        │  Ctrl+Shift+Tab  Previous focus                            ↓        │
+└────────└────────────────────────────────────────────────────────────┘────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| r:Refresh p:Peers j/k or Up/Down:Navigate ...| ?:Help | q:Quit     │
+│Esc:Close | r:Refresh p:Peers j/k or Up/Down:Navigate ...| ?:Help | q:Quit    │
 └──────────────────────────────────────────────────────────────────────────────┘

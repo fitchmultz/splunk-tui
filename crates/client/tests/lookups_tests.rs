@@ -61,6 +61,59 @@ async fn test_list_lookup_tables() {
 }
 
 #[tokio::test]
+async fn test_list_lookup_tables_parses_acl_backed_splunk_shape() {
+    let mock_server = MockServer::start().await;
+
+    let response = serde_json::json!({
+        "entry": [
+            {
+                "name": "activity.csv",
+                "author": "admin",
+                "acl": {
+                    "owner": "admin",
+                    "app": "search",
+                    "sharing": "global"
+                },
+                "content": {
+                    "disabled": false,
+                    "eai:appName": "search",
+                    "eai:data": "/opt/splunk/etc/apps/search/lookups/activity.csv"
+                }
+            }
+        ]
+    });
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/lookup-table-files"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(response))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_lookup_tables(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        None,
+        None,
+        3,
+        None,
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+    let lookups = result.unwrap();
+    assert_eq!(lookups.len(), 1);
+    assert_eq!(lookups[0].name, "activity.csv");
+    assert_eq!(lookups[0].filename, "activity.csv");
+    assert_eq!(lookups[0].owner, "admin");
+    assert_eq!(lookups[0].app, "search");
+    assert_eq!(lookups[0].sharing, "global");
+    assert_eq!(lookups[0].size, 0);
+}
+
+#[tokio::test]
 async fn test_list_lookup_tables_with_pagination() {
     let mock_server = MockServer::start().await;
 

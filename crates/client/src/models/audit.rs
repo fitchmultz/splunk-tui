@@ -92,7 +92,7 @@ impl fmt::Display for AuditResult {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuditEvent {
     /// Timestamp of the event
-    #[serde(rename = "_time")]
+    #[serde(rename = "_time", default)]
     pub time: String,
     /// User who performed the action
     #[serde(default)]

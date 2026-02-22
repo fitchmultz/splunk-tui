@@ -16,11 +16,10 @@
 use reqwest::Client;
 
 use crate::client::circuit_breaker::CircuitBreaker;
-use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
-use crate::models::{Input, InputListResponse};
+use crate::models::{Input, InputListResponse, InputType};
 use crate::name_merge::attach_entry_name;
 
 /// List inputs of a specific type.
@@ -58,8 +57,7 @@ pub async fn list_inputs_by_type(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<Input>> {
-    let encoded_input_type = encode_path_segment(input_type);
-    let url = format!("{}/services/data/inputs/{}", base_url, encoded_input_type);
+    let url = format!("{}/services/data/inputs/{}", base_url, input_type);
 
     let mut query_params: Vec<(String, String)> = vec![
         ("output_mode".to_string(), "json".to_string()),
@@ -77,7 +75,7 @@ pub async fn list_inputs_by_type(
     let response = send_request_with_retry(
         builder,
         max_retries,
-        &format!("/services/data/inputs/{}", encoded_input_type),
+        &format!("/services/data/inputs/{}", input_type),
         "GET",
         metrics,
         circuit_breaker,
@@ -86,11 +84,29 @@ pub async fn list_inputs_by_type(
 
     let resp: InputListResponse = response.json().await?;
 
+    let normalized_input_type = parse_input_type(input_type);
     Ok(resp
         .entry
         .into_iter()
-        .map(|e| attach_entry_name(e.name, e.content))
+        .map(|e| {
+            let mut input = attach_entry_name(e.name, e.content);
+            if matches!(input.input_type, InputType::Unknown) {
+                input.input_type = normalized_input_type.clone();
+            }
+            input
+        })
         .collect())
+}
+
+fn parse_input_type(input_type: &str) -> InputType {
+    match input_type {
+        "tcp/raw" => InputType::TcpRaw,
+        "tcp/cooked" => InputType::TcpCooked,
+        "udp" => InputType::Udp,
+        "monitor" => InputType::Monitor,
+        "script" => InputType::Script,
+        _ => InputType::Unknown,
+    }
 }
 
 /// Enable an input.
@@ -121,11 +137,10 @@ pub async fn enable_input(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let encoded_input_type = encode_path_segment(input_type);
-    let encoded_name = encode_path_segment(name);
+    let encoded_name = crate::endpoints::encode_path_segment(name);
     let url = format!(
         "{}/services/data/inputs/{}/{}/enable",
-        base_url, encoded_input_type, encoded_name
+        base_url, input_type, encoded_name
     );
 
     let builder = client
@@ -172,11 +187,10 @@ pub async fn disable_input(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<()> {
-    let encoded_input_type = encode_path_segment(input_type);
-    let encoded_name = encode_path_segment(name);
+    let encoded_name = crate::endpoints::encode_path_segment(name);
     let url = format!(
         "{}/services/data/inputs/{}/{}/disable",
-        base_url, encoded_input_type, encoded_name
+        base_url, input_type, encoded_name
     );
 
     let builder = client

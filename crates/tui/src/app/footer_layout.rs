@@ -181,45 +181,73 @@ impl FooterLayout {
         }
     }
 
+    /// Build footer hints text constrained to an available width.
+    ///
+    /// The returned string is guaranteed to be `<= available_width` bytes.
+    /// Hints are emitted in `" key:desc"` form and truncated with `...` when needed.
+    pub(crate) fn render_hints_text(
+        hints: &[(&'static str, &'static str)],
+        available_width: usize,
+    ) -> String {
+        if hints.is_empty() || available_width < 4 {
+            return String::new();
+        }
+
+        let mut text = String::new();
+
+        for (index, (key, desc)) in hints.iter().take(4).enumerate() {
+            let hint = format!(" {}:{}", key, desc);
+            if text.len() + hint.len() <= available_width {
+                text.push_str(&hint);
+                continue;
+            }
+
+            // If even the first hint does not fit, show a truncated fragment.
+            if index == 0 {
+                return Self::truncate_with_ellipsis(&hint, available_width);
+            }
+
+            // Otherwise append an ellipsis if there is enough room.
+            if text.len() + 4 <= available_width {
+                text.push_str(" ...");
+            }
+            break;
+        }
+
+        text
+    }
+
     /// Calculate the width of the hints section based on available space.
     ///
-    /// Hints are truncated with "..." if they don't fit.
+    /// This mirrors `render_hints_text` so render and hit-testing stay aligned.
     fn calculate_hints_width(
         hints: &[(&'static str, &'static str)],
         available_width: usize,
     ) -> u16 {
-        if hints.is_empty() || available_width < 4 {
-            return 0;
+        Self::render_hints_text(hints, available_width).len() as u16
+    }
+
+    fn truncate_with_ellipsis(text: &str, max_width: usize) -> String {
+        if text.len() <= max_width {
+            return text.to_string();
+        }
+        if max_width <= 3 {
+            return ".".repeat(max_width);
         }
 
-        let mut width = 0usize;
-        let mut first = true;
-
-        for (key, desc) in hints.iter().take(4) {
-            // Format: " key:desc"
-            let hint_width = key.len() + desc.len() + 2; // +2 for " " and ":"
-
-            if !first && width + hint_width > available_width {
-                // Truncate with ellipsis
-                width += 4; // " ..."
+        let head_len = max_width - 3;
+        let mut out = String::new();
+        let mut used = 0usize;
+        for ch in text.chars() {
+            let width = ch.len_utf8();
+            if used + width > head_len {
                 break;
             }
-
-            if first {
-                first = false;
-            }
-
-            width += hint_width;
-
-            // Check if we've exceeded available width
-            if width > available_width {
-                // Back up and add ellipsis
-                width = available_width.min(width + 4);
-                break;
-            }
+            out.push(ch);
+            used += width;
         }
-
-        width as u16
+        out.push_str("...");
+        out
     }
 
     /// Check if a column (0-indexed from frame edge) is within the quit button.
@@ -392,9 +420,21 @@ mod tests {
         // With only 10 chars available, first hint fits (10), second would exceed
         // so we add " ..." (4 chars) for truncation
         let width = FooterLayout::calculate_hints_width(&hints, 10);
-        // First hint (10) + ellipsis (4) = 14, but this exceeds available
-        // The function should cap at available or handle gracefully
-        assert!(width > 0, "Hints width should be positive");
-        // The key assertion is that we don't panic and we get a reasonable width
+        assert_eq!(width, 10, "Hints width should not exceed available space");
+    }
+
+    #[test]
+    fn test_render_hints_text_truncates_first_hint_when_very_narrow() {
+        let hints = vec![("Ctrl+Shift+T", "VeryLongActionName")];
+        let text = FooterLayout::render_hints_text(&hints, 8);
+        assert_eq!(text.len(), 8);
+        assert!(text.ends_with("..."));
+    }
+
+    #[test]
+    fn test_render_hints_text_appends_ellipsis_when_subsequent_hints_do_not_fit() {
+        let hints = vec![("r", "Refresh"), ("s", "Sort"), ("c", "Clear")];
+        let text = FooterLayout::render_hints_text(&hints, 14);
+        assert_eq!(text, " r:Refresh ...");
     }
 }

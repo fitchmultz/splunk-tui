@@ -15,7 +15,6 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
-use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -30,7 +29,7 @@ impl App {
             if let Some(job) = self.get_selected_job() {
                 return Some(Action::CopyToClipboard(job.sid.clone()));
             }
-            self.toasts.push(Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return None;
         }
 

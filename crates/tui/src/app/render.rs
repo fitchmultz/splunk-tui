@@ -8,13 +8,17 @@
 //! Does NOT handle:
 //! - Does NOT handle input
 //! - Does NOT mutate app state (except for ListState/TableState selection)
+//!
+//! Invariants:
+//! - Popup rendering happens after base content so modals remain foreground.
+//! - Footer hint rendering must stay width-safe for all terminal sizes.
 
 use crate::app::App;
+use crate::app::footer_layout::FooterLayout;
 use crate::app::state::{
     CurrentScreen, EscAction, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, NavigationContext,
     NavigationMode, TabAction,
 };
-use crate::input::keymap::footer_hints;
 use crate::input::keymap::overrides;
 use crate::ui::popup::PopupType;
 use crate::ui::screens::{
@@ -68,6 +72,7 @@ impl App {
         // Build health indicator span
         let health_indicator = match self.health_state {
             HealthState::Healthy => Span::styled("[+]", Style::default().fg(theme.health_healthy)),
+            HealthState::Degraded => Span::styled("[~]", Style::default().fg(theme.warning)),
             HealthState::Unhealthy => {
                 Span::styled("[!]", Style::default().fg(theme.health_unhealthy))
             }
@@ -88,12 +93,14 @@ impl App {
 
         let health_label = match self.health_state {
             HealthState::Healthy => "Healthy",
+            HealthState::Degraded => "Degraded",
             HealthState::Unhealthy => "Unhealthy",
             HealthState::Unknown => "Unknown",
         };
 
         let health_label_style = match self.health_state {
             HealthState::Healthy => Style::default().fg(theme.health_healthy),
+            HealthState::Degraded => Style::default().fg(theme.warning),
             HealthState::Unhealthy => Style::default().fg(theme.health_unhealthy),
             HealthState::Unknown => Style::default().fg(theme.health_unknown),
         };
@@ -200,7 +207,7 @@ impl App {
         crate::ui::toast::render_toasts(f, &self.toasts, self.current_error.is_some(), &self.theme);
 
         // Render onboarding checklist (if applicable)
-        if self.onboarding_checklist.should_show_checklist() {
+        if self.popup.is_none() && self.onboarding_checklist.should_show_checklist() {
             let checklist_area = crate::ui::widgets::checklist::checklist_area(f.area());
             crate::ui::widgets::checklist::render_onboarding_checklist(
                 f,
@@ -766,7 +773,7 @@ impl App {
     /// Mode indicator appears on screens with special navigation (Search).
     /// Handles narrow terminals by responsive truncation.
     fn build_footer_text(&self, theme: splunk_config::Theme) -> Vec<Line<'_>> {
-        let hints = footer_hints(self.current_screen);
+        let hints = crate::input::keymap::footer_hints(self.current_screen);
         let available_width = self.last_area.width as usize;
         let nav_ctx = self.navigation_context();
 
@@ -783,9 +790,9 @@ impl App {
 
         // Build Esc hint (separator added conditionally during render)
         let esc_text = match nav_ctx.esc_action {
-            EscAction::DefaultFocusMode => "Esc:Query".to_string(),
-            EscAction::BackToPreviousScreen => "Esc:Back".to_string(),
-            EscAction::ClosePopup => "Esc:Close".to_string(),
+            EscAction::DefaultFocusMode => "Esc:Query ".to_string(),
+            EscAction::BackToPreviousScreen => "Esc:Back ".to_string(),
+            EscAction::ClosePopup => "Esc:Close ".to_string(),
             EscAction::None => String::new(),
         };
         let esc_sep_width = if !nav_text.is_empty() && !esc_text.is_empty() {
@@ -814,20 +821,7 @@ impl App {
         let hints_available_width = available_width.saturating_sub(fixed_width);
 
         // Build screen hints string (truncated for narrow terminals)
-        let hints_text = if hints.is_empty() {
-            String::new()
-        } else {
-            let mut text = String::new();
-            for (key, desc) in hints {
-                let hint = format!(" {}:{}", key, desc);
-                if text.len() + hint.len() > hints_available_width && !text.is_empty() {
-                    text.push_str(" ...");
-                    break;
-                }
-                text.push_str(&hint);
-            }
-            text
-        };
+        let hints_text = FooterLayout::render_hints_text(&hints, hints_available_width);
 
         // Build the footer line
         let mut spans = Vec::new();

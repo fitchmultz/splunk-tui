@@ -1,5 +1,10 @@
 //! Circuit breaker pattern for resilient API calls.
 //!
+//! Purpose: Prevent cascading failures by short-circuiting unhealthy endpoint calls.
+//! Responsibilities: Track per-endpoint failures, transition circuit states, and emit circuit metrics.
+//! Non-scope: Request retry orchestration (handled separately) and persistent circuit state.
+//! Invariants/Assumptions: State transitions remain deterministic per endpoint given the configured thresholds.
+//!
 //! This module provides a circuit breaker implementation to prevent cascading
 //! failures when the Splunk API is struggling. It tracks failure rates per
 //! endpoint and opens the circuit when thresholds are exceeded.
@@ -19,7 +24,7 @@
 //! - `half_open_requests`: Max test requests in half-open (default: 1)
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use crate::metrics::MetricsCollector;
@@ -228,6 +233,14 @@ pub struct CircuitBreaker {
 }
 
 impl CircuitBreaker {
+    /// Lock circuit state map and recover the inner value if a previous panic poisoned the mutex.
+    fn lock_circuits(&self) -> MutexGuard<'_, HashMap<String, EndpointCircuit>> {
+        self.circuits.lock().unwrap_or_else(|poisoned| {
+            // Keep service operational by recovering state after panic in another thread.
+            poisoned.into_inner()
+        })
+    }
+
     /// Create a new circuit breaker with default configuration.
     pub fn new() -> Self {
         Self {
@@ -257,7 +270,7 @@ impl CircuitBreaker {
     /// Returns `Ok(())` if the request should proceed, or `Err(CircuitBreakerError)`
     /// if the circuit is open.
     pub fn check(&self, endpoint: &str) -> Result<(), CircuitBreakerError> {
-        let mut circuits = self.circuits.lock().unwrap();
+        let mut circuits = self.lock_circuits();
         let circuit = circuits
             .entry(endpoint.to_string())
             .or_insert_with(|| EndpointCircuit::new(self.default_config));
@@ -277,7 +290,7 @@ impl CircuitBreaker {
 
     /// Record a successful request for the given endpoint.
     pub fn record_success(&self, endpoint: &str) {
-        let mut circuits = self.circuits.lock().unwrap();
+        let mut circuits = self.lock_circuits();
         if let Some(circuit) = circuits.get_mut(endpoint) {
             let old_state = circuit.state();
             let new_state = circuit.record_success(endpoint);
@@ -290,7 +303,7 @@ impl CircuitBreaker {
 
     /// Record a failed request for the given endpoint.
     pub fn record_failure(&self, endpoint: &str) {
-        let mut circuits = self.circuits.lock().unwrap();
+        let mut circuits = self.lock_circuits();
         let circuit = circuits
             .entry(endpoint.to_string())
             .or_insert_with(|| EndpointCircuit::new(self.default_config));
@@ -305,7 +318,7 @@ impl CircuitBreaker {
 
     /// Get current state for an endpoint.
     pub fn state(&self, endpoint: &str) -> CircuitState {
-        let circuits = self.circuits.lock().unwrap();
+        let circuits = self.lock_circuits();
         circuits
             .get(endpoint)
             .map(|c| c.state())
@@ -314,7 +327,7 @@ impl CircuitBreaker {
 
     /// Get all endpoint states.
     pub fn all_states(&self) -> HashMap<String, CircuitState> {
-        let circuits = self.circuits.lock().unwrap();
+        let circuits = self.lock_circuits();
         circuits
             .iter()
             .map(|(k, v)| (k.clone(), v.state()))
@@ -323,7 +336,7 @@ impl CircuitBreaker {
 
     /// Reset a specific endpoint to closed state.
     pub fn reset(&self, endpoint: &str) {
-        let mut circuits = self.circuits.lock().unwrap();
+        let mut circuits = self.lock_circuits();
         if let Some(circuit) = circuits.get_mut(endpoint) {
             info!(endpoint = endpoint, "Manually resetting circuit breaker");
             circuit.state = CircuitState::Closed;
@@ -335,7 +348,7 @@ impl CircuitBreaker {
 
     /// Reset all circuits to closed state.
     pub fn reset_all(&self) {
-        let mut circuits = self.circuits.lock().unwrap();
+        let mut circuits = self.lock_circuits();
         info!("Resetting all circuit breakers");
         for (_endpoint, circuit) in circuits.iter_mut() {
             circuit.state = CircuitState::Closed;

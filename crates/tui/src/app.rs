@@ -43,7 +43,7 @@ pub use state::{
 pub use structs::{App, ConnectionContext, SplValidationState};
 
 use crate::action::Action;
-use crate::ui::Toast;
+use crate::ui::{Toast, ToastLevel};
 use crossterm::event::{KeyCode, KeyEvent};
 use splunk_config::constants::{
     DEFAULT_CLIPBOARD_PREVIEW_CHARS, DEFAULT_HISTORY_MAX_ITEMS, DEFAULT_SCROLL_THRESHOLD,
@@ -51,6 +51,24 @@ use splunk_config::constants::{
 };
 
 impl App {
+    /// Push a toast only if an identical active toast is not already present.
+    pub(crate) fn push_toast_once(&mut self, level: ToastLevel, message: impl Into<String>) {
+        let message = message.into();
+        let duplicate_active = self
+            .toasts
+            .iter()
+            .any(|t| !t.is_expired() && t.level == level && t.message == message);
+        if duplicate_active {
+            return;
+        }
+        self.toasts.push(Toast::new(message, level));
+    }
+
+    /// Push an info toast with active-duplicate suppression.
+    pub(crate) fn push_info_toast_once(&mut self, message: impl Into<String>) {
+        self.push_toast_once(ToastLevel::Info, message);
+    }
+
     /// Update the health state and emit a toast notification on transition to unhealthy.
     pub fn set_health_state(&mut self, new_state: HealthState) {
         // Only emit toast on Healthy -> Unhealthy transition
@@ -176,7 +194,13 @@ impl App {
                 count: self.workload_pools_pagination.page_size,
                 offset: 0,
             }),
-            CurrentScreen::Shc => Some(Action::LoadShcStatus),
+            CurrentScreen::Shc => {
+                if self.shc_unavailable {
+                    None
+                } else {
+                    Some(Action::LoadShcStatus)
+                }
+            }
             CurrentScreen::Settings => Some(Action::SwitchToSettings),
             CurrentScreen::Overview => Some(Action::LoadOverview),
             CurrentScreen::MultiInstance => Some(Action::LoadMultiInstanceOverview),
@@ -505,6 +529,21 @@ impl App {
         // Configs search mode takes precedence over other bindings
         if self.current_screen == CurrentScreen::Configs && self.config_search_mode {
             return self.handle_config_search_input(key);
+        }
+
+        // Onboarding checklist dismiss shortcuts are global while the widget is visible.
+        if self.onboarding_checklist.should_show_checklist() {
+            let is_shift_d = key.code == KeyCode::Char('D')
+                || (key.code == KeyCode::Char('d')
+                    && key.modifiers == crossterm::event::KeyModifiers::SHIFT);
+            if is_shift_d {
+                return Some(Action::DismissOnboardingItem);
+            }
+            if key.code == KeyCode::Char('d')
+                && key.modifiers == crossterm::event::KeyModifiers::CONTROL
+            {
+                return Some(Action::DismissOnboardingAll);
+            }
         }
 
         // Global 'e' keybinding to show error details when an error is present.

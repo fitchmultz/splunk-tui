@@ -5,20 +5,20 @@ expression: harness.render()
 ┌──────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown     │
 │ |                                    │
-└──────────────────────────────────────┘
-┌Search Query──────────────────────────┐
-│       ┌Tutorial - Learn the K┐       │
-└───────│   Step 4: Learn the  ↑───────┘
-┌Status─│      Keybindings     █───────┐
-│Press E│                      ║       │
-└───────│Splunk TUI is designed║───────┘
-┌Results│ to be keyboard-driven║─────┐─┐
-│No resu│ for efficiency. Here ║y and│p│
-│       │   are the essential  ║     │ │
-│       │      shortcuts:      ↓     │ │
-│       └──────────────────────┘     │ │
-│         └──────────────────────────┘ │
-└──────────────────────────────────────┘
+└─────┌Tutorial - Learn the Keybi┐─────┘
+┌Searc│     Step 4: Learn the    ↑─────┐
+│     │        Keybindings       █     │
+└─────│                          █─────┘
+┌Statu│ Splunk TUI is designed to█─────┐
+│Press│  be keyboard-driven for  ║     │
+└─────│ efficiency. Here are the ║─────┘
+┌Resul│   essential shortcuts:   ║─────┐
+│No re│                          ║and p│
+│     │        Navigation:       ║     │
+│     │      • Tab / Shift+Tab   ║     │
+│     │  Switch between screens  ║     │
+│     │        • Ctrl+Tab /      ↓     │
+└─────└──────────────────────────┘─────┘
 ┌──────────────────────────────────────┐
-│Esc:Close| Enter:Run ...| ?:Help | q:Q│
+│Esc:Close | Enter:Run| ?:Help | q:Quit│
 └──────────────────────────────────────┘

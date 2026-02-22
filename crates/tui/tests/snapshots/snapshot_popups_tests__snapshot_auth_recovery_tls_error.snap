@@ -16,13 +16,13 @@ expression: harness.render()
 │               │• Check system time is correct                │.              │
 │               │• Consider enabling 'Skip TLS Verify' for     │               │
 │               │self-signed certificates (development only)   │               │
-│               │                                              │─────────────┐ │
-│               │───                                           │0/5] 0%      │ │
-│               │                                              │file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
+│               │                                              │               │
+│               │───                                           │               │
+│               │                                              │               │
+│               └──────────────────────────────────────────────┘               │
+│                                                                              │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

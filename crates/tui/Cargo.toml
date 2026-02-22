@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+default-run = "splunk-tui"
 
 [lib]
 name = "splunk_tui"

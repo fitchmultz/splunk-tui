@@ -1,4 +1,7 @@
-//! Lookup table management endpoints.
+//! Purpose: Lookup table management endpoints.
+//! Responsibilities: List, download, upload, and delete CSV lookup-table files via Splunk REST APIs.
+//! Non-scope: KVStore lookup collections and lookup-transformation logic.
+//! Invariants/Assumptions: List parsing tolerates Splunk variants that place ownership metadata in `acl` instead of `content`.
 
 use reqwest::Client;
 use reqwest::Url;
@@ -8,7 +11,7 @@ use crate::endpoints::encode_path_segment;
 use crate::endpoints::send_request_with_retry;
 use crate::error::{ClientError, Result};
 use crate::metrics::MetricsCollector;
-use crate::models::{LookupTable, LookupTableListResponse, UploadLookupParams};
+use crate::models::{LookupTable, UploadLookupParams};
 
 /// List all lookup table files.
 ///
@@ -52,11 +55,86 @@ pub async fn list_lookup_tables(
     )
     .await?;
 
-    let resp: LookupTableListResponse = response.json().await.map_err(|e| {
+    let payload: serde_json::Value = response.json().await.map_err(|e| {
         ClientError::InvalidResponse(format!("Failed to parse lookup tables response: {}", e))
     })?;
 
-    Ok(resp.entry.into_iter().map(|e| e.content).collect())
+    let entries = payload
+        .get("entry")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| {
+            ClientError::InvalidResponse(
+                "Missing entry array in lookup tables response".to_string(),
+            )
+        })?;
+
+    let lookups = entries.iter().map(parse_lookup_entry).collect();
+    Ok(lookups)
+}
+
+fn parse_lookup_entry(entry: &serde_json::Value) -> LookupTable {
+    let name = entry
+        .get("name")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let content = entry.get("content").unwrap_or(&serde_json::Value::Null);
+    let acl = entry.get("acl").unwrap_or(&serde_json::Value::Null);
+
+    let owner = content
+        .get("owner")
+        .and_then(serde_json::Value::as_str)
+        .or_else(|| acl.get("owner").and_then(serde_json::Value::as_str))
+        .or_else(|| entry.get("author").and_then(serde_json::Value::as_str))
+        .unwrap_or_default()
+        .to_string();
+
+    let app = content
+        .get("app")
+        .and_then(serde_json::Value::as_str)
+        .or_else(|| {
+            content
+                .get("eai:appName")
+                .and_then(serde_json::Value::as_str)
+        })
+        .or_else(|| acl.get("app").and_then(serde_json::Value::as_str))
+        .unwrap_or_default()
+        .to_string();
+
+    let sharing = content
+        .get("sharing")
+        .and_then(serde_json::Value::as_str)
+        .or_else(|| acl.get("sharing").and_then(serde_json::Value::as_str))
+        .unwrap_or("user")
+        .to_string();
+
+    let filename = content
+        .get("filename")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or(&name)
+        .to_string();
+
+    let size = content
+        .get("size")
+        .and_then(size_from_json)
+        .unwrap_or_default();
+
+    LookupTable {
+        name,
+        filename,
+        owner,
+        app,
+        sharing,
+        size,
+    }
+}
+
+fn size_from_json(value: &serde_json::Value) -> Option<usize> {
+    match value {
+        serde_json::Value::Number(n) => n.as_u64().and_then(|u| usize::try_from(u).ok()),
+        serde_json::Value::String(s) => s.parse::<usize>().ok(),
+        _ => None,
+    }
 }
 
 /// Download a lookup table file as raw CSV content.

@@ -27,7 +27,7 @@ impl App {
             if let Some(info) = &self.cluster_info {
                 return Some(Action::CopyToClipboard(info.id.clone()));
             }
-            self.toasts.push(Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return None;
         }
 

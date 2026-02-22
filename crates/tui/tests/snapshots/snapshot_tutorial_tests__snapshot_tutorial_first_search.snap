@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown                                             │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Search Query──────────────────────────────────────────────────────────────────┐
-│                                                                              │
-└───────────────┌Tutorial - Run Your First Search (50%)────────┐───────────────┘
-┌Status─────────│         Step 4: Run Your First Search        ↑───────────────┐
-│Press Enter to │                                              █               │
-└───────────────│  Now let's run a search to see Splunk TUI in █───────────────┘
-┌Results────────│                    action!                   █───────────────┐
-│               │                                              ║.              │
-│               │               To run a search:               ║               │
-│               │   1. Navigate to the Search screen (it's the ║               │
-│               │                 first screen)                ║─────────────┐ │
-│               │   2. Type a search query in the input box at ║0/5] 0%      │ │
-│               │                    the top                   ↓file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└──────────┌Tutorial - Run Your First Search (50%)──────────────────┐──────────┘
+┌Search Que│              Step 4: Run Your First Search             ↑──────────┐
+│          │                                                        █          │
+└──────────│   Now let's run a search to see Splunk TUI in action!  █──────────┘
+┌Status────│                                                        █──────────┐
+│Press Ente│                    To run a search:                    █          │
+└──────────│     1. Navigate to the Search screen (it's the first   █──────────┘
+┌Results───│                         screen)                        █──────────┐
+│          │    2. Type a search query in the input box at the top  ║          │
+│          │           3. Press Enter to execute the search         ║          │
+│          │                                                        ║          │
+│          │           Try one of these example searches:           ║          │
+│          │                • index=_internal | head 10             ║          │
+│          │           • index=main | stats count by source         ║          │
+│          │                  • | makeresults count=5               ║          │
+│          │                                                        ║          │
+│          │ The results will appear below the search box. You can: ↓          │
+└──────────└────────────────────────────────────────────────────────┘──────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

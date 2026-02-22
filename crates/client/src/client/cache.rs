@@ -1,5 +1,10 @@
 //! Client-side response caching for API requests.
 //!
+//! Purpose: Provide in-memory response caching for idempotent client reads.
+//! Responsibilities: Cache GET responses, apply endpoint-specific TTL policy, and expose cache metrics.
+//! Non-scope: Persistent storage, distributed cache coordination, or proactive pre-warming.
+//! Invariants/Assumptions: Only safe-to-cache reads are stored and cache invalidation follows mutating operations.
+//!
 //! This module provides an LRU cache with TTL support for HTTP responses,
 //! reducing server load and improving response times for repeated queries.
 //!
@@ -48,6 +53,14 @@ pub const DEFAULT_LIST_TTL_SECONDS: u64 = 120;
 
 /// Metric name for cache eviction counter.
 pub const METRIC_CACHE_EVICTIONS: &str = "splunk_api_cache_evictions_total";
+
+fn env_u64_or_default(key: &str, default: u64) -> u64 {
+    std::env::var(key)
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(default)
+}
 
 /// A cached HTTP response entry.
 #[derive(Clone, Debug)]
@@ -134,70 +147,84 @@ pub struct CacheConfig {
 impl Default for CacheConfig {
     fn default() -> Self {
         let mut policies = std::collections::HashMap::new();
+        let index_ttl_seconds =
+            env_u64_or_default("SPLUNK_CACHE_TTL_INDEX_SECONDS", DEFAULT_INDEX_TTL_SECONDS);
+        let job_ttl_seconds =
+            env_u64_or_default("SPLUNK_CACHE_TTL_JOB_SECONDS", DEFAULT_JOB_TTL_SECONDS);
+        let health_ttl_seconds = env_u64_or_default(
+            "SPLUNK_CACHE_TTL_HEALTH_SECONDS",
+            DEFAULT_HEALTH_TTL_SECONDS,
+        );
+        let server_info_ttl_seconds = env_u64_or_default(
+            "SPLUNK_CACHE_TTL_SERVER_INFO_SECONDS",
+            DEFAULT_SERVER_INFO_TTL_SECONDS,
+        );
+        let list_ttl_seconds =
+            env_u64_or_default("SPLUNK_CACHE_TTL_LIST_SECONDS", DEFAULT_LIST_TTL_SECONDS);
 
         // Index endpoints - cache for 60 seconds
         policies.insert(
             "/services/data/indexes".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_INDEX_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(index_ttl_seconds)),
         );
 
         // Job endpoints - cache for 10 seconds (highly volatile)
         policies.insert(
             "/services/search/jobs".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_JOB_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(job_ttl_seconds)),
         );
 
         // Health endpoints - cache for 30 seconds
         policies.insert(
             "/services/server/health".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_HEALTH_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(health_ttl_seconds)),
         );
 
         // Server info - cache for 5 minutes (rarely changes)
         policies.insert(
             "/services/server/info".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_SERVER_INFO_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(server_info_ttl_seconds)),
         );
 
         // Forwarders - cache for 2 minutes
         policies.insert(
             "/services/deployment/server/clients".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_LIST_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(list_ttl_seconds)),
         );
 
         // Search peers - cache for 2 minutes
         policies.insert(
             "/services/search/distributed/peers".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_LIST_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(list_ttl_seconds)),
         );
 
         // Cluster peers - cache for 2 minutes
         policies.insert(
             "/services/cluster/master/peers".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_LIST_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(list_ttl_seconds)),
         );
 
         // License info - cache for 5 minutes
         policies.insert(
             "/services/licenser/usage".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_SERVER_INFO_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(server_info_ttl_seconds)),
         );
 
         // KVStore status - cache for 30 seconds
         policies.insert(
             "/services/kvstore/status".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_HEALTH_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(health_ttl_seconds)),
         );
 
         // Apps - cache for 5 minutes
         policies.insert(
             "/services/apps/local".to_string(),
-            CachePolicy::CacheWithTtl(Duration::from_secs(DEFAULT_SERVER_INFO_TTL_SECONDS)),
+            CachePolicy::CacheWithTtl(Duration::from_secs(server_info_ttl_seconds)),
         );
 
         Self {
             policies,
-            default_ttl: Duration::from_secs(DEFAULT_LIST_TTL_SECONDS),
+            default_ttl: Duration::from_secs(list_ttl_seconds),
         }
     }
 }
@@ -249,7 +276,8 @@ pub struct ResponseCache {
 impl ResponseCache {
     /// Create a new response cache with default settings.
     pub fn new() -> Self {
-        Self::with_capacity(DEFAULT_CACHE_SIZE)
+        let capacity = env_u64_or_default("SPLUNK_CACHE_SIZE", DEFAULT_CACHE_SIZE);
+        Self::with_capacity(capacity)
     }
 
     /// Create a new response cache with a specific capacity.
@@ -361,6 +389,7 @@ impl ResponseCache {
     /// Invalidate a specific cache entry.
     pub async fn invalidate(&self, key: &CacheKey) {
         self.inner.invalidate(key).await;
+        self.record_eviction_by(1);
         trace!("Invalidated cache entry for key: {}", key.url);
     }
 
@@ -373,12 +402,17 @@ impl ResponseCache {
         self.inner
             .invalidate_entries_if(move |key, _| key.url.starts_with(&prefix_owned))
             .ok();
+        // Moka doesn't expose affected-entry count for predicate invalidation.
+        // Record this as one invalidation event for observability.
+        self.record_eviction_by(1);
         debug!("Invalidated cache entries with prefix: {}", prefix);
     }
 
     /// Invalidate all cache entries.
     pub async fn invalidate_all(&self) {
+        let evicted = self.inner.entry_count();
         self.inner.invalidate_all();
+        self.record_eviction_by(evicted);
         debug!("Invalidated all cache entries");
     }
 
@@ -428,6 +462,13 @@ impl ResponseCache {
     fn record_miss(&self) {
         if self.metrics.is_some() {
             metrics::counter!(METRIC_CACHE_MISSES).increment(1);
+        }
+    }
+
+    /// Record cache eviction events.
+    fn record_eviction_by(&self, count: u64) {
+        if self.metrics.is_some() && count > 0 {
+            metrics::counter!(METRIC_CACHE_EVICTIONS).increment(count);
         }
     }
 }

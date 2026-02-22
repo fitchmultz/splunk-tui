@@ -29,7 +29,7 @@ impl App {
             {
                 return Some(Action::CopyToClipboard(uri.clone()));
             }
-            self.toasts.push(Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return None;
         }
 

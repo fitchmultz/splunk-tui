@@ -1,4 +1,16 @@
 //! Error details popup rendering with structured display.
+//!
+//! Responsibilities:
+//! - Render the error-details modal with contextual sections and scrolling.
+//! - Keep popup geometry within terminal bounds for all terminal sizes.
+//!
+//! Does NOT handle:
+//! - Error classification or detail construction.
+//! - Popup input handling.
+//!
+//! Invariants:
+//! - Popup rect must always stay fully inside the frame area.
+//! - Scrollbar render must only occur when content exceeds visible lines.
 
 use ratatui::{
     Frame,
@@ -41,11 +53,11 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App, theme: &Theme) {
     let area = f.area();
 
-    let popup_width = 80.min(area.width.saturating_sub(4));
-    let popup_height = 25.min(area.height.saturating_sub(4));
-    let mut popup_area = centered_rect(80, 25, area);
-    popup_area.width = popup_width;
-    popup_area.height = popup_height;
+    let popup_width = 80.min(area.width.saturating_sub(4)).max(1);
+    let popup_height = 25.min(area.height.saturating_sub(4)).max(1);
+    let popup_x = area.x + area.width.saturating_sub(popup_width) / 2;
+    let popup_y = area.y + area.height.saturating_sub(popup_height) / 2;
+    let popup_area = Rect::new(popup_x, popup_y, popup_width, popup_height);
 
     f.render_widget(Clear, popup_area);
 
@@ -191,5 +203,25 @@ pub fn render_error_details(f: &mut Frame, error: &ErrorDetails, app: &App, them
             popup_area.inner(Margin::new(0, 1)),
             &mut scrollbar_state,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_popup_geometry_stays_in_bounds_on_small_terminal() {
+        let area = Rect::new(0, 0, 80, 24);
+        let popup_width = 80.min(area.width.saturating_sub(4)).max(1);
+        let popup_height = 25.min(area.height.saturating_sub(4)).max(1);
+        let popup_x = area.x + area.width.saturating_sub(popup_width) / 2;
+        let popup_y = area.y + area.height.saturating_sub(popup_height) / 2;
+        let popup = Rect::new(popup_x, popup_y, popup_width, popup_height);
+
+        assert!(popup.x >= area.x);
+        assert!(popup.y >= area.y);
+        assert!(popup.x + popup.width <= area.x + area.width);
+        assert!(popup.y + popup.height <= area.y + area.height);
     }
 }

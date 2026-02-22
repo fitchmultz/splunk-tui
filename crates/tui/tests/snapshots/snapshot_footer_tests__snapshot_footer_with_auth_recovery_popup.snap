@@ -16,13 +16,13 @@ expression: harness.render()
 │               │• Check your username and password            │.              │
 │               │• Verify your API token is valid              │               │
 │               │• Ensure your account has not been locked     │               │
-│               │                                              │─────────────┐ │
-│               │───                                           │0/5] 0%      │ │
-│               │                                              │file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
+│               │                                              │               │
+│               │───                                           │               │
+│               │                                              │               │
+│               └──────────────────────────────────────────────┘               │
+│                                                                              │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

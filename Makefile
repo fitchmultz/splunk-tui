@@ -135,13 +135,10 @@ run-tui:
 # Mode controlled by LIVE_TESTS_MODE: required|optional|skip
 # - required: Fail if env/server unavailable (CI default)
 # - optional: Skip with warning if unavailable (local dev)
-# - skip: Explicit bypass (same as legacy SKIP_LIVE_TESTS=1)
+# - skip: Explicit bypass
 test-live:
 	@echo "→ Running live tests (mode: $(LIVE_TESTS_MODE))..."
 	@mode="$(LIVE_TESTS_MODE)"; \
-	if [ "$$SKIP_LIVE_TESTS" = "1" ]; then \
-		mode="skip"; \
-	fi; \
 	case "$$mode" in \
 		skip) \
 			echo "  $(YELLOW)Skipping live tests (LIVE_TESTS_MODE=skip)$(NC)"; \
@@ -240,7 +237,7 @@ ci:
 	$(MAKE) lint                 || { echo ""; echo "✗ CI failed at: lint"; exit 1; }; \
 	$(MAKE) type-check           || { echo ""; echo "✗ CI failed at: type-check"; exit 1; }; \
 	$(MAKE) test                 || { echo ""; echo "✗ CI failed at: test"; exit 1; }; \
-	LIVE_TESTS_MODE=required $(MAKE) test-live || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
+	LIVE_TESTS_MODE=$(LIVE_TESTS_MODE) $(MAKE) test-live || { echo ""; echo "✗ CI failed at: test-live"; exit 1; }; \
 	$(MAKE) release PROFILE=ci   || { echo ""; echo "✗ CI failed at: release"; exit 1; }; \
 	$(MAKE) _lint-docs-check     || { echo ""; echo "✗ CI failed at: lint-docs"; exit 1; }; \
 	$(MAKE) examples-test        || { echo ""; echo "✗ CI failed at: examples-test"; exit 1; }

@@ -88,6 +88,10 @@ pub struct Input {
     #[serde(rename = "connectionHost")]
     pub connection_host: Option<String>,
     /// Port number (TCP/UDP).
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::opt_string_from_number_or_string"
+    )]
     pub port: Option<String>,
     /// Path to monitor (Monitor inputs).
     pub path: Option<String>,
@@ -100,6 +104,10 @@ pub struct Input {
     /// Command to execute (Script inputs).
     pub command: Option<String>,
     /// Execution interval (Script inputs).
+    #[serde(
+        default,
+        deserialize_with = "crate::serde_helpers::opt_string_from_number_or_string"
+    )]
     pub interval: Option<String>,
 }
 
@@ -185,6 +193,20 @@ mod tests {
         assert_eq!(input.source, None);
         assert_eq!(input.sourcetype, None);
         assert_eq!(input.port, None);
+    }
+
+    #[test]
+    fn test_deserialize_script_input_with_numeric_interval() {
+        let json = r#"{
+            "name": "script://./bin/collect.sh",
+            "input_type": "script",
+            "disabled": false,
+            "command": "./bin/collect.sh",
+            "interval": 3600
+        }"#;
+        let input: Input = serde_json::from_str(json).unwrap();
+        assert_eq!(input.input_type, InputType::Script);
+        assert_eq!(input.interval, Some("3600".to_string()));
     }
 
     #[test]

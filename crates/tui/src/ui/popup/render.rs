@@ -1,7 +1,16 @@
 //! Popup rendering implementation.
 //!
-//! This module provides the `render_popup` function for rendering modal popup
-//! dialogs with appropriate styling based on popup type.
+//! Responsibilities:
+//! - Render modal popup dialogs with type-specific styling.
+//! - Apply popup-type sizing so dense dialogs remain readable.
+//!
+//! Does NOT handle:
+//! - Creating popup content (handled by popup builder).
+//! - Handling popup input/actions (handled by app input/actions).
+//!
+//! Invariants:
+//! - Confirmation popups keep default sizing for mouse-hit consistency.
+//! - Scroll state for help/tutorial/undo popups is preserved across renders.
 
 use ratatui::{
     Frame,
@@ -26,7 +35,8 @@ use crate::ui::popup::{POPUP_HEIGHT_PERCENT, POPUP_WIDTH_PERCENT, Popup, PopupTy
 /// * `app` - The app state (for accessing scroll offsets)
 pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
     let size = f.area();
-    let popup_area = centered_rect(POPUP_WIDTH_PERCENT, POPUP_HEIGHT_PERCENT, size);
+    let (popup_width_pct, popup_height_pct) = popup_size(&popup.kind);
+    let popup_area = centered_rect(popup_width_pct, popup_height_pct, size);
 
     f.render_widget(Clear, popup_area);
 
@@ -266,6 +276,19 @@ pub fn render_popup(f: &mut Frame, popup: &Popup, theme: &Theme, app: &App) {
             .alignment(alignment)
             .wrap(wrap_mode);
         f.render_widget(p, popup_area);
+    }
+}
+
+fn popup_size(kind: &PopupType) -> (u16, u16) {
+    match kind {
+        // Dense, scroll-heavy popups need more room for readability.
+        PopupType::Help => (78, 76),
+        PopupType::TutorialWizard { .. } => (72, 72),
+        PopupType::CreateProfile { .. }
+        | PopupType::EditProfile { .. }
+        | PopupType::ProfileSelector { .. } => (72, 62),
+        PopupType::ConnectionDiagnostics { .. } => (70, 58),
+        _ => (POPUP_WIDTH_PERCENT, POPUP_HEIGHT_PERCENT),
     }
 }
 

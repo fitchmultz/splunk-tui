@@ -6,8 +6,8 @@ services:
     container_name: splunk-dev
     environment:
       - SPLUNK_START_ARGS=--accept-license
-      - SPLUNK_PASSWORD=changeme
-      - SPLUNK_HEC_TOKEN=hec-token-123
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD:?Set SPLUNK_PASSWORD in .env}
+      - SPLUNK_HEC_TOKEN=${SPLUNK_HEC_TOKEN:?Set SPLUNK_HEC_TOKEN in .env}
     ports:
       - "8000:8000"   # Web UI
       - "8088:8088"   # HEC
@@ -15,7 +15,11 @@ services:
     volumes:
       - splunk-data:/opt/splunk/var
     healthcheck:
-      test: ["CMD", "curl", "-fk", "https://localhost:8089/services/server/info", "-u", "admin:changeme"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl --connect-timeout 5 --max-time 10 -ksS https://localhost:8089/services/server/info > /dev/null",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -28,8 +32,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - SPLUNK_BASE_URL=https://splunk:8089
-      - SPLUNK_USERNAME=admin
-      - SPLUNK_PASSWORD=changeme
+      - SPLUNK_USERNAME=${SPLUNK_USERNAME:?Set SPLUNK_USERNAME in .env}
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD:?Set SPLUNK_PASSWORD in .env}
       - SPLUNK_SKIP_VERIFY=true
     depends_on:
       splunk:
@@ -44,8 +48,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - SPLUNK_BASE_URL=https://splunk:8089
-      - SPLUNK_USERNAME=admin
-      - SPLUNK_PASSWORD=changeme
+      - SPLUNK_USERNAME=${SPLUNK_USERNAME:?Set SPLUNK_USERNAME in .env}
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD:?Set SPLUNK_PASSWORD in .env}
       - SPLUNK_SKIP_VERIFY=true
     depends_on:
       splunk:

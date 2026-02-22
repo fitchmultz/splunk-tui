@@ -16,12 +16,14 @@
 mod common;
 
 use common::*;
+use secrecy::SecretString;
 use splunk_client::error::ClientError;
 use splunk_client::models::InputType;
+use splunk_client::{AuthStrategy, SplunkClient};
 use wiremock::matchers::{method, path};
 
-// Note: Input types containing "/" (like "tcp/raw") are percent-encoded to "tcp%2Fraw"
-// to prevent path traversal. Tests use the encoded paths in mock server expectations.
+// Input type segments keep "/" path separators (e.g., "tcp/raw"), while input names
+// are still path-encoded when needed.
 
 #[tokio::test]
 async fn test_list_inputs_by_type_tcp() {
@@ -30,7 +32,7 @@ async fn test_list_inputs_by_type_tcp() {
     let fixture = load_fixture("inputs/list_inputs_tcp.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp%2Fraw"))
+        .and(path("/services/data/inputs/tcp/raw"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -108,7 +110,7 @@ async fn test_list_inputs_by_type_with_pagination() {
     let fixture = load_fixture("inputs/list_inputs_tcp.json");
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp%2Fraw"))
+        .and(path("/services/data/inputs/tcp/raw"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
         .mount(&mock_server)
         .await;
@@ -171,7 +173,7 @@ async fn test_enable_input() {
 
     // Enable endpoint returns 200 with empty body or minimal response
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp%2Fraw/9997/enable"))
+        .and(path("/services/data/inputs/tcp/raw/9997/enable"))
         .respond_with(ResponseTemplate::new(200).set_body_string(""))
         .mount(&mock_server)
         .await;
@@ -201,7 +203,7 @@ async fn test_disable_input() {
 
     // Disable endpoint returns 200 with empty body or minimal response
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp%2Fraw/9998/disable"))
+        .and(path("/services/data/inputs/tcp/raw/9998/disable"))
         .respond_with(ResponseTemplate::new(200).set_body_string(""))
         .mount(&mock_server)
         .await;
@@ -300,11 +302,54 @@ async fn test_list_inputs_by_type_with_special_characters_in_name() {
 }
 
 #[tokio::test]
+async fn test_list_inputs_by_type_infers_type_when_response_omits_input_type() {
+    let mock_server = MockServer::start().await;
+
+    let fixture = serde_json::json!({
+        "entry": [
+            {
+                "name": "9997",
+                "content": {
+                    "disabled": false,
+                    "host": "$decideOnStartup",
+                    "port": "9997"
+                }
+            }
+        ]
+    });
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/tcp/raw"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&fixture))
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let result = endpoints::list_inputs_by_type(
+        &client,
+        &mock_server.uri(),
+        "test-token",
+        "tcp/raw",
+        Some(30),
+        None,
+        3,
+        None,
+        None,
+    )
+    .await;
+
+    assert!(result.is_ok());
+    let inputs = result.unwrap();
+    assert_eq!(inputs.len(), 1);
+    assert_eq!(inputs[0].input_type, InputType::TcpRaw);
+}
+
+#[tokio::test]
 async fn test_list_inputs_by_type_unauthorized() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp%2Fraw"))
+        .and(path("/services/data/inputs/tcp/raw"))
         .respond_with(ResponseTemplate::new(401).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Unauthorized"}]
         })))
@@ -340,7 +385,7 @@ async fn test_list_inputs_by_type_forbidden() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp%2Fraw"))
+        .and(path("/services/data/inputs/tcp/raw"))
         .respond_with(ResponseTemplate::new(403).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Forbidden"}]
         })))
@@ -364,6 +409,54 @@ async fn test_list_inputs_by_type_forbidden() {
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(matches!(err, ClientError::ApiError { status: 403, .. }));
+}
+
+#[tokio::test]
+async fn test_splunk_client_list_inputs_skips_missing_input_type_endpoints() {
+    let mock_server = MockServer::start().await;
+    let tcp_fixture = load_fixture("inputs/list_inputs_tcp.json");
+    let empty_response = serde_json::json!({ "entry": [] });
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/tcp/raw"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&tcp_fixture))
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/services/data/inputs/tcp/cooked"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "messages": [{"type": "ERROR", "text": "Not Found"}]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    for endpoint in [
+        "/services/data/inputs/udp",
+        "/services/data/inputs/monitor",
+        "/services/data/inputs/script",
+    ] {
+        Mock::given(method("GET"))
+            .and(path(endpoint))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&empty_response))
+            .mount(&mock_server)
+            .await;
+    }
+
+    let client = SplunkClient::builder()
+        .base_url(mock_server.uri())
+        .auth_strategy(AuthStrategy::ApiToken {
+            token: SecretString::new("test-token".to_string().into()),
+        })
+        .build()
+        .expect("Failed to build SplunkClient");
+
+    let result = client.list_inputs(Some(30), None).await;
+
+    assert!(result.is_ok(), "Expected list_inputs to skip missing types");
+    let inputs = result.unwrap();
+    assert_eq!(inputs.len(), 2);
+    assert_eq!(inputs[0].input_type, InputType::TcpRaw);
 }
 
 #[tokio::test]
@@ -407,7 +500,7 @@ async fn test_enable_input_not_found() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp%2Fraw/9999/enable"))
+        .and(path("/services/data/inputs/tcp/raw/9999/enable"))
         .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Not Found"}]
         })))
@@ -442,7 +535,7 @@ async fn test_disable_input_not_found() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("POST"))
-        .and(path("/services/data/inputs/tcp%2Fraw/9999/disable"))
+        .and(path("/services/data/inputs/tcp/raw/9999/disable"))
         .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
             "messages": [{"type": "ERROR", "text": "Not Found"}]
         })))
@@ -477,7 +570,7 @@ async fn test_list_inputs_malformed_response() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/services/data/inputs/tcp%2Fraw"))
+        .and(path("/services/data/inputs/tcp/raw"))
         .respond_with(ResponseTemplate::new(200).set_body_string("invalid json"))
         .mount(&mock_server)
         .await;

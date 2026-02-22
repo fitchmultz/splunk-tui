@@ -1,5 +1,8 @@
 //! Action handling for the TUI app.
 //!
+//! Purpose:
+//! - Provide the central reducer-style state mutation entrypoint for TUI actions.
+//!
 //! Responsibilities:
 //! - Process Actions and mutate App state accordingly
 //! - Handle API result actions
@@ -22,6 +25,7 @@ use crate::app::state::SearchInputMode;
 
 // Domain-specific action handler modules
 mod data_loading;
+mod data_loading_handlers;
 mod navigation;
 mod profiles;
 mod search;
@@ -61,6 +65,11 @@ impl App {
             | Action::LoadLookups { .. }
             | Action::LoadDashboards { .. }
             | Action::LoadDataModels { .. }
+            | Action::LoadShcStatus
+            | Action::LoadShcMembers
+            | Action::LoadShcCaptain
+            | Action::LoadShcConfig
+            | Action::ToggleShcViewMode
             | Action::LoadMoreIndexes
             | Action::LoadMoreJobs
             | Action::LoadMoreApps
@@ -127,7 +136,12 @@ impl App {
             // Roles
             | Action::RoleCreated(_)
             | Action::RoleModified(_)
-            | Action::RoleDeleted(_) => {
+            | Action::RoleDeleted(_)
+            // SHC
+            | Action::ShcStatusLoaded(_)
+            | Action::ShcMembersLoaded(_)
+            | Action::ShcCaptainLoaded(_)
+            | Action::ShcConfigLoaded(_) => {
                 self.handle_data_loading_action(action);
             }
 
@@ -208,7 +222,14 @@ impl App {
             | Action::LookupDownloaded(_)
             | Action::LookupDeleted(_)
             | Action::ExportSuccess(_)
-            | Action::ConnectionDiagnosticsLoaded(_) => {
+            | Action::ConnectionDiagnosticsLoaded(_)
+            | Action::DismissOnboardingItem
+            | Action::DismissOnboardingAll
+            // SHC management
+            | Action::ShcMemberAdded { .. }
+            | Action::ShcMemberRemoved { .. }
+            | Action::ShcRollingRestarted { .. }
+            | Action::ShcCaptainSet { .. } => {
                 self.handle_system_action(action);
             }
 

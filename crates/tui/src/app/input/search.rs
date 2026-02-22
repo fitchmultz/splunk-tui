@@ -120,7 +120,7 @@ impl App {
         };
 
         if content.trim().is_empty() {
-            self.toasts.push(crate::ui::Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return Some(None);
         }
 

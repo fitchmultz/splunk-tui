@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown                                             │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Search Query──────────────────────────────────────────────────────────────────┐
-│                                                                              │
-└───────────────┌Tutorial - Test Your Connection (33%)─────────┐───────────────┘
-┌Status─────────│         Step 3: Test Your Connection         ↑───────────────┐
-│Press Enter to │                                              █               │
-└───────────────│  Now that you have created a profile, let's  █───────────────┘
-┌Results────────│   verify that we can connect to your Splunk  ║───────────────┐
-│               │                    server.                   ║.              │
-│               │                                              ║               │
-│               │           The connection test will:          ║               │
-│               │        • Verify the server is reachable      ║─────────────┐ │
-│               │     • Check your authentication credentials  ║0/5] 0%      │ │
-│               │        • Confirm TLS certificate status      ↓file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└──────────┌Tutorial - Test Your Connection (33%)───────────────────┐──────────┘
+┌Search Que│              Step 3: Test Your Connection              ↑──────────┐
+│          │                                                        █          │
+└──────────│ Now that you have created a profile, let's verify that █──────────┘
+┌Status────│          we can connect to your Splunk server.         █──────────┐
+│Press Ente│                                                        █          │
+└──────────│                The connection test will:               █──────────┘
+┌Results───│             • Verify the server is reachable           █──────────┐
+│          │          • Check your authentication credentials       ║          │
+│          │             • Confirm TLS certificate status           ║          │
+│          │                                                        ║          │
+│          │                 To test the connection:                ║          │
+│          │           1. Select your profile from the list         ║          │
+│          │        2. Press 't' to run connection diagnostics      ║          │
+│          │       3. Review the pass/fail status for each check    ║          │
+│          │                                                        ║          │
+│          │                If the test fails, check:               ↓          │
+└──────────└────────────────────────────────────────────────────────┘──────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

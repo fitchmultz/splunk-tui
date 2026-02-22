@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Job Details | [?] Unknown                                        │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Job Details───────────────────────────────────────────────────────────────────┐
-│                    Job: scheduler_admin_search_1234567890                    │
-└───────────────┌Help──────────────────────────────────────────┐───────────────┘
-┌───────────────│Global Keys:                                  ↑───────────────┐
-│Status: Done   │  ?               Help                        █               │
-│Duration: 5.23 │  Ctrl+P          Command palette             ║               │
-│Event Count: 50│  q               Quit                        ║               │
-│Scan Count: 150│  Ctrl+Q          Quit (global)               ║               │
-│Result Count: 1│  Tab             Next screen                 ║               │
-│Disk Usage: 204│  Shift+Tab       Previous screen             ║               │
-│Priority: 5    │  Ctrl+Tab        Next focus                  ║─────────────┐ │
-│Label: Schedule│  Ctrl+Shift+Tab  Previous focus              ║0/5] 0%      │ │
-│Cursor Time: 20│  Ctrl+c          Copy to clipboard           ↓file         │ │
-│Finalized: No  └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└────────┌Help────────────────────────────────────────────────────────┐────────┘
+┌Job Deta│Global Keys:                                                ↑────────┐
+│        │  ?               Help                                      █        │
+└────────│  Ctrl+P          Command palette                           ║────────┘
+┌────────│  q               Quit                                      ║────────┐
+│Status: │  Ctrl+Q          Quit (global)                             ║        │
+│Duration│  Tab             Next screen                               ║        │
+│Event Co│  Shift+Tab       Previous screen                           ║        │
+│Scan Cou│  Ctrl+Tab        Next focus                                ║        │
+│Result C│  Ctrl+Shift+Tab  Previous focus                            ║        │
+│Disk Usa│  Ctrl+c          Copy to clipboard                         ║        │
+│Priority│  e               Show error details (when an error is      ║        │
+│Label: S│present)                                                    ║        │
+│Cursor T│  Ctrl+Z          Undo last operation                       ║        │
+│Finalize│  Ctrl+Shift+Z    Redo last undone operation                ║        │
+│        │                                                            ║        │
+│        │Search Screen:                                              ↓        │
+└────────└────────────────────────────────────────────────────────────┘────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Esc:Back Ctrl+c:Copy SID| ?:Help | q:Quit                          │
+│Esc:Close | Esc:Back Ctrl+c:Copy SID| ?:Help | q:Quit                         │
 └──────────────────────────────────────────────────────────────────────────────┘

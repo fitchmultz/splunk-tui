@@ -232,6 +232,7 @@ impl App {
             shc_config: None,
             shc_members_state: ratatui::widgets::TableState::default(),
             shc_view_mode: crate::app::state::ShcViewMode::Summary,
+            shc_unavailable: false,
             config_files: None,
             config_files_state,
             selected_config_file: None,

@@ -13,7 +13,6 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
-use crate::ui::Toast;
 use crate::utils::format_bytes;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -53,7 +52,7 @@ impl App {
             if let Some(content) = content {
                 return Some(Action::CopyToClipboard(content));
             }
-            self.toasts.push(Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return None;
         }
 

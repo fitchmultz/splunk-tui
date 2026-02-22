@@ -78,6 +78,21 @@ fn test_load_action_for_screen() {
 }
 
 #[test]
+fn test_load_action_for_shc_skips_when_shc_unavailable() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Shc;
+
+    app.shc_unavailable = false;
+    assert!(matches!(
+        app.load_action_for_screen(),
+        Some(Action::LoadShcStatus)
+    ));
+
+    app.shc_unavailable = true;
+    assert!(app.load_action_for_screen().is_none());
+}
+
+#[test]
 fn test_global_e_keybinding_shows_error_details() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
@@ -110,6 +125,43 @@ fn test_global_e_keybinding_no_error_does_nothing() {
         !matches!(action, Some(Action::ShowErrorDetailsFromCurrent)),
         "Pressing 'e' when no error exists should NOT return ShowErrorDetailsFromCurrent"
     );
+}
+
+#[test]
+fn test_global_shift_d_keybinding_dismisses_onboarding_item() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Settings;
+
+    let key = KeyEvent::new(KeyCode::Char('D'), KeyModifiers::SHIFT);
+    let action = app.handle_input(key);
+
+    assert!(
+        matches!(action, Some(Action::DismissOnboardingItem)),
+        "Pressing 'D' while onboarding checklist is visible should dismiss current onboarding item"
+    );
+}
+
+#[test]
+fn test_global_ctrl_d_keybinding_dismisses_onboarding_all() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Settings;
+
+    let key = KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL);
+    let action = app.handle_input(key);
+
+    assert!(
+        matches!(action, Some(Action::DismissOnboardingAll)),
+        "Pressing 'Ctrl+d' while onboarding checklist is visible should dismiss all onboarding items"
+    );
+}
+
+#[test]
+fn test_toggle_shc_view_mode_action_updates_state() {
+    let mut app = App::new(None, ConnectionContext::default());
+    assert_eq!(app.shc_view_mode, crate::app::state::ShcViewMode::Summary);
+
+    app.update(Action::ToggleShcViewMode);
+    assert_eq!(app.shc_view_mode, crate::app::state::ShcViewMode::Members);
 }
 
 #[test]

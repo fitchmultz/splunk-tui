@@ -9,20 +9,20 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Theme:          Default                                                       │
-│                █ success  █ warning  █ error  █ info                         │
-│Auto-refresh:   [Off]                                                         │
-│Sort column:    sid                                                           │
-│Sort direction: asc                                                           │
-│Search history: 0 items                                                       │
-│Profile:        N/A                                                           │
+│Auto-refresh:   [Off]  Sort: sid/asc                                          │
+│Profile:        N/A  History: 0                                               │
 │                                                                              │
-│Search Defaults                                  ┌──────────────────────────┐ │
-│  Earliest time: -24h                            │ Onboarding [0/5] 0%      │ │
-│  Latest time:   now                             │ ○ Create Profile         │ │
-│  Max results:   1000                            │ ○ Test Connection        │ │
+│Search defaults: -24h → now (max 1000)                                        │
+│Internal logs:   count 100 / earliest -15m                                    │
+│                                                                              │
+│Shortcuts                                                                     │
+│t:Diagnostics  T:Theme  a:Auto-refresh           ┌──────────────────────────┐ │
+│s:Sort column  d:Direction  c:Clear history      │ Onboarding [0/5] 0%      │ │
+│p:Switch profile  n:Create  e:Edit  x:Delete     │ ○ Create Profile         │ │
+│u:Undo history  ?:Replay tutorial                │ ○ Test Connection        │ │
 │                                                 │ ○ Run Search             │ │
-│Internal Logs Defaults                           └──────────────────────────┘ │
+│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tab:Next | Shift+Tab:Prev | t:Run connection diagnostics ...| ?:Help | q:Quit│
+│ Tab:Next | Shift+Tab:Prev | t:Diag a:Auto s:Sort d:Direction| ?:Help | q:Quit│
 └──────────────────────────────────────────────────────────────────────────────┘

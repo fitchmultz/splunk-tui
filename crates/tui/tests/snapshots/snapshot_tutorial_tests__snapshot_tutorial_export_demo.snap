@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown                                             │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Search Query──────────────────────────────────────────────────────────────────┐
-│                                                                              │
-└───────────────┌Tutorial - Export Your Results (83%)──────────┐───────────────┘
-┌Status─────────│          Step 5: Export Your Results         ↑───────────────┐
-│Press Enter to │                                              █               │
-└───────────────│Splunk TUI allows you to export search results█───────────────┘
-┌Results────────│  to various formats for use in other tools.  █───────────────┐
-│               │                                              ║.              │
-│               │           Supported export formats:          ║               │
-│               │   • CSV  - Comma-separated values (great for ║               │
-│               │                    Excel)                    ║─────────────┐ │
-│               │   • JSON - Structured JSON format (great for ║0/5] 0%      │ │
-│               │                     APIs)                    ↓file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└──────────┌Tutorial - Export Your Results (83%)────────────────────┐──────────┘
+┌Search Que│               Step 5: Export Your Results              ↑──────────┐
+│          │                                                        █          │
+└──────────│    Splunk TUI allows you to export search results to   █──────────┘
+┌Status────│         various formats for use in other tools.        █──────────┐
+│Press Ente│                                                        █          │
+└──────────│                Supported export formats:               █──────────┘
+┌Results───│     • CSV  - Comma-separated values (great for Excel)  █──────────┐
+│          │     • JSON - Structured JSON format (great for APIs)   ║          │
+│          │             • Raw  - Raw events as plain text          ║          │
+│          │                                                        ║          │
+│          │                   To export results:                   ║          │
+│          │           1. Run a search and wait for results         ║          │
+│          │          2. Press 'e' to open the export dialog        ║          │
+│          │              3. Select your preferred format           ║          │
+│          │            4. Choose the output file location          ║          │
+│          │                   5. Confirm to export                 ↓          │
+└──────────└────────────────────────────────────────────────────────┘──────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

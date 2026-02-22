@@ -1,20 +1,16 @@
 //! System action handlers for the TUI app.
 //!
-//! Responsibilities:
-//! - Handle loading/progress state updates
-//! - Handle notifications and toast messages
-//! - Handle clipboard operations
-//! - Handle terminal resize events
-//! - Handle search/filter mode transitions
-//! - Handle theme cycling
-//! - Handle error detail popups
-//! - Handle SPL validation results
+//! Purpose: Apply non-domain-specific UI/system actions to `App` state.
+//! Responsibilities: Manage loading/progress, toasts, resize, filter mode, theme, and system popups.
+//! Non-scope: Does not dispatch API calls or own resource-loading workflows.
+//! Invariants/Assumptions: System actions keep focus/selection state clamped to current data bounds.
 
 use crate::action::Action;
 use crate::app::App;
 use crate::app::clipboard;
 use crate::app::input::components::SingleLineInput;
-use crate::ui::Toast;
+use crate::ui::{Toast, ToastLevel};
+use ratatui::widgets::{ListState, TableState};
 
 impl App {
     /// Handle system/miscellaneous actions.
@@ -297,6 +293,58 @@ impl App {
                     }
                 }
             }
+            // SHC management result actions
+            Action::ShcMemberAdded { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::success("SHC member added"));
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to add SHC member: {}", e)));
+                    }
+                }
+            }
+            Action::ShcMemberRemoved { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::success("SHC member removed"));
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to remove SHC member: {}", e)));
+                    }
+                }
+            }
+            Action::ShcRollingRestarted { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts
+                            .push(Toast::info("SHC rolling restart initiated"));
+                    }
+                    Err(e) => {
+                        self.toasts.push(Toast::error(format!(
+                            "Failed to initiate SHC rolling restart: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+            Action::ShcCaptainSet { result } => {
+                self.loading = false;
+                match result {
+                    Ok(()) => {
+                        self.toasts.push(Toast::success("SHC captain set"));
+                    }
+                    Err(e) => {
+                        self.toasts
+                            .push(Toast::error(format!("Failed to set SHC captain: {}", e)));
+                    }
+                }
+            }
             // Lookup operations
             Action::OpenDeleteLookupConfirm { name } => {
                 self.popup = Some(
@@ -397,10 +445,21 @@ impl App {
                 self.toasts.push(Toast::info(format!("Copied: {preview}")));
             }
             Err(e) => {
-                self.toasts
-                    .push(Toast::error(format!("Clipboard error: {e}")));
+                let message = format!("Clipboard error: {e}");
+                self.push_error_toast_once(message);
             }
         }
+    }
+
+    fn push_error_toast_once(&mut self, message: String) {
+        let duplicate_active = self
+            .toasts
+            .iter()
+            .any(|t| !t.is_expired() && t.level == ToastLevel::Error && t.message == message);
+        if duplicate_active {
+            return;
+        }
+        self.toasts.push(Toast::error(message));
     }
 
     fn enter_search_mode(&mut self) {
@@ -698,509 +757,99 @@ impl App {
 
     /// Clamp all scroll offsets to ensure they don't exceed available data.
     /// Called after terminal resize to prevent out-of-bounds scrolling.
+    fn clamp_list_selection(state: &mut ListState, len: usize) {
+        if let Some(selected) = state.selected() {
+            let max = len.saturating_sub(1);
+            if selected > max {
+                state.select(Some(max));
+            }
+        }
+    }
+
+    fn clamp_table_selection(state: &mut TableState, len: usize) {
+        if let Some(selected) = state.selected() {
+            let max = len.saturating_sub(1);
+            if selected > max {
+                state.select(Some(max));
+            }
+        }
+    }
+
     pub fn clamp_scroll_offsets(&mut self) {
         // Clamp search results scroll offset
         let max_search_offset = self.search_results.len().saturating_sub(1);
         self.search_scroll_offset = self.search_scroll_offset.min(max_search_offset);
 
-        // Clamp jobs selection to visible items
-        if let Some(selected) = self.jobs_state.selected() {
-            let max = self.filtered_jobs_len().saturating_sub(1);
-            if selected > max {
-                self.jobs_state.select(Some(max));
-            }
+        let filtered_jobs_len = self.filtered_jobs_len();
+        Self::clamp_table_selection(&mut self.jobs_state, filtered_jobs_len);
+
+        if let Some(items) = self.indexes.as_ref() {
+            Self::clamp_list_selection(&mut self.indexes_state, items.len());
+        }
+        if let Some(items) = self.saved_searches.as_ref() {
+            Self::clamp_list_selection(&mut self.saved_searches_state, items.len());
+        }
+        if let Some(items) = self.apps.as_ref() {
+            Self::clamp_list_selection(&mut self.apps_state, items.len());
+        }
+        if let Some(items) = self.users.as_ref() {
+            Self::clamp_list_selection(&mut self.users_state, items.len());
+        }
+        if let Some(items) = self.macros.as_ref() {
+            Self::clamp_list_selection(&mut self.macros_state, items.len());
+        }
+        if let Some(items) = self.fired_alerts.as_ref() {
+            Self::clamp_list_selection(&mut self.fired_alerts_state, items.len());
+        }
+        if let Some(items) = self.dashboards.as_ref() {
+            Self::clamp_list_selection(&mut self.dashboards_state, items.len());
+        }
+        if let Some(items) = self.data_models.as_ref() {
+            Self::clamp_list_selection(&mut self.data_models_state, items.len());
+        }
+        if let Some(items) = self.roles.as_ref() {
+            Self::clamp_list_selection(&mut self.roles_state, items.len());
         }
 
-        // Clamp indexes selection
-        if let Some(ref indexes) = self.indexes
-            && let Some(selected) = self.indexes_state.selected()
-        {
-            let max = indexes.len().saturating_sub(1);
-            if selected > max {
-                self.indexes_state.select(Some(max));
-            }
+        if let Some(items) = self.internal_logs.as_ref() {
+            Self::clamp_table_selection(&mut self.internal_logs_state, items.len());
         }
-
-        // Clamp saved searches selection
-        if let Some(ref searches) = self.saved_searches
-            && let Some(selected) = self.saved_searches_state.selected()
-        {
-            let max = searches.len().saturating_sub(1);
-            if selected > max {
-                self.saved_searches_state.select(Some(max));
-            }
+        if let Some(items) = self.cluster_peers.as_ref() {
+            Self::clamp_table_selection(&mut self.cluster_peers_state, items.len());
         }
-
-        // Clamp apps selection
-        if let Some(ref apps) = self.apps
-            && let Some(selected) = self.apps_state.selected()
-        {
-            let max = apps.len().saturating_sub(1);
-            if selected > max {
-                self.apps_state.select(Some(max));
-            }
+        if let Some(items) = self.search_peers.as_ref() {
+            Self::clamp_table_selection(&mut self.search_peers_state, items.len());
         }
-
-        // Clamp users selection
-        if let Some(ref users) = self.users
-            && let Some(selected) = self.users_state.selected()
-        {
-            let max = users.len().saturating_sub(1);
-            if selected > max {
-                self.users_state.select(Some(max));
-            }
+        if let Some(items) = self.inputs.as_ref() {
+            Self::clamp_table_selection(&mut self.inputs_state, items.len());
         }
-
-        // Clamp internal logs selection
-        if let Some(ref logs) = self.internal_logs
-            && let Some(selected) = self.internal_logs_state.selected()
-        {
-            let max = logs.len().saturating_sub(1);
-            if selected > max {
-                self.internal_logs_state.select(Some(max));
-            }
+        if let Some(items) = self.forwarders.as_ref() {
+            Self::clamp_table_selection(&mut self.forwarders_state, items.len());
         }
-
-        // Clamp cluster peers selection
-        if let Some(ref peers) = self.cluster_peers
-            && let Some(selected) = self.cluster_peers_state.selected()
-        {
-            let max = peers.len().saturating_sub(1);
-            if selected > max {
-                self.cluster_peers_state.select(Some(max));
-            }
+        if let Some(items) = self.lookups.as_ref() {
+            Self::clamp_table_selection(&mut self.lookups_state, items.len());
         }
-
-        // Clamp macros selection
-        if let Some(ref macros) = self.macros
-            && let Some(selected) = self.macros_state.selected()
-        {
-            let max = macros.len().saturating_sub(1);
-            if selected > max {
-                self.macros_state.select(Some(max));
-            }
+        if let Some(items) = self.workload_pools.as_ref() {
+            Self::clamp_table_selection(&mut self.workload_pools_state, items.len());
         }
-
-        // Clamp search peers selection
-        if let Some(ref peers) = self.search_peers
-            && let Some(selected) = self.search_peers_state.selected()
-        {
-            let max = peers.len().saturating_sub(1);
-            if selected > max {
-                self.search_peers_state.select(Some(max));
-            }
+        if let Some(items) = self.workload_rules.as_ref() {
+            Self::clamp_table_selection(&mut self.workload_rules_state, items.len());
         }
-
-        // Clamp inputs selection
-        if let Some(ref inputs) = self.inputs
-            && let Some(selected) = self.inputs_state.selected()
-        {
-            let max = inputs.len().saturating_sub(1);
-            if selected > max {
-                self.inputs_state.select(Some(max));
-            }
+        if let Some(items) = self.shc_members.as_ref() {
+            Self::clamp_table_selection(&mut self.shc_members_state, items.len());
         }
-
-        // Clamp fired alerts selection
-        if let Some(ref alerts) = self.fired_alerts
-            && let Some(selected) = self.fired_alerts_state.selected()
-        {
-            let max = alerts.len().saturating_sub(1);
-            if selected > max {
-                self.fired_alerts_state.select(Some(max));
-            }
+        if let Some(items) = self.config_files.as_ref() {
+            Self::clamp_table_selection(&mut self.config_files_state, items.len());
         }
-
-        // Clamp forwarders selection
-        if let Some(ref forwarders) = self.forwarders
-            && let Some(selected) = self.forwarders_state.selected()
-        {
-            let max = forwarders.len().saturating_sub(1);
-            if selected > max {
-                self.forwarders_state.select(Some(max));
-            }
+        if let Some(items) = self.config_stanzas.as_ref() {
+            Self::clamp_table_selection(&mut self.config_stanzas_state, items.len());
         }
-
-        // Clamp lookups selection
-        if let Some(ref lookups) = self.lookups
-            && let Some(selected) = self.lookups_state.selected()
-        {
-            let max = lookups.len().saturating_sub(1);
-            if selected > max {
-                self.lookups_state.select(Some(max));
-            }
-        }
-
-        // Clamp dashboards selection
-        if let Some(ref dashboards) = self.dashboards
-            && let Some(selected) = self.dashboards_state.selected()
-        {
-            let max = dashboards.len().saturating_sub(1);
-            if selected > max {
-                self.dashboards_state.select(Some(max));
-            }
-        }
-
-        // Clamp data models selection
-        if let Some(ref data_models) = self.data_models
-            && let Some(selected) = self.data_models_state.selected()
-        {
-            let max = data_models.len().saturating_sub(1);
-            if selected > max {
-                self.data_models_state.select(Some(max));
-            }
-        }
-
-        // Clamp workload pools selection
-        if let Some(ref pools) = self.workload_pools
-            && let Some(selected) = self.workload_pools_state.selected()
-        {
-            let max = pools.len().saturating_sub(1);
-            if selected > max {
-                self.workload_pools_state.select(Some(max));
-            }
-        }
-
-        // Clamp workload rules selection
-        if let Some(ref rules) = self.workload_rules
-            && let Some(selected) = self.workload_rules_state.selected()
-        {
-            let max = rules.len().saturating_sub(1);
-            if selected > max {
-                self.workload_rules_state.select(Some(max));
-            }
-        }
-
-        // Clamp SHC members selection
-        if let Some(ref members) = self.shc_members
-            && let Some(selected) = self.shc_members_state.selected()
-        {
-            let max = members.len().saturating_sub(1);
-            if selected > max {
-                self.shc_members_state.select(Some(max));
-            }
-        }
-
-        // Clamp config files selection
-        if let Some(ref files) = self.config_files
-            && let Some(selected) = self.config_files_state.selected()
-        {
-            let max = files.len().saturating_sub(1);
-            if selected > max {
-                self.config_files_state.select(Some(max));
-            }
-        }
-
-        // Clamp config stanzas selection
-        if let Some(ref stanzas) = self.config_stanzas
-            && let Some(selected) = self.config_stanzas_state.selected()
-        {
-            let max = stanzas.len().saturating_sub(1);
-            if selected > max {
-                self.config_stanzas_state.select(Some(max));
-            }
-        }
-
-        // Clamp audit events selection
-        if let Some(ref events) = self.audit_events
-            && let Some(selected) = self.audit_state.selected()
-        {
-            let max = events.len().saturating_sub(1);
-            if selected > max {
-                self.audit_state.select(Some(max));
-            }
-        }
-
-        // Clamp roles selection
-        if let Some(ref roles) = self.roles
-            && let Some(selected) = self.roles_state.selected()
-        {
-            let max = roles.len().saturating_sub(1);
-            if selected > max {
-                self.roles_state.select(Some(max));
-            }
+        if let Some(items) = self.audit_events.as_ref() {
+            Self::clamp_table_selection(&mut self.audit_state, items.len());
         }
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ConnectionContext;
-
-    #[test]
-    fn test_loading_sets_progress_to_zero() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.progress = 0.5;
-
-        app.handle_system_action(Action::Loading(true));
-
-        assert!(app.loading);
-        assert_eq!(app.progress, 0.0);
-    }
-
-    #[test]
-    fn test_progress_updates_value() {
-        let mut app = App::new(None, ConnectionContext::default());
-
-        app.handle_system_action(Action::Progress(0.75));
-
-        assert_eq!(app.progress, 0.75);
-    }
-
-    #[test]
-    fn test_notify_adds_toast() {
-        let mut app = App::new(None, ConnectionContext::default());
-
-        app.handle_system_action(Action::Notify(
-            crate::ui::ToastLevel::Info,
-            "Test message".to_string(),
-        ));
-
-        assert_eq!(app.toasts.len(), 1);
-        assert_eq!(app.toasts[0].message, "Test message");
-    }
-
-    #[test]
-    fn test_tick_prunes_expired_toasts() {
-        let mut app = App::new(None, ConnectionContext::default());
-        // Add a toast that's already expired (using created_at field)
-        let mut expired_toast = Toast::info("Expired");
-        expired_toast.created_at = std::time::Instant::now() - std::time::Duration::from_secs(100);
-        app.toasts.push(expired_toast);
-
-        // Add a fresh toast
-        app.toasts.push(Toast::info("Fresh"));
-
-        app.handle_system_action(Action::Tick);
-
-        // Only the fresh toast should remain
-        assert_eq!(app.toasts.len(), 1);
-        assert_eq!(app.toasts[0].message, "Fresh");
-    }
-
-    #[test]
-    fn test_enter_search_mode_saves_current_filter() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.search_filter = Some("existing filter".to_string());
-
-        app.handle_system_action(Action::EnterSearchMode);
-
-        assert!(app.is_filtering);
-        assert_eq!(app.filter_before_edit, Some("existing filter".to_string()));
-        assert_eq!(app.filter_input.value(), "existing filter");
-    }
-
-    #[test]
-    fn test_enter_search_mode_with_no_filter() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.search_filter = None;
-
-        app.handle_system_action(Action::EnterSearchMode);
-
-        assert!(app.is_filtering);
-        assert!(app.filter_before_edit.is_none());
-        assert!(app.filter_input.is_empty());
-    }
-
-    #[test]
-    fn test_search_input_appends_character() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.filter_input.set_value("hel");
-
-        app.handle_system_action(Action::SearchInput('l'));
-        app.handle_system_action(Action::SearchInput('o'));
-
-        assert_eq!(app.filter_input.value(), "hello");
-    }
-
-    #[test]
-    fn test_clear_search_clears_filter() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.search_filter = Some("test".to_string());
-
-        app.handle_system_action(Action::ClearSearch);
-
-        assert!(app.search_filter.is_none());
-    }
-
-    #[test]
-    fn test_cycle_theme_changes_theme() {
-        let mut app = App::new(None, ConnectionContext::default());
-        let initial_theme = app.color_theme;
-
-        app.handle_system_action(Action::CycleTheme);
-
-        assert_ne!(app.color_theme, initial_theme);
-        assert_eq!(app.toasts.len(), 1);
-        assert!(app.toasts[0].message.contains("Theme:"));
-    }
-
-    #[test]
-    fn test_spl_validation_result_updates_state() {
-        let mut app = App::new(None, ConnectionContext::default());
-
-        app.handle_system_action(Action::SplValidationResult {
-            valid: true,
-            errors: vec![],
-            warnings: vec!["Warning 1".to_string()],
-            request_id: 0,
-        });
-
-        assert_eq!(app.spl_validation_state.valid, Some(true));
-        assert!(
-            app.spl_validation_state
-                .warnings
-                .contains(&"Warning 1".to_string())
-        );
-        assert!(!app.spl_validation_pending);
-    }
-
-    #[test]
-    fn test_show_error_details_from_current_with_no_error() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.current_error = None;
-
-        app.handle_system_action(Action::ShowErrorDetailsFromCurrent);
-
-        assert!(app.popup.is_none());
-    }
-
-    #[test]
-    fn test_clear_error_details_clears_state() {
-        let mut app = App::new(None, ConnectionContext::default());
-        use crate::ui::popup::{Popup, PopupType};
-        app.current_error = Some(crate::error_details::ErrorDetails::from_error_string(
-            "Error",
-        ));
-        app.popup = Some(Popup::builder(PopupType::ErrorDetails).build());
-
-        app.handle_system_action(Action::ClearErrorDetails);
-
-        assert!(app.current_error.is_none());
-        assert!(app.popup.is_none());
-    }
-
-    #[test]
-    fn test_job_operation_complete_clears_selection() {
-        let mut app = App::new(None, ConnectionContext::default());
-        app.selected_jobs.insert("job1".to_string());
-        app.selected_jobs.insert("job2".to_string());
-
-        app.handle_system_action(Action::JobOperationComplete("Jobs finalized".to_string()));
-
-        assert!(app.selected_jobs.is_empty());
-        assert_eq!(app.search_status, "Jobs finalized");
-        assert!(!app.loading);
-    }
-
-    #[test]
-    fn test_resize_updates_last_area() {
-        let mut app = App::new(None, ConnectionContext::default());
-
-        app.handle_system_action(Action::Resize(100, 50));
-
-        assert_eq!(app.last_area.width, 100);
-        assert_eq!(app.last_area.height, 50);
-    }
-
-    #[test]
-    fn test_open_create_macro_dialog() {
-        let mut app = App::new(None, ConnectionContext::default());
-
-        app.handle_system_action(Action::OpenCreateMacroDialog);
-
-        assert!(app.popup.is_some());
-        assert!(matches!(
-            app.popup,
-            Some(crate::ui::popup::Popup {
-                kind: crate::ui::popup::PopupType::CreateMacro { .. },
-                ..
-            })
-        ));
-    }
-
-    #[test]
-    fn test_edit_macro_action_opens_popup() {
-        use crate::ui::popup::{MacroField, PopupType};
-        use splunk_client::models::Macro;
-
-        let mut app = App::new(None, ConnectionContext::default());
-
-        // Set up test macro data
-        app.macros = Some(vec![Macro {
-            name: "test_macro".to_string(),
-            definition: "index=main".to_string(),
-            args: Some("arg1,arg2".to_string()),
-            description: Some("Test description".to_string()),
-            disabled: false,
-            iseval: true,
-            validation: None,
-            errormsg: None,
-        }]);
-        app.macros_state.select(Some(0));
-
-        // Trigger edit action
-        app.handle_system_action(Action::EditMacro);
-
-        assert!(app.popup.is_some());
-        assert!(matches!(
-            app.popup,
-            Some(crate::ui::popup::Popup {
-                kind: PopupType::EditMacro {
-                    macro_name,
-                    disabled: false,
-                    iseval: true,
-                    selected_field: MacroField::Definition,
-                    ..
-                },
-                ..
-            }) if macro_name == "test_macro"
-        ));
-    }
-
-    #[test]
-    fn test_edit_macro_action_no_selection() {
-        let mut app = App::new(None, ConnectionContext::default());
-
-        // No macros loaded
-        app.macros = None;
-
-        // Trigger edit action
-        app.handle_system_action(Action::EditMacro);
-
-        // Should show toast and not open popup
-        assert!(app.popup.is_none());
-        assert_eq!(app.toasts.len(), 1);
-        assert_eq!(app.toasts[0].message, "No macro selected");
-    }
-
-    #[test]
-    fn test_edit_macro_action_no_macro_selected() {
-        use splunk_client::models::Macro;
-
-        let mut app = App::new(None, ConnectionContext::default());
-
-        // Set up test macro data but no selection
-        app.macros = Some(vec![Macro {
-            name: "test_macro".to_string(),
-            definition: "index=main".to_string(),
-            args: Some("arg1,arg2".to_string()),
-            description: Some("Test description".to_string()),
-            disabled: false,
-            iseval: true,
-            validation: None,
-            errormsg: None,
-        }]);
-        // No selection made
-        app.macros_state.select(None);
-
-        // Trigger edit action
-        app.handle_system_action(Action::EditMacro);
-
-        // Should show toast and not open popup
-        assert!(app.popup.is_none());
-        assert_eq!(app.toasts.len(), 1);
-        assert_eq!(app.toasts[0].message, "No macro selected");
-    }
-}
+#[path = "system_tests.rs"]
+mod tests;

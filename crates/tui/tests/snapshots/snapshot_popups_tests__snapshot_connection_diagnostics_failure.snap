@@ -7,22 +7,22 @@ expression: harness.render()
 │ |                                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Search Query──────────────────────────────────────────────────────────────────┐
+│           ┌Connection Diagnostics────────────────────────────────┐           │
+└───────────│✗ Reachability (5ms): Connection refused:             │───────────┘
+┌Status─────│localhost:8089                                        │───────────┐
+│Press Enter│○ Authentication                                      │           │
+└───────────│○ TLS Certificate                                     │───────────┘
+┌Results────│                                                      │───────────┐
+│           │Status: ✗ FAIL                                        │           │
+│           │                                                      │           │
+│           │Remediation:                                          │           │
+│           │• Verify the Splunk server is running                 │           │
+│           │• Check the base URL in your profile                  │           │
+│           │                                                      │           │
+│           │Press Enter to close                                  │           │
+│           └──────────────────────────────────────────────────────┘           │
 │                                                                              │
-└───────────────┌Connection Diagnostics────────────────────────┐───────────────┘
-┌Status─────────│✗ Reachability (5ms): Connection refused:     │───────────────┐
-│Press Enter to │localhost:8089                                │               │
-└───────────────│○ Authentication                              │───────────────┘
-┌Results────────│○ TLS Certificate                             │───────────────┐
-│               │                                              │.              │
-│               │Status: ✗ FAIL                                │               │
-│               │                                              │               │
-│               │Remediation:                                  │─────────────┐ │
-│               │• Verify the Splunk server is running         │0/5] 0%      │ │
-│               │• Check the base URL in your profile          │file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -132,6 +132,30 @@ fn parse_splunk_error_response(body: &str) -> String {
     }
 }
 
+/// Returns `true` when a SHC endpoint reports expected standalone/unclustered unavailability.
+///
+/// Standalone Splunk instances can return HTTP 503 for `/services/shcluster/*` requests even
+/// though the instance is healthy. Those responses should not be retried and should not count
+/// against circuit-breaker health.
+fn is_expected_shc_unavailable(endpoint: &str, status: u16, message: &str) -> bool {
+    if status != 503 {
+        return false;
+    }
+
+    if !endpoint
+        .to_ascii_lowercase()
+        .starts_with("/services/shcluster/")
+    {
+        return false;
+    }
+
+    let message = message.to_ascii_lowercase();
+    message.contains("service temporarily unavailable")
+        || message.contains("search head cluster")
+        || message.contains("shcluster")
+        || message.contains("standalone")
+}
+
 /// Sends an HTTP request with automatic retry logic for transient errors.
 ///
 /// This function wraps a `reqwest::RequestBuilder` with retry logic that:
@@ -295,15 +319,35 @@ pub async fn send_request_with_retry(
                     return Ok(response);
                 }
 
-                // Record failure in circuit breaker for server errors and 429
-                if status.is_server_error() || status_u16 == 429 {
+                let retry_after = if status_u16 == 429 {
+                    parse_retry_after(&response)
+                } else {
+                    None
+                };
+                let url = response.url().to_string();
+                let request_id = response
+                    .headers()
+                    .get("X-Splunk-Request-Id")
+                    .and_then(|h| h.to_str().ok())
+                    .map(|s| s.to_string());
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Could not read error response body".to_string());
+                let message = parse_splunk_error_response(&body);
+                let expected_shc_unavailable =
+                    is_expected_shc_unavailable(endpoint, status_u16, &message);
+
+                // Record failure in circuit breaker for retryable server errors and 429,
+                // excluding expected standalone SHC responses.
+                if (status.is_server_error() || status_u16 == 429) && !expected_shc_unavailable {
                     if let Some(cb) = circuit_breaker {
                         cb.record_failure(endpoint);
                     }
                 }
 
-                // Check for retryable status codes (429 or 5xx)
-                if ClientError::is_retryable_status(status_u16) {
+                // Check for retryable status codes (429 or 5xx) unless it's an expected SHC miss.
+                if ClientError::is_retryable_status(status_u16) && !expected_shc_unavailable {
                     if attempt < max_retries {
                         // Record retry metric
                         if let Some(m) = metrics {
@@ -315,8 +359,6 @@ pub async fn send_request_with_retry(
 
                         // For 429, check for Retry-After header
                         if status_u16 == 429 {
-                            let retry_after = parse_retry_after(&response);
-
                             let sleep_duration = if let Some(retry_after_duration) = retry_after {
                                 let retry_after_secs = retry_after_duration.as_secs();
                                 // Use the larger of exponential backoff or Retry-After value
@@ -360,19 +402,6 @@ pub async fn send_request_with_retry(
                             status = status_u16,
                             "Max retries exhausted for retryable request"
                         );
-                        let url = response.url().to_string();
-                        let request_id = response
-                            .headers()
-                            .get("X-Splunk-Request-Id")
-                            .and_then(|h| h.to_str().ok())
-                            .map(|s| s.to_string());
-                        let body = response
-                            .text()
-                            .await
-                            .unwrap_or_else(|_| "Could not read error response body".to_string());
-
-                        let message = parse_splunk_error_response(&body);
-
                         let classified_err =
                             ClientError::from_status_response(status_u16, url, message, request_id);
 
@@ -393,19 +422,13 @@ pub async fn send_request_with_retry(
                         return Err(err);
                     }
                 } else {
-                    // Non-retryable error: extract details and return ApiError
-                    let url = response.url().to_string();
-                    let request_id = response
-                        .headers()
-                        .get("X-Splunk-Request-Id")
-                        .and_then(|h| h.to_str().ok())
-                        .map(|s| s.to_string());
-                    let body = response
-                        .text()
-                        .await
-                        .unwrap_or_else(|_| "Could not read error response body".to_string());
-
-                    let message = parse_splunk_error_response(&body);
+                    if expected_shc_unavailable {
+                        debug!(
+                            endpoint = endpoint,
+                            status = status_u16,
+                            "Expected SHC unavailable response on standalone instance"
+                        );
+                    }
 
                     let err = ClientError::from_status_response(
                         status_u16,
@@ -522,5 +545,43 @@ mod tests {
         let json = r#"["not", "an", "object"]"#;
         let result = parse_splunk_error_response(json);
         assert_eq!(result, r#"["not", "an", "object"]"#);
+    }
+
+    #[test]
+    fn test_expected_shc_unavailable_detects_standalone_503() {
+        assert!(is_expected_shc_unavailable(
+            "/services/shcluster/member/info",
+            503,
+            "ERROR: Service temporarily unavailable"
+        ));
+        assert!(is_expected_shc_unavailable(
+            "/services/shcluster/member/info",
+            503,
+            "Search head cluster is not configured"
+        ));
+        assert!(is_expected_shc_unavailable(
+            "/services/shcluster/member/info",
+            503,
+            "This node is standalone"
+        ));
+    }
+
+    #[test]
+    fn test_expected_shc_unavailable_rejects_other_cases() {
+        assert!(!is_expected_shc_unavailable(
+            "/services/server/info",
+            503,
+            "Service temporarily unavailable"
+        ));
+        assert!(!is_expected_shc_unavailable(
+            "/services/shcluster/member/info",
+            500,
+            "Service temporarily unavailable"
+        ));
+        assert!(!is_expected_shc_unavailable(
+            "/services/shcluster/member/info",
+            503,
+            "Database timeout"
+        ));
     }
 }

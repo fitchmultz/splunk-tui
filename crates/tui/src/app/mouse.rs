@@ -9,6 +9,10 @@
 //! Does NOT handle:
 //! - Does NOT handle keyboard input
 //! - Does NOT render the UI
+//!
+//! Invariants:
+//! - Popup clicks are handled before content/footer hit-testing.
+//! - Footer hit-testing must use `FooterLayout` for render parity.
 
 use crate::action::Action;
 use crate::app::App;
@@ -451,8 +455,8 @@ impl App {
         }
     }
 
-    /// Calculate the popup area on screen.
-    /// Uses the same calculation as render.rs:centered_rect().
+    /// Calculate the confirmation popup area on screen.
+    /// Uses the default popup sizing from render.rs.
     fn get_popup_area(&self) -> Option<Rect> {
         let popup = self.popup.as_ref()?;
         if !popup.kind.is_confirmation() {

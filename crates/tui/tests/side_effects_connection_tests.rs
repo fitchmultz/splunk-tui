@@ -205,6 +205,7 @@ async fn test_dns_resolution_failure() {
         })
         .skip_verify(true)
         .timeout(Duration::from_secs(2))
+        .max_retries(0)
         .build()
         .expect("Failed to build test client");
 
@@ -218,31 +219,29 @@ async fn test_dns_resolution_failure() {
     };
 
     let task_tracker = TaskTracker::new();
-    let handle_future =
-        handle_side_effects(action, client, action_tx, config_manager, task_tracker);
-
-    // Should complete (not hang forever)
-    match tokio::time::timeout(Duration::from_secs(10), handle_future).await {
-        Ok(()) => {}
-        Err(_) => {
-            // DNS timeout is acceptable - the important thing is it doesn't panic
-            return;
-        }
-    }
+    handle_side_effects(action, client, action_tx, config_manager, task_tracker).await;
 
     // Collect any actions
     let mut actions = Vec::new();
-    while let Ok(Some(action)) =
-        tokio::time::timeout(Duration::from_millis(500), action_rx.recv()).await
-    {
-        actions.push(action);
+    let mut has_indexes_loaded = false;
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(6);
+    while tokio::time::Instant::now() < deadline {
+        match tokio::time::timeout(Duration::from_millis(200), action_rx.recv()).await {
+            Ok(Some(action)) => {
+                has_indexes_loaded |= matches!(action, Action::IndexesLoaded(_));
+                actions.push(action);
+                if has_indexes_loaded {
+                    break;
+                }
+            }
+            Ok(None) => break,
+            Err(_) => continue,
+        }
     }
 
-    // Should have either success or error (both are valid responses)
+    // Should eventually complete with either success or error.
     assert!(
-        actions
-            .iter()
-            .any(|a| matches!(a, Action::IndexesLoaded(_))),
+        has_indexes_loaded,
         "Should have completed with some result, got: {:?}",
         actions
     );

@@ -5,24 +5,24 @@ expression: harness.render()
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │Splunk TUI - Search | [?] Unknown                                             │
 │ |                                                                            │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌Search Query──────────────────────────────────────────────────────────────────┐
-│                                                                              │
-└───────────────┌Help - Search─────────────────────────────────┐───────────────┘
-┌Status─────────│Search Screen:                                ↑───────────────┐
-│Press Enter to │  Enter     Run search                        █               │
-└───────────────│  Ctrl+e    Export results                    ║───────────────┘
-┌Results────────│  PgDn      Page down                         ║───────────────┐
-│               │  PgUp      Page up                           ║.              │
-│               │  Ctrl+j/k  Scroll results (while typing)     ║               │
-│               │  Home      Go to top                         ║               │
-│               │  End       Go to bottom                      ║─────────────┐ │
-│               │  Ctrl+c    Copy query (or current result)    ║0/5] 0%      │ │
-│               │  Ctrl+r    Toggle real-time mode             ↓file         │ │
-│               └──────────────────────────────────────────────┘ction        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└────────┌Help - Search───────────────────────────────────────────────┐────────┘
+┌Search Q│Search Screen:                                              ↑────────┐
+│        │  Enter     Run search                                      █        │
+└────────│  Ctrl+e    Export results                                  ║────────┘
+┌Status──│  PgDn      Page down                                       ║────────┐
+│Press En│  PgUp      Page up                                         ║        │
+└────────│  Ctrl+j/k  Scroll results (while typing)                   ║────────┘
+┌Results─│  Home      Go to top                                       ║────────┐
+│        │  End       Go to bottom                                    ║        │
+│        │  Ctrl+c    Copy query (or current result)                  ║        │
+│        │  Ctrl+r    Toggle real-time mode                           ║        │
+│        │  Up/Down   Navigate history (query)                        ║        │
+│        │  j,k,...   Type search query                               ║        │
+│        │                                                            ║        │
+│        │Global Keys:                                                ║        │
+│        │  ?               Help                                      ║        │
+│        │  Ctrl+P          Command palette                           ↓        │
+└────────└────────────────────────────────────────────────────────────┘────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│Esc:Close| Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit       │
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
 └──────────────────────────────────────────────────────────────────────────────┘

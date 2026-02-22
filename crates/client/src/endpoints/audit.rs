@@ -1,13 +1,16 @@
-//! Audit event management endpoints.
+//! Purpose: Audit event management endpoints.
+//! Responsibilities: Fetch audit-like event data using Splunk search endpoints with optional filters.
+//! Non-scope: Splunk audit configuration management.
+//! Invariants/Assumptions: Query execution uses search jobs and tolerates partial parse failures.
 
 use reqwest::Client;
+use tracing::{debug, warn};
 
 use crate::client::circuit_breaker::CircuitBreaker;
-use crate::endpoints::send_request_with_retry;
+use crate::endpoints::search::{CreateJobOptions, OutputMode, create_job, get_results};
 use crate::error::Result;
 use crate::metrics::MetricsCollector;
-use crate::models::audit::{AuditEvent, AuditEventListResponse, ListAuditEventsParams};
-use crate::name_merge::attach_entry_name;
+use crate::models::audit::{AuditEvent, ListAuditEventsParams};
 
 /// List audit events with optional filters.
 #[allow(clippy::too_many_arguments)]
@@ -20,46 +23,94 @@ pub async fn list_audit_events(
     metrics: Option<&MetricsCollector>,
     circuit_breaker: Option<&CircuitBreaker>,
 ) -> Result<Vec<AuditEvent>> {
-    let url = format!("{}/services/admin/audit", base_url);
+    debug!("Fetching audit events via search API");
+    let mut query = String::from("search index=_audit");
 
-    let mut query_params: Vec<(String, String)> =
-        vec![("output_mode".to_string(), "json".to_string())];
+    if let Some(user) = params.user.as_deref() {
+        query.push(' ');
+        query.push_str("user=\"");
+        query.push_str(&escape_spl_string(user));
+        query.push('"');
+    }
+    if let Some(action) = params.action.as_deref() {
+        query.push(' ');
+        query.push_str("action=\"");
+        query.push_str(&escape_spl_string(action));
+        query.push('"');
+    }
 
+    query.push_str(" | sort -_time, -_indextime, -_serial");
     if let Some(count) = params.count {
-        query_params.push(("count".to_string(), count.to_string()));
-    }
-    if let Some(offset) = params.offset {
-        query_params.push(("offset".to_string(), offset.to_string()));
-    }
-    if let Some(earliest) = &params.earliest {
-        query_params.push(("earliest".to_string(), earliest.clone()));
-    }
-    if let Some(latest) = &params.latest {
-        query_params.push(("latest".to_string(), latest.clone()));
+        query.push_str(&format!(" | head {}", count));
     }
 
-    let builder = client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", auth_token))
-        .query(&query_params);
+    let options = CreateJobOptions {
+        earliest_time: params.earliest.clone(),
+        latest_time: params.latest.clone(),
+        output_mode: Some(OutputMode::Json),
+        exec_time: Some(30),
+        wait: Some(true),
+        ..Default::default()
+    };
 
-    let response = send_request_with_retry(
-        builder,
+    let sid = create_job(
+        client,
+        base_url,
+        auth_token,
+        &query,
+        &options,
         max_retries,
-        "/services/admin/audit",
-        "GET",
         metrics,
         circuit_breaker,
     )
     .await?;
 
-    let resp: AuditEventListResponse = response.json().await?;
+    let results = get_results(
+        client,
+        base_url,
+        auth_token,
+        &sid,
+        params.count,
+        params.offset,
+        OutputMode::Json,
+        max_retries,
+        metrics,
+        circuit_breaker,
+    )
+    .await?;
 
-    Ok(resp
-        .entry
+    let endpoint = "/services/search/jobs/{sid}/results";
+    let mut parse_failures = 0usize;
+    let events: Vec<AuditEvent> = results
+        .results
         .into_iter()
-        .map(|e| attach_entry_name(e.name, e.content))
-        .collect())
+        .filter_map(|v| match serde_json::from_value::<AuditEvent>(v.clone()) {
+            Ok(event) => Some(event),
+            Err(e) => {
+                parse_failures += 1;
+                warn!(
+                    "Failed to deserialize AuditEvent from {}: error={}, value_preview={}",
+                    endpoint,
+                    e,
+                    serde_json::to_string(&v).unwrap_or_else(|_| format!("{:?}", v))
+                );
+                if let Some(m) = metrics {
+                    m.record_deserialization_failure(endpoint, "AuditEvent");
+                }
+                None
+            }
+        })
+        .collect();
+
+    if parse_failures > 0 {
+        debug!(
+            "Completed list_audit_events with {} events and {} parse failures",
+            events.len(),
+            parse_failures
+        );
+    }
+
+    Ok(events)
 }
 
 /// Get recent audit events (convenience wrapper).
@@ -93,6 +144,10 @@ pub async fn get_recent_audit_events(
     .await
 }
 
+fn escape_spl_string(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,5 +169,12 @@ mod tests {
         assert_eq!(params.offset, Some(0));
         assert_eq!(params.user, Some("admin".to_string()));
         assert_eq!(params.action, Some("login".to_string()));
+    }
+
+    #[test]
+    fn test_escape_spl_string_escapes_backslash_and_quotes() {
+        let input = r#"user"with\chars"#;
+        let escaped = escape_spl_string(input);
+        assert_eq!(escaped, r#"user\"with\\chars"#);
     }
 }

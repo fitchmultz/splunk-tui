@@ -110,3 +110,46 @@ async fn test_circuit_breaker_recovery() {
         splunk_client::client::circuit_breaker::CircuitState::Closed
     ));
 }
+
+#[tokio::test]
+async fn test_expected_shc_503_does_not_open_circuit_or_retry() {
+    let mock_server = MockServer::start().await;
+
+    // Open quickly if failures are incorrectly recorded.
+    let config = CircuitBreakerConfig {
+        failure_threshold: 1,
+        failure_window: Duration::from_secs(60),
+        reset_timeout: Duration::from_secs(30),
+        half_open_requests: 1,
+    };
+    let cb = CircuitBreaker::new().with_default_config(config);
+
+    // Standalone/non-SHC instances can return a 503 for SHC endpoints.
+    // This should not be retried and should not count as circuit-breaker failure.
+    Mock::given(method("GET"))
+        .and(path("/services/shcluster/member/info"))
+        .respond_with(ResponseTemplate::new(503).set_body_json(serde_json::json!({
+            "messages": [{
+                "type": "ERROR",
+                "text": "Service temporarily unavailable"
+            }]
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = Client::new();
+    let uri = mock_server.uri();
+
+    let result = endpoints::get_shc_status(&client, &uri, "token", 3, None, Some(&cb)).await;
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        splunk_client::ClientError::ApiError { status: 503, .. }
+    ));
+
+    assert!(matches!(
+        cb.state("/services/shcluster/member/info"),
+        splunk_client::client::circuit_breaker::CircuitState::Closed
+    ));
+}

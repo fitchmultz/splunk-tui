@@ -10,6 +10,7 @@
 
 use crate::client::SplunkClient;
 use crate::endpoints;
+use crate::error::ClientError;
 use crate::error::Result;
 use crate::models::Input;
 
@@ -30,7 +31,9 @@ impl SplunkClient {
     ///
     /// # Errors
     ///
-    /// Returns a `ClientError` if any request fails or the response cannot be parsed.
+    /// Returns a `ClientError` for unrecoverable failures.
+    /// Input types that are not available on a given Splunk instance (404)
+    /// are skipped.
     pub async fn list_inputs(
         &self,
         count: Option<usize>,
@@ -40,8 +43,14 @@ impl SplunkClient {
         let mut all_inputs = Vec::new();
 
         for input_type in &input_types {
-            let inputs = self.list_inputs_by_type(input_type, count, offset).await?;
-            all_inputs.extend(inputs);
+            match self.list_inputs_by_type(input_type, count, offset).await {
+                Ok(inputs) => all_inputs.extend(inputs),
+                Err(ClientError::NotFound(_)) | Err(ClientError::ApiError { status: 404, .. }) => {
+                    // Some deployments do not expose every input type endpoint.
+                    continue;
+                }
+                Err(e) => return Err(e),
+            }
         }
 
         Ok(all_inputs)

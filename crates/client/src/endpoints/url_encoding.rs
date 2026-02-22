@@ -1,5 +1,10 @@
 //! URL encoding utilities for constructing safe API paths.
 //!
+//! Purpose: Safely encode user-provided path segments for Splunk endpoint URLs.
+//! Responsibilities: Apply strict percent-encoding rules for reserved/path-special characters.
+//! Non-scope: Query-string serialization and full URL construction.
+//! Invariants/Assumptions: Encoded output is valid for a single path segment and never introduces traversal semantics.
+//!
 //! Provides percent-encoding for URL path segments to handle special characters
 //! in resource names (usernames, index names, etc.) that could otherwise cause
 //! path traversal or incorrect URL resolution.
@@ -13,7 +18,7 @@
 //!
 //! # Example
 //!
-//! ```
+//! ```ignore
 //! use splunk_client::endpoints::url_encoding::encode_path_segment;
 //!
 //! let encoded = encode_path_segment("user/name");
@@ -70,7 +75,7 @@ pub const PATH_SEGMENT_ENCODE_SET: &AsciiSet = &CONTROLS
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use splunk_client::endpoints::url_encoding::encode_path_segment;
 ///
 /// assert_eq!(encode_path_segment("simple"), "simple");

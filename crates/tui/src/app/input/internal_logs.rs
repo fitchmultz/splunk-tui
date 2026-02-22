@@ -13,7 +13,6 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
-use crate::ui::Toast;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl App {
@@ -35,7 +34,7 @@ impl App {
                 return Some(Action::CopyToClipboard(content));
             }
 
-            self.toasts.push(Toast::info("Nothing to copy"));
+            self.push_info_toast_once("Nothing to copy");
             return None;
         }
 

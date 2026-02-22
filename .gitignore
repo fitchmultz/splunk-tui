@@ -51,3 +51,5 @@ logs/
 .ralph
 CLAUDE.md
 .ralph/cache/execution_history.json
+
+.scratchpad.md

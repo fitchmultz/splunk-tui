@@ -1,5 +1,8 @@
 //! Command dispatch logic.
 //!
+//! Purpose:
+//! - Route top-level CLI commands to their execution handlers.
+//!
 //! Responsibilities:
 //! - Route parsed CLI arguments to appropriate command handlers.
 //! - Extract and validate configuration for each command.
@@ -633,7 +636,10 @@ pub(crate) async fn run_command(
 
 async fn stage_operation(command: Commands) -> Result<()> {
     let manager = crate::commands::get_transaction_manager()?;
-    let mut transaction = manager.load_pending()?.unwrap_or_else(Transaction::new);
+    let mut transaction = manager
+        .load_pending()
+        .await?
+        .unwrap_or_else(Transaction::new);
 
     let op = match command {
         Commands::Indexes { command } => match command {
@@ -875,7 +881,7 @@ async fn stage_operation(command: Commands) -> Result<()> {
     };
 
     transaction.add_operation(op);
-    manager.save_pending(&transaction)?;
+    manager.save_pending(&transaction).await?;
 
     println!(
         "Staged operation in transaction {}. Total staged: {}",
