@@ -61,7 +61,7 @@ Refer to the [README](../README.md) for full installation instructions.
 
 ### First-Run Bootstrap Mode
 
-Starting with RQ-0454, `splunk-tui` supports a **bootstrap mode** that allows the UI to start even when authentication credentials are missing or invalid. This enables first-time users to complete onboarding without pre-configuring credentials.
+`splunk-tui` supports a **bootstrap mode** that allows the UI to start even when authentication credentials are missing or invalid. This enables first-time users to complete onboarding without pre-configuring credentials.
 
 **When bootstrap mode activates:**
 - No `SPLUNK_BASE_URL` configured

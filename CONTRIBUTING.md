@@ -2,19 +2,33 @@
 
 Thanks for contributing to `splunk-tui`.
 
-For full contributor documentation, see [docs/contributing.md](./docs/contributing.md).
+For the full contributor guide, see [docs/contributing.md](./docs/contributing.md).
 
-## Quick Dev Loop
+## Quick Start
 
 ```bash
 make install
-make format
-make lint
+make build
+make ci-fast
+```
+
+## Common Loops
+
+```bash
+# Non-mutating checks
+make format-check
+make lint-check
 make test
-LIVE_TESTS_MODE=optional make ci
+
+# Auto-fix flow
+make fix
+make lint-check
 ```
 
 ## Notes
 
-- `make ci` is the local quality gate before opening a PR.
-- For faster TUI iteration, use `make tui-smoke`.
+- `make ci-fast` is the PR-required local quality gate.
+- `make ci` is the full gate used for mainline/nightly parity and pre-release checks.
+- `make ci` defaults to `CI_LIVE_TESTS_MODE=skip` for deterministic offline checks.
+- For strict live validation: `CI_LIVE_TESTS_MODE=required make ci`.
+- For fast TUI iteration: `make tui-smoke`.

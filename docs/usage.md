@@ -257,7 +257,7 @@ This will run the secret guard every time you attempt to `git commit`.
 
 To ensure tests are stable and not influenced by a developer's local environment, `splunk-tui` enforces **hermetic testing**:
 
-- **Dotenv Isolation**: Loading of `.env` files is disabled by default during test runs (`make test` or `make ci`). This is controlled by the `DOTENV_DISABLED=1` environment variable.
+- **Dotenv Isolation**: Loading of `.env` files is disabled by default during test runs (`make test`, `make ci-fast`, or `make ci`). This is controlled by the `DOTENV_DISABLED=1` environment variable.
 - **Integration Tests**: CLI integration tests use a shared utility that explicitly sets `DOTENV_DISABLED=1` for the spawned process, ensuring they stay isolated even if run via `cargo test` directly.
 - **Live Tests**: Tests that require a real Splunk server (run via `make test-live`) may explicitly enable dotenv loading or rely on environment variables. They should be configured via `.env.test` which is also protected by the secret-commit guard.
 - **Validation**: Regression tests prove that local `.env` values are ignored during standard test runs.
@@ -268,16 +268,21 @@ Live tests require a real Splunk server and are controlled by `LIVE_TESTS_MODE`:
 
 | Mode | Behavior | Use Case |
 |------|----------|----------|
-| `required` | Fail if env/server unavailable | CI pipelines (default) |
-| `optional` | Skip with warning if unavailable | Local development |
+| `required` | Fail if env/server unavailable | Strict pre-release or pre-publish gates |
+| `optional` | Skip with warning if unavailable | Local development (`make test-live`) |
 | `skip` | Explicit bypass | Emergency situations |
 
 **CI Behavior:**
 
-`make ci` uses `LIVE_TESTS_MODE=required` by default. This means:
-- If `.env.test` is missing or incomplete → CI **fails** with clear error
-- If Splunk server is unreachable → CI **fails** with clear error
-- Tests run and pass → CI succeeds
+`make ci-fast` does not run live tests.
+
+`make ci` uses `CI_LIVE_TESTS_MODE=skip` by default for deterministic offline checks and will not attempt live Splunk tests unless explicitly requested.
+
+For a strict gate before publishing or shipping, require live tests explicitly:
+
+```bash
+CI_LIVE_TESTS_MODE=required make ci
+```
 
 **Local Development:**
 
@@ -287,9 +292,8 @@ For local development without a Splunk server:
 # Skip live tests locally
 LIVE_TESTS_MODE=optional make test-live
 
-# Or set in your shell
-export LIVE_TESTS_MODE=optional
-make ci
+# Optional mode can also be used for CI-style runs that may execute live tests
+CI_LIVE_TESTS_MODE=optional make ci
 ```
 
 ---

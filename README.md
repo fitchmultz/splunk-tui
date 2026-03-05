@@ -25,8 +25,11 @@ A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployme
 # Fetch dependencies
 make install
 
-# Build and install optimized release binaries to ~/.local/bin
-make release
+# Build workspace binaries (no install side effects)
+make build
+
+# Optional: install binaries to ~/.local/bin
+make install-bins
 ```
 
 ### Binaries
@@ -553,9 +556,16 @@ The Search screen has two input modes that affect how keys are handled:
 
 ## Documentation
 
+- [Docs Index](docs/index.md) - Start here for architecture, CI, and validation guides
 - [User Guide](docs/user-guide.md) - Task-oriented guide for CLI and TUI
 - [Usage Guide](docs/usage.md) - Detailed technical reference and configuration
 - [Contributing Guide](docs/contributing.md) - Developer setup, local CI workflow, and snapshot updates
+- [Architecture Overview](docs/architecture.md) - Core components, data/control flow, and trade-offs
+- [CI Strategy](docs/ci.md) - PR-required vs nightly/manual checks and resource controls
+- [Reviewer Verification Checklist](docs/reviewer-verification.md) - Step-by-step public review commands
+- [Release Readiness Report](docs/release-readiness.md) - Current hardening status and known follow-ups
+- [Changelog](CHANGELOG.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 - Development: configure live server access via `.env.test` (untracked; copy from `.env.test.example`) or environment variables (`SPLUNK_BASE_URL`, `SPLUNK_USERNAME`, `SPLUNK_PASSWORD`).
 
 ## Development
@@ -580,7 +590,10 @@ make type-check
 # Run tests
 make test
 
-# Full CI pipeline
+# Fast PR gate
+make ci-fast
+
+# Full release-grade gate
 make ci
 ```
 
@@ -622,21 +635,27 @@ API token authentication is preferred for automation as it doesn't require sessi
 |--------|-------------|
 | `make install` | Fetch all dependencies |
 | `make update` | Update dependencies to latest stable versions |
-| `make lint` | Run clippy (warnings as errors) |
+| `make format-check` | Verify rustfmt formatting |
+| `make lint-check` | Run strict clippy + format checks (non-mutating) |
+| `make lint` | Clippy autofix + strict check (mutating) |
 | `make type-check` | Run cargo check |
 | `make format` | Format code with rustfmt |
+| `make fix` | Run formatter + clippy autofix |
 | `make clean` | Remove build artifacts |
 | `make test` | Run all tests (unit + integration) |
-| `make release` | Optimized release build and install to ~/.local/bin |
-| `make build` | Alias for release |
-| `make ci` | Full CI pipeline |
+| `make build` | Build workspace binaries (no install side effects) |
+| `make install-bins` | Install pre-built binaries to ~/.local/bin |
+| `make release` | Build + install binaries |
+| `make ci-fast` | Fast non-mutating PR gate (smoke-focused) |
+| `make ci` | Full non-mutating local gate (main/nightly parity) |
 
 ## Contributing
 
-1. Format code: `make format`
-2. Run linter: `make lint`
+1. Format code (optional auto-fix): `make format` or `make fix`
+2. Run non-mutating lint checks: `make lint-check`
 3. Run tests: `make test`
-4. Run CI: `make ci`
+4. Run fast PR gate: `make ci-fast`
+5. Run full release-grade gate before publishing: `make ci`
 
 ## License
 

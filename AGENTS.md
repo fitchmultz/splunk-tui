@@ -16,7 +16,7 @@ This file is an index, not a semantic source. Do not hardcode behavior, defaults
 - CLI command surface/help: `crates/cli/src/**`
 - Config/env schema and persisted state: `crates/config/src/**`, `.env.example`, `.env.test.example`
 - Architecture constraints: `crates/architecture-tests/tests/**`
-- User/developer docs: `README.md`, `docs/usage.md`, `docs/user-guide.md`
+- User/developer docs: `README.md`, `docs/index.md`, `docs/architecture.md`, `docs/ci.md`, `docs/reviewer-verification.md`, `docs/release-readiness.md`, `docs/usage.md`, `docs/user-guide.md`
 - Secret scanning guardrails: `scripts/check-secrets.sh`, `make lint-secrets`
 
 ## Agent Rules For Drift Control

@@ -770,10 +770,13 @@ docker inspect <container>
 |------|---------|
 | 0 | Success |
 | 1 | General error |
-| 2 | Invalid arguments |
-| 3 | Authentication failure |
-| 4 | Connection error |
-| 5 | Timeout |
+| 2 | Authentication failure |
+| 3 | Connection error |
+| 4 | Resource not found |
+| 5 | Validation error |
+| 6 | Permission denied |
+| 7 | Rate limited |
+| 8 | Service unavailable |
 | 130 | Interrupted (Ctrl+C) |
 
 ## Additional Resources

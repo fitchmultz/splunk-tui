@@ -220,9 +220,9 @@ When adding new chaos tests:
 
 4. **Verify the test fails** without the resilience feature being tested
 
-5. **Run the full test suite** before committing:
+5. **Run the PR gate** before committing:
    ```bash
-   make ci
+   make ci-fast
    ```
 
 ## Test Utilities
@@ -245,7 +245,7 @@ Test fixtures are stored in `crates/client/fixtures/`:
 
 ## CI Integration
 
-Chaos tests are included in the full CI pipeline via `make ci`. They can also be run independently:
+Chaos tests are part of the full gate (`make ci`) and can be run independently. Live tests remain skipped by default in `make ci` (`CI_LIVE_TESTS_MODE=skip`) for deterministic offline execution.
 
 ```bash
 # Run only chaos tests
@@ -340,9 +340,10 @@ This runs the 8 snapshot test files (84 tests total) covering:
 
 | Target | Speed | Coverage | When to Use |
 |--------|-------|----------|-------------|
-| `make tui-smoke` | ~0.5s | UX snapshots only | Iterating on popups, layouts, visual styling |
-| `make test` | ~30-60s | All unit/integration tests | Before pushing changes |
-| `make ci` | ~3-5min | Full pipeline including release | Before merging/PR |
+| `make tui-smoke` | ~0.5-1 min | UX snapshots only | Iterating on popups, layouts, visual styling |
+| `make test` | ~5-30 min | Full workspace tests | Deep local verification |
+| `make ci-fast` | ~8-20 min | PR-required non-mutating gate (smoke-focused) | Before opening/updating a PR |
+| `make ci` | ~20-60 min | Full non-mutating gate (main/nightly parity) | Before release or mainline cutover |
 
 ### Manual TUI Testing
 
