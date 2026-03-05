@@ -317,6 +317,7 @@ impl App {
             tutorial_state: None,
             tutorial_completed,
             onboarding_checklist,
+            onboarding_checklist_enabled: true,
             command_palette_state: crate::app::command_palette::CommandPaletteState::new(),
             // Undo/Redo system
             undo_buffer: crate::undo::UndoBuffer::new(),
@@ -380,6 +381,11 @@ impl App {
     /// Called at session start to track sessions and auto-hide behavior.
     pub fn on_session_start(&mut self) {
         self.onboarding_checklist.on_session_start();
+    }
+
+    /// Enable or suppress the onboarding checklist overlay for this runtime session.
+    pub fn set_onboarding_checklist_enabled(&mut self, enabled: bool) {
+        self.onboarding_checklist_enabled = enabled;
     }
 
     /// Mark a milestone as completed.

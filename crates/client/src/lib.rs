@@ -64,6 +64,27 @@ pub use tracing::{
 pub use client::search::SearchRequest;
 pub use endpoints::search::{CreateJobOptions, OutputMode, SearchMode};
 
+/// Normalize a user-provided SPL query for Splunk compatibility.
+///
+/// Bare SPL search terms are prefixed with `search ` so both CLI and TUI accept
+/// the natural query shape users commonly type first.
+pub fn normalize_search_query(query: &str) -> String {
+    let trimmed = query.trim();
+    let lower = trimmed.to_ascii_lowercase();
+
+    if trimmed.is_empty()
+        || lower.starts_with("search ")
+        || trimmed.starts_with('|')
+        || lower.starts_with("tstats ")
+        || lower.starts_with("from ")
+        || lower.starts_with("metadata ")
+    {
+        trimmed.to_string()
+    } else {
+        format!("search {trimmed}")
+    }
+}
+
 /// Redact a query string for logging, showing only length and a short hash prefix.
 /// This allows operators to correlate logs without exposing query content.
 ///
@@ -78,3 +99,32 @@ pub(crate) fn redact_query(query: &str) -> String {
 
 #[cfg(any(feature = "test-utils", test))]
 pub mod testing;
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_search_query;
+
+    #[test]
+    fn normalize_prefixes_bare_index_query() {
+        assert_eq!(
+            normalize_search_query("index=_internal | head 5"),
+            "search index=_internal | head 5"
+        );
+    }
+
+    #[test]
+    fn normalize_keeps_explicit_search_query() {
+        assert_eq!(
+            normalize_search_query("search index=_internal | head 5"),
+            "search index=_internal | head 5"
+        );
+    }
+
+    #[test]
+    fn normalize_keeps_pipeline_query() {
+        assert_eq!(
+            normalize_search_query("| metadata type=sourcetypes"),
+            "| metadata type=sourcetypes"
+        );
+    }
+}

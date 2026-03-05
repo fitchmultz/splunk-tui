@@ -282,6 +282,8 @@ pub struct App {
     pub tutorial_completed: bool,
     /// Progressive onboarding checklist state (persisted)
     pub onboarding_checklist: OnboardingChecklistState,
+    /// Whether the checklist overlay should render for this runtime session.
+    pub onboarding_checklist_enabled: bool,
     /// Command palette state for fuzzy search and recent commands
     pub command_palette_state: crate::app::command_palette::CommandPaletteState,
 

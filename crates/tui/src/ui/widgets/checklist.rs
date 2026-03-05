@@ -87,8 +87,8 @@ pub fn checklist_area(frame_area: Rect) -> Rect {
     const CHECKLIST_WIDTH: u16 = 28;
     const CHECKLIST_HEIGHT: u16 = 6;
     const FOOTER_HEIGHT: u16 = 3;
-    const MIN_WIDTH: u16 = CHECKLIST_WIDTH + 2;
-    const MIN_HEIGHT: u16 = FOOTER_HEIGHT + CHECKLIST_HEIGHT + 1;
+    const MIN_WIDTH: u16 = 96;
+    const MIN_HEIGHT: u16 = 22;
 
     if frame_area.width < MIN_WIDTH || frame_area.height < MIN_HEIGHT {
         return Rect::default();
@@ -101,5 +101,28 @@ pub fn checklist_area(frame_area: Rect) -> Rect {
             .saturating_sub(FOOTER_HEIGHT + CHECKLIST_HEIGHT + 1),
         width: CHECKLIST_WIDTH,
         height: CHECKLIST_HEIGHT,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::checklist_area;
+    use ratatui::layout::Rect;
+
+    #[test]
+    fn checklist_is_hidden_when_terminal_is_too_narrow() {
+        assert_eq!(checklist_area(Rect::new(0, 0, 80, 24)), Rect::default());
+    }
+
+    #[test]
+    fn checklist_is_hidden_when_terminal_is_too_short() {
+        assert_eq!(checklist_area(Rect::new(0, 0, 120, 20)), Rect::default());
+    }
+
+    #[test]
+    fn checklist_renders_when_terminal_has_room() {
+        let area = checklist_area(Rect::new(0, 0, 120, 30));
+        assert_eq!(area.width, 28);
+        assert_eq!(area.height, 6);
     }
 }

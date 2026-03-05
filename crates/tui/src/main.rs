@@ -413,6 +413,9 @@ async fn main() -> Result<()> {
 
     // Create app with persisted state and pre-built connection context
     let mut app = App::new(Some(persisted_state), connection_ctx);
+    if cli.skip_tutorial {
+        app.set_onboarding_checklist_enabled(false);
+    }
 
     // Enable UX telemetry collection when metrics exporter is enabled
     app.ux_telemetry = Some(splunk_tui::ux_telemetry::UxTelemetryCollector::new(

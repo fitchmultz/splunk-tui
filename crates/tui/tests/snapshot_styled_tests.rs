@@ -12,16 +12,16 @@ use splunk_tui::{CurrentScreen, SearchInputMode};
 
 #[test]
 fn snapshot_styled_search_screen_semantics() {
-    let mut harness = TuiHarness::new(120, 24);
+    let mut harness = TuiHarness::new(160, 24);
     harness.app.current_screen = CurrentScreen::Search;
     harness.app.search_input.set_value("index=main | head 5");
     harness.app.search_status = "Ready".to_string();
+    harness.app.set_onboarding_checklist_enabled(false);
 
     let buffer = harness.render_buffer();
     assert_text_has_fg(&buffer, "Splunk TUI", harness.app.theme.title);
     assert_text_has_modifier(&buffer, "Splunk TUI", Modifier::BOLD);
-    assert_text_has_fg(&buffer, "?:Help", harness.app.theme.success);
-    assert_text_has_fg(&buffer, "q:Quit", harness.app.theme.error);
+    assert_text_has_fg(&buffer, "Ctrl+Q:Quit", harness.app.theme.error);
 
     insta::assert_snapshot!(harness.render_styled());
 }

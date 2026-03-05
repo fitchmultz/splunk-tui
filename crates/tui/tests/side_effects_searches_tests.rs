@@ -7,7 +7,7 @@ mod common;
 
 use common::*;
 use splunk_client::SearchMode;
-use wiremock::matchers::{method, path};
+use wiremock::matchers::{body_string_contains, method, path};
 
 #[tokio::test]
 async fn test_run_search_success() {
@@ -89,6 +89,75 @@ async fn test_run_search_success() {
             .iter()
             .any(|a| matches!(a, Action::SearchComplete(Ok(_)))),
         "Should send SearchComplete(Ok)"
+    );
+}
+
+#[tokio::test]
+async fn test_run_search_normalizes_bare_spl_queries() {
+    let mut harness = SideEffectsTestHarness::new().await;
+
+    let create_job_response = serde_json::json!({
+        "sid": "normalized-sid"
+    });
+    Mock::given(method("POST"))
+        .and(path("/services/search/jobs"))
+        .and(body_string_contains(
+            "search=search+index%3Dmain+%7C+head+10",
+        ))
+        .respond_with(ResponseTemplate::new(201).set_body_json(&create_job_response))
+        .mount(&harness.mock_server)
+        .await;
+
+    let job_status = serde_json::json!({
+        "entry": [{
+            "content": {
+                "sid": "normalized-sid",
+                "isDone": true,
+                "doneProgress": 1.0,
+                "runDuration": 0.5,
+                "scanCount": 10,
+                "eventCount": 10,
+                "resultCount": 10,
+                "diskUsage": 0
+            }
+        }]
+    });
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/normalized-sid"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&job_status))
+        .mount(&harness.mock_server)
+        .await;
+
+    let results_fixture = load_fixture("search/get_results.json");
+    Mock::given(method("GET"))
+        .and(path("/services/search/jobs/normalized-sid/results"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&results_fixture))
+        .mount(&harness.mock_server)
+        .await;
+
+    let search_defaults = splunk_config::SearchDefaults {
+        earliest_time: "-24h".to_string(),
+        latest_time: "now".to_string(),
+        max_results: 100,
+    };
+
+    let actions = harness
+        .handle_and_collect(
+            Action::RunSearch {
+                query: "index=main | head 10".to_string(),
+                search_defaults,
+                search_mode: SearchMode::Normal,
+                realtime_window: None,
+            },
+            4,
+        )
+        .await;
+
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::SearchComplete(Ok(_)))),
+        "Bare SPL queries should be normalized before executing"
     );
 }
 

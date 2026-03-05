@@ -16,12 +16,12 @@ expression: harness.render()
 │Internal logs:   count 100 / earliest -15m                                    │
 │                                                                              │
 │Shortcuts                                                                     │
-│t:Diagnostics  T:Theme  a:Auto-refresh           ┌──────────────────────────┐ │
-│s:Sort column  d:Direction  c:Clear history      │ Onboarding [0/5] 0%      │ │
-│p:Switch profile  n:Create  e:Edit  x:Delete     │ ○ Create Profile         │ │
-│u:Undo history  ?:Replay tutorial                │ ○ Test Connection        │ │
-│                                                 │ ○ Run Search             │ │
-│                                                 └──────────────────────────┘ │
+│t:Diagnostics  T:Theme  a:Auto-refresh                                        │
+│s:Sort column  d:Direction  c:Clear history                                   │
+│p:Switch profile  n:Create  e:Edit  x:Delete                                  │
+│u:Undo history  ?:Replay tutorial                                             │
+│                                                                              │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Tab:Next | Shift+Tab:Prev | t:Diag a:Auto s:Sort d:Direction| ?:Help | q:Quit│

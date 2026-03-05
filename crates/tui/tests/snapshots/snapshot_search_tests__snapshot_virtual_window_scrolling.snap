@@ -16,13 +16,13 @@ expression: harness.render()
 │{                                                                             │
 │  "id": 0,                                                                    │
 │  "message": "Message 0"                                                      │
-│}                                                ┌──────────────────────────┐ │
-│{                                                │ Onboarding [0/5] 0%      │ │
-│  "id": 1,                                       │ ○ Create Profile         │ │
-│  "message": "Message 1"                         │ ○ Test Connection        │ │
-│}                                                │ ○ Run Search             │ │
-│{                                                └──────────────────────────┘ │
+│}                                                                             │
+│{                                                                             │
+│  "id": 1,                                                                    │
+│  "message": "Message 1"                                                      │
+│}                                                                             │
+│{                                                                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│[FOCUS]  Tab:Next | Shift+Tab:Prev | Ctrl+Tab:Focus | Ctrl+Shift+Tab:Focus | ?│
+│[FOCUS]  Tab:Next | Shift+Tab:Prev | Ctrl+Tab:Results  | Esc:Results | Ctrl+Q:│
 └──────────────────────────────────────────────────────────────────────────────┘

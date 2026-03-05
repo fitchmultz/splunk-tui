@@ -421,8 +421,10 @@ pub enum TabAction {
 pub enum EscAction {
     /// Return to previous screen (e.g., JobInspect -> Jobs).
     BackToPreviousScreen,
-    /// Switch to default focus mode (e.g., ResultsFocused -> QueryFocused).
-    DefaultFocusMode,
+    /// Switch search focus to the results pane.
+    FocusResults,
+    /// Switch search focus back to the query input.
+    FocusQuery,
     /// Close current popup/overlay.
     ClosePopup,
     /// No action (already at base state).
@@ -476,8 +478,8 @@ impl NavigationContext {
                 tab_action: TabAction::NextScreen,
                 shift_tab_action: TabAction::PreviousScreen,
                 esc_action: match search_input_mode {
-                    SearchInputMode::QueryFocused => EscAction::None,
-                    SearchInputMode::ResultsFocused => EscAction::DefaultFocusMode,
+                    SearchInputMode::QueryFocused => EscAction::FocusResults,
+                    SearchInputMode::ResultsFocused => EscAction::FocusQuery,
                 },
                 has_multi_focus: true, // Search always has 2 focus targets
             },
@@ -940,7 +942,7 @@ mod tests {
         assert_eq!(ctx.mode, NavigationMode::LocalFocus);
         assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
-        assert_eq!(ctx.esc_action, EscAction::None);
+        assert_eq!(ctx.esc_action, EscAction::FocusResults);
         assert_eq!(ctx.mode_label(), "FOCUS");
         assert!(ctx.has_multi_focus);
     }
@@ -957,7 +959,7 @@ mod tests {
         assert_eq!(ctx.mode, NavigationMode::ScreenCycle);
         assert_eq!(ctx.tab_action, TabAction::NextScreen);
         assert_eq!(ctx.shift_tab_action, TabAction::PreviousScreen);
-        assert_eq!(ctx.esc_action, EscAction::DefaultFocusMode);
+        assert_eq!(ctx.esc_action, EscAction::FocusQuery);
         assert_eq!(ctx.mode_label(), "NAV");
         assert!(ctx.has_multi_focus);
     }

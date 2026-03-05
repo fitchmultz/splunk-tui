@@ -167,6 +167,46 @@ fn test_search_query_focused_inserts_question_mark() {
 }
 
 #[test]
+fn test_search_query_focused_esc_switches_to_results_mode() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::QueryFocused;
+
+    let action = app.handle_input(esc_key());
+    assert!(
+        action.is_none(),
+        "Esc should switch modes without emitting an action"
+    );
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::ResultsFocused
+        ),
+        "Esc should switch QueryFocused mode to ResultsFocused"
+    );
+}
+
+#[test]
+fn test_search_results_focused_esc_switches_to_query_mode() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+    app.search_input_mode = splunk_tui::SearchInputMode::ResultsFocused;
+
+    let action = app.handle_input(esc_key());
+    assert!(
+        action.is_none(),
+        "Esc should switch modes without emitting an action"
+    );
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Esc should switch ResultsFocused mode back to QueryFocused"
+    );
+}
+
+#[test]
 fn test_search_query_focused_inserts_digits() {
     let mut app = App::new(None, ConnectionContext::default());
     app.current_screen = CurrentScreen::Search;

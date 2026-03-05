@@ -17,7 +17,7 @@ use crate::app::App;
 use crate::app::footer_layout::FooterLayout;
 use crate::app::state::{
     CurrentScreen, EscAction, FOOTER_HEIGHT, HEADER_HEIGHT, HealthState, NavigationContext,
-    NavigationMode, TabAction,
+    NavigationMode, SearchInputMode, TabAction,
 };
 use crate::input::keymap::overrides;
 use crate::ui::popup::PopupType;
@@ -207,7 +207,10 @@ impl App {
         crate::ui::toast::render_toasts(f, &self.toasts, self.current_error.is_some(), &self.theme);
 
         // Render onboarding checklist (if applicable)
-        if self.popup.is_none() && self.onboarding_checklist.should_show_checklist() {
+        if self.onboarding_checklist_enabled
+            && self.popup.is_none()
+            && self.onboarding_checklist.should_show_checklist()
+        {
             let checklist_area = crate::ui::widgets::checklist::checklist_area(f.area());
             crate::ui::widgets::checklist::render_onboarding_checklist(
                 f,
@@ -790,7 +793,8 @@ impl App {
 
         // Build Esc hint (separator added conditionally during render)
         let esc_text = match nav_ctx.esc_action {
-            EscAction::DefaultFocusMode => "Esc:Query ".to_string(),
+            EscAction::FocusResults => "Esc:Results ".to_string(),
+            EscAction::FocusQuery => "Esc:Query ".to_string(),
             EscAction::BackToPreviousScreen => "Esc:Back ".to_string(),
             EscAction::ClosePopup => "Esc:Close ".to_string(),
             EscAction::None => String::new(),
@@ -814,10 +818,10 @@ impl App {
         };
         let loading_width = loading_text.len();
 
-        let help_quit_width = " | ?:Help | q:Quit ".len();
+        let (utility_spans, utility_width) = self.format_utility_hints(&nav_ctx);
 
         let fixed_width =
-            mode_width + loading_width + nav_width + esc_width + focus_width + help_quit_width;
+            mode_width + loading_width + nav_width + esc_width + focus_width + utility_width;
         let hints_available_width = available_width.saturating_sub(fixed_width);
 
         // Build screen hints string (truncated for narrow terminals)
@@ -872,11 +876,8 @@ impl App {
             spans.push(Span::styled(hints_text, Style::default().fg(theme.accent)));
         }
 
-        // Help and Quit
-        spans.push(Span::raw("|"));
-        spans.push(Span::styled(" ?:Help ", Style::default().fg(theme.success)));
-        spans.push(Span::raw("|"));
-        spans.push(Span::styled(" q:Quit ", Style::default().fg(theme.error)));
+        // Help and quit affordances (context-aware so the footer never advertises dead keys).
+        spans.extend(utility_spans);
 
         vec![Line::from(spans)]
     }
@@ -913,7 +914,57 @@ impl App {
         let prev_focus_key =
             overrides::get_effective_key_display(Action::PreviousFocus, "Ctrl+Shift+Tab");
 
-        let text = format!(" {}:Focus | {}:Focus ", next_focus_key, prev_focus_key);
+        let text = if self.current_screen == CurrentScreen::Search {
+            match self.search_input_mode {
+                SearchInputMode::QueryFocused => format!(" {}:Results ", next_focus_key),
+                SearchInputMode::ResultsFocused => format!(" {}:Query ", prev_focus_key),
+            }
+        } else {
+            format!(" {}:Focus | {}:Focus ", next_focus_key, prev_focus_key)
+        };
         (text.clone(), text.len())
+    }
+
+    /// Format help/quit affordances for the current interaction mode.
+    fn format_utility_hints(&self, _nav_ctx: &NavigationContext) -> (Vec<Span<'static>>, usize) {
+        use crate::action::Action;
+
+        let help_key = overrides::get_effective_key_display(Action::OpenHelpPopup, "?");
+        let quit_key = overrides::get_effective_key_display(Action::Quit, "q");
+        let global_quit_key = "Ctrl+Q".to_string();
+
+        if self.current_screen == CurrentScreen::Search
+            && matches!(self.search_input_mode, SearchInputMode::QueryFocused)
+            && self.popup.is_none()
+        {
+            let width = format!("| {}:Quit ", global_quit_key).len();
+            return (
+                vec![
+                    Span::raw("|"),
+                    Span::styled(
+                        format!(" {}:Quit ", global_quit_key),
+                        Style::default().fg(self.theme.error),
+                    ),
+                ],
+                width,
+            );
+        }
+
+        let width = format!("| {}:Help | {}:Quit ", help_key, quit_key).len();
+        (
+            vec![
+                Span::raw("|"),
+                Span::styled(
+                    format!(" {}:Help ", help_key),
+                    Style::default().fg(self.theme.success),
+                ),
+                Span::raw("|"),
+                Span::styled(
+                    format!(" {}:Quit ", quit_key),
+                    Style::default().fg(self.theme.error),
+                ),
+            ],
+            width,
+        )
     }
 }

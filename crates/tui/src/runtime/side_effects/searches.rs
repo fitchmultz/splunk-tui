@@ -12,7 +12,7 @@
 
 use crate::action::{Action, progress_callback_to_action_sender};
 use crate::error_details::{build_search_error_details, search_error_message};
-use splunk_client::{SearchMode, SearchRequest};
+use splunk_client::{SearchMode, SearchRequest, normalize_search_query};
 use splunk_config::SearchDefaults;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -90,12 +90,14 @@ pub async fn handle_run_search(
     let tx_clone = tx.clone();
     let query_clone = query.clone();
     task_tracker.spawn(async move {
+        let normalized_query = normalize_search_query(&query_clone);
+
         // Create progress callback that sends Action::Progress via channel
         let progress_tx = tx_clone.clone();
         let mut progress_callback = progress_callback_to_action_sender(progress_tx);
 
         // Build the search request
-        let request = SearchRequest::new(&query_clone, true)
+        let request = SearchRequest::new(&normalized_query, true)
             .time_bounds(&earliest_time, &latest_time)
             .max_results(max_results)
             .search_mode(search_mode);
@@ -189,7 +191,9 @@ pub async fn handle_validate_spl(
     }
 
     task_tracker.spawn(async move {
-        match client.validate_spl(&search).await {
+        let normalized_search = normalize_search_query(&search);
+
+        match client.validate_spl(&normalized_search).await {
             Ok(result) => {
                 let _ = tx
                     .send(Action::SplValidationResult {

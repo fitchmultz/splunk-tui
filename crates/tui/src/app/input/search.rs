@@ -129,9 +129,7 @@ impl App {
 
     /// Handle Esc key in search screen.
     fn handle_search_esc(&mut self) -> Option<Action> {
-        if matches!(self.search_input_mode, SearchInputMode::ResultsFocused) {
-            self.search_input_mode = SearchInputMode::QueryFocused;
-        }
+        self.search_input_mode = self.search_input_mode.toggle();
         None
     }
 
@@ -575,7 +573,7 @@ mod tests {
         assert!(action.is_none());
         assert!(matches!(
             app.search_input_mode,
-            SearchInputMode::QueryFocused
+            SearchInputMode::ResultsFocused
         ));
     }
 

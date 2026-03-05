@@ -21,29 +21,12 @@
 
 use anyhow::Result;
 use clap::Subcommand;
-use splunk_client::{SearchMode, SearchRequest};
+use splunk_client::{SearchMode, SearchRequest, normalize_search_query};
 use splunk_config::SearchDefaultConfig;
 use std::path::PathBuf;
 use tracing::info;
 
 use crate::formatters::{OutputFormat, get_formatter, output_result};
-
-fn normalize_search_query(query: &str) -> String {
-    let trimmed = query.trim();
-    let lower = trimmed.to_ascii_lowercase();
-
-    if trimmed.is_empty()
-        || lower.starts_with("search ")
-        || trimmed.starts_with('|')
-        || lower.starts_with("tstats ")
-        || lower.starts_with("from ")
-        || lower.starts_with("metadata ")
-    {
-        trimmed.to_string()
-    } else {
-        format!("search {trimmed}")
-    }
-}
 
 /// Search subcommands.
 #[derive(Subcommand)]
@@ -246,7 +229,7 @@ pub async fn run_validate(
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_search_query;
+    use splunk_client::normalize_search_query;
 
     #[test]
     fn normalize_prefixes_bare_index_query() {
