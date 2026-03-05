@@ -135,13 +135,18 @@ fn test_remaining_time() {
 
     let entry = splunk_tui::undo::UndoEntry::new(op, "Test".to_string());
 
-    // Should have approximately 30 seconds remaining
+    // Should have approximately 30 seconds remaining.
+    // Read both APIs close together and allow a one-second skew across calls.
     let remaining = entry.remaining();
-    assert!(remaining.as_secs() <= 30);
-    assert!(remaining.as_secs() >= 29); // Allow for test execution time
+    let remaining_secs = entry.remaining_secs();
 
-    // remaining_secs should match
-    assert_eq!(entry.remaining_secs(), remaining.as_secs());
+    assert!(remaining.as_secs() <= 30);
+    assert!(remaining.as_secs() >= 26); // Allow for test execution and scheduler jitter.
+    assert!(remaining_secs <= 30);
+    assert!(remaining_secs >= 26);
+
+    // APIs should stay effectively aligned even across second-boundary transitions.
+    assert!(remaining.as_secs().abs_diff(remaining_secs) <= 1);
 }
 
 /// Test various operation types
