@@ -426,36 +426,6 @@ Monitor changes for compliance and security.
 
 ## Automation Workflows
 
-### Scheduled Reporting
-
-Automate routine report generation.
-
-#### Daily Report Generation
-
-```bash
-# Run a saved search and save results
-./examples/automation/scheduled-reports.sh \
-    --report "Daily Error Summary" \
-    --output-dir /var/reports/splunk/ \
-    --format csv
-
-# Multiple reports from a list
-./examples/automation/scheduled-reports.sh \
-    --report-list daily-reports.txt \
-    --output-dir /var/reports/splunk/
-```
-
-**Cron Setup:**
-
-```bash
-# Add to crontab
-0 8 * * * /path/to/splunk-tui/examples/automation/scheduled-reports.sh \
-    --report "Daily Summary" \
-    --output-dir /var/reports/splunk/$(date +\%Y/\%m/\%d)
-```
-
-[See full script: examples/automation/scheduled-reports.sh](../examples/automation/scheduled-reports.sh)
-
 ### Bulk Operations
 
 Safely perform batch operations.
@@ -524,28 +494,24 @@ Streamline new data source onboarding.
 
 ## Integration Patterns
 
-### CI/CD Pipeline Integration
+### Local Pre-Deploy Validation
 
 ```bash
 #!/bin/bash
-# ci-spl-validation.sh
+# local-predeploy-check.sh
 
-# Validate SPL files before deployment
+set -euo pipefail
+
+# Validate SPL files before rollout
 for file in queries/*.spl; do
     echo "Validating: $file"
-    if ! splunk-cli search validate --file "$file"; then
-        echo "SPL validation failed: $file"
-        exit 1
-    fi
+    splunk-cli search validate --file "$file"
 done
 
-# Run health check before deployment
-if ! ./examples/daily-ops/health-check.sh --json | jq -e '.summary.issues == 0' > /dev/null; then
-    echo "Splunk health check failed - aborting deployment"
-    exit 1
-fi
+# Run health check before rollout
+./examples/daily-ops/health-check.sh --json | jq -e '.summary.issues == 0' > /dev/null
 
-echo "All checks passed - safe to deploy"
+echo "All checks passed - safe to continue"
 ```
 
 ### Monitoring Integration

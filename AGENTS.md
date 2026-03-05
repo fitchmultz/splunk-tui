@@ -6,6 +6,7 @@ This file is an index, not a semantic source. Do not hardcode behavior, defaults
 - Rust workspace with shared Splunk client logic and two frontends:
 - `splunk-cli` for command-line workflows.
 - `splunk-tui` for interactive terminal workflows.
+- Verification is local-only. The repository should not carry hosted CI workflow configs or assume external automation services.
 
 ## Source of Truth Index
 - Build/test/CI contract: `Makefile`

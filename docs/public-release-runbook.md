@@ -38,34 +38,25 @@ make ci-fast
 ### Commit 3
 
 ```bash
-git add .github/workflows/ci.yml .github/workflows/ci-full.yml .github/workflows/docker.yml \
-  .github/actions/splunk-config-validate/action.yml .github/actions/splunk-hec-send/action.yml
-git commit -m "ci(github): split fast and full workflows"
-make ci-fast
-```
-
-### Commit 4
-
-```bash
 git add CHANGELOG.md CODE_OF_CONDUCT.md
 git commit -m "docs: add governance docs for public readiness"
 ```
 
-### Commit 5
+### Commit 4
 
 ```bash
 git add docs/index.md docs/architecture.md docs/ci.md
 git commit -m "docs: add architecture and CI documentation hub"
 ```
 
-### Commit 6
+### Commit 5
 
 ```bash
 git add docs/reviewer-verification.md docs/release-readiness.md
 git commit -m "docs: add reviewer verification and release readiness report"
 ```
 
-### Commit 7
+### Commit 6
 
 ```bash
 git add README.md CONTRIBUTING.md docs/contributing.md docs/testing.md docs/usage.md \
@@ -74,14 +65,13 @@ git commit -m "docs: align contributor and user docs with release contract"
 make ci-fast
 ```
 
-### Commit 8
+### Commit 7
 
 ```bash
-git add crates/architecture-tests/tests/ci_workflow_policy_tests.rs \
-  crates/architecture-tests/tests/docs_link_validation_tests.rs \
+git add crates/architecture-tests/tests/docs_link_validation_tests.rs \
   crates/architecture-tests/tests/exit_code_docs_tests.rs \
   crates/architecture-tests/tests/repo_artifacts_tests.rs
-git commit -m "test(architecture-tests): enforce workflow/docs/repo hygiene invariants"
+git commit -m "test(architecture-tests): enforce docs and repo hygiene invariants"
 cargo test -p architecture-tests
 make ci
 ```

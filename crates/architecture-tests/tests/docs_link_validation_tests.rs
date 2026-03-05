@@ -1,6 +1,6 @@
 //! Purpose: Enforce markdown link integrity for public-facing repository documentation.
 //! Responsibilities: Validate that local relative markdown links resolve to existing paths.
-//! Scope: README/docs/examples/contributing/security/action docs links; external URLs are ignored.
+//! Scope: README/docs/examples/contributing/security links; external URLs are ignored.
 //! Usage: Runs as part of `cargo test -p architecture-tests` and `make ci`.
 //! Invariants/Assumptions: Relative links must resolve from the source file location.
 
@@ -17,7 +17,6 @@ fn markdown_relative_links_resolve() {
         workspace_root.join("README.md"),
         workspace_root.join("CONTRIBUTING.md"),
         workspace_root.join("SECURITY.md"),
-        workspace_root.join(".github/actions/README.md"),
     ];
 
     markdown_files.extend(find_markdown_files(&workspace_root.join("docs")));

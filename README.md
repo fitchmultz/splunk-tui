@@ -1,7 +1,5 @@
 # Splunk CLI and TUI
 
-[![CI](https://github.com/fitchmultz/splunk-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/fitchmultz/splunk-tui/actions/workflows/ci.yml)
-[![Docker Build](https://github.com/fitchmultz/splunk-tui/actions/workflows/docker.yml/badge.svg)](https://github.com/fitchmultz/splunk-tui/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployments. Supports both standalone and clustered deployments with dual authentication methods (session token and API token).
@@ -559,9 +557,9 @@ The Search screen has two input modes that affect how keys are handled:
 - [Docs Index](docs/index.md) - Start here for architecture, CI, and validation guides
 - [User Guide](docs/user-guide.md) - Task-oriented guide for CLI and TUI
 - [Usage Guide](docs/usage.md) - Detailed technical reference and configuration
-- [Contributing Guide](docs/contributing.md) - Developer setup, local CI workflow, and snapshot updates
+- [Contributing Guide](docs/contributing.md) - Developer setup, local verification workflow, and snapshot updates
 - [Architecture Overview](docs/architecture.md) - Core components, data/control flow, and trade-offs
-- [CI Strategy](docs/ci.md) - PR-required vs nightly/manual checks and resource controls
+- [CI Strategy](docs/ci.md) - Local verification gates and resource controls
 - [Reviewer Verification Checklist](docs/reviewer-verification.md) - Step-by-step public review commands
 - [Release Readiness Report](docs/release-readiness.md) - Current hardening status and known follow-ups
 - [Changelog](CHANGELOG.md)
@@ -646,15 +644,15 @@ API token authentication is preferred for automation as it doesn't require sessi
 | `make build` | Build workspace binaries (no install side effects) |
 | `make install-bins` | Install pre-built binaries to ~/.local/bin |
 | `make release` | Build + install binaries |
-| `make ci-fast` | Fast non-mutating PR gate (smoke-focused) |
-| `make ci` | Full non-mutating local gate (main/nightly parity) |
+| `make ci-fast` | Fast non-mutating local gate (smoke-focused) |
+| `make ci` | Full non-mutating local gate |
 
 ## Contributing
 
 1. Format code (optional auto-fix): `make format` or `make fix`
 2. Run non-mutating lint checks: `make lint-check`
 3. Run tests: `make test`
-4. Run fast PR gate: `make ci-fast`
+4. Run the fast local gate: `make ci-fast`
 5. Run full release-grade gate before publishing: `make ci`
 
 ## License

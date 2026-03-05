@@ -1,29 +1,15 @@
 # CI Strategy and Resource Governance
 
-This repository uses a **two-tier local-first quality model**.
+This repository uses a **two-tier local-only quality model**.
 
-- **PR-required gate:** `make ci-fast`
-- **Full release-grade gate:** `make ci`
+- **Fast local gate:** `make ci-fast`
+- **Full local gate:** `make ci`
 
 Both gates are deterministic, non-mutating, and avoid binary install side effects.
 
-## Workflow Mapping
-
-- **`CI (Fast PR Gate)`** (`.github/workflows/ci.yml`)
-  - Triggers: `pull_request`, `workflow_dispatch`
-  - Runs: `make ci-fast`
-- **`CI (Full)`** (`.github/workflows/ci-full.yml`)
-  - Triggers: `push` to `main`, nightly schedule, `workflow_dispatch`
-  - Runs: `make ci`
-- **Docker workflow**
-  - PR trigger narrowed to container-related file changes
-  - PR builds run `linux/amd64` only
-  - Source-only PRs may skip Docker build; container validation still runs on `main` and tag pushes
-  - Main/tag builds remain multi-arch (`amd64`, `arm64`)
-
 ## Check Tiers
 
-### PR-Required (`make ci-fast`)
+### Fast Local Gate (`make ci-fast`)
 
 ```bash
 make ci-fast
@@ -43,7 +29,7 @@ make ci-fast
 7. docs drift check (`make _lint-docs-check PROFILE=ci`)
 8. examples script validation (`make examples-test`)
 
-### Full / Nightly / Mainline (`make ci`)
+### Full Local Gate (`make ci`)
 
 ```bash
 make ci
@@ -55,7 +41,7 @@ make ci
 - live-test policy hook (`LIVE_TESTS_MODE=$(CI_LIVE_TESTS_MODE) make test-live`, default `skip`)
 - CI-profile binary build (`make build PROFILE=ci`)
 
-### Manual / On-Demand Heavy Validation
+### Additional Local Validation
 
 ```bash
 # strict live integration validation (requires Splunk instance)
@@ -70,7 +56,7 @@ make bench
 
 ## Resource Controls
 
-The Makefile and CI workflows expose explicit pressure controls:
+The Makefile exposes explicit pressure controls:
 
 - `CARGO_JOBS` (default: `4`) — cargo build/test parallelism
 - `RUST_TEST_THREADS` (default: `1`) — Rust test harness concurrency

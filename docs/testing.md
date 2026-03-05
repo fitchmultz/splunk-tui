@@ -360,8 +360,8 @@ make tui-accessibility
 |--------|-------|----------|-------------|
 | `make tui-smoke` | ~0.5-1 min | UX snapshots only | Iterating on popups, layouts, visual styling |
 | `make test` | ~5-30 min | Full workspace tests | Deep local verification |
-| `make ci-fast` | ~8-20 min | PR-required non-mutating gate (smoke-focused) | Before opening/updating a PR |
-| `make ci` | ~20-60 min | Full non-mutating gate (main/nightly parity) | Before release or mainline cutover |
+| `make ci-fast` | ~8-20 min | Fast non-mutating local gate (smoke-focused) | During normal development |
+| `make ci` | ~20-60 min | Full non-mutating local gate | Before release |
 
 ### Manual TUI Testing
 
@@ -383,12 +383,12 @@ For stronger visual automation beyond the current gate:
 
 1. **Scripted terminal recordings for behavior demos + regression artifacts**
    - Use [VHS](https://github.com/charmbracelet/vhs) tapes to run repeatable CLI/TUI sessions.
-   - VHS supports integration-test style output (`Output ...`) and CI execution, and has a [GitHub Action](https://github.com/charmbracelet/vhs-action).
+   - VHS supports integration-test style output (`Output ...`) and works well as a local, manual capture tool.
 2. **Stabilize snapshots with targeted redactions**
    - Use [Insta redactions](https://insta.rs/docs/redactions/) for dynamic fields (timestamps, IDs) when adding richer snapshots.
 3. **Avoid adopting unmaintained renderers as required gates**
    - [termtosvg](https://github.com/nbedos/termtosvg) is useful for SVG captures but is currently read-only; keep it optional/manual if used.
-4. **Optional capture pipeline for manual audits**
+4. **Optional capture tooling for manual audits**
    - [asciinema CLI](https://docs.asciinema.org/manual/cli/quick-start/) can record reproducible sessions for reviewer playback and troubleshooting artifacts.
 
 ## References
@@ -399,4 +399,3 @@ For stronger visual automation beyond the current gate:
 - [Insta Snapshot Testing](https://insta.rs/)
 - [Ratatui Snapshot Testing Recipe](https://ratatui.rs/recipes/testing/snapshots/)
 - [VHS](https://github.com/charmbracelet/vhs)
-- [VHS GitHub Action](https://github.com/charmbracelet/vhs-action)

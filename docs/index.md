@@ -12,7 +12,7 @@ Use this page as the entry point for repository docs.
 ## Release and Review Readiness
 
 - [Architecture Overview](architecture.md) — components, data flow, and design trade-offs
-- [CI Strategy](ci.md) — PR-required vs nightly/manual checks and resource governance
+- [CI Strategy](ci.md) — local verification gates and resource governance
 - [Reviewer Verification Checklist](reviewer-verification.md) — concrete validation commands
 - [Release Readiness Report](release-readiness.md) — risks addressed, remaining issues, next steps
 - [Public Release Runbook](public-release-runbook.md) — commit series and safe history-rewrite procedure for public launch
@@ -26,7 +26,6 @@ Use this page as the entry point for repository docs.
 - [Observability](observability.md) — diagnostics and monitoring guidance
 - [Performance](performance.md) — performance tuning notes
 - [Accessibility](accessibility.md) — accessibility principles and checks
-- [GitHub Actions](github-actions.md) — composite action usage and examples
 
 ## Security and Policy
 

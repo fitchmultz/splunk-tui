@@ -83,10 +83,10 @@ CI_LIVE_TESTS_MODE=required make ci
 
 ## CI matrix summary
 
-- **PR-required:** `make ci-fast`
+- **Fast local gate:** `make ci-fast`
   - Includes: format/lint/type-check, secrets, smoke tests, `tui-visual`, `tui-accessibility`, docs drift, examples.
   - Designed for deterministic, bounded local resource usage.
-- **Main/nightly/manual:** `make ci`
+- **Full local gate:** `make ci`
   - Full workspace tests + optional/required live tests via `CI_LIVE_TESTS_MODE`.
 
 ## Public-release recommendation

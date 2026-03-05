@@ -21,7 +21,7 @@ make --version
 make install
 ```
 
-## 3) Run PR-Equivalent Gate
+## 3) Run Fast Local Gate
 
 ```bash
 make ci-fast
@@ -33,7 +33,7 @@ Expected:
 - clear stage-by-stage output
 - no local source mutations from the gate itself
 
-## 4) Run Full Mainline/Nightly Gate
+## 4) Run Full Local Gate
 
 ```bash
 make ci

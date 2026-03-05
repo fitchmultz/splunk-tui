@@ -228,7 +228,7 @@ kubectl exec -it $CLI_POD -- splunk-cli \
   search "search index=_internal | head 10" --wait
 ```
 
-### CI/CD Job Example
+### One-Off Job Example
 
 ```yaml
 apiVersion: batch/v1
@@ -248,35 +248,6 @@ spec:
             - secretRef:
                 name: splunk-credentials
       restartPolicy: Never
-```
-
-### CronJob for Scheduled Tasks
-
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: splunk-daily-report
-spec:
-  schedule: "0 9 * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-            - name: cli
-              image: ghcr.io/fitchmultz/splunk-tui:latest
-              command:
-                - /usr/local/bin/splunk-cli
-                - search
-                - "search index=main earliest=-24h | stats count by host"
-                - --wait
-                - --format
-                - json
-              envFrom:
-                - secretRef:
-                    name: splunk-credentials
-          restartPolicy: OnFailure
 ```
 
 ### TUI as Sidecar
@@ -315,144 +286,20 @@ Access the TUI:
 kubectl exec -it deploy/my-app-with-splunk-tui -c splunk-tui -- splunk-tui
 ```
 
-## CI/CD Integration
+## Local Automation Integration
 
-### GitHub Actions
+Use the container image from your own shell scripts, local schedulers, or machines you control. This repository does not depend on hosted runners or external automation services.
 
-```yaml
-name: Splunk Health Check
+Example shell wrapper:
 
-on:
-  schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-jobs:
-  health-check:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/fitchmultz/splunk-tui:latest
-    steps:
-      - name: Check Splunk Health
-        run: splunk-cli health
-        env:
-          SPLUNK_BASE_URL: ${{ secrets.SPLUNK_BASE_URL }}
-          SPLUNK_API_TOKEN: ${{ secrets.SPLUNK_API_TOKEN }}
-
-  search-verify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Search
-        uses: docker://ghcr.io/fitchmultz/splunk-tui:latest
-        with:
-          args: search "search index=main | head 10" --wait
-        env:
-          SPLUNK_BASE_URL: ${{ secrets.SPLUNK_BASE_URL }}
-          SPLUNK_API_TOKEN: ${{ secrets.SPLUNK_API_TOKEN }}
-```
-
-### GitLab CI
-
-```yaml
-variables:
-  SPLUNK_IMAGE: ghcr.io/fitchmultz/splunk-tui:latest
-
-.splunk_base:
-  image: $SPLUNK_IMAGE
-  variables:
-    SPLUNK_BASE_URL: $SPLUNK_BASE_URL
-    SPLUNK_API_TOKEN: $SPLUNK_API_TOKEN
-
-health_check:
-  extends: .splunk_base
-  script:
-    - splunk-cli health
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-
-search_validation:
-  extends: .splunk_base
-  script:
-    - splunk-cli search "search index=main | head 100" --wait --format json
-```
-
-### Jenkins Pipeline
-
-```groovy
-pipeline {
-    agent {
-        docker {
-            image 'ghcr.io/fitchmultz/splunk-tui:latest'
-        }
-    }
-    environment {
-        SPLUNK_BASE_URL = credentials('splunk-base-url')
-        SPLUNK_API_TOKEN = credentials('splunk-api-token')
-    }
-    stages {
-        stage('Health Check') {
-            steps {
-                sh 'splunk-cli health'
-            }
-        }
-        stage('Search Test') {
-            steps {
-                sh 'splunk-cli search "search index=_internal | head 10" --wait'
-            }
-        }
-    }
-}
-```
-
-### Azure DevOps
-
-```yaml
-trigger:
-  - main
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-container:
-  image: ghcr.io/fitchmultz/splunk-tui:latest
-  endpoint: ghcr-connection
-
-steps:
-  - script: splunk-cli health
-    displayName: 'Check Splunk Health'
-    env:
-      SPLUNK_BASE_URL: $(SPLUNK_BASE_URL)
-      SPLUNK_API_TOKEN: $(SPLUNK_API_TOKEN)
-```
-
-### CircleCI
-
-```yaml
-version: 2.1
-
-jobs:
-  splunk-check:
-    docker:
-      - image: ghcr.io/fitchmultz/splunk-tui:latest
-    steps:
-      - run:
-          name: Check Splunk Health
-          command: splunk-cli health
-          environment:
-            SPLUNK_BASE_URL: $SPLUNK_BASE_URL
-            SPLUNK_API_TOKEN: $SPLUNK_API_TOKEN
-
-workflows:
-  version: 2
-  scheduled:
-    triggers:
-      - schedule:
-          cron: "0 */6 * * *"
-          filters:
-            branches:
-              only:
-                - main
-    jobs:
-      - splunk-check
+docker run --rm \
+  --env-file .env \
+  ghcr.io/fitchmultz/splunk-tui:latest \
+  splunk-cli health
 ```
 
 ## Security Considerations

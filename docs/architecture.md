@@ -111,8 +111,8 @@ The repo uses layered testing:
 
 The local quality contract is split into two gates:
 
-- `make ci-fast` for PR-required validation
-- `make ci` for full mainline/nightly and pre-release validation
+- `make ci-fast` for fast local validation
+- `make ci` for full local pre-release validation
 
 Design goals for both gates:
 
@@ -120,8 +120,6 @@ Design goals for both gates:
 - Deterministic offline defaults
 - Resource-governed execution (`CARGO_JOBS`, `RUST_TEST_THREADS`)
 - Clear stage failures
-
-GitHub workflows mirror these gates as reproducible public signals (`CI (Fast PR Gate)` and `CI (Full)`).
 
 ## Key Trade-offs
 

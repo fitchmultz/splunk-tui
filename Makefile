@@ -296,14 +296,14 @@ generate: _generate-docs
 # Verify documentation is up to date
 lint-docs: _lint-docs-check
 
-# Fast CI pipeline (PR-required, deterministic, resource-governed):
+# Fast local verification pipeline (deterministic, resource-governed):
 # deps -> format-check -> lint-secrets -> clippy strict check -> type-check -> smoke tests -> docs check -> examples check
 #
 # Notes:
 # - No live tests and no install side effects.
-# - Optimized for rapid PR feedback with bounded resource usage.
+# - Optimized for rapid local feedback with bounded resource usage.
 ci-fast:
-	@echo "→ Local fast CI (PR-required gate)..."
+	@echo "→ Local fast verification gate..."
 	@echo ""
 	@set -e; \
 	$(MAKE) install              || { echo ""; echo "✗ CI (fast) failed at: install"; exit 1; }; \
@@ -317,7 +317,7 @@ ci-fast:
 	@echo ""
 	@echo "✓ Fast CI completed successfully"
 
-# Full CI pipeline (main/nightly/manual):
+# Full local verification pipeline:
 # deps -> format-check -> lint-secrets -> clippy strict check -> type-check -> full tests -> live tests(mode=CI_LIVE_TESTS_MODE) -> build -> docs check -> examples check
 #
 # Notes:
@@ -388,8 +388,8 @@ help:
 	@echo "  make lint-docs        - Verify docs are up to date (cargo-run generate-tui-docs --check)"
 	@echo "  make lint-secrets     - Run secret-commit guard"
 	@echo "  make install-hooks    - Install git pre-commit hook for secret guard"
-	@echo "  make ci-fast          - Fast PR gate (non-mutating, smoke-focused)"
-	@echo "  make ci               - Full local non-mutating pipeline (main/nightly parity)"
+	@echo "  make ci-fast          - Fast local gate (non-mutating, smoke-focused)"
+	@echo "  make ci               - Full local non-mutating pipeline"
 	@echo "  knobs: CARGO_JOBS=<N> RUST_TEST_THREADS=<N> LIVE_TESTS_MODE=required|optional|skip CI_LIVE_TESTS_MODE=required|optional|skip"
 	@echo "  make docker-build     - Build Docker image locally"
 	@echo "  make docker-run-cli   - Run CLI in Docker container"

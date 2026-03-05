@@ -18,7 +18,7 @@ Result:
 - ✅ Pass
 - Message: `Secret-commit guard OK: no forbidden paths are tracked.`
 
-### PR-required gate
+### Fast local gate
 
 ```bash
 make ci-fast

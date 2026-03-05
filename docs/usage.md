@@ -600,13 +600,13 @@ splunk-cli search "index=main" --realtime
 
 #### `search validate`
 
-Validate SPL syntax without executing the search. This is useful for catching syntax errors early, especially in CI/CD pipelines.
+Validate SPL syntax without executing the search. This is useful for catching syntax errors early, especially in local automation or pre-commit checks.
 
 ```bash
 # Validate a query string
 splunk-cli search validate 'index=main | stats count by host'
 
-# Validate from a file (useful for CI/CD)
+# Validate from a file (useful for local automation)
 splunk-cli search validate --file my_saved_search.spl
 
 # Output structured JSON for parsing
@@ -654,9 +654,9 @@ The validation command supports all standard output formats:
 }
 ```
 
-**CI/CD Integration:**
+**Local Automation Integration:**
 
-For pre-commit hooks or CI pipelines:
+For pre-commit hooks or other local automation:
 
 ```bash
 # Exit with error if validation fails
@@ -1288,9 +1288,9 @@ splunk-cli config delete my-profile
   - `-p, --password <PASS>`: New password for encryption
   - `--env-var <VAR>`: New environment variable for the encryption key
 
-**Secure Credential Input (Recommended for CI/CD):**
+**Secure Credential Input (Recommended for Automation):**
 
-For automation and CI/CD pipelines, avoid passing secrets via command-line arguments. Use one of these secure alternatives:
+For local scripts or other unattended automation, avoid passing secrets via command-line arguments. Use one of these secure alternatives:
 
 ```bash
 # Option 1: Read from file (e.g., Docker secrets, Kubernetes secrets)
@@ -1339,7 +1339,7 @@ Splunk TUI supports encrypting your entire `config.json` file at rest using AES-
 **Master Key Sources:**
 1. **OS Keyring (Default)**: Automatically generates a random 32-byte key and stores it in your OS keychain. This provides a balance of security and convenience (no password required).
 2. **User Password**: Derives a key using Argon2id from a password you provide. Use this for maximum security or when a keyring is unavailable.
-3. **Environment Variable**: Uses a hex-encoded key from an environment variable (e.g., `SPLUNK_CONFIG_KEY`). Ideal for CI/CD pipelines.
+3. **Environment Variable**: Uses a hex-encoded key from an environment variable (e.g., `SPLUNK_CONFIG_KEY`). Useful for unattended local automation or controlled execution environments.
 
 **Encryption Commands:**
 

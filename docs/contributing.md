@@ -54,13 +54,13 @@ make test
 
 ## Local CI Contract
 
-`make ci-fast` is the canonical **PR-required** local gate.
+`make ci-fast` is the canonical fast local gate.
 
 - Non-mutating by default (no formatter/clippy auto-fix)
 - Resource-bounded and smoke-focused
 - No binary install side effects
 
-`make ci` is the **full** gate for mainline/nightly parity and pre-release validation.
+`make ci` is the full local gate for release-grade validation.
 
 - Includes full test suite + CI-profile build + docs/examples checks
 - Live tests skipped by default for deterministic offline execution (`CI_LIVE_TESTS_MODE=skip`)
@@ -135,7 +135,7 @@ Before publishing/releasing from main:
 ## Security and Secrets
 
 - Never commit `.env` or `.env.test`
-- Run `make lint-secrets` before commit/PR
+- Run `make lint-secrets` before commit
 - Install the local pre-commit guard if desired:
 
 ```bash
