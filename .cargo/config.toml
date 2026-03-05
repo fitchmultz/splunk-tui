@@ -1,5 +1,8 @@
-[build]
-jobs = 8
+# Purpose: Repository-local Cargo defaults for consistent developer behavior.
+# Responsibilities: Keep dev-profile compilation settings predictable across contributors.
+# Scope: Applies to Cargo commands run from this workspace.
+# Usage: Override per-machine parallelism with `CARGO_JOBS` in the Makefile rather than hardcoding here.
+# Invariants/Assumptions: Avoid fixed global job counts so CI/e2e runs do not oversubscribe shared hosts.
 
 # Optional local speedups:
 # - sccache: set `RUSTC_WRAPPER=sccache`

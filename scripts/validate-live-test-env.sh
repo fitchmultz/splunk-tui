@@ -14,9 +14,9 @@ USAGE:
     validate-live-test-env.sh [MODE]
 
 MODES:
-    required    Fail if .env.test missing or Splunk server unreachable (CI default)
-    optional    Skip with warning if unavailable (local dev recommended)
-    skip        Explicit bypass
+    required    Fail if .env.test missing or Splunk server unreachable (strict live gate)
+    optional    Skip with warning if unavailable (default for make test-live)
+    skip        Explicit bypass (default for make ci via CI_LIVE_TESTS_MODE)
 
 EXIT CODES:
     0    Environment valid, proceed with tests
@@ -25,13 +25,19 @@ EXIT CODES:
     3    Invalid arguments
 
 EXAMPLES:
-    # CI mode - fail if env/server not configured
+    # Strict local live validation
     LIVE_TESTS_MODE=required make test-live
 
     # Local dev mode - skip gracefully if unavailable
     LIVE_TESTS_MODE=optional make test-live
 
-    # Explicit skip
+    # Full CI gate defaults to skip (offline deterministic)
+    make ci
+
+    # Require live tests in full CI gate
+    CI_LIVE_TESTS_MODE=required make ci
+
+    # Explicit skip for direct live-test invocation
     LIVE_TESTS_MODE=skip make test-live
 
 ENVIRONMENT:
@@ -82,6 +88,19 @@ trim_whitespace() {
     value="${value#"${value%%[![:space:]]*}"}"
     value="${value%"${value##*[![:space:]]}"}"
     printf '%s' "$value"
+}
+
+is_truthy() {
+    local value
+    value="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+    case "$value" in
+        1|true|yes|on)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 strip_surrounding_quotes() {
@@ -170,8 +189,11 @@ check_server_reachable() {
     
     # Use curl with short timeout to check reachability
     if command -v curl &>/dev/null; then
-        if curl --connect-timeout 3 --max-time 5 -s -o /dev/null \
-            ${SPLUNK_SKIP_VERIFY:+-k} "$base_url/services/server/info" 2>/dev/null; then
+        local curl_args=(--connect-timeout 3 --max-time 5 -s -o /dev/null)
+        if is_truthy "${SPLUNK_SKIP_VERIFY:-}"; then
+            curl_args+=(-k)
+        fi
+        if curl "${curl_args[@]}" "$base_url/services/server/info" 2>/dev/null; then
             return 0
         fi
     elif command -v nc &>/dev/null; then
