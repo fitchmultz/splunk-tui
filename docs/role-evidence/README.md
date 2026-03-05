@@ -9,3 +9,4 @@ This folder contains public-release evidence artifacts for reviewer confidence.
 - [Operational Readiness Checklist](operational-readiness-checklist.md)
 - [Skeptical Reviewer Simulation](skeptical-reviewer-simulation.md)
 - [Verification Receipts](verification-receipts.md)
+- [Qualitative Dogfood Report (2026-03-05)](qualitative-dogfood-2026-03-05.md)

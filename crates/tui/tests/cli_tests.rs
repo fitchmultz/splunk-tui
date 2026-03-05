@@ -37,6 +37,43 @@ fn test_help_exits_successfully() {
 
 #[test]
 #[serial]
+fn test_help_hides_env_var_values() {
+    let output = Command::new(splunk_tui_bin())
+        .arg("--help")
+        .env("DOTENV_DISABLED", "1")
+        .env("SPLUNK_CONFIG_PASSWORD", "super-secret-config-password")
+        .env(
+            "SPLUNK_OTLP_ENDPOINT",
+            "https://secret-observability.internal",
+        )
+        .output()
+        .expect("Failed to run splunk-tui --help");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "--help should exit successfully with env vars set"
+    );
+    assert!(
+        stdout.contains("SPLUNK_CONFIG_PASSWORD"),
+        "Help should still mention SPLUNK_CONFIG_PASSWORD"
+    );
+    assert!(
+        !stdout.contains("super-secret-config-password"),
+        "Help must not leak SPLUNK_CONFIG_PASSWORD value"
+    );
+    assert!(
+        !stdout.contains("secret-observability.internal"),
+        "Help must not leak SPLUNK_OTLP_ENDPOINT value"
+    );
+    assert!(
+        !stdout.contains("SPLUNK_CONFIG_PASSWORD="),
+        "Help must not render env assignment values"
+    );
+}
+
+#[test]
+#[serial]
 fn test_help_contains_expected_options() {
     let output = Command::new(splunk_tui_bin())
         .arg("--help")

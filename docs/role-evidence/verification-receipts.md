@@ -4,7 +4,6 @@
 
 - Date: **2026-03-05**
 - Branch: `public-ready-final`
-- Head commit: `4fecf7d`
 
 ## Local Quality Gate Receipts
 
@@ -28,10 +27,9 @@ make ci-fast
 Result:
 
 - ✅ Pass
-- Measured warm-cache wall time: **24.48s** (`/usr/bin/time -p make ci-fast`)
-- Re-run after final docs alignment: ✅ Pass
+- Warm-cache wall time observed previously: **~25s**
 
-### Full gate
+### Full gate (default)
 
 ```bash
 make ci
@@ -40,27 +38,41 @@ make ci
 Result:
 
 - ✅ Pass
-- Includes full workspace tests, docs drift checks, and CI-profile build
-- Live tests defaulted to `skip` mode per CI contract
+- Includes full workspace tests, docs drift checks, and CI-profile build.
 
-## Fresh-Clone Skeptical Run
-
-Repository cloned into a temporary directory and validated with:
+### Full gate (strict live)
 
 ```bash
-make ci-fast
+CI_LIVE_TESTS_MODE=required make ci
 ```
 
 Result:
 
-- ✅ Pass in clean clone context
+- ✅ Pass
+- Client live tests: **21 passed**
+- CLI live tests: **15 passed**
+
+## Qualitative Dogfood Receipt
+
+Reference:
+
+- `docs/role-evidence/qualitative-dogfood-2026-03-05.md`
+
+Key outcomes:
+
+- Help-output env value leakage fixed + covered by regression tests
+- Plaintext config flow decryption/profile-load friction fixed + regression test
+- Bare `index=...` search UX fixed via normalization + tests
+- TUI remained stable under resize stress (no panic/error observed)
 
 ## Git Hygiene
+
+Verification command:
 
 ```bash
 git status --porcelain
 ```
 
-Result:
+Expected result before release tag/PR:
 
-- ✅ No changes (clean working tree after verification)
+- ✅ No unexpected changes

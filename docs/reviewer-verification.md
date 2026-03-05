@@ -47,7 +47,38 @@ Requires a reachable Splunk instance and configured credentials.
 CI_LIVE_TESTS_MODE=required make ci
 ```
 
-## 6) Additional Confidence Checks
+## 6) Qualitative Confidence Checks (High Signal)
+
+### A) Help-output secret safety
+
+```bash
+cargo test -p splunk-cli --test config_loading_tests test_help_hides_env_var_values
+cargo test -p splunk-tui --test cli_tests test_help_hides_env_var_values
+```
+
+### B) Search UX normalization
+
+```bash
+cargo test -p splunk-cli --test search_tests
+```
+
+### C) TUI resize stability
+
+```bash
+cargo test -p splunk-tui --test resize_tests
+```
+
+### D) Live smoke for core journeys (if Splunk available)
+
+```bash
+splunk-cli doctor
+splunk-cli health --format json
+splunk-cli search "index=_internal | head 5" --wait
+splunk-cli apps list --count 5
+splunk-cli jobs --list --count 5
+```
+
+## 7) Additional Confidence Checks
 
 ```bash
 # architecture invariants
@@ -63,7 +94,7 @@ make test-chaos
 make lint-secrets
 ```
 
-## 7) Repository Hygiene Checks
+## 8) Repository Hygiene Checks
 
 ```bash
 # no unexpected tracked artifacts
@@ -75,7 +106,7 @@ git status --porcelain
 
 Both commands should produce no output in a healthy state.
 
-## 8) Build + Installable Binaries (Optional)
+## 9) Build + Installable Binaries (Optional)
 
 ```bash
 make build
@@ -85,7 +116,7 @@ splunk-cli --version
 splunk-tui --version
 ```
 
-## 9) Documentation Drift and Links
+## 10) Documentation Drift and Links
 
 ```bash
 make lint-docs

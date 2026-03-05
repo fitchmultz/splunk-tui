@@ -1,0 +1,44 @@
+# Qualitative Dogfood Report (2026-03-05)
+
+## Scope
+
+Focused first-user experience validation using a live Splunk environment.
+
+## Scenarios Executed
+
+1. Fresh profile setup with secure input (`config set ... --password-stdin`)
+2. Core CLI journeys (`doctor`, `health`, `search`, `apps list`, `jobs list`)
+3. TUI launch + navigation + resize stress in `tmux`
+4. Strict full gate with live mode (`CI_LIVE_TESTS_MODE=required make ci`)
+
+## Initial Friction Found
+
+1. **Help output leaked environment variable values**
+   - Impact: security and trust issue during onboarding/help usage.
+2. **`config set --plaintext` could produce unreadable follow-up profile loads**
+   - Impact: first-run flow breakage in environments without stable keyring-backed master key retrieval.
+3. **Search command accepted examples like `index=...` but failed at runtime**
+   - Impact: users hit `Unknown search command` despite seemingly valid command syntax.
+
+## Remediation Applied
+
+1. Added `hide_env_values = true` to env-backed CLI/TUI args (including HEC token/url args).
+2. Added regression tests to prevent help-output env-value leakage.
+3. Updated `config set` / `config edit` plaintext path to disable config-file encryption before save.
+4. Added regression test ensuring plaintext profile setup remains readable across invocations.
+5. Added search query normalization to auto-prefix `search` when omitted, plus unit tests.
+6. Updated TUI help snapshot after env-redaction formatting change.
+
+## Post-Fix Evidence
+
+- Hermetic dogfood rerun: all targeted CLI journeys passed.
+- No decryption-error spam in dogfood logs after plaintext-flow fix.
+- Both legacy and explicit `search execute` forms succeeded with bare `index=...` queries.
+- TUI session remained stable under repeated resize transitions (no panics/errors observed in logs).
+- Full strict live CI passed end-to-end.
+
+## Confidence Outcome
+
+- API/runtime correctness (covered flows): **High**
+- Resize stability: **High**
+- First-run friction: improved from **Medium** to **Medium-High** based on concrete fixes and rerun evidence.

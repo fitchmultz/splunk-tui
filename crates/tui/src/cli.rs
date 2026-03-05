@@ -40,11 +40,11 @@ pub struct Cli {
     pub config_path: Option<PathBuf>,
 
     /// Password for configuration file encryption
-    #[arg(long, env = "SPLUNK_CONFIG_PASSWORD")]
+    #[arg(long, env = "SPLUNK_CONFIG_PASSWORD", hide_env_values = true)]
     pub config_password: Option<String>,
 
     /// Environment variable containing the configuration encryption key (hex)
-    #[arg(long, env = "SPLUNK_CONFIG_KEY_VAR")]
+    #[arg(long, env = "SPLUNK_CONFIG_KEY_VAR", hide_env_values = true)]
     pub config_key_var: Option<String>,
 
     /// Directory for log files
@@ -66,18 +66,18 @@ pub struct Cli {
     /// Enable Prometheus metrics endpoint and bind address (e.g., "localhost:9090")
     ///
     /// When enabled, exposes /metrics endpoint for Prometheus scraping.
-    #[arg(long, env = "SPLUNK_METRICS_BIND")]
+    #[arg(long, env = "SPLUNK_METRICS_BIND", hide_env_values = true)]
     pub metrics_bind: Option<String>,
 
     /// Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:4317")
     ///
     /// When enabled, traces are exported to the specified OTLP endpoint.
     /// Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
-    #[arg(long, env = "SPLUNK_OTLP_ENDPOINT")]
+    #[arg(long, env = "SPLUNK_OTLP_ENDPOINT", hide_env_values = true)]
     pub otlp_endpoint: Option<String>,
 
     /// Service name for OpenTelemetry traces
-    #[arg(long, env = "SPLUNK_OTEL_SERVICE_NAME")]
+    #[arg(long, env = "SPLUNK_OTEL_SERVICE_NAME", hide_env_values = true)]
     pub otel_service_name: Option<String>,
 }
 

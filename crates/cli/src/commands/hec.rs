@@ -40,11 +40,11 @@ pub enum HecCommand {
         event: String,
 
         /// HEC URL (e.g., https://localhost:8088).
-        #[arg(long, env = "SPLUNK_HEC_URL")]
+        #[arg(long, env = "SPLUNK_HEC_URL", hide_env_values = true)]
         hec_url: String,
 
         /// HEC token for authentication.
-        #[arg(long, env = "SPLUNK_HEC_TOKEN")]
+        #[arg(long, env = "SPLUNK_HEC_TOKEN", hide_env_values = true)]
         hec_token: String,
 
         /// Destination index (optional).
@@ -74,11 +74,11 @@ pub enum HecCommand {
         events_file: PathBuf,
 
         /// HEC URL (e.g., https://localhost:8088).
-        #[arg(long, env = "SPLUNK_HEC_URL")]
+        #[arg(long, env = "SPLUNK_HEC_URL", hide_env_values = true)]
         hec_url: String,
 
         /// HEC token for authentication.
-        #[arg(long, env = "SPLUNK_HEC_TOKEN")]
+        #[arg(long, env = "SPLUNK_HEC_TOKEN", hide_env_values = true)]
         hec_token: String,
 
         /// Use newline-delimited JSON format instead of JSON array.
@@ -89,22 +89,22 @@ pub enum HecCommand {
     /// Check HEC health endpoint.
     Health {
         /// HEC URL (e.g., https://localhost:8088).
-        #[arg(long, env = "SPLUNK_HEC_URL")]
+        #[arg(long, env = "SPLUNK_HEC_URL", hide_env_values = true)]
         hec_url: String,
 
         /// HEC token for authentication.
-        #[arg(long, env = "SPLUNK_HEC_TOKEN")]
+        #[arg(long, env = "SPLUNK_HEC_TOKEN", hide_env_values = true)]
         hec_token: String,
     },
 
     /// Check acknowledgment status for previously sent events.
     CheckAck {
         /// HEC URL (e.g., https://localhost:8088).
-        #[arg(long, env = "SPLUNK_HEC_URL")]
+        #[arg(long, env = "SPLUNK_HEC_URL", hide_env_values = true)]
         hec_url: String,
 
         /// HEC token for authentication.
-        #[arg(long, env = "SPLUNK_HEC_TOKEN")]
+        #[arg(long, env = "SPLUNK_HEC_TOKEN", hide_env_values = true)]
         hec_token: String,
 
         /// Acknowledgment IDs to check (comma-separated).

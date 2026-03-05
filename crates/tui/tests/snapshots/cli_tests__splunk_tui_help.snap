@@ -1,5 +1,6 @@
 ---
 source: crates/tui/tests/cli_tests.rs
+assertion_line: 284
 expression: normalized
 ---
 Command-line arguments for splunk-tui.
@@ -18,12 +19,12 @@ Options:
       --config-password <CONFIG_PASSWORD>
           Password for configuration file encryption
           
-          [env: SPLUNK_CONFIG_PASSWORD=]
+          [env: SPLUNK_CONFIG_PASSWORD]
 
       --config-key-var <CONFIG_KEY_VAR>
           Environment variable containing the configuration encryption key (hex)
           
-          [env: SPLUNK_CONFIG_KEY_VAR=]
+          [env: SPLUNK_CONFIG_KEY_VAR]
 
       --log-dir <LOG_DIR>
           Directory for log files
@@ -44,19 +45,19 @@ Options:
           
           When enabled, exposes /metrics endpoint for Prometheus scraping.
           
-          [env: SPLUNK_METRICS_BIND=]
+          [env: SPLUNK_METRICS_BIND]
 
       --otlp-endpoint <OTLP_ENDPOINT>
           Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:X")
           
           When enabled, traces are exported to the specified OTLP endpoint. Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
           
-          [env: SPLUNK_OTLP_ENDPOINT=]
+          [env: SPLUNK_OTLP_ENDPOINT]
 
       --otel-service-name <OTEL_SERVICE_NAME>
           Service name for OpenTelemetry traces
           
-          [env: SPLUNK_OTEL_SERVICE_NAME=]
+          [env: SPLUNK_OTEL_SERVICE_NAME]
 
   -h, --help
           Print help (see a summary with '-h')

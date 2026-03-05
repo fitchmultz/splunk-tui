@@ -3,7 +3,7 @@
 ## Run Metadata
 
 - Date: **2026-03-05**
-- Environment: local developer machine, offline-safe defaults
+- Environment: local developer machine + live Splunk test system
 
 ## Validation Sequence
 
@@ -11,22 +11,29 @@
 make lint-secrets
 make ci-fast
 make ci
+CI_LIVE_TESTS_MODE=required make ci
 ```
 
 ## Results
 
 - All commands exited successfully.
-- No known broken primary flows surfaced in automated coverage.
-- CI output remained stage-oriented and actionable.
+- Automated suites covered API behavior, CLI workflows, and TUI rendering/resize scenarios.
+- Live mode validated real Splunk integration paths.
 
-## Friction Found
+## Friction Found in Qualitative Dogfood
 
-1. Docs referenced old default credentials (`admin/changeme`) while runtime defaults were placeholders.
-2. `make install` log text implied lockfile enforcement but command lacked `--locked`.
-3. Fixture generation script was placeholder-only and not production quality.
+1. Help output showed env-backed value examples in a way that reduced trust around secret handling.
+2. `config set --plaintext` path could lead to follow-up profile-load/decryption friction.
+3. Bare SPL queries (`index=...`) failed unless users manually prefixed `search`.
 
 ## Remediation Applied
 
-- Updated auth/security docs to placeholder-first guidance.
-- Updated `make install` to `cargo fetch --locked`.
-- Removed placeholder `scripts/generate-fixtures.sh` and cleaned references.
+- Enabled env-value redaction in help output for CLI/TUI env-backed args.
+- Added regression tests for help-output redaction.
+- Made plaintext config updates explicitly disable file encryption before save.
+- Added regression test for plaintext profile readability.
+- Added search query normalization + tests for bare query behavior.
+
+## Residual Risk
+
+- UX confidence is strongest on tested/dogfooded core flows; long-tail command/screen paths still benefit from incremental live dogfooding.

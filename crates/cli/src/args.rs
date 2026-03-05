@@ -64,35 +64,58 @@ fn parse_max_retries(s: &str) -> Result<usize, String> {
 )]
 pub struct Cli {
     /// Base URL of the Splunk server (e.g., https://localhost:8089)
-    #[arg(short, long, global = true, env = "SPLUNK_BASE_URL")]
+    #[arg(
+        short,
+        long,
+        global = true,
+        env = "SPLUNK_BASE_URL",
+        hide_env_values = true
+    )]
     pub base_url: Option<String>,
 
     /// Username for session token authentication
-    #[arg(short, long, global = true, env = "SPLUNK_USERNAME")]
+    #[arg(
+        short,
+        long,
+        global = true,
+        env = "SPLUNK_USERNAME",
+        hide_env_values = true
+    )]
     pub username: Option<String>,
 
     /// Password for session token authentication
-    #[arg(short, long, global = true, env = "SPLUNK_PASSWORD")]
+    #[arg(
+        short,
+        long,
+        global = true,
+        env = "SPLUNK_PASSWORD",
+        hide_env_values = true
+    )]
     pub password: Option<String>,
 
     /// API token for authentication (preferred over username/password)
-    #[arg(long, global = true, env = "SPLUNK_API_TOKEN")]
+    #[arg(long, global = true, env = "SPLUNK_API_TOKEN", hide_env_values = true)]
     pub api_token: Option<String>,
 
     /// Connection timeout in seconds (1-3600)
-    #[arg(long, global = true, env = "SPLUNK_TIMEOUT", value_parser = parse_timeout_secs)]
+    #[arg(long, global = true, env = "SPLUNK_TIMEOUT", hide_env_values = true, value_parser = parse_timeout_secs)]
     pub timeout: Option<u64>,
 
     /// Maximum number of retries for failed requests (0-10)
-    #[arg(long, global = true, env = "SPLUNK_MAX_RETRIES", value_parser = parse_max_retries)]
+    #[arg(long, global = true, env = "SPLUNK_MAX_RETRIES", hide_env_values = true, value_parser = parse_max_retries)]
     pub max_retries: Option<usize>,
 
     /// Skip TLS certificate verification (for self-signed certificates)
-    #[arg(long, global = true, env = "SPLUNK_SKIP_VERIFY")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_SKIP_VERIFY",
+        hide_env_values = true
+    )]
     pub skip_verify: bool,
 
     /// Profile name to load from config file
-    #[arg(long, global = true, env = "SPLUNK_PROFILE")]
+    #[arg(long, global = true, env = "SPLUNK_PROFILE", hide_env_values = true)]
     pub profile: Option<String>,
 
     /// Output format (json, table, csv, xml, ndjson, yaml, markdown)
@@ -106,15 +129,31 @@ pub struct Cli {
     /// Path to a custom configuration file (overrides default location).
     ///
     /// Can also be set via SPLUNK_CONFIG_PATH environment variable.
-    #[arg(long, global = true, env = "SPLUNK_CONFIG_PATH", value_name = "FILE")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CONFIG_PATH",
+        hide_env_values = true,
+        value_name = "FILE"
+    )]
     pub config_path: Option<PathBuf>,
 
     /// Password for configuration file encryption
-    #[arg(long, global = true, env = "SPLUNK_CONFIG_PASSWORD")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CONFIG_PASSWORD",
+        hide_env_values = true
+    )]
     pub config_password: Option<String>,
 
     /// Environment variable containing the configuration encryption key (hex)
-    #[arg(long, global = true, env = "SPLUNK_CONFIG_KEY_VAR")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CONFIG_KEY_VAR",
+        hide_env_values = true
+    )]
     pub config_key_var: Option<String>,
 
     /// Suppress all progress output (spinners / progress bars).
@@ -134,42 +173,82 @@ pub struct Cli {
     ///
     /// When enabled (default), the client will fail fast when an endpoint
     /// exceeds failure thresholds to prevent cascading failures.
-    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_BREAKER_DISABLED")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CIRCUIT_BREAKER_DISABLED",
+        hide_env_values = true
+    )]
     pub no_circuit_breaker: bool,
 
     /// Number of failures within window to open circuit.
-    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_FAILURE_THRESHOLD")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CIRCUIT_FAILURE_THRESHOLD",
+        hide_env_values = true
+    )]
     pub circuit_failure_threshold: Option<u32>,
 
     /// Time window for failure counting in seconds.
-    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_FAILURE_WINDOW")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CIRCUIT_FAILURE_WINDOW",
+        hide_env_values = true
+    )]
     pub circuit_failure_window: Option<u64>,
 
     /// Time to wait before attempting half-open in seconds.
-    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_RESET_TIMEOUT")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CIRCUIT_RESET_TIMEOUT",
+        hide_env_values = true
+    )]
     pub circuit_reset_timeout: Option<u64>,
 
     /// Number of requests allowed in half-open state.
-    #[arg(long, global = true, env = "SPLUNK_CIRCUIT_HALF_OPEN_REQUESTS")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_CIRCUIT_HALF_OPEN_REQUESTS",
+        hide_env_values = true
+    )]
     pub circuit_half_open_requests: Option<u32>,
 
     /// Enable Prometheus metrics endpoint and bind address (e.g., "localhost:9090")
     ///
     /// When enabled, exposes /metrics endpoint for Prometheus scraping.
-    #[arg(long, global = true, env = "SPLUNK_METRICS_BIND")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_METRICS_BIND",
+        hide_env_values = true
+    )]
     pub metrics_bind: Option<String>,
 
     /// Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:4317")
     ///
     /// When enabled, traces are exported to the specified OTLP endpoint.
     /// Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
-    #[arg(long, global = true, env = "SPLUNK_OTLP_ENDPOINT")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_OTLP_ENDPOINT",
+        hide_env_values = true
+    )]
     pub otlp_endpoint: Option<String>,
 
     /// Service name for OpenTelemetry traces
     ///
     /// Defaults to "splunk-cli". Can be customized when running multiple instances.
-    #[arg(long, global = true, env = "SPLUNK_OTEL_SERVICE_NAME")]
+    #[arg(
+        long,
+        global = true,
+        env = "SPLUNK_OTEL_SERVICE_NAME",
+        hide_env_values = true
+    )]
     pub otel_service_name: Option<String>,
 
     /// Execute command as part of a transaction.

@@ -2,20 +2,23 @@
 
 ## Scope
 
-This report tracks public-release hardening work aimed at reducing reviewer friction for production-focused engineering review.
+Public-release hardening with emphasis on reviewer confidence in correctness, UX/DX quality, deterministic CI, and secret-safety.
 
 ## High-Risk Areas Addressed
 
-1. **CI determinism and safety**
-   - `make ci-fast` and `make ci` are non-mutating and currently passing.
-2. **Secret exposure prevention**
-   - Secret-commit guard is enforced (`make lint-secrets`) and passing.
-3. **Half-implemented fixture tooling removed**
-   - Deleted placeholder-only `scripts/generate-fixtures.sh`.
-4. **Docs/security drift around credentials resolved**
-   - Security and usage docs now match runtime behavior: placeholder credentials by default, explicit real-secret setup required.
-5. **Dependency lock enforcement in setup path**
-   - `make install` now enforces lockfile integrity via `cargo fetch --locked`.
+1. **Secret exposure in CLI/TUI help output**
+   - Env-backed flags now hide env values in help text (`hide_env_values = true`).
+   - Regression tests added for both `splunk-cli` and `splunk-tui` help output.
+2. **Plaintext config flow reliability**
+   - `config set --plaintext` and `config edit --plaintext` now disable config-file encryption before save to prevent follow-up decryption/profile-load failures.
+   - Regression test added for cross-invocation readability.
+3. **Search UX mismatch on bare SPL queries**
+   - Bare queries like `index=_internal | head 5` are normalized to `search ...` automatically.
+   - Unit coverage added for normalization behavior.
+4. **CI determinism and safety**
+   - `make ci-fast`, `make ci`, and strict live mode all passing.
+5. **Secret guardrails**
+   - `make lint-secrets` enforced and passing.
 
 ## Current State Snapshot (2026-03-05)
 
@@ -24,23 +27,28 @@ Validated locally on **March 5, 2026**:
 - `make lint-secrets` ✅
 - `make ci-fast` ✅
 - `make ci` ✅
-- Fresh-clone validation: `make ci-fast` ✅
+- `CI_LIVE_TESTS_MODE=required make ci` ✅
+  - Client live tests: **21/21**
+  - CLI live tests: **15/15**
 
-Observed characteristics:
+Qualitative dogfood evidence is captured in:
+- `docs/role-evidence/qualitative-dogfood-2026-03-05.md`
 
-- PR-equivalent gate is deterministic and high-signal.
-- Full gate remains bounded with live tests skipped by default (`CI_LIVE_TESTS_MODE=skip`).
-- No known failing primary CLI/TUI flows in current automated coverage.
-- Public baseline history is already in place (`f0b76cb`, `chore(repo): initialize public baseline`).
+## Confidence by Concern
 
-## Remaining Known Risk
+- API response/runtime correctness (covered flows): **High**
+- TUI resize robustness: **High** (automated resize suite + tmux stress run)
+- First-user friction / intuitiveness: **Medium-High** (targeted fixes validated, but subjective UX always benefits from additional external user trials)
 
-1. **Live integration coverage is environment-dependent**
-   - Strict live mode (`CI_LIVE_TESTS_MODE=required make ci`) requires a reachable Splunk environment and valid credentials.
-   - This is intentionally excluded from default PR-required checks to preserve deterministic, resource-bounded gates.
+## Remaining Known Risks
+
+1. **Environment-dependent live confidence**
+   - Strict live coverage requires reachable Splunk and valid credentials; by design this is optional for default PR gates.
+2. **Unvalidated paths outside covered flows**
+   - Confidence is strongest for tested/dogfooded core journeys; long-tail workflows should continue to be expanded with live and UX checks.
 
 ## Public-Release Recommendation
 
-Repository is ready for public release from an engineering-quality and guardrail perspective.
+Ready to go public from a quality and operational-discipline perspective, with evidence-backed confidence on core workflows and CI stability.
 
-Before flipping visibility, execute the final operational checklist in `docs/public-release-runbook.md` (branch protection, visibility switch, optional final fresh-clone verification).
+Before visibility flip, execute `docs/public-release-runbook.md`.

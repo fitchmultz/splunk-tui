@@ -534,6 +534,10 @@ fn run_set(
     profile_config.password = password.or(profile.password);
     profile_config.api_token = api_token.or(profile.api_token);
 
+    if plaintext {
+        manager.disable_encryption()?;
+    }
+
     manager.save_profile(profile_name, profile_config)?;
     println!("Profile '{}' saved successfully.", profile_name);
 
@@ -737,6 +741,10 @@ fn run_edit(manager: &mut ConfigManager, profile_name: &str, plaintext: bool) ->
 
     profile_config.password = password.or(existing_profile.password.clone());
     profile_config.api_token = api_token.or(existing_profile.api_token.clone());
+
+    if plaintext {
+        manager.disable_encryption()?;
+    }
 
     manager.save_profile(profile_name, profile_config)?;
     println!("Profile '{}' updated successfully.", profile_name);

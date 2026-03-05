@@ -14,7 +14,7 @@
 //! - Output formatting details (see formatters module)
 //!
 //! Invariants:
-//! - Search queries are passed through without modification
+//! - Search queries are normalized for Splunk compatibility (prefixing `search` when omitted)
 //! - Time bounds default to configuration values or -24h/now
 //! - Max results default to configuration or 100
 //! - Progress callbacks are only used in non-quiet mode
@@ -27,6 +27,23 @@ use std::path::PathBuf;
 use tracing::info;
 
 use crate::formatters::{OutputFormat, get_formatter, output_result};
+
+fn normalize_search_query(query: &str) -> String {
+    let trimmed = query.trim();
+    let lower = trimmed.to_ascii_lowercase();
+
+    if trimmed.is_empty()
+        || lower.starts_with("search ")
+        || trimmed.starts_with('|')
+        || lower.starts_with("tstats ")
+        || lower.starts_with("from ")
+        || lower.starts_with("metadata ")
+    {
+        trimmed.to_string()
+    } else {
+        format!("search {trimmed}")
+    }
+}
 
 /// Search subcommands.
 #[derive(Subcommand)]
@@ -99,6 +116,8 @@ pub async fn run(
     realtime_window: Option<u64>,
     no_cache: bool,
 ) -> Result<()> {
+    let query = normalize_search_query(&query);
+
     info!("Executing search: {}", query);
 
     // Apply search defaults when CLI flags are not provided
@@ -202,6 +221,8 @@ pub async fn run_validate(
         }
     };
 
+    let spl_query = normalize_search_query(&spl_query);
+
     info!("Validating SPL syntax");
 
     let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
@@ -221,4 +242,33 @@ pub async fn run_validate(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_search_query;
+
+    #[test]
+    fn normalize_prefixes_bare_index_query() {
+        assert_eq!(
+            normalize_search_query("index=_internal | head 5"),
+            "search index=_internal | head 5"
+        );
+    }
+
+    #[test]
+    fn normalize_keeps_explicit_search_query() {
+        assert_eq!(
+            normalize_search_query("search index=_internal | head 5"),
+            "search index=_internal | head 5"
+        );
+    }
+
+    #[test]
+    fn normalize_keeps_pipeline_query() {
+        assert_eq!(
+            normalize_search_query("| metadata type=sourcetypes"),
+            "| metadata type=sourcetypes"
+        );
+    }
 }

@@ -18,6 +18,7 @@ This file is an index, not a semantic source. Do not hardcode behavior, defaults
 - Architecture constraints: `crates/architecture-tests/tests/**`
 - User/developer docs: `README.md`, `docs/index.md`, `docs/architecture.md`, `docs/ci.md`, `docs/reviewer-verification.md`, `docs/release-readiness.md`, `docs/usage.md`, `docs/user-guide.md`
 - Secret scanning guardrails: `scripts/check-secrets.sh`, `make lint-secrets`
+- Help-output env redaction controls: `crates/cli/src/args.rs`, `crates/tui/src/cli.rs`
 
 ## Agent Rules For Drift Control
 1. Do not encode operational semantics in this file.

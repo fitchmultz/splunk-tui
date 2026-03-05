@@ -191,3 +191,51 @@ fn test_config_set_timeout_stores_correctly() {
         "max_retries field should be set to 5"
     );
 }
+
+/// Regression test: `--plaintext` profile setup must remain readable across invocations.
+#[test]
+fn test_config_set_plaintext_is_readable_without_master_key() {
+    let (_temp_dir, config_path) = setup_temp_config();
+
+    splunk_cmd()
+        .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env_remove("SPLUNK_CONFIG_NO_MIGRATE")
+        .env_remove("SPLUNK_BASE_URL")
+        .env_remove("SPLUNK_USERNAME")
+        .env_remove("SPLUNK_PASSWORD")
+        .env_remove("SPLUNK_API_TOKEN")
+        .args([
+            "config",
+            "set",
+            "test-profile",
+            "--base-url",
+            "https://splunk.example.com:8089",
+            "--username",
+            "admin",
+            "--password",
+            "testpass",
+            "--plaintext",
+            "--no-prompt",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("saved successfully"));
+
+    let content = fs::read_to_string(&config_path).unwrap();
+    assert!(
+        !content.contains("\"ciphertext\""),
+        "plaintext mode should not write encrypted config storage"
+    );
+
+    splunk_cmd()
+        .env("SPLUNK_CONFIG_PATH", &config_path)
+        .env_remove("SPLUNK_CONFIG_NO_MIGRATE")
+        .env_remove("SPLUNK_BASE_URL")
+        .env_remove("SPLUNK_USERNAME")
+        .env_remove("SPLUNK_PASSWORD")
+        .env_remove("SPLUNK_API_TOKEN")
+        .args(["config", "show", "test-profile"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("test-profile"));
+}

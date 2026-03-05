@@ -22,6 +22,27 @@ use predicates::prelude::*;
 use std::fs;
 use tempfile::TempDir;
 
+/// Test that help output does not leak environment variable values.
+#[test]
+fn test_help_hides_env_var_values() {
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("splunk-cli");
+    cmd.env("SPLUNK_PASSWORD", "super-secret-password")
+        .env("SPLUNK_API_TOKEN", "super-secret-token")
+        .env("SPLUNK_BASE_URL", "https://secret-host.internal:8089")
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("SPLUNK_PASSWORD"))
+        .stdout(predicate::str::contains("SPLUNK_API_TOKEN"))
+        .stdout(predicate::str::contains("SPLUNK_BASE_URL"))
+        .stdout(predicate::str::contains("super-secret-password").not())
+        .stdout(predicate::str::contains("super-secret-token").not())
+        .stdout(predicate::str::contains("secret-host.internal").not())
+        .stdout(predicate::str::contains("SPLUNK_PASSWORD=").not())
+        .stdout(predicate::str::contains("SPLUNK_API_TOKEN=").not())
+        .stdout(predicate::str::contains("SPLUNK_BASE_URL=").not());
+}
+
 /// Returns a predicate that matches common connection error messages.
 ///
 /// This predicate matches:
