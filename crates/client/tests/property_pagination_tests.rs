@@ -89,9 +89,10 @@ proptest! {
         let expected = offset + count < total;
         prop_assert_eq!(result, expected);
 
-        // Additional invariant: if count is 0 and offset < total, there should be more
+        // Additional invariant: when the current page is empty but items remain,
+        // fetching a single item only leaves a "next page" when more than one item remains.
         if count == 0 && offset < total {
-            prop_assert!(has_next(offset, 1, total));
+            prop_assert_eq!(has_next(offset, 1, total), offset + 1 < total);
         }
     }
 
