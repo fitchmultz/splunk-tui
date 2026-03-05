@@ -1,0 +1,12 @@
+{
+  "entry": [
+    {
+      "name": "enterprise",
+      "content": {
+        "quota": 53687091200,
+        "type": "enterprise",
+        "label": "Enterprise"
+      }
+    }
+  ]
+}

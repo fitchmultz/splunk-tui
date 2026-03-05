@@ -1,0 +1,49 @@
+//! Data model-related side effect handlers.
+//!
+//! Responsibilities:
+//! - Handle async API calls for data model operations.
+//! - Fetch data model lists from the Splunk server.
+//!
+//! Does NOT handle:
+//! - Direct state modification (sends actions for that).
+//! - UI rendering.
+
+use crate::action::Action;
+use std::sync::Arc;
+use tokio::sync::mpsc::Sender;
+
+use super::{SharedClient, TaskTracker};
+
+/// Handle loading data models with pagination support.
+///
+/// Emits `DataModelsLoaded` when offset == 0 (initial load/refresh).
+/// Emits `MoreDataModelsLoaded` when offset > 0 (pagination).
+pub async fn handle_load_datamodels(
+    client: SharedClient,
+    tx: Sender<Action>,
+    task_tracker: TaskTracker,
+    count: usize,
+    offset: usize,
+) {
+    let _ = tx.send(Action::Loading(true)).await;
+    task_tracker.spawn(async move {
+        match client.list_datamodels(Some(count), Some(offset)).await {
+            Ok(datamodels) => {
+                if offset == 0 {
+                    let _ = tx.send(Action::DataModelsLoaded(Ok(datamodels))).await;
+                } else {
+                    let _ = tx.send(Action::MoreDataModelsLoaded(Ok(datamodels))).await;
+                }
+            }
+            Err(e) => {
+                if offset == 0 {
+                    let _ = tx.send(Action::DataModelsLoaded(Err(Arc::new(e)))).await;
+                } else {
+                    let _ = tx
+                        .send(Action::MoreDataModelsLoaded(Err(Arc::new(e))))
+                        .await;
+                }
+            }
+        }
+    });
+}

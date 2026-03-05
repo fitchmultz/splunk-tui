@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+target/
+**/*.rs.bk
+# Cargo.lock is needed for reproducible builds with --locked flag
+# Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Documentation (not needed for build)
+docs/
+*.md
+!README.md
+
+# Environment files (security)
+.env
+.env.*
+!.env.example
+
+# Testing
+**/*_test.rs
+**/*_tests.rs
+tests/
+fixtures/
+
+# CI/CD
+.github/
+scripts/
+
+# Other
+*.log
+.DS_Store
+node_modules/
+*.png
+*.jpg
+*.gif
+
+# Ralph task management
+.ralph/

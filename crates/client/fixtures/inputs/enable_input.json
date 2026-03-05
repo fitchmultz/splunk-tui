@@ -1,0 +1,15 @@
+{
+  "entry": [
+    {
+      "name": "9997",
+      "content": {
+        "name": "9997",
+        "input_type": "tcp/raw",
+        "disabled": false,
+        "host": "$decideOnStartup",
+        "sourcetype": "tcp",
+        "port": "9997"
+      }
+    }
+  ]
+}

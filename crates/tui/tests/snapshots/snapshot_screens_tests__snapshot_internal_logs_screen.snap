@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_screens_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Internal Logs | [?] Unknown                                      │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Internal Logs (_internal)─────────────────────────────────────────────────────┐
+│   Time       Level      Component    Message                                 │
+│>> 2024-01-15 INFO       Metrics      some metrics log message                │
+│   2024-01-15 ERROR      DateParser   failed to parse date                    │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                 ┌──────────────────────────┐ │
+│                                                 │ Onboarding [0/5] 0%      │ │
+│                                                 │ ○ Create Profile         │ │
+│                                                 │ ○ Test Connection        │ │
+│                                                 │ ○ Run Search             │ │
+│                                                 └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Tab:Next | Shift+Tab:Prev | r:Refresh a:Auto ...| ?:Help | q:Quit            │
+└──────────────────────────────────────────────────────────────────────────────┘

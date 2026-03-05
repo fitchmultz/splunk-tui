@@ -1,0 +1,26 @@
+{
+  "entry": [
+    {
+      "name": "my_lookup",
+      "content": {
+        "name": "my_lookup",
+        "filename": "my_lookup.csv",
+        "owner": "admin",
+        "app": "search",
+        "sharing": "app",
+        "size": "1024"
+      }
+    },
+    {
+      "name": "countries",
+      "content": {
+        "name": "countries",
+        "filename": "countries.csv",
+        "owner": "admin",
+        "app": "search",
+        "sharing": "global",
+        "size": "2048"
+      }
+    }
+  ]
+}

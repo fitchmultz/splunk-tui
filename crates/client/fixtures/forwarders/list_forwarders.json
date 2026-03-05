@@ -1,0 +1,46 @@
+{
+  "entry": [
+    {
+      "name": "forwarder1.example.com",
+      "content": {
+        "name": "forwarder1.example.com",
+        "hostname": "forwarder1.example.com",
+        "clientName": "uf_forwarder1",
+        "ipAddress": "192.168.1.101",
+        "utsname": "Linux forwarder1 5.4.0-generic x86_64",
+        "version": "9.1.2",
+        "lastPhone": "2026-01-30T12:00:00+00:00",
+        "repositoryLocation": "master-apps",
+        "serverClasses": ["linux_forwarders", "production"]
+      }
+    },
+    {
+      "name": "forwarder2.example.com",
+      "content": {
+        "name": "forwarder2.example.com",
+        "hostname": "forwarder2.example.com",
+        "clientName": "uf_forwarder2",
+        "ipAddress": "192.168.1.102",
+        "utsname": "Linux forwarder2 5.4.0-generic x86_64",
+        "version": "9.1.2",
+        "lastPhone": "2026-01-30T11:55:00+00:00",
+        "repositoryLocation": "master-apps",
+        "serverClasses": ["linux_forwarders", "production"]
+      }
+    },
+    {
+      "name": "windows-forwarder.corp.local",
+      "content": {
+        "name": "windows-forwarder.corp.local",
+        "hostname": "windows-forwarder.corp.local",
+        "clientName": "windows_hf1",
+        "ipAddress": "10.0.1.50",
+        "utsname": "Windows Server 2019 10.0.17763",
+        "version": "9.1.1",
+        "lastPhone": "2026-01-30T11:58:30+00:00",
+        "repositoryLocation": "master-apps",
+        "serverClasses": ["windows_forwarders"]
+      }
+    }
+  ]
+}

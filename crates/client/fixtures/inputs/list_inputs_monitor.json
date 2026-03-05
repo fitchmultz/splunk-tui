@@ -1,0 +1,16 @@
+{
+  "entry": [
+    {
+      "name": "/var/log",
+      "content": {
+        "name": "/var/log",
+        "input_type": "monitor",
+        "disabled": false,
+        "host": "default",
+        "sourcetype": "syslog",
+        "path": "/var/log",
+        "recursive": true
+      }
+    }
+  ]
+}

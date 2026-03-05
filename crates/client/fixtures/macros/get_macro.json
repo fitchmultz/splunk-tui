@@ -1,0 +1,16 @@
+{
+  "entry": [
+    {
+      "name": "test_macro",
+      "content": {
+        "definition": "| makeresults | eval x=1",
+        "args": null,
+        "description": "A test macro",
+        "disabled": false,
+        "iseval": false,
+        "validation": null,
+        "errormsg": null
+      }
+    }
+  ]
+}

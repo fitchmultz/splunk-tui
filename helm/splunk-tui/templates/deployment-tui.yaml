@@ -1,0 +1,65 @@
+{{- if .Values.tui.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "splunk-tui.fullname" . }}-tui
+  labels:
+    {{- include "splunk-tui.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tui
+spec:
+  replicas: {{ .Values.tui.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "splunk-tui.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: tui
+  template:
+    metadata:
+      labels:
+        {{- include "splunk-tui.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tui
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      serviceAccountName: {{ include "splunk-tui.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-tui
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Use pause binary to keep container alive for kubectl exec access
+          # (distroless images have no shell or sleep command)
+          command: ["/usr/local/bin/pause"]
+          envFrom:
+            - secretRef:
+                name: {{ include "splunk-tui.tuiSecretName" . }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.tui.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.tui.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tui.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tui.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

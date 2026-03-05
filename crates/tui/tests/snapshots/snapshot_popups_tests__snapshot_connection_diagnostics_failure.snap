@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search | [?] Unknown                                             │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│           ┌Connection Diagnostics────────────────────────────────┐           │
+└───────────│✗ Reachability (5ms): Connection refused:             │───────────┘
+┌Status─────│localhost:8089                                        │───────────┐
+│Press Enter│○ Authentication                                      │           │
+└───────────│○ TLS Certificate                                     │───────────┘
+┌Results────│                                                      │───────────┐
+│           │Status: ✗ FAIL                                        │           │
+│           │                                                      │           │
+│           │Remediation:                                          │           │
+│           │• Verify the Splunk server is running                 │           │
+│           │• Check the base URL in your profile                  │           │
+│           │                                                      │           │
+│           │Press Enter to close                                  │           │
+│           └──────────────────────────────────────────────────────┘           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
+└──────────────────────────────────────────────────────────────────────────────┘

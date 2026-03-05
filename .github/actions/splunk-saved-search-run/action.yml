@@ -1,0 +1,148 @@
+name: 'Splunk Saved Search Run'
+description: 'Trigger saved searches and wait for completion'
+author: 'Splunk TUI Contributors'
+branding:
+  icon: 'play-circle'
+  color: 'blue'
+
+inputs:
+  name:
+    description: 'Name of the saved search to run'
+    required: true
+  earliest:
+    description: 'Override earliest time (optional)'
+    required: false
+  latest:
+    description: 'Override latest time (optional)'
+    required: false
+  count:
+    description: 'Maximum number of results'
+    required: false
+    default: '1000'
+  output-format:
+    description: 'Output format (json, csv, xml, yaml, ndjson, markdown)'
+    required: false
+    default: 'json'
+  output-file:
+    description: 'Output file path'
+    required: false
+    default: 'saved-search-results.json'
+  base-url:
+    description: 'Splunk base URL (or use SPLUNK_BASE_URL env var)'
+    required: false
+  api-token:
+    description: 'Splunk API token (or use SPLUNK_API_TOKEN env var)'
+    required: false
+  username:
+    description: 'Splunk username (or use SPLUNK_USERNAME env var)'
+    required: false
+  password:
+    description: 'Splunk password (or use SPLUNK_PASSWORD env var)'
+    required: false
+  skip-verify:
+    description: 'Skip TLS verification (true/false)'
+    required: false
+    default: 'false'
+  image-tag:
+    description: 'Container image tag to use (default: latest)'
+    required: false
+    default: 'latest'
+
+outputs:
+  result-file:
+    description: 'Path to the result file'
+    value: ${{ steps.run.outputs.result-file }}
+  result-count:
+    description: 'Number of results returned'
+    value: ${{ steps.run.outputs.result-count }}
+  search-name:
+    description: 'Name of the saved search that was executed'
+    value: ${{ inputs.name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Saved Search
+      id: run
+      shell: bash
+      env:
+        SPLUNK_BASE_URL: ${{ inputs.base-url || env.SPLUNK_BASE_URL }}
+        SPLUNK_API_TOKEN: ${{ inputs.api-token || env.SPLUNK_API_TOKEN }}
+        SPLUNK_USERNAME: ${{ inputs.username || env.SPLUNK_USERNAME }}
+        SPLUNK_PASSWORD: ${{ inputs.password || env.SPLUNK_PASSWORD }}
+        SPLUNK_SKIP_VERIFY: ${{ inputs.skip-verify }}
+      run: |
+        # Mask sensitive values
+        if [[ -n "$SPLUNK_API_TOKEN" ]]; then
+          echo "::add-mask::$SPLUNK_API_TOKEN"
+        fi
+        if [[ -n "$SPLUNK_PASSWORD" ]]; then
+          echo "::add-mask::$SPLUNK_PASSWORD"
+        fi
+
+        # Validate required environment
+        if [[ -z "$SPLUNK_BASE_URL" ]]; then
+          echo "::error::SPLUNK_BASE_URL must be provided via input or environment variable"
+          exit 1
+        fi
+
+        # Build image reference
+        IMAGE="${{ env.REGISTRY || 'ghcr.io' }}/${{ github.repository }}:${{ inputs.image-tag }}"
+
+        # Build optional time args
+        declare -a time_args=()
+        if [[ -n "${{ inputs.earliest }}" ]]; then
+          time_args+=("--earliest" "${{ inputs.earliest }}")
+        fi
+        if [[ -n "${{ inputs.latest }}" ]]; then
+          time_args+=("--latest" "${{ inputs.latest }}")
+        fi
+
+        echo "Running saved search: ${{ inputs.name }}"
+        echo "Output file: ${{ inputs.output-file }}"
+
+        # Run saved search using container
+        docker run --rm \
+          -e SPLUNK_BASE_URL \
+          -e SPLUNK_API_TOKEN \
+          -e SPLUNK_USERNAME \
+          -e SPLUNK_PASSWORD \
+          -e SPLUNK_SKIP_VERIFY \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          "$IMAGE" \
+          saved-searches run "${{ inputs.name }}" \
+          --wait \
+          --count ${{ inputs.count }} \
+          --output ${{ inputs.output-format }} \
+          --output-file "${{ inputs.output-file }}" \
+          "${time_args[@]}"
+
+        # Count results based on format
+        count=0
+        if [[ -f "${{ inputs.output-file }}" ]]; then
+          case "${{ inputs.output-format }}" in
+            json)
+              if jq -e 'type == "array"' "${{ inputs.output-file }}" >/dev/null 2>&1; then
+                count=$(jq 'length' "${{ inputs.output-file }}")
+              else
+                count=1
+              fi
+              ;;
+            csv)
+              count=$(( $(wc -l < "${{ inputs.output-file }}") - 1 ))
+              ;;
+            ndjson)
+              count=$(wc -l < "${{ inputs.output-file }}")
+              ;;
+            *)
+              count="unknown"
+              ;;
+          esac
+          echo "Results written to: ${{ inputs.output-file }}"
+        else
+          echo "::warning::Output file not found: ${{ inputs.output-file }}"
+        fi
+
+        echo "result-file=${{ inputs.output-file }}" >> "$GITHUB_OUTPUT"
+        echo "result-count=$count" >> "$GITHUB_OUTPUT"

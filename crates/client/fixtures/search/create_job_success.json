@@ -1,0 +1,18 @@
+{
+  "entry": [
+    {
+      "name": "search_id_12345",
+      "content": {
+        "sid": "scheduler__admin__search__RVB_743C0C6C_6159_4D6E_B0B4_41A6D84518C2",
+        "isDone": false,
+        "doneProgress": 0.0,
+        "runDuration": 0.0,
+        "cursorTime": "1969-12-31T19:00:00.000-05:00",
+        "scanCount": 0,
+        "eventCount": 0,
+        "resultCount": 0,
+        "diskUsage": 0
+      }
+    }
+  ]
+}

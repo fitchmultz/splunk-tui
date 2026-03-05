@@ -1,0 +1,59 @@
+# Rust
+/target/
+**/*.rs.bk
+*.bak
+/rust_out
+
+# IDE
+.idea/*
+!.idea/runConfigurations/
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.test
+
+# Local-only dev server notes
+docs/splunk-test-environment.md
+
+# Logs
+*.log
+*.log.*
+**/logs/
+
+# Test coverage
+*.profraw
+*.profdata
+
+# Build artifacts
+/dist/
+.ralph/lock
+
+# Property-based testing regression files
+*.proptest-regressions
+proptest-regressions/
+.ralph/cache/plans
+.ralph/cache/phase2_final
+.ralph/cache/queue.json.backup*
+.ralph/cache/parallel/state.json
+.ralph/cache/session.json
+.ralph/cache/stop_requested
+.ralph/config.json
+logs/
+.ralph
+CLAUDE.md
+.claude/
+.cursor/
+.ralph/cache/execution_history.json
+
+.scratchpad.md

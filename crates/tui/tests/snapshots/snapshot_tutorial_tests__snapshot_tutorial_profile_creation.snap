@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_tutorial_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search | [?] Unknown                                             │
+│ |                                                                            │
+└──────────┌Tutorial - Create a Connection Profile (16%)────────────┐──────────┘
+┌Search Que│           Step 2: Create a Connection Profile          ↑──────────┐
+│          │                                                        █          │
+└──────────│   Before you can use Splunk TUI, you need to create a  █──────────┘
+┌Status────│    connection profile that stores your Splunk server   █──────────┐
+│Press Ente│                   connection details.                  █          │
+└──────────│                                                        █──────────┘
+┌Results───│  Press Enter to open the profile creation form, then:  █──────────┐
+│          │             1. Enter a memorable profile name          █          │
+│          │          2. Enter your Splunk server URL (e.g.,        ║          │
+│          │                 https://localhost:8089)                ║          │
+│          │     3. Enter your username and password, or API token  ║          │
+│          │                  4. Press Enter to save                ║          │
+│          │                                                        ║          │
+│          │ Your credentials are stored securely and are only used ║          │
+│          │            to connect to your Splunk server.           ║          │
+│          │                                                        ↓          │
+└──────────└────────────────────────────────────────────────────────┘──────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
+└──────────────────────────────────────────────────────────────────────────────┘

@@ -1,0 +1,36 @@
+{
+  "entry": [
+    {
+      "name": "splunkd",
+      "content": {
+        "health": "green",
+        "features": {
+          "KVStore": {
+            "health": "green",
+            "status": "enabled",
+            "disabled": 0,
+            "reasons": []
+          },
+          "SearchScheduler": {
+            "health": "green",
+            "status": "enabled",
+            "disabled": 0,
+            "reasons": []
+          },
+          "IndexProcessor": {
+            "health": "green",
+            "status": "enabled",
+            "disabled": 0,
+            "reasons": []
+          },
+          "FileTracking": {
+            "health": "green",
+            "status": "enabled",
+            "disabled": 0,
+            "reasons": []
+          }
+        }
+      }
+    }
+  ]
+}

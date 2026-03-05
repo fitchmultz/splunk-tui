@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug splunk-cli" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run --package splunk-cli --bin splunk-cli" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+    <option name="emulateTerminal" value="true" />
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>

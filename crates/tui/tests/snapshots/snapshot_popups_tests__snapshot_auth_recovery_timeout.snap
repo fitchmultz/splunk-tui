@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Search | [?] Unknown                                             │
+│ |                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Search Query──────────────────────────────────────────────────────────────────┐
+│                                                                              │
+└───────────────┌Authentication Error──────────────────────────┐───────────────┘
+┌Status─────────│Connection timed out while authenticating.    │───────────────┐
+│Press Enter to │                                              │               │
+└───────────────│Next Steps:                                   │───────────────┘
+┌Results────────│• Check network connectivity                  │───────────────┐
+│               │• Verify the Splunk server is responsive      │.              │
+│               │• Consider increasing the timeout setting in  │               │
+│               │your profile                                  │               │
+│               │                                              │               │
+│               │───                                           │               │
+│               │                                              │               │
+│               └──────────────────────────────────────────────┘               │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Esc:Close | Enter:Run Ctrl+e:Export PgDn:PgDn PgUp:PgUp| ?:Help | q:Quit      │
+└──────────────────────────────────────────────────────────────────────────────┘

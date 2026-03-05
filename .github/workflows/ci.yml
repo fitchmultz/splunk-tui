@@ -1,0 +1,50 @@
+# Purpose: Non-mutating public CI gate for build, lint, test, and docs drift checks.
+# Responsibilities: Validate repo quality on PRs and main-branch pushes.
+# Scope: Rust workspace checks, docs generation drift, script validation, and secret guard.
+# Usage: Runs automatically via GitHub Actions on pull_request and push to main.
+# Invariants: Must not auto-fix or mutate checked-out files.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  DOTENV_DISABLED: "1"
+
+jobs:
+  rust-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: "1.84"
+          components: rustfmt, clippy
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Secret guard
+        run: make lint-secrets
+
+      - name: Format check
+        run: cargo fmt --all --check
+
+      - name: Clippy check (deny warnings)
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+      - name: Test workspace
+        run: cargo test --workspace --lib --bins --tests --all-features --locked
+
+      - name: Docs drift check
+        run: cargo run -p splunk-tui --bin generate-tui-docs -- --check
+
+      - name: Validate example scripts
+        run: make examples-test

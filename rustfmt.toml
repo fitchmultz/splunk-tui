@@ -1,0 +1,11 @@
+# Rustfmt configuration for splunk-tui workspace
+# This ensures consistent formatting across all environments
+# Note: Only stable features are used to ensure compatibility with stable Rust toolchain
+
+edition = "2024"
+max_width = 100
+reorder_imports = true
+reorder_modules = true
+remove_nested_parens = true
+use_try_shorthand = true
+use_field_init_shorthand = true

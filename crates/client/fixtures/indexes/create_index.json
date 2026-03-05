@@ -1,0 +1,21 @@
+{
+  "entry": [
+    {
+      "name": "test_index",
+      "content": {
+        "name": "test_index",
+        "maxTotalDataSizeMB": 1000,
+        "currentDBSizeMB": 0,
+        "totalEventCount": 0,
+        "maxWarmDBCount": 300,
+        "maxHotBuckets": 10,
+        "frozenTimePeriodInSecs": 15552000,
+        "coldDBPath": "/splunk/test_index/colddb",
+        "homePath": "/splunk/test_index/db",
+        "thawedPath": "/splunk/test_index/thaweddb",
+        "primaryIndex": false
+      },
+      "acl": null
+    }
+  ]
+}

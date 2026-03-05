@@ -1,0 +1,176 @@
+name: 'Splunk Config Validate'
+description: 'Validate configuration files and SPL queries against Splunk'
+author: 'Splunk TUI Contributors'
+branding:
+  icon: 'check-circle'
+  color: 'yellow'
+
+inputs:
+  query:
+    description: 'SPL query string to validate'
+    required: false
+  file:
+    description: 'Path to file containing SPL to validate'
+    required: false
+  output-format:
+    description: 'Output format (json, yaml, table)'
+    required: false
+    default: 'json'
+  output-file:
+    description: 'Output file path for validation results'
+    required: false
+    default: 'validation-results.json'
+  base-url:
+    description: 'Splunk base URL (or use SPLUNK_BASE_URL env var)'
+    required: false
+  api-token:
+    description: 'Splunk API token (or use SPLUNK_API_TOKEN env var)'
+    required: false
+  username:
+    description: 'Splunk username (or use SPLUNK_USERNAME env var)'
+    required: false
+  password:
+    description: 'Splunk password (or use SPLUNK_PASSWORD env var)'
+    required: false
+  skip-verify:
+    description: 'Skip TLS verification (true/false)'
+    required: false
+    default: 'false'
+  fail-on-warning:
+    description: 'Fail if validation produces warnings (true/false)'
+    required: false
+    default: 'false'
+  image-tag:
+    description: 'Container image tag to use (default: latest)'
+    required: false
+    default: 'latest'
+
+outputs:
+  valid:
+    description: 'Whether validation passed (true/false)'
+    value: ${{ steps.validate.outputs.valid }}
+  errors:
+    description: 'Number of errors found'
+    value: ${{ steps.validate.outputs.errors }}
+  warnings:
+    description: 'Number of warnings found'
+    value: ${{ steps.validate.outputs.warnings }}
+  output-file:
+    description: 'Path to validation results file'
+    value: ${{ steps.validate.outputs.output-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Config
+      id: validate
+      shell: bash
+      env:
+        SPLUNK_BASE_URL: ${{ inputs.base-url || env.SPLUNK_BASE_URL }}
+        SPLUNK_API_TOKEN: ${{ inputs.api-token || env.SPLUNK_API_TOKEN }}
+        SPLUNK_USERNAME: ${{ inputs.username || env.SPLUNK_USERNAME }}
+        SPLUNK_PASSWORD: ${{ inputs.password || env.SPLUNK_PASSWORD }}
+        SPLUNK_SKIP_VERIFY: ${{ inputs.skip-verify }}
+      run: |
+        # Mask sensitive values
+        if [[ -n "$SPLUNK_API_TOKEN" ]]; then
+          echo "::add-mask::$SPLUNK_API_TOKEN"
+        fi
+        if [[ -n "$SPLUNK_PASSWORD" ]]; then
+          echo "::add-mask::$SPLUNK_PASSWORD"
+        fi
+
+        # Validate required inputs
+        if [[ -z "${{ inputs.query }}" && -z "${{ inputs.file }}" ]]; then
+          echo "::error::Either 'query' or 'file' input must be provided"
+          exit 1
+        fi
+
+        # Validate required environment
+        if [[ -z "$SPLUNK_BASE_URL" ]]; then
+          echo "::error::SPLUNK_BASE_URL must be provided via input or environment variable"
+          exit 1
+        fi
+
+        # Build image reference
+        IMAGE="${{ env.REGISTRY || 'ghcr.io' }}/${{ github.repository }}:${{ inputs.image-tag }}"
+
+        # Build validation args
+        if [[ -n "${{ inputs.file }}" ]]; then
+          echo "Validating SPL from file: ${{ inputs.file }}"
+          if [[ ! -f "${{ inputs.file }}" ]]; then
+            echo "::error::SPL file not found: ${{ inputs.file }}"
+            exit 1
+          fi
+          validate_args="--file ${{ inputs.file }}"
+        else
+          echo "Validating SPL query: ${{ inputs.query }}"
+          validate_args="'${{ inputs.query }}'"
+        fi
+
+        # Run validation using container
+        set +e
+        # shellcheck disable=SC2086
+        docker run --rm \
+          -e SPLUNK_BASE_URL \
+          -e SPLUNK_API_TOKEN \
+          -e SPLUNK_USERNAME \
+          -e SPLUNK_PASSWORD \
+          -e SPLUNK_SKIP_VERIFY \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          "$IMAGE" \
+          search validate \
+          $validate_args \
+          --output ${{ inputs.output-format }} \
+          --output-file "${{ inputs.output-file }}"
+        exit_code=$?
+        set -e
+
+        # Parse validation results
+        valid="false"
+        errors=0
+        warnings=0
+
+        if [[ -f "${{ inputs.output-file }}" ]]; then
+          if [[ "${{ inputs.output-format }}" == "json" ]]; then
+            # Parse JSON output
+            if jq -e 'has("valid")' "${{ inputs.output-file }}" >/dev/null 2>&1; then
+              valid=$(jq -r '.valid' "${{ inputs.output-file }}")
+            fi
+            if jq -e 'has("errors")' "${{ inputs.output-file }}" >/dev/null 2>&1; then
+              errors=$(jq -r '.errors | length' "${{ inputs.output-file }}")
+            fi
+            if jq -e 'has("warnings")' "${{ inputs.output-file }}" >/dev/null 2>&1; then
+              warnings=$(jq -r '.warnings | length' "${{ inputs.output-file }}")
+            fi
+          fi
+        fi
+
+        # Determine overall validity based on exit code and results
+        if [[ $exit_code -eq 0 && "$valid" != "false" ]]; then
+          valid="true"
+        else
+          valid="false"
+        fi
+
+        echo "valid=$valid" >> "$GITHUB_OUTPUT"
+        echo "errors=$errors" >> "$GITHUB_OUTPUT"
+        echo "warnings=$warnings" >> "$GITHUB_OUTPUT"
+        echo "output-file=${{ inputs.output-file }}" >> "$GITHUB_OUTPUT"
+
+        # Output summary
+        if [[ "$valid" == "true" ]]; then
+          if [[ $warnings -gt 0 ]]; then
+            echo "✅ Validation passed with $warnings warning(s)"
+            if [[ "${{ inputs.fail-on-warning }}" == "true" ]]; then
+              echo "::error::Validation produced warnings (fail-on-warning is enabled)"
+              exit 1
+            fi
+          else
+            echo "✅ Validation passed"
+          fi
+        else
+          echo "❌ Validation failed with $errors error(s) and $warnings warning(s)"
+          exit 1
+        fi

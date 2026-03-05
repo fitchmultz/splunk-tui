@@ -1,0 +1,19 @@
+{
+  "entry": [
+    {
+      "name": "scheduler__admin__search__MyAlert_at_1351181001_5.31_1351181987",
+      "content": {
+        "actions": "email",
+        "alertType": "scheduled",
+        "digestMode": true,
+        "expirationTimeRendered": "2012-10-26T09:19:47-07:00",
+        "savedsearchName": "MyAlert",
+        "severity": "High",
+        "sid": "scheduler__admin__search__MyAlert_at_1351181001_5.31",
+        "triggerTime": 1351181987,
+        "triggerTimeRendered": "2012-10-25T09:19:47-07:00",
+        "triggeredAlerts": "1"
+      }
+    }
+  ]
+}

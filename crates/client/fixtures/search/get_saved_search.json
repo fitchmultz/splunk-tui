@@ -1,0 +1,21 @@
+{
+  "entry": [
+    {
+      "name": "Errors in the last 24 hours",
+      "content": {
+        "search": "index=_internal sourcetype=splunkd log_level=ERROR | head 100",
+        "description": "Finds error messages in internal logs",
+        "disabled": false
+      },
+      "acl": {
+        "app": "search",
+        "owner": "admin"
+      }
+    }
+  ],
+  "paging": {
+    "total": 1,
+    "offset": 0,
+    "count": 1
+  }
+}

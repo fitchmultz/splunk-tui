@@ -1,0 +1,16 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <option name="SOFT_MARGINS" value="100" />
+    <RustCodeStyleSettings>
+      <option name="USE_RUSTFMT" value="true" />
+      <option name="RUN_RUSTFMT_ON_SAVE" value="true" />
+    </RustCodeStyleSettings>
+    <codeStyleSettings language="Rust">
+      <indentOptions>
+        <option name="INDENT_SIZE" value="4" />
+        <option name="CONTINUATION_INDENT_SIZE" value="8" />
+        <option name="TAB_SIZE" value="4" />
+      </indentOptions>
+    </codeStyleSettings>
+  </code_scheme>
+</component>

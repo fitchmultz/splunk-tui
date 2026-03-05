@@ -1,0 +1,648 @@
+//! Centralized keybinding catalog and input resolver.
+//!
+//! Responsibilities:
+//! - Define a single source of truth for keybindings and their descriptions.
+//! - Resolve KeyEvents into Actions without mutating App state.
+//!
+//! Does NOT handle:
+//! - Performing App state mutations or side effects.
+//! - Handling text entry modes (those remain in App screen handlers).
+//!
+//! Invariants:
+//! - Bindings are deterministic and stable for help/docs rendering.
+//! - Resolver never mutates App state and returns at most one Action.
+
+use std::sync::LazyLock;
+
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+use crate::action::Action;
+use crate::app::CurrentScreen;
+
+mod bindings;
+pub mod overrides;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Section {
+    Global,
+    Search,
+    Jobs,
+    JobDetails,
+    Indexes,
+    Cluster,
+    Health,
+    License,
+    Kvstore,
+    SavedSearches,
+    Macros,
+    InternalLogs,
+    Apps,
+    Users,
+    Roles,
+    SearchPeers,
+    Inputs,
+    Configs,
+    FiredAlerts,
+    Forwarders,
+    Lookups,
+    Audit,
+    Dashboards,
+    DataModels,
+    Workload,
+    Shc,
+    Settings,
+    Overview,
+    MultiInstance,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BindingScope {
+    Global,
+    Screen(CurrentScreen),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Matcher {
+    Key {
+        code: KeyCode,
+        modifiers: KeyModifiers,
+    },
+}
+
+#[derive(Clone)]
+pub struct Keybinding {
+    pub section: Section,
+    pub keys: &'static str,
+    pub description: &'static str,
+    pub scope: BindingScope,
+    pub matcher: Option<Matcher>,
+    pub action: Option<Action>,
+    pub handles_input: bool,
+}
+
+impl Keybinding {
+    fn matches(&self, key: KeyEvent, screen: CurrentScreen) -> bool {
+        if !self.scope_applies(screen) {
+            return false;
+        }
+        let Some(matcher) = self.matcher else {
+            return false;
+        };
+        match matcher {
+            Matcher::Key { code, modifiers } => key.code == code && key.modifiers == modifiers,
+        }
+    }
+
+    pub fn scope_applies(&self, screen: CurrentScreen) -> bool {
+        match self.scope {
+            BindingScope::Global => true,
+            BindingScope::Screen(s) => s == screen,
+        }
+    }
+}
+
+pub fn keybindings() -> Vec<Keybinding> {
+    bindings::all()
+}
+
+/// Type alias for a single screen's footer hints to reduce type complexity.
+type ScreenHints = Vec<(&'static str, &'static str)>;
+
+/// Type alias for the cache array: tuple of (screen, hints) for each screen.
+type FooterHintsCache = [(CurrentScreen, ScreenHints); 28];
+
+/// Cache for footer hints to avoid per-frame allocations.
+/// Maps each screen to its pre-computed hints vector using a fixed-size array.
+static FOOTER_HINTS_CACHE: LazyLock<FooterHintsCache> = LazyLock::new(|| {
+    let screens = all_screens();
+    [
+        (screens[0], compute_footer_hints(screens[0])),
+        (screens[1], compute_footer_hints(screens[1])),
+        (screens[2], compute_footer_hints(screens[2])),
+        (screens[3], compute_footer_hints(screens[3])),
+        (screens[4], compute_footer_hints(screens[4])),
+        (screens[5], compute_footer_hints(screens[5])),
+        (screens[6], compute_footer_hints(screens[6])),
+        (screens[7], compute_footer_hints(screens[7])),
+        (screens[8], compute_footer_hints(screens[8])),
+        (screens[9], compute_footer_hints(screens[9])),
+        (screens[10], compute_footer_hints(screens[10])),
+        (screens[11], compute_footer_hints(screens[11])),
+        (screens[12], compute_footer_hints(screens[12])),
+        (screens[13], compute_footer_hints(screens[13])),
+        (screens[14], compute_footer_hints(screens[14])),
+        (screens[15], compute_footer_hints(screens[15])),
+        (screens[16], compute_footer_hints(screens[16])),
+        (screens[17], compute_footer_hints(screens[17])),
+        (screens[18], compute_footer_hints(screens[18])),
+        (screens[19], compute_footer_hints(screens[19])),
+        (screens[20], compute_footer_hints(screens[20])),
+        (screens[21], compute_footer_hints(screens[21])),
+        (screens[22], compute_footer_hints(screens[22])),
+        (screens[23], compute_footer_hints(screens[23])),
+        (screens[24], compute_footer_hints(screens[24])),
+        (screens[25], compute_footer_hints(screens[25])),
+        (screens[26], compute_footer_hints(screens[26])),
+        (screens[27], compute_footer_hints(screens[27])),
+    ]
+});
+
+/// Returns all screen variants for cache initialization.
+///
+/// This function is the source of truth for all screens in the application.
+/// When adding a new screen, you MUST add it to this array.
+///
+/// The count of screens in this array should match the number of variants
+/// in the `CurrentScreen` enum. This is verified by drift detection tests.
+#[doc(hidden)]
+pub fn all_screens() -> [CurrentScreen; 28] {
+    [
+        CurrentScreen::Search,
+        CurrentScreen::Indexes,
+        CurrentScreen::Cluster,
+        CurrentScreen::Jobs,
+        CurrentScreen::JobInspect,
+        CurrentScreen::Health,
+        CurrentScreen::License,
+        CurrentScreen::Kvstore,
+        CurrentScreen::SavedSearches,
+        CurrentScreen::Macros,
+        CurrentScreen::InternalLogs,
+        CurrentScreen::Apps,
+        CurrentScreen::Users,
+        CurrentScreen::Roles,
+        CurrentScreen::SearchPeers,
+        CurrentScreen::Inputs,
+        CurrentScreen::Configs,
+        CurrentScreen::Settings,
+        CurrentScreen::Overview,
+        CurrentScreen::MultiInstance,
+        CurrentScreen::FiredAlerts,
+        CurrentScreen::Forwarders,
+        CurrentScreen::Lookups,
+        CurrentScreen::Audit,
+        CurrentScreen::Dashboards,
+        CurrentScreen::DataModels,
+        CurrentScreen::WorkloadManagement,
+        CurrentScreen::Shc,
+    ]
+}
+
+/// Compute footer hints for a single screen (internal implementation).
+fn compute_footer_hints(screen: CurrentScreen) -> ScreenHints {
+    use std::collections::BTreeSet;
+
+    let section = screen_to_section(screen);
+
+    // Get unique entries for this section, filtering out navigation keys
+    let mut seen = BTreeSet::new();
+    let mut hints = Vec::new();
+
+    // Navigation keys that are always shown in the generic footer
+    let nav_keys: &[&str] = &["Tab", "Shift+Tab", "q", "Ctrl+Q", "?"];
+
+    for binding in keybindings() {
+        if binding.section != section {
+            continue;
+        }
+
+        // Skip navigation keys that are always shown
+        if nav_keys.contains(&binding.keys) {
+            continue;
+        }
+
+        // Skip entries with duplicate descriptions (e.g., j/k navigation)
+        let key = (binding.keys, binding.description);
+        if !seen.insert(key) {
+            continue;
+        }
+
+        // Shorten descriptions for footer display
+        let short_desc = shorten_description(binding.description);
+        hints.push((binding.keys, short_desc));
+    }
+
+    // Limit to top 4 hints, prioritizing by relevance
+    prioritize_hints(&mut hints, screen);
+    hints.truncate(4);
+
+    hints
+}
+
+/// Initialize the footer hints cache.
+///
+/// Should be called once at app startup after keybinding overrides are initialized.
+/// This forces early population of the cache to avoid first-access latency.
+/// Since this uses `LazyLock`, the actual initialization happens on first access,
+/// but calling this function ensures the cache is warm before the render loop starts.
+pub fn init_footer_cache() {
+    // Access the cache to force initialization
+    let _ = FOOTER_HINTS_CACHE.len();
+    tracing::debug!(
+        "Footer hints cache initialized with {} screens",
+        FOOTER_HINTS_CACHE.len()
+    );
+}
+
+/// Lookup hints for a given screen in the cache.
+fn get_cached_hints(screen: CurrentScreen) -> Option<ScreenHints> {
+    for (s, hints) in FOOTER_HINTS_CACHE.iter() {
+        if *s == screen {
+            return Some(hints.clone());
+        }
+    }
+    None
+}
+
+/// Returns all sections in their canonical display order.
+///
+/// This is the single source of truth for section ordering used by both
+/// the help popup and documentation generation.
+pub fn sections_in_order() -> &'static [Section] {
+    &[
+        Section::Global,
+        Section::Search,
+        Section::Jobs,
+        Section::JobDetails,
+        Section::Indexes,
+        Section::Cluster,
+        Section::Health,
+        Section::License,
+        Section::Kvstore,
+        Section::SavedSearches,
+        Section::Macros,
+        Section::InternalLogs,
+        Section::Apps,
+        Section::Users,
+        Section::Roles,
+        Section::SearchPeers,
+        Section::Inputs,
+        Section::Configs,
+        Section::FiredAlerts,
+        Section::Forwarders,
+        Section::Lookups,
+        Section::Audit,
+        Section::Dashboards,
+        Section::DataModels,
+        Section::Workload,
+        Section::Shc,
+        Section::Settings,
+        Section::Overview,
+        Section::MultiInstance,
+    ]
+}
+
+pub fn resolve_action(screen: CurrentScreen, key: KeyEvent) -> Option<Action> {
+    // First: check user overrides (if initialized)
+    if let Some(action) = overrides::resolve_override(key) {
+        return Some(action);
+    }
+
+    // Second: fall back to default bindings
+    for binding in keybindings() {
+        if !binding.handles_input {
+            continue;
+        }
+        if binding.matches(key, screen) {
+            return binding.action;
+        }
+    }
+    None
+}
+
+/// Returns footer hints for the given screen.
+///
+/// Returns the top 3-4 most relevant keybindings for the screen, formatted as
+/// compact "key:action" strings. Excludes navigation keys (Tab, Shift+Tab, q)
+/// that are always shown in the generic footer.
+///
+/// Note: Search screen has two input modes (QueryFocused/ResultsFocused) but
+/// both modes share the same keybinding hints since the keymap doesn't
+/// distinguish between them; mode-specific behavior is handled at input time.
+///
+/// This function uses a pre-computed cache to avoid per-frame allocations.
+pub fn footer_hints(screen: CurrentScreen) -> ScreenHints {
+    get_cached_hints(screen).unwrap_or_default()
+}
+
+/// Map CurrentScreen to Section enum.
+pub fn screen_to_section(screen: CurrentScreen) -> Section {
+    match screen {
+        CurrentScreen::Search => Section::Search,
+        CurrentScreen::Jobs => Section::Jobs,
+        CurrentScreen::JobInspect => Section::JobDetails,
+        CurrentScreen::Indexes => Section::Indexes,
+        CurrentScreen::Cluster => Section::Cluster,
+        CurrentScreen::Health => Section::Health,
+        CurrentScreen::License => Section::License,
+        CurrentScreen::Kvstore => Section::Kvstore,
+        CurrentScreen::SavedSearches => Section::SavedSearches,
+        CurrentScreen::Macros => Section::Macros,
+        CurrentScreen::InternalLogs => Section::InternalLogs,
+        CurrentScreen::Apps => Section::Apps,
+        CurrentScreen::Users => Section::Users,
+        CurrentScreen::Roles => Section::Roles,
+        CurrentScreen::SearchPeers => Section::SearchPeers,
+        CurrentScreen::Inputs => Section::Inputs,
+        CurrentScreen::Configs => Section::Configs,
+        CurrentScreen::FiredAlerts => Section::FiredAlerts,
+        CurrentScreen::Forwarders => Section::Forwarders,
+        CurrentScreen::Lookups => Section::Lookups,
+        CurrentScreen::Audit => Section::Audit,
+        CurrentScreen::Dashboards => Section::Dashboards,
+        CurrentScreen::DataModels => Section::DataModels,
+        CurrentScreen::WorkloadManagement => Section::Workload,
+        CurrentScreen::Shc => Section::Shc,
+        CurrentScreen::Settings => Section::Settings,
+        CurrentScreen::Overview => Section::Overview,
+        CurrentScreen::MultiInstance => Section::MultiInstance,
+    }
+}
+
+/// Shorten descriptions for compact footer display.
+fn shorten_description(desc: &'static str) -> &'static str {
+    match desc {
+        "Refresh jobs" => "Refresh",
+        "Refresh indexes" => "Refresh",
+        "Refresh cluster info" => "Refresh",
+        "Refresh health status" => "Refresh",
+        "Refresh saved searches" => "Refresh",
+        "Refresh logs" => "Refresh",
+        "Refresh apps" => "Refresh",
+        "Refresh users" => "Refresh",
+        "Refresh roles" => "Refresh",
+        "Reload settings" => "Reload",
+        "Run connection diagnostics" => "Diag",
+        "Run search" => "Run",
+        "Export jobs" => "Export",
+        "Export results" => "Export",
+        "Export indexes" => "Export",
+        "Export cluster info" => "Export",
+        "Export health info" => "Export",
+        "Export saved searches" => "Export",
+        "Export logs" => "Export",
+        "Export apps" => "Export",
+        "Export users" => "Export",
+        "Export roles" => "Export",
+        "Refresh KVStore status" => "Refresh",
+        "Export KVStore status" => "Export",
+        "Copy KVStore status" => "Copy",
+        "Cycle sort column" => "Sort",
+        "Toggle sort direction" => "Direction",
+        "Filter jobs" => "Filter",
+        "Toggle job selection" => "Select",
+        "Cancel selected job(s)" => "Cancel",
+        "Delete selected job(s)" => "Delete",
+        "Inspect job" => "Inspect",
+        "Back to jobs" => "Back",
+        "View index details" => "Details",
+        "Toggle peers view" => "Peers",
+        "Run selected search" => "Run",
+        "Toggle auto-refresh" => "Auto",
+        "Enable selected app" => "Enable",
+        "Disable selected app" => "Disable",
+        "Create new role" => "Create",
+        "Modify selected role" => "Modify",
+        "Delete selected role" => "Delete",
+        "Clear search history" => "Clear",
+        "Cycle theme" => "Theme",
+        "Copy selected SID" => "Copy SID",
+        "Copy job SID" => "Copy SID",
+        "Copy selected index name" => "Copy",
+        "Copy cluster ID" => "Copy",
+        "Copy selected saved search name" => "Copy",
+        "Copy selected log message" => "Copy",
+        "Copy selected app name" => "Copy",
+        "Copy selected username" => "Copy",
+        "Copy selected role name" => "Copy",
+        "Copy query (or current result)" => "Copy",
+        "Copy to clipboard" => "Copy",
+        "Navigate list" => "Navigate",
+        "Navigate peers list" => "Navigate",
+        "Navigate history (query)" => "History",
+        "Scroll results (while typing)" => "Scroll",
+        "Page down" => "PgDn",
+        "Page up" => "PgUp",
+        "Go to top" => "Top",
+        "Go to bottom" => "Bottom",
+        "Type search query" => "Type",
+        "Refresh forwarders" => "Refresh",
+        "Export forwarders" => "Export",
+        "Copy selected forwarder name" => "Copy",
+        "Refresh lookup tables" => "Refresh",
+        "Export lookup tables" => "Export",
+        "Copy selected lookup name" => "Copy",
+        "Refresh config files" => "Refresh",
+        "Search stanzas" => "Search",
+        "Refresh macros" => "Refresh",
+        "Export macros" => "Export",
+        "Edit macro" => "Edit",
+        "New macro" => "New",
+        "Delete macro" => "Delete",
+        "Copy definition" => "Copy",
+        "Switch profile" => "Profile",
+        "Create new profile" => "New",
+        "Edit selected profile" => "Edit",
+        "Delete selected profile" => "Delete",
+        "Replay tutorial" => "Tutorial",
+        "Refresh workload" => "Refresh",
+        "Toggle pools/rules" => "Toggle",
+        "Export workload" => "Export",
+        _ => desc,
+    }
+}
+
+/// Returns the priority key list for a given screen.
+///
+/// This is extracted for testability and to prevent drift between the
+/// priority lists and the actual keybinding catalog.
+pub(crate) fn get_priority_keys(screen: CurrentScreen) -> &'static [&'static str] {
+    match screen {
+        CurrentScreen::Search => &["Enter", "Ctrl+e", "PgDn", "PgUp", "Ctrl+j/k", "Home", "End"],
+        CurrentScreen::Jobs => &["r", "/", "s", "a", "Space", "c", "d", "Enter"],
+        CurrentScreen::JobInspect => &["Esc", "Ctrl+c"],
+        CurrentScreen::Indexes => &["r", "Enter", "j/k or Up/Down"],
+        CurrentScreen::Cluster => &["r", "p", "j/k or Up/Down"],
+        CurrentScreen::Health => &["r"],
+        CurrentScreen::License => &["r"],
+        CurrentScreen::Kvstore => &["r"],
+        CurrentScreen::SavedSearches => &["r", "Enter", "j/k or Up/Down"],
+        CurrentScreen::Macros => &["r", "e", "n", "d", "Ctrl+c", "j/k or Up/Down"],
+        CurrentScreen::InternalLogs => &["r", "a", "j/k or Up/Down"],
+        CurrentScreen::Apps => &["r", "e", "d", "j/k or Up/Down"],
+        CurrentScreen::Users => &["r", "j/k or Up/Down"],
+        CurrentScreen::Roles => &["r", "c", "m", "d", "j/k or Up/Down"],
+        CurrentScreen::SearchPeers => &["r", "j/k or Up/Down", "Ctrl+e"],
+        CurrentScreen::Settings => &["t", "a", "s", "d", "c", "r"],
+        CurrentScreen::Overview => &["r", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::MultiInstance => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Inputs => &["r", "e", "d", "j/k or Up/Down"],
+        CurrentScreen::Configs => &["r", "/", "Enter", "h", "j/k or Up/Down"],
+        CurrentScreen::FiredAlerts => &["r", "j/k or Up/Down", "Ctrl+c"],
+        CurrentScreen::Forwarders => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Lookups => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Audit => &["r", "j/k or Up/Down", "Ctrl+e", "Ctrl+c"],
+        CurrentScreen::Dashboards => &["r", "j/k or Up/Down"],
+        CurrentScreen::DataModels => &["r", "j/k or Up/Down"],
+        CurrentScreen::WorkloadManagement => &["r", "w", "j/k or Up/Down", "Ctrl+e"],
+        CurrentScreen::Shc => &["r", "m", "j/k or Up/Down", "Ctrl+e"],
+    }
+}
+
+/// Prioritize hints based on screen and relevance.
+fn prioritize_hints(hints: &mut Vec<(&'static str, &'static str)>, screen: CurrentScreen) {
+    let priority_keys = get_priority_keys(screen);
+
+    // Sort hints by priority order
+    hints.sort_by(|(key_a, _), (key_b, _)| {
+        let pos_a = priority_keys.iter().position(|k| *k == *key_a);
+        let pos_b = priority_keys.iter().position(|k| *k == *key_b);
+
+        match (pos_a, pos_b) {
+            (Some(a), Some(b)) => a.cmp(&b),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => key_a.cmp(key_b),
+        }
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+
+    fn ctrl_key(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
+    }
+
+    #[test]
+    fn resolves_global_quit() {
+        let action = resolve_action(CurrentScreen::Search, key(KeyCode::Char('q')));
+        assert!(matches!(action, Some(Action::Quit)));
+    }
+
+    #[test]
+    fn resolves_screen_navigation_for_lists() {
+        let action = resolve_action(CurrentScreen::Jobs, key(KeyCode::Char('j')));
+        assert!(matches!(action, Some(Action::NavigateDown)));
+    }
+
+    #[test]
+    fn ignores_list_navigation_on_search_screen() {
+        let action = resolve_action(CurrentScreen::Search, key(KeyCode::Char('j')));
+        assert!(action.is_none());
+    }
+
+    #[test]
+    fn resolves_ctrl_j_on_search_screen() {
+        let action = resolve_action(CurrentScreen::Search, ctrl_key('j'));
+        assert!(
+            matches!(action, Some(Action::NavigateDown)),
+            "Ctrl+j on Search screen should return NavigateDown action"
+        );
+    }
+
+    #[test]
+    fn resolves_ctrl_k_on_search_screen() {
+        let action = resolve_action(CurrentScreen::Search, ctrl_key('k'));
+        assert!(
+            matches!(action, Some(Action::NavigateUp)),
+            "Ctrl+k on Search screen should return NavigateUp action"
+        );
+    }
+
+    #[test]
+    fn resolves_ctrl_p_opens_command_palette() {
+        let action = resolve_action(CurrentScreen::Search, ctrl_key('p'));
+        assert!(
+            matches!(action, Some(Action::OpenCommandPalette)),
+            "Ctrl+P should open the command palette"
+        );
+    }
+
+    #[test]
+    fn macros_footer_hints_include_expected_keys() {
+        let hints = footer_hints(CurrentScreen::Macros);
+        let hint_keys: Vec<_> = hints.iter().map(|(k, _)| *k).collect();
+
+        // Should include the prioritized keys
+        assert!(hint_keys.contains(&"r"), "Should include 'r' for refresh");
+        assert!(hint_keys.contains(&"e"), "Should include 'e' for edit");
+        assert!(hint_keys.contains(&"n"), "Should include 'n' for new");
+        assert!(hint_keys.contains(&"d"), "Should include 'd' for delete");
+    }
+
+    /// Drift-prevention test: ensures all priority keys exist in the keybinding catalog.
+    ///
+    /// This test prevents "drift" where a key is added to a priority list but not
+    /// to the actual keybinding catalog for that screen (or vice versa).
+    #[test]
+    fn all_priority_keys_exist_in_keybinding_catalog() {
+        use std::collections::HashSet;
+
+        // All screen variants to test
+        let all_screens = [
+            CurrentScreen::Search,
+            CurrentScreen::Jobs,
+            CurrentScreen::JobInspect,
+            CurrentScreen::Indexes,
+            CurrentScreen::Cluster,
+            CurrentScreen::Health,
+            CurrentScreen::License,
+            CurrentScreen::Kvstore,
+            CurrentScreen::SavedSearches,
+            CurrentScreen::Macros,
+            CurrentScreen::InternalLogs,
+            CurrentScreen::Apps,
+            CurrentScreen::Users,
+            CurrentScreen::Roles,
+            CurrentScreen::SearchPeers,
+            CurrentScreen::Settings,
+            CurrentScreen::Overview,
+            CurrentScreen::MultiInstance,
+            CurrentScreen::Inputs,
+            CurrentScreen::Configs,
+            CurrentScreen::FiredAlerts,
+            CurrentScreen::Forwarders,
+            CurrentScreen::Lookups,
+            CurrentScreen::Audit,
+            CurrentScreen::Dashboards,
+            CurrentScreen::DataModels,
+            CurrentScreen::WorkloadManagement,
+            CurrentScreen::Shc,
+        ];
+
+        for screen in all_screens {
+            let section = screen_to_section(screen);
+            let priority_keys = get_priority_keys(screen);
+
+            // Skip screens with no priority keys defined
+            if priority_keys.is_empty() {
+                continue;
+            }
+
+            // Collect all keys from the keybinding catalog for this section
+            let catalog_keys: HashSet<&str> = keybindings()
+                .into_iter()
+                .filter(|b| b.section == section)
+                .map(|b| b.keys)
+                .collect();
+
+            // Verify each priority key exists in the catalog
+            for key in priority_keys {
+                assert!(
+                    catalog_keys.contains(key),
+                    "Drift detected: priority key '{}' for screen {:?} (section {:?}) does not exist in the keybinding catalog. \
+                     Either add the keybinding to the catalog or remove it from the priority list.",
+                    key,
+                    screen,
+                    section
+                );
+            }
+        }
+    }
+}

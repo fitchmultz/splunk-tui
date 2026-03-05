@@ -1,0 +1,389 @@
+//! Search macro command implementation.
+//!
+//! Responsibilities:
+//! - List search macros with optional count limiting
+//! - Show detailed information about specific macros
+//! - Create new macros with definitions, arguments, and metadata
+//! - Update existing macro properties
+//! - Delete macros with confirmation
+//! - Format output via shared formatters
+//!
+//! Does NOT handle:
+//! - Macro expansion or execution (done by Splunk at search time)
+//! - Direct REST API calls (handled by client crate)
+//! - Output formatting details (see formatters module)
+//!
+//! Invariants:
+//! - Macro names are validated as non-empty
+//! - Delete operations require confirmation unless --force is used
+//! - Conflicting flags (--disable/--enable, --iseval/--no-iseval) are rejected
+//! - At least one field must be provided for update operations
+
+use anyhow::Result;
+use clap::Subcommand;
+use splunk_client::{MacroCreateParams, MacroUpdateParams};
+use tracing::info;
+
+use crate::formatters::{OutputFormat, get_formatter, output_result};
+use splunk_config::constants::*;
+
+#[derive(Subcommand)]
+pub enum MacrosCommand {
+    /// List all search macros
+    List {
+        /// Maximum number of macros to list
+        #[arg(short, long, default_value_t = DEFAULT_LIST_PAGE_SIZE)]
+        count: usize,
+    },
+    /// Show detailed information about a macro
+    Info {
+        /// Name of the macro
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+    /// Create a new macro
+    Create {
+        /// Name of the macro
+        #[arg(value_name = "NAME")]
+        name: String,
+        /// Macro definition (SPL or eval expression)
+        #[arg(value_name = "DEFINITION")]
+        definition: String,
+        /// Comma-separated argument names
+        #[arg(short, long)]
+        args: Option<String>,
+        /// Description
+        #[arg(short, long)]
+        description: Option<String>,
+        /// Create as disabled
+        #[arg(long)]
+        disabled: bool,
+        /// Is eval expression (not SPL)
+        #[arg(long)]
+        iseval: bool,
+        /// Validation expression
+        #[arg(long)]
+        validation: Option<String>,
+        /// Error message for validation failure
+        #[arg(long)]
+        errormsg: Option<String>,
+    },
+    /// Update an existing macro
+    Update {
+        /// Name of the macro to update
+        #[arg(value_name = "NAME")]
+        name: String,
+        /// New definition
+        #[arg(short, long)]
+        definition: Option<String>,
+        /// New arguments
+        #[arg(short, long)]
+        args: Option<String>,
+        /// New description
+        #[arg(long)]
+        description: Option<String>,
+        /// Disable the macro
+        #[arg(long)]
+        disable: bool,
+        /// Enable the macro
+        #[arg(long)]
+        enable: bool,
+        /// Set as eval expression
+        #[arg(long)]
+        iseval: bool,
+        /// Set as SPL (not eval)
+        #[arg(long)]
+        no_iseval: bool,
+        /// New validation expression
+        #[arg(long)]
+        validation: Option<String>,
+        /// New error message
+        #[arg(long)]
+        errormsg: Option<String>,
+    },
+    /// Delete a macro
+    Delete {
+        /// Name of the macro to delete
+        #[arg(value_name = "NAME")]
+        name: String,
+        /// Skip confirmation
+        #[arg(short, long)]
+        force: bool,
+    },
+}
+
+pub async fn run(
+    config: splunk_config::Config,
+    command: MacrosCommand,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
+) -> Result<()> {
+    match command {
+        MacrosCommand::List { count } => {
+            run_list(
+                config,
+                count,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
+        }
+        MacrosCommand::Info { name } => {
+            run_info(
+                config,
+                &name,
+                output_format,
+                output_file.clone(),
+                cancel,
+                no_cache,
+            )
+            .await
+        }
+        MacrosCommand::Create {
+            name,
+            definition,
+            args,
+            description,
+            disabled,
+            iseval,
+            validation,
+            errormsg,
+        } => {
+            run_create(
+                config,
+                name,
+                definition,
+                args,
+                description,
+                disabled,
+                iseval,
+                validation,
+                errormsg,
+                cancel,
+                no_cache,
+            )
+            .await
+        }
+        MacrosCommand::Update {
+            name,
+            definition,
+            args,
+            description,
+            disable,
+            enable,
+            iseval,
+            no_iseval,
+            validation,
+            errormsg,
+        } => {
+            run_update(
+                config,
+                name,
+                definition,
+                args,
+                description,
+                disable,
+                enable,
+                iseval,
+                no_iseval,
+                validation,
+                errormsg,
+                cancel,
+                no_cache,
+            )
+            .await
+        }
+        MacrosCommand::Delete { name, force } => {
+            run_delete(config, &name, force, cancel, no_cache).await
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_create(
+    config: splunk_config::Config,
+    name: String,
+    definition: String,
+    args: Option<String>,
+    description: Option<String>,
+    disabled: bool,
+    iseval: bool,
+    validation: Option<String>,
+    errormsg: Option<String>,
+    cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
+) -> Result<()> {
+    info!("Creating macro: {}", name);
+
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
+
+    let params = MacroCreateParams {
+        name: name.clone(),
+        definition: definition.clone(),
+        args: args.clone(),
+        description: description.clone(),
+        disabled,
+        iseval,
+        validation: validation.clone(),
+        errormsg: errormsg.clone(),
+    };
+
+    cancellable_with!(client.create_macro(params), cancel, |_res| {
+        eprintln!("Macro '{}' created successfully", name);
+        Ok(())
+    })?;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_update(
+    config: splunk_config::Config,
+    name: String,
+    definition: Option<String>,
+    args: Option<String>,
+    description: Option<String>,
+    disable: bool,
+    enable: bool,
+    iseval: bool,
+    no_iseval: bool,
+    validation: Option<String>,
+    errormsg: Option<String>,
+    cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
+) -> Result<()> {
+    info!("Updating macro: {}", name);
+
+    // Validate conflicting flags
+    if disable && enable {
+        return Err(anyhow::anyhow!(
+            "Invalid flags: --disable and --enable cannot be used together"
+        ));
+    }
+    if iseval && no_iseval {
+        return Err(anyhow::anyhow!(
+            "Invalid flags: --iseval and --no-iseval cannot be used together"
+        ));
+    }
+
+    // Build optional values
+    let disabled = if disable {
+        Some(true)
+    } else if enable {
+        Some(false)
+    } else {
+        None
+    };
+
+    let iseval_flag = if iseval {
+        Some(true)
+    } else if no_iseval {
+        Some(false)
+    } else {
+        None
+    };
+
+    // Validate at least one field is provided
+    if definition.is_none()
+        && args.is_none()
+        && description.is_none()
+        && disabled.is_none()
+        && iseval_flag.is_none()
+        && validation.is_none()
+        && errormsg.is_none()
+    {
+        return Err(anyhow::anyhow!(
+            "At least one field must be provided to update"
+        ));
+    }
+
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
+
+    let params = MacroUpdateParams {
+        definition: definition.clone(),
+        args: args.clone(),
+        description: description.clone(),
+        disabled,
+        iseval: iseval_flag,
+        validation: validation.clone(),
+        errormsg: errormsg.clone(),
+    };
+
+    cancellable_with!(client.update_macro(&name, params), cancel, |_res| {
+        eprintln!("Macro '{}' updated successfully", name);
+        Ok(())
+    })?;
+
+    Ok(())
+}
+
+async fn run_list(
+    config: splunk_config::Config,
+    count: usize,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
+) -> Result<()> {
+    info!("Listing macros (count: {})", count);
+
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
+
+    let macros = cancellable!(client.list_macros(), cancel)?;
+
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
+    let output = formatter.format_macros(&macros)?;
+    output_result(&output, format, output_file.as_ref())?;
+
+    Ok(())
+}
+
+async fn run_info(
+    config: splunk_config::Config,
+    name: &str,
+    output_format: &str,
+    output_file: Option<std::path::PathBuf>,
+    cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
+) -> Result<()> {
+    info!("Getting macro info for: {}", name);
+
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
+
+    let macro_info = cancellable!(client.get_macro(name), cancel)?;
+
+    let format = OutputFormat::from_str(output_format)?;
+    let formatter = get_formatter(format);
+    let output = formatter.format_macro_info(&macro_info)?;
+    output_result(&output, format, output_file.as_ref())?;
+
+    Ok(())
+}
+
+async fn run_delete(
+    config: splunk_config::Config,
+    name: &str,
+    force: bool,
+    cancel: &crate::cancellation::CancellationToken,
+    no_cache: bool,
+) -> Result<()> {
+    info!("Deleting macro: {}", name);
+
+    if !force && !crate::interactive::confirm_delete(name, "macro")? {
+        return Ok(());
+    }
+
+    let client = crate::commands::build_client_from_config(&config, Some(no_cache))?;
+
+    cancellable_with!(client.delete_macro(name), cancel, |_res| {
+        eprintln!("Macro '{}' deleted successfully", name);
+        Ok(())
+    })?;
+
+    Ok(())
+}

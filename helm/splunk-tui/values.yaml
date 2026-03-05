@@ -1,0 +1,111 @@
+# Default values for splunk-tui.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: ghcr.io/fitchmultz/splunk-tui
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Disable automatic service account token mounting for security
+  # These pods don't need Kubernetes API access
+  automountServiceAccountToken: false
+
+# CLI configuration
+cli:
+  enabled: true
+  replicaCount: 1
+
+  splunk:
+    baseUrl: ""
+    username: ""
+    password: ""
+    skipVerify: false
+
+  # Use an existing secret for Splunk credentials instead of creating one
+  existingSecret: ""
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+# TUI configuration
+tui:
+  enabled: false
+  replicaCount: 1
+
+  splunk:
+    baseUrl: ""
+    username: ""
+    password: ""
+    skipVerify: false
+
+  # Use an existing secret for Splunk credentials instead of creating one
+  existingSecret: ""
+
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 8080
+    annotations: {}
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}

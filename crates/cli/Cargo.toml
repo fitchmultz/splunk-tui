@@ -1,0 +1,81 @@
+[package]
+name = "splunk-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "splunk-cli"
+path = "src/main.rs"
+
+[dependencies]
+splunk-client = { path = "../client" }
+splunk-config = { path = "../config" }
+
+# Async Runtime
+tokio = { workspace = true }
+futures = { workspace = true }
+
+# CLI
+clap = { workspace = true }
+clap_complete = "4.5"
+clap_mangen = "0.2"
+dialoguer = "0.12"
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Error Handling
+anyhow = { workspace = true }
+
+# Secrets
+secrecy = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# OpenTelemetry
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
+# Progress indicators (stderr-only via ProgressDrawTarget::stderr())
+indicatif = "0.18"
+
+# File operations
+tempfile = "3"
+
+# Date/time
+chrono = { workspace = true }
+
+# Bundle compression
+zip = { version = "7", default-features = false, features = ["deflate"] }
+
+# Cache directory resolution
+directories = "6"
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = "3"
+tempfile = "3"
+keyring = { workspace = true }
+wiremock = { workspace = true }
+serde_json = { workspace = true }
+dotenvy = { workspace = true }
+zip = { version = "7", default-features = false, features = ["deflate"] }
+criterion = { workspace = true }
+splunk-client = { path = "../client", features = ["test-utils"] }
+
+# Unix-only tests send SIGINT to child processes.
+[target.'cfg(unix)'.dev-dependencies]
+libc = "0.2"
+
+[[bench]]
+name = "formatter_benchmarks"
+harness = false

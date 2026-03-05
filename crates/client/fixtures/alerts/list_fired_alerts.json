@@ -1,0 +1,46 @@
+{
+  "entry": [
+    {
+      "name": "scheduler__admin__search__MyAlert_at_1351181001_5.31_1351181987",
+      "content": {
+        "actions": "email",
+        "alertType": "scheduled",
+        "digestMode": true,
+        "savedsearchName": "MyAlert",
+        "severity": "High",
+        "sid": "scheduler__admin__search__MyAlert_at_1351181001_5.31",
+        "triggerTime": 1351181987,
+        "triggerTimeRendered": "2012-10-25T09:19:47-07:00",
+        "triggeredAlerts": "1"
+      }
+    },
+    {
+      "name": "scheduler__admin__search__CriticalError_at_1351182000_1.12_1351183000",
+      "content": {
+        "actions": "email,webhook",
+        "alertType": "scheduled",
+        "digestMode": false,
+        "savedsearchName": "CriticalError",
+        "severity": "Critical",
+        "sid": "scheduler__admin__search__CriticalError_at_1351182000_1.12",
+        "triggerTime": 1351183000,
+        "triggerTimeRendered": "2012-10-25T09:36:40-07:00",
+        "triggeredAlerts": "3"
+      }
+    },
+    {
+      "name": "rt__admin__search__RealTimeAlert_at_1351184000_0.1_1351184000",
+      "content": {
+        "actions": "",
+        "alertType": "realtime",
+        "digestMode": true,
+        "savedsearchName": "RealTimeAlert",
+        "severity": "Medium",
+        "sid": "rt__admin__search__RealTimeAlert_at_1351184000_0.1",
+        "triggerTime": 1351184000,
+        "triggerTimeRendered": "2012-10-25T09:53:20-07:00",
+        "triggeredAlerts": "1"
+      }
+    }
+  ]
+}

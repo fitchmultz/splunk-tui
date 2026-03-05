@@ -1,0 +1,135 @@
+# HEC Event Streaming Example
+#
+# This workflow demonstrates sending various events to Splunk via HEC
+# for CI/CD observability and audit logging.
+#
+# Usage: Copy this file to .github/workflows/ and customize as needed
+
+name: HEC Event Streaming
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, closed, reopened]
+  workflow_dispatch:
+
+env:
+  SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+  SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+
+jobs:
+  stream-events:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Send workflow start event
+      - name: Send Workflow Start Event
+        uses: ./.github/actions/splunk-hec-send
+        with:
+          hec-url: ${{ secrets.SPLUNK_HEC_URL }}
+          hec-token: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          event: |
+            {
+              "message": "Workflow started",
+              "event_type": "workflow_start",
+              "repository": "${{ github.repository }}",
+              "workflow": "${{ github.workflow }}",
+              "run_id": "${{ github.run_id }}",
+              "actor": "${{ github.actor }}",
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}"
+            }
+          index: 'github_events'
+          sourcetype: 'github:workflow'
+          source: 'github-actions'
+
+      # Simulate some build steps and send intermediate events
+      - name: Send Build Step Events
+        run: |
+          # Create events file for batch send
+          cat > build-events.json << 'EOF'
+          [
+            {
+              "message": "Build step: install dependencies",
+              "event_type": "build_step",
+              "step": "install",
+              "status": "started"
+            },
+            {
+              "message": "Build step: compile",
+              "event_type": "build_step",
+              "step": "compile",
+              "status": "started"
+            },
+            {
+              "message": "Build step: test",
+              "event_type": "build_step",
+              "step": "test",
+              "status": "started"
+            }
+          ]
+          EOF
+          
+          cat build-events.json
+
+      # Send batch of build events
+      - name: Send Build Events (Batch)
+        uses: ./.github/actions/splunk-hec-send
+        with:
+          hec-url: ${{ secrets.SPLUNK_HEC_URL }}
+          hec-token: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          events-file: 'build-events.json'
+          index: 'github_events'
+          sourcetype: 'github:build'
+          source: 'github-actions'
+
+      # Send deployment event from file
+      - name: Create Deployment Event File
+        run: |
+          cat > deployment-event.json << EOF
+          {
+            "message": "Deployment event",
+            "event_type": "deployment",
+            "repository": "${{ github.repository }}",
+            "ref": "${{ github.ref }}",
+            "sha": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
+            "run_id": "${{ github.run_id }}"
+          }
+          EOF
+
+      - name: Send Deployment Event from File
+        uses: ./.github/actions/splunk-hec-send
+        with:
+          hec-url: ${{ secrets.SPLUNK_HEC_URL }}
+          hec-token: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          event: '@deployment-event.json'
+          index: 'github_events'
+          sourcetype: 'github:deployment'
+          source: 'github-actions'
+
+      # Send workflow completion event
+      - name: Send Workflow Complete Event
+        if: always()
+        uses: ./.github/actions/splunk-hec-send
+        with:
+          hec-url: ${{ secrets.SPLUNK_HEC_URL }}
+          hec-token: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          event: |
+            {
+              "message": "Workflow completed",
+              "event_type": "workflow_complete",
+              "repository": "${{ github.repository }}",
+              "workflow": "${{ github.workflow }}",
+              "run_id": "${{ github.run_id }}",
+              "actor": "${{ github.actor }}",
+              "conclusion": "${{ job.status }}",
+              "duration_seconds": ${{ steps.start-time.outputs.duration || 0 }}
+            }
+          index: 'github_events'
+          sourcetype: 'github:workflow'
+          source: 'github-actions'

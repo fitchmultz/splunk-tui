@@ -1,0 +1,14 @@
+[build]
+jobs = 8
+
+# Optional local speedups:
+# - sccache: set `RUSTC_WRAPPER=sccache`
+# - lld: configure target-specific linker flags in local machine overrides
+
+# Faster dev builds
+[profile.dev]
+opt-level = 0
+debug = true
+codegen-units = 256
+
+# Note: Release profile is defined in workspace Cargo.toml with more comprehensive settings

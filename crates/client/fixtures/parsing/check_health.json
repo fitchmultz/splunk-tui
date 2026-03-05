@@ -1,0 +1,26 @@
+[
+  {
+    "_time": "2025-01-20T10:30:00.000-05:00",
+    "source": "/opt/splunk/var/log/splunk/metrics.log",
+    "sourcetype": "splunkd",
+    "message": "Failed to parse timestamp for event",
+    "log_level": "ERROR",
+    "component": "DateParserVerbose"
+  },
+  {
+    "_time": "2025-01-20T10:35:00.000-05:00",
+    "source": "/opt/splunk/var/log/splunk/splunkd.log",
+    "sourcetype": "splunkd",
+    "message": "Could not use strptime time format for timestamp",
+    "log_level": "WARN",
+    "component": "DateParserVerbose"
+  },
+  {
+    "_time": "2025-01-20T11:00:00.000-05:00",
+    "source": "/opt/splunk/var/log/splunk/metrics.log",
+    "sourcetype": "splunkd",
+    "message": "Failed to parse event: unexpected format",
+    "log_level": "ERROR",
+    "component": "TuningParser"
+  }
+]

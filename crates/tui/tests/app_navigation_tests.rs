@@ -1,0 +1,440 @@
+//! Tests for screen/tab navigation and list navigation.
+//!
+//! This module tests:
+//! - Tab/Shift+Tab screen cycling
+//! - JobInspect exclusion from cycle
+//! - Up/down/page navigation
+//! - Go to top/bottom navigation
+//! - Boundary behavior
+//!
+//! ## Invariants
+//! - Tab on non-Search screens must navigate to next screen
+//! - Tab on Search screen in QueryFocused mode must toggle input mode
+//! - Tab on Search screen in ResultsFocused mode must navigate
+//! - JobInspect must not participate in tab cycling
+//!
+//! ## Test Organization
+//! Tests are grouped by navigation type: screen cycling, list navigation.
+
+mod helpers;
+use helpers::*;
+use splunk_client::models::SearchJobStatus;
+use splunk_tui::{CurrentScreen, action::Action, app::App, app::ConnectionContext};
+
+fn create_mock_jobs(count: usize) -> Vec<SearchJobStatus> {
+    (0..count)
+        .map(|i| SearchJobStatus {
+            sid: format!("sid_{}", i),
+            is_done: i % 2 == 0,
+            is_finalized: false,
+            done_progress: 0.5,
+            run_duration: 10.0,
+            disk_usage: 1024,
+            scan_count: 100,
+            event_count: 50,
+            result_count: 25,
+            cursor_time: None,
+            priority: None,
+            label: None,
+        })
+        .collect()
+}
+
+#[test]
+fn test_navigation_down_at_boundary() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(2)); // Already at last item
+
+    // Try to navigate down from last item
+    app.update(Action::NavigateDown);
+
+    // Should stay at last item (index 2)
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(2),
+        "Should stay at last item"
+    );
+}
+
+#[test]
+fn test_navigation_up_at_boundary() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(3))));
+    app.jobs_state.select(Some(0)); // Already at first item
+
+    // Try to navigate up from first item
+    app.update(Action::NavigateUp);
+
+    // Should stay at first item (index 0)
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(0),
+        "Should stay at first item"
+    );
+}
+
+#[test]
+fn test_navigation_down_normal() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
+    app.jobs_state.select(Some(1));
+
+    // Navigate down
+    app.update(Action::NavigateDown);
+
+    assert_eq!(app.jobs_state.selected(), Some(2), "Should move to index 2");
+}
+
+#[test]
+fn test_navigation_up_normal() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(5))));
+    app.jobs_state.select(Some(3));
+
+    // Navigate up
+    app.update(Action::NavigateUp);
+
+    assert_eq!(app.jobs_state.selected(), Some(2), "Should move to index 2");
+}
+
+#[test]
+fn test_page_down_navigation() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(25))));
+    app.jobs_state.select(Some(5));
+
+    // Page down
+    app.update(Action::PageDown);
+
+    // Should move to index 15 (5 + 10)
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(15),
+        "Should page down by 10"
+    );
+}
+
+#[test]
+fn test_page_up_navigation() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(25))));
+    app.jobs_state.select(Some(20));
+
+    // Page up
+    app.update(Action::PageUp);
+
+    // Should move to index 10 (20 - 10)
+    assert_eq!(app.jobs_state.selected(), Some(10), "Should page up by 10");
+}
+
+#[test]
+fn test_go_to_top() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
+    app.jobs_state.select(Some(7));
+
+    // Go to top
+    app.update(Action::GoToTop);
+
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(0),
+        "Should go to top (index 0)"
+    );
+}
+
+#[test]
+fn test_go_to_bottom() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Jobs;
+    app.update(Action::JobsLoaded(Ok(create_mock_jobs(10))));
+    app.jobs_state.select(Some(2));
+
+    // Go to bottom
+    app.update(Action::GoToBottom);
+
+    assert_eq!(
+        app.jobs_state.selected(),
+        Some(9),
+        "Should go to bottom (last index)"
+    );
+}
+
+#[test]
+fn test_screen_navigation_with_tab() {
+    // Tab on non-Search screens navigates to next screen
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Indexes;
+
+    // Navigate to Cluster with Tab
+    let action = app.handle_input(tab_key());
+    assert!(
+        matches!(action, Some(Action::NextScreen)),
+        "Should trigger NextScreen"
+    );
+    app.update(action.unwrap());
+    assert_eq!(
+        app.current_screen,
+        CurrentScreen::Cluster,
+        "Should switch to Cluster screen"
+    );
+}
+
+#[test]
+fn test_tab_navigates_to_next_screen() {
+    // Tab on non-Search screens navigates to next screen
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Indexes;
+
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Cluster);
+}
+
+#[test]
+fn test_tab_on_search_dispatches_next_screen() {
+    // Tab on Search screen now navigates to next screen (deterministic behavior)
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // Initial state: QueryFocused
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+
+    // Tab now dispatches NextScreen action (consistent with other screens)
+    let action = app.handle_input(tab_key());
+    assert!(
+        matches!(action, Some(Action::NextScreen)),
+        "Tab on Search should return NextScreen action"
+    );
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+    // Mode stays as QueryFocused (Tab doesn't toggle mode anymore)
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+}
+
+#[test]
+fn test_shift_tab_navigates_to_previous_screen() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Indexes;
+
+    let action = app.handle_input(shift_tab_key());
+    assert!(matches!(action, Some(Action::PreviousScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+}
+
+#[test]
+fn test_tab_cycles_through_screens() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Overview;
+
+    // Tab from Overview should go to MultiInstance
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::MultiInstance);
+
+    // Tab from MultiInstance should wrap to Search
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+
+    // Tab from Search now navigates deterministically (no mode toggle)
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+}
+
+#[test]
+fn test_shift_tab_cycles_backwards() {
+    let mut app = App::new(None, ConnectionContext::default());
+
+    // Start from Indexes
+    app.current_screen = CurrentScreen::Indexes;
+
+    // Shift+Tab from Indexes should go to Search
+    let action = app.handle_input(shift_tab_key());
+    assert!(matches!(action, Some(Action::PreviousScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Search);
+
+    // Shift+Tab from Search now navigates deterministically
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::MultiInstance);
+
+    // Shift+Tab from MultiInstance should go to Overview
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Overview);
+
+    // Shift+Tab from Overview should go to Settings
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Settings);
+
+    // Shift+Tab from Settings should go to Shc
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Shc);
+
+    // Shift+Tab from Shc should go to WorkloadManagement
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::WorkloadManagement);
+
+    // Shift+Tab from WorkloadManagement should go to DataModels
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::DataModels);
+
+    // Shift+Tab from DataModels should go to Dashboards
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Dashboards);
+
+    // Shift+Tab from Dashboards should go to Audit
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Audit);
+
+    // Shift+Tab from Audit should go to Lookups
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Lookups);
+
+    // Shift+Tab from Lookups should go to Forwarders
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Forwarders);
+
+    // Shift+Tab from Forwarders should go to FiredAlerts
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::FiredAlerts);
+
+    // Shift+Tab from FiredAlerts should go to Configs
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Configs);
+
+    // Shift+Tab from Configs should go to Inputs
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Inputs);
+
+    // Shift+Tab from Inputs should go to SearchPeers
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::SearchPeers);
+
+    // Shift+Tab from SearchPeers should go to Roles
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Roles);
+
+    // Shift+Tab from Roles should go to Users
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Users);
+}
+
+#[test]
+fn test_navigation_from_all_screens() {
+    // Test screens where Tab always navigates (non-Search screens)
+    let screens = [
+        CurrentScreen::Indexes,
+        CurrentScreen::Cluster,
+        CurrentScreen::Jobs,
+        CurrentScreen::Health,
+        CurrentScreen::SavedSearches,
+        CurrentScreen::InternalLogs,
+        CurrentScreen::Apps,
+        CurrentScreen::Users,
+        CurrentScreen::Roles,
+        CurrentScreen::SearchPeers,
+        CurrentScreen::Inputs,
+        CurrentScreen::Configs,
+        CurrentScreen::FiredAlerts,
+        CurrentScreen::Settings,
+    ];
+
+    for screen in screens {
+        let mut app = App::new(None, ConnectionContext::default());
+        app.current_screen = screen;
+
+        // Tab should work from all non-Search screens
+        let action = app.handle_input(tab_key());
+        assert!(
+            matches!(action, Some(Action::NextScreen)),
+            "Tab should work from {:?} screen",
+            screen
+        );
+        app.update(action.unwrap());
+        assert_ne!(
+            app.current_screen, screen,
+            "Screen should change from {:?}",
+            screen
+        );
+    }
+
+    // Test Search screen: Tab navigates deterministically regardless of input mode
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Search;
+
+    // In QueryFocused mode (default), Tab now navigates to next screen
+    assert!(matches!(
+        app.search_input_mode,
+        splunk_tui::SearchInputMode::QueryFocused
+    ));
+    let action = app.handle_input(tab_key());
+    assert!(
+        matches!(action, Some(Action::NextScreen)),
+        "Tab on Search should navigate to next screen deterministically"
+    );
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Indexes);
+    // Mode stays as QueryFocused (Tab doesn't toggle mode anymore)
+    assert!(
+        matches!(
+            app.search_input_mode,
+            splunk_tui::SearchInputMode::QueryFocused
+        ),
+        "Mode should stay as QueryFocused"
+    );
+}
+
+#[test]
+fn test_job_inspect_excluded_from_cycle() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::JobInspect;
+
+    // Tab from JobInspect should go to Jobs (not cycle)
+    let action = app.handle_input(tab_key());
+    assert!(matches!(action, Some(Action::NextScreen)));
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Jobs);
+
+    // Shift+Tab from JobInspect should also go to Jobs
+    app.current_screen = CurrentScreen::JobInspect;
+    let action = app.handle_input(shift_tab_key());
+    app.update(action.unwrap());
+    assert_eq!(app.current_screen, CurrentScreen::Jobs);
+}

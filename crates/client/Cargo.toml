@@ -1,0 +1,88 @@
+[package]
+name = "splunk-client"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+test-utils = ["proptest", "fake", "rand"]
+benchmark-utils = []
+
+[dependencies]
+splunk-config = { path = "../config" }
+
+# Async Runtime
+tokio = { workspace = true }
+directories = { workspace = true }
+
+# HTTP
+reqwest = { workspace = true, features = ["multipart"] }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error Handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Secrets
+secrecy = { workspace = true }
+uuid = { workspace = true }
+
+# Time
+chrono = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# OpenTelemetry
+tracing-opentelemetry = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Time
+time = { workspace = true }
+
+# Metrics
+metrics = "0.24"
+metrics-exporter-prometheus = "0.18"
+
+# Caching
+moka = { workspace = true }
+
+# URL Encoding
+percent-encoding = "2.3"
+
+# Testing (optional, enabled via test-utils feature)
+proptest = { workspace = true, optional = true }
+fake = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+
+[dev-dependencies]
+dotenvy = { workspace = true }
+proptest = { workspace = true }
+mockito = { workspace = true }
+wiremock = { workspace = true }
+tokio-test = "0.4"
+criterion = { workspace = true }
+tempfile = "3"
+# Enable test-utils feature for integration tests to access testing module
+splunk-client = { path = ".", features = ["test-utils"] }
+
+[[bench]]
+name = "serde_helpers_benchmarks"
+harness = false
+
+[[bench]]
+name = "model_parsing_benchmarks"
+harness = false
+
+[[bench]]
+name = "entry_extraction_benchmarks"
+harness = false

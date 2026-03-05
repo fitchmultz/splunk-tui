@@ -1,0 +1,113 @@
+[package]
+name = "splunk-tui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+default-run = "splunk-tui"
+
+[lib]
+name = "splunk_tui"
+path = "src/lib.rs"
+
+[[bin]]
+name = "splunk-tui"
+path = "src/main.rs"
+
+[[bin]]
+name = "generate-tui-docs"
+path = "src/bin/generate_tui_docs.rs"
+
+[dependencies]
+splunk-client = { path = "../client" }
+splunk-config = { path = "../config" }
+
+# Async Runtime
+tokio = { workspace = true }
+tokio-util = { version = "0.7", features = ["full"] }
+futures-util = "0.3"
+
+# Date/Time
+chrono = { workspace = true }
+
+# TUI
+ratatui = { workspace = true }
+crossterm = { workspace = true, features = ["event-stream"] }
+
+# Serialization
+serde_json = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+csv = { workspace = true }
+
+# Error Handling
+anyhow = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-appender = "0.2"
+
+# OpenTelemetry
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
+# Metrics
+metrics = "0.24"
+
+# CLI helpers (doc generation)
+clap = { workspace = true }
+
+# UUID for unique tracking
+uuid = { version = "1.20", features = ["v4"] }
+
+# Bitflags for efficient flag storage
+bitflags = { workspace = true }
+
+# Clipboard
+arboard = "3.6"
+
+# Secrets handling
+secrecy = { workspace = true }
+
+# Rich input components
+tui-input = "0.11"
+tui-textarea = "0.7"
+tui-scrollview = "0.5"
+
+# Syntax highlighting with tree-sitter
+tree-sitter = "0.22"
+
+# Flexbox layout with taffy (Yoga-based)
+taffy = "0.5"
+
+# Big ASCII text headers
+tui-big-text = "0.7"
+
+
+[dev-dependencies]
+insta = { version = "1.46", features = ["filters"] }
+tempfile = "3"
+serial_test = { workspace = true }
+temp-env = { workspace = true }
+wiremock = "0.6"
+reqwest = { workspace = true }
+secrecy = { workspace = true }
+criterion = { workspace = true }
+# Enable test-utils feature for shared test helpers
+splunk-client = { path = "../client", features = ["test-utils"] }
+
+[[bench]]
+name = "spawn_overhead"
+harness = false
+
+[[bench]]
+name = "syntax_highlighting_benchmarks"
+harness = false
+
+[[bench]]
+name = "export_benchmarks"
+harness = false

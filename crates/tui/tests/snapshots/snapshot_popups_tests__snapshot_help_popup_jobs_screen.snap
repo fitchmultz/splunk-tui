@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/snapshot_popups_tests.rs
+expression: harness.render()
+---
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Splunk TUI - Jobs | [?] Unknown                                               │
+│ |                                                                            │
+└────────┌Help - Jobs─────────────────────────────────────────────────┐────────┘
+┌Search J│Jobs Screen:                                                ↑────────┐
+│        │  r               Refresh jobs                              █        │
+│        │  /               Filter jobs                               ║        │
+│        │  s               Cycle sort column                         ║        │
+│        │  a               Toggle auto-refresh                       ║        │
+│        │  Space           Toggle job selection                      ║        │
+│        │  c               Cancel selected job(s)                    ║        │
+│        │  d               Delete selected job(s)                    ║        │
+│        │  Enter           Inspect job                               ║        │
+│        │  Ctrl+c          Copy selected SID                         ║        │
+│        │  Ctrl+e          Export jobs                               ║        │
+│        │  L               Load more jobs                            ║        │
+│        │  j/k or Up/Down  Navigate list                             ║        │
+│        │                                                            ║        │
+│        │Global Keys:                                                ║        │
+│        │  ?               Help                                      ↓        │
+└────────└────────────────────────────────────────────────────────────┘────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│Esc:Close | r:Refresh /:Filter s:Sort a:Auto| ?:Help | q:Quit                 │
+└──────────────────────────────────────────────────────────────────────────────┘

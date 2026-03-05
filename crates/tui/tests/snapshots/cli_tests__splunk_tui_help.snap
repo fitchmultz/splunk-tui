@@ -1,0 +1,73 @@
+---
+source: crates/tui/tests/cli_tests.rs
+expression: normalized
+---
+Command-line arguments for splunk-tui.
+
+Configuration precedence (highest to lowest): X. CLI arguments (e.g., --profile, --config-path) X. Environment variables (e.g., SPLUNK_PROFILE, SPLUNK_BASE_URL) X. Profile configuration (from config.json) X. Default values
+
+Usage: splunk-tui [OPTIONS]
+
+Options:
+  -p, --profile <PROFILE>
+          Config profile name to load
+
+      --config-path <CONFIG_PATH>
+          Path to a custom configuration file
+
+      --config-password <CONFIG_PASSWORD>
+          Password for configuration file encryption
+          
+          [env: SPLUNK_CONFIG_PASSWORD=]
+
+      --config-key-var <CONFIG_KEY_VAR>
+          Environment variable containing the configuration encryption key (hex)
+          
+          [env: SPLUNK_CONFIG_KEY_VAR=]
+
+      --log-dir <LOG_DIR>
+          Directory for log files
+          
+          [default: logs]
+
+      --no-mouse
+          Disable mouse support
+
+      --skip-tutorial
+          Skip the first-run tutorial
+
+      --fresh
+          Start with fresh state, ignoring any persisted state
+
+      --metrics-bind <METRICS_BIND>
+          Enable Prometheus metrics endpoint and bind address (e.g., "localhost:X")
+          
+          When enabled, exposes /metrics endpoint for Prometheus scraping.
+          
+          [env: SPLUNK_METRICS_BIND=]
+
+      --otlp-endpoint <OTLP_ENDPOINT>
+          Enable OpenTelemetry tracing and specify OTLP endpoint (e.g., "http://localhost:X")
+          
+          When enabled, traces are exported to the specified OTLP endpoint. Can also be set via SPLUNK_OTLP_ENDPOINT environment variable.
+          
+          [env: SPLUNK_OTLP_ENDPOINT=]
+
+      --otel-service-name <OTEL_SERVICE_NAME>
+          Service name for OpenTelemetry traces
+          
+          [env: SPLUNK_OTEL_SERVICE_NAME=]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+Examples:
+  splunk-tui
+  splunk-tui --profile production
+  splunk-tui --config-path /etc/splunk-tui/config.json
+  splunk-tui --log-dir /var/log/splunk-tui --no-mouse
+  splunk-tui --skip-tutorial
+  splunk-tui --fresh

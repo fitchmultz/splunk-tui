@@ -1,0 +1,243 @@
+//! Snapshot tests for footer hints rendering.
+
+mod helpers;
+
+use helpers::{TuiHarness, create_mock_index, create_mock_jobs};
+use splunk_tui::app::state::SearchInputMode;
+
+#[test]
+fn snapshot_footer_hints_search_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input.set_value("index=main");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_jobs_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_indexes_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Indexes;
+    harness.app.indexes = Some(vec![create_mock_index()]);
+    harness.app.indexes_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_cluster_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Cluster;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_apps_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Apps;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_settings_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Settings;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_narrow_terminal() {
+    // Test footer hints truncation on narrow terminal (60 cols)
+    let mut harness = TuiHarness::new(60, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_job_inspect_screen() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_with_loading() {
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.loading = true;
+    harness.app.progress = 0.65;
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_search_query_focused() {
+    // Test footer in Search screen with QueryFocused mode
+    // Footer should show "[FOCUS]" indicator and "Tab:Toggle"
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.search_input.set_value("index=main");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_hints_search_results_focused() {
+    // Test footer in Search screen with ResultsFocused mode
+    // Footer should show "[NAV]" indicator and "Tab:Next"
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::ResultsFocused;
+    harness.app.search_input.set_value("index=main");
+    // Add some mock results so the screen makes sense
+    harness.app.search_results = vec![
+        serde_json::json!({"_raw": "test event 1"}),
+        serde_json::json!({"_raw": "test event 2"}),
+    ];
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_search_narrow_terminal() {
+    // Narrow terminal (60 cols) - verify mode indicator is preserved
+    let mut harness = TuiHarness::new(60, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.search_input.set_value("index=main");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_search_very_narrow_terminal() {
+    // Very narrow terminal (40 cols) - minimal hints, mode indicator preserved
+    let mut harness = TuiHarness::new(40, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Search;
+    harness.app.search_input_mode = SearchInputMode::QueryFocused;
+    harness.app.search_input.set_value("idx");
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_job_inspect_esc_hint() {
+    // JobInspect screen should show "Esc:Back" hint
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::JobInspect;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_other_screen_no_mode_indicator() {
+    // Non-Search screens with single focus should NOT show mode indicator
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+    harness.app.focus_navigation_mode = false; // Explicitly disable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_multi_focus_jobs_screen() {
+    // Jobs screen with multi-focus should show [FOCUS] indicator and focus hints
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Jobs;
+    harness.app.jobs = Some(create_mock_jobs());
+    harness.app.filtered_job_indices = vec![0, 1];
+    harness.app.jobs_state.select(Some(0));
+    harness.app.focus_navigation_mode = true; // Enable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_multi_focus_cluster_screen() {
+    // Cluster screen with multi-focus should show [FOCUS] indicator and focus hints
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Cluster;
+    harness.app.focus_navigation_mode = true; // Enable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_multi_focus_configs_screen() {
+    // Configs screen with multi-focus should show [FOCUS] indicator and focus hints
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.current_screen = splunk_tui::CurrentScreen::Configs;
+    harness.app.focus_navigation_mode = true; // Enable focus navigation
+
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_with_tutorial_popup() {
+    // Footer should show tutorial-specific hints when tutorial is open
+    use splunk_tui::onboarding::TutorialState;
+
+    let mut harness = TuiHarness::new(80, 24);
+    let state = TutorialState::new();
+    harness.app.popup = Some(
+        splunk_tui::Popup::builder(splunk_tui::ui::popup::PopupType::TutorialWizard { state })
+            .build(),
+    );
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_with_error_popup() {
+    // Footer should show error-specific hints when error details popup is open
+    // ErrorDetails popup requires larger terminal to avoid buffer overflow
+    let mut harness = TuiHarness::new(100, 40);
+    harness.app.current_error = Some(splunk_tui::error_details::ErrorDetails::from_error_string(
+        "Test error",
+    ));
+    harness.app.popup =
+        Some(splunk_tui::Popup::builder(splunk_tui::ui::popup::PopupType::ErrorDetails).build());
+    insta::assert_snapshot!(harness.render());
+}
+
+#[test]
+fn snapshot_footer_with_auth_recovery_popup() {
+    use splunk_tui::error_details::AuthRecoveryKind;
+
+    let mut harness = TuiHarness::new(80, 24);
+    harness.app.popup = Some(
+        splunk_tui::Popup::builder(splunk_tui::ui::popup::PopupType::AuthRecovery {
+            kind: AuthRecoveryKind::InvalidCredentials,
+        })
+        .build(),
+    );
+    insta::assert_snapshot!(harness.render());
+}

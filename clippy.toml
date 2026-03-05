@@ -1,0 +1,8 @@
+# Clippy configuration for splunk-tui workspace
+# These settings apply to all crates in the workspace
+
+# Avoid lints that are too pedantic for this codebase
+avoid-breaking-exported-api = true
+
+# MSRV (should match rust-toolchain.toml)
+msrv = "1.84"

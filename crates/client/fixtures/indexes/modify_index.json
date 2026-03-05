@@ -1,0 +1,21 @@
+{
+  "entry": [
+    {
+      "name": "main",
+      "content": {
+        "name": "main",
+        "maxTotalDataSizeMB": 2000,
+        "currentDBSizeMB": 1024,
+        "totalEventCount": 1000000,
+        "maxWarmDBCount": 400,
+        "maxHotBuckets": 15,
+        "frozenTimePeriodInSecs": 2592000,
+        "coldDBPath": "/splunk/main/colddb",
+        "homePath": "/splunk/main/db",
+        "thawedPath": "/splunk/main/thaweddb",
+        "primaryIndex": true
+      },
+      "acl": null
+    }
+  ]
+}
