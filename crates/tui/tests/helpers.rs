@@ -1,14 +1,21 @@
-//! Test helpers for TUI testing.
-//!
-//! Provides utility functions for simulating keyboard input and creating
-//! test fixtures for the TUI application.
+//! Purpose: Shared test harness and fixtures for deterministic Splunk TUI integration tests.
+//! Responsibilities: Render offscreen buffers, drive key input, serialize visual output, and provide reusable assertions.
+//! Scope: Test-only utilities used by `crates/tui/tests/*`.
+//! Usage: Import helpers in integration tests to avoid duplicating setup and visual assertion logic.
+//! Invariants/Assumptions: Uses ratatui `TestBackend` with fixed dimensions and no network side effects.
 
 #![allow(dead_code)]
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use ratatui::{Terminal, backend::TestBackend};
+use ratatui::{
+    Terminal,
+    backend::TestBackend,
+    buffer::{Buffer, Cell},
+    style::{Color, Modifier, Style},
+};
 use splunk_client::models::{Index, LogEntry, LogLevel, SearchJobStatus, User, UserType};
 use splunk_tui::{App, ConnectionContext};
+use std::fmt::Write;
 
 /// Test harness for TUI rendering with a mock terminal.
 pub struct TuiHarness {
@@ -25,17 +32,36 @@ impl TuiHarness {
         Self { app, terminal }
     }
 
-    /// Render the current app state and return the buffer contents.
+    /// Render the current app state and return the visible text buffer.
     pub fn render(&mut self) -> String {
+        let buffer = self.render_buffer();
+        buffer_to_string(&buffer)
+    }
+
+    /// Render the current app state and return the raw ratatui buffer.
+    pub fn render_buffer(&mut self) -> Buffer {
         self.terminal
             .draw(|f| self.app.render(f))
             .expect("Failed to render");
-        buffer_to_string(self.terminal.backend().buffer())
+        self.terminal.backend().buffer().clone()
+    }
+
+    /// Render the current app state and return style-aware run serialization.
+    pub fn render_styled(&mut self) -> String {
+        let buffer = self.render_buffer();
+        buffer_to_styled_string(&buffer)
+    }
+
+    /// Drive one keyboard event through the reducer-style update loop.
+    pub fn step_key(&mut self, key: KeyEvent) {
+        if let Some(action) = self.app.handle_input(key) {
+            self.app.update(action);
+        }
     }
 }
 
 /// Convert a ratatui Buffer to a string for snapshot testing.
-pub fn buffer_to_string(buffer: &ratatui::buffer::Buffer) -> String {
+pub fn buffer_to_string(buffer: &Buffer) -> String {
     let area = buffer.area();
     let mut output = String::new();
 
@@ -50,6 +76,210 @@ pub fn buffer_to_string(buffer: &ratatui::buffer::Buffer) -> String {
     }
 
     output
+}
+
+/// Convert a ratatui buffer to stable style-aware runs for visual regression snapshots.
+///
+/// Format per row:
+/// `YY: [fg=...,bg=...,ul=...,add=...,sub=...]text[fg=..., ...]text`
+pub fn buffer_to_styled_string(buffer: &Buffer) -> String {
+    let area = buffer.area();
+    let mut output = String::new();
+
+    for y in area.top()..area.bottom() {
+        let mut active_style: Option<String> = None;
+        let mut run_text = String::new();
+
+        let _ = write!(&mut output, "{:02}: ", y - area.top());
+
+        for x in area.left()..area.right() {
+            let cell = &buffer[(x, y)];
+            let style = style_token(cell_style(cell));
+            let ch = printable_cell_char(cell);
+
+            match &active_style {
+                Some(current) if current == &style => {
+                    run_text.push(ch);
+                }
+                Some(current) => {
+                    flush_style_run(&mut output, current, &run_text);
+                    run_text.clear();
+                    run_text.push(ch);
+                    active_style = Some(style);
+                }
+                None => {
+                    active_style = Some(style);
+                    run_text.push(ch);
+                }
+            }
+        }
+
+        if let Some(style) = &active_style {
+            flush_style_run(&mut output, style, &run_text);
+        }
+
+        if y < area.bottom() - 1 {
+            output.push('\n');
+        }
+    }
+
+    output
+}
+
+/// Locate text in the rendered buffer, returning its starting coordinate.
+pub fn find_text_position(buffer: &Buffer, needle: &str) -> Option<(u16, u16)> {
+    if needle.is_empty() {
+        return None;
+    }
+
+    let area = buffer.area();
+    for y in area.top()..area.bottom() {
+        let mut row = String::new();
+        for x in area.left()..area.right() {
+            row.push(buffer[(x, y)].symbol().chars().next().unwrap_or(' '));
+        }
+
+        if let Some(byte_index) = row.find(needle) {
+            let char_offset = row[..byte_index].chars().count() as u16;
+            return Some((area.left() + char_offset, y));
+        }
+    }
+
+    None
+}
+
+/// Assert every cell in `needle` has the expected foreground color.
+pub fn assert_text_has_fg(buffer: &Buffer, needle: &str, expected_fg: Color) {
+    let (x, y) = find_text_position(buffer, needle).unwrap_or_else(|| {
+        panic!(
+            "Text '{needle}' not found in buffer.\nRendered:\n{}",
+            buffer_to_string(buffer)
+        )
+    });
+
+    for (offset, ch) in needle.chars().enumerate() {
+        let cell = &buffer[(x + offset as u16, y)];
+        let style = cell_style(cell);
+        assert_eq!(
+            style.fg,
+            Some(expected_fg),
+            "Unexpected fg style for '{ch}' in '{needle}' at ({}, {}). style={}",
+            x + offset as u16,
+            y,
+            style_token(style)
+        );
+    }
+}
+
+/// Assert every cell in `needle` includes the expected modifier.
+pub fn assert_text_has_modifier(buffer: &Buffer, needle: &str, expected_modifier: Modifier) {
+    let (x, y) = find_text_position(buffer, needle).unwrap_or_else(|| {
+        panic!(
+            "Text '{needle}' not found in buffer.\nRendered:\n{}",
+            buffer_to_string(buffer)
+        )
+    });
+
+    for (offset, ch) in needle.chars().enumerate() {
+        let cell = &buffer[(x + offset as u16, y)];
+        let style = cell_style(cell);
+        assert!(
+            style.add_modifier.contains(expected_modifier),
+            "Expected modifier {:?} for '{ch}' in '{needle}' at ({}, {}), style={}",
+            expected_modifier,
+            x + offset as u16,
+            y,
+            style_token(style)
+        );
+    }
+}
+
+fn flush_style_run(output: &mut String, style: &str, run_text: &str) {
+    let _ = write!(output, "[{style}]{}", display_run(run_text));
+}
+
+fn display_run(text: &str) -> String {
+    text.chars()
+        .map(|c| if c == ' ' { '·' } else { c })
+        .collect()
+}
+
+fn printable_cell_char(cell: &Cell) -> char {
+    cell.symbol().chars().next().unwrap_or(' ')
+}
+
+fn cell_style(cell: &Cell) -> Style {
+    cell.style()
+}
+
+fn style_token(style: Style) -> String {
+    format!(
+        "fg={},bg={},ul={},add={},sub={}",
+        optional_color_token(style.fg),
+        optional_color_token(style.bg),
+        optional_color_token(style.underline_color),
+        modifiers_token(style.add_modifier),
+        modifiers_token(style.sub_modifier),
+    )
+}
+
+fn optional_color_token(color: Option<Color>) -> String {
+    match color {
+        Some(c) => color_token(c),
+        None => "none".to_string(),
+    }
+}
+
+fn color_token(color: Color) -> String {
+    match color {
+        Color::Reset => "reset".to_string(),
+        Color::Black => "black".to_string(),
+        Color::Red => "red".to_string(),
+        Color::Green => "green".to_string(),
+        Color::Yellow => "yellow".to_string(),
+        Color::Blue => "blue".to_string(),
+        Color::Magenta => "magenta".to_string(),
+        Color::Cyan => "cyan".to_string(),
+        Color::Gray => "gray".to_string(),
+        Color::DarkGray => "dark_gray".to_string(),
+        Color::LightRed => "light_red".to_string(),
+        Color::LightGreen => "light_green".to_string(),
+        Color::LightYellow => "light_yellow".to_string(),
+        Color::LightBlue => "light_blue".to_string(),
+        Color::LightMagenta => "light_magenta".to_string(),
+        Color::LightCyan => "light_cyan".to_string(),
+        Color::White => "white".to_string(),
+        Color::Indexed(i) => format!("idx({i})"),
+        Color::Rgb(r, g, b) => format!("rgb({r},{g},{b})"),
+    }
+}
+
+fn modifiers_token(modifiers: Modifier) -> String {
+    let mut names = Vec::new();
+
+    let known = [
+        (Modifier::BOLD, "bold"),
+        (Modifier::DIM, "dim"),
+        (Modifier::ITALIC, "italic"),
+        (Modifier::UNDERLINED, "underlined"),
+        (Modifier::SLOW_BLINK, "slow_blink"),
+        (Modifier::RAPID_BLINK, "rapid_blink"),
+        (Modifier::REVERSED, "reversed"),
+        (Modifier::HIDDEN, "hidden"),
+        (Modifier::CROSSED_OUT, "crossed_out"),
+    ];
+
+    for (flag, name) in known {
+        if modifiers.contains(flag) {
+            names.push(name);
+        }
+    }
+
+    if names.is_empty() {
+        "none".to_string()
+    } else {
+        names.join("+")
+    }
 }
 
 /// Create mock user data for testing.

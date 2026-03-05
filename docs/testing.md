@@ -289,11 +289,17 @@ The TUI includes a comprehensive snapshot-based UX regression suite to prevent s
 | `app_error_tests.rs` | 31 | Error classification, auth recovery flows |
 | `app_navigation_tests.rs` | 23 | Screen cycling, list navigation |
 
-### Running TUX UX Tests
+### Running TUI UX Tests
 
 ```bash
-# Run all snapshot tests
+# Run all character-only snapshot tests
 cargo test -p splunk-tui --test snapshot_
+
+# Run style-aware + interaction visual tests
+make tui-visual
+
+# Run accessibility contrast checks
+make tui-accessibility
 
 # Run specific UX test files
 cargo test -p splunk-tui --test snapshot_tutorial_tests
@@ -303,6 +309,9 @@ cargo test -p splunk-tui --test first_run_tests
 
 ### Snapshot Best Practices
 
+For style-aware snapshots (`snapshot_styled_tests.rs`), use `harness.render_styled()` so each row includes compact style runs (`fg/bg/modifiers`) and can catch semantic color regressions.
+
+
 1. **Determinism**: Avoid timestamps, random data, or HashMap ordering in snapshots
 2. **Terminal size**: Use appropriate sizes (80x24 for standard, 120x50 for complex popups)
 3. **Review changes**: When snapshots change, use `cargo insta review` to accept/reject
@@ -311,9 +320,11 @@ cargo test -p splunk-tui --test first_run_tests
 
 1. Create a `TuiHarness` with appropriate terminal dimensions
 2. Set up the app state (popup, current_error, etc.)
-3. Call `harness.render()` and use `insta::assert_snapshot!`
-4. Run `cargo test` to generate the initial snapshot
-5. Review the snapshot in `crates/tui/tests/snapshots/`
+3. For text/layout checks, call `harness.render()` and snapshot the output
+4. For style/semantic checks, call `harness.render_styled()` and snapshot the output
+5. Add targeted assertions (`assert_text_has_fg`, `assert_text_has_modifier`) for high-signal semantics
+6. Run `cargo test` to generate initial snapshots
+7. Review snapshots in `crates/tui/tests/snapshots/`
 
 ## Quick UX Validation
 
@@ -326,7 +337,7 @@ For rapid iteration on TUI visual components, use the smoke test target:
 make tui-smoke
 ```
 
-This runs the 8 snapshot test files (84 tests total) covering:
+This runs the 8 character-snapshot test files (84 tests total) covering:
 - Tutorial wizard (8 tests)
 - Error details (5 tests)
 - Application popups (20 tests)
@@ -335,6 +346,13 @@ This runs the 8 snapshot test files (84 tests total) covering:
 - Search interfaces (10 tests)
 - Job displays (5 tests)
 - Miscellaneous UI (3 tests)
+
+For stronger visual guarantees, run:
+
+```bash
+make tui-visual
+make tui-accessibility
+```
 
 ### When to Use Smoke vs Full CI
 
@@ -357,9 +375,28 @@ make run-tui
 cargo run --package splunk-tui
 ```
 
+## Visual Automation Roadmap (researched March 5, 2026)
+
+Current approach (ratatui `TestBackend` + character/styled snapshots) should remain the primary PR gate because it is deterministic and fast.
+
+For stronger visual automation beyond the current gate:
+
+1. **Scripted terminal recordings for behavior demos + regression artifacts**
+   - Use [VHS](https://github.com/charmbracelet/vhs) tapes to run repeatable CLI/TUI sessions.
+   - VHS supports integration-test style output (`Output ...`) and CI execution, and has a [GitHub Action](https://github.com/charmbracelet/vhs-action).
+2. **Stabilize snapshots with targeted redactions**
+   - Use [Insta redactions](https://insta.rs/docs/redactions/) for dynamic fields (timestamps, IDs) when adding richer snapshots.
+3. **Avoid adopting unmaintained renderers as required gates**
+   - [termtosvg](https://github.com/nbedos/termtosvg) is useful for SVG captures but is currently read-only; keep it optional/manual if used.
+4. **Optional capture pipeline for manual audits**
+   - [asciinema CLI](https://docs.asciinema.org/manual/cli/quick-start/) can record reproducible sessions for reviewer playback and troubleshooting artifacts.
+
 ## References
 
 - [Wiremock Documentation](https://docs.rs/wiremock/)
 - [Tokio Testing](https://tokio.rs/tokio/topics/testing)
 - [Chaos Engineering Principles](https://principlesofchaos.org/)
 - [Insta Snapshot Testing](https://insta.rs/)
+- [Ratatui Snapshot Testing Recipe](https://ratatui.rs/recipes/testing/snapshots/)
+- [VHS](https://github.com/charmbracelet/vhs)
+- [VHS GitHub Action](https://github.com/charmbracelet/vhs-action)

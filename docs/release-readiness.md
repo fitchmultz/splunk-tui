@@ -2,53 +2,95 @@
 
 ## Scope
 
-Public-release hardening with emphasis on reviewer confidence in correctness, UX/DX quality, deterministic CI, and secret-safety.
+Public-release hardening with emphasis on correctness, deterministic CI, visual/UX confidence, and secret-safety.
 
-## High-Risk Areas Addressed
+## What changed in this hardening pass
 
-1. **Secret exposure in CLI/TUI help output**
-   - Env-backed flags now hide env values in help text (`hide_env_values = true`).
-   - Regression tests added for both `splunk-cli` and `splunk-tui` help output.
-2. **Plaintext config flow reliability**
-   - `config set --plaintext` and `config edit --plaintext` now disable config-file encryption before save to prevent follow-up decryption/profile-load failures.
-   - Regression test added for cross-invocation readability.
-3. **Search UX mismatch on bare SPL queries**
-   - Bare queries like `index=_internal | head 5` are normalized to `search ...` automatically.
-   - Unit coverage added for normalization behavior.
-4. **CI determinism and safety**
-   - `make ci-fast`, `make ci`, and strict live mode all passing.
-5. **Secret guardrails**
-   - `make lint-secrets` enforced and passing.
+1. **Style-aware visual regression gate for TUI**
+   - Added `snapshot_styled_tests.rs` to capture styled buffer runs (`fg/bg/modifiers`) and assert semantic color contracts.
+   - Added `interaction_render_tests.rs` for keyboard-driven render/state transitions.
+2. **Accessibility contrast validation**
+   - Added `accessibility_contrast_tests.rs` to enforce minimum contrast thresholds across all shipped themes.
+3. **PR gate contract enforcement**
+   - Added `visual_testing_contract_tests.rs` in architecture-tests to ensure Makefile visual targets remain wired into smoke CI.
+4. **CI/Docs wiring**
+   - Added `make tui-visual` and `make tui-accessibility` and wired both into `make test-smoke`.
+   - Updated testing/CI/reviewer docs accordingly.
 
-## Current State Snapshot (2026-03-05)
+## Evidence (executed on March 5, 2026)
 
-Validated locally on **March 5, 2026**:
+### Deterministic local gates
 
-- `make lint-secrets` ✅
+- `make tui-visual` ✅
+- `make tui-accessibility` ✅
+- `make test-smoke` ✅
 - `make ci-fast` ✅
 - `make ci` ✅
+
+### Strict live validation against real Splunk
+
+Live target used: `https://192.168.1.122:8089` with provided isolated test credentials.
+
+- `LIVE_TESTS_MODE=required make test-live` ✅
+  - splunk-client live tests: **21/21 passed**
+  - splunk-cli live tests: **15/15 passed**
 - `CI_LIVE_TESTS_MODE=required make ci` ✅
-  - Client live tests: **21/21**
-  - CLI live tests: **15/15**
 
-Qualitative dogfood evidence is captured in:
-- `docs/role-evidence/qualitative-dogfood-2026-03-05.md`
+### Live API/CLI JSON shape receipts
 
-## Confidence by Concern
+Executed live commands and captured outputs under `logs/validation/`:
+
+- `live_health.json`
+- `live_indexes.json`
+- `live_apps.json`
+- `live_jobs.json`
+- `live_search.json`
+- `live_doctor.json`
+
+Validated successfully:
+
+- health payload includes `server_info`, `splunkd_health`, `license_usage`, `kvstore_status`
+- list endpoints produce non-empty typed arrays with expected fields
+- search returns expected row payload (`{"foo": "qual-check"}`)
+- doctor output includes connectivity/config checks
+
+## Confidence by concern
 
 - API response/runtime correctness (covered flows): **High**
-- TUI resize robustness: **High** (automated resize suite + tmux stress run)
-- First-user friction / intuitiveness: **Medium-High** (targeted fixes validated, but subjective UX always benefits from additional external user trials)
+- TUI resize robustness: **High** (resize suite in full CI + stress tests)
+- TUI visual semantics regression resistance: **High** (character snapshots + styled snapshots + interaction checks)
+- User friction / intuitiveness: **Medium-High** (strong automated and live smoke coverage; still inherently benefits from additional external user trials)
 
-## Remaining Known Risks
+## Top remaining risks
 
-1. **Environment-dependent live confidence**
-   - Strict live coverage requires reachable Splunk and valid credentials; by design this is optional for default PR gates.
-2. **Unvalidated paths outside covered flows**
-   - Confidence is strongest for tested/dogfooded core journeys; long-tail workflows should continue to be expanded with live and UX checks.
+1. **Long-tail UX workflows**
+   - Core flows are strongly covered, but subjective usability for uncommon workflows should continue via periodic dogfood runs.
+2. **Environment-coupled live confidence**
+   - Strict live confidence requires reachable Splunk infrastructure; default PR gate remains deterministic/offline by design.
 
-## Public-Release Recommendation
+## Reproduce locally
 
-Ready to go public from a quality and operational-discipline perspective, with evidence-backed confidence on core workflows and CI stability.
+```bash
+# deterministic PR gate
+make ci-fast
 
-Before visibility flip, execute `docs/public-release-runbook.md`.
+# full deterministic gate
+make ci
+
+# strict live gate (requires SPLUNK_* env)
+CI_LIVE_TESTS_MODE=required make ci
+```
+
+## CI matrix summary
+
+- **PR-required:** `make ci-fast`
+  - Includes: format/lint/type-check, secrets, smoke tests, `tui-visual`, `tui-accessibility`, docs drift, examples.
+  - Designed for deterministic, bounded local resource usage.
+- **Main/nightly/manual:** `make ci`
+  - Full workspace tests + optional/required live tests via `CI_LIVE_TESTS_MODE`.
+
+## Public-release recommendation
+
+Ready for public release based on executed evidence above.
+
+Before flipping visibility, execute `docs/public-release-runbook.md`.

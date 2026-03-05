@@ -35,7 +35,11 @@ Focused first-user experience validation using a live Splunk environment.
 - No decryption-error spam in dogfood logs after plaintext-flow fix.
 - Both legacy and explicit `search execute` forms succeeded with bare `index=...` queries.
 - TUI session remained stable under repeated resize transitions (no panics/errors observed in logs).
-- Full strict live CI passed end-to-end.
+- Full strict live CI passed end-to-end (`CI_LIVE_TESTS_MODE=required make ci`).
+- Live integration suite passed against the isolated test server:
+  - `splunk-client` live tests: `21/21`
+  - `splunk-cli` live tests: `15/15`
+- Additional live JSON-shape validation passed for health, indexes, apps, jobs, search, and doctor outputs.
 
 ## Confidence Outcome
 

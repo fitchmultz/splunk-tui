@@ -9,7 +9,7 @@
 	bench bench-client bench-cli bench-tui \
 	build install-bins release generate lint-docs ci ci-fast help lint-secrets install-hooks \
 	_generate-docs _lint-docs-check examples-test \
-	tui-smoke run-tui \
+	tui-smoke tui-visual tui-accessibility run-tui \
 	docker-build docker-run-cli docker-run-tui docker-compose-up \
 	docker-compose-cli docker-compose-tui docker-clean \
 	helm-install helm-upgrade helm-uninstall
@@ -47,7 +47,7 @@ endif
 # Hermetic tests:
 # Prevent test runs from accidentally loading a developer's local `.env` file.
 # (The Rust config loader respects `DOTENV_DISABLED` in `crates/config/src/loader.rs`.)
-test test-all test-unit test-integration test-smoke test-chaos tui-smoke ci ci-fast: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
+test test-all test-unit test-integration test-smoke test-chaos tui-smoke tui-visual tui-accessibility ci ci-fast: export DOTENV_DISABLED=1 CARGO_TERM_VERBOSE=false
 
 # Fetch all dependencies (warm caches, no build)
 install:
@@ -135,6 +135,7 @@ test-integration:
 # - crate unit tests
 # - minimal integration-path checks across CLI/client/config
 # - TUI snapshot smoke suite
+# - Style-aware visual checks and accessibility contrast checks
 test-smoke:
 	@echo "→ Running smoke test suite..."
 	@cargo test $(CARGO_JOBS_FLAG) -p architecture-tests --locked -- $(TEST_ARGS)
@@ -145,6 +146,8 @@ test-smoke:
 	@cargo test $(CARGO_JOBS_FLAG) -p splunk-config --lib --all-features --locked -- $(TEST_ARGS)
 	@cargo test $(CARGO_JOBS_FLAG) -p splunk-config --test integration_test --all-features --locked -- $(TEST_ARGS)
 	@$(MAKE) tui-smoke
+	@$(MAKE) tui-visual
+	@$(MAKE) tui-accessibility
 	@echo "  ✓ Smoke tests complete"
 
 # Run chaos engineering tests
@@ -174,6 +177,23 @@ tui-smoke:
 		--test snapshot_misc_tests \
 		--all-features --locked -- $(TEST_ARGS)
 	@echo "  ✓ TUI smoke tests complete"
+
+# Run style-aware TUI visual tests (semantic colors/modifiers + interaction flows).
+tui-visual:
+	@echo "→ Running TUI visual style tests..."
+	@cargo test $(CARGO_JOBS_FLAG) -p splunk-tui \
+		--test snapshot_styled_tests \
+		--test interaction_render_tests \
+		--all-features --locked -- $(TEST_ARGS)
+	@echo "  ✓ TUI visual tests complete"
+
+# Run accessibility contrast checks for supported color themes.
+tui-accessibility:
+	@echo "→ Running TUI accessibility contrast tests..."
+	@cargo test $(CARGO_JOBS_FLAG) -p splunk-tui \
+		--test accessibility_contrast_tests \
+		--all-features --locked -- $(TEST_ARGS)
+	@echo "  ✓ TUI accessibility checks complete"
 
 # Run the TUI binary locally (developer convenience)
 # Builds and runs the TUI with the dev profile for quick manual testing.
@@ -354,6 +374,8 @@ help:
 	@echo "  make test-live        - Run live tests (LIVE_TESTS_MODE=required|optional|skip)"
 	@echo "  make test-live-manual - Run manual live server test script"
 	@echo "  make tui-smoke        - Run TUI UX smoke tests (snapshot suite, fast feedback)"
+	@echo "  make tui-visual       - Run style-aware visual tests + interaction render checks"
+	@echo "  make tui-accessibility - Run theme contrast/accessibility checks"
 	@echo "  make run-tui          - Run TUI locally for manual testing"
 	@echo "  make bench            - Run all benchmarks"
 	@echo "  make bench-client     - Run client crate benchmarks"

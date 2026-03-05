@@ -36,7 +36,10 @@ make ci-fast
 3. secret guard (`make lint-secrets`)
 4. lint check (`make lint-check`)
 5. type check (`make type-check`)
-6. deterministic smoke test suite (`make test-smoke`)
+6. deterministic smoke test suite (`make test-smoke`), including:
+   - `make tui-smoke` (character snapshots)
+   - `make tui-visual` (style-aware snapshots + interaction visual checks)
+   - `make tui-accessibility` (theme contrast checks)
 7. docs drift check (`make _lint-docs-check PROFILE=ci`)
 8. examples script validation (`make examples-test`)
 
@@ -88,8 +91,10 @@ CI_LIVE_TESTS_MODE=optional make ci
 Approximate and hardware-dependent:
 
 - `make tui-smoke`: ~0.5–1 min
-- `make test-smoke`: ~5–15 min
-- `make ci-fast`: ~8–20 min
+- `make tui-visual`: ~0.5–2 min
+- `make tui-accessibility`: <0.5 min
+- `make test-smoke`: ~6–17 min
+- `make ci-fast`: ~9–22 min
 - `make ci`: ~20–60 min
 - `CI_LIVE_TESTS_MODE=required make ci`: depends on Splunk environment latency/stability
 
