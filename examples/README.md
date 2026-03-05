@@ -27,8 +27,8 @@ Scripts use the same configuration as `splunk-cli`:
    export SPLUNK_BASE_URL="https://your-splunk:8089"
    export SPLUNK_API_TOKEN="your-api-token"
    # or
-   export SPLUNK_USERNAME="admin"
-   export SPLUNK_PASSWORD="changeme"
+   export SPLUNK_USERNAME="replace-with-your-username"
+   export SPLUNK_PASSWORD="replace-with-your-password"
    ```
 
 2. **Configuration file** (`~/.config/splunk-tui/config.json`):

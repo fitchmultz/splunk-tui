@@ -135,6 +135,23 @@ git bundle verify "$BUNDLE"
 echo "$OLD_MAIN" > ../repo-backups/splunk-tui-old-main.sha
 ```
 
+### Step 1.5: Audit baseline tree content before rewrite
+
+Before creating the new public root commit from `BASE`, verify the baseline tree does not contain sensitive files or internal-only artifacts.
+
+```bash
+# Verify forbidden secret files are absent in baseline tree
+git ls-tree -r --name-only "$BASE_COMMIT" | grep -qE '(^|/)\.env$|(^|/)\.env\.test$' && {
+  echo "✗ Baseline commit contains forbidden env files (.env / .env.test)";
+  exit 1;
+} || true
+
+# Optional: inspect baseline tree for internal-only docs/notes before publishing
+git ls-tree -r --name-only "$BASE_COMMIT" | grep -E '(^|/)(internal|private|draft)' || true
+```
+
+If anything sensitive is found, stop and choose a different baseline/cutover strategy before proceeding.
+
 ### Step 2: Build rewritten history in isolated clone
 
 ```bash

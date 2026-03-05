@@ -22,8 +22,8 @@ The file uses JSON format and can contain multiple named profiles:
   "profiles": {
     "default": {
       "base_url": "https://localhost:8089",
-      "username": "admin",
-      "password": "changeme",
+      "username": "replace-with-your-username",
+      "password": "replace-with-your-password",
       "skip_verify": true
     },
     "production": {
@@ -36,10 +36,9 @@ The file uses JSON format and can contain multiple named profiles:
 }
 ```
 
-> **Security Warning:** The example above shows Splunk's default credentials (`admin`/`changeme`).
-> These credentials are **only appropriate for local development** against a local Splunk instance.
-> **Always change default credentials before connecting to production Splunk servers.**
-> Consider using API tokens or the system keyring for secure credential storage (see below).
+> **Security Warning:** The example above intentionally uses non-working placeholder credentials.
+> Do not hardcode real credentials in config files committed to source control.
+> Prefer API tokens or system keyring-backed secrets for production usage (see below).
 
 ### Secure Credential Storage
 
@@ -52,14 +51,14 @@ In the `config.json` file, you can specify that a value should be fetched from t
   "profiles": {
     "default": {
       "base_url": "https://localhost:8089",
-      "username": "admin",
-      "password": { "keyring_account": "splunk-default-admin" }
+      "username": "replace-with-your-username",
+      "password": { "keyring_account": "splunk-default-user" }
     }
   }
 }
 ```
 
-When configured this way, `splunk-tui` will look up the password for the account `splunk-default-admin` under the service `splunk-tui`.
+When configured this way, `splunk-tui` will look up the password for the account `splunk-default-user` under the service `splunk-tui`.
 
 ### Environment Variables
 

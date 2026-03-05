@@ -16,6 +16,7 @@ Use this page as the entry point for repository docs.
 - [Reviewer Verification Checklist](reviewer-verification.md) — concrete validation commands
 - [Release Readiness Report](release-readiness.md) — risks addressed, remaining issues, next steps
 - [Public Release Runbook](public-release-runbook.md) — commit series and safe history-rewrite procedure for public launch
+- [Role Evidence Pack](role-evidence/README.md) — evidence map, demo script, workshop outline, cookbook, and readiness checklist
 
 ## Operational Guides
 

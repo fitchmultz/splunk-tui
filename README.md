@@ -67,8 +67,8 @@ Configuration is loaded from environment variables or a `.env` file:
 ```bash
 # Splunk Connection
 export SPLUNK_BASE_URL=https://localhost:8089
-export SPLUNK_USERNAME=admin
-export SPLUNK_PASSWORD=changeme
+export SPLUNK_USERNAME=replace-with-your-username
+export SPLUNK_PASSWORD=replace-with-your-password
 export SPLUNK_API_TOKEN=your-api-token
 
 # Optional Connection Settings
@@ -615,8 +615,8 @@ splunk-tui/
 ### Session Token (Username/Password)
 
 ```bash
-export SPLUNK_USERNAME=admin
-export SPLUNK_PASSWORD=changeme
+export SPLUNK_USERNAME=replace-with-your-username
+export SPLUNK_PASSWORD=replace-with-your-password
 ```
 
 The client will automatically login and manage session token renewal.

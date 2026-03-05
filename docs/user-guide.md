@@ -49,8 +49,8 @@ Before using the tools, you need to configure your connection to Splunk.
    export SPLUNK_BASE_URL=https://your-splunk-instance:8089
    export SPLUNK_API_TOKEN=your-secret-token
    # Or use username/password
-   # export SPLUNK_USERNAME=admin
-   # export SPLUNK_PASSWORD=changeme
+   # export SPLUNK_USERNAME=replace-with-your-username
+   # export SPLUNK_PASSWORD=replace-with-your-password
    ```
 2. If you are using self-signed certificates (common in dev environments), enable:
    ```bash

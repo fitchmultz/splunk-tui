@@ -28,8 +28,8 @@ docker run --rm \
 # List Splunk jobs
 docker run --rm \
   -e SPLUNK_BASE_URL=https://your-splunk:8089 \
-  -e SPLUNK_USERNAME=admin \
-  -e SPLUNK_PASSWORD=changeme \
+  -e SPLUNK_USERNAME=replace-with-your-username \
+  -e SPLUNK_PASSWORD=replace-with-your-password \
   ghcr.io/fitchmultz/splunk-tui:latest jobs list
 ```
 
@@ -147,8 +147,8 @@ Create a `.env` file:
 
 ```bash
 SPLUNK_BASE_URL=https://splunk:8089
-SPLUNK_USERNAME=admin
-SPLUNK_PASSWORD=changeme
+SPLUNK_USERNAME=replace-with-your-username
+SPLUNK_PASSWORD=replace-with-your-password
 SPLUNK_SKIP_VERIFY=true
 ```
 
@@ -179,8 +179,8 @@ helm repo update
 # Install with minimal configuration
 helm install splunk-tui ./helm/splunk-tui \
   --set cli.splunk.baseUrl=https://splunk:8089 \
-  --set cli.splunk.username=admin \
-  --set cli.splunk.password=changeme
+  --set cli.splunk.username=replace-with-your-username \
+  --set cli.splunk.password=replace-with-your-password
 
 # Install with existing secret
 helm install splunk-tui ./helm/splunk-tui \
@@ -202,8 +202,8 @@ cli:
   enabled: true
   splunk:
     baseUrl: "https://splunk:8089"
-    username: "admin"
-    password: "changeme"
+    username: "replace-with-your-username"
+    password: "replace-with-your-password"
     skipVerify: false
   resources:
     limits:
@@ -499,8 +499,8 @@ services:
 # Create secret
 kubectl create secret generic splunk-credentials \
   --from-literal=SPLUNK_BASE_URL=https://splunk:8089 \
-  --from-literal=SPLUNK_USERNAME=admin \
-  --from-literal=SPLUNK_PASSWORD=changeme
+  --from-literal=SPLUNK_USERNAME=replace-with-your-username \
+  --from-literal=SPLUNK_PASSWORD=replace-with-your-password
 
 # Use in Helm
 helm install splunk-tui ./helm/splunk-tui \

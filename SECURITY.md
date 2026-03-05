@@ -1,90 +1,85 @@
 # Security Policy
 
-This document outlines security considerations for using Splunk TUI, including credential management and safe configuration practices.
+This document outlines security posture, credential handling, and vulnerability reporting for Splunk TUI.
 
-## Default Credentials
+## Safe Defaults
 
-Splunk TUI provides default credentials (`admin`/`changeme`) in its `Config::default()` implementation. These are Splunk's default credentials intended **only** for local development environments.
+`Config::default()` uses **placeholder** credentials:
 
-### Security Implications
+- `username`: `replace-with-your-username`
+- `password`: `replace-with-your-password`
 
-- **Default credentials target localhost:8089**: This is the default Splunk management port on the local machine
-- **Publicly known credentials**: The default `admin`/`changeme` combination is well-documented and should never be used for production Splunk instances
-- **No automatic credential rotation**: The application does not enforce credential changes
+These placeholders are intentionally non-working and are meant to force explicit configuration.
 
-### Best Practices
+## Credential Management Best Practices
 
-1. **Change default credentials immediately** when connecting to any non-local Splunk instance
-2. **Use API tokens** instead of username/password when possible (see below)
-3. **Use the system keyring** for secure credential storage (see [Secure Credential Storage](#secure-credential-storage))
-4. **Review configuration files** before committing them to version control
+1. Use API tokens where possible.
+2. Prefer system keyring-backed credentials over plaintext secrets.
+3. Never commit `.env`, `.env.test`, or real credential files.
+4. Keep TLS verification enabled (`skip_verify: false`) outside local test environments.
 
 ## Secure Credential Storage
 
-Splunk TUI supports storing credentials in your system's secure keyring instead of plain text configuration files.
+Splunk TUI supports system keyring-backed credentials.
 
-### Using Keyring Storage
-
-In your `config.json`, specify credentials using the `keyring_account` field:
+Example profile snippet:
 
 ```json
 {
   "profiles": {
     "production": {
       "base_url": "https://splunk.example.com:8089",
-      "username": "admin",
-      "password": { "keyring_account": "splunk-production-admin" }
+      "username": "replace-with-your-username",
+      "password": { "keyring_account": "splunk-production-user" }
     }
   }
 }
 ```
 
-Then store the password in your system keyring:
+Then store the secret in your OS keyring:
 
 ```bash
 # macOS
-security add-generic-password -s "splunk-tui" -a "splunk-production-admin" -w "your-secure-password"
+security add-generic-password -s "splunk-tui" -a "splunk-production-user" -w "your-secure-password"
 
 # Linux (secret-tool)
-secret-tool store --label="Splunk Production" service splunk-tui username splunk-production-admin
+secret-tool store --label="Splunk Production" service splunk-tui username splunk-production-user
 ```
-
-### Benefits
-
-- Credentials are encrypted at rest using OS-provided mechanisms
-- Credentials are not visible in config files
-- Reduces risk of accidental credential exposure in version control
 
 ## Runtime Warnings
 
-Splunk TUI logs a warning when default credentials are detected:
+- CLI emits a warning when placeholder credentials are detected in active configuration.
+- TUI enters bootstrap/connection-recovery flows when credentials are missing or invalid.
 
-```
-WARN Using default Splunk credentials (admin/changeme). These are for local development only - change before production use.
+## Secret-Commit Guard
+
+Use the built-in guardrail before commits:
+
+```bash
+make lint-secrets
 ```
 
-This warning appears in:
-- Log files (`splunk-tui.log` for the TUI)
-- stderr output (for the CLI when using `RUST_LOG=warn`)
+This verifies forbidden local secret files are not tracked by git.
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability in Splunk TUI:
+Do not open public issues for vulnerabilities.
 
-1. **Do not open a public issue**
-2. Contact the maintainers directly with details of the vulnerability
-3. Allow reasonable time for a fix before public disclosure
+Preferred process:
+
+1. Open a private vulnerability report from the repository **Security** tab (GitHub private reporting).
+2. If private reporting is unavailable, contact maintainers directly with reproduction details.
+3. Allow reasonable remediation time before public disclosure.
 
 ## Security Checklist
 
-Before deploying to production:
+Before production use:
 
-- [ ] Changed default `admin`/`changeme` credentials
-- [ ] Using API tokens or secure keyring storage for credentials
+- [ ] Placeholder credentials replaced with real secrets
+- [ ] API tokens or keyring-backed secrets in use
 - [ ] TLS verification enabled (`skip_verify: false`)
-- [ ] Configuration files excluded from version control
-- [ ] `.env` files excluded from version control (use `.env.example` as template)
-- [ ] Reviewed the [secret-commit guard](./docs/usage.md#secret-commit-guard) output
+- [ ] Secret files excluded from version control
+- [ ] `make lint-secrets` passes
 
 ## Related Documentation
 

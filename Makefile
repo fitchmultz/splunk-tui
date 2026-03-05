@@ -52,7 +52,7 @@ test test-all test-unit test-integration test-smoke test-chaos tui-smoke ci ci-f
 # Fetch all dependencies (warm caches, no build)
 install:
 	@echo "→ Fetching deps (locked)..."
-	@cargo fetch
+	@cargo fetch --locked
 	@echo "  ✓ Deps fetched"
 
 # Update all dependencies to latest stable versions
