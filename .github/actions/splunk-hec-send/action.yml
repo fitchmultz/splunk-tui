@@ -1,3 +1,9 @@
+# Purpose: Composite GitHub Action for sending single or batched events to Splunk HEC.
+# Responsibilities: Validate inputs, execute CLI HEC commands in a container, and publish outputs.
+# Scope: Workflow orchestration only; does not define HEC client request/response behavior.
+# Usage: Provide `hec-url`, `hec-token`, and either `event` or `events-file`.
+# Invariants/Assumptions: Secrets are masked and all shell arguments are passed via arrays for safe quoting.
+
 name: 'Splunk HEC Send'
 description: 'Send events to Splunk via HTTP Event Collector (HEC)'
 author: 'Splunk TUI Contributors'
@@ -75,6 +81,7 @@ runs:
       id: send
       shell: bash
       env:
+        # splunk-cli hec subcommands support these vars directly via clap `env = ...` bindings.
         SPLUNK_HEC_URL: ${{ inputs.hec-url }}
         SPLUNK_HEC_TOKEN: ${{ inputs.hec-token }}
         SPLUNK_SKIP_VERIFY: ${{ inputs.skip-verify }}
@@ -92,21 +99,21 @@ runs:
         IMAGE="${{ env.REGISTRY || 'ghcr.io' }}/${{ github.repository }}:${{ inputs.image-tag }}"
 
         # Build optional args
-        args=""
+        optional_args=()
         if [[ -n "${{ inputs.index }}" ]]; then
-          args="$args --index ${{ inputs.index }}"
+          optional_args+=(--index "${{ inputs.index }}")
         fi
         if [[ -n "${{ inputs.source }}" ]]; then
-          args="$args --source ${{ inputs.source }}"
+          optional_args+=(--source "${{ inputs.source }}")
         fi
         if [[ -n "${{ inputs.sourcetype }}" ]]; then
-          args="$args --sourcetype ${{ inputs.sourcetype }}"
+          optional_args+=(--sourcetype "${{ inputs.sourcetype }}")
         fi
         if [[ -n "${{ inputs.host }}" ]]; then
-          args="$args --host ${{ inputs.host }}"
+          optional_args+=(--host "${{ inputs.host }}")
         fi
         if [[ -n "${{ inputs.time }}" ]]; then
-          args="$args --time ${{ inputs.time }}"
+          optional_args+=(--time "${{ inputs.time }}")
         fi
 
         set +e
@@ -119,12 +126,11 @@ runs:
             exit 1
           fi
 
-          ndjson_flag=""
+          ndjson_args=()
           if [[ "${{ inputs.ndjson }}" == "true" ]]; then
-            ndjson_flag="--ndjson"
+            ndjson_args+=(--ndjson)
           fi
 
-          # shellcheck disable=SC2086
           docker run --rm \
             -e SPLUNK_HEC_URL \
             -e SPLUNK_HEC_TOKEN \
@@ -133,11 +139,9 @@ runs:
             -w /workspace \
             "$IMAGE" \
             hec send-batch "${{ inputs.events-file }}" \
-            --hec-url "${{ inputs.hec-url }}" \
-            --hec-token "${{ inputs.hec-token }}" \
             --output ${{ inputs.output-format }} \
             --output-file "${{ inputs.output-file }}" \
-            $ndjson_flag
+            "${ndjson_args[@]}"
         else
           # Single event mode
           echo "Sending single event to HEC"
@@ -153,7 +157,6 @@ runs:
             echo "Reading event from file: $event_file"
           fi
 
-          # shellcheck disable=SC2086
           docker run --rm \
             -e SPLUNK_HEC_URL \
             -e SPLUNK_HEC_TOKEN \
@@ -161,12 +164,10 @@ runs:
             -v "$PWD:/workspace" \
             -w /workspace \
             "$IMAGE" \
-            hec send '${{ inputs.event }}' \
-            --hec-url "${{ inputs.hec-url }}" \
-            --hec-token "${{ inputs.hec-token }}" \
+            hec send "$event_arg" \
             --output ${{ inputs.output-format }} \
             --output-file "${{ inputs.output-file }}" \
-            $args
+            "${optional_args[@]}"
         fi
         exit_code=$?
         set -e

@@ -1,22 +1,28 @@
-# Purpose: Non-mutating public CI gate for build, lint, test, and docs drift checks.
-# Responsibilities: Validate repo quality on PRs and main-branch pushes.
-# Scope: Rust workspace checks, docs generation drift, script validation, and secret guard.
-# Usage: Runs automatically via GitHub Actions on pull_request and push to main.
-# Invariants: Must not auto-fix or mutate checked-out files.
-name: CI
+# Purpose: Fast, non-mutating PR CI gate for high-signal feedback.
+# Responsibilities: Validate lint/type/smoke/docs/script quality quickly on pull requests.
+# Scope: Resource-bounded Rust checks, smoke tests, docs drift, and secret guard.
+# Usage: Runs automatically for pull requests and can be invoked manually.
+# Invariants: Must remain deterministic, non-mutating, and resource-conscious.
+name: CI (Fast PR Gate)
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-fast-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   DOTENV_DISABLED: "1"
+  CARGO_JOBS: "4"
+  RUST_TEST_THREADS: "1"
+  CI_LIVE_TESTS_MODE: "skip"
 
 jobs:
   rust-ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -31,20 +37,5 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@v2
 
-      - name: Secret guard
-        run: make lint-secrets
-
-      - name: Format check
-        run: cargo fmt --all --check
-
-      - name: Clippy check (deny warnings)
-        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
-
-      - name: Test workspace
-        run: cargo test --workspace --lib --bins --tests --all-features --locked
-
-      - name: Docs drift check
-        run: cargo run -p splunk-tui --bin generate-tui-docs -- --check
-
-      - name: Validate example scripts
-        run: make examples-test
+      - name: Run fast CI gate contract
+        run: make ci-fast

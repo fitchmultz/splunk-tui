@@ -1,3 +1,9 @@
+# Purpose: Composite GitHub Action for validating SPL configuration via the project container image.
+# Responsibilities: Validate inputs, run `search validate`, and emit machine-readable outputs.
+# Scope: Workflow-time validation orchestration only; does not define CLI validation semantics.
+# Usage: Provide either `query` or `file` plus Splunk auth/base-url inputs or env vars.
+# Invariants/Assumptions: Secret values are masked and shell argument handling must preserve spaces safely.
+
 name: 'Splunk Config Validate'
 description: 'Validate configuration files and SPL queries against Splunk'
 author: 'Splunk TUI Contributors'
@@ -96,21 +102,21 @@ runs:
         IMAGE="${{ env.REGISTRY || 'ghcr.io' }}/${{ github.repository }}:${{ inputs.image-tag }}"
 
         # Build validation args
+        validate_args=()
         if [[ -n "${{ inputs.file }}" ]]; then
           echo "Validating SPL from file: ${{ inputs.file }}"
           if [[ ! -f "${{ inputs.file }}" ]]; then
             echo "::error::SPL file not found: ${{ inputs.file }}"
             exit 1
           fi
-          validate_args="--file ${{ inputs.file }}"
+          validate_args+=(--file "${{ inputs.file }}")
         else
           echo "Validating SPL query: ${{ inputs.query }}"
-          validate_args="'${{ inputs.query }}'"
+          validate_args+=("${{ inputs.query }}")
         fi
 
         # Run validation using container
         set +e
-        # shellcheck disable=SC2086
         docker run --rm \
           -e SPLUNK_BASE_URL \
           -e SPLUNK_API_TOKEN \
@@ -121,7 +127,7 @@ runs:
           -w /workspace \
           "$IMAGE" \
           search validate \
-          $validate_args \
+          "${validate_args[@]}" \
           --output ${{ inputs.output-format }} \
           --output-file "${{ inputs.output-file }}"
         exit_code=$?

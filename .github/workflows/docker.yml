@@ -9,8 +9,13 @@ on:
     paths:
       - "Dockerfile"
       - ".github/workflows/docker.yml"
-      - "crates/**"
-      - "Cargo.*"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "docker-compose.yml"
+
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -58,7 +63,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
