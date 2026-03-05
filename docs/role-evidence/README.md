@@ -8,3 +8,4 @@ This folder contains public-release evidence artifacts for reviewer confidence.
 - [Cookbook Pattern](cookbook-pattern-deterministic-local-ci.md)
 - [Operational Readiness Checklist](operational-readiness-checklist.md)
 - [Skeptical Reviewer Simulation](skeptical-reviewer-simulation.md)
+- [Verification Receipts](verification-receipts.md)
