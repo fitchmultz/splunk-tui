@@ -38,14 +38,10 @@ Live target used: `https://192.168.1.122:8089` with provided isolated test crede
 
 ### Live API/CLI JSON shape receipts
 
-Executed live commands and captured outputs under `logs/validation/`:
+Executed live commands and recorded the validation outcomes in:
 
-- `live_health.json`
-- `live_indexes.json`
-- `live_apps.json`
-- `live_jobs.json`
-- `live_search.json`
-- `live_doctor.json`
+- `docs/validation-receipts.md`
+- `docs/dogfood-2026-03-05.md`
 
 Validated successfully:
 

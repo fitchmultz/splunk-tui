@@ -216,8 +216,8 @@ The guard ensures that sensitive files are **not tracked** in your git repositor
 #### Forbidden Tracked Paths
 - `.env`
 - `.env.test`
-- `docs/splunk-test-environment.md`
 - `rust_out`
+- any private environment notes that contain host details, credentials, or internal topology
 
 #### Running the Guard
 You can run the guard manually:
@@ -232,8 +232,10 @@ If the guard fails, follow these steps to safely untrack the files while keeping
 
 1. **Untrack the files**:
    ```bash
-   git rm --cached -- .env .env.test docs/splunk-test-environment.md rust_out
+   git rm --cached -- .env .env.test rust_out
    ```
+
+   If you created a private environment note locally, add that path to the command as well.
 
 2. **Commit the removals**:
    ```bash

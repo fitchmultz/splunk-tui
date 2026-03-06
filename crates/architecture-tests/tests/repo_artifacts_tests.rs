@@ -20,6 +20,7 @@ fn forbidden_artifacts_are_not_tracked() {
         .arg("crates/tui/logs/")
         .arg(".env")
         .arg(".env.test")
+        .arg("docs/splunk-test-environment.md")
         .current_dir(&workspace_root)
         .output()
         .expect("Failed to run git ls-files for forbidden artifact check");
