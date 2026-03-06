@@ -15,7 +15,7 @@ Public-release hardening with emphasis on correctness, deterministic CI, visual/
    - Added `visual_testing_contract_tests.rs` in architecture-tests to ensure Makefile visual targets remain wired into smoke CI.
 4. **CI/Docs wiring**
    - Added `make tui-visual` and `make tui-accessibility` and wired both into `make test-smoke`.
-   - Updated testing/CI/reviewer docs accordingly.
+   - Updated testing and validation docs accordingly.
 
 ## Evidence (executed on March 5, 2026)
 
@@ -80,6 +80,12 @@ make ci
 # strict live gate (requires SPLUNK_* env)
 CI_LIVE_TESTS_MODE=required make ci
 ```
+
+Supporting artifacts:
+
+- `docs/validation-checklist.md`
+- `docs/validation-receipts.md`
+- `docs/dogfood-2026-03-05.md`
 
 ## CI matrix summary
 

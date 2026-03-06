@@ -389,7 +389,7 @@ For stronger visual automation beyond the current gate:
 3. **Avoid adopting unmaintained renderers as required gates**
    - [termtosvg](https://github.com/nbedos/termtosvg) is useful for SVG captures but is currently read-only; keep it optional/manual if used.
 4. **Optional capture tooling for manual audits**
-   - [asciinema CLI](https://docs.asciinema.org/manual/cli/quick-start/) can record reproducible sessions for reviewer playback and troubleshooting artifacts.
+   - [asciinema CLI](https://docs.asciinema.org/manual/cli/quick-start/) can record reproducible sessions for troubleshooting and manual visual comparisons.
 
 ## References
 

@@ -1,8 +1,6 @@
-# Reviewer Verification Checklist
+# Validation Checklist
 
-Use this checklist to validate repository readiness on a fresh machine.
-
-This path is intended for external reviewers who want to verify engineering quality, operational trustworthiness, and real-world usability without having to reverse-engineer the maintainer workflow first.
+Use this checklist to validate the repository on a fresh machine.
 
 ## 1) Environment Setup
 
@@ -49,7 +47,7 @@ Requires a reachable Splunk instance and configured credentials.
 CI_LIVE_TESTS_MODE=required make ci
 ```
 
-## 6) Qualitative Confidence Checks (High Signal)
+## 6) Qualitative Confidence Checks
 
 ### A) Help-output secret safety
 
@@ -92,7 +90,7 @@ splunk-cli --output json apps list --count 5
 splunk-cli --output json jobs --count 5
 ```
 
-### G) Live JSON shape sanity checks (high signal)
+### G) Live JSON shape sanity checks
 
 ```bash
 splunk-cli --output json health > health.json

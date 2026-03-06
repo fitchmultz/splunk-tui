@@ -52,8 +52,8 @@ git commit -m "docs: add architecture and CI documentation hub"
 ### Commit 5
 
 ```bash
-git add docs/reviewer-verification.md docs/release-readiness.md
-git commit -m "docs: add reviewer verification and release readiness report"
+git add docs/validation-checklist.md docs/release-readiness.md
+git commit -m "docs: add validation checklist and release readiness report"
 ```
 
 ### Commit 6

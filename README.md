@@ -4,22 +4,15 @@
 
 A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployments. Supports both standalone and clustered deployments with dual authentication methods (session token and API token).
 
-This repository is first and foremost a real operator tool, not a demo artifact. The same qualities that make it useful for Splunk operators also make it relevant beyond Splunk: it emphasizes safe configuration handling, fast local verification, production diagnostics, accessibility, and workflows that help engineers understand real systems quickly without depending on hosted automation.
+The project is built for day-to-day operational use: safe configuration handling, production diagnostics, accessible terminal workflows, and local-first verification that can be rerun without depending on hosted automation.
 
-## Why This Project Matters Beyond Splunk
+## Quick Validation
 
-- It is a concrete example of production-facing developer tooling: health checks, diagnostics, support bundles, safe defaults, and live validation against real infrastructure.
-- It shows how to build workflow acceleration tools for engineers and operators without sacrificing correctness, observability, or trust.
-- It demonstrates a local-first verification model that is intentional, not ad hoc: deterministic smoke checks for daily work, stricter live validation when real infrastructure is available.
+If you want to verify the project quickly before going deep on day-to-day usage, start here:
 
-## Reviewer Path
-
-If you are evaluating engineering judgment rather than trying to use Splunk day-to-day, start here:
-
-1. [CI Strategy](docs/ci.md) for the verification model and why it is local-only
-2. [Reviewer Verification Checklist](docs/reviewer-verification.md) for exact commands
-3. [Release Readiness Report](docs/release-readiness.md) for evidence and remaining risk
-4. [Evidence Pack](docs/role-evidence/README.md) for supporting receipts, demo flow, and workshop-style material
+1. [CI Strategy](docs/ci.md) for the verification model and local-only gates
+2. [Validation Checklist](docs/validation-checklist.md) for exact commands on a fresh machine
+3. [Release Readiness Report](docs/release-readiness.md) for the current hardening status and known follow-ups
 
 ## Features
 
@@ -577,7 +570,7 @@ The Search screen has two input modes that affect how keys are handled:
 - [Contributing Guide](docs/contributing.md) - Developer setup, local verification workflow, and snapshot updates
 - [Architecture Overview](docs/architecture.md) - Core components, data/control flow, and trade-offs
 - [CI Strategy](docs/ci.md) - Local verification gates and resource controls
-- [Reviewer Verification Checklist](docs/reviewer-verification.md) - Step-by-step public review commands
+- [Validation Checklist](docs/validation-checklist.md) - Step-by-step repository validation commands
 - [Release Readiness Report](docs/release-readiness.md) - Current hardening status and known follow-ups
 - [Changelog](CHANGELOG.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)

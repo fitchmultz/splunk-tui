@@ -9,7 +9,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- Public-release hardening docs (`docs/index.md`, `docs/architecture.md`, `docs/ci.md`, `docs/reviewer-verification.md`, `docs/release-readiness.md`).
+- Public-release hardening docs (`docs/index.md`, `docs/architecture.md`, `docs/ci.md`, `docs/validation-checklist.md`, `docs/release-readiness.md`).
 - Architecture tests for markdown link integrity, exit-code docs drift, and forbidden tracked artifacts.
 
 ### Changed

@@ -1,9 +1,9 @@
-# Verification Receipts
+# Validation Receipts
 
 ## Context
 
 - Date: **2026-03-05**
-- Branch: `public-ready-final`
+- Branch at time of capture: `public-ready-final`
 
 ## Local Quality Gate Receipts
 
@@ -15,7 +15,7 @@ make lint-secrets
 
 Result:
 
-- ✅ Pass
+- Pass
 - Message: `Secret-commit guard OK: no forbidden paths are tracked.`
 
 ### Fast local gate
@@ -26,8 +26,8 @@ make ci-fast
 
 Result:
 
-- ✅ Pass
-- Warm-cache wall time observed previously: **~25s**
+- Pass
+- Warm-cache wall time observed previously: about 25 seconds
 
 ### Full gate (default)
 
@@ -37,7 +37,7 @@ make ci
 
 Result:
 
-- ✅ Pass
+- Pass
 - Includes full workspace tests, docs drift checks, and CI-profile build.
 
 ### Full gate (strict live)
@@ -48,7 +48,7 @@ CI_LIVE_TESTS_MODE=required make ci
 
 Result:
 
-- ✅ Pass
+- Pass
 - Client live tests: **21 passed**
 - CLI live tests: **15 passed**
 
@@ -56,14 +56,14 @@ Result:
 
 Reference:
 
-- `docs/role-evidence/qualitative-dogfood-2026-03-05.md`
+- `docs/dogfood-2026-03-05.md`
 
 Key outcomes:
 
-- Help-output env value leakage fixed + covered by regression tests
-- Plaintext config flow decryption/profile-load friction fixed + regression test
-- Bare `index=...` search UX fixed via normalization + tests
-- TUI remained stable under resize stress (no panic/error observed)
+- Help-output env value leakage fixed and covered by regression tests
+- Plaintext config flow decryption/profile-load friction fixed and covered by regression tests
+- Bare `index=...` search UX fixed via normalization and tests
+- TUI remained stable under resize stress with no panic or error observed
 
 ## Git Hygiene
 
@@ -73,6 +73,6 @@ Verification command:
 git status --porcelain
 ```
 
-Expected result before release tag/PR:
+Expected result before release tag or push:
 
-- ✅ No unexpected changes
+- No unexpected changes
