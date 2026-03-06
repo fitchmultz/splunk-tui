@@ -3,6 +3,7 @@
 **/*.rs.bk
 *.bak
 /rust_out
+.cargo-watch.json
 
 # IDE
 .idea/
