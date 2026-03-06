@@ -51,7 +51,6 @@ GEMINI.md
 .claude/
 .cursor/
 .repo_ignore
-AGENTS.md
 .ralph/cache/execution_history.json
 
 .scratchpad.md
