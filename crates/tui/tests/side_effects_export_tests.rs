@@ -41,9 +41,10 @@ async fn test_export_data_success() {
 #[tokio::test]
 async fn test_export_data_error() {
     let mut harness = SideEffectsTestHarness::new().await;
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
 
-    // Use an invalid path (directory that doesn't exist and can't be created)
-    let export_path = std::path::PathBuf::from("/nonexistent/directory/export.json");
+    // Use a missing parent directory; export does not create directories.
+    let export_path = temp_dir.path().join("missing").join("export.json");
 
     let data = serde_json::json!([{"name": "test"}]);
 

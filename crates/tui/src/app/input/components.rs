@@ -5,6 +5,7 @@
 
 use ratatui::{layout::Rect, style::Style, widgets::Block};
 use tui_input::{Input, InputRequest};
+use tui_textarea::TextArea;
 
 /// Single-line input wrapper with enhanced functionality.
 #[derive(Debug, Clone, Default)]
@@ -202,19 +203,19 @@ impl std::fmt::Display for SingleLineInput {
 
 /// Multi-line textarea wrapper for SPL queries.
 pub struct MultiLineInput<'a> {
-    textarea: tui_textarea::TextArea<'a>,
+    textarea: TextArea<'a>,
 }
 
 impl<'a> MultiLineInput<'a> {
     /// Create a new empty multi-line input.
     pub fn new() -> Self {
-        let textarea = tui_textarea::TextArea::default();
+        let textarea = TextArea::default();
         Self { textarea }
     }
 
     /// Create a new input with a placeholder.
     pub fn with_placeholder(placeholder: impl Into<String>) -> Self {
-        let mut textarea = tui_textarea::TextArea::default();
+        let mut textarea = TextArea::default();
         textarea.set_placeholder_text(placeholder);
         Self { textarea }
     }
@@ -222,7 +223,7 @@ impl<'a> MultiLineInput<'a> {
     /// Create a new input with the given value.
     pub fn with_value(value: impl AsRef<str>) -> Self {
         let lines: Vec<String> = value.as_ref().lines().map(|s| s.to_string()).collect();
-        let textarea = tui_textarea::TextArea::new(lines);
+        let textarea = TextArea::new(lines);
         Self { textarea }
     }
 
@@ -239,7 +240,7 @@ impl<'a> MultiLineInput<'a> {
     /// Set value programmatically.
     pub fn set_value(&mut self, value: impl AsRef<str>) {
         let lines: Vec<String> = value.as_ref().lines().map(|s| s.to_string()).collect();
-        self.textarea = tui_textarea::TextArea::new(lines);
+        self.textarea = TextArea::new(lines);
     }
 
     /// Check if empty (all lines are empty).
@@ -268,12 +269,12 @@ impl<'a> MultiLineInput<'a> {
     }
 
     /// Get the underlying textarea for direct access.
-    pub fn inner(&self) -> &tui_textarea::TextArea<'a> {
+    pub fn inner(&self) -> &TextArea<'a> {
         &self.textarea
     }
 
     /// Get mutable access to the underlying textarea.
-    pub fn inner_mut(&mut self) -> &mut tui_textarea::TextArea<'a> {
+    pub fn inner_mut(&mut self) -> &mut TextArea<'a> {
         &mut self.textarea
     }
 }

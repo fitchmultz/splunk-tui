@@ -57,7 +57,11 @@ install:
 
 # Update all dependencies to latest stable versions
 update:
+	@echo "→ Upgrading direct dependency requirements..."
+	@cargo upgrade --incompatible
+	@echo "→ Refreshing lockfile to latest allowed resolutions..."
 	@cargo update
+	@echo "  ✓ Dependency update complete"
 
 # Format code with rustfmt (write mode)
 format:

@@ -11,7 +11,7 @@ use ratatui::{
 };
 use splunk_config::Theme;
 use std::sync::LazyLock;
-use tree_sitter::{Parser, Query, QueryCursor};
+use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
 
 /// Syntax highlighter using tree-sitter for accurate parsing.
 ///
@@ -88,12 +88,15 @@ impl SyntaxHighlighter {
         };
 
         let mut cursor = QueryCursor::new();
-        let matches = cursor.matches(query, tree.root_node(), code.as_bytes());
+        let mut matches = cursor.matches(query, tree.root_node(), code.as_bytes());
 
         let mut results = Vec::new();
         let mut last_end = 0;
 
-        for m in matches {
+        while let Some(m) = {
+            matches.advance();
+            matches.get()
+        } {
             for capture in m.captures {
                 let node = capture.node;
                 let start = node.start_byte();

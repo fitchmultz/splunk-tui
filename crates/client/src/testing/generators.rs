@@ -9,8 +9,8 @@ use fake::faker::internet::en::{IPv4, Username};
 use fake::faker::lorem::en::{Sentence, Word};
 use fake::faker::name::en::Name;
 use fake::faker::number::en::Digit;
-use rand::Rng;
 use rand::seq::IndexedRandom;
+use rand::{Rng, RngExt};
 use serde_json::Value;
 use std::collections::HashMap;
 

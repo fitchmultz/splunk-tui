@@ -62,7 +62,7 @@ metrics = "0.24"
 clap = { workspace = true }
 
 # UUID for unique tracking
-uuid = { version = "1.20", features = ["v4"] }
+uuid = { version = "1.22", features = ["v4"] }
 
 # Bitflags for efficient flag storage
 bitflags = { workspace = true }
@@ -74,18 +74,18 @@ arboard = "3.6"
 secrecy = { workspace = true }
 
 # Rich input components
-tui-input = "0.11"
-tui-textarea = "0.7"
-tui-scrollview = "0.5"
+tui-input = "0.15"
+tui_textarea = { package = "ratatui-textarea", version = "0.8" }
+tui-scrollview = "0.6"
 
 # Syntax highlighting with tree-sitter
-tree-sitter = "0.22"
+tree-sitter = "0.26"
 
 # Flexbox layout with taffy (Yoga-based)
-taffy = "0.5"
+taffy = "0.9"
 
 # Big ASCII text headers
-tui-big-text = "0.7"
+tui-big-text = "0.8"
 
 
 [dev-dependencies]

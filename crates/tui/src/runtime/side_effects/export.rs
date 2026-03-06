@@ -21,28 +21,27 @@ pub async fn handle_export_data(
     path: PathBuf,
     format: ExportFormat,
     tx: Sender<Action>,
-    _task_tracker: TaskTracker,
+    task_tracker: TaskTracker,
 ) {
-    // Directly await the async export function
-    match crate::export::export_value(&data, &path, format).await {
-        Ok(_) => {
-            // Send notification
-            let _ = tx
-                .send(Action::Notify(
-                    ToastLevel::Info,
-                    format!("Exported to {}", path.display()),
-                ))
-                .await;
-            // Track successful export for persistence
-            let _ = tx.send(Action::ExportSuccess(path)).await;
+    task_tracker.spawn(async move {
+        match crate::export::export_value(&data, &path, format).await {
+            Ok(_) => {
+                let _ = tx
+                    .send(Action::Notify(
+                        ToastLevel::Info,
+                        format!("Exported to {}", path.display()),
+                    ))
+                    .await;
+                let _ = tx.send(Action::ExportSuccess(path)).await;
+            }
+            Err(e) => {
+                let _ = tx
+                    .send(Action::Notify(
+                        ToastLevel::Error,
+                        format!("Export failed: {}", e),
+                    ))
+                    .await;
+            }
         }
-        Err(e) => {
-            let _ = tx
-                .send(Action::Notify(
-                    ToastLevel::Error,
-                    format!("Export failed: {}", e),
-                ))
-                .await;
-        }
-    }
+    });
 }
