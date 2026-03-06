@@ -14,8 +14,6 @@ use anyhow::Context;
 use serde::Serialize;
 use serde_json::Value;
 use std::{collections::BTreeSet, path::Path};
-use tokio::fs::File;
-use tokio::io::AsyncWriteExt;
 
 /// Export any serializable payload to a file in the requested format.
 ///
@@ -80,41 +78,15 @@ pub async fn export_results(
 }
 
 async fn export_json_value(value: &Value, path: &Path) -> anyhow::Result<()> {
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create JSON export file: {}", path.display()))?;
-
     let json_bytes =
         serde_json::to_vec_pretty(value).context("Failed to serialize JSON for export")?;
-
-    file.write_all(&json_bytes)
-        .await
-        .with_context(|| format!("Failed to write JSON export to: {}", path.display()))?;
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush JSON export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, &json_bytes, "JSON").await
 }
 
 async fn export_json_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> anyhow::Result<()> {
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create JSON export file: {}", path.display()))?;
-
     let json_bytes =
         serde_json::to_vec_pretty(data).context("Failed to serialize data to JSON for export")?;
-
-    file.write_all(&json_bytes)
-        .await
-        .with_context(|| format!("Failed to write JSON export to: {}", path.display()))?;
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush JSON export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, &json_bytes, "JSON").await
 }
 
 async fn export_csv_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
@@ -152,50 +124,22 @@ async fn export_csv_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
         w.flush().context("Failed to flush CSV writer")?;
     } // csv::Writer is dropped here, releasing the mutable borrow on buffer
 
-    // Now write the buffer to file asynchronously
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create CSV export file: {}", path.display()))?;
-
-    file.write_all(&buffer)
-        .await
-        .with_context(|| format!("Failed to write CSV export to: {}", path.display()))?;
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush CSV export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, &buffer, "CSV").await
 }
 
 async fn export_ndjson_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
-    use tokio::io::AsyncWriteExt;
-
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create NDJSON export file: {}", path.display()))?;
-
+    let mut buffer = String::new();
     for (i, row) in rows.iter().enumerate() {
         let line = serde_json::to_string(row)
             .context("Failed to serialize row to JSON for NDJSON export")?;
-
-        file.write_all(line.as_bytes())
-            .await
-            .with_context(|| format!("Failed to write NDJSON export to: {}", path.display()))?;
+        buffer.push_str(&line);
 
         // Add newline between rows, but not after the last one
         if i < rows.len() - 1 {
-            file.write_all(b"\n").await.with_context(|| {
-                format!("Failed to write NDJSON newline to: {}", path.display())
-            })?;
+            buffer.push('\n');
         }
     }
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush NDJSON export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, buffer.as_bytes(), "NDJSON").await
 }
 
 fn collect_csv_headers(rows: &[Value]) -> Vec<String> {
@@ -219,58 +163,19 @@ fn value_to_csv_cell(v: &Value) -> String {
 }
 
 async fn export_yaml_value(value: &Value, path: &Path) -> anyhow::Result<()> {
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create YAML export file: {}", path.display()))?;
-
     let yaml_str = serde_yaml::to_string(value).context("Failed to serialize YAML for export")?;
-
-    file.write_all(yaml_str.as_bytes())
-        .await
-        .with_context(|| format!("Failed to write YAML export to: {}", path.display()))?;
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush YAML export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, yaml_str.as_bytes(), "YAML").await
 }
 
 async fn export_yaml_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> anyhow::Result<()> {
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create YAML export file: {}", path.display()))?;
-
     let yaml_str =
         serde_yaml::to_string(data).context("Failed to serialize data to YAML for export")?;
-
-    file.write_all(yaml_str.as_bytes())
-        .await
-        .with_context(|| format!("Failed to write YAML export to: {}", path.display()))?;
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush YAML export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, yaml_str.as_bytes(), "YAML").await
 }
 
 async fn export_markdown_value(value: &Value, path: &Path) -> anyhow::Result<()> {
-    let mut file = File::create(path)
-        .await
-        .with_context(|| format!("Failed to create Markdown export file: {}", path.display()))?;
-
     let markdown = value_to_markdown(value);
-
-    file.write_all(markdown.as_bytes())
-        .await
-        .with_context(|| format!("Failed to write Markdown export to: {}", path.display()))?;
-
-    file.flush()
-        .await
-        .with_context(|| format!("Failed to flush Markdown export to: {}", path.display()))?;
-
-    Ok(())
+    write_export_bytes(path, markdown.as_bytes(), "Markdown").await
 }
 
 async fn export_markdown_serialize<T: Serialize + ?Sized>(
@@ -361,6 +266,15 @@ fn object_to_markdown(obj: &serde_json::Map<String, Value>) -> String {
     }
     output.push('\n');
     output
+}
+
+async fn write_export_bytes(path: &Path, bytes: &[u8], format_name: &str) -> anyhow::Result<()> {
+    tokio::fs::write(path, bytes).await.with_context(|| {
+        format!(
+            "Failed to write {format_name} export to: {}",
+            path.display()
+        )
+    })
 }
 
 #[cfg(test)]

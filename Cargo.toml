@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = ["crates/cli", "crates/tui", "crates/client", "crates/config", "crates/architecture-tests"]
 
 [workspace.package]
@@ -21,7 +21,7 @@ reqwest = { version = "0.13", features = ["json", "rustls", "query", "form", "mu
 clap = { version = "4.5", features = ["derive", "env"] }
 
 # TUI
-ratatui = { version = "0.30", features = ["all-widgets"] }
+ratatui = { version = "0.30", features = ["all-widgets", "crossterm_0_29"] }
 crossterm = "0.29"
 uuid = { version = "1.22", features = ["v4", "serde"] }
 

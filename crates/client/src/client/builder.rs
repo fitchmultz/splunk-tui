@@ -346,6 +346,7 @@ impl SplunkClientBuilder {
             .ok_or_else(|| ClientError::AuthFailed("auth_strategy is required".to_string()))?;
 
         let mut http_builder = reqwest::Client::builder()
+            .tls_backend_rustls()
             .timeout(self.timeout)
             .redirect(reqwest::redirect::Policy::limited(DEFAULT_MAX_REDIRECTS));
 
