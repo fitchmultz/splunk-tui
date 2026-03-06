@@ -12,7 +12,7 @@ If you want to verify the project quickly before going deep on day-to-day usage,
 
 1. [CI Strategy](docs/ci.md) for the verification model and local-only gates
 2. [Validation Checklist](docs/validation-checklist.md) for exact commands on a fresh machine
-3. [Release Readiness Report](docs/release-readiness.md) for the current hardening status and known follow-ups
+3. [Architecture Overview](docs/architecture.md) for system structure and trade-offs
 
 ## Features
 
@@ -571,7 +571,6 @@ The Search screen has two input modes that affect how keys are handled:
 - [Architecture Overview](docs/architecture.md) - Core components, data/control flow, and trade-offs
 - [CI Strategy](docs/ci.md) - Local verification gates and resource controls
 - [Validation Checklist](docs/validation-checklist.md) - Step-by-step repository validation commands
-- [Release Readiness Report](docs/release-readiness.md) - Current hardening status and known follow-ups
 - [Changelog](CHANGELOG.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - Development: configure live server access via `.env.test` (untracked; copy from `.env.test.example`) or environment variables (`SPLUNK_BASE_URL`, `SPLUNK_USERNAME`, `SPLUNK_PASSWORD`).
