@@ -52,6 +52,9 @@ proptest-regressions/
 logs/
 .ralph
 CLAUDE.md
+GEMINI.md
+.cursorrules
+.cursorignore
 .claude/
 .cursor/
 .ralph/cache/execution_history.json
