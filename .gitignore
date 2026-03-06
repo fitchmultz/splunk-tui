@@ -5,15 +5,8 @@
 /rust_out
 
 # IDE
-.idea/*
-!.idea/runConfigurations/
-!.idea/codeStyles/
-!.idea/inspectionProfiles/
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
@@ -57,6 +50,8 @@ GEMINI.md
 .cursorignore
 .claude/
 .cursor/
+.repo_ignore
+AGENTS.md
 .ralph/cache/execution_history.json
 
 .scratchpad.md

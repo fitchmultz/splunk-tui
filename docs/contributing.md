@@ -10,19 +10,7 @@ Thank you for contributing.
 
 ## IDE Setup
 
-### Visual Studio Code
-
-We provide a pre-configured `.vscode` directory. When you open the project, VS Code will suggest installing recommended extensions.
-
-- **Rust Analyzer**: Completions and diagnostics
-- **CodeLLDB**: Debugging
-
-### JetBrains (CLion / RustRover)
-
-The project includes run configurations in `.idea/runConfigurations`.
-You should see `Debug splunk-cli` and `Debug splunk-tui` in your run/debug menu.
-
-The tracked `.vscode/` and `.idea/runConfigurations/` files are intentional to improve out-of-the-box onboarding for contributors.
+Use the editor and debugger you prefer. Rust Analyzer and CodeLLDB provide a good default experience in VS Code and compatible JetBrains IDEs, but the repository does not depend on tracked editor-specific project files.
 
 ## Development Workflow
 
