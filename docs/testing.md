@@ -220,7 +220,7 @@ When adding new chaos tests:
 
 4. **Verify the test fails** without the resilience feature being tested
 
-5. **Run the PR gate** before committing:
+5. **Run the fast local gate** before committing:
    ```bash
    make ci-fast
    ```
@@ -377,7 +377,7 @@ cargo run --package splunk-tui
 
 ## Visual Automation Roadmap (researched March 5, 2026)
 
-Current approach (ratatui `TestBackend` + character/styled snapshots) should remain the primary PR gate because it is deterministic and fast.
+Current approach (ratatui `TestBackend` + character/styled snapshots) should remain the primary fast local gate because it is deterministic and fast.
 
 For stronger visual automation beyond the current gate:
 

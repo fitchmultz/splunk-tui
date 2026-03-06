@@ -2,6 +2,8 @@
 
 Use this checklist to validate repository readiness on a fresh machine.
 
+This path is intended for external reviewers who want to verify engineering quality, operational trustworthiness, and real-world usability without having to reverse-engineer the maintainer workflow first.
+
 ## 1) Environment Setup
 
 ```bash

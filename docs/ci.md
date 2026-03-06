@@ -7,6 +7,8 @@ This repository uses a **two-tier local-only quality model**.
 
 Both gates are deterministic, non-mutating, and avoid binary install side effects.
 
+The local-only choice is deliberate. This project is designed so the same commands that validate a change on a contributor laptop also validate release readiness against real infrastructure when needed. That keeps feedback fast, avoids hosted-runner drift, and makes failures easier to reproduce and debug without a separate CI environment.
+
 ## Check Tiers
 
 ### Fast Local Gate (`make ci-fast`)

@@ -4,6 +4,23 @@
 
 A robust Rust-based CLI and TUI tool for managing Splunk Enterprise v9+ deployments. Supports both standalone and clustered deployments with dual authentication methods (session token and API token).
 
+This repository is first and foremost a real operator tool, not a demo artifact. The same qualities that make it useful for Splunk operators also make it relevant beyond Splunk: it emphasizes safe configuration handling, fast local verification, production diagnostics, accessibility, and workflows that help engineers understand real systems quickly without depending on hosted automation.
+
+## Why This Project Matters Beyond Splunk
+
+- It is a concrete example of production-facing developer tooling: health checks, diagnostics, support bundles, safe defaults, and live validation against real infrastructure.
+- It shows how to build workflow acceleration tools for engineers and operators without sacrificing correctness, observability, or trust.
+- It demonstrates a local-first verification model that is intentional, not ad hoc: deterministic smoke checks for daily work, stricter live validation when real infrastructure is available.
+
+## Reviewer Path
+
+If you are evaluating engineering judgment rather than trying to use Splunk day-to-day, start here:
+
+1. [CI Strategy](docs/ci.md) for the verification model and why it is local-only
+2. [Reviewer Verification Checklist](docs/reviewer-verification.md) for exact commands
+3. [Release Readiness Report](docs/release-readiness.md) for evidence and remaining risk
+4. [Evidence Pack](docs/role-evidence/README.md) for supporting receipts, demo flow, and workshop-style material
+
 ## Features
 
 - **Dual Authentication**: Session token (username/password) and API token support
@@ -588,7 +605,7 @@ make type-check
 # Run tests
 make test
 
-# Fast PR gate
+# Fast local gate
 make ci-fast
 
 # Full release-grade gate

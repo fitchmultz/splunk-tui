@@ -1,6 +1,6 @@
-# Role Evidence Pack
+# Evidence Pack
 
-This folder contains public-release evidence artifacts for reviewer confidence.
+This folder contains supplementary review artifacts. It is not the primary source of truth for the project; start with the README, CI strategy, and reviewer checklist first, then use these materials if you want deeper evidence or a more structured walkthrough.
 
 - [Evidence Map](evidence-map.md)
 - [Demo Script (5–10 min)](demo-script.md)

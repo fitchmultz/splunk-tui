@@ -11,7 +11,7 @@ Public-release hardening with emphasis on correctness, deterministic CI, visual/
    - Added `interaction_render_tests.rs` for keyboard-driven render/state transitions.
 2. **Accessibility contrast validation**
    - Added `accessibility_contrast_tests.rs` to enforce minimum contrast thresholds across all shipped themes.
-3. **PR gate contract enforcement**
+3. **Fast local gate contract enforcement**
    - Added `visual_testing_contract_tests.rs` in architecture-tests to ensure Makefile visual targets remain wired into smoke CI.
 4. **CI/Docs wiring**
    - Added `make tui-visual` and `make tui-accessibility` and wired both into `make test-smoke`.
@@ -66,12 +66,12 @@ Validated successfully:
 1. **Long-tail UX workflows**
    - Core flows are strongly covered, but subjective usability for uncommon workflows should continue via periodic dogfood runs.
 2. **Environment-coupled live confidence**
-   - Strict live confidence requires reachable Splunk infrastructure; default PR gate remains deterministic/offline by design.
+   - Strict live confidence requires reachable Splunk infrastructure; the default fast local gate remains deterministic and offline by design.
 
 ## Reproduce locally
 
 ```bash
-# deterministic PR gate
+# deterministic fast local gate
 make ci-fast
 
 # full deterministic gate
