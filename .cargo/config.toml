@@ -1,11 +1,13 @@
 # Purpose: Repository-local Cargo defaults for consistent developer behavior.
-# Responsibilities: Keep dev-profile compilation settings predictable across contributors.
+# Responsibilities: Keep dev-profile compilation settings predictable across contributors, including approved local build accelerators.
 # Scope: Applies to Cargo commands run from this workspace.
 # Usage: Override per-machine parallelism with `CARGO_JOBS` in the Makefile rather than hardcoding here.
 # Invariants/Assumptions: Avoid fixed global job counts so CI/e2e runs do not oversubscribe shared hosts.
 
+[build]
+rustc-wrapper = "sccache"
+
 # Optional local speedups:
-# - sccache: set `RUSTC_WRAPPER=sccache`
 # - lld: configure target-specific linker flags in local machine overrides
 
 # Faster dev builds

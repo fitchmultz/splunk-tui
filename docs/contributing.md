@@ -134,5 +134,5 @@ make install-hooks
 
 These are optional and should not be required for first-time contributors:
 
-- `sccache`: install and set `RUSTC_WRAPPER=sccache`
+- `sccache`: install it locally; the workspace already routes Cargo builds through `sccache` via `.cargo/config.toml`
 - `lld`: configure target-specific linker flags in local (untracked) Cargo config overrides
