@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::common::flatten_kvstore_record;
 use anyhow::Result;
 use splunk_client::models::{KvStoreCollection, KvStoreRecord};
 
@@ -49,28 +50,8 @@ pub fn format_kvstore_records(records: &[KvStoreRecord]) -> Result<String> {
             output.push_str("---\n");
         }
 
-        if let Some(key) = &record.key {
-            output.push_str(&format!("_key: {}\n", key));
-        }
-        if let Some(owner) = &record.owner {
-            output.push_str(&format!("_owner: {}\n", owner));
-        }
-        if let Some(user) = &record.user {
-            output.push_str(&format!("_user: {}\n", user));
-        }
-
-        // Format the data fields
-        if let serde_json::Value::Object(map) = &record.data {
-            for (k, v) in map {
-                let value_str = match v {
-                    serde_json::Value::String(s) => s.clone(),
-                    serde_json::Value::Number(n) => n.to_string(),
-                    serde_json::Value::Bool(b) => b.to_string(),
-                    serde_json::Value::Null => "null".to_string(),
-                    _ => v.to_string(),
-                };
-                output.push_str(&format!("{}: {}\n", k, value_str));
-            }
+        for (key, value) in flatten_kvstore_record(record) {
+            output.push_str(&format!("{}: {}\n", key, value));
         }
     }
 

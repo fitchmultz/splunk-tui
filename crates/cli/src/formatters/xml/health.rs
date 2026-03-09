@@ -264,17 +264,11 @@ pub fn format_health_check_report(report: &DiagnosticReport) -> Result<String> {
     // Diagnostic checks
     xml.push_str("  <checks>\n");
     for check in &report.checks {
-        let status_str = match check.status {
-            crate::formatters::CheckStatus::Pass => "pass",
-            crate::formatters::CheckStatus::Fail => "fail",
-            crate::formatters::CheckStatus::Warning => "warning",
-            crate::formatters::CheckStatus::Skipped => "skipped",
-        };
         xml.push_str("    <check>\n");
         xml.push_str(&format!("      <name>{}</name>\n", escape_xml(&check.name)));
         xml.push_str(&format!(
             "      <status>{}</status>\n",
-            escape_xml(status_str)
+            escape_xml(check.status.slug())
         ));
         xml.push_str(&format!(
             "      <message>{}</message>\n",

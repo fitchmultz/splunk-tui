@@ -62,7 +62,7 @@ use splunk_config::types::ProfileConfig;
 pub use splunk_client::HealthCheckOutput;
 
 // Re-export doctor types for formatters
-pub use crate::commands::doctor::{CheckStatus, DiagnosticReport};
+pub use crate::commands::doctor::DiagnosticReport;
 
 mod common;
 mod csv;

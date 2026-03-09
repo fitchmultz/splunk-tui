@@ -12,9 +12,9 @@ use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
     ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
+    common::{build_named_profile_display, build_profile_display_map},
 };
 use anyhow::Result;
-use serde::Serialize;
 use splunk_client::models::{
     AuditEvent, ConfigFile, ConfigStanza, Dashboard, DataModel, Input, KvStoreCollection,
     KvStoreRecord, LogEntry, SearchPeer,
@@ -127,70 +127,16 @@ impl Formatter for YamlFormatter {
     }
 
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
-        #[derive(Serialize)]
-        struct ProfileDisplay {
-            name: String,
-            base_url: Option<String>,
-            username: Option<String>,
-            skip_verify: Option<bool>,
-            timeout_seconds: Option<u64>,
-            max_retries: Option<usize>,
-            password: Option<String>,
-            api_token: Option<String>,
-        }
-
-        let display = ProfileDisplay {
-            name: profile_name.to_string(),
-            base_url: profile.base_url.clone(),
-            username: profile.username.clone(),
-            skip_verify: profile.skip_verify,
-            timeout_seconds: profile.timeout_seconds,
-            max_retries: profile.max_retries,
-            password: profile.password.as_ref().map(|_| "****".to_string()),
-            api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
-        };
-
-        Ok(serde_yaml::to_string(&display)?)
+        Ok(serde_yaml::to_string(&build_named_profile_display(
+            profile_name,
+            profile,
+        ))?)
     }
 
     fn format_profiles(&self, profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
-        #[derive(Serialize)]
-        struct ProfileDisplay {
-            base_url: Option<String>,
-            username: Option<String>,
-            skip_verify: Option<bool>,
-            timeout_seconds: Option<u64>,
-            max_retries: Option<usize>,
-            password: Option<String>,
-            api_token: Option<String>,
-        }
-
-        let display_profiles: BTreeMap<String, ProfileDisplay> = profiles
-            .iter()
-            .map(|(name, profile)| {
-                (
-                    name.clone(),
-                    ProfileDisplay {
-                        base_url: profile.base_url.clone(),
-                        username: profile.username.clone(),
-                        skip_verify: profile.skip_verify,
-                        timeout_seconds: profile.timeout_seconds,
-                        max_retries: profile.max_retries,
-                        password: profile.password.as_ref().map(|_| "****".to_string()),
-                        api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
-                    },
-                )
-            })
-            .collect();
-
-        #[derive(Serialize)]
-        struct Output {
-            profiles: BTreeMap<String, ProfileDisplay>,
-        }
-
-        Ok(serde_yaml::to_string(&Output {
-            profiles: display_profiles,
-        })?)
+        Ok(serde_yaml::to_string(
+            &serde_json::json!({ "profiles": build_profile_display_map(profiles) }),
+        )?)
     }
 
     fn format_forwarders(&self, forwarders: &[Forwarder], _detailed: bool) -> Result<String> {

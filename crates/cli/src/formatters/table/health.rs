@@ -185,15 +185,11 @@ pub fn format_health_check_report(report: &DiagnosticReport) -> Result<String> {
     // Diagnostic checks
     output.push_str("--- Diagnostic Checks ---\n");
     for check in &report.checks {
-        let status_icon = match check.status {
-            crate::formatters::CheckStatus::Pass => "[PASS]",
-            crate::formatters::CheckStatus::Fail => "[FAIL]",
-            crate::formatters::CheckStatus::Warning => "[WARN]",
-            crate::formatters::CheckStatus::Skipped => "[SKIP]",
-        };
         output.push_str(&format!(
             "{} {}: {}\n",
-            status_icon, check.name, check.message
+            check.status.table_badge(),
+            check.name,
+            check.message
         ));
     }
 

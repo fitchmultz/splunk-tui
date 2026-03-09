@@ -6,6 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
+use crate::formatters::common::{build_profile_fields, build_profile_summary_row};
 use anyhow::Result;
 use splunk_config::types::ProfileConfig;
 use std::collections::BTreeMap;
@@ -14,40 +15,16 @@ use std::collections::BTreeMap;
 pub fn format_profile(profile_name: &str, profile: &ProfileConfig) -> Result<String> {
     let mut output = String::new();
 
-    output.push_str(&format!("{:<20} {}\n", "Profile Name:", profile_name));
-
-    let base_url = profile.base_url.as_deref().unwrap_or("N/A");
-    output.push_str(&format!("{:<20} {}\n", "Base URL:", base_url));
-
-    let username = profile.username.as_deref().unwrap_or("N/A");
-    output.push_str(&format!("{:<20} {}\n", "Username:", username));
-
-    let password_display = match &profile.password {
-        Some(_) => "****",
-        None => "N/A",
-    };
-    output.push_str(&format!("{:<20} {}\n", "Password:", password_display));
-
-    let token_display = match &profile.api_token {
-        Some(_) => "****",
-        None => "(not set)",
-    };
-    output.push_str(&format!("{:<20} {}\n", "API Token:", token_display));
-
-    let skip_verify = profile
-        .skip_verify
-        .map_or("N/A".to_string(), |b| b.to_string());
-    output.push_str(&format!("{:<20} {}\n", "Skip TLS Verify:", skip_verify));
-
-    let timeout = profile
-        .timeout_seconds
-        .map_or("(not set)".to_string(), |t| t.to_string());
-    output.push_str(&format!("{:<20} {}\n", "Timeout (sec):", timeout));
-
-    let max_retries = profile
-        .max_retries
-        .map_or("(not set)".to_string(), |r| r.to_string());
-    output.push_str(&format!("{:<20} {}", "Max Retries:", max_retries));
+    let fields = build_profile_fields(profile_name, profile);
+    for (index, field) in fields.iter().enumerate() {
+        let suffix = if index + 1 == fields.len() { "" } else { "\n" };
+        output.push_str(&format!(
+            "{:<20} {}{}",
+            format!("{}:", field.label),
+            field.value,
+            suffix
+        ));
+    }
 
     Ok(output)
 }
@@ -65,9 +42,11 @@ pub fn format_profiles(profiles: &BTreeMap<String, ProfileConfig>) -> Result<Str
     output.push_str(&format!("{}\n", "-".repeat(75)));
 
     for (name, profile) in profiles {
-        let base_url = profile.base_url.as_deref().unwrap_or("N/A");
-        let username = profile.username.as_deref().unwrap_or("N/A");
-        output.push_str(&format!("{:<20} {:<40} {:<15}\n", name, base_url, username));
+        let row = build_profile_summary_row(name, profile);
+        output.push_str(&format!(
+            "{:<20} {:<40} {:<15}\n",
+            row.name, row.base_url, row.username
+        ));
     }
 
     Ok(output)

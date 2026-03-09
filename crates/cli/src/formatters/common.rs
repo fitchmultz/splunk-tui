@@ -11,7 +11,10 @@
 //! - Direct output formatting.
 
 use anyhow::{Context, Result};
-use std::collections::BTreeMap;
+use serde::Serialize;
+use splunk_client::models::KvStoreRecord;
+use splunk_config::types::ProfileConfig;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Default string representation for missing/null/empty values across all formatters.
 ///
@@ -20,6 +23,52 @@ use std::collections::BTreeMap;
 /// values are represented identically regardless of output format.
 #[allow(dead_code)]
 pub const DEFAULT_MISSING_VALUE: &str = "N/A";
+pub const DEFAULT_NOT_SET_VALUE: &str = "(not set)";
+pub const MASKED_SECRET_VALUE: &str = "****";
+
+/// Serializable profile view used by machine-readable formatters.
+#[derive(Debug, Clone, Serialize)]
+pub struct NamedProfileDisplay {
+    pub name: String,
+    pub base_url: Option<String>,
+    pub username: Option<String>,
+    pub skip_verify: Option<bool>,
+    pub timeout_seconds: Option<u64>,
+    pub max_retries: Option<usize>,
+    pub password: Option<String>,
+    pub api_token: Option<String>,
+}
+
+/// Serializable profile body used for profile maps.
+#[derive(Debug, Clone, Serialize)]
+pub struct ProfileDisplay {
+    pub base_url: Option<String>,
+    pub username: Option<String>,
+    pub skip_verify: Option<bool>,
+    pub timeout_seconds: Option<u64>,
+    pub max_retries: Option<usize>,
+    pub password: Option<String>,
+    pub api_token: Option<String>,
+}
+
+/// Human-readable profile field used by text-based formatters.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProfileField {
+    pub label: &'static str,
+    pub key: &'static str,
+    pub value: String,
+}
+
+/// Summary row for list-style profile output.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProfileSummaryRow {
+    pub name: String,
+    pub base_url: String,
+    pub username: String,
+    pub skip_verify: String,
+    pub timeout_seconds: String,
+    pub max_retries: String,
+}
 
 /// Format an optional string value, using the default missing value if None.
 ///
@@ -60,6 +109,152 @@ pub fn format_missing(opt: Option<&str>) -> &str {
 pub fn format_missing_display<T: std::fmt::Display>(opt: Option<T>) -> String {
     opt.map(|v| v.to_string())
         .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string())
+}
+
+fn mask_secret<T>(value: Option<&T>, missing: &str) -> String {
+    value
+        .map(|_| MASKED_SECRET_VALUE.to_string())
+        .unwrap_or_else(|| missing.to_string())
+}
+
+/// Build the shared machine-readable profile view for a single profile.
+pub fn build_named_profile_display(
+    profile_name: &str,
+    profile: &ProfileConfig,
+) -> NamedProfileDisplay {
+    NamedProfileDisplay {
+        name: profile_name.to_string(),
+        base_url: profile.base_url.clone(),
+        username: profile.username.clone(),
+        skip_verify: profile.skip_verify,
+        timeout_seconds: profile.timeout_seconds,
+        max_retries: profile.max_retries,
+        password: profile
+            .password
+            .as_ref()
+            .map(|_| MASKED_SECRET_VALUE.to_string()),
+        api_token: profile
+            .api_token
+            .as_ref()
+            .map(|_| MASKED_SECRET_VALUE.to_string()),
+    }
+}
+
+/// Build the shared machine-readable profile map entry.
+pub fn build_profile_display(profile: &ProfileConfig) -> ProfileDisplay {
+    ProfileDisplay {
+        base_url: profile.base_url.clone(),
+        username: profile.username.clone(),
+        skip_verify: profile.skip_verify,
+        timeout_seconds: profile.timeout_seconds,
+        max_retries: profile.max_retries,
+        password: profile
+            .password
+            .as_ref()
+            .map(|_| MASKED_SECRET_VALUE.to_string()),
+        api_token: profile
+            .api_token
+            .as_ref()
+            .map(|_| MASKED_SECRET_VALUE.to_string()),
+    }
+}
+
+/// Build the shared machine-readable profile map.
+pub fn build_profile_display_map(
+    profiles: &BTreeMap<String, ProfileConfig>,
+) -> BTreeMap<String, ProfileDisplay> {
+    profiles
+        .iter()
+        .map(|(name, profile)| (name.clone(), build_profile_display(profile)))
+        .collect()
+}
+
+/// Build a consistent set of profile fields for human-readable output.
+pub fn build_profile_fields(profile_name: &str, profile: &ProfileConfig) -> Vec<ProfileField> {
+    vec![
+        ProfileField {
+            label: "Profile Name",
+            key: "name",
+            value: profile_name.to_string(),
+        },
+        ProfileField {
+            label: "Base URL",
+            key: "base_url",
+            value: profile
+                .base_url
+                .clone()
+                .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string()),
+        },
+        ProfileField {
+            label: "Username",
+            key: "username",
+            value: profile
+                .username
+                .clone()
+                .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string()),
+        },
+        ProfileField {
+            label: "Password",
+            key: "password",
+            value: mask_secret(profile.password.as_ref(), DEFAULT_MISSING_VALUE),
+        },
+        ProfileField {
+            label: "API Token",
+            key: "api_token",
+            value: mask_secret(profile.api_token.as_ref(), DEFAULT_NOT_SET_VALUE),
+        },
+        ProfileField {
+            label: "Skip TLS Verify",
+            key: "skip_verify",
+            value: profile
+                .skip_verify
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string()),
+        },
+        ProfileField {
+            label: "Timeout (sec)",
+            key: "timeout_seconds",
+            value: profile
+                .timeout_seconds
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| DEFAULT_NOT_SET_VALUE.to_string()),
+        },
+        ProfileField {
+            label: "Max Retries",
+            key: "max_retries",
+            value: profile
+                .max_retries
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| DEFAULT_NOT_SET_VALUE.to_string()),
+        },
+    ]
+}
+
+/// Build a summary row for list-style profile output.
+pub fn build_profile_summary_row(profile_name: &str, profile: &ProfileConfig) -> ProfileSummaryRow {
+    ProfileSummaryRow {
+        name: profile_name.to_string(),
+        base_url: profile
+            .base_url
+            .clone()
+            .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string()),
+        username: profile
+            .username
+            .clone()
+            .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string()),
+        skip_verify: profile
+            .skip_verify
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| DEFAULT_MISSING_VALUE.to_string()),
+        timeout_seconds: profile
+            .timeout_seconds
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        max_retries: profile
+            .max_retries
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+    }
 }
 
 /// Flatten a JSON object into a map of dot-notation keys to string values.
@@ -124,6 +319,37 @@ pub fn get_all_flattened_keys(results: &[serde_json::Value]) -> Vec<String> {
     all_keys.into_iter().collect()
 }
 
+/// Flatten a KVStore record into display-ready key/value pairs.
+pub fn flatten_kvstore_record(record: &KvStoreRecord) -> BTreeMap<String, String> {
+    let mut fields = BTreeMap::new();
+
+    if let Some(key) = &record.key {
+        fields.insert("_key".to_string(), key.clone());
+    }
+    if let Some(owner) = &record.owner {
+        fields.insert("_owner".to_string(), owner.clone());
+    }
+    if let Some(user) = &record.user {
+        fields.insert("_user".to_string(), user.clone());
+    }
+
+    flatten_json_object(&record.data, "", &mut fields);
+    fields
+}
+
+/// Collect the union of flattened KVStore data keys across all records.
+pub fn get_all_flattened_kvstore_data_keys(records: &[KvStoreRecord]) -> Vec<String> {
+    let mut keys = BTreeSet::new();
+
+    for record in records {
+        let mut flattened = BTreeMap::new();
+        flatten_json_object(&record.data, "", &mut flattened);
+        keys.extend(flattened.into_keys());
+    }
+
+    keys.into_iter().collect()
+}
+
 /// Format a JSON value as a string for display.
 ///
 /// Converts any JSON value to its string representation:
@@ -166,12 +392,12 @@ pub fn build_csv_header(fields: &[&str]) -> String {
     format!("{}\n", escaped.join(","))
 }
 
-/// Build a CSV data row from field values.
+/// Build a CSV data row from already-prepared field values.
 ///
-/// Escapes each value and joins with commas, appending a newline.
+/// Values are joined as-is, which keeps escaping in one place at the call site
+/// and avoids accidental double-escaping.
 pub fn build_csv_row(values: &[String]) -> String {
-    let escaped: Vec<String> = values.iter().map(|v| escape_csv(v)).collect();
-    format!("{}\n", escaped.join(","))
+    format!("{}\n", values.join(","))
 }
 
 /// Format an optional string for CSV output.

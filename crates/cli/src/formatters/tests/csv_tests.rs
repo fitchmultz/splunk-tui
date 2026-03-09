@@ -4,11 +4,14 @@ use crate::formatters::{
     ClusterInfoOutput, ClusterPeerOutput, CsvFormatter, Formatter, LicenseInfoOutput,
     common::{flatten_json_object, get_all_flattened_keys},
 };
+use secrecy::SecretString;
 use serde_json::json;
 use splunk_client::models::{KvStoreMemberStatus, PeerState, PeerStatus, UserType};
 use splunk_client::{
     Index, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, LicenseUsage, User,
 };
+use splunk_config::SecureValue;
+use splunk_config::types::ProfileConfig;
 
 #[test]
 fn test_csv_formatter() {
@@ -197,6 +200,26 @@ fn test_users_csv_special_characters() {
     let output = formatter.format_users(&users).unwrap();
     assert!(output.contains("\"user,name\""));
     assert!(output.contains("\"User, Name\""));
+}
+
+#[test]
+fn test_csv_profile_does_not_double_escape_special_characters() {
+    let formatter = CsvFormatter;
+    let profile = ProfileConfig {
+        base_url: Some("https://splunk.example.com".to_string()),
+        username: Some("admin,user".to_string()),
+        password: Some(SecureValue::Plain(SecretString::new(
+            "pw".to_string().into(),
+        ))),
+        ..ProfileConfig::default()
+    };
+
+    let output = formatter.format_profile("prod,west", &profile).unwrap();
+
+    assert!(output.contains("\"prod,west\""));
+    assert!(output.contains("\"admin,user\""));
+    assert!(!output.contains("\"\"\"prod,west\"\"\""));
+    assert!(!output.contains("\"\"\"admin,user\"\"\""));
 }
 
 // === RQ-0056: Tests for flattening nested JSON structures ===

@@ -12,6 +12,7 @@ use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
     ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
+    common::{build_named_profile_display, build_profile_summary_row},
 };
 use anyhow::Result;
 use serde::Serialize;
@@ -266,13 +267,11 @@ impl Formatter for MarkdownFormatter {
                 .checks
                 .iter()
                 .map(|c| {
-                    let status = match c.status {
-                        crate::commands::doctor::CheckStatus::Pass => "✅ Pass",
-                        crate::commands::doctor::CheckStatus::Warning => "⚠️ Warning",
-                        crate::commands::doctor::CheckStatus::Fail => "❌ Fail",
-                        crate::commands::doctor::CheckStatus::Skipped => "⏭️ Skipped",
-                    };
-                    vec![c.name.clone(), status.to_string(), c.message.clone()]
+                    vec![
+                        c.name.clone(),
+                        c.status.markdown_badge().to_string(),
+                        c.message.clone(),
+                    ]
                 })
                 .collect();
             output.push_str(&build_markdown_table(&headers, &rows));
@@ -362,26 +361,10 @@ impl Formatter for MarkdownFormatter {
     }
 
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
-        #[derive(Serialize)]
-        struct ProfileDisplay {
-            name: String,
-            base_url: Option<String>,
-            username: Option<String>,
-            skip_verify: Option<bool>,
-            timeout_seconds: Option<u64>,
-            max_retries: Option<usize>,
-        }
-
-        let display = ProfileDisplay {
-            name: profile_name.to_string(),
-            base_url: profile.base_url.clone(),
-            username: profile.username.clone(),
-            skip_verify: profile.skip_verify,
-            timeout_seconds: profile.timeout_seconds,
-            max_retries: profile.max_retries,
-        };
-
-        to_markdown_section(&display, &format!("Profile: {}", profile_name))
+        to_markdown_section(
+            &build_named_profile_display(profile_name, profile),
+            &format!("Profile: {}", profile_name),
+        )
     }
 
     fn format_profiles(&self, profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
@@ -400,11 +383,8 @@ impl Formatter for MarkdownFormatter {
         let rows: Vec<Vec<String>> = profiles
             .iter()
             .map(|(name, p)| {
-                vec![
-                    name.clone(),
-                    p.base_url.clone().unwrap_or_default(),
-                    p.username.clone().unwrap_or_default(),
-                ]
+                let row = build_profile_summary_row(name, p);
+                vec![row.name, row.base_url, row.username]
             })
             .collect();
 

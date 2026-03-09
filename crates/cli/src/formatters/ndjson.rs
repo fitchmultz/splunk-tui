@@ -17,6 +17,7 @@ use crate::formatters::{
     ClusterInfoOutput, ClusterManagementOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput,
     LicenseInstallOutput, LicensePoolOperationOutput, Pagination, ShcCaptainOutput,
     ShcConfigOutput, ShcManagementOutput, ShcMemberOutput, ShcStatusOutput,
+    common::{build_named_profile_display, build_profile_display_map},
 };
 use anyhow::Result;
 use serde::Serialize;
@@ -145,63 +146,13 @@ impl Formatter for NdjsonFormatter {
     }
 
     fn format_profile(&self, profile_name: &str, profile: &ProfileConfig) -> Result<String> {
-        #[derive(Serialize)]
-        struct ProfileDisplay {
-            name: String,
-            base_url: Option<String>,
-            username: Option<String>,
-            skip_verify: Option<bool>,
-            timeout_seconds: Option<u64>,
-            max_retries: Option<usize>,
-            password: Option<String>,
-            api_token: Option<String>,
-        }
-
-        let display = ProfileDisplay {
-            name: profile_name.to_string(),
-            base_url: profile.base_url.clone(),
-            username: profile.username.clone(),
-            skip_verify: profile.skip_verify,
-            timeout_seconds: profile.timeout_seconds,
-            max_retries: profile.max_retries,
-            password: profile.password.as_ref().map(|_| "****".to_string()),
-            api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
-        };
-
-        to_ndjson_single(&display)
+        to_ndjson_single(&build_named_profile_display(profile_name, profile))
     }
 
     fn format_profiles(&self, profiles: &BTreeMap<String, ProfileConfig>) -> Result<String> {
-        #[derive(Serialize)]
-        struct ProfileDisplay {
-            base_url: Option<String>,
-            username: Option<String>,
-            skip_verify: Option<bool>,
-            timeout_seconds: Option<u64>,
-            max_retries: Option<usize>,
-            password: Option<String>,
-            api_token: Option<String>,
-        }
-
-        let display_profiles: BTreeMap<String, ProfileDisplay> = profiles
-            .iter()
-            .map(|(name, profile)| {
-                (
-                    name.clone(),
-                    ProfileDisplay {
-                        base_url: profile.base_url.clone(),
-                        username: profile.username.clone(),
-                        skip_verify: profile.skip_verify,
-                        timeout_seconds: profile.timeout_seconds,
-                        max_retries: profile.max_retries,
-                        password: profile.password.as_ref().map(|_| "****".to_string()),
-                        api_token: profile.api_token.as_ref().map(|_| "****".to_string()),
-                    },
-                )
-            })
-            .collect();
-
-        to_ndjson_single(&serde_json::json!({ "profiles": display_profiles }))
+        to_ndjson_single(&serde_json::json!({
+            "profiles": build_profile_display_map(profiles)
+        }))
     }
 
     fn format_forwarders(&self, forwarders: &[Forwarder], _detailed: bool) -> Result<String> {

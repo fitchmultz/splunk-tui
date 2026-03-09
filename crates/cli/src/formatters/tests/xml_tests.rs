@@ -2,7 +2,7 @@
 
 use crate::formatters::{ClusterInfoOutput, ClusterPeerOutput, Formatter, XmlFormatter};
 use serde_json::json;
-use splunk_client::models::{KvStoreMemberStatus, PeerState, PeerStatus, UserType};
+use splunk_client::models::{KvStoreMemberStatus, KvStoreRecord, PeerState, PeerStatus, UserType};
 use splunk_client::{Index, KvStoreMember, KvStoreReplicationStatus, KvStoreStatus, User};
 
 #[test]
@@ -150,6 +150,30 @@ fn test_kvstore_peers_xml_formatting() {
     assert!(output.contains("<host>localhost</host>"));
     assert!(output.contains("<port>8089</port>"));
     assert!(output.contains("<oplogUsed>1.50</oplogUsed>"));
+}
+
+#[test]
+fn test_kvstore_record_xml_uses_field_elements_for_dynamic_keys() {
+    let formatter = XmlFormatter;
+    let records = vec![KvStoreRecord {
+        key: Some("record-1".to_string()),
+        owner: None,
+        user: None,
+        data: json!({
+            "host.name": "idx-01",
+            "9invalid key": true,
+            "nested": { "status": "ready" }
+        }),
+    }];
+
+    let output = formatter.format_kvstore_records(&records).unwrap();
+
+    assert!(output.contains("<_key>record-1</_key>"));
+    assert!(output.contains("<field name=\"host.name\">idx-01</field>"));
+    assert!(output.contains("<field name=\"9invalid key\">true</field>"));
+    assert!(output.contains("<field name=\"nested.status\">ready</field>"));
+    assert!(!output.contains("<host.name>"));
+    assert!(!output.contains("<9invalid key>"));
 }
 
 #[test]

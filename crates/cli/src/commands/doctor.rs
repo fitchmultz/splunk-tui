@@ -31,13 +31,42 @@ pub struct DiagnosticCheck {
 }
 
 /// Status of a diagnostic check.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CheckStatus {
     Pass,
     Fail,
     Warning,
     Skipped,
+}
+
+impl CheckStatus {
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Pass => "pass",
+            Self::Fail => "fail",
+            Self::Warning => "warning",
+            Self::Skipped => "skipped",
+        }
+    }
+
+    pub const fn table_badge(self) -> &'static str {
+        match self {
+            Self::Pass => "[PASS]",
+            Self::Fail => "[FAIL]",
+            Self::Warning => "[WARN]",
+            Self::Skipped => "[SKIP]",
+        }
+    }
+
+    pub const fn markdown_badge(self) -> &'static str {
+        match self {
+            Self::Pass => "✅ Pass",
+            Self::Fail => "❌ Fail",
+            Self::Warning => "⚠️ Warning",
+            Self::Skipped => "⏭️ Skipped",
+        }
+    }
 }
 
 /// Complete diagnostic report.

@@ -6,7 +6,10 @@
 //! Does NOT handle:
 //! - Other resource types.
 
-use crate::formatters::common::{escape_csv, flatten_json_object, get_all_flattened_keys};
+use crate::formatters::common::{
+    escape_csv, flatten_json_object, flatten_kvstore_record, get_all_flattened_keys,
+    get_all_flattened_kvstore_data_keys,
+};
 use anyhow::Result;
 use splunk_client::models::KvStoreRecord;
 
@@ -54,8 +57,7 @@ pub fn format_kvstore_records(records: &[KvStoreRecord]) -> Result<String> {
     let mut output = String::new();
 
     // Get all unique flattened keys from all records (sorted)
-    let all_keys =
-        get_all_flattened_keys(&records.iter().map(|r| r.data.clone()).collect::<Vec<_>>());
+    let all_keys = get_all_flattened_kvstore_data_keys(records);
 
     // Print header with _key, _owner, _user plus data fields
     let mut headers = vec![
@@ -70,8 +72,7 @@ pub fn format_kvstore_records(records: &[KvStoreRecord]) -> Result<String> {
 
     // Print rows
     for record in records {
-        let mut flat = std::collections::BTreeMap::new();
-        flatten_json_object(&record.data, "", &mut flat);
+        let flat = flatten_kvstore_record(record);
 
         let mut row = vec![
             escape_csv(record.key.as_deref().unwrap_or("")),

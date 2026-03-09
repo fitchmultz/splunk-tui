@@ -6,7 +6,7 @@
 //! Does NOT handle:
 //! - Other resource types.
 
-use crate::formatters::common::escape_xml;
+use crate::formatters::common::{escape_xml, flatten_kvstore_record};
 use anyhow::Result;
 use splunk_client::models::{KvStoreCollection, KvStoreRecord};
 
@@ -56,27 +56,15 @@ pub fn format_kvstore_records(records: &[KvStoreRecord]) -> Result<String> {
     for record in records {
         output.push_str("  <record>\n");
 
-        if let Some(key) = &record.key {
-            output.push_str(&format!("    <_key>{}</_key>\n", escape_xml(key)));
-        }
-        if let Some(owner) = &record.owner {
-            output.push_str(&format!("    <_owner>{}</_owner>\n", escape_xml(owner)));
-        }
-        if let Some(user) = &record.user {
-            output.push_str(&format!("    <_user>{}</_user>\n", escape_xml(user)));
-        }
-
-        // Format the data fields
-        if let serde_json::Value::Object(map) = &record.data {
-            for (k, v) in map {
-                let value_str = match v {
-                    serde_json::Value::String(s) => escape_xml(s),
-                    serde_json::Value::Number(n) => n.to_string(),
-                    serde_json::Value::Bool(b) => b.to_string(),
-                    serde_json::Value::Null => "null".to_string(),
-                    _ => escape_xml(&v.to_string()),
-                };
-                output.push_str(&format!("    <{0}>{1}</{0}>\n", escape_xml(k), value_str));
+        for (key, value) in flatten_kvstore_record(record) {
+            if key.starts_with('_') {
+                output.push_str(&format!("    <{0}>{1}</{0}>\n", key, escape_xml(&value)));
+            } else {
+                output.push_str(&format!(
+                    "    <field name=\"{}\">{}</field>\n",
+                    escape_xml(&key),
+                    escape_xml(&value)
+                ));
             }
         }
 

@@ -159,15 +159,9 @@ pub fn format_health_check_report(report: &DiagnosticReport) -> Result<String> {
 
     // Check results
     for check in &report.checks {
-        let status_str = match check.status {
-            crate::formatters::CheckStatus::Pass => "pass",
-            crate::formatters::CheckStatus::Fail => "fail",
-            crate::formatters::CheckStatus::Warning => "warning",
-            crate::formatters::CheckStatus::Skipped => "skipped",
-        };
         output.push_str(&build_csv_row(&[
             escape_csv(&check.name),
-            escape_csv(status_str),
+            escape_csv(check.status.slug()),
             escape_csv(&check.message),
         ]));
     }
