@@ -8,11 +8,11 @@
 //! - Direct state modification (sends actions for that).
 //! - UI rendering.
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
 use crate::action::Action;
 use crate::ui::ToastLevel;
 use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 /// Handle loading inputs with pagination support.
@@ -28,22 +28,14 @@ pub async fn handle_load_inputs(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_inputs(Some(count), Some(offset)).await {
-            Ok(inputs) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::InputsLoaded(Ok(inputs))).await;
-                } else {
-                    let _ = tx.send(Action::MoreInputsLoaded(Ok(inputs))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::InputsLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx.send(Action::MoreInputsLoaded(Err(Arc::new(e)))).await;
-                }
-            }
-        }
+        let result = client.list_inputs(Some(count), Some(offset)).await;
+        let action = build_paginated_action(
+            result,
+            offset,
+            Action::InputsLoaded,
+            Action::MoreInputsLoaded,
+        );
+        let _ = tx.send(action).await;
     });
 }
 

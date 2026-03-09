@@ -9,9 +9,9 @@
 //! - UI rendering.
 
 use crate::action::Action;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
 
 /// Handle loading dashboards with pagination support.
@@ -27,23 +27,13 @@ pub async fn handle_load_dashboards(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_dashboards(Some(count), Some(offset)).await {
-            Ok(dashboards) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::DashboardsLoaded(Ok(dashboards))).await;
-                } else {
-                    let _ = tx.send(Action::MoreDashboardsLoaded(Ok(dashboards))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::DashboardsLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx
-                        .send(Action::MoreDashboardsLoaded(Err(Arc::new(e))))
-                        .await;
-                }
-            }
-        }
+        let result = client.list_dashboards(Some(count), Some(offset)).await;
+        let action = build_paginated_action(
+            result,
+            offset,
+            Action::DashboardsLoaded,
+            Action::MoreDashboardsLoaded,
+        );
+        let _ = tx.send(action).await;
     });
 }

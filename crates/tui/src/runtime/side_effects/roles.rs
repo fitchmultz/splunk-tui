@@ -16,7 +16,15 @@ use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
+
+fn build_roles_action(
+    result: Result<Vec<splunk_client::models::Role>, splunk_client::ClientError>,
+    offset: usize,
+) -> Action {
+    build_paginated_action(result, offset, Action::RolesLoaded, Action::MoreRolesLoaded)
+}
 
 /// Handle loading roles.
 pub async fn handle_load_roles(
@@ -28,14 +36,9 @@ pub async fn handle_load_roles(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_roles(Some(count), Some(offset)).await {
-            Ok(roles) => {
-                let _ = tx.send(Action::RolesLoaded(Ok(roles))).await;
-            }
-            Err(e) => {
-                let _ = tx.send(Action::RolesLoaded(Err(Arc::new(e)))).await;
-            }
-        }
+        let result = client.list_roles(Some(count), Some(offset)).await;
+        let action = build_roles_action(result, offset);
+        let _ = tx.send(action).await;
     });
 }
 
@@ -177,4 +180,29 @@ pub async fn handle_delete_role(
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_roles_action_uses_roles_loaded_for_offset_zero() {
+        let action = build_roles_action(Ok(Vec::<splunk_client::models::Role>::new()), 0);
+
+        match action {
+            Action::RolesLoaded(Ok(roles)) => assert!(roles.is_empty()),
+            _ => panic!("expected RolesLoaded(Ok(_)) for offset == 0"),
+        }
+    }
+
+    #[test]
+    fn build_roles_action_uses_more_roles_loaded_for_offset_non_zero() {
+        let action = build_roles_action(Ok(Vec::<splunk_client::models::Role>::new()), 25);
+
+        match action {
+            Action::MoreRolesLoaded(Ok(roles)) => assert!(roles.is_empty()),
+            _ => panic!("expected MoreRolesLoaded(Ok(_)) for offset > 0"),
+        }
+    }
 }

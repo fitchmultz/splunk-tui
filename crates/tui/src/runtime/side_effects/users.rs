@@ -16,6 +16,7 @@ use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
 
 /// Handle loading users with pagination support.
@@ -31,22 +32,10 @@ pub async fn handle_load_users(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_users(Some(count), Some(offset)).await {
-            Ok(users) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::UsersLoaded(Ok(users))).await;
-                } else {
-                    let _ = tx.send(Action::MoreUsersLoaded(Ok(users))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::UsersLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx.send(Action::MoreUsersLoaded(Err(Arc::new(e)))).await;
-                }
-            }
-        }
+        let result = client.list_users(Some(count), Some(offset)).await;
+        let action =
+            build_paginated_action(result, offset, Action::UsersLoaded, Action::MoreUsersLoaded);
+        let _ = tx.send(action).await;
     });
 }
 

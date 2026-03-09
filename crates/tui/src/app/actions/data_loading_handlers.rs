@@ -11,6 +11,22 @@ use crate::ui::Toast;
 use splunk_client::models::DataModel;
 
 impl App {
+    fn apply_paginated_items<T>(target: &mut Option<Vec<T>>, items: Vec<T>, append: bool) -> usize {
+        let count = items.len();
+
+        if append {
+            if let Some(existing) = target.as_mut() {
+                existing.extend(items);
+            } else {
+                *target = Some(items);
+            }
+        } else {
+            *target = Some(items);
+        }
+
+        count
+    }
+
     pub(crate) fn handle_multi_instance_overview_loaded(
         &mut self,
         data: crate::action::MultiInstanceOverviewData,
@@ -79,8 +95,7 @@ impl App {
 
     // Indexes handlers
     pub(crate) fn handle_indexes_loaded(&mut self, indexes: Vec<splunk_client::models::Index>) {
-        let count = indexes.len();
-        self.indexes = Some(indexes);
+        let count = Self::apply_paginated_items(&mut self.indexes, indexes, false);
         self.indexes_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -89,12 +104,7 @@ impl App {
         &mut self,
         indexes: Vec<splunk_client::models::Index>,
     ) {
-        let count = indexes.len();
-        if let Some(ref mut existing) = self.indexes {
-            existing.extend(indexes);
-        } else {
-            self.indexes = Some(indexes);
-        }
+        let count = Self::apply_paginated_items(&mut self.indexes, indexes, true);
         self.indexes_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -102,8 +112,7 @@ impl App {
     // Jobs handlers
     pub(crate) fn handle_jobs_loaded(&mut self, jobs: Vec<splunk_client::SearchJobStatus>) {
         let sel = self.jobs_state.selected();
-        let count = jobs.len();
-        self.jobs = Some(jobs);
+        let count = Self::apply_paginated_items(&mut self.jobs, jobs, false);
         self.jobs_pagination.update_loaded(count);
         self.loading = false;
         // Rebuild filtered indices and restore selection clamped to new bounds
@@ -117,12 +126,7 @@ impl App {
 
     pub(crate) fn handle_more_jobs_loaded(&mut self, jobs: Vec<splunk_client::SearchJobStatus>) {
         let sel = self.jobs_state.selected();
-        let count = jobs.len();
-        if let Some(ref mut existing) = self.jobs {
-            existing.extend(jobs);
-        } else {
-            self.jobs = Some(jobs);
-        }
+        let count = Self::apply_paginated_items(&mut self.jobs, jobs, true);
         self.jobs_pagination.update_loaded(count);
         self.loading = false;
         // Rebuild filtered indices to include new items
@@ -216,57 +220,39 @@ impl App {
 
     // Apps handlers
     pub(crate) fn handle_apps_loaded(&mut self, apps: Vec<splunk_client::models::App>) {
-        let count = apps.len();
-        self.apps = Some(apps);
+        let count = Self::apply_paginated_items(&mut self.apps, apps, false);
         self.apps_pagination.update_loaded(count);
         self.loading = false;
     }
 
     pub(crate) fn handle_more_apps_loaded(&mut self, apps: Vec<splunk_client::models::App>) {
-        let count = apps.len();
-        if let Some(ref mut existing) = self.apps {
-            existing.extend(apps);
-        } else {
-            self.apps = Some(apps);
-        }
+        let count = Self::apply_paginated_items(&mut self.apps, apps, true);
         self.apps_pagination.update_loaded(count);
         self.loading = false;
     }
 
     // Users handlers
     pub(crate) fn handle_users_loaded(&mut self, users: Vec<splunk_client::models::User>) {
-        let count = users.len();
-        self.users = Some(users);
+        let count = Self::apply_paginated_items(&mut self.users, users, false);
         self.users_pagination.update_loaded(count);
         self.loading = false;
     }
 
     pub(crate) fn handle_more_users_loaded(&mut self, users: Vec<splunk_client::models::User>) {
-        let count = users.len();
-        if let Some(ref mut existing) = self.users {
-            existing.extend(users);
-        } else {
-            self.users = Some(users);
-        }
+        let count = Self::apply_paginated_items(&mut self.users, users, true);
         self.users_pagination.update_loaded(count);
         self.loading = false;
     }
 
     // Roles handlers
     pub(crate) fn handle_roles_loaded(&mut self, roles: Vec<splunk_client::models::Role>) {
-        let count = roles.len();
-        self.roles = Some(roles);
+        let count = Self::apply_paginated_items(&mut self.roles, roles, false);
         self.roles_pagination.update_loaded(count);
         self.loading = false;
     }
 
     pub(crate) fn handle_more_roles_loaded(&mut self, roles: Vec<splunk_client::models::Role>) {
-        let count = roles.len();
-        if let Some(ref mut existing) = self.roles {
-            existing.extend(roles);
-        } else {
-            self.roles = Some(roles);
-        }
+        let count = Self::apply_paginated_items(&mut self.roles, roles, true);
         self.roles_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -276,8 +262,7 @@ impl App {
         &mut self,
         peers: Vec<splunk_client::models::SearchPeer>,
     ) {
-        let count = peers.len();
-        self.search_peers = Some(peers);
+        let count = Self::apply_paginated_items(&mut self.search_peers, peers, false);
         self.search_peers_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -286,12 +271,7 @@ impl App {
         &mut self,
         peers: Vec<splunk_client::models::SearchPeer>,
     ) {
-        let count = peers.len();
-        if let Some(ref mut existing) = self.search_peers {
-            existing.extend(peers);
-        } else {
-            self.search_peers = Some(peers);
-        }
+        let count = Self::apply_paginated_items(&mut self.search_peers, peers, true);
         self.search_peers_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -301,8 +281,7 @@ impl App {
         &mut self,
         forwarders: Vec<splunk_client::models::Forwarder>,
     ) {
-        let count = forwarders.len();
-        self.forwarders = Some(forwarders);
+        let count = Self::apply_paginated_items(&mut self.forwarders, forwarders, false);
         self.forwarders_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -311,12 +290,7 @@ impl App {
         &mut self,
         forwarders: Vec<splunk_client::models::Forwarder>,
     ) {
-        let count = forwarders.len();
-        if let Some(ref mut existing) = self.forwarders {
-            existing.extend(forwarders);
-        } else {
-            self.forwarders = Some(forwarders);
-        }
+        let count = Self::apply_paginated_items(&mut self.forwarders, forwarders, true);
         self.forwarders_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -326,8 +300,7 @@ impl App {
         &mut self,
         lookups: Vec<splunk_client::models::LookupTable>,
     ) {
-        let count = lookups.len();
-        self.lookups = Some(lookups);
+        let count = Self::apply_paginated_items(&mut self.lookups, lookups, false);
         self.lookups_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -336,31 +309,20 @@ impl App {
         &mut self,
         lookups: Vec<splunk_client::models::LookupTable>,
     ) {
-        let count = lookups.len();
-        if let Some(ref mut existing) = self.lookups {
-            existing.extend(lookups);
-        } else {
-            self.lookups = Some(lookups);
-        }
+        let count = Self::apply_paginated_items(&mut self.lookups, lookups, true);
         self.lookups_pagination.update_loaded(count);
         self.loading = false;
     }
 
     // Inputs handlers
     pub(crate) fn handle_inputs_loaded(&mut self, inputs: Vec<splunk_client::models::Input>) {
-        let count = inputs.len();
-        self.inputs = Some(inputs);
+        let count = Self::apply_paginated_items(&mut self.inputs, inputs, false);
         self.inputs_pagination.update_loaded(count);
         self.loading = false;
     }
 
     pub(crate) fn handle_more_inputs_loaded(&mut self, inputs: Vec<splunk_client::models::Input>) {
-        let count = inputs.len();
-        if let Some(ref mut existing) = self.inputs {
-            existing.extend(inputs);
-        } else {
-            self.inputs = Some(inputs);
-        }
+        let count = Self::apply_paginated_items(&mut self.inputs, inputs, true);
         self.inputs_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -370,8 +332,7 @@ impl App {
         &mut self,
         alerts: Vec<splunk_client::models::FiredAlert>,
     ) {
-        let count = alerts.len();
-        self.fired_alerts = Some(alerts);
+        let count = Self::apply_paginated_items(&mut self.fired_alerts, alerts, false);
         self.fired_alerts_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -380,12 +341,7 @@ impl App {
         &mut self,
         alerts: Vec<splunk_client::models::FiredAlert>,
     ) {
-        let count = alerts.len();
-        if let Some(ref mut existing) = self.fired_alerts {
-            existing.extend(alerts);
-        } else {
-            self.fired_alerts = Some(alerts);
-        }
+        let count = Self::apply_paginated_items(&mut self.fired_alerts, alerts, true);
         self.fired_alerts_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -395,8 +351,7 @@ impl App {
         &mut self,
         dashboards: Vec<splunk_client::models::Dashboard>,
     ) {
-        let count = dashboards.len();
-        self.dashboards = Some(dashboards);
+        let count = Self::apply_paginated_items(&mut self.dashboards, dashboards, false);
         self.dashboards_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -405,31 +360,20 @@ impl App {
         &mut self,
         dashboards: Vec<splunk_client::models::Dashboard>,
     ) {
-        let count = dashboards.len();
-        if let Some(ref mut existing) = self.dashboards {
-            existing.extend(dashboards);
-        } else {
-            self.dashboards = Some(dashboards);
-        }
+        let count = Self::apply_paginated_items(&mut self.dashboards, dashboards, true);
         self.dashboards_pagination.update_loaded(count);
         self.loading = false;
     }
 
     // Data models handlers
     pub(crate) fn handle_datamodels_loaded(&mut self, datamodels: Vec<DataModel>) {
-        let count = datamodels.len();
-        self.data_models = Some(datamodels);
+        let count = Self::apply_paginated_items(&mut self.data_models, datamodels, false);
         self.data_models_pagination.update_loaded(count);
         self.loading = false;
     }
 
     pub(crate) fn handle_more_datamodels_loaded(&mut self, datamodels: Vec<DataModel>) {
-        let count = datamodels.len();
-        if let Some(ref mut existing) = self.data_models {
-            existing.extend(datamodels);
-        } else {
-            self.data_models = Some(datamodels);
-        }
+        let count = Self::apply_paginated_items(&mut self.data_models, datamodels, true);
         self.data_models_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -439,8 +383,7 @@ impl App {
         &mut self,
         pools: Vec<splunk_client::models::WorkloadPool>,
     ) {
-        let count = pools.len();
-        self.workload_pools = Some(pools);
+        let count = Self::apply_paginated_items(&mut self.workload_pools, pools, false);
         self.workload_pools_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -449,12 +392,7 @@ impl App {
         &mut self,
         pools: Vec<splunk_client::models::WorkloadPool>,
     ) {
-        let count = pools.len();
-        if let Some(ref mut existing) = self.workload_pools {
-            existing.extend(pools);
-        } else {
-            self.workload_pools = Some(pools);
-        }
+        let count = Self::apply_paginated_items(&mut self.workload_pools, pools, true);
         self.workload_pools_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -463,8 +401,7 @@ impl App {
         &mut self,
         rules: Vec<splunk_client::models::WorkloadRule>,
     ) {
-        let count = rules.len();
-        self.workload_rules = Some(rules);
+        let count = Self::apply_paginated_items(&mut self.workload_rules, rules, false);
         self.workload_rules_pagination.update_loaded(count);
         self.loading = false;
     }
@@ -473,12 +410,7 @@ impl App {
         &mut self,
         rules: Vec<splunk_client::models::WorkloadRule>,
     ) {
-        let count = rules.len();
-        if let Some(ref mut existing) = self.workload_rules {
-            existing.extend(rules);
-        } else {
-            self.workload_rules = Some(rules);
-        }
+        let count = Self::apply_paginated_items(&mut self.workload_rules, rules, true);
         self.workload_rules_pagination.update_loaded(count);
         self.loading = false;
     }

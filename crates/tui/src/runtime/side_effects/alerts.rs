@@ -9,11 +9,10 @@
 //! - UI rendering.
 
 use crate::action::Action;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
-use super::TaskTracker;
+use super::paginated::build_paginated_action;
+use super::{SharedClient, TaskTracker};
 
 /// Handle loading fired alerts with pagination support.
 ///
@@ -28,23 +27,13 @@ pub async fn handle_load_fired_alerts(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_fired_alerts(Some(count), Some(offset)).await {
-            Ok(alerts) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::FiredAlertsLoaded(Ok(alerts))).await;
-                } else {
-                    let _ = tx.send(Action::MoreFiredAlertsLoaded(Ok(alerts))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::FiredAlertsLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx
-                        .send(Action::MoreFiredAlertsLoaded(Err(Arc::new(e))))
-                        .await;
-                }
-            }
-        }
+        let result = client.list_fired_alerts(Some(count), Some(offset)).await;
+        let action = build_paginated_action(
+            result,
+            offset,
+            Action::FiredAlertsLoaded,
+            Action::MoreFiredAlertsLoaded,
+        );
+        let _ = tx.send(action).await;
     });
 }

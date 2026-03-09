@@ -11,8 +11,7 @@
 use tokio::sync::mpsc::Sender;
 
 use crate::action::Action;
-use crate::runtime::side_effects::{SharedClient, TaskTracker};
-use std::sync::Arc;
+use crate::runtime::side_effects::{SharedClient, TaskTracker, paginated::build_paginated_action};
 
 /// Handle loading forwarders with pagination support.
 ///
@@ -27,22 +26,13 @@ pub async fn handle_load_forwarders(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_forwarders(Some(count), Some(offset)).await {
-            Ok(forwarders) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::ForwardersLoaded(Ok(forwarders))).await;
-                } else {
-                    let _ = tx.send(Action::MoreForwardersLoaded(Ok(forwarders))).await;
-                }
-            }
-            Err(e) => {
-                let arc_err = Arc::new(e);
-                if offset == 0 {
-                    let _ = tx.send(Action::ForwardersLoaded(Err(arc_err))).await;
-                } else {
-                    let _ = tx.send(Action::MoreForwardersLoaded(Err(arc_err))).await;
-                }
-            }
-        }
+        let result = client.list_forwarders(Some(count), Some(offset)).await;
+        let action = build_paginated_action(
+            result,
+            offset,
+            Action::ForwardersLoaded,
+            Action::MoreForwardersLoaded,
+        );
+        let _ = tx.send(action).await;
     });
 }

@@ -9,9 +9,9 @@
 //! - UI rendering.
 
 use crate::action::Action;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
 
 /// Handle loading data models with pagination support.
@@ -27,23 +27,13 @@ pub async fn handle_load_datamodels(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_datamodels(Some(count), Some(offset)).await {
-            Ok(datamodels) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::DataModelsLoaded(Ok(datamodels))).await;
-                } else {
-                    let _ = tx.send(Action::MoreDataModelsLoaded(Ok(datamodels))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::DataModelsLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx
-                        .send(Action::MoreDataModelsLoaded(Err(Arc::new(e))))
-                        .await;
-                }
-            }
-        }
+        let result = client.list_datamodels(Some(count), Some(offset)).await;
+        let action = build_paginated_action(
+            result,
+            offset,
+            Action::DataModelsLoaded,
+            Action::MoreDataModelsLoaded,
+        );
+        let _ = tx.send(action).await;
     });
 }

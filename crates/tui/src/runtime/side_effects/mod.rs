@@ -103,6 +103,7 @@ mod macros;
 mod multi_instance;
 mod overview;
 mod overview_fetch;
+mod paginated;
 mod profiles;
 mod roles;
 mod search_peers;

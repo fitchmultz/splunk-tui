@@ -89,62 +89,6 @@ impl App {
                 self.handle_navigation_action(action);
             }
 
-            // Data loading actions
-            Action::IndexesLoaded(_)
-            | Action::MoreIndexesLoaded(_)
-            | Action::IndexCreated(_)
-            | Action::IndexModified(_)
-            | Action::IndexDeleted(_)
-            | Action::JobsLoaded(_)
-            | Action::MoreJobsLoaded(_)
-            | Action::SavedSearchesLoaded(_)
-            | Action::InternalLogsLoaded(_)
-            | Action::ClusterInfoLoaded(_)
-            | Action::ClusterPeersLoaded(_)
-            | Action::HealthLoaded(_)
-            | Action::HealthStatusLoaded(_)
-            | Action::LicenseLoaded(_)
-            | Action::KvstoreLoaded(_)
-            | Action::AppsLoaded(_)
-            | Action::MoreAppsLoaded(_)
-            | Action::UsersLoaded(_)
-            | Action::MoreUsersLoaded(_)
-            | Action::UserCreated(_)
-            | Action::UserModified(_)
-            | Action::UserDeleted(_)
-            | Action::SearchPeersLoaded(_)
-            | Action::MoreSearchPeersLoaded(_)
-            | Action::ForwardersLoaded(_)
-            | Action::MoreForwardersLoaded(_)
-            | Action::LookupsLoaded(_)
-            | Action::MoreLookupsLoaded(_)
-            | Action::InputsLoaded(_)
-            | Action::MoreInputsLoaded(_)
-            | Action::FiredAlertsLoaded(_)
-            | Action::MoreFiredAlertsLoaded(_)
-            | Action::AuditEventsLoaded(_)
-            | Action::ConfigFilesLoaded(_)
-            | Action::ConfigStanzasLoaded(_)
-            | Action::SettingsLoaded(_)
-            | Action::OverviewLoaded(_)
-            | Action::MultiInstanceOverviewLoaded(_)
-            // Macros
-            | Action::MacrosLoaded(_)
-            | Action::MacroCreated(_)
-            | Action::MacroUpdated(_)
-            | Action::MacroDeleted(_)
-            // Roles
-            | Action::RoleCreated(_)
-            | Action::RoleModified(_)
-            | Action::RoleDeleted(_)
-            // SHC
-            | Action::ShcStatusLoaded(_)
-            | Action::ShcMembersLoaded(_)
-            | Action::ShcCaptainLoaded(_)
-            | Action::ShcConfigLoaded(_) => {
-                self.handle_data_loading_action(action);
-            }
-
             // Search actions
             Action::SearchStarted(_)
             | Action::SearchComplete(_)
@@ -249,8 +193,8 @@ impl App {
                 self.handle_undo_action(action);
             }
 
-            // Catch-all for unhandled actions
-            _ => {}
+            // Data loading result actions are handled centrally in data_loading.rs.
+            action => self.handle_data_loading_action(action),
         }
     }
 

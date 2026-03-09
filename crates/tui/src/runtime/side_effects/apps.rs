@@ -11,11 +11,10 @@
 use crate::action::Action;
 use crate::ui::ToastLevel;
 use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use super::SharedClient;
-use super::TaskTracker;
+use super::paginated::build_paginated_action;
+use super::{SharedClient, TaskTracker};
 use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 
 /// Handle loading apps with pagination support.
@@ -31,22 +30,10 @@ pub async fn handle_load_apps(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_apps(Some(count), Some(offset)).await {
-            Ok(apps) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::AppsLoaded(Ok(apps))).await;
-                } else {
-                    let _ = tx.send(Action::MoreAppsLoaded(Ok(apps))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::AppsLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx.send(Action::MoreAppsLoaded(Err(Arc::new(e)))).await;
-                }
-            }
-        }
+        let result = client.list_apps(Some(count), Some(offset)).await;
+        let action =
+            build_paginated_action(result, offset, Action::AppsLoaded, Action::MoreAppsLoaded);
+        let _ = tx.send(action).await;
     });
 }
 

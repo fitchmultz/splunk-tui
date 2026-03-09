@@ -16,6 +16,7 @@ use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
 
 /// Handle loading indexes with pagination support.
@@ -31,22 +32,14 @@ pub async fn handle_load_indexes(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_indexes(Some(count), Some(offset)).await {
-            Ok(indexes) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::IndexesLoaded(Ok(indexes))).await;
-                } else {
-                    let _ = tx.send(Action::MoreIndexesLoaded(Ok(indexes))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::IndexesLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx.send(Action::MoreIndexesLoaded(Err(Arc::new(e)))).await;
-                }
-            }
-        }
+        let result = client.list_indexes(Some(count), Some(offset)).await;
+        let action = build_paginated_action(
+            result,
+            offset,
+            Action::IndexesLoaded,
+            Action::MoreIndexesLoaded,
+        );
+        let _ = tx.send(action).await;
     });
 }
 

@@ -17,7 +17,7 @@
 use tokio::sync::mpsc::Sender;
 
 use crate::action::Action;
-use crate::runtime::side_effects::{SharedClient, TaskTracker};
+use crate::runtime::side_effects::{SharedClient, TaskTracker, paginated::build_paginated_action};
 
 /// Build the action for workload pools based on fetch result and offset.
 ///
@@ -27,16 +27,12 @@ fn build_workload_pools_action(
     result: Result<Vec<splunk_client::models::WorkloadPool>, splunk_client::ClientError>,
     offset: usize,
 ) -> Action {
-    match offset {
-        0 => match result {
-            Ok(pools) => Action::WorkloadPoolsLoaded(Ok(pools)),
-            Err(e) => Action::WorkloadPoolsLoaded(Err(std::sync::Arc::new(e))),
-        },
-        _ => match result {
-            Ok(pools) => Action::MoreWorkloadPoolsLoaded(Ok(pools)),
-            Err(e) => Action::MoreWorkloadPoolsLoaded(Err(std::sync::Arc::new(e))),
-        },
-    }
+    build_paginated_action(
+        result,
+        offset,
+        Action::WorkloadPoolsLoaded,
+        Action::MoreWorkloadPoolsLoaded,
+    )
 }
 
 /// Build the action for workload rules based on fetch result and offset.
@@ -47,16 +43,12 @@ fn build_workload_rules_action(
     result: Result<Vec<splunk_client::models::WorkloadRule>, splunk_client::ClientError>,
     offset: usize,
 ) -> Action {
-    match offset {
-        0 => match result {
-            Ok(rules) => Action::WorkloadRulesLoaded(Ok(rules)),
-            Err(e) => Action::WorkloadRulesLoaded(Err(std::sync::Arc::new(e))),
-        },
-        _ => match result {
-            Ok(rules) => Action::MoreWorkloadRulesLoaded(Ok(rules)),
-            Err(e) => Action::MoreWorkloadRulesLoaded(Err(std::sync::Arc::new(e))),
-        },
-    }
+    build_paginated_action(
+        result,
+        offset,
+        Action::WorkloadRulesLoaded,
+        Action::MoreWorkloadRulesLoaded,
+    )
 }
 
 /// Handle loading workload pools.

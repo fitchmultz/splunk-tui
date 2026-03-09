@@ -37,6 +37,28 @@ fn test_indexes_loaded_updates_state() {
 }
 
 #[test]
+fn test_update_routes_roles_loaded_through_data_loading_handler() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.loading = true;
+
+    app.update(Action::RolesLoaded(Ok(vec![])));
+
+    assert_eq!(app.roles.as_ref().map(Vec::len), Some(0));
+    assert!(!app.loading);
+}
+
+#[test]
+fn test_update_routes_capabilities_loaded_through_data_loading_handler() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.loading = true;
+
+    app.update(Action::CapabilitiesLoaded(Ok(vec![])));
+
+    assert_eq!(app.capabilities.as_ref().map(Vec::len), Some(0));
+    assert!(!app.loading);
+}
+
+#[test]
 fn test_health_status_loaded_ok() {
     let mut app = App::new(None, ConnectionContext::default());
 

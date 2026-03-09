@@ -11,9 +11,9 @@
 use crate::action::Action;
 use crate::ui::ToastLevel;
 use splunk_config::constants::DEFAULT_LIST_PAGE_SIZE;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use super::paginated::build_paginated_action;
 use super::{SharedClient, TaskTracker};
 
 /// Handle loading jobs with pagination support.
@@ -29,22 +29,10 @@ pub async fn handle_load_jobs(
 ) {
     let _ = tx.send(Action::Loading(true)).await;
     task_tracker.spawn(async move {
-        match client.list_jobs(Some(count), Some(offset)).await {
-            Ok(jobs) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::JobsLoaded(Ok(jobs))).await;
-                } else {
-                    let _ = tx.send(Action::MoreJobsLoaded(Ok(jobs))).await;
-                }
-            }
-            Err(e) => {
-                if offset == 0 {
-                    let _ = tx.send(Action::JobsLoaded(Err(Arc::new(e)))).await;
-                } else {
-                    let _ = tx.send(Action::MoreJobsLoaded(Err(Arc::new(e)))).await;
-                }
-            }
-        }
+        let result = client.list_jobs(Some(count), Some(offset)).await;
+        let action =
+            build_paginated_action(result, offset, Action::JobsLoaded, Action::MoreJobsLoaded);
+        let _ = tx.send(action).await;
     });
 }
 
