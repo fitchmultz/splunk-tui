@@ -5,7 +5,6 @@
 
 use crate::action::LicenseData;
 use crate::ui::widgets::{render_empty_state, render_loading_state};
-use crate::utils::format_bytes;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -13,6 +12,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
+use splunk_client::format_bytes;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;

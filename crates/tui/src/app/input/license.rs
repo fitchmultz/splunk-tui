@@ -13,8 +13,8 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
-use crate::utils::format_bytes;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use splunk_client::format_bytes;
 
 impl App {
     /// Handle input for the license screen.

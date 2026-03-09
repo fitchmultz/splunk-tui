@@ -5,14 +5,13 @@
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::{render_empty_state, render_loading_state};
-use crate::utils::format_bytes;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::Style,
     widgets::{Block, Borders, Cell, Row, Table},
 };
-use splunk_client::models::KvStoreStatus;
+use splunk_client::{format_bytes, models::KvStoreStatus};
 use splunk_config::Theme;
 
 /// Configuration for rendering the KVStore screen.

@@ -24,6 +24,22 @@ use splunk_config::{
     ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
 };
 
+fn selected_list_state() -> ratatui::widgets::ListState {
+    let mut state = ratatui::widgets::ListState::default();
+    state.select(Some(0));
+    state
+}
+
+fn selected_table_state() -> ratatui::widgets::TableState {
+    let mut state = ratatui::widgets::TableState::default();
+    state.select(Some(0));
+    state
+}
+
+fn default_pagination() -> ListPaginationState {
+    ListPaginationState::new(30, 1000)
+}
+
 impl Default for App {
     fn default() -> Self {
         Self::new(None, ConnectionContext::default())
@@ -38,60 +54,6 @@ impl App {
     /// * `persisted` - Optional persisted state from previous runs
     /// * `connection_ctx` - Connection context (profile, base_url, auth_mode)
     pub fn new(persisted: Option<PersistedState>, connection_ctx: ConnectionContext) -> Self {
-        let mut indexes_state = ratatui::widgets::ListState::default();
-        indexes_state.select(Some(0));
-
-        let mut jobs_state = ratatui::widgets::TableState::default();
-        jobs_state.select(Some(0));
-
-        let mut saved_searches_state = ratatui::widgets::ListState::default();
-        saved_searches_state.select(Some(0));
-
-        let mut macros_state = ratatui::widgets::ListState::default();
-        macros_state.select(Some(0));
-
-        let mut internal_logs_state = ratatui::widgets::TableState::default();
-        internal_logs_state.select(Some(0));
-
-        let mut apps_state = ratatui::widgets::ListState::default();
-        apps_state.select(Some(0));
-
-        let mut users_state = ratatui::widgets::ListState::default();
-        users_state.select(Some(0));
-
-        let mut cluster_peers_state = ratatui::widgets::TableState::default();
-        cluster_peers_state.select(Some(0));
-
-        let mut search_peers_state = ratatui::widgets::TableState::default();
-        search_peers_state.select(Some(0));
-
-        let mut inputs_state = ratatui::widgets::TableState::default();
-        inputs_state.select(Some(0));
-
-        let mut config_files_state = ratatui::widgets::TableState::default();
-        config_files_state.select(Some(0));
-
-        let mut config_stanzas_state = ratatui::widgets::TableState::default();
-        config_stanzas_state.select(Some(0));
-
-        let mut fired_alerts_state = ratatui::widgets::ListState::default();
-        fired_alerts_state.select(Some(0));
-
-        let mut forwarders_state = ratatui::widgets::TableState::default();
-        forwarders_state.select(Some(0));
-
-        let mut lookups_state = ratatui::widgets::TableState::default();
-        lookups_state.select(Some(0));
-
-        let mut audit_state = ratatui::widgets::TableState::default();
-        audit_state.select(Some(0));
-
-        let mut dashboards_state = ratatui::widgets::ListState::default();
-        dashboards_state.select(Some(0));
-
-        let mut data_models_state = ratatui::widgets::ListState::default();
-        data_models_state.select(Some(0));
-
         let (
             auto_refresh,
             sort_column,
@@ -170,74 +132,74 @@ impl App {
             },
             search_has_more_results: false,
             indexes: None,
-            indexes_state,
+            indexes_state: selected_list_state(),
             jobs: None,
-            jobs_state,
+            jobs_state: selected_table_state(),
             saved_searches: None,
-            saved_searches_state,
+            saved_searches_state: selected_list_state(),
             macros: None,
-            macros_state,
+            macros_state: selected_list_state(),
             internal_logs: None,
-            internal_logs_state,
+            internal_logs_state: selected_table_state(),
             cluster_info: None,
             cluster_peers: None,
-            cluster_peers_state,
+            cluster_peers_state: selected_table_state(),
             cluster_view_mode: ClusterViewMode::Summary,
             health_info: None,
             license_info: None,
             kvstore_status: None,
             apps: None,
-            apps_state,
+            apps_state: selected_list_state(),
             users: None,
-            users_state,
+            users_state: selected_list_state(),
             roles: None,
-            roles_state: ratatui::widgets::ListState::default(),
+            roles_state: selected_list_state(),
             capabilities: None,
             search_peers: None,
-            search_peers_state,
-            search_peers_pagination: ListPaginationState::new(30, 1000),
+            search_peers_state: selected_table_state(),
+            search_peers_pagination: default_pagination(),
             inputs: None,
-            inputs_state,
-            inputs_pagination: ListPaginationState::new(30, 1000),
+            inputs_state: selected_table_state(),
+            inputs_pagination: default_pagination(),
             overview_data: None,
             multi_instance_data: None,
             multi_instance_selected_index: 0,
             fired_alerts: None,
-            fired_alerts_state,
-            fired_alerts_pagination: ListPaginationState::new(30, 1000),
+            fired_alerts_state: selected_list_state(),
+            fired_alerts_pagination: default_pagination(),
             forwarders: None,
-            forwarders_state,
-            forwarders_pagination: ListPaginationState::new(30, 1000),
+            forwarders_state: selected_table_state(),
+            forwarders_pagination: default_pagination(),
             lookups: None,
-            lookups_state,
-            lookups_pagination: ListPaginationState::new(30, 1000),
+            lookups_state: selected_table_state(),
+            lookups_pagination: default_pagination(),
             audit_events: None,
-            audit_state,
+            audit_state: selected_table_state(),
             dashboards: None,
-            dashboards_state,
-            dashboards_pagination: ListPaginationState::new(30, 1000),
+            dashboards_state: selected_list_state(),
+            dashboards_pagination: default_pagination(),
             data_models: None,
-            data_models_state,
-            data_models_pagination: ListPaginationState::new(30, 1000),
+            data_models_state: selected_list_state(),
+            data_models_pagination: default_pagination(),
             workload_pools: None,
-            workload_pools_state: ratatui::widgets::TableState::default(),
-            workload_pools_pagination: ListPaginationState::new(30, 1000),
+            workload_pools_state: selected_table_state(),
+            workload_pools_pagination: default_pagination(),
             workload_rules: None,
-            workload_rules_state: ratatui::widgets::TableState::default(),
-            workload_rules_pagination: ListPaginationState::new(30, 1000),
+            workload_rules_state: selected_table_state(),
+            workload_rules_pagination: default_pagination(),
             workload_view_mode: crate::app::state::WorkloadViewMode::Pools,
             shc_status: None,
             shc_members: None,
             shc_captain: None,
             shc_config: None,
-            shc_members_state: ratatui::widgets::TableState::default(),
+            shc_members_state: selected_table_state(),
             shc_view_mode: crate::app::state::ShcViewMode::Summary,
             shc_unavailable: false,
             config_files: None,
-            config_files_state,
+            config_files_state: selected_table_state(),
             selected_config_file: None,
             config_stanzas: None,
-            config_stanzas_state,
+            config_stanzas_state: selected_table_state(),
             selected_stanza: None,
             config_view_mode: crate::ui::screens::configs::ConfigViewMode::FileList,
             config_search_mode: false,

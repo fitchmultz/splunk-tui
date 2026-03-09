@@ -37,7 +37,10 @@ use splunk_tui::runtime::startup::{
 };
 use splunk_tui::ui::popup::{Popup, PopupType};
 use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc::channel};
+use tokio::sync::{
+    Mutex,
+    mpsc::{Sender, channel},
+};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
@@ -56,6 +59,8 @@ use splunk_tui::runtime::{
     side_effects::{TaskTracker, handle_side_effects},
     terminal::TerminalGuard,
 };
+
+type SharedConfigManager = Arc<Mutex<ConfigManager>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -448,45 +453,12 @@ async fn main() -> Result<()> {
 
     // Spawn background health monitoring task (only if we have a client)
     if let Some(client_health) = client.clone() {
-        let tx_health = tx.clone();
-        let health_check_interval = health_check_interval_seconds;
-        task_tracker.spawn(async move {
-            use tokio::sync::mpsc::error::TrySendError;
-
-            let mut interval =
-                tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
-            loop {
-                interval.tick().await;
-                match client_health.get_health().await {
-                    Ok(health) => {
-                        match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
-                            Ok(()) => {}
-                            Err(TrySendError::Full(_)) => {
-                                // Drop health status update if channel full - next tick will send another
-                                tracing::debug!("Health status channel full, dropping update");
-                            }
-                            Err(TrySendError::Closed(_)) => {
-                                // Channel closed, exit task
-                                break;
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        match tx_health.try_send(Action::HealthStatusLoaded(Err(Arc::new(e)))) {
-                            Ok(()) => {}
-                            Err(TrySendError::Full(_)) => {
-                                // Drop health status update if channel full - next tick will send another
-                                tracing::debug!("Health status channel full, dropping update");
-                            }
-                            Err(TrySendError::Closed(_)) => {
-                                // Channel closed, exit task
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        spawn_health_check_task(
+            &task_tracker,
+            client_health,
+            tx.clone(),
+            health_check_interval_seconds,
+        );
     }
 
     // Create UI tick interval for smooth animations
@@ -686,42 +658,12 @@ async fn main() -> Result<()> {
                         if !health_check_running {
                             if let Some(ref client_health) = client {
                                 health_check_running = true;
-                                let tx_health = tx.clone();
-                                let health_check_interval = health_check_interval_seconds;
-                                let client_health = client_health.clone();
-                                task_tracker.spawn(async move {
-                                    use tokio::sync::mpsc::error::TrySendError;
-
-                                    let mut interval =
-                                        tokio::time::interval(tokio::time::Duration::from_secs(health_check_interval));
-                                    loop {
-                                        interval.tick().await;
-                                        match client_health.get_health().await {
-                                            Ok(health) => {
-                                                match tx_health.try_send(Action::HealthStatusLoaded(Ok(health))) {
-                                                    Ok(()) => {}
-                                                    Err(TrySendError::Full(_)) => {
-                                                        tracing::debug!("Health status channel full, dropping update");
-                                                    }
-                                                    Err(TrySendError::Closed(_)) => {
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            Err(e) => {
-                                                match tx_health.try_send(Action::HealthStatusLoaded(Err(Arc::new(e)))) {
-                                                    Ok(()) => {}
-                                                    Err(TrySendError::Full(_)) => {
-                                                        tracing::debug!("Health status channel full, dropping update");
-                                                    }
-                                                    Err(TrySendError::Closed(_)) => {
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
+                                spawn_health_check_task(
+                                    &task_tracker,
+                                    client_health.clone(),
+                                    tx.clone(),
+                                    health_check_interval_seconds,
+                                );
                             }
                         }
                     }
@@ -730,14 +672,7 @@ async fn main() -> Result<()> {
 
                 // Handle PersistState specially - needs access to app
                 if matches!(action, Action::PersistState) {
-                    let state = app.get_persisted_state();
-                    let cm = config_manager.clone();
-                    tokio::task::spawn(async move {
-                        let mut manager = cm.lock().await;
-                        if let Err(e) = manager.save(&state) {
-                            tracing::error!("Failed to persist state: {}", e);
-                        }
-                    });
+                    spawn_state_save(config_manager.clone(), app.get_persisted_state(), false);
                     continue;
                 }
 
@@ -757,55 +692,17 @@ async fn main() -> Result<()> {
                             break;
                         }
 
-                        // Translate LoadMore* actions produced by input handlers
                         let a = app.translate_load_more_action(a);
-
-                        // Handle any additional follow-up actions for pagination
-                        let followup_action = match a {
-                            Action::LoadWorkloadPools { .. } => {
-                                // If this was translated from LoadMoreWorkloadPools,
-                                // we don't need an additional follow-up
-                                None
-                            }
-                            Action::LoadWorkloadRules { .. } => {
-                                // If this was translated from LoadMoreWorkloadRules,
-                                // we don't need an additional follow-up
-                                None
-                            }
-                            _ => None,
-                        };
-
-                        let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
-                        app.update(a.clone());
-
-                        // Only handle side effects if we have a client or action doesn't require one
-                        if client.is_some() || !action_requires_client(&a) {
-                            if let Some(ref c) = client {
-                                handle_side_effects(a, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                            }
-                        }
-
-                        // Execute follow-up action for workload pagination if derived
-                        if let Some(followup) = followup_action {
-                            if let Some(ref c) = client {
-                                handle_side_effects(followup, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                            }
-                        }
-
-                        // If navigation action, trigger load for new screen
-                        if is_navigation
-                            && let Some(load_action) = app.load_action_for_screen()
-                        {
-                            if let Some(ref c) = client {
-                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                            }
-                        }
-                        // Check if we need to load more results after navigation
-                        if let Some(load_action) = app.maybe_fetch_more_results() {
-                            if let Some(ref c) = client {
-                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                            }
-                        }
+                        dispatch_app_action(
+                            &mut app,
+                            a,
+                            client.as_ref(),
+                            &tx,
+                            &config_manager,
+                            &task_tracker,
+                            true,
+                        )
+                        .await;
                     }
                 } else if let Action::Mouse(mouse) = action {
                     if let Some(a) = app.handle_mouse(mouse) {
@@ -816,55 +713,29 @@ async fn main() -> Result<()> {
                             }
                             break;
                         }
-                        // Translate LoadMore* actions produced by mouse handlers
                         let a = app.translate_load_more_action(a);
-                        let is_navigation = matches!(a, Action::NextScreen | Action::PreviousScreen);
-                        app.update(a.clone());
-
-                        // Only handle side effects if we have a client or action doesn't require one
-                        if let Some(ref c) = client {
-                            handle_side_effects(a, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                        }
-
-                        // If navigation action, trigger load for new screen
-                        if is_navigation
-                            && let Some(load_action) = app.load_action_for_screen()
-                        {
-                            if let Some(ref c) = client {
-                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                            }
-                        }
-                        // Check if we need to load more results after navigation
-                        if let Some(load_action) = app.maybe_fetch_more_results() {
-                            if let Some(ref c) = client {
-                                handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                            }
-                        }
+                        dispatch_app_action(
+                            &mut app,
+                            a,
+                            client.as_ref(),
+                            &tx,
+                            &config_manager,
+                            &task_tracker,
+                            true,
+                        )
+                        .await;
                     }
                 } else {
-                    let was_toggle = matches!(action, Action::ToggleClusterViewMode);
-                    let was_profile_switch = matches!(action, Action::ProfileSwitchResult(Ok(_)));
-                    app.update(action.clone());
-
-                    // Only handle side effects if we have a client or action doesn't require one
-                    if let Some(ref c) = client {
-                        handle_side_effects(action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                    }
-
-                    // After toggle, if we're now in Peers view, trigger peers load
-                    if was_toggle && app.cluster_view_mode == splunk_tui::app::ClusterViewMode::Peers {
-                        if let Some(ref c) = client {
-                            handle_side_effects(Action::LoadClusterPeers, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                        }
-                    }
-                    // After successful profile switch, trigger reload for current screen
-                    if was_profile_switch
-                        && let Some(load_action) = app.load_action_for_screen()
-                    {
-                        if let Some(ref c) = client {
-                            handle_side_effects(load_action, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                        }
-                    }
+                    dispatch_app_action(
+                        &mut app,
+                        action,
+                        client.as_ref(),
+                        &tx,
+                        &config_manager,
+                        &task_tracker,
+                        false,
+                    )
+                    .await;
                 }
             }
             _ = tick_interval.tick() => {
@@ -885,16 +756,7 @@ async fn main() -> Result<()> {
             }
             _ = auto_save_interval.tick() => {
                 // Periodic auto-save of persisted state
-                let state = app.get_persisted_state();
-                let cm = config_manager.clone();
-                tokio::task::spawn(async move {
-                    let mut manager = cm.lock().await;
-                    if let Err(e) = manager.save(&state) {
-                        tracing::error!("Failed to auto-save state: {}", e);
-                    } else {
-                        tracing::debug!("State auto-saved successfully");
-                    }
-                });
+                spawn_state_save(config_manager.clone(), app.get_persisted_state(), true);
             }
         }
     }
@@ -925,4 +787,111 @@ async fn main() -> Result<()> {
     terminal.show_cursor()?;
 
     Ok(())
+}
+
+fn spawn_health_check_task(
+    task_tracker: &TaskTracker,
+    client: Arc<splunk_client::SplunkClient>,
+    tx: Sender<Action>,
+    interval_seconds: u64,
+) {
+    task_tracker.spawn(async move {
+        use tokio::sync::mpsc::error::TrySendError;
+
+        let mut interval =
+            tokio::time::interval(tokio::time::Duration::from_secs(interval_seconds));
+        loop {
+            interval.tick().await;
+            let action = match client.get_health().await {
+                Ok(health) => Action::HealthStatusLoaded(Ok(health)),
+                Err(error) => Action::HealthStatusLoaded(Err(Arc::new(error))),
+            };
+
+            match tx.try_send(action) {
+                Ok(()) => {}
+                Err(TrySendError::Full(_)) => {
+                    tracing::debug!("Health status channel full, dropping update");
+                }
+                Err(TrySendError::Closed(_)) => break,
+            }
+        }
+    });
+}
+
+fn spawn_state_save(
+    config_manager: SharedConfigManager,
+    state: PersistedState,
+    is_auto_save: bool,
+) {
+    tokio::task::spawn(async move {
+        let mut manager = config_manager.lock().await;
+        if let Err(error) = manager.save(&state) {
+            let context = if is_auto_save { "auto-save" } else { "persist" };
+            tracing::error!("Failed to {} state: {}", context, error);
+        } else if is_auto_save {
+            tracing::debug!("State auto-saved successfully");
+        }
+    });
+}
+
+async fn dispatch_side_effect(
+    action: Action,
+    client: Option<&Arc<splunk_client::SplunkClient>>,
+    tx: &Sender<Action>,
+    config_manager: &SharedConfigManager,
+    task_tracker: &TaskTracker,
+) {
+    if action_requires_client(&action) && client.is_none() {
+        return;
+    }
+
+    if let Some(client) = client {
+        handle_side_effects(
+            action,
+            client.clone(),
+            tx.clone(),
+            config_manager.clone(),
+            task_tracker.clone(),
+        )
+        .await;
+    }
+}
+
+async fn dispatch_app_action(
+    app: &mut App,
+    action: Action,
+    client: Option<&Arc<splunk_client::SplunkClient>>,
+    tx: &Sender<Action>,
+    config_manager: &SharedConfigManager,
+    task_tracker: &TaskTracker,
+    allow_search_prefetch: bool,
+) {
+    let is_navigation = matches!(action, Action::NextScreen | Action::PreviousScreen);
+    let should_load_cluster_peers = matches!(action, Action::ToggleClusterViewMode);
+    let should_reload_current_screen = matches!(action, Action::ProfileSwitchResult(Ok(_)));
+
+    app.update(action.clone());
+    dispatch_side_effect(action, client, tx, config_manager, task_tracker).await;
+
+    if should_load_cluster_peers && app.cluster_view_mode == splunk_tui::app::ClusterViewMode::Peers
+    {
+        dispatch_side_effect(
+            Action::LoadClusterPeers,
+            client,
+            tx,
+            config_manager,
+            task_tracker,
+        )
+        .await;
+    }
+
+    if (is_navigation || should_reload_current_screen)
+        && let Some(load_action) = app.load_action_for_screen()
+    {
+        dispatch_side_effect(load_action, client, tx, config_manager, task_tracker).await;
+    }
+
+    if allow_search_prefetch && let Some(load_action) = app.maybe_fetch_more_results() {
+        dispatch_side_effect(load_action, client, tx, config_manager, task_tracker).await;
+    }
 }

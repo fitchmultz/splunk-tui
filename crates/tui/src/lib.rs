@@ -28,7 +28,6 @@ pub mod input;
 pub mod onboarding;
 pub mod runtime;
 pub mod undo;
-pub mod utils;
 
 // Re-export commonly used types at the crate root
 pub use action::Action;

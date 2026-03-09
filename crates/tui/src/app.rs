@@ -51,6 +51,24 @@ use splunk_config::constants::{
 };
 
 impl App {
+    fn paged_load_action(
+        &self,
+        pagination: &ListPaginationState,
+        build: impl FnOnce(usize, usize) -> Action,
+    ) -> Action {
+        build(pagination.page_size, 0)
+    }
+
+    fn paged_load_more_action(
+        &self,
+        pagination: &ListPaginationState,
+        build: impl FnOnce(usize, usize) -> Action,
+    ) -> Option<Action> {
+        pagination
+            .can_load_more()
+            .then(|| build(pagination.page_size, pagination.current_offset))
+    }
+
     /// Push a toast only if an identical active toast is not already present.
     pub(crate) fn push_toast_once(&mut self, level: ToastLevel, message: impl Into<String>) {
         let message = message.into();
@@ -124,15 +142,16 @@ impl App {
     pub fn load_action_for_screen(&self) -> Option<Action> {
         match self.current_screen {
             CurrentScreen::Search => None, // Search doesn't need pre-loading
-            CurrentScreen::Indexes => Some(Action::LoadIndexes {
-                count: self.indexes_pagination.page_size,
-                offset: 0,
-            }),
+            CurrentScreen::Indexes => Some(
+                self.paged_load_action(&self.indexes_pagination, |count, offset| {
+                    Action::LoadIndexes { count, offset }
+                }),
+            ),
             CurrentScreen::Cluster => Some(Action::LoadClusterInfo),
-            CurrentScreen::Jobs => Some(Action::LoadJobs {
-                count: self.jobs_pagination.page_size,
-                offset: 0,
-            }),
+            CurrentScreen::Jobs => Some(self.paged_load_action(
+                &self.jobs_pagination,
+                |count, offset| Action::LoadJobs { count, offset },
+            )),
             CurrentScreen::JobInspect => None, // Already loaded when entering inspect mode
             CurrentScreen::Health => Some(Action::LoadHealth),
             CurrentScreen::License => Some(Action::LoadLicense),
@@ -143,57 +162,65 @@ impl App {
                 count: self.internal_logs_defaults.count,
                 earliest: self.internal_logs_defaults.earliest_time.clone(),
             }),
-            CurrentScreen::Apps => Some(Action::LoadApps {
-                count: self.apps_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::Users => Some(Action::LoadUsers {
-                count: self.users_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::Roles => Some(Action::LoadRoles {
-                count: self.roles_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::SearchPeers => Some(Action::LoadSearchPeers {
-                count: self.search_peers_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::Inputs => Some(Action::LoadInputs {
-                count: self.inputs_pagination.page_size,
-                offset: 0,
-            }),
+            CurrentScreen::Apps => Some(self.paged_load_action(
+                &self.apps_pagination,
+                |count, offset| Action::LoadApps { count, offset },
+            )),
+            CurrentScreen::Users => Some(self.paged_load_action(
+                &self.users_pagination,
+                |count, offset| Action::LoadUsers { count, offset },
+            )),
+            CurrentScreen::Roles => Some(self.paged_load_action(
+                &self.roles_pagination,
+                |count, offset| Action::LoadRoles { count, offset },
+            )),
+            CurrentScreen::SearchPeers => Some(
+                self.paged_load_action(&self.search_peers_pagination, |count, offset| {
+                    Action::LoadSearchPeers { count, offset }
+                }),
+            ),
+            CurrentScreen::Inputs => Some(
+                self.paged_load_action(&self.inputs_pagination, |count, offset| {
+                    Action::LoadInputs { count, offset }
+                }),
+            ),
             CurrentScreen::Configs => Some(Action::LoadConfigFiles),
-            CurrentScreen::FiredAlerts => Some(Action::LoadFiredAlerts {
-                count: self.fired_alerts_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::Forwarders => Some(Action::LoadForwarders {
-                count: self.forwarders_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::Lookups => Some(Action::LoadLookups {
-                count: self.lookups_pagination.page_size,
-                offset: 0,
-            }),
+            CurrentScreen::FiredAlerts => Some(
+                self.paged_load_action(&self.fired_alerts_pagination, |count, offset| {
+                    Action::LoadFiredAlerts { count, offset }
+                }),
+            ),
+            CurrentScreen::Forwarders => Some(
+                self.paged_load_action(&self.forwarders_pagination, |count, offset| {
+                    Action::LoadForwarders { count, offset }
+                }),
+            ),
+            CurrentScreen::Lookups => Some(
+                self.paged_load_action(&self.lookups_pagination, |count, offset| {
+                    Action::LoadLookups { count, offset }
+                }),
+            ),
             CurrentScreen::Audit => Some(Action::LoadAuditEvents {
                 count: 50,
                 offset: 0,
                 earliest: "-24h".to_string(),
                 latest: "now".to_string(),
             }),
-            CurrentScreen::Dashboards => Some(Action::LoadDashboards {
-                count: self.dashboards_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::DataModels => Some(Action::LoadDataModels {
-                count: self.data_models_pagination.page_size,
-                offset: 0,
-            }),
-            CurrentScreen::WorkloadManagement => Some(Action::LoadWorkloadPools {
-                count: self.workload_pools_pagination.page_size,
-                offset: 0,
-            }),
+            CurrentScreen::Dashboards => Some(
+                self.paged_load_action(&self.dashboards_pagination, |count, offset| {
+                    Action::LoadDashboards { count, offset }
+                }),
+            ),
+            CurrentScreen::DataModels => Some(
+                self.paged_load_action(&self.data_models_pagination, |count, offset| {
+                    Action::LoadDataModels { count, offset }
+                }),
+            ),
+            CurrentScreen::WorkloadManagement => Some(
+                self.paged_load_action(&self.workload_pools_pagination, |count, offset| {
+                    Action::LoadWorkloadPools { count, offset }
+                }),
+            ),
             CurrentScreen::Shc => {
                 if self.shc_unavailable {
                     None
@@ -210,149 +237,67 @@ impl App {
     /// Returns a load-more action for the current screen if pagination is available.
     pub fn load_more_action_for_current_screen(&self) -> Option<Action> {
         match self.current_screen {
-            CurrentScreen::Indexes => {
-                if self.indexes_pagination.can_load_more() {
-                    Some(Action::LoadIndexes {
-                        count: self.indexes_pagination.page_size,
-                        offset: self.indexes_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
+            CurrentScreen::Indexes => self
+                .paged_load_more_action(&self.indexes_pagination, |count, offset| {
+                    Action::LoadIndexes { count, offset }
+                }),
             CurrentScreen::Jobs => {
-                if self.jobs_pagination.can_load_more() {
-                    Some(Action::LoadJobs {
-                        count: self.jobs_pagination.page_size,
-                        offset: self.jobs_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
+                self.paged_load_more_action(&self.jobs_pagination, |count, offset| {
+                    Action::LoadJobs { count, offset }
+                })
             }
             CurrentScreen::Apps => {
-                if self.apps_pagination.can_load_more() {
-                    Some(Action::LoadApps {
-                        count: self.apps_pagination.page_size,
-                        offset: self.apps_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
+                self.paged_load_more_action(&self.apps_pagination, |count, offset| {
+                    Action::LoadApps { count, offset }
+                })
             }
-            CurrentScreen::Users => {
-                if self.users_pagination.can_load_more() {
-                    Some(Action::LoadUsers {
-                        count: self.users_pagination.page_size,
-                        offset: self.users_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::Roles => {
-                if self.roles_pagination.can_load_more() {
-                    Some(Action::LoadRoles {
-                        count: self.roles_pagination.page_size,
-                        offset: self.roles_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::SearchPeers => {
-                if self.search_peers_pagination.can_load_more() {
-                    Some(Action::LoadSearchPeers {
-                        count: self.search_peers_pagination.page_size,
-                        offset: self.search_peers_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::Forwarders => {
-                if self.forwarders_pagination.can_load_more() {
-                    Some(Action::LoadForwarders {
-                        count: self.forwarders_pagination.page_size,
-                        offset: self.forwarders_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::Lookups => {
-                if self.lookups_pagination.can_load_more() {
-                    Some(Action::LoadLookups {
-                        count: self.lookups_pagination.page_size,
-                        offset: self.lookups_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::Inputs => {
-                if self.inputs_pagination.can_load_more() {
-                    Some(Action::LoadInputs {
-                        count: self.inputs_pagination.page_size,
-                        offset: self.inputs_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::FiredAlerts => {
-                if self.fired_alerts_pagination.can_load_more() {
-                    Some(Action::LoadFiredAlerts {
-                        count: self.fired_alerts_pagination.page_size,
-                        offset: self.fired_alerts_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::Dashboards => {
-                if self.dashboards_pagination.can_load_more() {
-                    Some(Action::LoadDashboards {
-                        count: self.dashboards_pagination.page_size,
-                        offset: self.dashboards_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
-            CurrentScreen::DataModels => {
-                if self.data_models_pagination.can_load_more() {
-                    Some(Action::LoadDataModels {
-                        count: self.data_models_pagination.page_size,
-                        offset: self.data_models_pagination.current_offset,
-                    })
-                } else {
-                    None
-                }
-            }
+            CurrentScreen::Users => self
+                .paged_load_more_action(&self.users_pagination, |count, offset| {
+                    Action::LoadUsers { count, offset }
+                }),
+            CurrentScreen::Roles => self
+                .paged_load_more_action(&self.roles_pagination, |count, offset| {
+                    Action::LoadRoles { count, offset }
+                }),
+            CurrentScreen::SearchPeers => self
+                .paged_load_more_action(&self.search_peers_pagination, |count, offset| {
+                    Action::LoadSearchPeers { count, offset }
+                }),
+            CurrentScreen::Forwarders => self
+                .paged_load_more_action(&self.forwarders_pagination, |count, offset| {
+                    Action::LoadForwarders { count, offset }
+                }),
+            CurrentScreen::Lookups => self
+                .paged_load_more_action(&self.lookups_pagination, |count, offset| {
+                    Action::LoadLookups { count, offset }
+                }),
+            CurrentScreen::Inputs => self
+                .paged_load_more_action(&self.inputs_pagination, |count, offset| {
+                    Action::LoadInputs { count, offset }
+                }),
+            CurrentScreen::FiredAlerts => self
+                .paged_load_more_action(&self.fired_alerts_pagination, |count, offset| {
+                    Action::LoadFiredAlerts { count, offset }
+                }),
+            CurrentScreen::Dashboards => self
+                .paged_load_more_action(&self.dashboards_pagination, |count, offset| {
+                    Action::LoadDashboards { count, offset }
+                }),
+            CurrentScreen::DataModels => self
+                .paged_load_more_action(&self.data_models_pagination, |count, offset| {
+                    Action::LoadDataModels { count, offset }
+                }),
             CurrentScreen::WorkloadManagement => {
                 // Load more based on current view mode
                 match self.workload_view_mode {
-                    crate::app::state::WorkloadViewMode::Pools => {
-                        if self.workload_pools_pagination.can_load_more() {
-                            Some(Action::LoadWorkloadPools {
-                                count: self.workload_pools_pagination.page_size,
-                                offset: self.workload_pools_pagination.current_offset,
-                            })
-                        } else {
-                            None
-                        }
-                    }
-                    crate::app::state::WorkloadViewMode::Rules => {
-                        if self.workload_rules_pagination.can_load_more() {
-                            Some(Action::LoadWorkloadRules {
-                                count: self.workload_rules_pagination.page_size,
-                                offset: self.workload_rules_pagination.current_offset,
-                            })
-                        } else {
-                            None
-                        }
-                    }
+                    crate::app::state::WorkloadViewMode::Pools => self.paged_load_more_action(
+                        &self.workload_pools_pagination,
+                        |count, offset| Action::LoadWorkloadPools { count, offset },
+                    ),
+                    crate::app::state::WorkloadViewMode::Rules => self.paged_load_more_action(
+                        &self.workload_rules_pagination,
+                        |count, offset| Action::LoadWorkloadRules { count, offset },
+                    ),
                 }
             }
             _ => None,
@@ -407,42 +352,50 @@ impl App {
     /// The translated action with offset=0, or the original action if no translation is needed
     pub fn translate_refresh_action(&self, action: Action) -> Action {
         match action {
-            Action::RefreshIndexes => Action::LoadIndexes {
-                count: self.indexes_pagination.page_size,
-                offset: 0,
-            },
-            Action::RefreshJobs => Action::LoadJobs {
-                count: self.jobs_pagination.page_size,
-                offset: 0,
-            },
-            Action::RefreshApps => Action::LoadApps {
-                count: self.apps_pagination.page_size,
-                offset: 0,
-            },
-            Action::RefreshUsers => Action::LoadUsers {
-                count: self.users_pagination.page_size,
-                offset: 0,
-            },
-            Action::RefreshRoles => Action::LoadRoles {
-                count: self.roles_pagination.page_size,
-                offset: 0,
-            },
+            Action::RefreshIndexes => self
+                .paged_load_action(&self.indexes_pagination, |count, offset| {
+                    Action::LoadIndexes { count, offset }
+                }),
+            Action::RefreshJobs => {
+                self.paged_load_action(&self.jobs_pagination, |count, offset| Action::LoadJobs {
+                    count,
+                    offset,
+                })
+            }
+            Action::RefreshApps => {
+                self.paged_load_action(&self.apps_pagination, |count, offset| Action::LoadApps {
+                    count,
+                    offset,
+                })
+            }
+            Action::RefreshUsers => {
+                self.paged_load_action(&self.users_pagination, |count, offset| Action::LoadUsers {
+                    count,
+                    offset,
+                })
+            }
+            Action::RefreshRoles => {
+                self.paged_load_action(&self.roles_pagination, |count, offset| Action::LoadRoles {
+                    count,
+                    offset,
+                })
+            }
             Action::RefreshInternalLogs => Action::LoadInternalLogs {
                 count: self.internal_logs_defaults.count,
                 earliest: self.internal_logs_defaults.earliest_time.clone(),
             },
-            Action::RefreshDashboards => Action::LoadDashboards {
-                count: self.dashboards_pagination.page_size,
-                offset: 0,
-            },
-            Action::RefreshDataModels => Action::LoadDataModels {
-                count: self.data_models_pagination.page_size,
-                offset: 0,
-            },
-            Action::RefreshInputs => Action::LoadInputs {
-                count: self.inputs_pagination.page_size,
-                offset: 0,
-            },
+            Action::RefreshDashboards => self
+                .paged_load_action(&self.dashboards_pagination, |count, offset| {
+                    Action::LoadDashboards { count, offset }
+                }),
+            Action::RefreshDataModels => self
+                .paged_load_action(&self.data_models_pagination, |count, offset| {
+                    Action::LoadDataModels { count, offset }
+                }),
+            Action::RefreshInputs => self
+                .paged_load_action(&self.inputs_pagination, |count, offset| {
+                    Action::LoadInputs { count, offset }
+                }),
             _ => action,
         }
     }

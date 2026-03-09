@@ -79,38 +79,43 @@ pub enum CurrentScreen {
 }
 
 impl CurrentScreen {
+    /// Canonical navigation and serialization order for user-visible screens.
+    pub const ALL: [Self; 27] = [
+        Self::Search,
+        Self::Indexes,
+        Self::Cluster,
+        Self::Jobs,
+        Self::Health,
+        Self::License,
+        Self::Kvstore,
+        Self::SavedSearches,
+        Self::Macros,
+        Self::InternalLogs,
+        Self::Apps,
+        Self::Users,
+        Self::Roles,
+        Self::SearchPeers,
+        Self::Inputs,
+        Self::Configs,
+        Self::FiredAlerts,
+        Self::Forwarders,
+        Self::Lookups,
+        Self::Audit,
+        Self::Dashboards,
+        Self::DataModels,
+        Self::WorkloadManagement,
+        Self::Shc,
+        Self::Settings,
+        Self::Overview,
+        Self::MultiInstance,
+    ];
+
     /// Returns the next screen in cyclic navigation order.
     /// Excludes JobInspect from the cycle (it's only accessible via InspectJob action).
     pub fn next(self) -> Self {
         match self {
-            CurrentScreen::Search => CurrentScreen::Indexes,
-            CurrentScreen::Indexes => CurrentScreen::Cluster,
-            CurrentScreen::Cluster => CurrentScreen::Jobs,
-            CurrentScreen::Jobs => CurrentScreen::Health,
-            CurrentScreen::JobInspect => CurrentScreen::Jobs, // Special case: return to Jobs
-            CurrentScreen::Health => CurrentScreen::License,
-            CurrentScreen::License => CurrentScreen::Kvstore,
-            CurrentScreen::Kvstore => CurrentScreen::SavedSearches,
-            CurrentScreen::SavedSearches => CurrentScreen::Macros,
-            CurrentScreen::Macros => CurrentScreen::InternalLogs,
-            CurrentScreen::InternalLogs => CurrentScreen::Apps,
-            CurrentScreen::Apps => CurrentScreen::Users,
-            CurrentScreen::Users => CurrentScreen::Roles,
-            CurrentScreen::Roles => CurrentScreen::SearchPeers,
-            CurrentScreen::SearchPeers => CurrentScreen::Inputs,
-            CurrentScreen::Inputs => CurrentScreen::Configs,
-            CurrentScreen::Configs => CurrentScreen::FiredAlerts,
-            CurrentScreen::FiredAlerts => CurrentScreen::Forwarders,
-            CurrentScreen::Forwarders => CurrentScreen::Lookups,
-            CurrentScreen::Lookups => CurrentScreen::Audit,
-            CurrentScreen::Audit => CurrentScreen::Dashboards,
-            CurrentScreen::Dashboards => CurrentScreen::DataModels,
-            CurrentScreen::DataModels => CurrentScreen::WorkloadManagement,
-            CurrentScreen::WorkloadManagement => CurrentScreen::Shc,
-            CurrentScreen::Shc => CurrentScreen::Settings,
-            CurrentScreen::Settings => CurrentScreen::Overview,
-            CurrentScreen::Overview => CurrentScreen::MultiInstance,
-            CurrentScreen::MultiInstance => CurrentScreen::Search, // Wrap around
+            Self::JobInspect => Self::Jobs,
+            screen => cycle_screen(screen, 1),
         }
     }
 
@@ -118,34 +123,8 @@ impl CurrentScreen {
     /// Excludes JobInspect from the cycle (it's only accessible via InspectJob action).
     pub fn previous(self) -> Self {
         match self {
-            CurrentScreen::Search => CurrentScreen::MultiInstance, // Wrap around
-            CurrentScreen::Indexes => CurrentScreen::Search,
-            CurrentScreen::Cluster => CurrentScreen::Indexes,
-            CurrentScreen::Jobs => CurrentScreen::Cluster,
-            CurrentScreen::JobInspect => CurrentScreen::Jobs, // Special case: return to Jobs
-            CurrentScreen::Health => CurrentScreen::Jobs,
-            CurrentScreen::License => CurrentScreen::Health,
-            CurrentScreen::Kvstore => CurrentScreen::License,
-            CurrentScreen::SavedSearches => CurrentScreen::Kvstore,
-            CurrentScreen::Macros => CurrentScreen::SavedSearches,
-            CurrentScreen::InternalLogs => CurrentScreen::Macros,
-            CurrentScreen::Apps => CurrentScreen::InternalLogs,
-            CurrentScreen::Users => CurrentScreen::Apps,
-            CurrentScreen::Roles => CurrentScreen::Users,
-            CurrentScreen::SearchPeers => CurrentScreen::Roles,
-            CurrentScreen::Inputs => CurrentScreen::SearchPeers,
-            CurrentScreen::Configs => CurrentScreen::Inputs,
-            CurrentScreen::FiredAlerts => CurrentScreen::Configs,
-            CurrentScreen::Forwarders => CurrentScreen::FiredAlerts,
-            CurrentScreen::Settings => CurrentScreen::Shc,
-            CurrentScreen::Shc => CurrentScreen::WorkloadManagement,
-            CurrentScreen::WorkloadManagement => CurrentScreen::DataModels,
-            CurrentScreen::DataModels => CurrentScreen::Dashboards,
-            CurrentScreen::Dashboards => CurrentScreen::Audit,
-            CurrentScreen::Audit => CurrentScreen::Lookups,
-            CurrentScreen::Lookups => CurrentScreen::Forwarders,
-            CurrentScreen::Overview => CurrentScreen::Settings,
-            CurrentScreen::MultiInstance => CurrentScreen::Overview,
+            Self::JobInspect => Self::Jobs,
+            screen => cycle_screen(screen, CurrentScreen::ALL.len() - 1),
         }
     }
 
@@ -186,37 +165,23 @@ impl CurrentScreen {
 
 /// Parse current screen from string (for deserialization).
 pub fn parse_current_screen(s: &str) -> CurrentScreen {
-    match s {
-        "Search" => CurrentScreen::Search,
-        "Indexes" => CurrentScreen::Indexes,
-        "Cluster" => CurrentScreen::Cluster,
-        "Jobs" => CurrentScreen::Jobs,
-        "JobInspect" => CurrentScreen::JobInspect,
-        "Health" => CurrentScreen::Health,
-        "License" => CurrentScreen::License,
-        "Kvstore" => CurrentScreen::Kvstore,
-        "SavedSearches" => CurrentScreen::SavedSearches,
-        "Macros" => CurrentScreen::Macros,
-        "InternalLogs" => CurrentScreen::InternalLogs,
-        "Apps" => CurrentScreen::Apps,
-        "Users" => CurrentScreen::Users,
-        "Roles" => CurrentScreen::Roles,
-        "SearchPeers" => CurrentScreen::SearchPeers,
-        "Inputs" => CurrentScreen::Inputs,
-        "Configs" => CurrentScreen::Configs,
-        "Settings" => CurrentScreen::Settings,
-        "Overview" => CurrentScreen::Overview,
-        "MultiInstance" => CurrentScreen::MultiInstance,
-        "FiredAlerts" => CurrentScreen::FiredAlerts,
-        "Forwarders" => CurrentScreen::Forwarders,
-        "Lookups" => CurrentScreen::Lookups,
-        "Audit" => CurrentScreen::Audit,
-        "Dashboards" => CurrentScreen::Dashboards,
-        "DataModels" => CurrentScreen::DataModels,
-        "WorkloadManagement" => CurrentScreen::WorkloadManagement,
-        "Shc" => CurrentScreen::Shc,
-        _ => CurrentScreen::Search, // Default fallback
+    if s == CurrentScreen::JobInspect.as_str() {
+        return CurrentScreen::JobInspect;
     }
+
+    CurrentScreen::ALL
+        .into_iter()
+        .find(|screen| screen.as_str() == s)
+        .unwrap_or(CurrentScreen::Search)
+}
+
+fn cycle_screen(current: CurrentScreen, step: usize) -> CurrentScreen {
+    let screens = &CurrentScreen::ALL;
+    let current_index = screens
+        .iter()
+        .position(|screen| *screen == current)
+        .unwrap_or(0);
+    screens[(current_index + step) % screens.len()]
 }
 
 /// Sort column for jobs table.

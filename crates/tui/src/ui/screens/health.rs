@@ -10,12 +10,11 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
-use splunk_client::models::HealthCheckOutput;
+use splunk_client::{format_bytes, models::HealthCheckOutput};
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::{render_empty_state, render_loading_state};
-use crate::utils::format_bytes;
 
 /// Configuration for rendering the health screen.
 pub struct HealthRenderConfig<'a> {
@@ -291,11 +290,11 @@ mod tests {
     fn test_format_bytes() {
         assert_eq!(format_bytes(0), "0 B");
         assert_eq!(format_bytes(512), "512 B");
-        assert_eq!(format_bytes(1024), "1.00 KB");
-        assert_eq!(format_bytes(1536), "1.50 KB");
-        assert_eq!(format_bytes(1024 * 1024), "1.00 MB");
-        assert_eq!(format_bytes(1024 * 1024 * 1024), "1.00 GB");
-        assert_eq!(format_bytes(1024 * 1024 * 1024 * 1024), "1.00 TB");
+        assert_eq!(format_bytes(1024), "1.0 KB");
+        assert_eq!(format_bytes(1536), "1.5 KB");
+        assert_eq!(format_bytes(1024 * 1024), "1.0 MB");
+        assert_eq!(format_bytes(1024 * 1024 * 1024), "1.0 GB");
+        assert_eq!(format_bytes(1024 * 1024 * 1024 * 1024), "1.0 TB");
     }
 
     #[test]
