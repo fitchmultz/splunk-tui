@@ -33,7 +33,8 @@ use splunk_tui::cli::Cli;
 use splunk_tui::onboarding::TutorialState;
 use splunk_tui::runtime::config::ConfigLoadResult;
 use splunk_tui::runtime::startup::{
-    BootstrapReason, StartupPhase, action_requires_client, should_launch_tutorial,
+    BootstrapReason, StartupDecision, StartupPhase, action_requires_client, classify_startup_error,
+    should_launch_tutorial,
 };
 use splunk_tui::ui::popup::{Popup, PopupType};
 use std::sync::Arc;
@@ -61,6 +62,25 @@ use splunk_tui::runtime::{
 };
 
 type SharedConfigManager = Arc<Mutex<ConfigManager>>;
+
+fn bootstrap_reason_from_decision(decision: &StartupDecision) -> Option<BootstrapReason> {
+    match decision {
+        StartupDecision::EnterBootstrap(reason) => Some(*reason),
+        StartupDecision::ContinueWithConfig | StartupDecision::Fatal(_) => None,
+    }
+}
+
+fn bootstrap_metric_reason(decision: &StartupDecision) -> &'static str {
+    match decision {
+        StartupDecision::EnterBootstrap(BootstrapReason::MissingAuth) => "missing_auth",
+        StartupDecision::EnterBootstrap(BootstrapReason::InvalidAuth) => "invalid_auth",
+        StartupDecision::EnterBootstrap(BootstrapReason::ProfileNotFound) => "profile_not_found",
+        StartupDecision::EnterBootstrap(BootstrapReason::ExplicitFreshStart) => "fresh_start",
+        StartupDecision::EnterBootstrap(BootstrapReason::MissingBaseUrl) => "missing_base_url",
+        StartupDecision::ContinueWithConfig => "connected",
+        StartupDecision::Fatal(_) => "fatal_error",
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -554,46 +574,49 @@ async fn main() -> Result<()> {
                                                 }).await;
                                             }
                                             Err(e) => {
+                                                let decision = classify_startup_error(&e);
+
                                                 // Emit bootstrap connect failure metric
                                                 if metrics_enabled {
-                                                    let reason = if e.to_string().to_lowercase().contains("auth") {
-                                                        "invalid_auth"
-                                                    } else {
-                                                        "connection_error"
-                                                    };
                                                     metrics::counter!(
                                                         splunk_client::metrics::METRIC_UX_BOOTSTRAP_CONNECT,
                                                         "success" => "false",
-                                                        "reason" => reason,
+                                                        "reason" => bootstrap_metric_reason(&decision),
                                                     ).increment(1);
                                                 }
 
-                                                let _ = tx_connect.send(Action::BootstrapConnectFinished {
-                                                    ok: false,
-                                                    error: Some(e.to_string()),
-                                                }).await;
+                                                let reason = bootstrap_reason_from_decision(&decision)
+                                                    .unwrap_or(BootstrapReason::InvalidAuth);
+
+                                                let _ = tx_connect
+                                                    .send(Action::BootstrapConnectFinished {
+                                                        ok: false,
+                                                        reason: Some(reason),
+                                                        error: Some(e.to_string()),
+                                                    })
+                                                    .await;
                                             }
                                         }
                                     }
                                     Err(e) => {
+                                        let decision = classify_startup_error(&e);
+
                                         // Emit bootstrap connect failure metric (config error)
                                         if metrics_enabled {
-                                            let reason = if e.to_string().to_lowercase().contains("auth") {
-                                                "missing_auth"
-                                            } else {
-                                                "config_error"
-                                            };
                                             metrics::counter!(
                                                 splunk_client::metrics::METRIC_UX_BOOTSTRAP_CONNECT,
                                                 "success" => "false",
-                                                "reason" => reason,
+                                                "reason" => bootstrap_metric_reason(&decision),
                                             ).increment(1);
                                         }
 
-                                        let _ = tx_connect.send(Action::BootstrapConnectFinished {
-                                            ok: false,
-                                            error: Some(e.to_string()),
-                                        }).await;
+                                        let _ = tx_connect
+                                            .send(Action::BootstrapConnectFinished {
+                                                ok: false,
+                                                reason: bootstrap_reason_from_decision(&decision),
+                                                error: Some(e.to_string()),
+                                            })
+                                            .await;
                                     }
                                 }
                             });
@@ -615,12 +638,12 @@ async fn main() -> Result<()> {
                 // Handle bootstrap connect finished (error case only)
                 let is_bootstrap_finished = matches!(action, Action::BootstrapConnectFinished { .. });
                 if is_bootstrap_finished {
-                    if let Action::BootstrapConnectFinished { ok, error } = &action {
+                    if let Action::BootstrapConnectFinished { ok, reason, error } = &action {
                         app.loading = false;
                         if !*ok {
                             // Connection failed - stay in bootstrap mode
                             startup_phase = StartupPhase::Bootstrap {
-                                reason: BootstrapReason::InvalidAuth,
+                                reason: reason.unwrap_or(BootstrapReason::InvalidAuth),
                             };
                             if let Some(err) = error {
                                 app.toasts.push(splunk_tui::ui::Toast::error(format!(

@@ -163,8 +163,8 @@ fn test_classify_startup_error_with_auth_keyword() {
     let decision = classify_startup_error(&err);
 
     match decision {
-        StartupDecision::EnterBootstrap(BootstrapReason::MissingAuth) => {}
-        _ => panic!("Expected EnterBootstrap(MissingAuth), got {:?}", decision),
+        StartupDecision::EnterBootstrap(BootstrapReason::InvalidAuth) => {}
+        _ => panic!("Expected EnterBootstrap(InvalidAuth), got {:?}", decision),
     }
 }
 
@@ -174,19 +174,53 @@ fn test_classify_startup_error_with_credential_keyword() {
     let decision = classify_startup_error(&err);
 
     match decision {
-        StartupDecision::EnterBootstrap(BootstrapReason::MissingAuth) => {}
-        _ => panic!("Expected EnterBootstrap(MissingAuth), got {:?}", decision),
+        StartupDecision::EnterBootstrap(BootstrapReason::InvalidAuth) => {}
+        _ => panic!("Expected EnterBootstrap(InvalidAuth), got {:?}", decision),
     }
 }
 
 #[test]
 fn test_classify_startup_error_with_profile_keyword() {
-    let err = anyhow::anyhow!("Profile configuration error");
+    let err = anyhow::anyhow!("Profile not found in configuration");
     let decision = classify_startup_error(&err);
 
     match decision {
-        StartupDecision::EnterBootstrap(BootstrapReason::MissingAuth) => {}
-        _ => panic!("Expected EnterBootstrap(MissingAuth), got {:?}", decision),
+        StartupDecision::EnterBootstrap(BootstrapReason::ProfileNotFound) => {}
+        _ => panic!(
+            "Expected EnterBootstrap(ProfileNotFound), got {:?}",
+            decision
+        ),
+    }
+}
+
+#[test]
+fn test_classify_startup_error_with_base_url_keyword() {
+    let err = anyhow::anyhow!("Base URL is required before connecting");
+    let decision = classify_startup_error(&err);
+
+    match decision {
+        StartupDecision::EnterBootstrap(BootstrapReason::MissingBaseUrl) => {}
+        _ => panic!(
+            "Expected EnterBootstrap(MissingBaseUrl), got {:?}",
+            decision
+        ),
+    }
+}
+
+#[test]
+fn test_classify_startup_error_wrapped_config_error_preserves_reason() {
+    let err = anyhow::Error::new(splunk_config::ConfigError::ProfileNotFound(
+        "prod".to_string(),
+    ))
+    .context("Failed to load config");
+    let decision = classify_startup_error(&err);
+
+    match decision {
+        StartupDecision::EnterBootstrap(BootstrapReason::ProfileNotFound) => {}
+        _ => panic!(
+            "Expected wrapped ConfigError to preserve ProfileNotFound, got {:?}",
+            decision
+        ),
     }
 }
 
@@ -322,10 +356,12 @@ fn test_bootstrap_connect_action_variants_exist() {
     let _action = Action::BootstrapConnectRequested;
     let _action = Action::BootstrapConnectFinished {
         ok: true,
+        reason: None,
         error: None,
     };
     let _action = Action::BootstrapConnectFinished {
         ok: false,
+        reason: Some(BootstrapReason::InvalidAuth),
         error: Some("Test error".to_string()),
     };
 }

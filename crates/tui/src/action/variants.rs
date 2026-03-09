@@ -1008,6 +1008,8 @@ pub enum Action {
     BootstrapConnectFinished {
         /// Whether connection was successful
         ok: bool,
+        /// Bootstrap reason to remain in or return to
+        reason: Option<crate::runtime::startup::BootstrapReason>,
         /// Error message if connection failed
         error: Option<String>,
     },

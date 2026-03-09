@@ -141,14 +141,24 @@ pub fn classify_config_error(err: &ConfigError) -> StartupDecision {
 
 /// Classify an anyhow error that may wrap a ConfigError.
 pub fn classify_startup_error(err: &Error) -> StartupDecision {
-    // Check error message for common patterns
-    let msg = err.to_string().to_lowercase();
-    if msg.contains("auth")
-        || msg.contains("credential")
-        || msg.contains("profile")
-        || msg.contains("login")
+    if let Some(config_err) = err
+        .chain()
+        .find_map(|cause| cause.downcast_ref::<ConfigError>())
     {
-        return StartupDecision::EnterBootstrap(BootstrapReason::MissingAuth);
+        return classify_config_error(config_err);
+    }
+
+    let msg = err.to_string().to_lowercase();
+    if msg.contains("base url") || msg.contains("server url") {
+        return StartupDecision::EnterBootstrap(BootstrapReason::MissingBaseUrl);
+    }
+
+    if msg.contains("profile") && msg.contains("not found") {
+        return StartupDecision::EnterBootstrap(BootstrapReason::ProfileNotFound);
+    }
+
+    if msg.contains("auth") || msg.contains("credential") || msg.contains("login") {
+        return StartupDecision::EnterBootstrap(BootstrapReason::InvalidAuth);
     }
 
     // Default to fatal for unknown errors

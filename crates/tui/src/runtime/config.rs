@@ -18,7 +18,7 @@
 //! - Bootstrap mode allows UI to start without valid auth credentials.
 
 use crate::app::App;
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result};
 use splunk_config::{
     Config, ConfigLoader, ConfigManager, InternalLogsDefaults, SearchDefaultConfig,
 };
@@ -49,6 +49,61 @@ pub enum ConfigLoadResult {
     },
 }
 
+struct PreparedLoader {
+    loader: ConfigLoader,
+    resolved_profile_name: Option<String>,
+    search_defaults: SearchDefaultConfig,
+    internal_logs_defaults: InternalLogsDefaults,
+}
+
+fn apply_cli_loader_overrides(mut loader: ConfigLoader, cli: &Cli) -> ConfigLoader {
+    if let Some(config_path) = &cli.config_path {
+        loader = loader.with_config_path(config_path.clone());
+    }
+
+    if let Some(profile) = &cli.profile {
+        loader = loader.with_profile_name(profile.clone());
+    }
+
+    if let Some(password) = &cli.config_password {
+        loader = loader.with_config_password(password.clone());
+    }
+
+    if let Some(var_name) = &cli.config_key_var {
+        loader = loader.with_config_key_var(var_name.clone());
+    }
+
+    loader
+}
+
+fn build_base_loader(cli: &Cli) -> Result<ConfigLoader> {
+    let loader = ConfigLoader::new().load_dotenv()?;
+    let loader = apply_cli_loader_overrides(loader, cli);
+    Ok(loader.from_env()?)
+}
+
+fn maybe_load_selected_profile(loader: ConfigLoader) -> Result<ConfigLoader> {
+    if loader.profile_name().is_some() {
+        Ok(loader.from_profile()?)
+    } else {
+        Ok(loader)
+    }
+}
+
+fn prepare_loader_for_runtime(cli: &Cli) -> Result<PreparedLoader> {
+    let loader = maybe_load_selected_profile(build_base_loader(cli)?)?;
+    let resolved_profile_name = loader.profile_name().cloned();
+    let search_defaults = loader.build_search_defaults(None);
+    let internal_logs_defaults = loader.build_internal_logs_defaults(None);
+
+    Ok(PreparedLoader {
+        loader,
+        resolved_profile_name,
+        search_defaults,
+        internal_logs_defaults,
+    })
+}
+
 /// Attempt to load configuration with bootstrap fallback.
 ///
 /// Unlike `load_config_with_defaults`, this function does not fail on
@@ -64,31 +119,7 @@ pub enum ConfigLoadResult {
 /// Returns `ConfigLoadResult::Success` if config loads successfully,
 /// or `ConfigLoadResult::Bootstrap` if auth is missing/invalid.
 pub fn try_load_config_with_bootstrap_fallback(cli: &Cli) -> Result<ConfigLoadResult> {
-    let loader = ConfigLoader::new().load_dotenv()?;
-
-    // Apply config path from CLI if provided (highest precedence)
-    let mut loader = if let Some(config_path) = &cli.config_path {
-        loader.with_config_path(config_path.clone())
-    } else {
-        loader
-    };
-
-    // Apply profile from CLI if provided (highest precedence)
-    if let Some(profile) = &cli.profile {
-        loader = loader.with_profile_name(profile.clone());
-    }
-
-    // Apply encryption options from CLI
-    if let Some(ref password) = cli.config_password {
-        loader = loader.with_config_password(password.clone());
-    }
-    if let Some(ref var_name) = cli.config_key_var {
-        loader = loader.with_config_key_var(var_name.clone());
-    }
-
-    // Apply environment variables (including SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
-    // if not already set via CLI args). Env vars override profile values.
-    let loader = loader.from_env()?;
+    let loader = build_base_loader(cli)?;
 
     // Capture the resolved profile name before attempting to load from profile
     // (from_profile consumes the loader)
@@ -101,11 +132,14 @@ pub fn try_load_config_with_bootstrap_fallback(cli: &Cli) -> Result<ConfigLoadRe
 
     // Load from profile if profile_name is now set (from CLI or env var)
     let loader = if resolved_profile_name.is_some() {
-        match loader.from_profile() {
+        match maybe_load_selected_profile(loader) {
             Ok(l) => l,
             Err(e) => {
                 // Check if this is a recoverable error
-                match classify_config_error(&e) {
+                let config_err = e
+                    .downcast_ref::<splunk_config::ConfigError>()
+                    .expect("profile loading should preserve ConfigError");
+                match classify_config_error(config_err) {
                     StartupDecision::EnterBootstrap(reason) => {
                         return Ok(ConfigLoadResult::Bootstrap {
                             reason,
@@ -115,9 +149,9 @@ pub fn try_load_config_with_bootstrap_fallback(cli: &Cli) -> Result<ConfigLoadRe
                     }
                     StartupDecision::ContinueWithConfig => {
                         // This shouldn't happen for profile errors
-                        return Err(e.into());
+                        return Err(e);
                     }
-                    StartupDecision::Fatal(_) => return Err(e.into()),
+                    StartupDecision::Fatal(_) => return Err(e),
                 }
             }
         }
@@ -134,45 +168,20 @@ pub fn try_load_config_with_bootstrap_fallback(cli: &Cli) -> Result<ConfigLoadRe
             resolved_profile_name,
         }),
         Err(e) => {
-            // Check if this is a recoverable error based on message content
-            let msg = e.to_string().to_lowercase();
-            if msg.contains("auth")
-                || msg.contains("credential")
-                || msg.contains("profile")
-                || msg.contains("login")
-                || msg.contains("base url")
-            {
-                Ok(ConfigLoadResult::Bootstrap {
-                    reason: crate::runtime::startup::BootstrapReason::MissingAuth,
+            let startup_error = anyhow::Error::from(e);
+            match crate::runtime::startup::classify_startup_error(&startup_error) {
+                StartupDecision::EnterBootstrap(reason) => Ok(ConfigLoadResult::Bootstrap {
+                    reason,
                     search_defaults,
                     internal_logs_defaults,
-                })
-            } else {
-                Err(e.into())
+                }),
+                StartupDecision::ContinueWithConfig => Err(startup_error),
+                StartupDecision::Fatal(error) => Err(error),
             }
         }
     }
 }
 
-/// Load configuration, search defaults, and internal logs defaults from CLI args, environment variables, and profile.
-///
-/// This function returns the main Config along with SearchDefaultConfig and InternalLogsDefaults so that
-/// defaults with environment variable overrides can be applied to the App state.
-///
-/// Configuration precedence (highest to lowest):
-/// 1. CLI arguments (e.g., --profile, --config-path)
-/// 2. Environment variables (e.g., SPLUNK_PROFILE, SPLUNK_BASE_URL)
-/// 3. Profile configuration (from config.json)
-/// 4. Default values
-///
-/// # Arguments
-///
-/// * `cli` - The parsed CLI arguments
-///
-/// # Errors
-///
-/// Returns an error if configuration loading fails (e.g., profile not found,
-/// missing required fields like base_url or auth credentials).
 /// Load configuration, search defaults, and internal logs defaults from CLI args, environment variables, and profile.
 ///
 /// This function returns the main Config along with SearchDefaultConfig and InternalLogsDefaults so that
@@ -205,46 +214,14 @@ pub fn load_config_with_defaults(
     Config,
     Option<String>,
 )> {
-    let mut loader = ConfigLoader::new().load_dotenv()?;
+    let PreparedLoader {
+        loader,
+        resolved_profile_name,
+        search_defaults,
+        internal_logs_defaults,
+    } = prepare_loader_for_runtime(cli)?;
 
-    // Apply config path from CLI if provided (highest precedence)
-    if let Some(config_path) = &cli.config_path {
-        loader = loader.with_config_path(config_path.clone());
-    }
-
-    // Apply profile from CLI if provided (highest precedence)
-    if let Some(profile) = &cli.profile {
-        loader = loader.with_profile_name(profile.clone());
-    }
-
-    // Apply encryption options from CLI
-    if let Some(ref password) = cli.config_password {
-        loader = loader.with_config_password(password.clone());
-    }
-    if let Some(ref var_name) = cli.config_key_var {
-        loader = loader.with_config_key_var(var_name.clone());
-    }
-
-    // Apply environment variables (including SPLUNK_CONFIG_PATH and SPLUNK_PROFILE
-    // if not already set via CLI args). Env vars override profile values.
-    let mut loader = loader.from_env()?;
-
-    // Load from profile if profile_name is now set (from CLI or env var)
-    if loader.profile_name().is_some() {
-        loader = loader.from_profile()?;
-    }
-
-    // Capture the resolved profile name before building
-    let resolved_profile_name = loader.profile_name().cloned();
-
-    // Build search defaults and internal logs defaults with env var overrides
-    // (pass None for now, will merge with persisted later)
-    let search_defaults = loader.build_search_defaults(None);
-    let internal_logs_defaults = loader.build_internal_logs_defaults(None);
-
-    let config = loader
-        .build()
-        .map_err(|e| anyhow!("Failed to load config: {}", e))?;
+    let config = loader.build().context("Failed to load config")?;
 
     Ok((
         search_defaults,
@@ -272,39 +249,4 @@ pub async fn save_and_quit(app: &App, config_manager: &Arc<Mutex<ConfigManager>>
     let mut cm = config_manager.lock().await;
     cm.save(&state)?;
     Ok(())
-}
-
-/// Build a ConfigLoader with CLI options applied.
-///
-/// This helper creates a loader with all CLI overrides applied.
-/// It's used when rebuilding config during bootstrap connection.
-///
-/// # Arguments
-///
-/// * `cli` - The parsed CLI arguments
-///
-/// # Returns
-///
-/// Returns a ConfigLoader with CLI options applied.
-pub fn build_loader_with_cli(cli: &Cli) -> Result<ConfigLoader> {
-    let loader = ConfigLoader::new().load_dotenv()?;
-
-    let mut loader = if let Some(config_path) = &cli.config_path {
-        loader.with_config_path(config_path.clone())
-    } else {
-        loader
-    };
-
-    if let Some(profile) = &cli.profile {
-        loader = loader.with_profile_name(profile.clone());
-    }
-
-    if let Some(ref password) = cli.config_password {
-        loader = loader.with_config_password(password.clone());
-    }
-    if let Some(ref var_name) = cli.config_key_var {
-        loader = loader.with_config_key_var(var_name.clone());
-    }
-
-    Ok(loader.from_env()?)
 }
