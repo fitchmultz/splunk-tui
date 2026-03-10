@@ -40,7 +40,7 @@ pub async fn handle_side_effects(
     config_manager: Arc<Mutex<ConfigManager>>,
     task_tracker: TaskTracker,
 ) {
-    let action_name = action_type_name(&action);
+    let action_name = action.type_name();
     let start = Instant::now();
 
     let span = info_span!(
@@ -60,130 +60,6 @@ pub async fn handle_side_effects(
     .await;
 }
 
-/// Get a safe action name for tracing (no sensitive data).
-fn action_type_name(action: &Action) -> &'static str {
-    match action {
-        Action::LoadIndexes { .. } => "LoadIndexes",
-        Action::LoadJobs { .. } => "LoadJobs",
-        Action::LoadClusterInfo => "LoadClusterInfo",
-        Action::LoadClusterPeers => "LoadClusterPeers",
-        Action::SetMaintenanceMode { .. } => "SetMaintenanceMode",
-        Action::RebalanceCluster => "RebalanceCluster",
-        Action::DecommissionPeer { .. } => "DecommissionPeer",
-        Action::RemovePeer { .. } => "RemovePeer",
-        Action::LoadSavedSearches => "LoadSavedSearches",
-        Action::LoadMacros => "LoadMacros",
-        Action::CreateMacro { .. } => "CreateMacro",
-        Action::UpdateMacro { .. } => "UpdateMacro",
-        Action::DeleteMacro { .. } => "DeleteMacro",
-        Action::UpdateSavedSearch { .. } => "UpdateSavedSearch",
-        Action::CreateSavedSearch { .. } => "CreateSavedSearch",
-        Action::DeleteSavedSearch { .. } => "DeleteSavedSearch",
-        Action::ToggleSavedSearch { .. } => "ToggleSavedSearch",
-        Action::LoadInternalLogs { .. } => "LoadInternalLogs",
-        Action::LoadApps { .. } => "LoadApps",
-        Action::LoadUsers { .. } => "LoadUsers",
-        Action::LoadMoreIndexes => "LoadMoreIndexes",
-        Action::LoadMoreJobs => "LoadMoreJobs",
-        Action::LoadMoreApps => "LoadMoreApps",
-        Action::LoadMoreUsers => "LoadMoreUsers",
-        Action::LoadMoreInternalLogs => "LoadMoreInternalLogs",
-        Action::LoadSearchPeers { .. } => "LoadSearchPeers",
-        Action::LoadMoreSearchPeers => "LoadMoreSearchPeers",
-        Action::LoadForwarders { .. } => "LoadForwarders",
-        Action::LoadMoreForwarders => "LoadMoreForwarders",
-        Action::LoadLookups { .. } => "LoadLookups",
-        Action::LoadMoreLookups => "LoadMoreLookups",
-        Action::DownloadLookup { .. } => "DownloadLookup",
-        Action::DeleteLookup { .. } => "DeleteLookup",
-        Action::LoadInputs { .. } => "LoadInputs",
-        Action::LoadMoreInputs => "LoadMoreInputs",
-        Action::LoadConfigFiles => "LoadConfigFiles",
-        Action::LoadFiredAlerts { .. } => "LoadFiredAlerts",
-        Action::LoadMoreFiredAlerts => "LoadMoreFiredAlerts",
-        Action::LoadConfigStanzas { .. } => "LoadConfigStanzas",
-        Action::EnableInput { .. } => "EnableInput",
-        Action::DisableInput { .. } => "DisableInput",
-        Action::SwitchToSettings => "SwitchToSettings",
-        Action::RunSearch { .. } => "RunSearch",
-        Action::LoadMoreSearchResults { .. } => "LoadMoreSearchResults",
-        Action::ValidateSpl { .. } => "ValidateSpl",
-        Action::CancelJob(_) => "CancelJob",
-        Action::DeleteJob(_) => "DeleteJob",
-        Action::CancelJobsBatch(_) => "CancelJobsBatch",
-        Action::DeleteJobsBatch(_) => "DeleteJobsBatch",
-        Action::EnableApp(_) => "EnableApp",
-        Action::DisableApp(_) => "DisableApp",
-        Action::InstallApp { .. } => "InstallApp",
-        Action::RemoveApp { .. } => "RemoveApp",
-        Action::LoadHealth => "LoadHealth",
-        Action::RunConnectionDiagnostics => "RunConnectionDiagnostics",
-        Action::ConnectionDiagnosticsLoaded(_) => "ConnectionDiagnosticsLoaded",
-        Action::LoadLicense => "LoadLicense",
-        Action::LoadKvstore => "LoadKvstore",
-        Action::LoadOverview => "LoadOverview",
-        Action::LoadMultiInstanceOverview => "LoadMultiInstanceOverview",
-        Action::RetryInstance(_) => "RetryInstance",
-        Action::ExportData(_, _, _) => "ExportData",
-        Action::OpenProfileSwitcher => "OpenProfileSwitcher",
-        Action::ProfileSelected(_) => "ProfileSelected",
-        Action::CreateIndex { .. } => "CreateIndex",
-        Action::ModifyIndex { .. } => "ModifyIndex",
-        Action::DeleteIndex { .. } => "DeleteIndex",
-        Action::CreateUser { .. } => "CreateUser",
-        Action::ModifyUser { .. } => "ModifyUser",
-        Action::DeleteUser { .. } => "DeleteUser",
-        Action::LoadRoles { .. } => "LoadRoles",
-        Action::LoadCapabilities => "LoadCapabilities",
-        Action::CreateRole { .. } => "CreateRole",
-        Action::ModifyRole { .. } => "ModifyRole",
-        Action::DeleteRole { .. } => "DeleteRole",
-        Action::InstallLicense { .. } => "InstallLicense",
-        Action::CreateLicensePool { .. } => "CreateLicensePool",
-        Action::ModifyLicensePool { .. } => "ModifyLicensePool",
-        Action::DeleteLicensePool { .. } => "DeleteLicensePool",
-        Action::ActivateLicense { .. } => "ActivateLicense",
-        Action::DeactivateLicense { .. } => "DeactivateLicense",
-        Action::OpenEditProfileDialog { .. } => "OpenEditProfileDialog",
-        Action::SaveProfile { .. } => "SaveProfile",
-        Action::DeleteProfile { .. } => "DeleteProfile",
-        Action::LoadAuditEvents { .. } => "LoadAuditEvents",
-        Action::LoadRecentAuditEvents { .. } => "LoadRecentAuditEvents",
-        Action::LoadDashboards { .. } => "LoadDashboards",
-        Action::LoadMoreDashboards => "LoadMoreDashboards",
-        Action::LoadDataModels { .. } => "LoadDataModels",
-        Action::LoadMoreDataModels => "LoadMoreDataModels",
-        Action::RefreshIndexes => "RefreshIndexes",
-        Action::RefreshJobs => "RefreshJobs",
-        Action::RefreshApps => "RefreshApps",
-        Action::RefreshUsers => "RefreshUsers",
-        Action::RefreshInternalLogs => "RefreshInternalLogs",
-        Action::RefreshDashboards => "RefreshDashboards",
-        Action::RefreshDataModels => "RefreshDataModels",
-        Action::RefreshInputs => "RefreshInputs",
-        Action::LoadWorkloadPools { .. } => "LoadWorkloadPools",
-        Action::LoadMoreWorkloadPools => "LoadMoreWorkloadPools",
-        Action::LoadWorkloadRules { .. } => "LoadWorkloadRules",
-        Action::LoadMoreWorkloadRules => "LoadMoreWorkloadRules",
-        Action::LoadShcStatus => "LoadShcStatus",
-        Action::LoadShcMembers => "LoadShcMembers",
-        Action::LoadShcCaptain => "LoadShcCaptain",
-        Action::LoadShcConfig => "LoadShcConfig",
-        Action::AddShcMember { .. } => "AddShcMember",
-        Action::RemoveShcMember { .. } => "RemoveShcMember",
-        Action::RollingRestartShc { .. } => "RollingRestartShc",
-        Action::SetShcCaptain { .. } => "SetShcCaptain",
-        Action::Input(_) => "Input",
-        Action::Mouse(_) => "Mouse",
-        Action::Resize(_, _) => "Resize",
-        Action::Tick => "Tick",
-        Action::Quit => "Quit",
-        Action::Loading(_) => "Loading",
-        Action::PersistState => "PersistState",
-        _ => "Other",
-    }
-}
-
 async fn handle_action(
     action: Action,
     client: SharedClient,
@@ -191,6 +67,14 @@ async fn handle_action(
     config_manager: Arc<Mutex<ConfigManager>>,
     task_tracker: TaskTracker,
 ) {
+    if action.is_main_loop_translated() {
+        tracing::debug!(
+            action_type = action.type_name(),
+            "Skipping main-loop translated action"
+        );
+        return;
+    }
+
     match action {
         Action::LoadIndexes { count, offset } => {
             indexes::handle_load_indexes(client, tx, task_tracker.clone(), count, offset).await;
@@ -313,46 +197,16 @@ async fn handle_action(
         Action::LoadUsers { count, offset } => {
             users::handle_load_users(client, tx, task_tracker.clone(), count, offset).await;
         }
-        // LoadMore actions for pagination - these require state access, handled in main loop
-        Action::LoadMoreIndexes => {
-            // This action is handled by the main loop which has access to state
-            // It reads current pagination state and sends LoadIndexes with updated offset
-        }
-        Action::LoadMoreJobs => {
-            // This action is handled by the main loop which has access to state
-        }
-        Action::LoadMoreApps => {
-            // This action is handled by the main loop which has access to state
-        }
-        Action::LoadMoreUsers => {
-            // This action is handled by the main loop which has access to state
-        }
-        Action::LoadMoreInternalLogs => {
-            // This action is handled by the main loop which has access to state
-            // It reads internal_logs_defaults and sends LoadInternalLogs with parameters
-        }
         Action::LoadSearchPeers { count, offset } => {
             search_peers::handle_load_search_peers(client, tx, task_tracker.clone(), count, offset)
                 .await;
-        }
-        Action::LoadMoreSearchPeers => {
-            // This action is handled by the main loop which has access to state
-            // It reads search_peers_pagination and sends LoadSearchPeers with updated offset
         }
         Action::LoadForwarders { count, offset } => {
             forwarders::handle_load_forwarders(client, tx, task_tracker.clone(), count, offset)
                 .await;
         }
-        Action::LoadMoreForwarders => {
-            // This action is handled by the main loop which has access to state
-            // It reads forwarders_pagination and sends LoadForwarders with updated offset
-        }
         Action::LoadLookups { count, offset } => {
             lookups::handle_load_lookups(client, tx, task_tracker.clone(), count, offset).await;
-        }
-        Action::LoadMoreLookups => {
-            // This action is handled by the main loop which has access to state
-            // It reads lookups_pagination and sends LoadLookups with updated offset
         }
         Action::DownloadLookup {
             name,
@@ -377,19 +231,11 @@ async fn handle_action(
         Action::LoadInputs { count, offset } => {
             inputs::handle_load_inputs(client, tx, task_tracker.clone(), count, offset).await;
         }
-        Action::LoadMoreInputs => {
-            // This action is handled by the main loop which has access to state
-            // It reads inputs_pagination and sends LoadInputs with updated offset
-        }
         Action::LoadConfigFiles => {
             configs::handle_load_config_files(client, tx, task_tracker.clone()).await;
         }
         Action::LoadFiredAlerts { count, offset } => {
             alerts::handle_load_fired_alerts(client, tx, task_tracker.clone(), count, offset).await;
-        }
-        Action::LoadMoreFiredAlerts => {
-            // This action is handled by the main loop which has access to state
-            // It reads fired_alerts_pagination and sends LoadFiredAlerts with updated offset
         }
         Action::LoadConfigStanzas {
             config_file,
@@ -638,44 +484,17 @@ async fn handle_action(
             dashboards::handle_load_dashboards(client, tx, task_tracker.clone(), count, offset)
                 .await;
         }
-        Action::LoadMoreDashboards => {
-            // This action is handled by the main loop which has access to state
-            // It reads dashboards_pagination and sends LoadDashboards with updated offset
-        }
         Action::LoadDataModels { count, offset } => {
             datamodels::handle_load_datamodels(client, tx, task_tracker.clone(), count, offset)
                 .await;
-        }
-        Action::LoadMoreDataModels => {
-            // This action is handled by the main loop which has access to state
-            // It reads data_models_pagination and sends LoadDataModels with updated offset
-        }
-        // Refresh actions - these are translated to Load* actions with offset=0 by the main loop
-        Action::RefreshIndexes
-        | Action::RefreshJobs
-        | Action::RefreshApps
-        | Action::RefreshUsers
-        | Action::RefreshInternalLogs
-        | Action::RefreshDashboards
-        | Action::RefreshDataModels
-        | Action::RefreshInputs => {
-            // These are handled by the main loop which translates them to Load* actions
         }
         Action::LoadWorkloadPools { count, offset } => {
             workload::handle_load_workload_pools(client, tx, task_tracker.clone(), count, offset)
                 .await;
         }
-        Action::LoadMoreWorkloadPools => {
-            // This action is handled by the main loop which has access to state
-            // It reads workload_pools_pagination and sends LoadWorkloadPools with updated offset
-        }
         Action::LoadWorkloadRules { count, offset } => {
             workload::handle_load_workload_rules(client, tx, task_tracker.clone(), count, offset)
                 .await;
-        }
-        Action::LoadMoreWorkloadRules => {
-            // This action is handled by the main loop which has access to state
-            // It reads workload_rules_pagination and sends LoadWorkloadRules with updated offset
         }
         // SHC actions
         Action::LoadShcStatus => {

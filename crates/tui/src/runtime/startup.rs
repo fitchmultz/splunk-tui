@@ -201,64 +201,7 @@ pub fn should_launch_tutorial(
 ///
 /// Returns false for actions that can be handled in bootstrap mode.
 pub fn action_requires_client(action: &crate::action::Action) -> bool {
-    use crate::action::Action;
-
-    match action {
-        // System actions - always allowed
-        Action::Quit => false,
-        Action::Tick => false,
-        Action::Input(_) => false,
-        Action::Mouse(_) => false,
-        Action::Resize(_, _) => false,
-        Action::Loading(_) => false,
-        Action::Notify(_, _) => false,
-
-        // Tutorial actions - allowed in bootstrap
-        Action::StartTutorial { .. } => false,
-        Action::TutorialProfileCreated { .. } => false,
-        Action::TutorialConnectionResult { .. } => false,
-        Action::TutorialCompleted => false,
-        Action::TutorialSkipped => false,
-        Action::LoadSearchScreenForTutorial => false,
-
-        // Profile management - allowed in bootstrap
-        Action::OpenCreateProfileDialog { .. } => false,
-        Action::OpenEditProfileDialog { .. } => false,
-        Action::OpenEditProfileDialogWithData { .. } => false,
-        Action::OpenDeleteProfileConfirm { .. } => false,
-        Action::SaveProfile { .. } => false,
-        Action::DeleteProfile { .. } => false,
-        Action::ProfileSaved(_) => false,
-        Action::ProfileDeleted(_) => false,
-
-        // Settings - allowed in bootstrap
-        Action::SwitchToSettingsScreen => false,
-        Action::SwitchToSettings => false,
-        Action::SettingsLoaded(_) => false,
-        Action::CycleTheme => false,
-
-        // Navigation - allowed in bootstrap (though screens will be empty)
-        Action::NextScreen => false,
-        Action::PreviousScreen => false,
-        Action::SwitchToSearch => false,
-        Action::OpenCommandPalette => false,
-        Action::OpenHelpPopup => false,
-        Action::SetFocus(_) => false,
-        Action::NextFocus => false,
-        Action::PreviousFocus => false,
-        Action::ToggleFocusMode => false,
-
-        // UI state - allowed in bootstrap
-        Action::PersistState => false,
-        Action::ShowErrorDetails(_) => false,
-        Action::ShowErrorDetailsFromCurrent => false,
-        Action::ClearErrorDetails => false,
-        Action::Progress(_) => false,
-        Action::CopyToClipboard(_) => false,
-
-        // All other actions require a client
-        _ => true,
-    }
+    action.requires_client()
 }
 
 #[cfg(test)]

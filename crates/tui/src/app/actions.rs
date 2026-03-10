@@ -19,7 +19,7 @@
 //! - `profiles`: Profile switching and management
 //! - `system`: Loading, notifications, clipboard, etc.
 
-use crate::action::Action;
+use crate::action::{Action, AppActionRoute};
 use crate::app::App;
 use crate::app::state::SearchInputMode;
 
@@ -38,163 +38,20 @@ impl App {
     ///
     /// This method delegates to domain-specific handlers based on action type.
     pub fn update(&mut self, action: Action) {
-        match action {
-            // Navigation actions
-            Action::OpenHelpPopup
-            | Action::OpenCommandPalette
-            | Action::SwitchToSearch
-            | Action::SwitchToSettingsScreen
-            | Action::NextScreen
-            | Action::PreviousScreen
-            | Action::LoadIndexes { .. }
-            | Action::LoadClusterInfo
-            | Action::ToggleClusterViewMode
-            | Action::LoadJobs { .. }
-            | Action::LoadHealth
-            | Action::LoadLicense
-            | Action::LoadKvstore
-            | Action::LoadSavedSearches
-            | Action::LoadInternalLogs { .. }
-            | Action::LoadApps { .. }
-            | Action::LoadUsers { .. }
-            | Action::LoadRoles { .. }
-            | Action::LoadSearchPeers { .. }
-            | Action::LoadInputs { .. }
-            | Action::LoadForwarders { .. }
-            | Action::LoadFiredAlerts { .. }
-            | Action::LoadLookups { .. }
-            | Action::LoadDashboards { .. }
-            | Action::LoadDataModels { .. }
-            | Action::LoadShcStatus
-            | Action::LoadShcMembers
-            | Action::LoadShcCaptain
-            | Action::LoadShcConfig
-            | Action::ToggleShcViewMode
-            | Action::LoadMoreIndexes
-            | Action::LoadMoreJobs
-            | Action::LoadMoreApps
-            | Action::LoadMoreUsers
-            | Action::LoadMoreSearchPeers
-            | Action::LoadMoreInputs
-            | Action::LoadMoreFiredAlerts
-            | Action::LoadMoreLookups
-            | Action::NavigateDown
-            | Action::NavigateUp
-            | Action::PageDown
-            | Action::PageUp
-            | Action::GoToTop
-            | Action::GoToBottom
-            | Action::InspectJob
-            | Action::ExitInspectMode => {
-                self.handle_navigation_action(action);
-            }
-
-            // Search actions
-            Action::SearchStarted(_)
-            | Action::SearchComplete(_)
-            | Action::MoreSearchResultsLoaded(_) => {
-                self.handle_search_action(action);
-            }
-
-            // Tutorial actions (must come before profile actions to catch from_tutorial: true)
-            Action::StartTutorial { .. }
-            | Action::TutorialCompleted
-            | Action::TutorialSkipped
-            | Action::TutorialProfileCreated { .. }
-            | Action::TutorialConnectionResult { .. }
-            | Action::LoadSearchScreenForTutorial
-            | Action::OpenCreateProfileDialog { from_tutorial: true } => {
+        match action.app_route() {
+            AppActionRoute::Navigation => self.handle_navigation_action(action),
+            AppActionRoute::Search => self.handle_search_action(action),
+            AppActionRoute::Tutorial => {
                 if let Some(remaining) = self.handle_tutorial_action(action) {
                     // Re-dispatch non-tutorial actions that need further handling
                     self.update(remaining);
                 }
             }
-
-            // Profile actions
-            Action::OpenProfileSwitcher
-            | Action::OpenProfileSelectorWithList(_)
-            | Action::ProfileSelected(_)
-            | Action::ProfileSwitchResult(_)
-            | Action::ClearAllData
-            | Action::OpenCreateProfileDialog { .. }
-            | Action::OpenEditProfileDialogWithData { .. }
-            | Action::OpenDeleteProfileConfirm { .. }
-            | Action::ProfileSaved(_)
-            | Action::ProfileDeleted(_) => {
-                self.handle_profile_action(action);
-            }
-
-            // System actions
-            Action::Loading(_)
-            | Action::Progress(_)
-            | Action::Notify(_, _)
-            | Action::Tick
-            | Action::CopyToClipboard(_)
-            | Action::Resize(_, _)
-            | Action::EnterSearchMode
-            | Action::SearchInput(_)
-            | Action::ClearSearch
-            | Action::CycleSortColumn
-            | Action::ToggleSortDirection
-            | Action::CycleTheme
-            | Action::SplValidationResult { .. }
-            | Action::ShowErrorDetails(_)
-            | Action::ShowErrorDetailsFromCurrent
-            | Action::ClearErrorDetails
-            | Action::JobOperationComplete(_)
-            | Action::OpenCreateIndexDialog
-            | Action::OpenModifyIndexDialog { .. }
-            | Action::OpenDeleteIndexConfirm { .. }
-            | Action::OpenCreateUserDialog
-            | Action::OpenModifyUserDialog { .. }
-            | Action::OpenDeleteUserConfirm { .. }
-            | Action::OpenCreateRoleDialog
-            | Action::OpenModifyRoleDialog { .. }
-            | Action::OpenDeleteRoleConfirm { .. }
-            | Action::EditSavedSearch
-            | Action::SavedSearchUpdated(_)
-            | Action::OpenCreateSavedSearchDialog
-            | Action::OpenDeleteSavedSearchConfirm { .. }
-            | Action::SavedSearchCreated(_)
-            | Action::SavedSearchDeleted(_)
-            | Action::SavedSearchToggled(_)
-            | Action::MaintenanceModeSet { .. }
-            | Action::ClusterRebalanced { .. }
-            | Action::PeerDecommissioned { .. }
-            | Action::PeerRemoved { .. }
-            | Action::OpenDeleteLookupConfirm { .. }
-            | Action::LookupDownloaded(_)
-            | Action::LookupDeleted(_)
-            | Action::ExportSuccess(_)
-            | Action::ConnectionDiagnosticsLoaded(_)
-            | Action::DismissOnboardingItem
-            | Action::DismissOnboardingAll
-            // SHC management
-            | Action::ShcMemberAdded { .. }
-            | Action::ShcMemberRemoved { .. }
-            | Action::ShcRollingRestarted { .. }
-            | Action::ShcCaptainSet { .. } => {
-                self.handle_system_action(action);
-            }
-
-            // Focus management actions
-            Action::NextFocus | Action::PreviousFocus | Action::SetFocus(_) | Action::ToggleFocusMode => {
-                self.handle_focus_action(action);
-            }
-
-            // Undo/Redo actions
-            Action::QueueUndoableOperation { .. }
-            | Action::Undo
-            | Action::Redo
-            | Action::ExecutePendingOperation { .. }
-            | Action::OperationUndone { .. }
-            | Action::OperationRedone { .. }
-            | Action::ShowUndoHistory => {
-                self.handle_undo_action(action);
-            }
-
-            // Data loading result actions are handled centrally in data_loading.rs.
-            action => self.handle_data_loading_action(action),
+            AppActionRoute::Profile => self.handle_profile_action(action),
+            AppActionRoute::System => self.handle_system_action(action),
+            AppActionRoute::Focus => self.handle_focus_action(action),
+            AppActionRoute::Undo => self.handle_undo_action(action),
+            AppActionRoute::DataLoading => self.handle_data_loading_action(action),
         }
     }
 

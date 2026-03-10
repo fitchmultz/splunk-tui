@@ -17,5 +17,6 @@ mod data_loading;
 mod errors;
 mod jobs;
 mod profiles;
+mod routing;
 mod search;
 mod simple;

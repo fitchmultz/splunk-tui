@@ -27,10 +27,12 @@ use tokio::sync::mpsc::{Sender, error::TrySendError};
 
 pub mod format;
 pub mod redaction;
+pub mod routing;
 pub mod variants;
 
 pub use format::ExportFormat;
 pub use redaction::RedactedAction;
+pub use routing::AppActionRoute;
 pub use variants::{
     Action, InstanceOverview, InstanceStatus, LicenseData, MultiInstanceOverviewData, OverviewData,
     OverviewResource,
