@@ -13,30 +13,24 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{
+    handle_copy_with_toast, handle_single_export, is_copy_key, is_export_key, should_export_single,
+};
 use crate::ui::Toast;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
     /// Handle input for the cluster screen.
     pub fn handle_cluster_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C or 'y': copy cluster ID (vim-style)
-        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
-            && matches!(key.code, KeyCode::Char('c')))
-            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
-        if is_copy {
-            if let Some(info) = &self.cluster_info {
-                return Some(Action::CopyToClipboard(info.id.clone()));
-            }
-            self.push_info_toast_once("Nothing to copy");
-            return None;
+        if is_copy_key(key) {
+            let content = self.cluster_info.as_ref().map(|info| info.id.clone());
+            return handle_copy_with_toast(self, content);
         }
 
         match key.code {
-            KeyCode::Char('e')
-                if key.modifiers.contains(KeyModifiers::CONTROL) && self.cluster_info.is_some() =>
-            {
-                self.begin_export(ExportTarget::ClusterInfo);
-                None
+            KeyCode::Char('e') if is_export_key(key) => {
+                let can_export = should_export_single(self.cluster_info.as_ref());
+                handle_single_export(self, can_export, ExportTarget::ClusterInfo)
             }
             // Maintenance mode toggle (m)
             KeyCode::Char('m') => {

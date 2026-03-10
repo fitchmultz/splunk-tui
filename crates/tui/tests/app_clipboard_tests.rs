@@ -249,6 +249,28 @@ fn test_ctrl_c_copies_health_status() {
 }
 
 #[test]
+fn test_ctrl_c_without_selected_input_shows_nothing_to_copy_toast() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Inputs;
+    app.inputs = Some(vec![]);
+
+    let action = app.handle_input(ctrl_key('c'));
+
+    assert!(
+        action.is_none(),
+        "Ctrl+C should not emit a copy action when the inputs list is empty"
+    );
+    assert_eq!(
+        app.toasts.last().map(|toast| toast.level),
+        Some(ToastLevel::Info)
+    );
+    assert_eq!(
+        app.toasts.last().map(|toast| toast.message.as_str()),
+        Some("Nothing to copy")
+    );
+}
+
+#[test]
 fn test_copy_to_clipboard_action_success_emits_info_toast_and_records_text() {
     let guard = splunk_tui::app::clipboard::install_recording_clipboard();
 

@@ -15,6 +15,7 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{handle_copy_with_toast, is_copy_key};
 use crate::app::state::SearchInputMode;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use splunk_client::SearchMode;
@@ -96,11 +97,7 @@ impl App {
     ///
     /// Returns `Some(action)` if copy was handled, `None` otherwise.
     fn try_handle_search_copy(&mut self, key: KeyEvent) -> Option<Option<Action>> {
-        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
-            && matches!(key.code, KeyCode::Char('c')))
-            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
-
-        if !is_copy {
+        if !is_copy_key(key) {
             return None;
         }
 
@@ -119,12 +116,7 @@ impl App {
             self.search_input.value().to_string()
         };
 
-        if content.trim().is_empty() {
-            self.push_info_toast_once("Nothing to copy");
-            return Some(None);
-        }
-
-        Some(Some(Action::CopyToClipboard(content)))
+        Some(handle_copy_with_toast(self, Some(content)))
     }
 
     /// Handle Esc key in search screen.

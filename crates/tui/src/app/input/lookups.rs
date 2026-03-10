@@ -13,6 +13,9 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{
+    handle_copy_with_toast, handle_list_export, is_copy_key, is_export_key, should_export_list,
+};
 
 impl App {
     /// Handle keyboard input for the lookups screen.
@@ -24,23 +27,41 @@ impl App {
     /// * `Some(Action)` - Action to execute
     /// * `None` - No action to execute
     pub fn handle_lookups_input(&mut self, key: KeyEvent) -> Option<Action> {
+        if is_copy_key(key) {
+            let content = self.lookups.as_ref().and_then(|lookups| {
+                self.lookups_state
+                    .selected()
+                    .and_then(|index| lookups.get(index))
+                    .map(|lookup| lookup.name.clone())
+            });
+
+            return handle_copy_with_toast(self, content);
+        }
+
         match key.code {
             // Navigation
             KeyCode::Down | KeyCode::Char('j') => {
-                let next = self.lookups_state.selected().map(|i| i + 1).unwrap_or(0);
-                let max = self.lookups.as_ref().map(|l| l.len()).unwrap_or(0);
-                if next < max {
-                    self.lookups_state.select(Some(next));
-                }
+                self.next_item();
                 None
             }
             KeyCode::Up | KeyCode::Char('k') => {
-                let prev = self
-                    .lookups_state
-                    .selected()
-                    .map(|i| i.saturating_sub(1))
-                    .unwrap_or(0);
-                self.lookups_state.select(Some(prev));
+                self.previous_item();
+                None
+            }
+            KeyCode::PageDown => {
+                self.next_page();
+                None
+            }
+            KeyCode::PageUp => {
+                self.previous_page();
+                None
+            }
+            KeyCode::Home => {
+                self.go_to_top();
+                None
+            }
+            KeyCode::End => {
+                self.go_to_bottom();
                 None
             }
 
@@ -54,29 +75,9 @@ impl App {
             }
 
             // Export
-            KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.begin_export(ExportTarget::Lookups);
-                None
-            }
-
-            // Copy selected lookup name (Ctrl+C or 'y' vim-style)
-            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if let Some(index) = self.lookups_state.selected()
-                    && let Some(lookups) = &self.lookups
-                    && let Some(lookup) = lookups.get(index)
-                {
-                    return Some(Action::CopyToClipboard(lookup.name.clone()));
-                }
-                None
-            }
-            KeyCode::Char('y') if key.modifiers.is_empty() => {
-                if let Some(index) = self.lookups_state.selected()
-                    && let Some(lookups) = &self.lookups
-                    && let Some(lookup) = lookups.get(index)
-                {
-                    return Some(Action::CopyToClipboard(lookup.name.clone()));
-                }
-                None
+            KeyCode::Char('e') if is_export_key(key) => {
+                let can_export = should_export_list(self.lookups.as_ref());
+                handle_list_export(self, can_export, ExportTarget::Lookups)
             }
 
             // Download selected lookup (Ctrl+D or 'd')
@@ -256,6 +257,21 @@ mod tests {
         app.handle_lookups_input(key);
 
         assert_eq!(app.export_target, Some(ExportTarget::Lookups));
+    }
+
+    #[test]
+    #[allow(clippy::field_reassign_with_default)]
+    fn test_lookups_export_requires_non_empty_collection() {
+        let mut app = App::default();
+        app.current_screen = CurrentScreen::Lookups;
+        app.lookups = Some(vec![]);
+
+        let key = ctrl_key('e');
+        let action = app.handle_lookups_input(key);
+
+        assert!(action.is_none());
+        assert!(app.popup.is_none());
+        assert!(app.export_target.is_none());
     }
 
     #[test]

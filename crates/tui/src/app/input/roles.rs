@@ -15,17 +15,16 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{
+    handle_copy_with_toast, handle_list_export, is_copy_key, is_export_key, should_export_list,
+};
 use crate::ui::Toast;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
     /// Handle input for the roles screen.
     pub fn handle_roles_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C or 'y': copy selected role name (vim-style)
-        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
-            && matches!(key.code, KeyCode::Char('c')))
-            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
-        if is_copy {
+        if is_copy_key(key) {
             let content = self.roles.as_ref().and_then(|roles| {
                 self.roles_state
                     .selected()
@@ -33,21 +32,13 @@ impl App {
                     .map(|r| r.name.clone())
             });
 
-            if let Some(content) = content.filter(|s| !s.trim().is_empty()) {
-                return Some(Action::CopyToClipboard(content));
-            }
-
-            self.push_info_toast_once("Nothing to copy");
-            return None;
+            return handle_copy_with_toast(self, content);
         }
 
         match key.code {
-            KeyCode::Char('e')
-                if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && self.roles.as_ref().map(|v| !v.is_empty()).unwrap_or(false) =>
-            {
-                self.begin_export(ExportTarget::Roles);
-                None
+            KeyCode::Char('e') if is_export_key(key) => {
+                let can_export = should_export_list(self.roles.as_ref());
+                handle_list_export(self, can_export, ExportTarget::Roles)
             }
             KeyCode::Char('c') => {
                 // Open create role dialog

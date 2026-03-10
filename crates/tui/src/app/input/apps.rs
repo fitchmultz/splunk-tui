@@ -16,18 +16,17 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{
+    handle_copy_with_toast, handle_list_export, is_copy_key, is_export_key, should_export_list,
+};
 use crate::ui::ToastLevel;
 use crate::ui::popup::{Popup, PopupType};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
     /// Handle input for the apps screen.
     pub fn handle_apps_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C or 'y': copy selected app name (vim-style)
-        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
-            && matches!(key.code, KeyCode::Char('c')))
-            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
-        if is_copy {
+        if is_copy_key(key) {
             let content = self.apps.as_ref().and_then(|apps| {
                 self.apps_state
                     .selected()
@@ -35,21 +34,13 @@ impl App {
                     .map(|a| a.name.clone())
             });
 
-            if let Some(content) = content.filter(|s| !s.trim().is_empty()) {
-                return Some(Action::CopyToClipboard(content));
-            }
-
-            self.push_info_toast_once("Nothing to copy");
-            return None;
+            return handle_copy_with_toast(self, content);
         }
 
         match key.code {
-            KeyCode::Char('e')
-                if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && self.apps.as_ref().map(|v| !v.is_empty()).unwrap_or(false) =>
-            {
-                self.begin_export(ExportTarget::Apps);
-                None
+            KeyCode::Char('e') if is_export_key(key) => {
+                let can_export = should_export_list(self.apps.as_ref());
+                handle_list_export(self, can_export, ExportTarget::Apps)
             }
             KeyCode::Char('e') => {
                 // Enable selected app (if disabled)

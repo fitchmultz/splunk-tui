@@ -8,11 +8,12 @@
 //! - Rendering (handled by screen module)
 //! - Data fetching (handled by side effects)
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{handle_list_export, is_export_key, should_export_list};
 
 impl App {
     /// Handle keyboard input for the search peers screen.
@@ -27,24 +28,27 @@ impl App {
         match key.code {
             // Navigation
             KeyCode::Down | KeyCode::Char('j') => {
-                let next = self
-                    .search_peers_state
-                    .selected()
-                    .map(|i| i + 1)
-                    .unwrap_or(0);
-                let max = self.search_peers.as_ref().map(|p| p.len()).unwrap_or(0);
-                if next < max {
-                    self.search_peers_state.select(Some(next));
-                }
+                self.next_item();
                 None
             }
             KeyCode::Up | KeyCode::Char('k') => {
-                let prev = self
-                    .search_peers_state
-                    .selected()
-                    .map(|i| i.saturating_sub(1))
-                    .unwrap_or(0);
-                self.search_peers_state.select(Some(prev));
+                self.previous_item();
+                None
+            }
+            KeyCode::PageDown => {
+                self.next_page();
+                None
+            }
+            KeyCode::PageUp => {
+                self.previous_page();
+                None
+            }
+            KeyCode::Home => {
+                self.go_to_top();
+                None
+            }
+            KeyCode::End => {
+                self.go_to_bottom();
                 None
             }
 
@@ -58,9 +62,9 @@ impl App {
             }
 
             // Export
-            KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.begin_export(ExportTarget::SearchPeers);
-                None
+            KeyCode::Char('e') if is_export_key(key) => {
+                let can_export = should_export_list(self.search_peers.as_ref());
+                handle_list_export(self, can_export, ExportTarget::SearchPeers)
             }
 
             // Load more (if available)

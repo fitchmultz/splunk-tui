@@ -16,30 +16,24 @@
 use crate::action::Action;
 use crate::app::App;
 use crate::app::export::ExportTarget;
+use crate::app::input::helpers::{
+    handle_copy_with_toast, handle_list_export, is_copy_key, is_export_key, should_export_list,
+};
 use crate::ui::Toast;
 use crate::ui::popup::{Popup, PopupType};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
     /// Handle input for the indexes screen.
     pub fn handle_indexes_input(&mut self, key: KeyEvent) -> Option<Action> {
-        // Ctrl+C or 'y': copy selected index name (vim-style)
-        let is_copy = (key.modifiers.contains(KeyModifiers::CONTROL)
-            && matches!(key.code, KeyCode::Char('c')))
-            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Char('y')));
-        if is_copy {
+        if is_copy_key(key) {
             let content = self
                 .indexes
                 .as_ref()
                 .and_then(|indexes| self.indexes_state.selected().and_then(|i| indexes.get(i)))
                 .map(|idx| idx.name.clone());
 
-            if let Some(content) = content {
-                return Some(Action::CopyToClipboard(content));
-            }
-
-            self.push_info_toast_once("Nothing to copy");
-            return None;
+            return handle_copy_with_toast(self, content);
         }
 
         match key.code {
@@ -53,16 +47,9 @@ impl App {
                 }
                 None
             }
-            KeyCode::Char('e')
-                if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && self
-                        .indexes
-                        .as_ref()
-                        .map(|v| !v.is_empty())
-                        .unwrap_or(false) =>
-            {
-                self.begin_export(ExportTarget::Indexes);
-                None
+            KeyCode::Char('e') if is_export_key(key) => {
+                let can_export = should_export_list(self.indexes.as_ref());
+                handle_list_export(self, can_export, ExportTarget::Indexes)
             }
             KeyCode::Char('c') => {
                 // Open create index dialog

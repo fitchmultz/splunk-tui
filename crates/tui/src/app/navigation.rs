@@ -73,6 +73,38 @@ impl App {
                     }
                 }
             }
+            CurrentScreen::Inputs => {
+                if let Some(inputs) = &self.inputs {
+                    let i = self.inputs_state.selected().unwrap_or(0);
+                    if i < inputs.len().saturating_sub(1) {
+                        self.inputs_state.select(Some(i + 1));
+                    }
+                }
+            }
+            CurrentScreen::Lookups => {
+                if let Some(lookups) = &self.lookups {
+                    let i = self.lookups_state.selected().unwrap_or(0);
+                    if i < lookups.len().saturating_sub(1) {
+                        self.lookups_state.select(Some(i + 1));
+                    }
+                }
+            }
+            CurrentScreen::Forwarders => {
+                if let Some(forwarders) = &self.forwarders {
+                    let i = self.forwarders_state.selected().unwrap_or(0);
+                    if i < forwarders.len().saturating_sub(1) {
+                        self.forwarders_state.select(Some(i + 1));
+                    }
+                }
+            }
+            CurrentScreen::Macros => {
+                if let Some(macros) = &self.macros {
+                    let i = self.macros_state.selected().unwrap_or(0);
+                    if i < macros.len().saturating_sub(1) {
+                        self.macros_state.select(Some(i + 1));
+                    }
+                }
+            }
             CurrentScreen::Cluster => {
                 if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers
                     && let Some(peers) = &self.cluster_peers
@@ -126,6 +158,30 @@ impl App {
                 let i = self.users_state.selected().unwrap_or(0);
                 if i > 0 {
                     self.users_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::Inputs => {
+                let i = self.inputs_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.inputs_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::Lookups => {
+                let i = self.lookups_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.lookups_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::Forwarders => {
+                let i = self.forwarders_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.forwarders_state.select(Some(i - 1));
+                }
+            }
+            CurrentScreen::Macros => {
+                let i = self.macros_state.selected().unwrap_or(0);
+                if i > 0 {
+                    self.macros_state.select(Some(i - 1));
                 }
             }
             CurrentScreen::Cluster => {
@@ -192,6 +248,42 @@ impl App {
                         .select(Some((i.saturating_add(10)).min(apps.len() - 1)));
                 }
             }
+            CurrentScreen::Inputs => {
+                if let Some(inputs) = &self.inputs
+                    && !inputs.is_empty()
+                {
+                    let i = self.inputs_state.selected().unwrap_or(0);
+                    self.inputs_state
+                        .select(Some((i.saturating_add(10)).min(inputs.len() - 1)));
+                }
+            }
+            CurrentScreen::Lookups => {
+                if let Some(lookups) = &self.lookups
+                    && !lookups.is_empty()
+                {
+                    let i = self.lookups_state.selected().unwrap_or(0);
+                    self.lookups_state
+                        .select(Some((i.saturating_add(10)).min(lookups.len() - 1)));
+                }
+            }
+            CurrentScreen::Forwarders => {
+                if let Some(forwarders) = &self.forwarders
+                    && !forwarders.is_empty()
+                {
+                    let i = self.forwarders_state.selected().unwrap_or(0);
+                    self.forwarders_state
+                        .select(Some((i.saturating_add(10)).min(forwarders.len() - 1)));
+                }
+            }
+            CurrentScreen::Macros => {
+                if let Some(macros) = &self.macros
+                    && !macros.is_empty()
+                {
+                    let i = self.macros_state.selected().unwrap_or(0);
+                    self.macros_state
+                        .select(Some((i.saturating_add(10)).min(macros.len() - 1)));
+                }
+            }
             CurrentScreen::Cluster => {
                 if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers
                     && let Some(peers) = &self.cluster_peers
@@ -232,6 +324,22 @@ impl App {
                 let i = self.apps_state.selected().unwrap_or(0);
                 self.apps_state.select(Some(i.saturating_sub(10)));
             }
+            CurrentScreen::Inputs => {
+                let i = self.inputs_state.selected().unwrap_or(0);
+                self.inputs_state.select(Some(i.saturating_sub(10)));
+            }
+            CurrentScreen::Lookups => {
+                let i = self.lookups_state.selected().unwrap_or(0);
+                self.lookups_state.select(Some(i.saturating_sub(10)));
+            }
+            CurrentScreen::Forwarders => {
+                let i = self.forwarders_state.selected().unwrap_or(0);
+                self.forwarders_state.select(Some(i.saturating_sub(10)));
+            }
+            CurrentScreen::Macros => {
+                let i = self.macros_state.selected().unwrap_or(0);
+                self.macros_state.select(Some(i.saturating_sub(10)));
+            }
             CurrentScreen::Cluster => {
                 if self.cluster_view_mode == crate::app::state::ClusterViewMode::Peers {
                     let i = self.cluster_peers_state.selected().unwrap_or(0);
@@ -263,6 +371,18 @@ impl App {
             }
             CurrentScreen::Apps => {
                 self.apps_state.select(Some(0));
+            }
+            CurrentScreen::Inputs => {
+                self.inputs_state.select(Some(0));
+            }
+            CurrentScreen::Lookups => {
+                self.lookups_state.select(Some(0));
+            }
+            CurrentScreen::Forwarders => {
+                self.forwarders_state.select(Some(0));
+            }
+            CurrentScreen::Macros => {
+                self.macros_state.select(Some(0));
             }
             CurrentScreen::Users => {
                 self.users_state.select(Some(0));
@@ -313,6 +433,30 @@ impl App {
             CurrentScreen::Apps => {
                 if let Some(apps) = &self.apps {
                     self.apps_state.select(Some(apps.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::Inputs => {
+                if let Some(inputs) = &self.inputs {
+                    self.inputs_state
+                        .select(Some(inputs.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::Lookups => {
+                if let Some(lookups) = &self.lookups {
+                    self.lookups_state
+                        .select(Some(lookups.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::Forwarders => {
+                if let Some(forwarders) = &self.forwarders {
+                    self.forwarders_state
+                        .select(Some(forwarders.len().saturating_sub(1)));
+                }
+            }
+            CurrentScreen::Macros => {
+                if let Some(macros) = &self.macros {
+                    self.macros_state
+                        .select(Some(macros.len().saturating_sub(1)));
                 }
             }
             CurrentScreen::Users => {

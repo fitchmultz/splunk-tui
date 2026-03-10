@@ -35,6 +35,7 @@ pub enum ExportTarget {
     FiredAlerts,
     Forwarders,
     Lookups,
+    Inputs,
     MultiInstance,
     AuditEvents,
     Workload,
@@ -62,6 +63,7 @@ impl ExportTarget {
             ExportTarget::FiredAlerts => "Export Fired Alerts",
             ExportTarget::Forwarders => "Export Forwarders",
             ExportTarget::Lookups => "Export Lookups",
+            ExportTarget::Inputs => "Export Inputs",
             ExportTarget::MultiInstance => "Export Multi-Instance Dashboard",
             ExportTarget::AuditEvents => "Export Audit Events",
             ExportTarget::Workload => "Export Workload Management",
@@ -89,6 +91,7 @@ impl ExportTarget {
             ExportTarget::FiredAlerts => "fired-alerts",
             ExportTarget::Forwarders => "forwarders",
             ExportTarget::Lookups => "lookups",
+            ExportTarget::Inputs => "inputs",
             ExportTarget::MultiInstance => "multi-instance",
             ExportTarget::AuditEvents => "audit-events",
             ExportTarget::Workload => "workload",
@@ -257,6 +260,14 @@ impl App {
                         .map_err(|e| format!("Failed to serialize lookups: {}", e))
                 })
                 .transpose(),
+            ExportTarget::Inputs => self
+                .inputs
+                .as_ref()
+                .map(|v| {
+                    serde_json::to_value(v)
+                        .map_err(|e| format!("Failed to serialize inputs: {}", e))
+                })
+                .transpose(),
             ExportTarget::MultiInstance => self
                 .multi_instance_data
                 .as_ref()
@@ -352,5 +363,27 @@ mod tests {
             ExportTarget::Jobs.default_filename(ExportFormat::Csv),
             "jobs.csv"
         );
+        assert_eq!(
+            ExportTarget::Inputs.default_filename(ExportFormat::Json),
+            "inputs.json"
+        );
+    }
+
+    #[test]
+    fn test_export_target_inputs_metadata() {
+        assert_eq!(ExportTarget::Inputs.title(), "Export Inputs");
+    }
+
+    #[test]
+    fn test_collect_export_data_supports_inputs() {
+        let app = App {
+            export_target: Some(ExportTarget::Inputs),
+            inputs: Some(vec![]),
+            ..Default::default()
+        };
+
+        let data = app.collect_export_data().unwrap();
+
+        assert_eq!(data, Some(serde_json::Value::Array(vec![])));
     }
 }
