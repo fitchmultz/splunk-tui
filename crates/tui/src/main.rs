@@ -699,10 +699,8 @@ async fn main() -> Result<()> {
                     continue;
                 }
 
-                // Handle LoadMore* actions by converting to Load* with pagination params
-                let action = app.translate_load_more_action(action);
-                // Handle Refresh* actions by converting to Load* with offset=0
-                let action = app.translate_refresh_action(action);
+                // Normalize main-loop translation actions before dispatch.
+                let action = app.translate_main_loop_action(action);
 
                 // Handle input -> Action
                 if let Action::Input(key) = action {
@@ -715,7 +713,7 @@ async fn main() -> Result<()> {
                             break;
                         }
 
-                        let a = app.translate_load_more_action(a);
+                        let a = app.translate_main_loop_action(a);
                         dispatch_app_action(
                             &mut app,
                             a,
@@ -736,7 +734,7 @@ async fn main() -> Result<()> {
                             }
                             break;
                         }
-                        let a = app.translate_load_more_action(a);
+                        let a = app.translate_main_loop_action(a);
                         dispatch_app_action(
                             &mut app,
                             a,

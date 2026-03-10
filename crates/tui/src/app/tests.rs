@@ -350,3 +350,47 @@ fn test_translate_refresh_action_passes_through_unrecognized() {
     let action = app.translate_refresh_action(Action::LoadMoreJobs);
     assert!(matches!(action, Action::LoadMoreJobs));
 }
+
+#[test]
+fn test_translate_load_more_action_uses_trigger_variant_not_current_screen() {
+    let mut app = App::new(None, ConnectionContext::default());
+
+    app.current_screen = CurrentScreen::Users;
+    app.jobs_pagination
+        .update_loaded(app.jobs_pagination.page_size);
+
+    let action = app.translate_load_more_action(Action::LoadMoreJobs);
+    match action {
+        Action::LoadJobs { count, offset } => {
+            assert_eq!(count, app.jobs_pagination.page_size);
+            assert_eq!(offset, app.jobs_pagination.page_size);
+        }
+        _ => panic!("Expected LoadJobs action, got {:?}", action),
+    }
+}
+
+#[test]
+fn test_translate_main_loop_action_normalizes_load_more_and_refresh_actions() {
+    let mut app = App::new(None, ConnectionContext::default());
+    app.current_screen = CurrentScreen::Users;
+    app.jobs_pagination
+        .update_loaded(app.jobs_pagination.page_size);
+
+    let load_more = app.translate_main_loop_action(Action::LoadMoreJobs);
+    match load_more {
+        Action::LoadJobs { count, offset } => {
+            assert_eq!(count, app.jobs_pagination.page_size);
+            assert_eq!(offset, app.jobs_pagination.page_size);
+        }
+        _ => panic!("Expected LoadJobs action, got {:?}", load_more),
+    }
+
+    let refresh = app.translate_main_loop_action(Action::RefreshUsers);
+    match refresh {
+        Action::LoadUsers { count, offset } => {
+            assert_eq!(count, app.users_pagination.page_size);
+            assert_eq!(offset, 0);
+        }
+        _ => panic!("Expected LoadUsers action, got {:?}", refresh),
+    }
+}
