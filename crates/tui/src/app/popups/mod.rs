@@ -15,6 +15,7 @@ use crate::ui::popup::PopupType;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 mod command_palette;
+mod common;
 mod confirm;
 mod export;
 mod index;

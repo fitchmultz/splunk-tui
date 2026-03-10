@@ -12,7 +12,7 @@ use splunk_client::models::SavedSearch;
 
 use crate::ui::syntax::highlight_spl;
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use splunk_config::Theme;
 
 /// Configuration for rendering the saved searches screen.
@@ -39,24 +39,18 @@ pub fn render_saved_searches(f: &mut Frame, area: Rect, config: SavedSearchesRen
         spinner_frame,
     } = config;
 
-    if loading && saved_searches.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Saved Searches",
-            "Loading saved searches...",
-            spinner_frame,
-            theme,
-        );
+    let Some(searches) = render_screen_state(
+        f,
+        area,
+        loading,
+        saved_searches,
+        "Saved Searches",
+        "Loading saved searches...",
+        "saved searches",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let searches = match saved_searches {
-        Some(s) => s,
-        None => {
-            render_empty_state(f, area, "Saved Searches", "saved searches");
-            return;
-        }
     };
 
     // Create a split layout for list and preview

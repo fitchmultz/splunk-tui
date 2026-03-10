@@ -18,7 +18,7 @@ use splunk_client::models::Forwarder;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the forwarders screen.
 pub struct ForwardersRenderConfig<'a> {
@@ -44,24 +44,18 @@ pub fn render_forwarders(f: &mut Frame, area: Rect, config: ForwardersRenderConf
         spinner_frame,
     } = config;
 
-    if loading && forwarders.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Forwarders",
-            "Loading forwarders...",
-            spinner_frame,
-            theme,
-        );
+    let Some(forwarders) = render_screen_state(
+        f,
+        area,
+        loading,
+        forwarders,
+        "Forwarders",
+        "Loading forwarders...",
+        "forwarders",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let forwarders = match forwarders {
-        Some(f) => f,
-        None => {
-            render_empty_state(f, area, "Forwarders", "forwarders");
-            return;
-        }
     };
 
     if forwarders.is_empty() {

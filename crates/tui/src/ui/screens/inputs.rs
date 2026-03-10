@@ -3,7 +3,7 @@
 //! Renders the list of Splunk data inputs with their types and status.
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -43,24 +43,18 @@ pub fn render_inputs(f: &mut Frame, area: Rect, config: InputsRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && inputs.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Data Inputs",
-            "Loading inputs...",
-            spinner_frame,
-            theme,
-        );
+    let Some(inputs) = render_screen_state(
+        f,
+        area,
+        loading,
+        inputs,
+        "Data Inputs",
+        "Loading inputs...",
+        "inputs",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let inputs = match inputs {
-        Some(i) => i,
-        None => {
-            render_empty_state(f, area, "Data Inputs", "inputs");
-            return;
-        }
     };
 
     if inputs.is_empty() {

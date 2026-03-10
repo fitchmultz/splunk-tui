@@ -9,7 +9,7 @@ use splunk_client::models::{LogEntry, LogLevel};
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the internal logs screen.
 pub struct InternalLogsRenderConfig<'a> {
@@ -38,24 +38,18 @@ pub fn render_internal_logs(f: &mut Frame, area: Rect, config: InternalLogsRende
         .border_style(theme.border())
         .title_style(theme.title());
 
-    if config.loading && config.logs.is_none() {
-        render_loading_state(
-            f,
-            area,
-            title,
-            "Loading internal logs...",
-            config.spinner_frame,
-            theme,
-        );
+    let Some(logs) = render_screen_state(
+        f,
+        area,
+        config.loading,
+        config.logs,
+        title,
+        "Loading internal logs...",
+        "logs",
+        config.spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let logs = match config.logs {
-        Some(l) => l,
-        None => {
-            render_empty_state(f, area, title, "logs");
-            return;
-        }
     };
 
     let header_cells = ["Time", "Level", "Component", "Message"]

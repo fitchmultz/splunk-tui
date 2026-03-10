@@ -10,15 +10,19 @@
 
 use crate::action::Action;
 use crate::app::App;
-use crate::ui::popup::{Popup, PopupType, SavedSearchField};
+use crate::ui::popup::{PopupType, SavedSearchField};
 use crate::undo::{SavedSearchRecoveryData, UndoableOperation};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+use super::common::optional_string;
 
 impl App {
     /// Handle saved search-related popups (EditSavedSearch).
     pub fn handle_saved_search_popup(&mut self, key: KeyEvent) -> Option<Action> {
-        match (self.popup.as_ref().map(|p| &p.kind), key.code) {
-            // EditSavedSearch - submit
+        match (
+            self.popup.as_ref().map(|popup| popup.kind.clone()),
+            key.code,
+        ) {
             (
                 Some(PopupType::EditSavedSearch {
                     search_name,
@@ -29,218 +33,18 @@ impl App {
                 }),
                 KeyCode::Enter,
             ) => {
-                let name = search_name.clone();
-                // Only include non-empty values in the update
-                let search = if search_input.is_empty() {
-                    None
-                } else {
-                    Some(search_input.clone())
-                };
-                let description = if description_input.is_empty() {
-                    None
-                } else {
-                    Some(description_input.clone())
-                };
-                // Only include disabled if it's different from the original
-                let disabled_flag = Some(*disabled);
                 self.popup = None;
                 Some(Action::UpdateSavedSearch {
-                    name,
-                    search,
-                    description,
-                    disabled: disabled_flag,
+                    name: search_name,
+                    search: optional_string(search_input),
+                    description: optional_string(description_input),
+                    disabled: Some(disabled),
                 })
             }
-            // EditSavedSearch - close
             (Some(PopupType::EditSavedSearch { .. }), KeyCode::Esc) => {
                 self.popup = None;
                 None
             }
-            // EditSavedSearch - Tab navigation
-            (
-                Some(PopupType::EditSavedSearch {
-                    search_name,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Tab,
-            ) => {
-                let new_field = if key.modifiers.contains(KeyModifiers::SHIFT) {
-                    selected_field.previous()
-                } else {
-                    selected_field.next()
-                };
-                self.popup = Some(
-                    Popup::builder(PopupType::EditSavedSearch {
-                        search_name: search_name.clone(),
-                        search_input: search_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        selected_field: new_field,
-                    })
-                    .build(),
-                );
-                None
-            }
-            // EditSavedSearch - Up navigation
-            (
-                Some(PopupType::EditSavedSearch {
-                    search_name,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Up,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::EditSavedSearch {
-                        search_name: search_name.clone(),
-                        search_input: search_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        selected_field: selected_field.previous(),
-                    })
-                    .build(),
-                );
-                None
-            }
-            // EditSavedSearch - Down navigation
-            (
-                Some(PopupType::EditSavedSearch {
-                    search_name,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Down,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::EditSavedSearch {
-                        search_name: search_name.clone(),
-                        search_input: search_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        selected_field: selected_field.next(),
-                    })
-                    .build(),
-                );
-                None
-            }
-            // EditSavedSearch - character input
-            (
-                Some(PopupType::EditSavedSearch {
-                    search_name,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Char(c),
-            ) => {
-                match selected_field {
-                    SavedSearchField::Search => {
-                        let mut new_search = search_input.clone();
-                        new_search.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditSavedSearch {
-                                search_name: search_name.clone(),
-                                search_input: new_search,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditSavedSearch {
-                                search_name: search_name.clone(),
-                                search_input: search_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Disabled => {
-                        // Toggle disabled on space
-                        if c == ' ' {
-                            self.popup = Some(
-                                Popup::builder(PopupType::EditSavedSearch {
-                                    search_name: search_name.clone(),
-                                    search_input: search_input.clone(),
-                                    description_input: description_input.clone(),
-                                    disabled: !*disabled,
-                                    selected_field: *selected_field,
-                                })
-                                .build(),
-                            );
-                        }
-                    }
-                    SavedSearchField::Name => {
-                        // No-op: Name field only exists in CreateSavedSearch, not EditSavedSearch
-                    }
-                }
-                None
-            }
-            // EditSavedSearch - backspace
-            (
-                Some(PopupType::EditSavedSearch {
-                    search_name,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Backspace,
-            ) => {
-                match selected_field {
-                    SavedSearchField::Search => {
-                        let mut new_search = search_input.clone();
-                        new_search.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditSavedSearch {
-                                search_name: search_name.clone(),
-                                search_input: new_search,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditSavedSearch {
-                                search_name: search_name.clone(),
-                                search_input: search_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Disabled => {
-                        // No-op for disabled field
-                    }
-                    SavedSearchField::Name => {
-                        // No-op: Name field only exists in CreateSavedSearch, not EditSavedSearch
-                    }
-                }
-                None
-            }
-            // CreateSavedSearch - submit
             (
                 Some(PopupType::CreateSavedSearch {
                     name_input,
@@ -251,240 +55,54 @@ impl App {
                 }),
                 KeyCode::Enter,
             ) => {
-                // Name and search are required
                 if name_input.is_empty() || search_input.is_empty() {
                     return None;
                 }
 
-                let name = name_input.clone();
-                let search = search_input.clone();
-                let description = if description_input.is_empty() {
-                    None
-                } else {
-                    Some(description_input.clone())
-                };
-                let disabled_flag = *disabled;
-
                 self.popup = None;
                 Some(Action::CreateSavedSearch {
-                    name,
-                    search,
-                    description,
-                    disabled: disabled_flag,
+                    name: name_input,
+                    search: search_input,
+                    description: optional_string(description_input),
+                    disabled,
                 })
             }
-            // CreateSavedSearch - close
             (Some(PopupType::CreateSavedSearch { .. }), KeyCode::Esc) => {
                 self.popup = None;
                 None
             }
-            // CreateSavedSearch - Tab navigation
-            (
-                Some(PopupType::CreateSavedSearch {
-                    name_input,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Tab,
-            ) => {
-                let new_field = if key.modifiers.contains(KeyModifiers::SHIFT) {
-                    selected_field.previous()
-                } else {
-                    selected_field.next()
-                };
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateSavedSearch {
-                        name_input: name_input.clone(),
-                        search_input: search_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        selected_field: new_field,
-                    })
-                    .build(),
-                );
+            (Some(mut kind @ PopupType::EditSavedSearch { .. }), KeyCode::Tab)
+            | (Some(mut kind @ PopupType::CreateSavedSearch { .. }), KeyCode::Tab) => {
+                kind.navigate_fields(key.modifiers.contains(KeyModifiers::SHIFT));
+                self.replace_popup_kind(kind);
                 None
             }
-            // CreateSavedSearch - Up navigation
-            (
-                Some(PopupType::CreateSavedSearch {
-                    name_input,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Up,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateSavedSearch {
-                        name_input: name_input.clone(),
-                        search_input: search_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        selected_field: selected_field.previous(),
-                    })
-                    .build(),
-                );
+            (Some(mut kind @ PopupType::EditSavedSearch { .. }), KeyCode::Up)
+            | (Some(mut kind @ PopupType::CreateSavedSearch { .. }), KeyCode::Up) => {
+                kind.navigate_fields(true);
+                self.replace_popup_kind(kind);
                 None
             }
-            // CreateSavedSearch - Down navigation
-            (
-                Some(PopupType::CreateSavedSearch {
-                    name_input,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Down,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateSavedSearch {
-                        name_input: name_input.clone(),
-                        search_input: search_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        selected_field: selected_field.next(),
-                    })
-                    .build(),
-                );
+            (Some(mut kind @ PopupType::EditSavedSearch { .. }), KeyCode::Down)
+            | (Some(mut kind @ PopupType::CreateSavedSearch { .. }), KeyCode::Down) => {
+                kind.navigate_fields(false);
+                self.replace_popup_kind(kind);
                 None
             }
-            // CreateSavedSearch - character input
-            (
-                Some(PopupType::CreateSavedSearch {
-                    name_input,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Char(c),
-            ) => {
-                match selected_field {
-                    SavedSearchField::Name => {
-                        let mut new_name = name_input.clone();
-                        new_name.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateSavedSearch {
-                                name_input: new_name,
-                                search_input: search_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Search => {
-                        let mut new_search = search_input.clone();
-                        new_search.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateSavedSearch {
-                                name_input: name_input.clone(),
-                                search_input: new_search,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateSavedSearch {
-                                name_input: name_input.clone(),
-                                search_input: search_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Disabled => {
-                        // Toggle disabled on space
-                        if c == ' ' {
-                            self.popup = Some(
-                                Popup::builder(PopupType::CreateSavedSearch {
-                                    name_input: name_input.clone(),
-                                    search_input: search_input.clone(),
-                                    description_input: description_input.clone(),
-                                    disabled: !*disabled,
-                                    selected_field: *selected_field,
-                                })
-                                .build(),
-                            );
-                        }
-                    }
+            (Some(mut kind @ PopupType::EditSavedSearch { .. }), KeyCode::Char(c))
+            | (Some(mut kind @ PopupType::CreateSavedSearch { .. }), KeyCode::Char(c)) => {
+                if update_saved_search_char(&mut kind, c) {
+                    self.replace_popup_kind(kind);
                 }
                 None
             }
-            // CreateSavedSearch - backspace
-            (
-                Some(PopupType::CreateSavedSearch {
-                    name_input,
-                    search_input,
-                    description_input,
-                    disabled,
-                    selected_field,
-                }),
-                KeyCode::Backspace,
-            ) => {
-                match selected_field {
-                    SavedSearchField::Name => {
-                        let mut new_name = name_input.clone();
-                        new_name.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateSavedSearch {
-                                name_input: new_name,
-                                search_input: search_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Search => {
-                        let mut new_search = search_input.clone();
-                        new_search.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateSavedSearch {
-                                name_input: name_input.clone(),
-                                search_input: new_search,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateSavedSearch {
-                                name_input: name_input.clone(),
-                                search_input: search_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    SavedSearchField::Disabled => {
-                        // No-op for disabled field
-                    }
+            (Some(mut kind @ PopupType::EditSavedSearch { .. }), KeyCode::Backspace)
+            | (Some(mut kind @ PopupType::CreateSavedSearch { .. }), KeyCode::Backspace) => {
+                if update_saved_search_backspace(&mut kind) {
+                    self.replace_popup_kind(kind);
                 }
                 None
             }
-            // DeleteSavedSearchConfirm - confirm (queue as undoable operation)
             (
                 Some(PopupType::DeleteSavedSearchConfirm { search_name }),
                 KeyCode::Char('y') | KeyCode::Enter,
@@ -527,6 +145,87 @@ impl App {
                     disabled: s.disabled,
                 })
         })
+    }
+}
+
+fn update_saved_search_char(kind: &mut PopupType, c: char) -> bool {
+    match kind {
+        PopupType::EditSavedSearch {
+            search_input,
+            description_input,
+            disabled,
+            selected_field,
+            ..
+        } => {
+            match selected_field {
+                SavedSearchField::Name => return false,
+                SavedSearchField::Search => search_input.push(c),
+                SavedSearchField::Description => description_input.push(c),
+                SavedSearchField::Disabled if c == ' ' => *disabled = !*disabled,
+                _ => return false,
+            }
+            true
+        }
+        PopupType::CreateSavedSearch {
+            name_input,
+            search_input,
+            description_input,
+            disabled,
+            selected_field,
+        } => {
+            match selected_field {
+                SavedSearchField::Name => name_input.push(c),
+                SavedSearchField::Search => search_input.push(c),
+                SavedSearchField::Description => description_input.push(c),
+                SavedSearchField::Disabled if c == ' ' => *disabled = !*disabled,
+                _ => return false,
+            }
+            true
+        }
+        _ => false,
+    }
+}
+
+fn update_saved_search_backspace(kind: &mut PopupType) -> bool {
+    match kind {
+        PopupType::EditSavedSearch {
+            search_input,
+            description_input,
+            selected_field,
+            ..
+        } => match selected_field {
+            SavedSearchField::Name | SavedSearchField::Disabled => false,
+            SavedSearchField::Search => {
+                search_input.pop();
+                true
+            }
+            SavedSearchField::Description => {
+                description_input.pop();
+                true
+            }
+        },
+        PopupType::CreateSavedSearch {
+            name_input,
+            search_input,
+            description_input,
+            selected_field,
+            ..
+        } => match selected_field {
+            SavedSearchField::Name => {
+                name_input.pop();
+                true
+            }
+            SavedSearchField::Search => {
+                search_input.pop();
+                true
+            }
+            SavedSearchField::Description => {
+                description_input.pop();
+                true
+            }
+            SavedSearchField::Disabled => false,
+        },
+        _ => false,
     }
 }
 

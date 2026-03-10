@@ -4,7 +4,7 @@
 //! license pools, and license stacks.
 
 use crate::action::LicenseData;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -44,24 +44,18 @@ pub fn render_license(f: &mut Frame, area: Rect, config: LicenseRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && license_info.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "License",
-            "Loading license info...",
-            spinner_frame,
-            theme,
-        );
+    let Some(info) = render_screen_state(
+        f,
+        area,
+        loading,
+        license_info,
+        "License",
+        "Loading license info...",
+        "license info",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let info = match license_info {
-        Some(i) => i,
-        None => {
-            render_empty_state(f, area, "License", "license info");
-            return;
-        }
     };
 
     // Create layout with three sections: usage, pools, stacks

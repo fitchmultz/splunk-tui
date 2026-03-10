@@ -4,7 +4,7 @@
 //! and replication status.
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
@@ -41,24 +41,18 @@ pub fn render_kvstore(f: &mut Frame, area: Rect, config: KvstoreRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && kvstore_status.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "KVStore",
-            "Loading KVStore status...",
-            spinner_frame,
-            theme,
-        );
+    let Some(status) = render_screen_state(
+        f,
+        area,
+        loading,
+        kvstore_status,
+        "KVStore",
+        "Loading KVStore status...",
+        "KVStore status",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let status = match kvstore_status {
-        Some(s) => s,
-        None => {
-            render_empty_state(f, area, "KVStore", "KVStore status");
-            return;
-        }
     };
 
     // Create layout with two sections: member info and replication status

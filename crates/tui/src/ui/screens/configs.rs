@@ -14,7 +14,7 @@ use splunk_client::models::{ConfigFile, ConfigStanza};
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// View mode for the configs screen.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -84,24 +84,18 @@ fn render_file_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
         ..
     } = config;
 
-    if loading && config_files.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Configuration Files",
-            "Loading config files...",
-            spinner_frame,
-            theme,
-        );
+    let Some(files) = render_screen_state(
+        f,
+        area,
+        loading,
+        config_files,
+        "Configuration Files",
+        "Loading config files...",
+        "config files",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let files = match config_files {
-        Some(f) => f,
-        None => {
-            render_empty_state(f, area, "Configuration Files", "config files");
-            return;
-        }
     };
 
     if files.is_empty() {
@@ -173,17 +167,18 @@ fn render_stanza_list(f: &mut Frame, area: Rect, config: ConfigsRenderConfig) {
 
     let title = format!("Stanzas for {}.conf", selected_file.unwrap_or("unknown"));
 
-    if loading && stanzas.is_none() {
-        render_loading_state(f, area, &title, "Loading stanzas...", spinner_frame, theme);
+    let Some(stanzas) = render_screen_state(
+        f,
+        area,
+        loading,
+        stanzas,
+        &title,
+        "Loading stanzas...",
+        "stanzas",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let stanzas = match stanzas {
-        Some(s) => s,
-        None => {
-            render_empty_state(f, area, &title, "stanzas");
-            return;
-        }
     };
 
     // Split area for search bar if needed

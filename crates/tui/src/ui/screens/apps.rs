@@ -11,7 +11,7 @@ use splunk_client::models::App;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the apps screen.
 pub struct AppsRenderConfig<'a> {
@@ -43,17 +43,18 @@ pub fn render_apps(f: &mut Frame, area: Rect, config: AppsRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && apps.is_none() {
-        render_loading_state(f, area, "Apps", "Loading apps...", spinner_frame, theme);
+    let Some(apps) = render_screen_state(
+        f,
+        area,
+        loading,
+        apps,
+        "Apps",
+        "Loading apps...",
+        "apps",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let apps = match apps {
-        Some(a) => a,
-        None => {
-            render_empty_state(f, area, "Apps", "apps");
-            return;
-        }
     };
 
     let items: Vec<ListItem> = apps

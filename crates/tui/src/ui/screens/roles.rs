@@ -3,7 +3,7 @@
 //! Renders the list of Splunk roles with their capabilities and settings.
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -42,17 +42,18 @@ pub fn render_roles(f: &mut Frame, area: Rect, config: RolesRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && roles.is_none() {
-        render_loading_state(f, area, "Roles", "Loading roles...", spinner_frame, theme);
+    let Some(roles) = render_screen_state(
+        f,
+        area,
+        loading,
+        roles,
+        "Roles",
+        "Loading roles...",
+        "roles",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let roles = match roles {
-        Some(r) => r,
-        None => {
-            render_empty_state(f, area, "Roles", "roles");
-            return;
-        }
     };
 
     let items: Vec<ListItem> = roles

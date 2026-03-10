@@ -18,7 +18,7 @@ use splunk_client::{format_bytes, models::LookupTable};
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the lookups screen.
 pub struct LookupsRenderConfig<'a> {
@@ -44,24 +44,18 @@ pub fn render_lookups(f: &mut Frame, area: Rect, config: LookupsRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && lookups.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Lookups",
-            "Loading lookup tables...",
-            spinner_frame,
-            theme,
-        );
+    let Some(lookups) = render_screen_state(
+        f,
+        area,
+        loading,
+        lookups,
+        "Lookups",
+        "Loading lookup tables...",
+        "lookup tables",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let lookups = match lookups {
-        Some(l) => l,
-        None => {
-            render_empty_state(f, area, "Lookups", "lookup tables");
-            return;
-        }
     };
 
     if lookups.is_empty() {

@@ -224,8 +224,8 @@ impl ConfigManager {
     /// Invalid persisted values are sanitized to their defaults.
     pub fn load(&self) -> PersistedState {
         let mut state = self.config_file.state.clone().unwrap_or_default();
-        // Sanitize search defaults to enforce invariants
         state.search_defaults = state.search_defaults.sanitize();
+        state.internal_logs_defaults = state.internal_logs_defaults.sanitize();
         state
     }
 
@@ -577,6 +577,31 @@ mod tests {
                     .as_ref()
                     .unwrap(),
                 "https://splunk.example.com:8089"
+            );
+        });
+    }
+
+    #[test]
+    fn test_load_sanitizes_internal_logs_defaults() {
+        temp_env::with_var("SPLUNK_CONFIG_NO_MIGRATE", Some("1"), || {
+            let temp_file = NamedTempFile::new().unwrap();
+            let mut manager = ConfigManager::new_with_path(temp_file.path().to_path_buf()).unwrap();
+            manager.config_file.state = Some(PersistedState {
+                internal_logs_defaults: crate::persistence::state::InternalLogsDefaults {
+                    count: 0,
+                    earliest_time: "   ".to_string(),
+                },
+                ..Default::default()
+            });
+
+            let state = manager.load();
+            assert_eq!(
+                state.internal_logs_defaults.count,
+                crate::constants::DEFAULT_INTERNAL_LOGS_COUNT
+            );
+            assert_eq!(
+                state.internal_logs_defaults.earliest_time,
+                crate::constants::DEFAULT_INTERNAL_LOGS_EARLIEST_TIME
             );
         });
     }

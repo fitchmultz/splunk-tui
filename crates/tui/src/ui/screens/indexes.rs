@@ -11,7 +11,7 @@ use splunk_client::models::Index;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the indexes screen.
 pub struct IndexesRenderConfig<'a> {
@@ -43,24 +43,18 @@ pub fn render_indexes(f: &mut Frame, area: Rect, config: IndexesRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && indexes.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Indexes",
-            "Loading indexes...",
-            spinner_frame,
-            theme,
-        );
+    let Some(indexes) = render_screen_state(
+        f,
+        area,
+        loading,
+        indexes,
+        "Indexes",
+        "Loading indexes...",
+        "indexes",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let indexes = match indexes {
-        Some(i) => i,
-        None => {
-            render_empty_state(f, area, "Indexes", "indexes");
-            return;
-        }
     };
 
     let items: Vec<ListItem> = indexes

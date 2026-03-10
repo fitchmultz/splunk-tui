@@ -421,6 +421,18 @@ impl PopupBuilder {
         (title, content)
     }
 
+    fn marker(selected: bool) -> &'static str {
+        if selected { "> " } else { "  " }
+    }
+
+    fn masked_state<'a>(value: &str, empty_label: &'a str, set_label: &'a str) -> &'a str {
+        if value.is_empty() {
+            empty_label
+        } else {
+            set_label
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn build_create_profile_defaults(
         &self,
@@ -438,94 +450,50 @@ impl PopupBuilder {
         let title = "Create Profile".to_string();
         let mut content = String::from("Create new profile:\n\n");
 
-        let name_marker = if selected_field == ProfileField::Name {
-            "> "
-        } else {
-            "  "
-        };
-        let base_url_marker = if selected_field == ProfileField::BaseUrl {
-            "> "
-        } else {
-            "  "
-        };
-        let username_marker = if selected_field == ProfileField::Username {
-            "> "
-        } else {
-            "  "
-        };
-        let password_marker = if selected_field == ProfileField::Password {
-            "> "
-        } else {
-            "  "
-        };
-        let api_token_marker = if selected_field == ProfileField::ApiToken {
-            "> "
-        } else {
-            "  "
-        };
-        let skip_verify_marker = if selected_field == ProfileField::SkipVerify {
-            "> "
-        } else {
-            "  "
-        };
-        let timeout_marker = if selected_field == ProfileField::Timeout {
-            "> "
-        } else {
-            "  "
-        };
-        let max_retries_marker = if selected_field == ProfileField::MaxRetries {
-            "> "
-        } else {
-            "  "
-        };
-        let use_keyring_marker = if selected_field == ProfileField::UseKeyring {
-            "> "
-        } else {
-            "  "
-        };
-
-        content.push_str(&format!("{}Name: {}\n", name_marker, name_input));
+        content.push_str(&format!(
+            "{}Name: {}\n",
+            Self::marker(selected_field == ProfileField::Name),
+            name_input
+        ));
         content.push_str(&format!(
             "{}Base URL: {}\n",
-            base_url_marker, base_url_input
+            Self::marker(selected_field == ProfileField::BaseUrl),
+            base_url_input
         ));
         content.push_str(&format!(
             "{}Username: {}\n",
-            username_marker, username_input
+            Self::marker(selected_field == ProfileField::Username),
+            username_input
         ));
-        let password_display = if password_input.is_empty() {
-            "(empty)".to_string()
-        } else {
-            "(set)".to_string()
-        };
         content.push_str(&format!(
             "{}Password: {}\n",
-            password_marker, password_display
+            Self::marker(selected_field == ProfileField::Password),
+            Self::masked_state(password_input, "(empty)", "(set)")
         ));
-        let token_display = if api_token_input.is_empty() {
-            "(empty)".to_string()
-        } else {
-            "(set)".to_string()
-        };
         content.push_str(&format!(
             "{}API Token: {}\n",
-            api_token_marker, token_display
+            Self::marker(selected_field == ProfileField::ApiToken),
+            Self::masked_state(api_token_input, "(empty)", "(set)")
         ));
         content.push_str(&format!(
             "{}Skip TLS Verify: {}\n",
-            skip_verify_marker, skip_verify
+            Self::marker(selected_field == ProfileField::SkipVerify),
+            skip_verify
         ));
         content.push_str(&format!(
             "{}Timeout (s): {}\n",
-            timeout_marker, timeout_seconds
+            Self::marker(selected_field == ProfileField::Timeout),
+            timeout_seconds
         ));
         content.push_str(&format!(
             "{}Max Retries: {}\n",
-            max_retries_marker, max_retries
+            Self::marker(selected_field == ProfileField::MaxRetries),
+            max_retries
         ));
         content.push_str(&format!(
             "{}Use Keyring: {}\n",
-            use_keyring_marker, use_keyring
+            Self::marker(selected_field == ProfileField::UseKeyring),
+            use_keyring
         ));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
@@ -550,94 +518,50 @@ impl PopupBuilder {
         let title = format!("Edit Profile '{}'", original_name);
         let mut content = String::from("Edit profile:\n\n");
 
-        let name_marker = if selected_field == ProfileField::Name {
-            "> "
-        } else {
-            "  "
-        };
-        let base_url_marker = if selected_field == ProfileField::BaseUrl {
-            "> "
-        } else {
-            "  "
-        };
-        let username_marker = if selected_field == ProfileField::Username {
-            "> "
-        } else {
-            "  "
-        };
-        let password_marker = if selected_field == ProfileField::Password {
-            "> "
-        } else {
-            "  "
-        };
-        let api_token_marker = if selected_field == ProfileField::ApiToken {
-            "> "
-        } else {
-            "  "
-        };
-        let skip_verify_marker = if selected_field == ProfileField::SkipVerify {
-            "> "
-        } else {
-            "  "
-        };
-        let timeout_marker = if selected_field == ProfileField::Timeout {
-            "> "
-        } else {
-            "  "
-        };
-        let max_retries_marker = if selected_field == ProfileField::MaxRetries {
-            "> "
-        } else {
-            "  "
-        };
-        let use_keyring_marker = if selected_field == ProfileField::UseKeyring {
-            "> "
-        } else {
-            "  "
-        };
-
-        content.push_str(&format!("{}Name: {}\n", name_marker, name_input));
+        content.push_str(&format!(
+            "{}Name: {}\n",
+            Self::marker(selected_field == ProfileField::Name),
+            name_input
+        ));
         content.push_str(&format!(
             "{}Base URL: {}\n",
-            base_url_marker, base_url_input
+            Self::marker(selected_field == ProfileField::BaseUrl),
+            base_url_input
         ));
         content.push_str(&format!(
             "{}Username: {}\n",
-            username_marker, username_input
+            Self::marker(selected_field == ProfileField::Username),
+            username_input
         ));
-        let password_display = if password_input.is_empty() {
-            "(keep existing)".to_string()
-        } else {
-            "(will update)".to_string()
-        };
         content.push_str(&format!(
             "{}Password: {}\n",
-            password_marker, password_display
+            Self::marker(selected_field == ProfileField::Password),
+            Self::masked_state(password_input, "(keep existing)", "(will update)")
         ));
-        let token_display = if api_token_input.is_empty() {
-            "(keep existing)".to_string()
-        } else {
-            "(will update)".to_string()
-        };
         content.push_str(&format!(
             "{}API Token: {}\n",
-            api_token_marker, token_display
+            Self::marker(selected_field == ProfileField::ApiToken),
+            Self::masked_state(api_token_input, "(keep existing)", "(will update)")
         ));
         content.push_str(&format!(
             "{}Skip TLS Verify: {}\n",
-            skip_verify_marker, skip_verify
+            Self::marker(selected_field == ProfileField::SkipVerify),
+            skip_verify
         ));
         content.push_str(&format!(
             "{}Timeout (s): {}\n",
-            timeout_marker, timeout_seconds
+            Self::marker(selected_field == ProfileField::Timeout),
+            timeout_seconds
         ));
         content.push_str(&format!(
             "{}Max Retries: {}\n",
-            max_retries_marker, max_retries
+            Self::marker(selected_field == ProfileField::MaxRetries),
+            max_retries
         ));
         content.push_str(&format!(
             "{}Use Keyring: {}\n",
-            use_keyring_marker, use_keyring
+            Self::marker(selected_field == ProfileField::UseKeyring),
+            use_keyring
         ));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
@@ -655,35 +579,15 @@ impl PopupBuilder {
         let title = format!("Edit Saved Search '{}'", search_name);
         let mut content = String::from("Edit saved search:\n\n");
 
-        let name_marker = if selected_field == SavedSearchField::Name {
-            "> "
-        } else {
-            "  "
-        };
-        let search_marker = if selected_field == SavedSearchField::Search {
-            "> "
-        } else {
-            "  "
-        };
-        let description_marker = if selected_field == SavedSearchField::Description {
-            "> "
-        } else {
-            "  "
-        };
-        let disabled_marker = if selected_field == SavedSearchField::Disabled {
-            "> "
-        } else {
-            "  "
-        };
-
         // Show name as readonly (included in navigation cycle but not editable)
         content.push_str(&format!(
             "{}Name: {} (readonly)\n",
-            name_marker, search_name
+            Self::marker(selected_field == SavedSearchField::Name),
+            search_name
         ));
         content.push_str(&format!(
             "{}Search Query: {}\n",
-            search_marker,
+            Self::marker(selected_field == SavedSearchField::Search),
             if search_input.is_empty() {
                 "(unchanged)".to_string()
             } else {
@@ -695,7 +599,7 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Description: {}\n",
-            description_marker,
+            Self::marker(selected_field == SavedSearchField::Description),
             if description_input.is_empty() {
                 "(unchanged)".to_string()
             } else {
@@ -705,7 +609,11 @@ impl PopupBuilder {
                 )
             }
         ));
-        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
+        content.push_str(&format!(
+            "{}Disabled: {}\n",
+            Self::marker(selected_field == SavedSearchField::Disabled),
+            disabled
+        ));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
         (title, content)
@@ -722,30 +630,9 @@ impl PopupBuilder {
         let title = "Create Saved Search".to_string();
         let mut content = String::from("Create new saved search:\n\n");
 
-        let name_marker = if selected_field == SavedSearchField::Name {
-            "> "
-        } else {
-            "  "
-        };
-        let search_marker = if selected_field == SavedSearchField::Search {
-            "> "
-        } else {
-            "  "
-        };
-        let description_marker = if selected_field == SavedSearchField::Description {
-            "> "
-        } else {
-            "  "
-        };
-        let disabled_marker = if selected_field == SavedSearchField::Disabled {
-            "> "
-        } else {
-            "  "
-        };
-
         content.push_str(&format!(
             "{}Name: {}\n",
-            name_marker,
+            Self::marker(selected_field == SavedSearchField::Name),
             if name_input.is_empty() {
                 "(required)".to_string()
             } else {
@@ -754,7 +641,7 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Search Query: {}\n",
-            search_marker,
+            Self::marker(selected_field == SavedSearchField::Search),
             if search_input.is_empty() {
                 "(required)".to_string()
             } else {
@@ -763,14 +650,18 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Description: {}\n",
-            description_marker,
+            Self::marker(selected_field == SavedSearchField::Description),
             if description_input.is_empty() {
                 "(optional)".to_string()
             } else {
                 description_input[..description_input.len().min(40)].to_string()
             }
         ));
-        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
+        content.push_str(&format!(
+            "{}Disabled: {}\n",
+            Self::marker(selected_field == SavedSearchField::Disabled),
+            disabled
+        ));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
         (title, content)
@@ -790,41 +681,14 @@ impl PopupBuilder {
         let title = "Create Macro".to_string();
         let mut content = String::from("Create new macro:\n\n");
 
-        let name_marker = if selected_field == MacroField::Name {
-            "> "
-        } else {
-            "  "
-        };
-        let definition_marker = if selected_field == MacroField::Definition {
-            "> "
-        } else {
-            "  "
-        };
-        let args_marker = if selected_field == MacroField::Args {
-            "> "
-        } else {
-            "  "
-        };
-        let description_marker = if selected_field == MacroField::Description {
-            "> "
-        } else {
-            "  "
-        };
-        let disabled_marker = if selected_field == MacroField::Disabled {
-            "> "
-        } else {
-            "  "
-        };
-        let iseval_marker = if selected_field == MacroField::IsEval {
-            "> "
-        } else {
-            "  "
-        };
-
-        content.push_str(&format!("{}Name: {}\n", name_marker, name_input));
+        content.push_str(&format!(
+            "{}Name: {}\n",
+            Self::marker(selected_field == MacroField::Name),
+            name_input
+        ));
         content.push_str(&format!(
             "{}Definition: {}\n",
-            definition_marker,
+            Self::marker(selected_field == MacroField::Definition),
             if definition_input.is_empty() {
                 "(required)".to_string()
             } else {
@@ -833,7 +697,7 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Args: {}\n",
-            args_marker,
+            Self::marker(selected_field == MacroField::Args),
             if args_input.is_empty() {
                 "(optional, comma-separated)".to_string()
             } else {
@@ -842,15 +706,23 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Description: {}\n",
-            description_marker,
+            Self::marker(selected_field == MacroField::Description),
             if description_input.is_empty() {
                 "(optional)".to_string()
             } else {
                 description_input[..description_input.len().min(40)].to_string()
             }
         ));
-        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
-        content.push_str(&format!("{}IsEval: {}\n", iseval_marker, iseval));
+        content.push_str(&format!(
+            "{}Disabled: {}\n",
+            Self::marker(selected_field == MacroField::Disabled),
+            disabled
+        ));
+        content.push_str(&format!(
+            "{}IsEval: {}\n",
+            Self::marker(selected_field == MacroField::IsEval),
+            iseval
+        ));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
         (title, content)
@@ -870,42 +742,15 @@ impl PopupBuilder {
         let title = format!("Edit Macro '{}'", macro_name);
         let mut content = String::from("Edit macro:\n\n");
 
-        let name_marker = if selected_field == MacroField::Name {
-            "> "
-        } else {
-            "  "
-        };
-        let definition_marker = if selected_field == MacroField::Definition {
-            "> "
-        } else {
-            "  "
-        };
-        let args_marker = if selected_field == MacroField::Args {
-            "> "
-        } else {
-            "  "
-        };
-        let description_marker = if selected_field == MacroField::Description {
-            "> "
-        } else {
-            "  "
-        };
-        let disabled_marker = if selected_field == MacroField::Disabled {
-            "> "
-        } else {
-            "  "
-        };
-        let iseval_marker = if selected_field == MacroField::IsEval {
-            "> "
-        } else {
-            "  "
-        };
-
         // Name is readonly
-        content.push_str(&format!("{}Name: {} (readonly)\n", name_marker, macro_name));
+        content.push_str(&format!(
+            "{}Name: {} (readonly)\n",
+            Self::marker(selected_field == MacroField::Name),
+            macro_name
+        ));
         content.push_str(&format!(
             "{}Definition: {}\n",
-            definition_marker,
+            Self::marker(selected_field == MacroField::Definition),
             if definition_input.is_empty() {
                 "(unchanged)".to_string()
             } else {
@@ -917,7 +762,7 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Args: {}\n",
-            args_marker,
+            Self::marker(selected_field == MacroField::Args),
             if args_input.is_empty() {
                 "(unchanged)".to_string()
             } else {
@@ -926,7 +771,7 @@ impl PopupBuilder {
         ));
         content.push_str(&format!(
             "{}Description: {}\n",
-            description_marker,
+            Self::marker(selected_field == MacroField::Description),
             if description_input.is_empty() {
                 "(unchanged)".to_string()
             } else {
@@ -936,8 +781,16 @@ impl PopupBuilder {
                 )
             }
         ));
-        content.push_str(&format!("{}Disabled: {}\n", disabled_marker, disabled));
-        content.push_str(&format!("{}IsEval: {}\n", iseval_marker, iseval));
+        content.push_str(&format!(
+            "{}Disabled: {}\n",
+            Self::marker(selected_field == MacroField::Disabled),
+            disabled
+        ));
+        content.push_str(&format!(
+            "{}IsEval: {}\n",
+            Self::marker(selected_field == MacroField::IsEval),
+            iseval
+        ));
 
         content.push_str("\nTab/↑↓ to navigate fields, Enter to save, Esc to cancel");
         (title, content)

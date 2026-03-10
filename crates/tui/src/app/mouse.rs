@@ -21,6 +21,7 @@ use crate::app::state::{CurrentScreen, HEADER_HEIGHT};
 use crate::ui::popup::{POPUP_HEIGHT_PERCENT, POPUP_WIDTH_PERCENT};
 use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::widgets::{ListState, TableState};
 
 impl App {
     /// Handle mouse input - returns Action if one should be dispatched.
@@ -201,168 +202,83 @@ impl App {
             // Single-focus screens: only update selection, no focus change needed
             // These screens have only one component in FocusManager, so focus is already there
             CurrentScreen::Apps => {
-                if let Some(index) = calculate_list_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.apps_state.offset(),
-                    self.apps.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.apps_state.select(Some(index));
-                }
+                select_list_click(&mut self.apps_state, self.apps.as_deref(), row);
                 None
             }
             CurrentScreen::Users => {
-                if let Some(index) = calculate_list_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.users_state.offset(),
-                    self.users.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.users_state.select(Some(index));
-                }
+                select_list_click(&mut self.users_state, self.users.as_deref(), row);
                 None
             }
             CurrentScreen::Roles => {
-                if let Some(index) = calculate_list_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.roles_state.offset(),
-                    self.roles.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.roles_state.select(Some(index));
-                }
+                select_list_click(&mut self.roles_state, self.roles.as_deref(), row);
                 None
             }
             CurrentScreen::Indexes => {
-                if let Some(index) = calculate_list_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.indexes_state.offset(),
-                    self.indexes.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.indexes_state.select(Some(index));
-                }
+                select_list_click(&mut self.indexes_state, self.indexes.as_deref(), row);
                 None
             }
             CurrentScreen::SavedSearches => {
-                if let Some(index) = calculate_list_click_index(
+                select_list_click(
+                    &mut self.saved_searches_state,
+                    self.saved_searches.as_deref(),
                     row,
-                    HEADER_HEIGHT + 1,
-                    self.saved_searches_state.offset(),
-                    self.saved_searches.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.saved_searches_state.select(Some(index));
-                }
+                );
                 None
             }
             CurrentScreen::Macros => {
-                if let Some(index) = calculate_list_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.macros_state.offset(),
-                    self.macros.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.macros_state.select(Some(index));
-                }
+                select_list_click(&mut self.macros_state, self.macros.as_deref(), row);
                 None
             }
             CurrentScreen::FiredAlerts => {
-                if let Some(index) = calculate_list_click_index(
+                select_list_click(
+                    &mut self.fired_alerts_state,
+                    self.fired_alerts.as_deref(),
                     row,
-                    HEADER_HEIGHT + 1,
-                    self.fired_alerts_state.offset(),
-                    self.fired_alerts.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.fired_alerts_state.select(Some(index));
-                }
+                );
                 None
             }
             CurrentScreen::Dashboards => {
-                if let Some(index) = calculate_list_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.dashboards_state.offset(),
-                    self.dashboards.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.dashboards_state.select(Some(index));
-                }
+                select_list_click(&mut self.dashboards_state, self.dashboards.as_deref(), row);
                 None
             }
             CurrentScreen::DataModels => {
-                if let Some(index) = calculate_list_click_index(
+                select_list_click(
+                    &mut self.data_models_state,
+                    self.data_models.as_deref(),
                     row,
-                    HEADER_HEIGHT + 1,
-                    self.data_models_state.offset(),
-                    self.data_models.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.data_models_state.select(Some(index));
-                }
+                );
                 None
             }
             CurrentScreen::Inputs => {
-                if let Some(index) = calculate_table_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.inputs_state.offset(),
-                    self.inputs.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.inputs_state.select(Some(index));
-                }
+                select_table_click(&mut self.inputs_state, self.inputs.as_deref(), row);
                 None
             }
             CurrentScreen::SearchPeers => {
-                if let Some(index) = calculate_table_click_index(
+                select_table_click(
+                    &mut self.search_peers_state,
+                    self.search_peers.as_deref(),
                     row,
-                    HEADER_HEIGHT + 1,
-                    self.search_peers_state.offset(),
-                    self.search_peers.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.search_peers_state.select(Some(index));
-                }
+                );
                 None
             }
             CurrentScreen::Forwarders => {
-                if let Some(index) = calculate_table_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.forwarders_state.offset(),
-                    self.forwarders.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.forwarders_state.select(Some(index));
-                }
+                select_table_click(&mut self.forwarders_state, self.forwarders.as_deref(), row);
                 None
             }
             CurrentScreen::Lookups => {
-                if let Some(index) = calculate_table_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.lookups_state.offset(),
-                    self.lookups.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.lookups_state.select(Some(index));
-                }
+                select_table_click(&mut self.lookups_state, self.lookups.as_deref(), row);
                 None
             }
             CurrentScreen::Audit => {
-                if let Some(index) = calculate_table_click_index(
-                    row,
-                    HEADER_HEIGHT + 1,
-                    self.audit_state.offset(),
-                    self.audit_events.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.audit_state.select(Some(index));
-                }
+                select_table_click(&mut self.audit_state, self.audit_events.as_deref(), row);
                 None
             }
             CurrentScreen::InternalLogs => {
-                if let Some(index) = calculate_table_click_index(
+                select_table_click(
+                    &mut self.internal_logs_state,
+                    self.internal_logs.as_deref(),
                     row,
-                    HEADER_HEIGHT + 1,
-                    self.internal_logs_state.offset(),
-                    self.internal_logs.as_deref().map(|v| v.len()).unwrap_or(0),
-                ) {
-                    self.internal_logs_state.select(Some(index));
-                }
+                );
                 None
             }
 
@@ -411,6 +327,26 @@ fn calculate_list_click_index(
         Some(index)
     } else {
         None
+    }
+}
+
+fn total_items<T>(items: Option<&[T]>) -> usize {
+    items.map_or(0, <[T]>::len)
+}
+
+fn select_list_click<T>(state: &mut ListState, items: Option<&[T]>, row: u16) {
+    if let Some(index) =
+        calculate_list_click_index(row, HEADER_HEIGHT + 1, state.offset(), total_items(items))
+    {
+        state.select(Some(index));
+    }
+}
+
+fn select_table_click<T>(state: &mut TableState, items: Option<&[T]>, row: u16) {
+    if let Some(index) =
+        calculate_table_click_index(row, HEADER_HEIGHT + 1, state.offset(), total_items(items))
+    {
+        state.select(Some(index));
     }
 }
 

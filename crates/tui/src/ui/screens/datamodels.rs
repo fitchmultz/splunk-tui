@@ -3,7 +3,7 @@
 //! Renders the list of Splunk data models.
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -42,24 +42,18 @@ pub fn render_datamodels(f: &mut Frame, area: Rect, config: DataModelsRenderConf
         spinner_frame,
     } = config;
 
-    if loading && data_models.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Data Models",
-            "Loading data models...",
-            spinner_frame,
-            theme,
-        );
+    let Some(data_models) = render_screen_state(
+        f,
+        area,
+        loading,
+        data_models,
+        "Data Models",
+        "Loading data models...",
+        "data models",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let data_models = match data_models {
-        Some(d) => d,
-        None => {
-            render_empty_state(f, area, "Data Models", "data models");
-            return;
-        }
     };
 
     let items: Vec<ListItem> = data_models

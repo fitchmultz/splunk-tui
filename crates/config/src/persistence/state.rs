@@ -74,28 +74,10 @@ impl SearchDefaults {
     ///
     /// Returns a new `SearchDefaults` with sanitized values.
     pub fn sanitize(&self) -> Self {
-        let earliest_time = if self.earliest_time.trim().is_empty() {
-            "-24h".to_string()
-        } else {
-            self.earliest_time.clone()
-        };
-
-        let latest_time = if self.latest_time.trim().is_empty() {
-            "now".to_string()
-        } else {
-            self.latest_time.clone()
-        };
-
-        let max_results = if self.max_results == 0 {
-            DEFAULT_MAX_RESULTS
-        } else {
-            self.max_results
-        };
-
         Self {
-            earliest_time,
-            latest_time,
-            max_results,
+            earliest_time: non_empty_or(&self.earliest_time, "-24h"),
+            latest_time: non_empty_or(&self.latest_time, "now"),
+            max_results: non_zero_or(self.max_results, DEFAULT_MAX_RESULTS),
         }
     }
 }
@@ -192,23 +174,23 @@ impl InternalLogsDefaults {
     ///
     /// Returns a new `InternalLogsDefaults` with sanitized values.
     pub fn sanitize(&self) -> Self {
-        let count = if self.count == 0 {
-            DEFAULT_INTERNAL_LOGS_COUNT
-        } else {
-            self.count
-        };
-
-        let earliest_time = if self.earliest_time.trim().is_empty() {
-            DEFAULT_INTERNAL_LOGS_EARLIEST_TIME.to_string()
-        } else {
-            self.earliest_time.clone()
-        };
-
         Self {
-            count,
-            earliest_time,
+            count: non_zero_or(self.count, DEFAULT_INTERNAL_LOGS_COUNT),
+            earliest_time: non_empty_or(&self.earliest_time, DEFAULT_INTERNAL_LOGS_EARLIEST_TIME),
         }
     }
+}
+
+fn non_empty_or(value: &str, default: &str) -> String {
+    if value.trim().is_empty() {
+        default.to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn non_zero_or(value: usize, default: usize) -> usize {
+    if value == 0 { default } else { value }
 }
 
 /// Scroll positions for various scrollable areas in the TUI.

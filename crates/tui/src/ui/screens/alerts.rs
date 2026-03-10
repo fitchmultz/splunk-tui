@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use splunk_client::models::FiredAlert;
 
 use splunk_config::Theme;
@@ -39,24 +39,18 @@ pub fn render_fired_alerts(f: &mut Frame, area: Rect, config: FiredAlertsRenderC
         spinner_frame,
     } = config;
 
-    if loading && fired_alerts.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Fired Alerts",
-            "Loading fired alerts...",
-            spinner_frame,
-            theme,
-        );
+    let Some(alerts) = render_screen_state(
+        f,
+        area,
+        loading,
+        fired_alerts,
+        "Fired Alerts",
+        "Loading fired alerts...",
+        "fired alerts",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let alerts = match fired_alerts {
-        Some(a) => a,
-        None => {
-            render_empty_state(f, area, "Fired Alerts", "fired alerts");
-            return;
-        }
     };
 
     // Create a split layout for list and preview

@@ -10,14 +10,18 @@
 
 use crate::action::Action;
 use crate::app::App;
-use crate::ui::popup::{MacroField, Popup, PopupType};
+use crate::ui::popup::{MacroField, PopupType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+use super::common::optional_string;
 
 impl App {
     /// Handle macro-related popups (CreateMacro, EditMacro).
     pub fn handle_macro_popup(&mut self, key: KeyEvent) -> Option<Action> {
-        match (self.popup.as_ref().map(|p| &p.kind), key.code) {
-            // CreateMacro - submit
+        match (
+            self.popup.as_ref().map(|popup| popup.kind.clone()),
+            key.code,
+        ) {
             (
                 Some(PopupType::CreateMacro {
                     name_input,
@@ -30,37 +34,20 @@ impl App {
                 }),
                 KeyCode::Enter,
             ) => {
-                // Name and definition are required
                 if name_input.is_empty() || definition_input.is_empty() {
                     return None;
                 }
 
-                let name = name_input.clone();
-                let definition = definition_input.clone();
-                let args = if args_input.is_empty() {
-                    None
-                } else {
-                    Some(args_input.clone())
-                };
-                let description = if description_input.is_empty() {
-                    None
-                } else {
-                    Some(description_input.clone())
-                };
-                let disabled_flag = *disabled;
-                let iseval_flag = *iseval;
-
                 self.popup = None;
                 Some(Action::CreateMacro {
-                    name,
-                    definition,
-                    args,
-                    description,
-                    disabled: disabled_flag,
-                    iseval: iseval_flag,
+                    name: name_input,
+                    definition: definition_input,
+                    args: optional_string(args_input),
+                    description: optional_string(description_input),
+                    disabled,
+                    iseval,
                 })
             }
-            // EditMacro - submit
             (
                 Some(PopupType::EditMacro {
                     macro_name,
@@ -73,593 +60,158 @@ impl App {
                 }),
                 KeyCode::Enter,
             ) => {
-                let name = macro_name.clone();
-                // Empty inputs mean "don't change this field"
-                let definition = if definition_input.is_empty() {
-                    None
-                } else {
-                    Some(definition_input.clone())
-                };
-                let args = if args_input.is_empty() {
-                    None
-                } else {
-                    Some(args_input.clone())
-                };
-                let description = if description_input.is_empty() {
-                    None
-                } else {
-                    Some(description_input.clone())
-                };
-                let disabled_flag = *disabled;
-                let iseval_flag = *iseval;
-
                 self.popup = None;
                 Some(Action::UpdateMacro {
-                    name,
-                    definition,
-                    args,
-                    description,
-                    disabled: Some(disabled_flag),
-                    iseval: Some(iseval_flag),
+                    name: macro_name,
+                    definition: optional_string(definition_input),
+                    args: optional_string(args_input),
+                    description: optional_string(description_input),
+                    disabled: Some(disabled),
+                    iseval: Some(iseval),
                 })
             }
-            // CreateMacro - close
             (Some(PopupType::CreateMacro { .. }), KeyCode::Esc) => {
                 self.popup = None;
                 None
             }
-            // EditMacro - close
             (Some(PopupType::EditMacro { .. }), KeyCode::Esc) => {
                 self.popup = None;
                 None
             }
-            // CreateMacro - Tab navigation
-            (
-                Some(PopupType::CreateMacro {
-                    name_input,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Tab,
-            ) => {
-                let new_field = if key.modifiers.contains(KeyModifiers::SHIFT) {
-                    selected_field.previous()
-                } else {
-                    selected_field.next()
-                };
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateMacro {
-                        name_input: name_input.clone(),
-                        definition_input: definition_input.clone(),
-                        args_input: args_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        iseval: *iseval,
-                        selected_field: new_field,
-                    })
-                    .build(),
-                );
+            (Some(mut kind @ PopupType::CreateMacro { .. }), KeyCode::Tab)
+            | (Some(mut kind @ PopupType::EditMacro { .. }), KeyCode::Tab) => {
+                kind.navigate_fields(key.modifiers.contains(KeyModifiers::SHIFT));
+                self.replace_popup_kind(kind);
                 None
             }
-            // EditMacro - Tab navigation
-            (
-                Some(PopupType::EditMacro {
-                    macro_name,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Tab,
-            ) => {
-                let new_field = if key.modifiers.contains(KeyModifiers::SHIFT) {
-                    selected_field.previous()
-                } else {
-                    selected_field.next()
-                };
-                self.popup = Some(
-                    Popup::builder(PopupType::EditMacro {
-                        macro_name: macro_name.clone(),
-                        definition_input: definition_input.clone(),
-                        args_input: args_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        iseval: *iseval,
-                        selected_field: new_field,
-                    })
-                    .build(),
-                );
+            (Some(mut kind @ PopupType::CreateMacro { .. }), KeyCode::Up)
+            | (Some(mut kind @ PopupType::EditMacro { .. }), KeyCode::Up) => {
+                kind.navigate_fields(true);
+                self.replace_popup_kind(kind);
                 None
             }
-            // CreateMacro - Up navigation
-            (
-                Some(PopupType::CreateMacro {
-                    name_input,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Up,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateMacro {
-                        name_input: name_input.clone(),
-                        definition_input: definition_input.clone(),
-                        args_input: args_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        iseval: *iseval,
-                        selected_field: selected_field.previous(),
-                    })
-                    .build(),
-                );
+            (Some(mut kind @ PopupType::CreateMacro { .. }), KeyCode::Down)
+            | (Some(mut kind @ PopupType::EditMacro { .. }), KeyCode::Down) => {
+                kind.navigate_fields(false);
+                self.replace_popup_kind(kind);
                 None
             }
-            // EditMacro - Up navigation
-            (
-                Some(PopupType::EditMacro {
-                    macro_name,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Up,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::EditMacro {
-                        macro_name: macro_name.clone(),
-                        definition_input: definition_input.clone(),
-                        args_input: args_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        iseval: *iseval,
-                        selected_field: selected_field.previous(),
-                    })
-                    .build(),
-                );
-                None
-            }
-            // CreateMacro - Down navigation
-            (
-                Some(PopupType::CreateMacro {
-                    name_input,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Down,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::CreateMacro {
-                        name_input: name_input.clone(),
-                        definition_input: definition_input.clone(),
-                        args_input: args_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        iseval: *iseval,
-                        selected_field: selected_field.next(),
-                    })
-                    .build(),
-                );
-                None
-            }
-            // EditMacro - Down navigation
-            (
-                Some(PopupType::EditMacro {
-                    macro_name,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Down,
-            ) => {
-                self.popup = Some(
-                    Popup::builder(PopupType::EditMacro {
-                        macro_name: macro_name.clone(),
-                        definition_input: definition_input.clone(),
-                        args_input: args_input.clone(),
-                        description_input: description_input.clone(),
-                        disabled: *disabled,
-                        iseval: *iseval,
-                        selected_field: selected_field.next(),
-                    })
-                    .build(),
-                );
-                None
-            }
-            // CreateMacro - character input
-            (
-                Some(PopupType::CreateMacro {
-                    name_input,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Char(c),
-            ) => {
-                match selected_field {
-                    MacroField::Name => {
-                        let mut new_name = name_input.clone();
-                        new_name.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: new_name,
-                                definition_input: definition_input.clone(),
-                                args_input: args_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Definition => {
-                        let mut new_definition = definition_input.clone();
-                        new_definition.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: name_input.clone(),
-                                definition_input: new_definition,
-                                args_input: args_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Args => {
-                        let mut new_args = args_input.clone();
-                        new_args.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: name_input.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: new_args,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: name_input.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: args_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Disabled => {
-                        // Toggle disabled on space
-                        if c == ' ' {
-                            self.popup = Some(
-                                Popup::builder(PopupType::CreateMacro {
-                                    name_input: name_input.clone(),
-                                    definition_input: definition_input.clone(),
-                                    args_input: args_input.clone(),
-                                    description_input: description_input.clone(),
-                                    disabled: !*disabled,
-                                    iseval: *iseval,
-                                    selected_field: *selected_field,
-                                })
-                                .build(),
-                            );
-                        }
-                    }
-                    MacroField::IsEval => {
-                        // Toggle iseval on space
-                        if c == ' ' {
-                            self.popup = Some(
-                                Popup::builder(PopupType::CreateMacro {
-                                    name_input: name_input.clone(),
-                                    definition_input: definition_input.clone(),
-                                    args_input: args_input.clone(),
-                                    description_input: description_input.clone(),
-                                    disabled: *disabled,
-                                    iseval: !*iseval,
-                                    selected_field: *selected_field,
-                                })
-                                .build(),
-                            );
-                        }
-                    }
+            (Some(mut kind @ PopupType::CreateMacro { .. }), KeyCode::Char(c))
+            | (Some(mut kind @ PopupType::EditMacro { .. }), KeyCode::Char(c)) => {
+                if update_macro_char(&mut kind, c) {
+                    self.replace_popup_kind(kind);
                 }
                 None
             }
-            // EditMacro - character input
-            (
-                Some(PopupType::EditMacro {
-                    macro_name,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Char(c),
-            ) => {
-                match selected_field {
-                    MacroField::Name => {
-                        // Name is readonly in edit mode - ignore input
-                    }
-                    MacroField::Definition => {
-                        let mut new_definition = definition_input.clone();
-                        new_definition.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditMacro {
-                                macro_name: macro_name.clone(),
-                                definition_input: new_definition,
-                                args_input: args_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Args => {
-                        let mut new_args = args_input.clone();
-                        new_args.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditMacro {
-                                macro_name: macro_name.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: new_args,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.push(c);
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditMacro {
-                                macro_name: macro_name.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: args_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Disabled => {
-                        // Toggle disabled on space
-                        if c == ' ' {
-                            self.popup = Some(
-                                Popup::builder(PopupType::EditMacro {
-                                    macro_name: macro_name.clone(),
-                                    definition_input: definition_input.clone(),
-                                    args_input: args_input.clone(),
-                                    description_input: description_input.clone(),
-                                    disabled: !*disabled,
-                                    iseval: *iseval,
-                                    selected_field: *selected_field,
-                                })
-                                .build(),
-                            );
-                        }
-                    }
-                    MacroField::IsEval => {
-                        // Toggle iseval on space
-                        if c == ' ' {
-                            self.popup = Some(
-                                Popup::builder(PopupType::EditMacro {
-                                    macro_name: macro_name.clone(),
-                                    definition_input: definition_input.clone(),
-                                    args_input: args_input.clone(),
-                                    description_input: description_input.clone(),
-                                    disabled: *disabled,
-                                    iseval: !*iseval,
-                                    selected_field: *selected_field,
-                                })
-                                .build(),
-                            );
-                        }
-                    }
+            (Some(mut kind @ PopupType::CreateMacro { .. }), KeyCode::Backspace)
+            | (Some(mut kind @ PopupType::EditMacro { .. }), KeyCode::Backspace) => {
+                if update_macro_backspace(&mut kind) {
+                    self.replace_popup_kind(kind);
                 }
                 None
             }
-            // CreateMacro - backspace
-            (
-                Some(PopupType::CreateMacro {
-                    name_input,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Backspace,
-            ) => {
-                match selected_field {
-                    MacroField::Name => {
-                        let mut new_name = name_input.clone();
-                        new_name.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: new_name,
-                                definition_input: definition_input.clone(),
-                                args_input: args_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Definition => {
-                        let mut new_definition = definition_input.clone();
-                        new_definition.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: name_input.clone(),
-                                definition_input: new_definition,
-                                args_input: args_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Args => {
-                        let mut new_args = args_input.clone();
-                        new_args.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: name_input.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: new_args,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::CreateMacro {
-                                name_input: name_input.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: args_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Disabled | MacroField::IsEval => {
-                        // No-op for toggle fields
-                    }
-                }
-                None
-            }
-            // EditMacro - backspace
-            (
-                Some(PopupType::EditMacro {
-                    macro_name,
-                    definition_input,
-                    args_input,
-                    description_input,
-                    disabled,
-                    iseval,
-                    selected_field,
-                }),
-                KeyCode::Backspace,
-            ) => {
-                match selected_field {
-                    MacroField::Name => {
-                        // Name is readonly in edit mode - ignore backspace
-                    }
-                    MacroField::Definition => {
-                        let mut new_definition = definition_input.clone();
-                        new_definition.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditMacro {
-                                macro_name: macro_name.clone(),
-                                definition_input: new_definition,
-                                args_input: args_input.clone(),
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Args => {
-                        let mut new_args = args_input.clone();
-                        new_args.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditMacro {
-                                macro_name: macro_name.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: new_args,
-                                description_input: description_input.clone(),
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Description => {
-                        let mut new_desc = description_input.clone();
-                        new_desc.pop();
-                        self.popup = Some(
-                            Popup::builder(PopupType::EditMacro {
-                                macro_name: macro_name.clone(),
-                                definition_input: definition_input.clone(),
-                                args_input: args_input.clone(),
-                                description_input: new_desc,
-                                disabled: *disabled,
-                                iseval: *iseval,
-                                selected_field: *selected_field,
-                            })
-                            .build(),
-                        );
-                    }
-                    MacroField::Disabled | MacroField::IsEval => {
-                        // No-op for toggle fields
-                    }
-                }
-                None
-            }
-            // Default: ignore other keys
             _ => None,
         }
+    }
+}
+
+fn update_macro_char(kind: &mut PopupType, c: char) -> bool {
+    match kind {
+        PopupType::CreateMacro {
+            name_input,
+            definition_input,
+            args_input,
+            description_input,
+            disabled,
+            iseval,
+            selected_field,
+        } => {
+            match selected_field {
+                MacroField::Name => name_input.push(c),
+                MacroField::Definition => definition_input.push(c),
+                MacroField::Args => args_input.push(c),
+                MacroField::Description => description_input.push(c),
+                MacroField::Disabled if c == ' ' => *disabled = !*disabled,
+                MacroField::IsEval if c == ' ' => *iseval = !*iseval,
+                _ => return false,
+            }
+            true
+        }
+        PopupType::EditMacro {
+            definition_input,
+            args_input,
+            description_input,
+            disabled,
+            iseval,
+            selected_field,
+            ..
+        } => {
+            match selected_field {
+                MacroField::Name => return false,
+                MacroField::Definition => definition_input.push(c),
+                MacroField::Args => args_input.push(c),
+                MacroField::Description => description_input.push(c),
+                MacroField::Disabled if c == ' ' => *disabled = !*disabled,
+                MacroField::IsEval if c == ' ' => *iseval = !*iseval,
+                _ => return false,
+            }
+            true
+        }
+        _ => false,
+    }
+}
+
+fn update_macro_backspace(kind: &mut PopupType) -> bool {
+    match kind {
+        PopupType::CreateMacro {
+            name_input,
+            definition_input,
+            args_input,
+            description_input,
+            selected_field,
+            ..
+        } => match selected_field {
+            MacroField::Name => {
+                name_input.pop();
+                true
+            }
+            MacroField::Definition => {
+                definition_input.pop();
+                true
+            }
+            MacroField::Args => {
+                args_input.pop();
+                true
+            }
+            MacroField::Description => {
+                description_input.pop();
+                true
+            }
+            MacroField::Disabled | MacroField::IsEval => false,
+        },
+        PopupType::EditMacro {
+            definition_input,
+            args_input,
+            description_input,
+            selected_field,
+            ..
+        } => match selected_field {
+            MacroField::Name => false,
+            MacroField::Definition => {
+                definition_input.pop();
+                true
+            }
+            MacroField::Args => {
+                args_input.pop();
+                true
+            }
+            MacroField::Description => {
+                description_input.pop();
+                true
+            }
+            MacroField::Disabled | MacroField::IsEval => false,
+        },
+        _ => false,
     }
 }
 

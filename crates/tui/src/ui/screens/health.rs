@@ -14,7 +14,7 @@ use splunk_client::{format_bytes, models::HealthCheckOutput};
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the health screen.
 pub struct HealthRenderConfig<'a> {
@@ -43,24 +43,18 @@ pub fn render_health(f: &mut Frame, area: Rect, config: HealthRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && health_info.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Health Check",
-            "Loading health info...",
-            spinner_frame,
-            theme,
-        );
+    let Some(info) = render_screen_state(
+        f,
+        area,
+        loading,
+        health_info,
+        "Health Check",
+        "Loading health info...",
+        "health info",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let info = match health_info {
-        Some(i) => i,
-        None => {
-            render_empty_state(f, area, "Health Check", "health info");
-            return;
-        }
     };
 
     let lines = build_health_lines(info, theme);

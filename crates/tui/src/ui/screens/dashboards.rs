@@ -11,7 +11,7 @@ use splunk_client::models::Dashboard;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the dashboards screen.
 pub struct DashboardsRenderConfig<'a> {
@@ -43,24 +43,18 @@ pub fn render_dashboards(f: &mut Frame, area: Rect, config: DashboardsRenderConf
         spinner_frame,
     } = config;
 
-    if loading && dashboards.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Dashboards",
-            "Loading dashboards...",
-            spinner_frame,
-            theme,
-        );
+    let Some(dashboards) = render_screen_state(
+        f,
+        area,
+        loading,
+        dashboards,
+        "Dashboards",
+        "Loading dashboards...",
+        "dashboards",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let dashboards = match dashboards {
-        Some(d) => d,
-        None => {
-            render_empty_state(f, area, "Dashboards", "dashboards");
-            return;
-        }
     };
 
     let items: Vec<ListItem> = dashboards

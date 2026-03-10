@@ -11,7 +11,7 @@ use splunk_client::models::User;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the users screen.
 pub struct UsersRenderConfig<'a> {
@@ -43,17 +43,18 @@ pub fn render_users(f: &mut Frame, area: Rect, config: UsersRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && users.is_none() {
-        render_loading_state(f, area, "Users", "Loading users...", spinner_frame, theme);
+    let Some(users) = render_screen_state(
+        f,
+        area,
+        loading,
+        users,
+        "Users",
+        "Loading users...",
+        "users",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let users = match users {
-        Some(u) => u,
-        None => {
-            render_empty_state(f, area, "Users", "users");
-            return;
-        }
     };
 
     let items: Vec<ListItem> = users

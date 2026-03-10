@@ -18,7 +18,7 @@ use splunk_client::models::SearchPeer;
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 
 /// Configuration for rendering the search peers screen.
 pub struct SearchPeersRenderConfig<'a> {
@@ -44,24 +44,18 @@ pub fn render_search_peers(f: &mut Frame, area: Rect, config: SearchPeersRenderC
         spinner_frame,
     } = config;
 
-    if loading && search_peers.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Search Peers",
-            "Loading search peers...",
-            spinner_frame,
-            theme,
-        );
+    let Some(peers) = render_screen_state(
+        f,
+        area,
+        loading,
+        search_peers,
+        "Search Peers",
+        "Loading search peers...",
+        "search peers",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let peers = match search_peers {
-        Some(p) => p,
-        None => {
-            render_empty_state(f, area, "Search Peers", "search peers");
-            return;
-        }
     };
 
     if peers.is_empty() {

@@ -250,3 +250,110 @@ pub enum PopupType {
         result: ConnectionDiagnosticsResult,
     },
 }
+
+impl PopupType {
+    pub fn navigate_fields(&mut self, backwards: bool) -> bool {
+        match self {
+            Self::CreateProfile { selected_field, .. }
+            | Self::EditProfile { selected_field, .. } => {
+                *selected_field = if backwards {
+                    selected_field.previous()
+                } else {
+                    selected_field.next()
+                };
+                true
+            }
+            Self::CreateSavedSearch { selected_field, .. }
+            | Self::EditSavedSearch { selected_field, .. } => {
+                *selected_field = if backwards {
+                    selected_field.previous()
+                } else {
+                    selected_field.next()
+                };
+                true
+            }
+            Self::CreateMacro { selected_field, .. } | Self::EditMacro { selected_field, .. } => {
+                *selected_field = if backwards {
+                    selected_field.previous()
+                } else {
+                    selected_field.next()
+                };
+                true
+            }
+            _ => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_navigate_fields_updates_profile_variants() {
+        let mut kind = PopupType::CreateProfile {
+            name_input: String::new(),
+            base_url_input: String::new(),
+            username_input: String::new(),
+            password_input: String::new(),
+            api_token_input: String::new(),
+            skip_verify: false,
+            timeout_seconds: 30,
+            max_retries: 3,
+            use_keyring: false,
+            selected_field: ProfileField::Name,
+            from_tutorial: false,
+        };
+
+        assert!(kind.navigate_fields(false));
+        assert!(matches!(
+            kind,
+            PopupType::CreateProfile {
+                selected_field: ProfileField::BaseUrl,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn test_navigate_fields_updates_macro_variants() {
+        let mut kind = PopupType::EditMacro {
+            macro_name: String::from("name"),
+            definition_input: String::new(),
+            args_input: String::new(),
+            description_input: String::new(),
+            disabled: false,
+            iseval: false,
+            selected_field: MacroField::Definition,
+        };
+
+        assert!(kind.navigate_fields(true));
+        assert!(matches!(
+            kind,
+            PopupType::EditMacro {
+                selected_field: MacroField::Name,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn test_navigate_fields_updates_saved_search_variants() {
+        let mut kind = PopupType::CreateSavedSearch {
+            name_input: String::new(),
+            search_input: String::new(),
+            description_input: String::new(),
+            disabled: false,
+            selected_field: SavedSearchField::Disabled,
+        };
+
+        assert!(kind.navigate_fields(false));
+        assert!(matches!(
+            kind,
+            PopupType::CreateSavedSearch {
+                selected_field: SavedSearchField::Name,
+                ..
+            }
+        ));
+    }
+}

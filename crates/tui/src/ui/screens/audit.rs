@@ -3,7 +3,7 @@
 //! Renders the list of Splunk audit events with filtering capabilities.
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_loading_state};
+use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -36,24 +36,18 @@ pub fn render_audit(f: &mut Frame, area: Rect, config: AuditRenderConfig) {
         .border_style(theme.border())
         .title_style(theme.title());
 
-    if config.loading && config.events.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Audit Events",
-            "Loading audit events...",
-            config.spinner_frame,
-            theme,
-        );
+    let Some(events) = render_screen_state(
+        f,
+        area,
+        config.loading,
+        config.events,
+        "Audit Events",
+        "Loading audit events...",
+        "audit events",
+        config.spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let events = match config.events {
-        Some(e) => e,
-        None => {
-            render_empty_state(f, area, "Audit Events", "audit events");
-            return;
-        }
     };
 
     if events.is_empty() {
