@@ -1,7 +1,8 @@
 //! Table formatter tests.
 
 use crate::formatters::{
-    ClusterInfoOutput, ClusterPeerOutput, Formatter, LicenseInfoOutput, TableFormatter,
+    ClusterInfoOutput, ClusterPeerOutput, DiagnosticReport, Formatter, LicenseInfoOutput,
+    TableFormatter,
 };
 use serde_json::json;
 use splunk_client::models::{KvStoreMemberStatus, PeerState, PeerStatus, UserType};
@@ -132,6 +133,50 @@ fn test_kvstore_peers_table_formatting() {
     assert!(output.contains("Replica Set: rs0"));
     assert!(output.contains("Oplog Size: 100 MB"));
     assert!(output.contains("Oplog Used: 1.50%"));
+}
+
+#[test]
+fn test_doctor_report_kvstore_section_uses_separate_lines() {
+    let report = DiagnosticReport {
+        cli_version: "0.1.0".to_string(),
+        os_arch: "macos-aarch64".to_string(),
+        timestamp: "2026-03-10T00:00:00Z".to_string(),
+        config_summary: crate::commands::doctor::ConfigSummary {
+            config_source: "resolved".to_string(),
+            profile_name: None,
+            config_path: None,
+            base_url: "https://localhost:8089".to_string(),
+            auth_strategy: "api_token".to_string(),
+            skip_verify: false,
+            timeout_secs: 30,
+            max_retries: 3,
+        },
+        checks: vec![],
+        health_output: Some(splunk_client::HealthCheckOutput {
+            server_info: None,
+            splunkd_health: None,
+            license_usage: None,
+            kvstore_status: Some(KvStoreStatus {
+                current_member: KvStoreMember {
+                    guid: "guid".to_string(),
+                    host: "localhost".to_string(),
+                    port: 8089,
+                    replica_set: "rs0".to_string(),
+                    status: KvStoreMemberStatus::Ready,
+                },
+                replication_status: KvStoreReplicationStatus {
+                    oplog_size: 100,
+                    oplog_used: 1.5,
+                },
+            }),
+            log_parsing_health: None,
+            circuit_breaker_states: None,
+        }),
+        partial_errors: vec![],
+    };
+
+    let output = TableFormatter.format_health_check_report(&report).unwrap();
+    assert!(output.contains("Member: localhost:8089 (ready)\nReplica Set: rs0"));
 }
 
 #[test]

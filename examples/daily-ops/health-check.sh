@@ -348,8 +348,8 @@ check_recent_errors() {
   local error_count=0
   local logs_data=""
 
-  if logs_data=$(splunk-cli logs --search 'index=_internal sourcetype=splunkd log_level=ERROR' --last 1h --limit 10 --output json 2>/dev/null); then
-    error_count=$(echo "$logs_data" | grep -c '"event"' || echo "0")
+  if logs_data=$(splunk-cli logs --earliest -1h --count 10 --output json 2>/dev/null); then
+    error_count=$(echo "$logs_data" | grep -Eci '"log_level"[[:space:]]*:[[:space:]]*"error"' || echo "0")
 
     if [[ $error_count -eq 0 ]]; then
       status="ok"

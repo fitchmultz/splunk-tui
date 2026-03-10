@@ -353,6 +353,8 @@ examples-test:
 		bash -n "$$script" || { echo ""; echo "✗ Syntax error in $$script"; exit 1; }; \
 		[ -x "$$script" ] || { echo ""; echo "✗ Not executable: $$script"; exit 1; }; \
 	done
+	@echo "→ Checking example/docs CLI contract drift..."
+	@cargo test $(CARGO_JOBS_FLAG) -p architecture-tests --test example_cli_contract_tests --locked -- --test-threads 1
 	@echo "  ✓ All example scripts validated"
 
 # Display help for each target

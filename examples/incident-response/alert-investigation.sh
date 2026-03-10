@@ -132,7 +132,7 @@ list_alerts() {
   echo -e "${BLUE}Fetching alerts from last ${hours} hours...${NC}" >&2
 
   local output
-  if ! output=$(splunk-cli alerts list --limit "$limit" 2>/dev/null); then
+  if ! output=$(splunk-cli alerts list --count "$limit" --output json 2>/dev/null); then
     echo -e "${RED}Error: Failed to fetch alerts${NC}" >&2
     return 1
   fi
@@ -171,7 +171,7 @@ show_alert_details() {
 
   # Get job results
   local results
-  if ! results=$(splunk-cli jobs --results "$sid" --format json 2>/dev/null); then
+  if ! results=$(splunk-cli jobs --results "$sid" --output json 2>/dev/null); then
     echo -e "${YELLOW}Warning: Could not retrieve results for SID ${sid}${NC}" >&2
     return 1
   fi
@@ -197,7 +197,7 @@ investigate_high_severity() {
   echo -e "${BLUE}Investigating high and critical severity alerts...${NC}" >&2
 
   local output
-  if ! output=$(splunk-cli alerts list --limit "$limit" 2>/dev/null); then
+  if ! output=$(splunk-cli alerts list --count "$limit" --output json 2>/dev/null); then
     echo -e "${RED}Error: Failed to fetch alerts${NC}" >&2
     return 1
   fi

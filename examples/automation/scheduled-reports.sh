@@ -49,7 +49,7 @@ OPTIONS:
     --report <name>       Name of the saved search to run (required)
     --output-dir <dir>    Output directory for reports (default: ./reports)
     --format <format>     Output format: json, csv (default: json)
-    --timeout <seconds>   Search timeout in seconds (default: 300)
+    --timeout <seconds>   Connection timeout in seconds (default: 300)
     --list                List available saved searches
     -h, --help            Show this help message
 
@@ -198,7 +198,7 @@ main() {
     output_format="csv"
   fi
 
-  if splunk-cli saved-searches run "$REPORT_NAME" --output-format "$output_format" --output-file "$filepath" --timeout "$TIMEOUT"; then
+  if splunk-cli saved-searches run "$REPORT_NAME" --wait --output "$output_format" --output-file "$filepath" --timeout "$TIMEOUT"; then
     # Verify file was created and has content
     if [[ -f "$filepath" && -s "$filepath" ]]; then
       local filesize

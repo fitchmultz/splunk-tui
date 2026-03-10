@@ -174,7 +174,7 @@ step_create_index() {
   echo -e "${BLUE}[Step 1/4] Checking/Creating index: ${INDEX_NAME}${NC}"
 
   # Check if index exists
-  if splunk-cli indexes list 2>/dev/null | grep -q "^${INDEX_NAME}$"; then
+  if splunk-cli indexes list --output csv 2>/dev/null | tail -n +2 | cut -d, -f1 | grep -Fxq "$INDEX_NAME"; then
     echo -e "  ${GREEN}✓ Index '${INDEX_NAME}' already exists${NC}"
     return 0
   fi
@@ -268,7 +268,7 @@ step_validate_ingestion() {
   echo -e "  ${BLUE}Searching for test event...${NC}"
   local search_query="index=\"${INDEX_NAME}\" sourcetype=\"${SOURCETYPE}\" onboarding_test"
   local results
-  results=$(splunk-cli search "$search_query" --limit 1 2>/dev/null || echo "")
+  results=$(splunk-cli search "$search_query" --count 1 2>/dev/null || echo "")
 
   if [[ -n "$results" && "$results" != "[]" ]]; then
     echo -e "  ${GREEN}✓ Test event found in index${NC}"

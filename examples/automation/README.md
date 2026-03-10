@@ -6,7 +6,7 @@ Scripts for CI/CD integration, scheduled tasks, and bulk operations.
 
 ### scheduled-reports.sh
 
-Generate and save scheduled reports from saved searches or ad-hoc queries.
+Generate and save scheduled reports from saved searches.
 
 ```bash
 # Run a saved search and save results
@@ -15,19 +15,16 @@ Generate and save scheduled reports from saved searches or ad-hoc queries.
 # Run with specific format
 ./scheduled-reports.sh --report "Security Events" --format csv --output-dir ./reports/
 
-# Run multiple reports from a list
-./scheduled-reports.sh --report-list reports.txt --output-dir /var/reports/
-
-# Ad-hoc report with custom SPL
-./scheduled-reports.sh --search "index=main | stats count by host" --output-file report.json
+# Run another report to a separate directory
+./scheduled-reports.sh --report "License Usage Daily" --output-dir /var/reports/licenses/
 ```
 
 **Features:**
 - Timestamped output filenames
-- Multiple output formats (json, csv, xml)
+- Multiple output formats (json, csv)
 - Saved search execution
-- Ad-hoc SPL query execution
-- Email notification support (with optional sendmail configuration)
+- Output directories created on demand
+- Uses the supported `saved-searches run --wait` flow under the hood
 
 ### bulk-operations.sh
 
@@ -42,36 +39,30 @@ Perform bulk operations on Splunk resources safely.
 
 # Available operations:
 # - disable-searches / enable-searches / delete-searches
-# - disable-apps / enable-apps
-# - delete-lookup-files
 
-# Force execution without confirmation
-./bulk-operations.sh --operation delete-searches --file obsolete.txt --execute --force
+# Execute deletions after review
+./bulk-operations.sh --operation delete-searches --file obsolete.txt --execute
 ```
 
 **Safety Features:**
 - Dry-run mode by default
-- Batch confirmation prompts
+- Explicit `--execute` requirement before making changes
 - Progress reporting
-- Detailed logging
-- Rollback capability (for some operations)
+- Per-search existence checks use `saved-searches info`, not table parsing
 
 ### data-onboarding.sh
 
 Automate the complete data onboarding workflow.
 
 ```bash
-# Basic onboarding - create index only
-./data-onboarding.sh --index newapp
+# Basic onboarding
+./data-onboarding.sh --index newapp --sourcetype newapp:logs
 
 # Full onboarding with HEC
 ./data-onboarding.sh --index newapp --sourcetype newapp:logs --hec
 
-# With custom retention
-./data-onboarding.sh --index newapp --sourcetype newapp:logs --retention 90
-
-# Validate data is flowing
-./data-onboarding.sh --index newapp --sourcetype newapp:logs --validate
+# Skip the built-in ingestion validation step
+./data-onboarding.sh --index newapp --sourcetype newapp:logs --skip-validation
 ```
 
 **Workflow:**
@@ -79,7 +70,7 @@ Automate the complete data onboarding workflow.
 2. Configure HEC input (if --hec specified)
 3. Send test event for validation
 4. Create monitoring saved searches
-5. Generate onboarding documentation
+5. Print next-step guidance for manual source configuration
 
 ## Common Workflows
 
@@ -109,12 +100,7 @@ mkdir -p "$REPORT_DIR"
     --output-dir "$REPORT_DIR" \
     --format csv
 
-# Email reports (if mail configured)
-if [ -f "$REPORT_DIR/Failed-Logins-Summary.csv" ]; then
-    mail -s "Daily Splunk Reports $(date +%Y-%m-%d)" \
-         -A "$REPORT_DIR/Failed-Logins-Summary.csv" \
-         security-team@example.com < /dev/null
-fi
+# Optional: hand off generated files to your own mail or archive tooling here
 ```
 
 ### CI/CD SPL Validation
@@ -157,27 +143,19 @@ cat /tmp/old-searches.txt
     --file /tmp/old-searches.txt \
     --execute
 
-# Clean up old lookup files
-splunk-cli lookups list --output json | \
-    jq -r '.[] | select(.size > 104857600) | .name' > /tmp/large-lookups.txt
-
-./bulk-operations.sh \
-    --operation delete-lookup-files \
-    --file /tmp/large-lookups.txt
+# Review or script lookup cleanup separately; bulk-operations.sh only handles saved searches
 ```
 
 ### New Application Onboarding
 
 ```bash
 #!/bin/bash
-# onboard-new-app.sh <app_name> <sourcetype> [retention_days]
+# onboard-new-app.sh <app_name> <sourcetype>
 
 APP_NAME="$1"
 SOURCETYPE="$2"
-RETENTION="${3:-90}"
-
 if [ -z "$APP_NAME" ] || [ -z "$SOURCETYPE" ]; then
-    echo "Usage: $0 <app_name> <sourcetype> [retention_days]"
+    echo "Usage: $0 <app_name> <sourcetype>"
     exit 1
 fi
 
@@ -185,14 +163,12 @@ fi
 ./data-onboarding.sh \
     --index "$APP_NAME" \
     --sourcetype "$SOURCETYPE" \
-    --retention "$RETENTION" \
-    --hec \
-    --validate
+    --hec
 
-# Create standard saved searches
+# Export a standard saved-search report
 ./scheduled-reports.sh \
-    --search "index=$APP_NAME | stats count by host, source | sort -count" \
-    --output-file "/opt/splunk-saved-searches/${APP_NAME}-overview.json"
+    --report "${APP_NAME}_monitor_volume" \
+    --output-dir "/opt/splunk-saved-searches"
 
 echo "Onboarding complete for $APP_NAME"
 echo "HEC endpoint: https://your-splunk:8088"
@@ -229,7 +205,7 @@ jobs:
           SPLUNK_API_TOKEN: ${{ secrets.SPLUNK_TOKEN }}
         run: |
           ./examples/automation/scheduled-reports.sh \
-              --report-list reports.txt \
+              --report "Failed Logins Summary" \
               --output-dir ./reports
       
       - name: Upload Reports
@@ -304,7 +280,7 @@ pipeline {
                 sh '''
                     export PATH="$PATH:$PWD/target/release"
                     ./examples/automation/scheduled-reports.sh \
-                        --report-list config/reports.txt \
+                        --report "Daily Summary" \
                         --output-dir reports/
                 '''
             }
@@ -395,3 +371,5 @@ resource "null_resource" "splunk_validation" {
 
 - [Main Examples README](../README.md) - Overview of all example categories
 - [Workflow Guide](../../docs/workflows.md) - Detailed workflow explanations
+
+**Validation note:** these examples are checked offline for CLI contract drift and shell syntax, but any workflow that talks to a real Splunk instance still requires valid credentials and a reachable server.

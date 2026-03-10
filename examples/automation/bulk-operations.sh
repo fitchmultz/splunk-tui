@@ -244,7 +244,7 @@ main() {
 
     if [[ "$EXECUTE" == false ]]; then
       # Dry-run: just verify search exists
-      if splunk-cli saved-searches list 2>/dev/null | grep -q "^${search_name}$"; then
+      if splunk-cli saved-searches info "$search_name" >/dev/null 2>&1; then
         if [[ "$SUMMARY_ONLY" == false ]]; then
           echo -e "${GREEN}[would ${OPERATION%-searches}]${NC}"
         fi

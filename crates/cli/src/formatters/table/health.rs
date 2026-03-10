@@ -82,7 +82,7 @@ pub fn format_health(health: &HealthCheckOutput) -> Result<String> {
     if let Some(kv) = &health.kvstore_status {
         output.push_str("--- KVStore Status ---\n");
         output.push_str(&format!(
-            "Member: {}:{} ({})",
+            "Member: {}:{} ({})\n",
             kv.current_member.host, kv.current_member.port, kv.current_member.status
         ));
         output.push_str(&format!("Replica Set: {}\n", kv.current_member.replica_set));
