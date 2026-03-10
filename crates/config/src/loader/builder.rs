@@ -34,6 +34,7 @@ use crate::persistence::{InternalLogsDefaults, SearchDefaults};
 use crate::types::{AuthConfig, AuthStrategy, Config, ConnectionConfig};
 
 /// Configuration loader that builds config from environment variables and profiles.
+#[derive(Default)]
 pub struct ConfigLoader {
     base_url: Option<String>,
     username: Option<String>,
@@ -62,42 +63,10 @@ pub struct ConfigLoader {
     config_key_var: Option<String>,
 }
 
-impl Default for ConfigLoader {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ConfigLoader {
     /// Create a new configuration loader.
     pub fn new() -> Self {
-        Self {
-            base_url: None,
-            username: None,
-            password: None,
-            api_token: None,
-            skip_verify: None,
-            timeout: None,
-            max_retries: None,
-            session_expiry_buffer_seconds: None,
-            session_ttl_seconds: None,
-            health_check_interval_seconds: None,
-            circuit_breaker_enabled: None,
-            circuit_failure_threshold: None,
-            circuit_failure_window_seconds: None,
-            circuit_reset_timeout_seconds: None,
-            circuit_half_open_requests: None,
-            profile_name: None,
-            profile_missing: None,
-            config_path: None,
-            earliest_time: None,
-            latest_time: None,
-            max_results: None,
-            internal_logs_count: None,
-            internal_logs_earliest: None,
-            config_password: None,
-            config_key_var: None,
-        }
+        Self::default()
     }
 
     /// Set the configuration file password.
@@ -351,94 +320,76 @@ impl ConfigLoader {
     /// - health_check_interval_seconds is greater than 0 and not exceeding MAX_HEALTH_CHECK_INTERVAL_SECS
     fn validate_timeout_config(connection: &ConnectionConfig) -> Result<(), ConfigError> {
         let timeout_secs = connection.timeout.as_secs();
+        let invalid_timeout = |message| ConfigError::InvalidTimeout { message };
+        let invalid_max_retries = |message| ConfigError::InvalidMaxRetries { message };
+        let invalid_session_ttl = |message| ConfigError::InvalidSessionTtl { message };
+        let invalid_expiry_buffer = |message| ConfigError::InvalidExpiryBuffer { message };
+        let invalid_health_check = |message| ConfigError::InvalidHealthCheckInterval { message };
 
-        // Validate timeout > 0
         if timeout_secs == 0 {
-            return Err(ConfigError::InvalidTimeout {
-                message: "timeout must be greater than 0 seconds".to_string(),
-            });
+            return Err(invalid_timeout(
+                "timeout must be greater than 0 seconds".to_string(),
+            ));
         }
 
-        // Validate timeout <= MAX_TIMEOUT_SECS
         if timeout_secs > MAX_TIMEOUT_SECS {
-            return Err(ConfigError::InvalidTimeout {
-                message: format!(
-                    "timeout exceeds maximum allowed value of {} seconds",
-                    MAX_TIMEOUT_SECS
-                ),
-            });
+            return Err(invalid_timeout(format!(
+                "timeout exceeds maximum allowed value of {} seconds",
+                MAX_TIMEOUT_SECS
+            )));
         }
 
-        // Validate max_retries <= MAX_MAX_RETRIES
         if connection.max_retries > MAX_MAX_RETRIES {
-            return Err(ConfigError::InvalidMaxRetries {
-                message: format!(
-                    "max_retries exceeds maximum allowed value of {} (got {})",
-                    MAX_MAX_RETRIES, connection.max_retries
-                ),
-            });
+            return Err(invalid_max_retries(format!(
+                "max_retries exceeds maximum allowed value of {} (got {})",
+                MAX_MAX_RETRIES, connection.max_retries
+            )));
         }
 
-        // Validate session_ttl_seconds >= MIN_SESSION_TTL_SECS
         if connection.session_ttl_seconds < MIN_SESSION_TTL_SECS {
-            return Err(ConfigError::InvalidSessionTtl {
-                message: format!(
-                    "session_ttl_seconds ({}) must be at least {} seconds (minimum allowed: {}s, maximum: {}s)",
-                    connection.session_ttl_seconds,
-                    MIN_SESSION_TTL_SECS,
-                    MIN_SESSION_TTL_SECS,
-                    MAX_SESSION_TTL_SECS
-                ),
-            });
+            return Err(invalid_session_ttl(format!(
+                "session_ttl_seconds ({}) must be at least {} seconds (minimum allowed: {}s, maximum: {}s)",
+                connection.session_ttl_seconds,
+                MIN_SESSION_TTL_SECS,
+                MIN_SESSION_TTL_SECS,
+                MAX_SESSION_TTL_SECS
+            )));
         }
 
-        // Validate session_expiry_buffer_seconds >= MIN_EXPIRY_BUFFER_SECS
         if connection.session_expiry_buffer_seconds < MIN_EXPIRY_BUFFER_SECS {
-            return Err(ConfigError::InvalidExpiryBuffer {
-                message: format!(
-                    "session_expiry_buffer_seconds ({}) must be at least {} seconds (minimum allowed: {}s)",
-                    connection.session_expiry_buffer_seconds,
-                    MIN_EXPIRY_BUFFER_SECS,
-                    MIN_EXPIRY_BUFFER_SECS
-                ),
-            });
+            return Err(invalid_expiry_buffer(format!(
+                "session_expiry_buffer_seconds ({}) must be at least {} seconds (minimum allowed: {}s)",
+                connection.session_expiry_buffer_seconds,
+                MIN_EXPIRY_BUFFER_SECS,
+                MIN_EXPIRY_BUFFER_SECS
+            )));
         }
 
-        // Validate session_ttl_seconds > session_expiry_buffer_seconds
         if connection.session_ttl_seconds <= connection.session_expiry_buffer_seconds {
-            return Err(ConfigError::InvalidSessionTtl {
-                message: format!(
-                    "session_ttl_seconds ({}) must be greater than session_expiry_buffer_seconds ({})",
-                    connection.session_ttl_seconds, connection.session_expiry_buffer_seconds
-                ),
-            });
+            return Err(invalid_session_ttl(format!(
+                "session_ttl_seconds ({}) must be greater than session_expiry_buffer_seconds ({})",
+                connection.session_ttl_seconds, connection.session_expiry_buffer_seconds
+            )));
         }
 
-        // Validate session_ttl_seconds <= MAX_SESSION_TTL_SECS
         if connection.session_ttl_seconds > MAX_SESSION_TTL_SECS {
-            return Err(ConfigError::InvalidSessionTtl {
-                message: format!(
-                    "session_ttl_seconds exceeds maximum allowed value of {} seconds",
-                    MAX_SESSION_TTL_SECS
-                ),
-            });
+            return Err(invalid_session_ttl(format!(
+                "session_ttl_seconds exceeds maximum allowed value of {} seconds",
+                MAX_SESSION_TTL_SECS
+            )));
         }
 
-        // Validate health_check_interval_seconds > 0
         if connection.health_check_interval_seconds == 0 {
-            return Err(ConfigError::InvalidHealthCheckInterval {
-                message: "health_check_interval_seconds must be greater than 0".to_string(),
-            });
+            return Err(invalid_health_check(
+                "health_check_interval_seconds must be greater than 0".to_string(),
+            ));
         }
 
-        // Validate health_check_interval_seconds <= MAX_HEALTH_CHECK_INTERVAL_SECS
         if connection.health_check_interval_seconds > MAX_HEALTH_CHECK_INTERVAL_SECS {
-            return Err(ConfigError::InvalidHealthCheckInterval {
-                message: format!(
-                    "health_check_interval_seconds exceeds maximum allowed value of {} seconds",
-                    MAX_HEALTH_CHECK_INTERVAL_SECS
-                ),
-            });
+            return Err(invalid_health_check(format!(
+                "health_check_interval_seconds exceeds maximum allowed value of {} seconds",
+                MAX_HEALTH_CHECK_INTERVAL_SECS
+            )));
         }
 
         Ok(())
@@ -449,11 +400,15 @@ impl ConfigLoader {
     /// This uses environment variable values if set, otherwise falls back
     /// to the provided persisted defaults.
     pub fn build_search_defaults(&self, persisted: Option<SearchDefaults>) -> SearchDefaultConfig {
-        let defaults = persisted.unwrap_or_default();
+        let SearchDefaults {
+            earliest_time,
+            latest_time,
+            max_results,
+        } = persisted.unwrap_or_default();
         SearchDefaultConfig {
-            earliest_time: self.earliest_time.clone().unwrap_or(defaults.earliest_time),
-            latest_time: self.latest_time.clone().unwrap_or(defaults.latest_time),
-            max_results: self.max_results.unwrap_or(defaults.max_results),
+            earliest_time: self.earliest_time.clone().unwrap_or(earliest_time),
+            latest_time: self.latest_time.clone().unwrap_or(latest_time),
+            max_results: self.max_results.unwrap_or(max_results),
         }
     }
 
@@ -465,13 +420,13 @@ impl ConfigLoader {
         &self,
         persisted: Option<InternalLogsDefaults>,
     ) -> InternalLogsDefaults {
-        let defaults = persisted.unwrap_or_default();
+        let InternalLogsDefaults {
+            count,
+            earliest_time,
+        } = persisted.unwrap_or_default();
         InternalLogsDefaults {
-            count: self.internal_logs_count.unwrap_or(defaults.count),
-            earliest_time: self
-                .internal_logs_earliest
-                .clone()
-                .unwrap_or(defaults.earliest_time),
+            count: self.internal_logs_count.unwrap_or(count),
+            earliest_time: self.internal_logs_earliest.clone().unwrap_or(earliest_time),
         }
     }
 
