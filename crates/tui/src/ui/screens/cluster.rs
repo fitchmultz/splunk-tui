@@ -22,7 +22,7 @@ use splunk_config::Theme;
 
 use crate::app::state::ClusterViewMode;
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_empty_state_custom, render_loading_state};
+use crate::ui::widgets::{render_screen_state, render_screen_state_custom};
 
 /// Configuration for rendering the cluster screen.
 pub struct ClusterRenderConfig<'a> {
@@ -60,24 +60,18 @@ pub fn render_cluster(f: &mut Frame, area: Rect, config: ClusterRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && cluster_info.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "Cluster Information",
-            "Loading cluster info...",
-            spinner_frame,
-            theme,
-        );
+    let Some(info) = render_screen_state(
+        f,
+        area,
+        loading,
+        cluster_info,
+        "Cluster Information",
+        "Loading cluster info...",
+        "cluster info",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let info = match cluster_info {
-        Some(i) => i,
-        None => {
-            render_empty_state(f, area, "Cluster Information", "cluster info");
-            return;
-        }
     };
 
     match view_mode {
@@ -134,17 +128,22 @@ fn render_peers(
         .border_style(theme.border())
         .title_style(theme.title());
 
-    let peers = match peers {
-        Some(p) => p,
-        None => {
-            let message = if loading {
-                "Loading peers..."
-            } else {
-                "No peers loaded. Press 'r' to refresh."
-            };
-            render_empty_state_custom(f, area, title, message);
-            return;
-        }
+    let Some(peers) = render_screen_state_custom(
+        f,
+        area,
+        false,
+        peers,
+        title,
+        "Loading peers...",
+        if loading {
+            "Loading peers..."
+        } else {
+            "No peers loaded. Press 'r' to refresh."
+        },
+        0,
+        theme,
+    ) else {
+        return;
     };
 
     if peers.is_empty() {

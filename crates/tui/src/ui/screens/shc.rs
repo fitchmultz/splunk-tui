@@ -22,7 +22,7 @@ use splunk_config::Theme;
 
 use crate::app::state::ShcViewMode;
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_empty_state_custom, render_loading_state};
+use crate::ui::widgets::{render_screen_state, render_screen_state_custom};
 
 /// Configuration for rendering the SHC screen.
 pub struct ShcRenderConfig<'a> {
@@ -60,24 +60,18 @@ pub fn render_shc(f: &mut Frame, area: Rect, config: ShcRenderConfig) {
         spinner_frame,
     } = config;
 
-    if loading && shc_status.is_none() {
-        render_loading_state(
-            f,
-            area,
-            "SHC Information",
-            "Loading SHC info...",
-            spinner_frame,
-            theme,
-        );
+    let Some(status) = render_screen_state(
+        f,
+        area,
+        loading,
+        shc_status,
+        "SHC Information",
+        "Loading SHC info...",
+        "SHC info",
+        spinner_frame,
+        theme,
+    ) else {
         return;
-    }
-
-    let status = match shc_status {
-        Some(s) => s,
-        None => {
-            render_empty_state(f, area, "SHC Information", "SHC info");
-            return;
-        }
     };
 
     match view_mode {
@@ -140,17 +134,22 @@ fn render_members(
         .border_style(theme.border())
         .title_style(theme.title());
 
-    let members = match members {
-        Some(m) => m,
-        None => {
-            let message = if loading {
-                "Loading members..."
-            } else {
-                "No members loaded. Press 'r' to refresh."
-            };
-            render_empty_state_custom(f, area, title, message);
-            return;
-        }
+    let Some(members) = render_screen_state_custom(
+        f,
+        area,
+        false,
+        members,
+        title,
+        "Loading members...",
+        if loading {
+            "Loading members..."
+        } else {
+            "No members loaded. Press 'r' to refresh."
+        },
+        0,
+        theme,
+    ) else {
+        return;
     };
 
     if members.is_empty() {

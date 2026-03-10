@@ -19,7 +19,7 @@ use ratatui::{
 use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
-use crate::ui::widgets::{render_empty_state, render_empty_state_custom, render_loading_state};
+use crate::ui::widgets::{render_empty_state, render_screen_state_custom};
 
 /// Render the macros screen with a split view (list on top, preview on bottom).
 pub fn render_macros_screen(
@@ -69,22 +69,18 @@ fn render_macros_list(
         .borders(Borders::ALL)
         .border_style(theme.border());
 
-    if loading && macros.is_none() {
-        render_loading_state(
-            f,
-            area,
-            " Search Macros ",
-            "Loading macros...",
-            spinner_frame,
-            theme,
-        );
-        return;
-    }
-
-    match macros {
-        None => {
-            render_empty_state_custom(f, area, " Search Macros ", "Press 'r' to load macros");
-        }
+    match render_screen_state_custom(
+        f,
+        area,
+        loading,
+        macros,
+        " Search Macros ",
+        "Loading macros...",
+        "Press 'r' to load macros",
+        spinner_frame,
+        theme,
+    ) {
+        None => {}
         Some([]) => {
             render_empty_state(f, area, " Search Macros ", "macros");
         }
