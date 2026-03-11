@@ -24,70 +24,80 @@ use crate::models::{
 impl SplunkClient {
     /// Get license usage information.
     pub async fn get_license_usage(&self) -> Result<Vec<LicenseUsage>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_license_usage(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_license_usage"),
+            |__token| async move {
+                endpoints::get_license_usage(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List all license pools.
     pub async fn list_license_pools(&self) -> Result<Vec<LicensePool>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_license_pools(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_license_pools"),
+            |__token| async move {
+                endpoints::list_license_pools(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List all license stacks.
     pub async fn list_license_stacks(&self) -> Result<Vec<LicenseStack>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_license_stacks(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_license_stacks"),
+            |__token| async move {
+                endpoints::list_license_stacks(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List all installed licenses.
     pub async fn list_installed_licenses(&self) -> Result<Vec<InstalledLicense>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_installed_licenses(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation(
+                "list_installed_licenses",
+            ),
+            |__token| async move {
+                endpoints::list_installed_licenses(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Install a license file on the Splunk server.
@@ -115,23 +125,26 @@ impl SplunkClient {
             .and_then(|n| n.to_str())
             .unwrap_or("license.sla");
 
-        // Clone file_content for retry attempts
-        let file_content_clone = file_content.clone();
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::install_license(
-                &self.http,
-                &self.base_url,
-                &__token,
-                file_content_clone.clone(),
-                filename,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("install_license"),
+            |__token| {
+                let file_content = file_content.clone();
+                async move {
+                    endpoints::install_license(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        file_content,
+                        filename,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Create a new license pool.
@@ -140,20 +153,22 @@ impl SplunkClient {
     ///
     /// * `params` - Parameters for the new pool including name, stack_id, and optional quota/description
     pub async fn create_license_pool(&self, params: &CreatePoolParams) -> Result<LicensePool> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::create_license_pool(
-                &self.http,
-                &self.base_url,
-                &__token,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("create_license_pool"),
+            |__token| async move {
+                endpoints::create_license_pool(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Delete a license pool by name.
@@ -162,20 +177,22 @@ impl SplunkClient {
     ///
     /// * `pool_name` - Name of the pool to delete
     pub async fn delete_license_pool(&self, pool_name: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_license_pool(
-                &self.http,
-                &self.base_url,
-                &__token,
-                pool_name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_license_pool"),
+            |__token| async move {
+                endpoints::delete_license_pool(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    pool_name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Modify an existing license pool.
@@ -189,21 +206,23 @@ impl SplunkClient {
         pool_name: &str,
         params: &ModifyPoolParams,
     ) -> Result<LicensePool> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::modify_license_pool(
-                &self.http,
-                &self.base_url,
-                &__token,
-                pool_name,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("modify_license_pool"),
+            |__token| async move {
+                endpoints::modify_license_pool(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    pool_name,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Activate a license.
@@ -212,20 +231,22 @@ impl SplunkClient {
     ///
     /// * `license_name` - Name of the license to activate
     pub async fn activate_license(&self, license_name: &str) -> Result<LicenseActivationResult> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::activate_license(
-                &self.http,
-                &self.base_url,
-                &__token,
-                license_name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("activate_license"),
+            |__token| async move {
+                endpoints::activate_license(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    license_name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Deactivate a license.
@@ -234,19 +255,21 @@ impl SplunkClient {
     ///
     /// * `license_name` - Name of the license to deactivate
     pub async fn deactivate_license(&self, license_name: &str) -> Result<LicenseActivationResult> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::deactivate_license(
-                &self.http,
-                &self.base_url,
-                &__token,
-                license_name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("deactivate_license"),
+            |__token| async move {
+                endpoints::deactivate_license(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    license_name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

@@ -432,10 +432,10 @@ impl ResponseCache {
                 // Parse max-age directive
                 for directive in value.split(',') {
                     let directive = directive.trim();
-                    if let Some(stripped) = directive.strip_prefix("max-age=") {
-                        if let Ok(seconds) = stripped.parse::<u64>() {
-                            return Some(Duration::from_secs(seconds));
-                        }
+                    if let Some(stripped) = directive.strip_prefix("max-age=")
+                        && let Ok(seconds) = stripped.parse::<u64>()
+                    {
+                        return Some(Duration::from_secs(seconds));
                     }
                 }
             }

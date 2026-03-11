@@ -280,7 +280,9 @@ mod tests {
 
         let action = app.refresh_workload();
 
-        assert!(matches!(action, Some(Action::LoadWorkloadPools { count, offset }) if offset == 0));
+        assert!(
+            matches!(action, Some(Action::LoadWorkloadPools { count: _, offset }) if offset == 0)
+        );
         assert!(app.loading);
     }
 
@@ -291,7 +293,9 @@ mod tests {
 
         let action = app.refresh_workload();
 
-        assert!(matches!(action, Some(Action::LoadWorkloadRules { count, offset }) if offset == 0));
+        assert!(
+            matches!(action, Some(Action::LoadWorkloadRules { count: _, offset }) if offset == 0)
+        );
         assert!(app.loading);
     }
 

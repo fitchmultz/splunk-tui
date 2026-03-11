@@ -29,19 +29,21 @@ impl SplunkClient {
     ///
     /// Returns a `ClientError` if the request fails.
     pub async fn list_config_files(&self) -> Result<Vec<ConfigFile>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_config_files(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_config_files"),
+            |__token| async move {
+                endpoints::list_config_files(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List configuration stanzas for a specific config file.
@@ -65,22 +67,24 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<ConfigStanza>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_config_stanzas(
-                &self.http,
-                &self.base_url,
-                &__token,
-                config_file,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_config_stanzas"),
+            |__token| async move {
+                endpoints::list_config_stanzas(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    config_file,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get a specific configuration stanza.
@@ -102,21 +106,23 @@ impl SplunkClient {
         config_file: &str,
         stanza_name: &str,
     ) -> Result<ConfigStanza> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_config_stanza(
-                &self.http,
-                &self.base_url,
-                &__token,
-                config_file,
-                stanza_name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_config_stanza"),
+            |__token| async move {
+                endpoints::get_config_stanza(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    config_file,
+                    stanza_name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List stanzas across all supported config files (aggregated).

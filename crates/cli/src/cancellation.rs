@@ -78,6 +78,12 @@ impl fmt::Display for Cancelled {
 
 impl std::error::Error for Cancelled {}
 
+impl splunk_client::workflows::CancellationProbe for CancellationToken {
+    fn is_cancelled(&self) -> bool {
+        self.is_cancelled()
+    }
+}
+
 /// Returns true if this anyhow error represents a cancellation.
 pub fn is_cancelled_error(err: &anyhow::Error) -> bool {
     err.is::<Cancelled>()

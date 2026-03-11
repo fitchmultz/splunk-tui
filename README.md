@@ -31,7 +31,7 @@ If you want to verify the project quickly before going deep on day-to-day usage,
 
 ```bash
 # Fetch dependencies
-make install
+make deps
 
 # Build workspace binaries (no install side effects)
 make build
@@ -76,8 +76,8 @@ Configuration is loaded from environment variables or a `.env` file:
 # Splunk Connection
 export SPLUNK_BASE_URL=https://localhost:8089
 export SPLUNK_USERNAME=replace-with-your-username
-export SPLUNK_PASSWORD=replace-with-your-password
-export SPLUNK_API_TOKEN=your-api-token
+# Load secrets from a local .env file, keyring-backed shell init, or secret manager.
+# Do not hardcode passwords or API tokens directly in shell history.
 
 # Optional Connection Settings
 export SPLUNK_SKIP_VERIFY=false
@@ -103,7 +103,6 @@ export SPLUNK_PROFILE=default
 export SPLUNK_CONFIG_PATH=/path/to/config.json
 
 # Configuration Encryption
-export SPLUNK_CONFIG_PASSWORD=my-password
 export SPLUNK_CONFIG_KEY_VAR=MY_SECRET_KEY
 ```
 
@@ -251,14 +250,14 @@ splunk-cli saved-searches delete "My Saved Search"
 # Encrypt config file using OS keyring (default)
 splunk-cli config encrypt
 
-# Encrypt using a password
-splunk-cli config encrypt --password "my-password"
+# Encrypt using a password stored in a secure shell variable
+splunk-cli config encrypt --password "$SPLUNK_CONFIG_PASSWORD"
 
 # Decrypt back to plaintext
 splunk-cli config decrypt
 
 # Rotate encryption key
-splunk-cli config rotate-key --password "new-password"
+splunk-cli config rotate-key --password "$SPLUNK_NEW_CONFIG_PASSWORD"
 ```
 
 ## TUI Usage
@@ -579,7 +578,7 @@ The Search screen has two input modes that affect how keys are handled:
 
 ### Prerequisites
 
-- Rust 1.84 or later
+- Rust 1.94.0
 - Make
 
 ### Build
@@ -623,7 +622,7 @@ splunk-tui/
 
 ```bash
 export SPLUNK_USERNAME=replace-with-your-username
-export SPLUNK_PASSWORD=replace-with-your-password
+# Load SPLUNK_PASSWORD from a local .env file, keyring helper, or shell secret store.
 ```
 
 The client will automatically login and manage session token renewal.
@@ -631,7 +630,7 @@ The client will automatically login and manage session token renewal.
 ### API Token (Recommended)
 
 ```bash
-export SPLUNK_API_TOKEN=your-api-token
+# Load SPLUNK_API_TOKEN from a local .env file, keyring helper, or shell secret store.
 ```
 
 API token authentication is preferred for automation as it doesn't require session management.
@@ -640,7 +639,7 @@ API token authentication is preferred for automation as it doesn't require sessi
 
 | Target | Description |
 |--------|-------------|
-| `make install` | Fetch all dependencies |
+| `make deps` | Fetch all dependencies |
 | `make update` | Update dependencies to latest stable versions |
 | `make format-check` | Verify rustfmt formatting |
 | `make lint-check` | Run strict clippy + format checks (non-mutating) |
@@ -651,7 +650,7 @@ API token authentication is preferred for automation as it doesn't require sessi
 | `make clean` | Remove build artifacts |
 | `make test` | Run all tests (unit + integration) |
 | `make build` | Build workspace binaries (no install side effects) |
-| `make install-bins` | Install pre-built binaries to ~/.local/bin |
+| `make install-bins` | Install pre-built runtime binaries to ~/.local/bin |
 | `make release` | Build + install binaries |
 | `make ci-fast` | Fast non-mutating local gate (smoke-focused) |
 | `make ci` | Full non-mutating local gate |

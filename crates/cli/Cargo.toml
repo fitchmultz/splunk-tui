@@ -31,6 +31,7 @@ serde_yaml = { workspace = true }
 
 # Error Handling
 anyhow = { workspace = true }
+thiserror = { workspace = true }
 
 # Secrets
 secrecy = { workspace = true }
@@ -38,6 +39,7 @@ secrecy = { workspace = true }
 # Logging
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
 
 # OpenTelemetry
 opentelemetry = { workspace = true }

@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk data inputs with their types and status.
 
+use crate::theme::Theme;
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
 use ratatui::{
@@ -11,7 +12,6 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::Input;
-use splunk_config::Theme;
 
 /// Configuration for rendering the inputs screen.
 pub struct InputsRenderConfig<'a> {

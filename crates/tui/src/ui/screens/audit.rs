@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk audit events with filtering capabilities.
 
+use crate::theme::Theme;
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
 use ratatui::{
@@ -10,7 +11,6 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::AuditEvent;
-use splunk_config::Theme;
 
 /// Configuration for rendering the audit events screen.
 pub struct AuditRenderConfig<'a> {

@@ -473,7 +473,7 @@ impl App {
 
     fn cycle_theme(&mut self) {
         self.color_theme = self.color_theme.cycle_next();
-        self.theme = splunk_config::Theme::from(self.color_theme);
+        self.theme = crate::theme::Theme::from(self.color_theme);
         self.toasts
             .push(Toast::info(format!("Theme: {}", self.color_theme)));
     }
@@ -571,36 +571,36 @@ impl App {
 
     fn open_modify_index_dialog(&mut self, name: String) {
         use crate::ui::popup::{Popup, PopupType};
-        if let Some(indexes) = &self.indexes {
-            if let Some(index) = indexes.iter().find(|i| i.name == name) {
-                let current_max_hot_buckets = index
-                    .max_hot_buckets
-                    .as_ref()
-                    .and_then(|s| Self::parse_max_hot_buckets(s, &index.name));
-                self.popup = Some(
-                    Popup::builder(PopupType::ModifyIndex {
-                        index_name: index.name.clone(),
-                        current_max_data_size_mb: index.max_total_data_size_mb,
-                        current_max_hot_buckets,
-                        current_max_warm_db_count: index.max_warm_db_count,
-                        current_frozen_time_period_secs: index.frozen_time_period_in_secs,
-                        current_home_path: index.home_path.clone(),
-                        current_cold_db_path: index.cold_db_path.clone(),
-                        current_thawed_path: index.thawed_path.clone(),
-                        current_cold_to_frozen_dir: index.cold_to_frozen_dir.clone(),
-                        new_max_data_size_mb: index.max_total_data_size_mb,
-                        new_max_hot_buckets: current_max_hot_buckets,
-                        new_max_warm_db_count: index.max_warm_db_count,
-                        new_frozen_time_period_secs: index.frozen_time_period_in_secs,
-                        new_home_path: index.home_path.clone(),
-                        new_cold_db_path: index.cold_db_path.clone(),
-                        new_thawed_path: index.thawed_path.clone(),
-                        new_cold_to_frozen_dir: index.cold_to_frozen_dir.clone(),
-                    })
-                    .build(),
-                );
-                return;
-            }
+        if let Some(indexes) = &self.indexes
+            && let Some(index) = indexes.iter().find(|i| i.name == name)
+        {
+            let current_max_hot_buckets = index
+                .max_hot_buckets
+                .as_ref()
+                .and_then(|s| Self::parse_max_hot_buckets(s, &index.name));
+            self.popup = Some(
+                Popup::builder(PopupType::ModifyIndex {
+                    index_name: index.name.clone(),
+                    current_max_data_size_mb: index.max_total_data_size_mb,
+                    current_max_hot_buckets,
+                    current_max_warm_db_count: index.max_warm_db_count,
+                    current_frozen_time_period_secs: index.frozen_time_period_in_secs,
+                    current_home_path: index.home_path.clone(),
+                    current_cold_db_path: index.cold_db_path.clone(),
+                    current_thawed_path: index.thawed_path.clone(),
+                    current_cold_to_frozen_dir: index.cold_to_frozen_dir.clone(),
+                    new_max_data_size_mb: index.max_total_data_size_mb,
+                    new_max_hot_buckets: current_max_hot_buckets,
+                    new_max_warm_db_count: index.max_warm_db_count,
+                    new_frozen_time_period_secs: index.frozen_time_period_in_secs,
+                    new_home_path: index.home_path.clone(),
+                    new_cold_db_path: index.cold_db_path.clone(),
+                    new_thawed_path: index.thawed_path.clone(),
+                    new_cold_to_frozen_dir: index.cold_to_frozen_dir.clone(),
+                })
+                .build(),
+            );
+            return;
         }
         self.toasts.push(Toast::info("Index not found"));
     }
@@ -622,29 +622,29 @@ impl App {
 
     fn open_modify_user_dialog(&mut self, name: String) {
         use crate::ui::popup::{Popup, PopupType};
-        if let Some(users) = &self.users {
-            if let Some(user) = users.iter().find(|u| u.name == name) {
-                let current_roles = user.roles.clone();
-                let current_realname = user.realname.clone();
-                let current_email = user.email.clone();
-                let current_default_app = user.default_app.clone();
-                self.popup = Some(
-                    Popup::builder(PopupType::ModifyUser {
-                        user_name: user.name.clone(),
-                        current_roles: current_roles.clone(),
-                        current_realname: current_realname.clone(),
-                        current_email: current_email.clone(),
-                        current_default_app: current_default_app.clone(),
-                        password_input: String::new(),
-                        roles_input: current_roles.join(","),
-                        realname_input: current_realname.unwrap_or_default(),
-                        email_input: current_email.unwrap_or_default(),
-                        default_app_input: current_default_app.unwrap_or_default(),
-                    })
-                    .build(),
-                );
-                return;
-            }
+        if let Some(users) = &self.users
+            && let Some(user) = users.iter().find(|u| u.name == name)
+        {
+            let current_roles = user.roles.clone();
+            let current_realname = user.realname.clone();
+            let current_email = user.email.clone();
+            let current_default_app = user.default_app.clone();
+            self.popup = Some(
+                Popup::builder(PopupType::ModifyUser {
+                    user_name: user.name.clone(),
+                    current_roles: current_roles.clone(),
+                    current_realname: current_realname.clone(),
+                    current_email: current_email.clone(),
+                    current_default_app: current_default_app.clone(),
+                    password_input: String::new(),
+                    roles_input: current_roles.join(","),
+                    realname_input: current_realname.unwrap_or_default(),
+                    email_input: current_email.unwrap_or_default(),
+                    default_app_input: current_default_app.unwrap_or_default(),
+                })
+                .build(),
+            );
+            return;
         }
         self.toasts.push(Toast::info("User not found"));
     }
@@ -666,31 +666,31 @@ impl App {
 
     fn open_modify_role_dialog(&mut self, name: String) {
         use crate::ui::popup::{Popup, PopupType};
-        if let Some(roles) = &self.roles {
-            if let Some(role) = roles.iter().find(|r| r.name == name) {
-                let current_capabilities = role.capabilities.clone();
-                let current_search_indexes = role.search_indexes.clone();
-                let current_search_filter = role.search_filter.clone();
-                let current_imported_roles = role.imported_roles.clone();
-                let current_default_app = role.default_app.clone();
-                self.popup = Some(
-                    Popup::builder(PopupType::ModifyRole {
-                        role_name: role.name.clone(),
-                        current_capabilities: current_capabilities.clone(),
-                        current_search_indexes: current_search_indexes.clone(),
-                        current_search_filter: current_search_filter.clone(),
-                        current_imported_roles: current_imported_roles.clone(),
-                        current_default_app: current_default_app.clone(),
-                        capabilities_input: current_capabilities.join(","),
-                        search_indexes_input: current_search_indexes.join(","),
-                        search_filter_input: current_search_filter.unwrap_or_default(),
-                        imported_roles_input: current_imported_roles.join(","),
-                        default_app_input: current_default_app.unwrap_or_default(),
-                    })
-                    .build(),
-                );
-                return;
-            }
+        if let Some(roles) = &self.roles
+            && let Some(role) = roles.iter().find(|r| r.name == name)
+        {
+            let current_capabilities = role.capabilities.clone();
+            let current_search_indexes = role.search_indexes.clone();
+            let current_search_filter = role.search_filter.clone();
+            let current_imported_roles = role.imported_roles.clone();
+            let current_default_app = role.default_app.clone();
+            self.popup = Some(
+                Popup::builder(PopupType::ModifyRole {
+                    role_name: role.name.clone(),
+                    current_capabilities: current_capabilities.clone(),
+                    current_search_indexes: current_search_indexes.clone(),
+                    current_search_filter: current_search_filter.clone(),
+                    current_imported_roles: current_imported_roles.clone(),
+                    current_default_app: current_default_app.clone(),
+                    capabilities_input: current_capabilities.join(","),
+                    search_indexes_input: current_search_indexes.join(","),
+                    search_filter_input: current_search_filter.unwrap_or_default(),
+                    imported_roles_input: current_imported_roles.join(","),
+                    default_app_input: current_default_app.unwrap_or_default(),
+                })
+                .build(),
+            );
+            return;
         }
         self.toasts.push(Toast::info("Role not found"));
     }

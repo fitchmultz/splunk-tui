@@ -1,403 +1,47 @@
-//! Export functionality for TUI screens.
+//! TUI wrapper around the shared export workflow.
 //!
 //! Responsibilities:
-//! - Export *any* serializable payload to JSON or CSV.
-//! - Keep CSV behavior consistent with search-result exporting (object rows become columns).
+//! - Translate TUI export format selections into the shared workflow format.
+//! - Keep TUI callers decoupled from the underlying shared module layout.
 //!
 //! Does NOT handle:
-//! - Path validation / directory creation.
-//! - Enforcing filename extensions.
-//! - Streaming extremely large exports efficiently (payload is provided in-memory).
+//! - Frontend popup UX or toast behavior.
+//! - Serialization logic (delegated to `splunk-client::workflows::export`).
+//!
+//! Invariants:
+//! - TUI export operations use the shared file-export workflow.
 
 use crate::action::ExportFormat;
-use anyhow::Context;
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::BTreeSet, path::Path};
+use std::path::Path;
 
-/// Export any serializable payload to a file in the requested format.
-///
-/// For CSV, the payload is first serialized to `serde_json::Value` to allow
-/// uniform "tabularization" (arrays of objects become rows/columns).
+fn shared_format(format: ExportFormat) -> splunk_client::workflows::export::ExportFormat {
+    match format {
+        ExportFormat::Json => splunk_client::workflows::export::ExportFormat::Json,
+        ExportFormat::Csv => splunk_client::workflows::export::ExportFormat::Csv,
+        ExportFormat::Ndjson => splunk_client::workflows::export::ExportFormat::Ndjson,
+        ExportFormat::Yaml => splunk_client::workflows::export::ExportFormat::Yaml,
+        ExportFormat::Markdown => splunk_client::workflows::export::ExportFormat::Markdown,
+    }
+}
+
 pub async fn export_data<T: Serialize + ?Sized>(
     data: &T,
     path: &Path,
     format: ExportFormat,
 ) -> anyhow::Result<()> {
-    match format {
-        ExportFormat::Json => export_json_serialize(data, path).await,
-        ExportFormat::Csv => {
-            let v = serde_json::to_value(data)
-                .context("Failed to serialize data to JSON for CSV export")?;
-            export_value(&v, path, ExportFormat::Csv).await
-        }
-        ExportFormat::Ndjson => {
-            let v = serde_json::to_value(data)
-                .context("Failed to serialize data to JSON for NDJSON export")?;
-            export_value(&v, path, ExportFormat::Ndjson).await
-        }
-        ExportFormat::Yaml => export_yaml_serialize(data, path).await,
-        ExportFormat::Markdown => export_markdown_serialize(data, path).await,
-    }
+    splunk_client::workflows::export::export_data(data, path, shared_format(format)).await
 }
 
-/// Export a pre-serialized JSON value.
-///
-/// JSON exports write the value directly. CSV exports attempt to treat:
-/// - `Value::Array` as rows
-/// - all other values as a single row
 pub async fn export_value(value: &Value, path: &Path, format: ExportFormat) -> anyhow::Result<()> {
-    match format {
-        ExportFormat::Json => export_json_value(value, path).await,
-        ExportFormat::Csv => match value {
-            Value::Array(rows) => export_csv_values(rows, path).await,
-            _ => {
-                let rows = vec![value.clone()];
-                export_csv_values(&rows, path).await
-            }
-        },
-        ExportFormat::Ndjson => match value {
-            Value::Array(rows) => export_ndjson_values(rows, path).await,
-            _ => {
-                let rows = vec![value.clone()];
-                export_ndjson_values(&rows, path).await
-            }
-        },
-        ExportFormat::Yaml => export_yaml_value(value, path).await,
-        ExportFormat::Markdown => export_markdown_value(value, path).await,
-    }
+    splunk_client::workflows::export::export_value(value, path, shared_format(format)).await
 }
 
-/// Back-compat: export search results (slice of `Value`) to file.
 pub async fn export_results(
     results: &[Value],
     path: &Path,
     format: ExportFormat,
 ) -> anyhow::Result<()> {
-    export_data(results, path, format).await
-}
-
-async fn export_json_value(value: &Value, path: &Path) -> anyhow::Result<()> {
-    let json_bytes =
-        serde_json::to_vec_pretty(value).context("Failed to serialize JSON for export")?;
-    write_export_bytes(path, &json_bytes, "JSON").await
-}
-
-async fn export_json_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> anyhow::Result<()> {
-    let json_bytes =
-        serde_json::to_vec_pretty(data).context("Failed to serialize data to JSON for export")?;
-    write_export_bytes(path, &json_bytes, "JSON").await
-}
-
-async fn export_csv_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
-    // The csv crate has no async API, so we buffer in memory first
-    let mut buffer = Vec::new();
-    {
-        let mut w = csv::Writer::from_writer(&mut buffer);
-
-        let headers = collect_csv_headers(rows);
-
-        if !headers.is_empty() {
-            w.write_record(&headers)
-                .context("Failed to write CSV headers")?;
-
-            for row in rows {
-                if let Some(map) = row.as_object() {
-                    let record: Vec<String> = headers
-                        .iter()
-                        .map(|k| map.get(k).map(value_to_csv_cell).unwrap_or_default())
-                        .collect();
-                    w.write_record(&record)
-                        .context("Failed to write CSV record")?;
-                }
-            }
-        } else {
-            // Fallback for non-object rows (or empty input)
-            w.write_record(["value"])
-                .context("Failed to write CSV fallback header")?;
-            for row in rows {
-                w.write_record([row.to_string()])
-                    .context("Failed to write CSV fallback record")?;
-            }
-        }
-
-        w.flush().context("Failed to flush CSV writer")?;
-    } // csv::Writer is dropped here, releasing the mutable borrow on buffer
-
-    write_export_bytes(path, &buffer, "CSV").await
-}
-
-async fn export_ndjson_values(rows: &[Value], path: &Path) -> anyhow::Result<()> {
-    let mut buffer = String::new();
-    for (i, row) in rows.iter().enumerate() {
-        let line = serde_json::to_string(row)
-            .context("Failed to serialize row to JSON for NDJSON export")?;
-        buffer.push_str(&line);
-
-        // Add newline between rows, but not after the last one
-        if i < rows.len() - 1 {
-            buffer.push('\n');
-        }
-    }
-    write_export_bytes(path, buffer.as_bytes(), "NDJSON").await
-}
-
-fn collect_csv_headers(rows: &[Value]) -> Vec<String> {
-    let mut keys: BTreeSet<String> = BTreeSet::new();
-    for row in rows {
-        if let Some(obj) = row.as_object() {
-            for k in obj.keys() {
-                keys.insert(k.clone());
-            }
-        }
-    }
-    keys.into_iter().collect()
-}
-
-fn value_to_csv_cell(v: &Value) -> String {
-    match v {
-        Value::String(s) => s.clone(),
-        Value::Null => String::new(),
-        _ => v.to_string(),
-    }
-}
-
-async fn export_yaml_value(value: &Value, path: &Path) -> anyhow::Result<()> {
-    let yaml_str = serde_yaml::to_string(value).context("Failed to serialize YAML for export")?;
-    write_export_bytes(path, yaml_str.as_bytes(), "YAML").await
-}
-
-async fn export_yaml_serialize<T: Serialize + ?Sized>(data: &T, path: &Path) -> anyhow::Result<()> {
-    let yaml_str =
-        serde_yaml::to_string(data).context("Failed to serialize data to YAML for export")?;
-    write_export_bytes(path, yaml_str.as_bytes(), "YAML").await
-}
-
-async fn export_markdown_value(value: &Value, path: &Path) -> anyhow::Result<()> {
-    let markdown = value_to_markdown(value);
-    write_export_bytes(path, markdown.as_bytes(), "Markdown").await
-}
-
-async fn export_markdown_serialize<T: Serialize + ?Sized>(
-    data: &T,
-    path: &Path,
-) -> anyhow::Result<()> {
-    let v = serde_json::to_value(data)
-        .context("Failed to serialize data to JSON for Markdown export")?;
-    export_markdown_value(&v, path).await
-}
-
-/// Convert a JSON value to Markdown format
-fn value_to_markdown(value: &Value) -> String {
-    match value {
-        Value::Array(arr) => array_to_markdown_table(arr),
-        Value::Object(obj) => object_to_markdown(obj),
-        _ => format!("```\n{}\n```\n", value),
-    }
-}
-
-/// Convert an array of objects to a markdown table
-fn array_to_markdown_table(arr: &[Value]) -> String {
-    if arr.is_empty() {
-        return "_No data available._\n".to_string();
-    }
-
-    // Collect all unique keys
-    let mut all_keys: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    for item in arr {
-        if let Some(obj) = item.as_object() {
-            all_keys.extend(obj.keys().cloned());
-        }
-    }
-
-    if all_keys.is_empty() {
-        return "_No data available._\n".to_string();
-    }
-
-    let headers: Vec<&str> = all_keys.iter().map(|s| s.as_str()).collect();
-    let mut output = String::new();
-
-    // Header row
-    output.push('|');
-    for header in &headers {
-        output.push(' ');
-        output.push_str(header);
-        output.push(' ');
-        output.push('|');
-    }
-    output.push('\n');
-
-    // Separator row
-    output.push('|');
-    for _ in &headers {
-        output.push(' ');
-        output.push_str("---");
-        output.push(' ');
-        output.push('|');
-    }
-    output.push('\n');
-
-    // Data rows
-    for item in arr {
-        if let Some(obj) = item.as_object() {
-            output.push('|');
-            for key in &all_keys {
-                output.push(' ');
-                let value = obj
-                    .get(key)
-                    .map(|v| v.to_string().trim_matches('"').replace('|', "\\|"))
-                    .unwrap_or_else(|| "_".to_string());
-                output.push_str(&value);
-                output.push(' ');
-                output.push('|');
-            }
-            output.push('\n');
-        }
-    }
-
-    output
-}
-
-/// Convert a single object to markdown key-value list
-fn object_to_markdown(obj: &serde_json::Map<String, Value>) -> String {
-    let mut output = String::new();
-    for (key, value) in obj {
-        output.push_str(&format!("- **{}**: {}\n", key, value));
-    }
-    output.push('\n');
-    output
-}
-
-async fn write_export_bytes(path: &Path, bytes: &[u8], format_name: &str) -> anyhow::Result<()> {
-    tokio::fs::write(path, bytes).await.with_context(|| {
-        format!(
-            "Failed to write {format_name} export to: {}",
-            path.display()
-        )
-    })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde::Serialize;
-    use serde_json::json;
-    use tempfile::tempdir;
-
-    #[tokio::test]
-    async fn test_export_csv_mixed_keys() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("test.csv");
-        let results = vec![json!({"a": 1, "b": 2}), json!({"b": 3, "c": 4})];
-
-        export_results(&results, &path, ExportFormat::Csv)
-            .await
-            .unwrap();
-
-        let mut rdr = csv::Reader::from_path(path).unwrap();
-        let headers = rdr.headers().unwrap();
-        assert_eq!(headers, vec!["a", "b", "c"]);
-
-        let mut records = rdr.records();
-
-        let record1 = records.next().unwrap().unwrap();
-        assert_eq!(record1.get(0).unwrap(), "1");
-        assert_eq!(record1.get(1).unwrap(), "2");
-        assert_eq!(record1.get(2).unwrap(), "");
-
-        let record2 = records.next().unwrap().unwrap();
-        assert_eq!(record2.get(0).unwrap(), "");
-        assert_eq!(record2.get(1).unwrap(), "3");
-        assert_eq!(record2.get(2).unwrap(), "4");
-    }
-
-    #[tokio::test]
-    async fn test_export_json_array() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("test.json");
-        let results = vec![json!({"a": 1})];
-
-        export_results(&results, &path, ExportFormat::Json)
-            .await
-            .unwrap();
-
-        let content = std::fs::read_to_string(path).unwrap();
-        assert!(content.contains("\"a\": 1"));
-    }
-
-    #[tokio::test]
-    async fn test_export_value_single_object_csv() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("single.csv");
-        let value = json!({"x": "y", "n": 2});
-
-        export_value(&value, &path, ExportFormat::Csv)
-            .await
-            .unwrap();
-
-        let mut rdr = csv::Reader::from_path(path).unwrap();
-        let headers = rdr.headers().unwrap();
-        assert_eq!(headers, vec!["n", "x"]);
-
-        let rec = rdr.records().next().unwrap().unwrap();
-        assert_eq!(rec.get(0).unwrap(), "2");
-        assert_eq!(rec.get(1).unwrap(), "y");
-    }
-
-    #[tokio::test]
-    async fn test_export_data_struct_json() {
-        #[derive(Debug, Serialize)]
-        struct Demo {
-            a: i32,
-            b: String,
-        }
-
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("demo.json");
-        let demo = Demo {
-            a: 1,
-            b: "ok".to_string(),
-        };
-
-        export_data(&demo, &path, ExportFormat::Json).await.unwrap();
-        let content = std::fs::read_to_string(path).unwrap();
-        assert!(content.contains("\"a\": 1"));
-        assert!(content.contains("\"b\": \"ok\""));
-    }
-
-    #[tokio::test]
-    async fn test_export_ndjson_array() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("test.ndjson");
-        let results = vec![json!({"a": 1, "b": 2}), json!({"a": 3, "b": 4})];
-
-        export_results(&results, &path, ExportFormat::Ndjson)
-            .await
-            .unwrap();
-
-        let content = std::fs::read_to_string(path).unwrap();
-        let lines: Vec<&str> = content.lines().collect();
-        assert_eq!(lines.len(), 2);
-        assert!(lines[0].contains("\"a\":1"));
-        assert!(lines[0].contains("\"b\":2"));
-        assert!(lines[1].contains("\"a\":3"));
-        assert!(lines[1].contains("\"b\":4"));
-    }
-
-    #[tokio::test]
-    async fn test_export_ndjson_single_object() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("single.ndjson");
-        let value = json!({"x": "y", "n": 2});
-
-        export_value(&value, &path, ExportFormat::Ndjson)
-            .await
-            .unwrap();
-
-        let content = std::fs::read_to_string(path).unwrap();
-        let lines: Vec<&str> = content.lines().collect();
-        assert_eq!(lines.len(), 1);
-        assert!(lines[0].contains("\"x\":\"y\""));
-        assert!(lines[0].contains("\"n\":2"));
-    }
+    splunk_client::workflows::export::export_results(results, path, shared_format(format)).await
 }

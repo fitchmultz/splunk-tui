@@ -53,10 +53,10 @@ impl App {
                     .push(Toast::success(format!("Index '{}' modified", index.name)));
                 self.loading = false;
                 // Update in list if present
-                if let Some(ref mut indexes) = self.indexes {
-                    if let Some(idx) = indexes.iter().position(|i| i.name == index.name) {
-                        indexes[idx] = index;
-                    }
+                if let Some(ref mut indexes) = self.indexes
+                    && let Some(idx) = indexes.iter().position(|i| i.name == index.name)
+                {
+                    indexes[idx] = index;
                 }
             }
             Action::IndexModified(Err(e)) => {
@@ -225,10 +225,10 @@ impl App {
                     .push(Toast::success(format!("User '{}' modified", user.name)));
                 self.loading = false;
                 // Update in list if present
-                if let Some(ref mut users) = self.users {
-                    if let Some(idx) = users.iter().position(|u| u.name == user.name) {
-                        users[idx] = user;
-                    }
+                if let Some(ref mut users) = self.users
+                    && let Some(idx) = users.iter().position(|u| u.name == user.name)
+                {
+                    users[idx] = user;
                 }
             }
             Action::UserModified(Err(e)) => {
@@ -275,10 +275,10 @@ impl App {
                 self.toasts
                     .push(Toast::success(format!("Role '{}' modified", role.name)));
                 self.loading = false;
-                if let Some(ref mut roles) = self.roles {
-                    if let Some(idx) = roles.iter().position(|r| r.name == role.name) {
-                        roles[idx] = role;
-                    }
+                if let Some(ref mut roles) = self.roles
+                    && let Some(idx) = roles.iter().position(|r| r.name == role.name)
+                {
+                    roles[idx] = role;
                 }
             }
             Action::RoleModified(Err(e)) => {

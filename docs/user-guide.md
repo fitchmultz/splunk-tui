@@ -47,10 +47,10 @@ Before using the tools, you need to configure your connection to Splunk.
 1. Create a `.env` file in your project root or set environment variables:
    ```bash
    export SPLUNK_BASE_URL=https://your-splunk-instance:8089
-   export SPLUNK_API_TOKEN=your-secret-token
+   # Load SPLUNK_API_TOKEN from your local .env file, keyring-backed shell init, or secret manager.
    # Or use username/password
    # export SPLUNK_USERNAME=replace-with-your-username
-   # export SPLUNK_PASSWORD=replace-with-your-password
+   # Load SPLUNK_PASSWORD from your local .env file, keyring-backed shell init, or secret manager.
    ```
 2. If you are using self-signed certificates (common in dev environments), enable:
    ```bash

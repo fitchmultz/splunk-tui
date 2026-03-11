@@ -36,7 +36,7 @@ pub struct SettingsRenderConfig<'a> {
     /// Selected persisted theme (for display).
     pub selected_theme: splunk_config::ColorTheme,
     /// Runtime expanded theme (for colors).
-    pub theme: &'a splunk_config::Theme,
+    pub theme: &'a crate::theme::Theme,
     /// Default earliest time for searches (e.g., "-24h").
     pub earliest_time: &'a str,
     /// Default latest time for searches (e.g., "now").

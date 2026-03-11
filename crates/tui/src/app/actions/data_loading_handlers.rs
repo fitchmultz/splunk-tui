@@ -47,8 +47,6 @@ impl App {
         &mut self,
         new_instance: crate::action::InstanceOverview,
     ) {
-        use crate::action::InstanceStatus;
-
         if self.multi_instance_data.is_none() {
             self.multi_instance_data = Some(crate::action::MultiInstanceOverviewData {
                 timestamp: chrono::Utc::now().to_rfc3339(),
@@ -57,38 +55,24 @@ impl App {
         }
 
         if let Some(ref mut data) = self.multi_instance_data {
-            if let Some(existing) = data
+            if let Some(index) = data
                 .instances
-                .iter_mut()
-                .find(|i| i.profile_name == new_instance.profile_name)
+                .iter()
+                .position(|instance| instance.profile_name == new_instance.profile_name)
             {
-                // Graceful degradation logic:
-                // If the new fetch failed but we have healthy cached data, transition to Cached
-                if new_instance.error.is_some() && existing.status == InstanceStatus::Healthy {
-                    existing.status = InstanceStatus::Cached;
-                    existing.error = new_instance.error;
-                    // Keep old resources and job_count
-                } else {
-                    // Update with new data (Success or hard Failure)
-                    let mut updated = new_instance;
-                    if updated.error.is_none() {
-                        updated.status = InstanceStatus::Healthy;
-                        updated.last_success_at = Some(chrono::Utc::now().to_rfc3339());
-                    } else {
-                        updated.status = InstanceStatus::Failed;
-                    }
-                    *existing = updated;
-                }
+                let previous = data.instances[index].clone();
+                data.instances[index] =
+                    splunk_client::workflows::multi_profile::merge_instance_update(
+                        Some(&previous),
+                        new_instance,
+                    );
             } else {
-                // New instance discovered or first load
-                let mut updated = new_instance;
-                if updated.error.is_none() {
-                    updated.status = InstanceStatus::Healthy;
-                    updated.last_success_at = Some(chrono::Utc::now().to_rfc3339());
-                } else {
-                    updated.status = InstanceStatus::Failed;
-                }
-                data.instances.push(updated);
+                data.instances.push(
+                    splunk_client::workflows::multi_profile::merge_instance_update(
+                        None,
+                        new_instance,
+                    ),
+                );
             }
         }
     }

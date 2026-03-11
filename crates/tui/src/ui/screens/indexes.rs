@@ -2,13 +2,13 @@
 //!
 //! Renders the list of Splunk indexes with their event counts and sizes.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Index;
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;

@@ -1,12 +1,12 @@
 //! Internal logs screen.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
     widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use splunk_client::models::{LogEntry, LogLevel};
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;

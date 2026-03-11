@@ -61,11 +61,11 @@ impl CompletionCache {
         // Check memory cache first
         {
             let cache = self.memory_cache.lock().await;
-            if let Some(entry) = cache.get(key) {
-                if !entry.is_expired(self.default_ttl) {
-                    debug!("Using memory cache for {}", key);
-                    return entry.data.clone();
-                }
+            if let Some(entry) = cache.get(key)
+                && !entry.is_expired(self.default_ttl)
+            {
+                debug!("Using memory cache for {}", key);
+                return entry.data.clone();
             }
         }
 

@@ -36,14 +36,12 @@ impl App {
 
                 if let Some(name) = profile_name {
                     // Mark as loading in UI immediately
-                    if let Some(ref mut data) = self.multi_instance_data {
-                        if let Some(instance) =
+                    if let Some(ref mut data) = self.multi_instance_data
+                        && let Some(instance) =
                             data.instances.iter_mut().find(|i| i.profile_name == name)
-                        {
-                            instance.status = crate::action::InstanceStatus::Loading;
-                        }
+                    {
+                        instance.status = crate::action::InstanceStatus::Loading;
                     }
-
                     return Some(Action::RetryInstance(name));
                 }
                 Some(Action::LoadMultiInstanceOverview)

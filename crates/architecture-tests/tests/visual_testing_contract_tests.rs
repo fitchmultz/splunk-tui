@@ -10,15 +10,7 @@ use std::path::PathBuf;
 #[test]
 fn makefile_visual_testing_targets_are_wired_into_smoke_gate() {
     let workspace_root = find_workspace_root();
-    let makefile_path = workspace_root.join("Makefile");
-    assert!(
-        makefile_path.exists(),
-        "Makefile not found at {:?}",
-        makefile_path
-    );
-
-    let makefile_content =
-        fs::read_to_string(&makefile_path).expect("Failed to read workspace Makefile");
+    let makefile_content = load_makefile_contract_view(&workspace_root);
 
     let visual_lines = extract_target_recipe(&makefile_content, "tui-visual");
     assert!(
@@ -67,6 +59,26 @@ fn makefile_visual_testing_targets_are_wired_into_smoke_gate() {
             .any(|line| line.contains("$(MAKE) tui-accessibility")),
         "Expected test-smoke to include $(MAKE) tui-accessibility"
     );
+}
+
+fn load_makefile_contract_view(workspace_root: &std::path::Path) -> String {
+    let root_makefile = workspace_root.join("Makefile");
+    let tests_makefile = workspace_root.join("mk/tests.mk");
+    assert!(
+        root_makefile.exists(),
+        "Makefile not found at {:?}",
+        root_makefile
+    );
+    assert!(
+        tests_makefile.exists(),
+        "mk/tests.mk not found at {:?}",
+        tests_makefile
+    );
+
+    let root = fs::read_to_string(&root_makefile).expect("Failed to read workspace Makefile");
+    let tests = fs::read_to_string(&tests_makefile).expect("Failed to read mk/tests.mk");
+
+    format!("{root}\n{tests}")
 }
 
 fn extract_target_recipe<'a>(makefile_content: &'a str, target: &str) -> Vec<&'a str> {

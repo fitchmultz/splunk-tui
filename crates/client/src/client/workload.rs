@@ -35,21 +35,23 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<WorkloadPool>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_workload_pools(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_workload_pools"),
+            |__token| async move {
+                endpoints::list_workload_pools(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List all workload rules.
@@ -74,20 +76,22 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<WorkloadRule>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_workload_rules(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_workload_rules"),
+            |__token| async move {
+                endpoints::list_workload_rules(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

@@ -12,6 +12,7 @@
 //! - Confirmation popups keep default sizing for mouse-hit consistency.
 //! - Scroll state for help/tutorial/undo popups is preserved across renders.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
@@ -20,7 +21,6 @@ use ratatui::{
         Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
     },
 };
-use splunk_config::Theme;
 
 use crate::app::App;
 use crate::ui::popup::{POPUP_HEIGHT_PERCENT, POPUP_WIDTH_PERCENT, Popup, PopupType};

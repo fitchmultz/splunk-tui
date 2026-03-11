@@ -78,10 +78,9 @@ async fn test_forbidden_access() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    // 403 is kept as ApiError (not classified) so CLI can map to PermissionDenied exit code
     assert!(
-        matches!(err, ClientError::ApiError { status: 403, .. }),
-        "Expected ApiError with 403, got {:?}",
+        matches!(err, ClientError::Unauthorized(ref message) if message == "ERROR: Forbidden"),
+        "Expected Unauthorized semantic classification for 403, got {:?}",
         err
     );
 }
@@ -560,16 +559,13 @@ async fn test_connection_refused_completes_quickly() {
     );
 }
 
-/// Test that is_retryable() returns false for ConnectionRefused errors.
+/// Test that is_retryable() returns true for ConnectionRefused errors.
 ///
-/// This test verifies the error classification logic for non-retryable errors.
+/// This test verifies the error classification logic for retryable transport failures.
 #[test]
-fn test_connection_refused_is_not_retryable() {
+fn test_connection_refused_is_retryable() {
     let err = ClientError::ConnectionRefused("localhost:8089".to_string());
-    assert!(
-        !err.is_retryable(),
-        "ConnectionRefused should not be retryable"
-    );
+    assert!(err.is_retryable(), "ConnectionRefused should be retryable");
 }
 
 /// Test that is_retryable() returns false for TlsError.

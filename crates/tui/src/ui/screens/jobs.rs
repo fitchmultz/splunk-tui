@@ -8,6 +8,7 @@
 
 use crate::app::input::components::SingleLineInput;
 use crate::app::{SortColumn, SortDirection};
+use crate::theme::Theme;
 use crate::ui::theme::ThemeExt;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
@@ -16,7 +17,6 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
 };
 use splunk_client::models::SearchJobStatus;
-use splunk_config::Theme;
 use std::collections::HashSet;
 
 /// Configuration for rendering the jobs table.

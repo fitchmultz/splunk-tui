@@ -1,620 +1,104 @@
-# Container Usage Guide
+# Container Guide
 
-This guide covers running Splunk TUI and CLI in containers using Docker, Docker Compose, and Kubernetes (Helm).
+This guide covers the supported container workflows for `splunk-cli` and `splunk-tui`.
 
-## Overview
+## Supported Surface
 
-| Attribute | Value |
-|-----------|-------|
-| Base Image | `gcr.io/distroless/cc-debian12:nonroot` |
-| User | `nonroot` (UID 65532) |
-| Platforms | `linux/amd64`, `linux/arm64` |
-| Registry | `ghcr.io/fitchmultz/splunk-tui` |
+- Local Docker image builds
+- Local Docker Compose orchestration for a development Splunk instance
+- Running `splunk-cli` or `splunk-tui` inside the project image
 
-## Quick Start
+Hosted orchestration manifests are intentionally out of scope for this repository.
 
-### Pull and Run
+## Build the Runtime Image
 
 ```bash
-# Pull the latest image
-docker pull ghcr.io/fitchmultz/splunk-tui:latest
-
-# Run a quick health check
-docker run --rm \
-  -e SPLUNK_BASE_URL=https://your-splunk:8089 \
-  -e SPLUNK_API_TOKEN=your-token \
-  ghcr.io/fitchmultz/splunk-tui:latest health
-
-# List Splunk jobs
-docker run --rm \
-  -e SPLUNK_BASE_URL=https://your-splunk:8089 \
-  -e SPLUNK_USERNAME=replace-with-your-username \
-  -e SPLUNK_PASSWORD=replace-with-your-password \
-  ghcr.io/fitchmultz/splunk-tui:latest jobs list
-```
-
-### Interactive TUI Mode
-
-```bash
-# Run the TUI (requires interactive terminal)
-docker run --rm -it \
-  -e SPLUNK_BASE_URL=https://your-splunk:8089 \
-  -e SPLUNK_API_TOKEN=your-token \
-  --entrypoint /usr/local/bin/splunk-tui \
-  ghcr.io/fitchmultz/splunk-tui:latest
-```
-
-### Using Make (Recommended for Local Development)
-
-The project includes convenient Makefile targets for common container operations:
-
-```bash
-# Build the Docker image
 make docker-build
+```
 
-# Run CLI with environment variables from your shell
-make docker-run-cli ARGS="jobs list"
-make docker-run-cli ARGS="health"
+The runtime image contains only:
 
-# Run TUI interactively
-make docker-run-tui
+- `/usr/local/bin/splunk-cli`
+- `/usr/local/bin/splunk-tui`
 
-# Start docker-compose environment (Splunk only)
+The internal `generate-tui-docs` tool is not shipped in the runtime image.
+
+## Run the CLI
+
+Provide connection metadata with environment variables and load secrets from a local `.env` file, shell secret store, or CI secret injection.
+
+```bash
+docker run --rm -it \
+  -e SPLUNK_BASE_URL \
+  -e SPLUNK_USERNAME \
+  -e SPLUNK_PASSWORD \
+  -e SPLUNK_API_TOKEN \
+  -e SPLUNK_SKIP_VERIFY \
+  splunk-tui:latest search 'index=_internal | head 10'
+```
+
+## Run the TUI
+
+```bash
+docker run --rm -it \
+  -e SPLUNK_BASE_URL \
+  -e SPLUNK_USERNAME \
+  -e SPLUNK_PASSWORD \
+  -e SPLUNK_API_TOKEN \
+  -e SPLUNK_SKIP_VERIFY \
+  --entrypoint /usr/local/bin/splunk-tui \
+  splunk-tui:latest
+```
+
+## Docker Compose Development Flow
+
+Start the local Splunk container:
+
+```bash
 make docker-compose-up
+```
 
-# Run CLI via docker-compose
-make docker-compose-cli ARGS="jobs list"
+Run the CLI against the compose environment:
 
-# Run TUI via docker-compose
+```bash
+make docker-compose-cli ARGS="doctor"
+```
+
+Run the TUI against the compose environment:
+
+```bash
 make docker-compose-tui
-
-# Clean up Docker images
-make docker-clean
-
-# Install Helm chart (requires SPLUNK_BASE_URL, SPLUNK_USERNAME, SPLUNK_PASSWORD)
-make helm-install
-
-# Upgrade or uninstall Helm release
-make helm-upgrade
-make helm-uninstall
 ```
 
-## Building Locally
+## Secret Handling
 
-### Basic Build
+- Do not place literal passwords or tokens directly in shell history.
+- Prefer a local `.env` file, shell startup that hydrates variables from a keyring, or CI-secret injection.
+- Keep `.env` and `.env.test` untracked.
 
-```bash
-# Build the Docker image
-docker build -t splunk-tui:latest .
-
-# Verify the build
-docker run --rm splunk-tui:latest --version
-```
-
-### Multi-Architecture Build
+Example `.env`:
 
 ```bash
-# Create buildx builder (first time only)
-docker buildx create --name multiarch --use
-docker buildx inspect --bootstrap
-
-# Build for multiple platforms
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/fitchmultz/splunk-tui:latest \
-  --push .
-```
-
-### Build with Cache
-
-```bash
-# Build with layer caching
-docker build \
-  --cache-from=type=local,src=/tmp/.buildx-cache \
-  --cache-to=type=local,dest=/tmp/.buildx-cache \
-  -t splunk-tui:latest .
-```
-
-## Docker Compose Usage
-
-### Starting the Development Environment
-
-```bash
-# Start Splunk Enterprise and supporting services
-docker-compose up -d splunk
-
-# Wait for Splunk to be healthy (check logs)
-docker-compose logs -f splunk
-
-# Once healthy, run CLI commands
-docker-compose --profile cli run --rm cli jobs list
-
-# Run the TUI interactively
-docker-compose --profile tui run --rm tui
-```
-
-### Docker Compose Configuration
-
-The included `docker-compose.yml` provides:
-
-- **splunk**: Splunk Enterprise instance with REST API on port 8089
-- **cli**: CLI service for running commands (profile: `cli`)
-- **tui**: TUI service for interactive use (profile: `tui`)
-
-### Environment Variables
-
-Create a `.env` file:
-
-```bash
-SPLUNK_BASE_URL=https://splunk:8089
+SPLUNK_BASE_URL=https://localhost:8089
 SPLUNK_USERNAME=replace-with-your-username
-SPLUNK_PASSWORD=replace-with-your-password
 SPLUNK_SKIP_VERIFY=true
+# Load SPLUNK_PASSWORD or SPLUNK_API_TOKEN from your shell/keyring workflow.
 ```
 
-### Example Commands
+## Validation
 
 ```bash
-# Run a search
-docker-compose --profile cli run --rm cli \
-  search "search index=_internal | head 10" --wait
-
-# Export search results to CSV
-docker-compose --profile cli run --rm cli \
-  search "search index=main | head 100" --format csv > results.csv
-
-# Check cluster health
-docker-compose --profile cli run --rm cli cluster health
+make docker-build
+make docker-compose-up
+make docker-compose-cli ARGS="doctor --output json"
 ```
 
-## Kubernetes Deployment
+## Exit Codes
 
-### Helm Installation
-
-```bash
-# Add the Helm repository (if published)
-helm repo add splunk-tui https://fitchmultz.github.io/splunk-tui
-helm repo update
-
-# Install with minimal configuration
-helm install splunk-tui ./helm/splunk-tui \
-  --set cli.splunk.baseUrl=https://splunk:8089 \
-  --set cli.splunk.username=replace-with-your-username \
-  --set cli.splunk.password=replace-with-your-password
-
-# Install with existing secret
-helm install splunk-tui ./helm/splunk-tui \
-  --set cli.enabled=true \
-  --set cli.existingSecret=my-splunk-secret
-```
-
-### Helm Values
-
-Key configuration options:
-
-```yaml
-# values.yaml
-image:
-  repository: ghcr.io/fitchmultz/splunk-tui
-  tag: "latest"
-
-cli:
-  enabled: true
-  splunk:
-    baseUrl: "https://splunk:8089"
-    username: "replace-with-your-username"
-    password: "replace-with-your-password"
-    skipVerify: false
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-
-tui:
-  enabled: false  # Enable for TUI sidecar deployment
-```
-
-### Using the CLI in Kubernetes
-
-```bash
-# Get pod name
-CLI_POD=$(kubectl get pods -l app.kubernetes.io/component=cli -o jsonpath='{.items[0].metadata.name}')
-
-# Run a command
-kubectl exec -it $CLI_POD -- splunk-cli jobs list
-
-# Run a search
-kubectl exec -it $CLI_POD -- splunk-cli \
-  search "search index=_internal | head 10" --wait
-```
-
-### One-Off Job Example
-
-```yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: splunk-health-check
-spec:
-  template:
-    spec:
-      containers:
-        - name: cli
-          image: ghcr.io/fitchmultz/splunk-tui:latest
-          command:
-            - /usr/local/bin/splunk-cli
-            - health
-          envFrom:
-            - secretRef:
-                name: splunk-credentials
-      restartPolicy: Never
-```
-
-### TUI as Sidecar
-
-For debugging or troubleshooting in Kubernetes:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-app-with-splunk-tui
-spec:
-  template:
-    spec:
-      containers:
-        - name: my-app
-          image: my-app:latest
-          # ... main application config
-        - name: splunk-tui
-          image: ghcr.io/fitchmultz/splunk-tui:latest
-          command: ["/usr/local/bin/pause"]
-          envFrom:
-            - secretRef:
-                name: splunk-credentials
-          resources:
-            limits:
-              cpu: 500m
-              memory: 256Mi
-```
-
-> Note: The runtime image is distroless and does not include a shell. Use `/usr/local/bin/pause` (included in the image) to keep the container running as a sidecar.
-
-Access the TUI:
-
-```bash
-kubectl exec -it deploy/my-app-with-splunk-tui -c splunk-tui -- splunk-tui
-```
-
-## Local Automation Integration
-
-Use the container image from your own shell scripts, local schedulers, or machines you control. This repository does not depend on hosted runners or external automation services.
-
-Example shell wrapper:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-docker run --rm \
-  --env-file .env \
-  ghcr.io/fitchmultz/splunk-tui:latest \
-  splunk-cli health
-```
-
-## Security Considerations
-
-### Distroless Base Image
-
-The container uses Google's distroless image which:
-- Contains no shell (no `sh`, `bash`)
-- Contains no package manager
-- Minimal attack surface
-- Only runtime dependencies for C/C++ applications
-
-### Non-Root User
-
-Containers run as `nonroot` user (UID 65532):
-- No privilege escalation possible
-- File system access limited
-- Follows principle of least privilege
-
-### Secrets Management
-
-**Never pass secrets via command line arguments** (they appear in process lists).
-
-#### Docker Secrets (Swarm)
-
-```yaml
-# docker-compose.yml
-secrets:
-  splunk_password:
-    external: true
-
-services:
-  cli:
-    image: ghcr.io/fitchmultz/splunk-tui:latest
-    secrets:
-      - splunk_password
-    environment:
-      SPLUNK_PASSWORD_FILE: /run/secrets/splunk_password
-```
-
-#### Kubernetes Secrets
-
-```bash
-# Create secret
-kubectl create secret generic splunk-credentials \
-  --from-literal=SPLUNK_BASE_URL=https://splunk:8089 \
-  --from-literal=SPLUNK_USERNAME=replace-with-your-username \
-  --from-literal=SPLUNK_PASSWORD=replace-with-your-password
-
-# Use in Helm
-helm install splunk-tui ./helm/splunk-tui \
-  --set cli.existingSecret=splunk-credentials
-```
-
-#### External Secrets Operator
-
-For cloud-managed secrets (AWS Secrets Manager, GCP Secret Manager, Azure Key Vault):
-
-```yaml
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: splunk-credentials
-spec:
-  secretStoreRef:
-    name: aws-secrets-manager
-    kind: ClusterSecretStore
-  target:
-    name: splunk-credentials
-  data:
-    - secretKey: SPLUNK_PASSWORD
-      remoteRef:
-        key: prod/splunk
-        property: password
-```
-
-### TLS Verification
-
-**Production**: Always use valid TLS certificates:
-
-```bash
-docker run --rm \
-  -e SPLUNK_BASE_URL=https://splunk.company.com:8089 \
-  -e SPLUNK_API_TOKEN=token \
-  -v /path/to/ca-cert.pem:/etc/ssl/certs/splunk-ca.pem:ro \
-  ghcr.io/fitchmultz/splunk-tui:latest health
-```
-
-**Development Only**: Skip TLS verification (not recommended for production):
-
-```bash
-docker run --rm \
-  -e SPLUNK_BASE_URL=https://splunk:8089 \
-  -e SPLUNK_API_TOKEN=token \
-  -e SPLUNK_SKIP_VERIFY=true \
-  ghcr.io/fitchmultz/splunk-tui:latest health
-```
-
-### Network Policies
-
-Restrict egress in Kubernetes:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: splunk-tui-policy
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: splunk-tui
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app: splunk
-      ports:
-        - protocol: TCP
-          port: 8089
-```
-
-## Troubleshooting
-
-### Container Won't Start
-
-```bash
-# Check logs
-docker logs <container-id>
-
-# Verify environment variables
-docker run --rm -e SPLUNK_BASE_URL=test ghcr.io/fitchmultz/splunk-tui:latest --help
-```
-
-### Connection Refused / Timeout
-
-**Issue**: Cannot connect to Splunk
-
-**Solutions**:
-1. Verify Splunk URL is accessible from container:
-   ```bash
-   docker run --rm --network=host splunk-tui:latest health
-   ```
-
-2. Check firewall rules between container and Splunk
-
-3. For Docker Compose, ensure services are on same network:
-   ```yaml
-   services:
-     cli:
-       networks:
-         - splunk-network
-   networks:
-     splunk-network:
-   ```
-
-### TLS Certificate Errors
-
-**Issue**: `certificate verify failed`
-
-**Solutions**:
-1. Mount custom CA certificate:
-   ```bash
-   docker run --rm \
-     -v /path/to/ca.crt:/etc/ssl/certs/splunk-ca.crt:ro \
-     -e SPLUNK_BASE_URL=https://splunk:8089 \
-     ghcr.io/fitchmultz/splunk-tui:latest health
-   ```
-
-2. Skip verification (development only):
-   ```bash
-   docker run -e SPLUNK_SKIP_VERIFY=true ...
-   ```
-
-### Authentication Failures
-
-**Issue**: `401 Unauthorized` or `403 Forbidden`
-
-**Solutions**:
-1. Verify credentials are correct
-2. Check password doesn't contain special characters that need escaping
-3. For API tokens, ensure token has required capabilities
-4. Quote password in docker run:
-   ```bash
-   docker run -e "SPLUNK_PASSWORD=p@ssw0rd!" ...
-   ```
-
-### TUI Display Issues
-
-**Issue**: TUI doesn't render correctly or shows garbled text
-
-**Solutions**:
-1. Ensure TTY is allocated:
-   ```bash
-   docker run -it ...
-   ```
-   (Both `-i` for interactive and `-t` for TTY are required)
-
-2. Set terminal type:
-   ```bash
-   docker run -it -e TERM=xterm-256color ...
-   ```
-
-3. For Windows terminals, use Windows Terminal or WSL2
-
-### Permission Denied
-
-**Issue**: Cannot write files or access directories
-
-**Cause**: Container runs as UID 65532 (nonroot)
-
-**Solution**: Ensure mounted volumes have correct permissions:
-
-```bash
-# Create directory with correct ownership
-docker run --rm -v $(pwd)/output:/output ghcr.io/fitchmultz/splunk-tui:latest \
-  search "search index=main | head 10" --wait --format csv > output/results.csv
-```
-
-### Out of Memory
-
-**Issue**: Container killed (OOMKilled)
-
-**Solutions**:
-1. Increase memory limit:
-   ```bash
-   docker run --memory=512m ...
-   ```
-
-2. For large result sets, use pagination:
-   ```bash
-   splunk-cli search "..." --max-count 1000
-   ```
-
-3. In Kubernetes, increase resources in values.yaml:
-   ```yaml
-   cli:
-     resources:
-       limits:
-         memory: 512Mi
-   ```
-
-### Debugging
-
-Since the distroless image has no shell, use these debugging techniques:
-
-**Option 1: Use a debug sidecar**
-
-```bash
-# Run a debug container alongside
-docker run --rm --network=container:<splunk-tui-container> \
-  nicolaka/netshoot \
-  curl -k https://splunk:8089/services/server/info
-```
-
-**Option 2: Build a debug version**
-
-```dockerfile
-# Dockerfile.debug
-FROM splunk-tui:latest as base
-FROM alpine:latest
-COPY --from=base /usr/local/bin/splunk-cli /usr/local/bin/
-COPY --from=base /usr/local/bin/splunk-tui /usr/local/bin/
-RUN apk add --no-cache ca-certificates
-ENTRYPOINT ["/usr/local/bin/splunk-cli"]
-```
-
-```bash
-docker build -f Dockerfile.debug -t splunk-tui:debug .
-docker run --rm -it --entrypoint sh splunk-tui:debug
-```
-
-**Option 3: Check logs and describe**
-
-```bash
-# Kubernetes
-kubectl logs <pod>
-kubectl describe pod <pod>
-
-# Docker
-docker logs <container>
-docker inspect <container>
-```
-
-## Reference
-
-### Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SPLUNK_BASE_URL` | Yes | - | Splunk REST API URL |
-| `SPLUNK_USERNAME` | No* | - | Splunk username |
-| `SPLUNK_PASSWORD` | No* | - | Splunk password |
-| `SPLUNK_API_TOKEN` | No* | - | Splunk API token (preferred) |
-| `SPLUNK_SKIP_VERIFY` | No | `false` | Skip TLS verification |
-| `SPLUNK_TIMEOUT` | No | `30` | Connection timeout (seconds) |
-| `SPLUNK_MAX_RETRIES` | No | `3` | Max retry attempts |
-| `RUST_LOG` | No | `info` | Log level (error, warn, info, debug, trace) |
-
-*Either API token OR username/password required
-
-### Image Tags
-
-| Tag | Description |
-|-----|-------------|
-| `latest` | Latest stable release |
-| `v0.1.0` | Specific version |
-| `main` | Latest build from main branch |
-| `sha-abc1234` | Specific commit |
-
-### Exit Codes
+Containerized CLI runs return the same structured exit codes as local `splunk-cli` runs.
 
 | Code | Meaning |
-|------|---------|
+| --- | --- |
 | 0 | Success |
 | 1 | General error |
 | 2 | Authentication failure |
@@ -625,10 +109,3 @@ docker inspect <container>
 | 7 | Rate limited |
 | 8 | Service unavailable |
 | 130 | Interrupted (Ctrl+C) |
-
-## Additional Resources
-
-- [Main README](../README.md)
-- [Usage Guide](usage.md)
-- [Security Policy](../SECURITY.md)
-- [Splunk REST API Documentation](https://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTprolog)

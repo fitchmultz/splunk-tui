@@ -209,10 +209,11 @@ impl SessionManager {
         // Fast path: Check if existing token is still valid (read lock only)
         {
             let token_guard = self.session_token.read().await;
-            if let Some(token) = token_guard.as_ref() {
-                if !token.is_expired() && !token.will_expire_soon(self.expiry_buffer_seconds) {
-                    return Ok(token.value.expose_secret().to_string());
-                }
+            if let Some(token) = token_guard.as_ref()
+                && !token.is_expired()
+                && !token.will_expire_soon(self.expiry_buffer_seconds)
+            {
+                return Ok(token.value.expose_secret().to_string());
             }
         } // Release read lock
 
@@ -273,10 +274,10 @@ impl SessionManager {
         // After being notified, check if we now have a valid token
         // If the refresh succeeded, we'll have a token. If it failed, we return error.
         let token_guard = self.session_token.read().await;
-        if let Some(token) = token_guard.as_ref() {
-            if !token.is_expired() {
-                return Ok(token.value.expose_secret().to_string());
-            }
+        if let Some(token) = token_guard.as_ref()
+            && !token.is_expired()
+        {
+            return Ok(token.value.expose_secret().to_string());
         }
         drop(token_guard);
 

@@ -90,14 +90,14 @@ pub struct ShcConfig {
 }
 
 /// Parameters for adding a member to SHC.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct AddShcMemberParams {
     /// Target member URI to add
     pub target_uri: String,
 }
 
 /// Parameters for removing a member from SHC.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct RemoveShcMemberParams {
     /// Member GUID to remove
     pub member: String,
@@ -113,14 +113,14 @@ pub struct ShcManagementResponse {
 }
 
 /// Parameters for triggering a rolling restart.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct RollingRestartParams {
     /// Force restart even if some members are not ready
     pub force: bool,
 }
 
 /// Parameters for setting captain.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct SetCaptainParams {
     /// Target member GUID to become captain
     pub target_guid: String,

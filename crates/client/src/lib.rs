@@ -12,11 +12,11 @@ pub mod client;
 pub mod error;
 pub mod format;
 pub mod metrics;
-pub mod metrics_exporter;
 pub mod models;
 mod name_merge;
-pub mod tracing;
+pub(crate) mod tracing;
 pub mod transaction;
+pub mod workflows;
 
 /// Serde helper functions for deserializing Splunk's inconsistent JSON types.
 ///
@@ -38,7 +38,6 @@ pub use client::health::AggregatedHealth;
 pub use error::{ClientError, FailureCategory, Result, RollbackFailure, UserFacingFailure};
 pub use format::{format_bytes, format_bytes_with_precision};
 pub use metrics::{ErrorCategory, MetricsCollector};
-pub use metrics_exporter::{MetricsExporter, MetricsExporterError};
 pub use models::{
     AddShcMemberParams, App, AppListResponse, Capability, CapabilityListResponse, ClusterInfo,
     ClusterManagementResponse, ClusterPeer, CreateIndexParams, CreatePoolParams, CreateRoleParams,
@@ -55,9 +54,6 @@ pub use models::{
     SetCaptainParams, ShcCaptain, ShcConfig, ShcManagementResponse, ShcMember, ShcStatus,
     SplunkHealth, SplunkResponse, UploadLookupParams, User, UserListResponse, WorkloadPool,
     WorkloadRule,
-};
-pub use tracing::{
-    TracingConfig, TracingError, TracingGuard, extract_trace_context, inject_trace_context,
 };
 
 // Re-export search types for CLI/TUI use

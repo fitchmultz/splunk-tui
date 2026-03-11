@@ -19,7 +19,7 @@ make ci-fast
 
 `make ci-fast` includes:
 
-1. dependency fetch (`make install`)
+1. dependency fetch (`make deps`)
 2. format check (`make format-check`)
 3. secret guard (`make lint-secrets`)
 4. lint check (`make lint-check`)

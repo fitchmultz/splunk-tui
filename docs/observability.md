@@ -2,6 +2,12 @@
 
 Splunk TUI and CLI support OpenTelemetry distributed tracing for production debugging and performance analysis.
 
+Telemetry bootstrap now lives in the frontend binaries:
+
+- `splunk-cli` owns CLI subscriber and metrics-exporter initialization.
+- `splunk-tui` owns TUI subscriber and metrics-exporter initialization.
+- `splunk-client` emits spans, metrics labels, and trace context, but does not install exporters or runtime telemetry plumbing.
+
 ## Quick Start
 
 ### Run with Jaeger (Local Development)

@@ -14,7 +14,7 @@
 //!
 //! # Theme Helpers
 //!
-//! The [`theme`] module extends `splunk_config::Theme` with ergonomic
+//! The [`theme`] module extends `crate::theme::Theme` with ergonomic
 //! style builders via the [`ThemeExt`] trait.
 //!
 //! # Layout
@@ -26,7 +26,7 @@
 //!
 //! ```rust,ignore
 //! use splunk_tui::ui::{ThemeExt, components::SelectList};
-//! use splunk_config::Theme;
+//! use crate::theme::Theme;
 //!
 //! let theme = Theme::default();
 //! let style = theme.title(); // Uses ThemeExt trait

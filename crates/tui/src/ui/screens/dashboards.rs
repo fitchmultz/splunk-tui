@@ -2,13 +2,13 @@
 //!
 //! Renders the list of Splunk dashboards.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Dashboard;
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;

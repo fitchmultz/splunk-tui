@@ -116,11 +116,11 @@ impl CommandPaletteState {
 
         // Add recent commands first
         for recent_action in &self.recent_commands {
-            if let Some(mut item) = self.find_item_by_action(recent_action) {
-                if item.is_available_on(current_screen) {
-                    item.is_recent = true;
-                    items.push(item);
-                }
+            if let Some(mut item) = self.find_item_by_action(recent_action)
+                && item.is_available_on(current_screen)
+            {
+                item.is_recent = true;
+                items.push(item);
             }
         }
 

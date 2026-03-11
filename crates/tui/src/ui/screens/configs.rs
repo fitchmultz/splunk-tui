@@ -4,6 +4,7 @@
 //! (props.conf, transforms.conf, inputs.conf, etc.).
 
 use crate::app::input::components::SingleLineInput;
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -11,7 +12,6 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
 };
 use splunk_client::models::{ConfigFile, ConfigStanza};
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;

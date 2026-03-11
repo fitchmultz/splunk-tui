@@ -10,13 +10,13 @@
 //! - Data fetching (handled by side effects)
 //! - User input (handled by input handlers)
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState},
 };
 use splunk_client::models::{WorkloadPool, WorkloadRule};
-use splunk_config::Theme;
 
 use crate::app::state::WorkloadViewMode;
 use crate::ui::theme::ThemeExt;

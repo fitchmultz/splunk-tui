@@ -8,15 +8,13 @@
 //! Does NOT handle:
 //! - Direct REST API implementation (see `crates/client`).
 //! - Output formatting details (see `output.rs`).
-//! - Resource fetching implementation (see `fetchers.rs`).
+//! - Shared resource aggregation implementation (lives in `splunk-client::workflows`).
 //!
 //! Invariants:
 //! - Individual resource fetches have a 30-second timeout.
 //! - Profile-level errors are captured and reported but don't stop other profiles.
 //! - Timestamp is always RFC3339 format.
 
-pub mod auth;
-pub mod fetchers;
 pub mod output;
 pub mod types;
 
@@ -27,41 +25,7 @@ use crate::cancellation::CancellationToken;
 use crate::commands::build_client_from_config;
 use crate::formatters::{OutputFormat, output_result};
 
-pub use types::{ListAllMultiOutput, ProfileResult, VALID_RESOURCES};
-
-/// Normalize and validate resource types for fetching.
-///
-/// This helper:
-/// - Trims, lowercases, and deduplicates resource names (preserving order)
-/// - Defaults to all valid resources if none specified
-/// - Validates that all resources are valid types
-fn normalize_and_validate_resources(resources_filter: Option<Vec<String>>) -> Result<Vec<String>> {
-    // Normalize resource types (trim, lowercase, dedupe, preserve order)
-    let resources_to_fetch: Vec<String> = resources_filter
-        .map(|resources| {
-            let mut seen = std::collections::HashSet::new();
-            resources
-                .into_iter()
-                .map(|r| r.trim().to_lowercase())
-                .filter(|r| !r.is_empty())
-                .filter(|r| seen.insert(r.clone()))
-                .collect()
-        })
-        .unwrap_or_else(|| VALID_RESOURCES.iter().map(|s| s.to_string()).collect());
-
-    // Validate all resources are valid types
-    for resource in &resources_to_fetch {
-        if !VALID_RESOURCES.contains(&resource.as_str()) {
-            anyhow::bail!(
-                "Invalid resource type: {}. Valid types: {}",
-                resource,
-                VALID_RESOURCES.join(", ")
-            );
-        }
-    }
-
-    Ok(resources_to_fetch)
-}
+pub use types::{ListAllMultiOutput, ProfileResult};
 
 /// Write formatted output to stdout or file.
 async fn write_output(
@@ -89,11 +53,22 @@ pub async fn run_single_profile(
     info!("Listing all Splunk resources (single-profile mode)");
 
     // Normalize and validate resource types
-    let resources_to_fetch = normalize_and_validate_resources(resources_filter)?;
+    let resources_to_fetch =
+        splunk_client::workflows::multi_profile::normalize_and_validate_resources(
+            resources_filter,
+        )?;
 
     // Build client and fetch resources
     let client = build_client_from_config(&config, Some(no_cache))?;
-    let resources = fetchers::fetch_all_resources(&client, resources_to_fetch, cancel).await?;
+    if cancel.is_cancelled() {
+        anyhow::bail!("List-all request cancelled");
+    }
+    let resources = splunk_client::workflows::multi_profile::fetch_resource_summaries(
+        &client,
+        resources_to_fetch,
+        Some(cancel),
+    )
+    .await?;
 
     // Build output structure
     let results = ListAllMultiOutput {
@@ -134,7 +109,10 @@ pub async fn run_multi_profile(
     info!("Listing all Splunk resources (multi-profile mode)");
 
     // Normalize and validate resource types
-    let resources_to_fetch = normalize_and_validate_resources(resources_filter)?;
+    let resources_to_fetch =
+        splunk_client::workflows::multi_profile::normalize_and_validate_resources(
+            resources_filter,
+        )?;
 
     // Determine which profiles to query
     let target_profiles: Vec<String> = if all_profiles {
@@ -178,13 +156,18 @@ pub async fn run_multi_profile(
     }
 
     // Fetch resources from all target profiles
-    let results = output::fetch_multi_profile_resources(
-        config_manager,
-        target_profiles,
-        resources_to_fetch,
-        cancel,
-    )
-    .await?;
+    let profiles_map = config_manager.list_profiles().clone();
+    let profiles = target_profiles
+        .iter()
+        .map(|profile_name| {
+            (
+                profile_name.clone(),
+                profiles_map.get(profile_name).cloned().unwrap_or_default(),
+            )
+        })
+        .collect();
+    let results =
+        output::fetch_multi_profile_resources(profiles, resources_to_fetch, cancel).await?;
 
     // Format and output results
     let format = OutputFormat::from_str(output_format)?;

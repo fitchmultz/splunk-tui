@@ -237,15 +237,15 @@ pub async fn send_request_with_retry(
 
     for attempt in 0..=max_retries {
         // Check circuit breaker before each attempt (fail fast if opened during retry sleep)
-        if let Some(cb) = circuit_breaker {
-            if let Err(e) = cb.check(endpoint) {
-                warn!(
-                    endpoint = endpoint,
-                    attempt = attempt + 1,
-                    "Circuit breaker open, failing fast"
-                );
-                return Err(ClientError::from(e));
-            }
+        if let Some(cb) = circuit_breaker
+            && let Err(e) = cb.check(endpoint)
+        {
+            warn!(
+                endpoint = endpoint,
+                attempt = attempt + 1,
+                "Circuit breaker open, failing fast"
+            );
+            return Err(ClientError::from(e));
         }
 
         // Record current attempt number in span
@@ -340,10 +340,11 @@ pub async fn send_request_with_retry(
 
                 // Record failure in circuit breaker for retryable server errors and 429,
                 // excluding expected standalone SHC responses.
-                if (status.is_server_error() || status_u16 == 429) && !expected_shc_unavailable {
-                    if let Some(cb) = circuit_breaker {
-                        cb.record_failure(endpoint);
-                    }
+                if (status.is_server_error() || status_u16 == 429)
+                    && !expected_shc_unavailable
+                    && let Some(cb) = circuit_breaker
+                {
+                    cb.record_failure(endpoint);
                 }
 
                 // Check for retryable status codes (429 or 5xx) unless it's an expected SHC miss.

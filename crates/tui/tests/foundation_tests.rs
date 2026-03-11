@@ -2,9 +2,10 @@
 //!
 //! Tests the theme helpers, focus management, and component library.
 
-use splunk_config::{ColorTheme, Theme};
+use splunk_config::ColorTheme;
 use splunk_tui::{
     focus::{ComponentFocusData, FocusManager},
+    theme::Theme,
     ui::theme::ThemeExt,
 };
 

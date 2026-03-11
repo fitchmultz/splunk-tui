@@ -182,10 +182,10 @@ impl App {
 
     /// Helper to extract AuthRecoveryKind from current popup
     fn get_auth_recovery_kind(&self) -> Option<AuthRecoveryKind> {
-        if let Some(ref popup) = self.popup {
-            if let PopupType::AuthRecovery { kind } = popup.kind.clone() {
-                return Some(kind);
-            }
+        if let Some(ref popup) = self.popup
+            && let PopupType::AuthRecovery { kind } = popup.kind.clone()
+        {
+            return Some(kind);
         }
         None
     }

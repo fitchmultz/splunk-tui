@@ -148,7 +148,7 @@ fn test_doctor_output_includes_checks() {
         .args(["doctor", "--output", "json"])
         .assert()
         .failure()
-        .stdout(predicate::str::contains("config_load"))
+        .stdout(predicate::str::contains("\"name\": \"config\""))
         .stdout(predicate::str::contains("auth_strategy"))
         .stdout(predicate::str::contains("client_build"));
 }

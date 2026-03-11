@@ -13,8 +13,8 @@ use ratatui::{
 
 use crate::app::SplValidationState;
 use crate::app::input::components::SingleLineInput;
+use crate::theme::Theme;
 use splunk_client::SearchMode;
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 

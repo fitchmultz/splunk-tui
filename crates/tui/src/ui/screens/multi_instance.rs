@@ -6,6 +6,7 @@
 //!
 //! This provides TUI parity with the CLI's list-all --all-profiles command.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -13,7 +14,6 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
-use splunk_config::Theme;
 
 use crate::action::MultiInstanceOverviewData;
 

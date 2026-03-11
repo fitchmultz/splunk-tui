@@ -25,21 +25,23 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<LookupTable>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_lookup_tables(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_lookup_tables"),
+            |__token| async move {
+                endpoints::list_lookup_tables(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Download a lookup table file as raw CSV content.
@@ -57,22 +59,24 @@ impl SplunkClient {
         app: Option<&str>,
         owner: Option<&str>,
     ) -> Result<String> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::download_lookup_table(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                app,
-                owner,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("download_lookup_table"),
+            |__token| async move {
+                endpoints::download_lookup_table(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    app,
+                    owner,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Upload or replace a lookup table file.
@@ -112,21 +116,23 @@ impl SplunkClient {
         app: Option<&str>,
         owner: Option<&str>,
     ) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_lookup_table(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                app,
-                owner,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_lookup_table"),
+            |__token| async move {
+                endpoints::delete_lookup_table(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    app,
+                    owner,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

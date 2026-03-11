@@ -28,11 +28,12 @@
 //! # Invariants
 //! - All API methods handle 401/403 authentication errors by refreshing the session
 //!   and retrying once (for session-based authentication only; API tokens do not trigger retries)
-//! - The `retry_call!` macro centralizes this retry pattern across all API methods
+//! - Auth-refresh request execution is centralized in `request_executor`
 
 pub mod builder;
 pub mod cache;
 pub mod circuit_breaker;
+pub mod request_executor;
 mod session;
 
 // API method submodules
@@ -68,45 +69,6 @@ use crate::client::circuit_breaker::CircuitBreaker;
 use crate::metrics::MetricsCollector;
 use std::sync::Arc;
 
-/// Macro to wrap an async API call with automatic session retry on 401/403 errors.
-///
-/// This macro centralizes the authentication retry pattern used across all API methods.
-/// When a 401 or 403 error is received and the client is using session-based auth
-/// (not API token auth), it clears the session, re-authenticates, and retries the call once.
-///
-/// # Usage
-///
-/// ```ignore
-/// retry_call!(self, __token, endpoints::some_endpoint(&self.http, &self.base_url, __token, arg1, arg2).await)
-/// ```
-///
-/// The placeholder `__token` will be replaced with the actual auth token.
-#[macro_export]
-macro_rules! retry_call {
-    ($self:expr, $token:ident, $call:expr) => {{
-        let $token = $self.get_auth_token().await?;
-        let result = $call;
-
-        match result {
-            Ok(data) => Ok(data),
-            // Handle classified auth errors (SessionExpired, Unauthorized, AuthFailed)
-            // as well as legacy ApiError with 401/403 status codes
-            Err(ref e) if e.is_auth_error() && !$self.is_api_token_auth() => {
-                ::tracing::debug!(
-                    "Auth error ({}), clearing session and re-authenticating...",
-                    e
-                );
-                $self.session_manager.clear_session().await;
-                let $token = $self.get_auth_token().await?;
-                let retry_result = $call;
-                // Enrich error with username if retry also failed
-                retry_result.map_err(|err| $self.enrich_auth_error(err))
-            }
-            Err(e) => Err($self.enrich_auth_error(e)),
-        }
-    }};
-}
-
 /// Splunk REST API client.
 ///
 /// This client provides methods for interacting with the Splunk Enterprise
@@ -138,6 +100,7 @@ pub struct SplunkClient {
     pub(crate) http: reqwest::Client,
     pub(crate) base_url: String,
     pub(crate) session_manager: SessionManager,
+    pub(crate) request_timeout: std::time::Duration,
     pub(crate) max_retries: usize,
     pub(crate) session_ttl_seconds: u64,
     pub(crate) metrics: Option<MetricsCollector>,

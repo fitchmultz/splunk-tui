@@ -27,6 +27,14 @@ use crossterm::{
 };
 use futures_util::StreamExt;
 use ratatui::{Terminal, backend::CrosstermBackend};
+use splunk_config::constants::{
+    DEFAULT_CHANNEL_CAPACITY, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_REFRESH_INTERVAL_SECS,
+    DEFAULT_UI_TICK_MS,
+};
+use splunk_config::{
+    AuthStrategy as ConfigAuthStrategy, ConfigLoader, ConfigManager, InternalLogsDefaults,
+    PersistedState, SearchDefaultConfig, SearchDefaults,
+};
 use splunk_tui::action::Action;
 use splunk_tui::app::{App, ConnectionContext};
 use splunk_tui::cli::Cli;
@@ -36,22 +44,12 @@ use splunk_tui::runtime::startup::{
     BootstrapReason, StartupDecision, StartupPhase, action_requires_client, classify_startup_error,
     should_launch_tutorial,
 };
+use splunk_tui::telemetry;
 use splunk_tui::ui::popup::{Popup, PopupType};
 use std::sync::Arc;
 use tokio::sync::{
     Mutex,
     mpsc::{Sender, channel},
-};
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-
-use splunk_config::constants::{
-    DEFAULT_CHANNEL_CAPACITY, DEFAULT_HEALTH_CHECK_INTERVAL_SECS, DEFAULT_REFRESH_INTERVAL_SECS,
-    DEFAULT_UI_TICK_MS,
-};
-use splunk_config::{
-    AuthStrategy as ConfigAuthStrategy, ConfigLoader, ConfigManager, InternalLogsDefaults,
-    PersistedState, SearchDefaultConfig, SearchDefaults,
 };
 
 use splunk_tui::runtime::{
@@ -98,64 +96,16 @@ async fn main() -> Result<()> {
     // Create logs directory if it doesn't exist
     std::fs::create_dir_all(&cli.log_dir)?;
 
-    // Initialize OpenTelemetry if OTLP endpoint is configured.
-    // Keep guards alive for the entire main() duration to ensure logs are flushed.
-    let (otel_guard, log_guard): (_, Option<WorkerGuard>) =
-        if let Some(ref endpoint) = cli.otlp_endpoint {
-            let service_name = cli
-                .otel_service_name
-                .clone()
-                .unwrap_or_else(|| "splunk-tui".to_string());
-
-            let config = splunk_client::TracingConfig::new()
-                .with_otlp_endpoint(endpoint)
-                .with_service_name(service_name)
-                .with_stdout(false); // TUI uses file logging, not stdout
-
-            match config.init() {
-                Ok(guard) => {
-                    tracing::info!("OpenTelemetry tracing enabled: endpoint={endpoint}");
-                    (Some(guard), None)
-                }
-                Err(e) => {
-                    tracing::warn!("Failed to initialize OpenTelemetry: {e}");
-                    (None, None)
-                }
-            }
-        } else {
-            // Initialize file-based logging with configurable directory
-            let log_file_name = "splunk-tui.log";
-            let file_appender = tracing_appender::rolling::daily(&cli.log_dir, log_file_name);
-            let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
-
-            tracing_subscriber::registry()
-                .with(EnvFilter::from_default_env())
-                .with(fmt::layer().with_writer(file_writer))
-                .init();
-
-            (None, Some(guard))
-        };
-    let _otel_guard = otel_guard;
-    let _log_guard = log_guard;
-
-    // Initialize metrics exporter if --metrics-bind is provided
-    let _metrics_exporter = if let Some(ref bind_addr) = cli.metrics_bind {
-        match splunk_client::MetricsExporter::install(bind_addr) {
-            Ok(exporter) => {
-                tracing::info!("Metrics exporter started on http://{}/metrics", bind_addr);
-                Some(exporter)
-            }
-            Err(e) => {
-                tracing::error!("Failed to start metrics exporter: {}", e);
-                None
-            }
-        }
-    } else {
-        None
-    };
+    let _telemetry = telemetry::init(
+        cli.otlp_endpoint.as_deref(),
+        cli.otel_service_name.as_deref(),
+        &cli.log_dir,
+        cli.metrics_bind.as_deref(),
+    )
+    .map_err(anyhow::Error::msg)?;
 
     // Store whether metrics are enabled for use in spawned tasks
-    let metrics_enabled = _metrics_exporter.is_some();
+    let metrics_enabled = _telemetry.metrics_enabled();
 
     // Try to load configuration with bootstrap fallback (RQ-0454)
     // This allows the UI to start even if auth is missing/invalid
@@ -678,16 +628,16 @@ async fn main() -> Result<()> {
                         ));
 
                         // Spawn health check task now that we have a client (if not already running)
-                        if !health_check_running {
-                            if let Some(ref client_health) = client {
-                                health_check_running = true;
-                                spawn_health_check_task(
-                                    &task_tracker,
-                                    client_health.clone(),
-                                    tx.clone(),
-                                    health_check_interval_seconds,
-                                );
-                            }
+                        if !health_check_running
+                            && let Some(ref client_health) = client
+                        {
+                            health_check_running = true;
+                            spawn_health_check_task(
+                                &task_tracker,
+                                client_health.clone(),
+                                tx.clone(),
+                                health_check_interval_seconds,
+                            );
                         }
                     }
                     continue;
@@ -766,12 +716,19 @@ async fn main() -> Result<()> {
             _ = refresh_interval.tick() => {
                 // Data refresh is separate from UI tick
                 // Only process if we have a client (not in bootstrap mode)
-                if client.is_some() {
-                    if let Some(a) = app.handle_tick() {
-                        app.update(a.clone());
-                        if let Some(ref c) = client {
-                            handle_side_effects(a, c.clone(), tx.clone(), config_manager.clone(), task_tracker.clone()).await;
-                        }
+                if client.is_some()
+                    && let Some(a) = app.handle_tick()
+                {
+                    app.update(a.clone());
+                    if let Some(ref c) = client {
+                        handle_side_effects(
+                            a,
+                            c.clone(),
+                            tx.clone(),
+                            config_manager.clone(),
+                            task_tracker.clone(),
+                        )
+                        .await;
                     }
                 }
             }
@@ -785,11 +742,6 @@ async fn main() -> Result<()> {
     // Graceful shutdown: close tracker and wait for tasks
     let _ = task_tracker.close();
     task_tracker.wait().await;
-
-    // Shutdown OpenTelemetry to flush pending spans
-    if let Some(guard) = _otel_guard {
-        guard.shutdown();
-    }
 
     // Restore terminal
     disable_raw_mode()?;

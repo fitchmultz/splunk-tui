@@ -22,56 +22,62 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<SearchJobStatus>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_jobs(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_jobs"),
+            |__token| async move {
+                endpoints::list_jobs(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Cancel a search job.
     pub async fn cancel_job(&self, sid: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::cancel_job(
-                &self.http,
-                &self.base_url,
-                &__token,
-                sid,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("cancel_job"),
+            |__token| async move {
+                endpoints::cancel_job(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    sid,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Delete a search job.
     pub async fn delete_job(&self, sid: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_job(
-                &self.http,
-                &self.base_url,
-                &__token,
-                sid,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_job"),
+            |__token| async move {
+                endpoints::delete_job(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    sid,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

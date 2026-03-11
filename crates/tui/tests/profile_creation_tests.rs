@@ -56,26 +56,26 @@ fn test_create_profile_popup_field_navigation() {
     });
 
     // Initial field should be Name
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::Name);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::Name);
     }
 
     // Tab should advance to next field
     let _ = app.handle_popup_input(tab_key());
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::BaseUrl);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::BaseUrl);
     }
 
     // Tab again should advance to Username
     let _ = app.handle_popup_input(tab_key());
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::Username);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::Username);
     }
 }
 
@@ -92,10 +92,10 @@ fn test_create_profile_popup_text_input() {
     }
 
     // Verify name was entered
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { name_input, .. } = &popup.kind {
-            assert_eq!(name_input, "test-profile");
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { name_input, .. } = &popup.kind
+    {
+        assert_eq!(name_input, "test-profile");
     }
 }
 
@@ -138,10 +138,10 @@ fn test_create_profile_from_tutorial_flag() {
     });
 
     // Verify from_tutorial flag is set
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { from_tutorial, .. } = &popup.kind {
-            assert!(*from_tutorial);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { from_tutorial, .. } = &popup.kind
+    {
+        assert!(*from_tutorial);
     }
 }
 
@@ -172,10 +172,10 @@ fn test_create_profile_skip_verify_toggle() {
     let _ = app.handle_popup_input(key(' '));
 
     // Verify it toggled
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { skip_verify, .. } = &popup.kind {
-            assert_ne!(*skip_verify, initial_skip_verify);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { skip_verify, .. } = &popup.kind
+    {
+        assert_ne!(*skip_verify, initial_skip_verify);
     }
 }
 
@@ -232,18 +232,17 @@ fn test_create_profile_popup_with_valid_data() {
     }
 
     // Verify popup state
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile {
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile {
             name_input,
             base_url_input,
             username_input,
             ..
         } = &popup.kind
-        {
-            assert_eq!(name_input, "my-profile");
-            assert_eq!(base_url_input, "https://localhost:8089");
-            assert_eq!(username_input, "admin");
-        }
+    {
+        assert_eq!(name_input, "my-profile");
+        assert_eq!(base_url_input, "https://localhost:8089");
+        assert_eq!(username_input, "admin");
     }
 
     // Submit should produce SaveProfile action (if name is provided)
@@ -264,10 +263,10 @@ fn test_create_profile_popup_use_keyring_toggle() {
     }
 
     // Verify we're on UseKeyring field
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::UseKeyring);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::UseKeyring);
     }
 
     // Get current state
@@ -285,10 +284,10 @@ fn test_create_profile_popup_use_keyring_toggle() {
     let _ = app.handle_popup_input(key(' '));
 
     // Verify it toggled
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { use_keyring, .. } = &popup.kind {
-            assert_ne!(*use_keyring, initial_use_keyring);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { use_keyring, .. } = &popup.kind
+    {
+        assert_ne!(*use_keyring, initial_use_keyring);
     }
 }
 
@@ -305,10 +304,10 @@ fn test_create_profile_popup_timeout_field() {
     }
 
     // Verify we're on Timeout field
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::Timeout);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::Timeout);
     }
 }
 
@@ -325,10 +324,10 @@ fn test_create_profile_popup_max_retries_field() {
     }
 
     // Verify we're on MaxRetries field
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::MaxRetries);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::MaxRetries);
     }
 }
 
@@ -345,10 +344,10 @@ fn test_create_profile_popup_api_token_input() {
     }
 
     // Verify we're on ApiToken field
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::ApiToken);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::ApiToken);
     }
 
     // Fill in API token
@@ -357,13 +356,12 @@ fn test_create_profile_popup_api_token_input() {
     }
 
     // Verify api_token was entered
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile {
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile {
             api_token_input, ..
         } = &popup.kind
-        {
-            assert_eq!(api_token_input, "eyJ0eXAiOiJKV1QiLCJhbGci...");
-        }
+    {
+        assert_eq!(api_token_input, "eyJ0eXAiOiJKV1QiLCJhbGci...");
     }
 }
 
@@ -376,17 +374,17 @@ fn test_create_profile_popup_up_navigation() {
 
     // Navigate down to BaseUrl
     let _ = app.handle_popup_input(tab_key());
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::BaseUrl);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::BaseUrl);
     }
 
     // Navigate up with Up arrow
     let _ = app.handle_popup_input(KeyEvent::new(KeyCode::Up, KeyModifiers::NONE));
-    if let Some(popup) = &app.popup {
-        if let PopupType::CreateProfile { selected_field, .. } = &popup.kind {
-            assert_eq!(*selected_field, ProfileField::Name);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::CreateProfile { selected_field, .. } = &popup.kind
+    {
+        assert_eq!(*selected_field, ProfileField::Name);
     }
 }

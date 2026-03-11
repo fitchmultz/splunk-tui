@@ -1,7 +1,7 @@
 //! Benchmarks for SPL syntax highlighting.
 
 use criterion::{Criterion, criterion_group, criterion_main};
-use splunk_config::Theme;
+use splunk_tui::theme::Theme;
 use splunk_tui::ui::syntax::highlight_spl;
 use std::hint::black_box;
 

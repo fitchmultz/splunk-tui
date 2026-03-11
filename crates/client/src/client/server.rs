@@ -16,35 +16,39 @@ use crate::models::{ServerInfo, SplunkHealth};
 impl SplunkClient {
     /// Get server information.
     pub async fn get_server_info(&self) -> Result<ServerInfo> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_server_info(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_server_info"),
+            |__token| async move {
+                endpoints::get_server_info(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get system-wide health information.
     pub async fn get_health(&self) -> Result<SplunkHealth> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_health(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_health"),
+            |__token| async move {
+                endpoints::get_health(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

@@ -43,8 +43,8 @@ async fn test_export_data_error() {
     let mut harness = SideEffectsTestHarness::new().await;
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
 
-    // Use a missing parent directory; export does not create directories.
-    let export_path = temp_dir.path().join("missing").join("export.json");
+    // Use a directory path as the target so the shared export workflow fails on write.
+    let export_path = temp_dir.path().to_path_buf();
 
     let data = serde_json::json!([{"name": "test"}]);
 

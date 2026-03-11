@@ -81,12 +81,12 @@ impl App {
 
         // Check if any circuits are open
         let mut open_circuits = Vec::new();
-        if let Some(ref health) = self.health_info {
-            if let Some(ref cb_states) = health.circuit_breaker_states {
-                for (endpoint, state) in cb_states {
-                    if state == "open" {
-                        open_circuits.push(endpoint.clone());
-                    }
+        if let Some(ref health) = self.health_info
+            && let Some(ref cb_states) = health.circuit_breaker_states
+        {
+            for (endpoint, state) in cb_states {
+                if state == "open" {
+                    open_circuits.push(endpoint.clone());
                 }
             }
         }
@@ -775,7 +775,7 @@ impl App {
     ///
     /// Mode indicator appears on screens with special navigation (Search).
     /// Handles narrow terminals by responsive truncation.
-    fn build_footer_text(&self, theme: splunk_config::Theme) -> Vec<Line<'_>> {
+    fn build_footer_text(&self, theme: crate::theme::Theme) -> Vec<Line<'_>> {
         let hints = crate::input::keymap::footer_hints(self.current_screen);
         let available_width = self.last_area.width as usize;
         let nav_ctx = self.navigation_context();

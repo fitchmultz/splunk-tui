@@ -182,7 +182,7 @@ async fn test_list_forwarders_forbidden() {
 
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(matches!(err, ClientError::ApiError { status: 403, .. }));
+    assert!(matches!(err, ClientError::Unauthorized(_)));
 }
 
 #[tokio::test]

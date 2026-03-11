@@ -3,6 +3,7 @@
 //! Renders KVStore status information including current member details
 //! and replication status.
 
+use crate::theme::Theme;
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
 use ratatui::{
@@ -12,7 +13,6 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Row, Table},
 };
 use splunk_client::{format_bytes, models::KvStoreStatus};
-use splunk_config::Theme;
 
 /// Configuration for rendering the KVStore screen.
 pub struct KvstoreRenderConfig<'a> {

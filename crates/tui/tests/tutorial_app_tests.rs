@@ -172,10 +172,10 @@ fn test_tutorial_popup_enter_advances_welcome() {
     assert!(app.popup.is_some());
 
     // Verify we're on Welcome step
-    if let Some(popup) = &app.popup {
-        if let PopupType::TutorialWizard { state } = &popup.kind {
-            assert_eq!(state.current_step, TutorialStep::Welcome);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::TutorialWizard { state } = &popup.kind
+    {
+        assert_eq!(state.current_step, TutorialStep::Welcome);
     }
 
     // Press Enter on Welcome step - should advance to ProfileCreation
@@ -187,14 +187,14 @@ fn test_tutorial_popup_enter_advances_welcome() {
 
     // Popup should still be open with updated state
     assert!(app.popup.is_some());
-    if let Some(popup) = &app.popup {
-        if let PopupType::TutorialWizard { state } = &popup.kind {
-            assert_eq!(
-                state.current_step,
-                TutorialStep::ProfileCreation,
-                "Should advance to ProfileCreation"
-            );
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::TutorialWizard { state } = &popup.kind
+    {
+        assert_eq!(
+            state.current_step,
+            TutorialStep::ProfileCreation,
+            "Should advance to ProfileCreation"
+        );
     }
 }
 
@@ -207,10 +207,10 @@ fn test_tutorial_popup_left_goes_back() {
     let _ = app.handle_tutorial_popup(enter_key()); // Advance from Welcome
 
     // Verify we're on ProfileCreation
-    if let Some(popup) = &app.popup {
-        if let PopupType::TutorialWizard { state } = &popup.kind {
-            assert_eq!(state.current_step, TutorialStep::ProfileCreation);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::TutorialWizard { state } = &popup.kind
+    {
+        assert_eq!(state.current_step, TutorialStep::ProfileCreation);
     }
 
     // Press Left - should go back to Welcome
@@ -218,10 +218,10 @@ fn test_tutorial_popup_left_goes_back() {
     assert!(action.is_none(), "Left arrow should not produce action");
 
     // Should be back on Welcome
-    if let Some(popup) = &app.popup {
-        if let PopupType::TutorialWizard { state } = &popup.kind {
-            assert_eq!(state.current_step, TutorialStep::Welcome);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::TutorialWizard { state } = &popup.kind
+    {
+        assert_eq!(state.current_step, TutorialStep::Welcome);
     }
 }
 
@@ -303,10 +303,10 @@ fn test_tutorial_connection_test_triggers_diagnostics() {
         Some(splunk_tui::ui::popup::Popup::builder(PopupType::TutorialWizard { state }).build());
 
     // Verify we're on ConnectionTest step
-    if let Some(popup) = &app.popup {
-        if let PopupType::TutorialWizard { state } = &popup.kind {
-            assert_eq!(state.current_step, TutorialStep::ConnectionTest);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::TutorialWizard { state } = &popup.kind
+    {
+        assert_eq!(state.current_step, TutorialStep::ConnectionTest);
     }
 
     // Press 't' to trigger diagnostics
@@ -325,10 +325,10 @@ fn test_tutorial_other_steps_ignore_t_key() {
     app.update(Action::StartTutorial { is_replay: false });
 
     // Verify we're on Welcome step
-    if let Some(popup) = &app.popup {
-        if let PopupType::TutorialWizard { state } = &popup.kind {
-            assert_eq!(state.current_step, TutorialStep::Welcome);
-        }
+    if let Some(popup) = &app.popup
+        && let PopupType::TutorialWizard { state } = &popup.kind
+    {
+        assert_eq!(state.current_step, TutorialStep::Welcome);
     }
 
     // Press 't' - should do nothing on Welcome step

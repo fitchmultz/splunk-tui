@@ -134,33 +134,31 @@ impl App {
 
     /// Update command palette search input and refilter.
     pub fn update_command_palette_input(&mut self, new_input: String) {
-        if let Some(ref mut popup) = self.popup {
-            if let PopupType::CommandPalette {
+        if let Some(ref mut popup) = self.popup
+            && let PopupType::CommandPalette {
                 ref mut input,
                 ref mut selected_index,
                 ref mut filtered_items,
                 ..
             } = popup.kind
-            {
-                *input = new_input.clone();
-                *selected_index = 0;
-                *filtered_items = self
-                    .command_palette_state
-                    .search(&new_input, self.current_screen);
-            }
+        {
+            *input = new_input.clone();
+            *selected_index = 0;
+            *filtered_items = self
+                .command_palette_state
+                .search(&new_input, self.current_screen);
         }
     }
 
     /// Update command palette selection.
     pub fn update_command_palette_selection(&mut self, new_index: usize) {
-        if let Some(ref mut popup) = self.popup {
-            if let PopupType::CommandPalette {
+        if let Some(ref mut popup) = self.popup
+            && let PopupType::CommandPalette {
                 ref mut selected_index,
                 ..
             } = popup.kind
-            {
-                *selected_index = new_index;
-            }
+        {
+            *selected_index = new_index;
         }
     }
 }

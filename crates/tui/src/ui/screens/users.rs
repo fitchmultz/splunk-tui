@@ -2,13 +2,13 @@
 //!
 //! Renders the list of Splunk users with their roles and last login times.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::User;
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;

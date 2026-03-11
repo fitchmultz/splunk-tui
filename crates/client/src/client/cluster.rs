@@ -19,36 +19,40 @@ use crate::models::{
 impl SplunkClient {
     /// Get cluster information.
     pub async fn get_cluster_info(&self) -> Result<ClusterInfo> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_cluster_info(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_cluster_info"),
+            |__token| async move {
+                endpoints::get_cluster_info(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get cluster peer information.
     pub async fn get_cluster_peers(&self) -> Result<Vec<ClusterPeer>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_cluster_peers(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_cluster_peers"),
+            |__token| async move {
+                endpoints::get_cluster_peers(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Set maintenance mode on the cluster manager.
@@ -58,20 +62,25 @@ impl SplunkClient {
     /// * `enable` - true to enable maintenance mode, false to disable
     pub async fn set_maintenance_mode(&self, enable: bool) -> Result<ClusterManagementResponse> {
         let params = MaintenanceModeParams { mode: enable };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::set_maintenance_mode(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("set_maintenance_mode"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::set_maintenance_mode(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Enable maintenance mode on the cluster manager.
@@ -86,19 +95,21 @@ impl SplunkClient {
 
     /// Rebalance primary buckets across all peers.
     pub async fn rebalance_cluster(&self) -> Result<ClusterManagementResponse> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::rebalance_cluster(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("rebalance_cluster"),
+            |__token| async move {
+                endpoints::rebalance_cluster(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Remove peers from the cluster by their GUIDs.
@@ -110,20 +121,25 @@ impl SplunkClient {
         let params = RemovePeersParams {
             peers: peer_guids.join(","),
         };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::remove_peers(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("remove_peers"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::remove_peers(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Decommission a peer by its name/GUID.
@@ -133,20 +149,25 @@ impl SplunkClient {
     /// * `peer_name` - The peer name or GUID to decommission
     pub async fn decommission_peer(&self, peer_name: &str) -> Result<ClusterPeer> {
         let params = DecommissionPeerParams { decommission: true };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::decommission_peer(
-                &self.http,
-                &self.base_url,
-                &__token,
-                peer_name,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("decommission_peer"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::decommission_peer(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        peer_name,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 }

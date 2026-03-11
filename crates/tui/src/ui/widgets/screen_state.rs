@@ -14,8 +14,8 @@
 //! - Loading placeholders render only when the screen is still waiting on data.
 //! - Empty placeholders render only when no data exists.
 
+use crate::theme::Theme;
 use ratatui::{Frame, layout::Rect};
-use splunk_config::Theme;
 
 use super::{render_empty_state, render_empty_state_custom, render_loading_state};
 

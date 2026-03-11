@@ -10,10 +10,10 @@ use ratatui::{
 };
 use splunk_client::models::SavedSearch;
 
+use crate::theme::Theme;
 use crate::ui::syntax::highlight_spl;
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
-use splunk_config::Theme;
 
 /// Configuration for rendering the saved searches screen.
 pub struct SavedSearchesRenderConfig<'a> {

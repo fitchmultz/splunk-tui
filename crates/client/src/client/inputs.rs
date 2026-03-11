@@ -77,22 +77,24 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<Input>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_inputs_by_type(
-                &self.http,
-                &self.base_url,
-                &__token,
-                input_type,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_inputs_by_type"),
+            |__token| async move {
+                endpoints::list_inputs_by_type(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    input_type,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Enable an input.
@@ -106,21 +108,23 @@ impl SplunkClient {
     ///
     /// Returns a `ClientError` if the request fails.
     pub async fn enable_input(&self, input_type: &str, name: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::enable_input(
-                &self.http,
-                &self.base_url,
-                &__token,
-                input_type,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("enable_input"),
+            |__token| async move {
+                endpoints::enable_input(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    input_type,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Disable an input.
@@ -134,20 +138,22 @@ impl SplunkClient {
     ///
     /// Returns a `ClientError` if the request fails.
     pub async fn disable_input(&self, input_type: &str, name: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::disable_input(
-                &self.http,
-                &self.base_url,
-                &__token,
-                input_type,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("disable_input"),
+            |__token| async move {
+                endpoints::disable_input(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    input_type,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

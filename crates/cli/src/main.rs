@@ -27,6 +27,7 @@ mod error;
 mod formatters;
 mod interactive;
 mod progress;
+mod telemetry;
 
 use args::Cli;
 use cancellation::{CancellationToken, is_cancelled_error, print_cancelled_message};
@@ -35,8 +36,6 @@ use config_context::ConfigCommandContext;
 use dispatch::run_command;
 use error::{ExitCode, ExitCodeExt};
 use splunk_config::ConfigLoader;
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-
 #[tokio::main]
 async fn main() {
     // Load .env file BEFORE CLI parsing so clap env defaults can read .env values
@@ -47,48 +46,16 @@ async fn main() {
 
     let cli = Cli::parse();
 
-    // Initialize OpenTelemetry tracing if OTLP endpoint is configured
-    let _tracing_guard = if let Some(ref endpoint) = cli.otlp_endpoint {
-        let service_name = cli
-            .otel_service_name
-            .clone()
-            .unwrap_or_else(|| "splunk-cli".to_string());
-
-        let config = splunk_client::TracingConfig::new()
-            .with_otlp_endpoint(endpoint)
-            .with_service_name(service_name)
-            .with_stdout(true);
-
-        match config.init() {
-            Ok(guard) => Some(guard),
-            Err(e) => {
-                eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
-                std::process::exit(ExitCode::GeneralError.as_i32());
-            }
+    let _telemetry = match telemetry::init(
+        cli.otlp_endpoint.as_deref(),
+        cli.otel_service_name.as_deref(),
+        cli.metrics_bind.as_deref(),
+    ) {
+        Ok(state) => state,
+        Err(e) => {
+            eprintln!("Failed to initialize CLI telemetry: {}", e);
+            std::process::exit(ExitCode::GeneralError.as_i32());
         }
-    } else {
-        // Fallback to standard logging
-        tracing_subscriber::registry()
-            .with(EnvFilter::from_default_env())
-            .with(fmt::layer())
-            .init();
-        None
-    };
-
-    // Initialize metrics exporter if --metrics-bind is provided
-    let _metrics_exporter = if let Some(ref bind_addr) = cli.metrics_bind {
-        match splunk_client::MetricsExporter::install(bind_addr) {
-            Ok(exporter) => {
-                tracing::info!("Metrics exporter started on http://{}/metrics", bind_addr);
-                Some(exporter)
-            }
-            Err(e) => {
-                eprintln!("Failed to start metrics exporter: {}", e);
-                std::process::exit(ExitCode::GeneralError.as_i32());
-            }
-        }
-    } else {
-        None
     };
 
     // Determine if we need a real config or can use a placeholder
@@ -258,11 +225,6 @@ async fn main() {
             e.exit_code()
         }
     };
-
-    // Shutdown tracing to ensure all spans are flushed
-    if let Some(guard) = _tracing_guard {
-        guard.shutdown();
-    }
 
     std::process::exit(exit_code.as_i32());
 }

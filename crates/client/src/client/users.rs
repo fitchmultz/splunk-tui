@@ -22,75 +22,83 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<User>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_users(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_users"),
+            |__token| async move {
+                endpoints::list_users(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Create a new user with the specified parameters.
     pub async fn create_user(&self, params: &CreateUserParams) -> Result<User> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::create_user(
-                &self.http,
-                &self.base_url,
-                &__token,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("create_user"),
+            |__token| async move {
+                endpoints::create_user(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Modify an existing user.
     pub async fn modify_user(&self, name: &str, params: &ModifyUserParams) -> Result<User> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::modify_user(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("modify_user"),
+            |__token| async move {
+                endpoints::modify_user(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Delete a user by name.
     pub async fn delete_user(&self, name: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_user(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_user"),
+            |__token| async move {
+                endpoints::delete_user(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

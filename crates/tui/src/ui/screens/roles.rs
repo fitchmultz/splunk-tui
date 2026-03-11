@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk roles with their capabilities and settings.
 
+use crate::theme::Theme;
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
 use ratatui::{
@@ -10,7 +11,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::Role;
-use splunk_config::Theme;
 
 /// Configuration for rendering the roles screen.
 pub struct RolesRenderConfig<'a> {

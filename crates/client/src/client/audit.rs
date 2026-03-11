@@ -18,37 +18,43 @@ impl SplunkClient {
         &self,
         params: &ListAuditEventsParams,
     ) -> Result<Vec<AuditEvent>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_audit_events(
-                &self.http,
-                &self.base_url,
-                &__token,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_audit_events"),
+            |__token| async move {
+                endpoints::list_audit_events(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get recent audit events from the last 24 hours.
     pub async fn get_recent_audit_events(&self, count: usize) -> Result<Vec<AuditEvent>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_recent_audit_events(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation(
+                "get_recent_audit_events",
+            ),
+            |__token| async move {
+                endpoints::get_recent_audit_events(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

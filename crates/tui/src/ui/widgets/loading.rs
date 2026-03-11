@@ -3,12 +3,12 @@
 //! Provides a consistent loading indicator with animated spinner
 //! for all TUI screens.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
     widgets::{Block, Borders, Paragraph},
 };
-use splunk_config::Theme;
 
 use crate::ui::theme::spinner_char;
 

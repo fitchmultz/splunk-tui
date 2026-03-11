@@ -4,7 +4,7 @@ Thank you for contributing.
 
 ## Prerequisites
 
-- Rust 1.84+
+- Rust 1.94.0+
 - Make
 - Docker (optional, for container and local Splunk workflows)
 
@@ -17,7 +17,7 @@ Use the editor and debugger you prefer. Rust Analyzer and CodeLLDB provide a goo
 ### First-time setup
 
 ```bash
-make install
+make deps
 make build
 make ci-fast
 ```
@@ -134,5 +134,5 @@ make install-hooks
 
 These are optional and should not be required for first-time contributors:
 
-- `sccache`: install it locally; the workspace already routes Cargo builds through `sccache` via `.cargo/config.toml`
+- `sccache`: install it locally if you want faster rebuilds; the Makefile detects it automatically and falls back to normal Cargo execution when absent
 - `lld`: configure target-specific linker flags in local (untracked) Cargo config overrides

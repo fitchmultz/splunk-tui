@@ -3,6 +3,7 @@
 //! Renders a detailed view of a single search job, showing all available
 //! metadata including status, duration, counts, and other properties.
 
+use crate::theme::Theme;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::{
@@ -10,7 +11,6 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
 };
 use splunk_client::models::SearchJobStatus;
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 

@@ -39,6 +39,14 @@ use splunk_client::models::{
     SearchJobStatus, SearchPeer, ShcCaptain, ShcConfig, ShcMember, ShcStatus, SplunkHealth, User,
     WorkloadPool, WorkloadRule,
 };
+pub use splunk_client::workflows::diagnostics::{
+    ConnectionCheck as DiagnosticCheck, ConnectionDiagnosticsResult, DiagnosticStatus,
+    ServerInfoSummary,
+};
+pub use splunk_client::workflows::multi_profile::{
+    InstanceOverview, InstanceStatus, MultiInstanceOverviewData,
+    ResourceSummary as OverviewResource,
+};
 use splunk_config::{PersistedState, SearchDefaults};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -46,61 +54,6 @@ use std::sync::Arc;
 use crate::ConnectionContext;
 use crate::action::format::ExportFormat;
 use crate::ui::ToastLevel;
-
-/// Result of a connection diagnostics check.
-///
-/// Each field represents a specific check that can pass, fail, or be skipped.
-/// The overall status is derived from individual check results.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub struct ConnectionDiagnosticsResult {
-    /// Whether the server is reachable (TCP/TLS handshake)
-    pub reachable: DiagnosticCheck,
-    /// Whether authentication succeeded
-    pub auth: DiagnosticCheck,
-    /// TLS certificate validation result
-    pub tls: DiagnosticCheck,
-    /// Server info if available
-    pub server_info: Option<ServerInfoSummary>,
-    /// Overall pass/fail status
-    pub overall_status: DiagnosticStatus,
-    /// Human-readable remediation hints for failures
-    pub remediation_hints: Vec<String>,
-    /// Timestamp of the diagnostics run
-    pub timestamp: String,
-}
-
-/// Individual diagnostic check result.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub struct DiagnosticCheck {
-    /// Check name (e.g., "Reachability", "Authentication")
-    pub name: String,
-    /// Status of this check
-    pub status: DiagnosticStatus,
-    /// Optional error message if failed
-    pub error: Option<String>,
-    /// Duration of the check in milliseconds
-    pub duration_ms: u64,
-}
-
-/// Status of a diagnostic check.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum DiagnosticStatus {
-    /// Check passed
-    Pass,
-    /// Check failed
-    Fail,
-    /// Check was skipped (dependency failed)
-    Skip,
-}
-
-/// Summarized server info for diagnostics display.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub struct ServerInfoSummary {
-    pub version: String,
-    pub build: String,
-    pub server_name: String,
-    pub mode: Option<String>,
-}
 
 /// Aggregated license data from multiple API endpoints.
 ///
@@ -116,22 +69,6 @@ pub struct LicenseData {
     pub stacks: Vec<LicenseStack>,
 }
 
-/// Per-resource summary for the overview screen.
-///
-/// Mirrors the CLI's ResourceSummary type for CLI/TUI parity.
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct OverviewResource {
-    /// The resource type name (e.g., "indexes", "jobs", "apps")
-    pub resource_type: String,
-    /// Count of items for this resource type
-    pub count: usize,
-    /// Status string (e.g., "ok", "error", "timeout")
-    pub status: String,
-    /// Optional error message if the fetch failed
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
-
 /// Aggregated overview data for all Splunk resources.
 ///
 /// This is the TUI equivalent of the CLI's list-all output,
@@ -140,56 +77,6 @@ pub struct OverviewResource {
 pub struct OverviewData {
     /// List of resource summaries
     pub resources: Vec<OverviewResource>,
-}
-
-/// Health status for a single Splunk instance.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum InstanceStatus {
-    /// Instance is reachable and data is fresh
-    Healthy,
-    /// Instance is unreachable, displaying cached data
-    Cached,
-    /// Instance is unreachable and no cached data is available
-    Failed,
-    /// Data is currently being fetched
-    Loading,
-}
-
-/// Per-instance overview data for multi-instance dashboard.
-///
-/// Represents the health and resource status of a single Splunk instance
-/// within the multi-instance dashboard view.
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct InstanceOverview {
-    /// Profile name for this instance
-    pub profile_name: String,
-    /// Base URL of the Splunk instance
-    pub base_url: String,
-    /// Resource summaries for this instance
-    pub resources: Vec<OverviewResource>,
-    /// Error message if connection failed
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-    /// Health status (green/yellow/red)
-    pub health_status: String,
-    /// Job count (for quick reference)
-    pub job_count: usize,
-    /// Current status of the instance
-    pub status: InstanceStatus,
-    /// Timestamp of the last successful data fetch (RFC3339)
-    pub last_success_at: Option<String>,
-}
-
-/// Aggregated multi-instance overview data.
-///
-/// Contains overview data for all configured Splunk instances,
-/// enabling administrators to monitor multiple instances from a single view.
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct MultiInstanceOverviewData {
-    /// Timestamp of the data fetch
-    pub timestamp: String,
-    /// Overview data per instance
-    pub instances: Vec<InstanceOverview>,
 }
 
 /// Unified action type for async TUI event handling.

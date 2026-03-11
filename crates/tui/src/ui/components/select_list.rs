@@ -20,6 +20,7 @@
 //! }
 //! ```
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -27,7 +28,6 @@ use ratatui::{
     text::Line,
     widgets::{Block, List, ListItem, ListState},
 };
-use splunk_config::Theme;
 use std::fmt::Display;
 
 use crate::ui::theme::ThemeExt;

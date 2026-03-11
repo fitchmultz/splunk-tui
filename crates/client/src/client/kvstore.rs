@@ -18,19 +18,21 @@ use crate::models::{
 impl SplunkClient {
     /// Get KVStore status information.
     pub async fn get_kvstore_status(&self) -> Result<KvStoreStatus> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_kvstore_status(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_kvstore_status"),
+            |__token| async move {
+                endpoints::get_kvstore_status(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List all KVStore collections.
@@ -41,23 +43,25 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<KvStoreCollection>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_collections(
-                &self.http,
-                &self.base_url,
-                &__token,
-                app,
-                owner,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_collections"),
+            |__token| async move {
+                endpoints::list_collections(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    app,
+                    owner,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Create a new KVStore collection.
@@ -65,20 +69,22 @@ impl SplunkClient {
         &self,
         params: &CreateCollectionParams,
     ) -> Result<KvStoreCollection> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::create_collection(
-                &self.http,
-                &self.base_url,
-                &__token,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("create_collection"),
+            |__token| async move {
+                endpoints::create_collection(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Modify an existing KVStore collection.
@@ -89,43 +95,47 @@ impl SplunkClient {
         owner: &str,
         params: &ModifyCollectionParams,
     ) -> Result<KvStoreCollection> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::modify_collection(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                app,
-                owner,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("modify_collection"),
+            |__token| async move {
+                endpoints::modify_collection(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    app,
+                    owner,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Delete a KVStore collection.
     pub async fn delete_collection(&self, name: &str, app: &str, owner: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_collection(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                app,
-                owner,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_collection"),
+            |__token| async move {
+                endpoints::delete_collection(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    app,
+                    owner,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List records in a collection.
@@ -138,25 +148,29 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<KvStoreRecord>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_collection_records(
-                &self.http,
-                &self.base_url,
-                &__token,
-                collection_name,
-                app,
-                owner,
-                query,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation(
+                "list_collection_records",
+            ),
+            |__token| async move {
+                endpoints::list_collection_records(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    collection_name,
+                    app,
+                    owner,
+                    query,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Insert a record into a collection.
@@ -167,23 +181,27 @@ impl SplunkClient {
         owner: &str,
         record: &serde_json::Value,
     ) -> Result<KvStoreRecord> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::insert_collection_record(
-                &self.http,
-                &self.base_url,
-                &__token,
-                collection_name,
-                app,
-                owner,
-                record,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation(
+                "insert_collection_record",
+            ),
+            |__token| async move {
+                endpoints::insert_collection_record(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    collection_name,
+                    app,
+                    owner,
+                    record,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Delete a record from a collection.
@@ -194,22 +212,26 @@ impl SplunkClient {
         owner: &str,
         record_key: &str,
     ) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_collection_record(
-                &self.http,
-                &self.base_url,
-                &__token,
-                collection_name,
-                app,
-                owner,
-                record_key,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation(
+                "delete_collection_record",
+            ),
+            |__token| async move {
+                endpoints::delete_collection_record(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    collection_name,
+                    app,
+                    owner,
+                    record_key,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

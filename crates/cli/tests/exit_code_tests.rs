@@ -34,9 +34,9 @@ async fn test_success_returns_exit_code_0() {
     cmd.arg("health").assert().code(0);
 }
 
-/// Test that authentication failures return exit code 2.
+/// Test that semantic permission failures return exit code 6.
 #[tokio::test]
-async fn test_auth_failure_returns_exit_code_2() {
+async fn test_unauthorized_returns_exit_code_6() {
     let server = MockServer::start().await;
 
     Mock::given(method("GET"))
@@ -50,7 +50,7 @@ async fn test_auth_failure_returns_exit_code_2() {
     let mut cmd = splunk_cmd();
     cmd.env("SPLUNK_BASE_URL", server.uri());
     cmd.env("SPLUNK_API_TOKEN", "invalid-token");
-    cmd.arg("health").assert().code(2);
+    cmd.arg("health").assert().code(6);
 }
 
 /// Test that connection refused returns exit code 3.

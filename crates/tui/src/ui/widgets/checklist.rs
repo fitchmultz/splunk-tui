@@ -3,6 +3,7 @@
 //! Renders a compact widget showing onboarding progress with dismissible
 //! individual items and global dismiss option.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -10,7 +11,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
-use splunk_config::Theme;
 
 use crate::onboarding::checklist::OnboardingChecklistState;
 

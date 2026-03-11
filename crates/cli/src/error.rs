@@ -86,7 +86,6 @@ impl From<&ClientError> for ExitCode {
             // Authentication errors (exit code 2)
             ClientError::AuthFailed(_) => ExitCode::AuthenticationFailed,
             ClientError::SessionExpired { .. } => ExitCode::AuthenticationFailed,
-            ClientError::Unauthorized(_) => ExitCode::AuthenticationFailed,
             ClientError::TokenRefreshFailed { .. } => ExitCode::AuthenticationFailed,
 
             // Connection errors (exit code 3)
@@ -105,10 +104,11 @@ impl From<&ClientError> for ExitCode {
             ClientError::InvalidResponse(_) => ExitCode::ValidationError,
             ClientError::ApiError { status: 400, .. } => ExitCode::ValidationError,
 
-            // Authentication errors (exit code 2) - HTTP status codes
+            // Authentication errors (exit code 2)
             ClientError::ApiError { status: 401, .. } => ExitCode::AuthenticationFailed,
 
             // Permission denied (exit code 6)
+            ClientError::Unauthorized(_) => ExitCode::PermissionDenied,
             ClientError::ApiError { status: 403, .. } => ExitCode::PermissionDenied,
 
             // Rate limited (exit code 7)
@@ -203,7 +203,7 @@ mod tests {
     #[test]
     fn test_from_client_error_unauthorized() {
         let err = ClientError::Unauthorized("access denied".to_string());
-        assert_eq!(ExitCode::from(&err), ExitCode::AuthenticationFailed);
+        assert_eq!(ExitCode::from(&err), ExitCode::PermissionDenied);
     }
 
     #[test]

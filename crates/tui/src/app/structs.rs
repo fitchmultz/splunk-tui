@@ -19,6 +19,7 @@ use crate::app::state::{
 use crate::error_details::ErrorDetails;
 use crate::focus::FocusManager;
 use crate::onboarding::{OnboardingChecklistState, TutorialState};
+use crate::theme::Theme;
 use crate::ui::Toast;
 use crate::ui::popup::Popup;
 use ratatui::layout::Rect;
@@ -28,7 +29,7 @@ use splunk_client::models::{
     App as SplunkApp, Capability, ClusterInfo, ClusterPeer, DataModel, HealthCheckOutput, Index,
     KvStoreStatus, LogEntry, Macro, Role, SavedSearch, SearchJobStatus, SearchPeer, User,
 };
-use splunk_config::{ColorTheme, KeybindOverrides, ListDefaults, SearchDefaults, Theme};
+use splunk_config::{ColorTheme, KeybindOverrides, ListDefaults, SearchDefaults};
 use std::collections::HashSet;
 
 /// Main application state.

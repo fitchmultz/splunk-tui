@@ -1,55 +1,21 @@
-//! Type definitions for list-all command output structures.
+//! Shared list-all types re-exported from the client workflow layer.
+//!
+//! Purpose:
+//! - Keep CLI type imports stable while sourcing multi-profile models from `splunk-client`.
 //!
 //! Responsibilities:
-//! - Define data structures for resource summaries and multi-profile aggregation.
-//! - Provide serialization support for JSON, CSV, and XML output formats.
+//! - Re-export shared list-all aggregation types and supported resource constants.
 //!
-//! Does NOT handle:
-//! - Fetching logic (see `fetchers.rs`).
-//! - Output formatting/rendering (see `output.rs`).
+//! Scope:
+//! - Type surface only; fetching and formatting live elsewhere.
 //!
-//! Invariants:
-//! - All timestamp fields use RFC3339 format.
-//! - Error fields are skipped during serialization if None.
+//! Usage:
+//! - Imported by CLI list-all fetch/output modules and tests.
+//!
+//! Invariants/Assumptions:
+//! - `splunk-client::workflows::multi_profile` is the single source of truth.
 
-use serde::{Deserialize, Serialize};
-
-/// Per-resource summary for a single resource type.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceSummary {
-    pub resource_type: String,
-    pub count: usize,
-    pub status: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
-
-/// Per-profile resource summary for multi-profile aggregation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProfileResult {
-    pub profile_name: String,
-    pub base_url: String,
-    pub resources: Vec<ResourceSummary>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
-
-/// Multi-profile list-all output structure.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListAllMultiOutput {
-    pub timestamp: String,
-    pub profiles: Vec<ProfileResult>,
-}
-
-/// Valid resource types that can be queried.
-pub const VALID_RESOURCES: &[&str] = &[
-    "indexes",
-    "jobs",
-    "apps",
-    "users",
-    "cluster",
-    "health",
-    "kvstore",
-    "license",
-    "saved-searches",
-];
+pub type ListAllMultiOutput = splunk_client::workflows::multi_profile::ListAllMultiOutput;
+pub type ProfileResult = splunk_client::workflows::multi_profile::ProfileResult;
+#[allow(dead_code)]
+pub const VALID_RESOURCES: &[&str] = splunk_client::workflows::multi_profile::VALID_RESOURCES;

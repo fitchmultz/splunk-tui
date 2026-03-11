@@ -6,8 +6,7 @@
 //! - Handle per-profile errors gracefully without failing the entire command.
 //!
 //! Does NOT handle:
-//! - Individual resource fetching (see `fetchers.rs`).
-//! - Authentication strategy building (see `auth.rs`).
+//! - Individual resource fetching implementation (lives in `splunk-client::workflows`).
 //! - Type definitions (see `types.rs`).
 //!
 //! Invariants:
@@ -20,9 +19,7 @@ use crate::formatters::OutputFormat;
 use crate::formatters::escape_xml;
 use anyhow::Result;
 
-use super::auth::build_auth_strategy_from_profile;
-use super::fetchers::fetch_all_resources;
-use super::types::{ListAllMultiOutput, ProfileResult};
+use super::types::ListAllMultiOutput;
 
 /// Returns the current timestamp in RFC3339 format.
 pub fn format_timestamp() -> String {
@@ -31,110 +28,20 @@ pub fn format_timestamp() -> String {
 
 /// Fetch resources from multiple profiles in parallel.
 pub async fn fetch_multi_profile_resources(
-    config_manager: splunk_config::ConfigManager,
-    profile_names: Vec<String>,
+    profiles: Vec<(String, splunk_config::ProfileConfig)>,
     resource_types: Vec<String>,
     cancel: &CancellationToken,
 ) -> Result<ListAllMultiOutput> {
-    let timestamp = format_timestamp();
-    let mut profile_results = Vec::new();
-
-    // Get all profile configs first
-    let profiles_map = config_manager.list_profiles().clone();
-
-    // Create futures for each profile
-    let mut futures = Vec::new();
-    for profile_name in &profile_names {
-        let profile_config = profiles_map.get(profile_name).cloned();
-        let resource_types = resource_types.clone();
-        let profile_name = profile_name.clone();
-
-        let future = async move {
-            if let Some(config) = profile_config {
-                fetch_single_profile_resources(profile_name, config, resource_types, cancel).await
-            } else {
-                ProfileResult {
-                    profile_name,
-                    base_url: String::new(),
-                    resources: vec![],
-                    error: Some("Profile configuration not found".to_string()),
-                }
-            }
-        };
-        futures.push(future);
+    if cancel.is_cancelled() {
+        anyhow::bail!("List-all request cancelled");
     }
 
-    // Execute all futures concurrently
-    let results = futures::future::join_all(futures).await;
-    profile_results.extend(results);
-
-    Ok(ListAllMultiOutput {
-        timestamp,
-        profiles: profile_results,
-    })
-}
-
-/// Fetch resources from a single profile.
-async fn fetch_single_profile_resources(
-    profile_name: String,
-    profile_config: splunk_config::types::ProfileConfig,
-    resource_types: Vec<String>,
-    cancel: &CancellationToken,
-) -> ProfileResult {
-    // Build config from profile
-    let base_url = profile_config.base_url.clone().unwrap_or_default();
-
-    // Build auth strategy - fail fast if credentials are missing/invalid
-    let auth_strategy = match build_auth_strategy_from_profile(&profile_config) {
-        Ok(strategy) => strategy,
-        Err(error_msg) => {
-            return ProfileResult {
-                profile_name,
-                base_url,
-                resources: vec![],
-                error: Some(error_msg),
-            };
-        }
-    };
-
-    // Build Splunk client
-    let client = match splunk_client::SplunkClient::builder()
-        .base_url(base_url.clone())
-        .auth_strategy(auth_strategy)
-        .skip_verify(profile_config.skip_verify.unwrap_or(false))
-        .timeout(std::time::Duration::from_secs(
-            profile_config.timeout_seconds.unwrap_or(30),
-        ))
-        .session_ttl_seconds(profile_config.session_ttl_seconds.unwrap_or(3600))
-        .session_expiry_buffer_seconds(profile_config.session_expiry_buffer_seconds.unwrap_or(60))
-        .build()
-    {
-        Ok(c) => c,
-        Err(e) => {
-            return ProfileResult {
-                profile_name,
-                base_url,
-                resources: vec![],
-                error: Some(format!("Failed to build client: {}", e)),
-            };
-        }
-    };
-
-    // Fetch resources
-    match fetch_all_resources(&client, resource_types, cancel).await {
-        Ok(resources) => ProfileResult {
-            profile_name,
-            base_url,
-            resources,
-            error: None,
-        },
-        Err(e) => ProfileResult {
-            profile_name,
-            base_url,
-            resources: vec![],
-            error: Some(e.to_string()),
-        },
-    }
+    splunk_client::workflows::multi_profile::fetch_multi_profile_overview(
+        profiles,
+        resource_types,
+        Some(cancel),
+    )
+    .await
 }
 
 /// Format multi-profile output based on the selected format.

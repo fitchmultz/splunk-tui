@@ -4,6 +4,7 @@
 //! license pools, and license stacks.
 
 use crate::action::LicenseData;
+use crate::theme::Theme;
 use crate::ui::widgets::render_screen_state;
 use ratatui::{
     Frame,
@@ -13,7 +14,6 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
 use splunk_client::format_bytes;
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 

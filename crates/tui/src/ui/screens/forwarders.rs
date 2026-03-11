@@ -15,7 +15,7 @@ use ratatui::{
 };
 use splunk_client::models::Forwarder;
 
-use splunk_config::Theme;
+use crate::theme::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;

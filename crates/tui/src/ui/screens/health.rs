@@ -3,6 +3,7 @@
 //! Renders comprehensive Splunk environment health metrics including server info,
 //! splunkd health, license usage, KVStore status, and log parsing health.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
@@ -11,7 +12,6 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 use splunk_client::{format_bytes, models::HealthCheckOutput};
-use splunk_config::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
@@ -208,30 +208,30 @@ fn build_health_lines(health: &HealthCheckOutput, theme: &Theme) -> Vec<Line<'st
         }
     }
 
-    if let Some(cb_states) = &health.circuit_breaker_states {
-        if !cb_states.is_empty() {
-            push_section_lines(&mut lines, "Circuit Breakers", theme);
-            let mut sorted_states: Vec<_> = cb_states.iter().collect();
-            sorted_states.sort_by_key(|(k, _)| *k);
+    if let Some(cb_states) = &health.circuit_breaker_states
+        && !cb_states.is_empty()
+    {
+        push_section_lines(&mut lines, "Circuit Breakers", theme);
+        let mut sorted_states: Vec<_> = cb_states.iter().collect();
+        sorted_states.sort_by_key(|(k, _)| *k);
 
-            for (endpoint, state) in sorted_states {
-                let state_color = match state.as_str() {
-                    "closed" => theme.success,
-                    "open" => theme.error,
-                    "half_open" => theme.warning,
-                    _ => theme.warning,
-                };
+        for (endpoint, state) in sorted_states {
+            let state_color = match state.as_str() {
+                "closed" => theme.success,
+                "open" => theme.error,
+                "half_open" => theme.warning,
+                _ => theme.warning,
+            };
 
-                lines.push(Line::from(vec![
-                    Span::raw(format!("  {}: ", endpoint)),
-                    Span::styled(
-                        state.to_uppercase(),
-                        Style::default()
-                            .fg(state_color)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                ]));
-            }
+            lines.push(Line::from(vec![
+                Span::raw(format!("  {}: ", endpoint)),
+                Span::styled(
+                    state.to_uppercase(),
+                    Style::default()
+                        .fg(state_color)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]));
         }
     }
 

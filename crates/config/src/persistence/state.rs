@@ -393,16 +393,17 @@ pub(crate) fn read_config_file(path: &Path) -> Result<(ConfigStorage, bool), Con
     // Try parsing as the old ConfigFile format
     if let Ok(file) = serde_json::from_str::<ConfigFile>(&content) {
         // If we got a ConfigFile but it has no state and no profiles, it might be legacy PersistedState
-        if file.state.is_none() && file.profiles.is_empty() {
-            if let Ok(state) = serde_json::from_str::<PersistedState>(&content) {
-                return Ok((
-                    ConfigStorage::Plain(Box::new(ConfigFile {
-                        profiles: BTreeMap::new(),
-                        state: Some(state),
-                    })),
-                    true,
-                ));
-            }
+        if file.state.is_none()
+            && file.profiles.is_empty()
+            && let Ok(state) = serde_json::from_str::<PersistedState>(&content)
+        {
+            return Ok((
+                ConfigStorage::Plain(Box::new(ConfigFile {
+                    profiles: BTreeMap::new(),
+                    state: Some(state),
+                })),
+                true,
+            ));
         }
         return Ok((ConfigStorage::Plain(Box::new(file)), true));
     }

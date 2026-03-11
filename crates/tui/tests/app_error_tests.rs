@@ -389,7 +389,7 @@ fn test_api_error_401_classification() {
     assert_eq!(details.request_id, Some("req-123".to_string()));
 }
 
-/// Test that API error 403 is classified as auth error
+/// Test that raw API error 403 is not treated as an auth-recovery case.
 #[test]
 fn test_api_error_403_classification() {
     let api_error = splunk_client::ClientError::ApiError {
@@ -401,11 +401,7 @@ fn test_api_error_403_classification() {
 
     let details = error_details::ErrorDetails::from_client_error(&api_error);
 
-    assert!(details.auth_recovery.is_some());
-    assert_eq!(
-        details.auth_recovery.unwrap().kind,
-        AuthRecoveryKind::InvalidCredentials
-    );
+    assert!(details.auth_recovery.is_none());
     assert_eq!(details.status_code, Some(403));
 }
 
@@ -444,7 +440,7 @@ fn test_timeout_error_classification() {
     );
 }
 
-/// Test that ClientError::is_auth_error includes ApiError 401/403
+/// Test that ClientError::is_auth_error treats raw ApiError 401 as auth but not raw ApiError 403.
 #[test]
 fn test_is_auth_error_includes_api_errors() {
     let err_401 = splunk_client::ClientError::ApiError {
@@ -461,7 +457,10 @@ fn test_is_auth_error_includes_api_errors() {
         message: "Forbidden".to_string(),
         request_id: None,
     };
-    assert!(err_403.is_auth_error(), "403 should be auth error");
+    assert!(
+        !err_403.is_auth_error(),
+        "raw 403 ApiError should not be auth error"
+    );
 
     let err_500 = splunk_client::ClientError::ApiError {
         status: 500,

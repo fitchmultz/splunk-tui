@@ -14,7 +14,7 @@
 //! Invariants:
 //! - All secret types use `secrecy::SecretString` to prevent accidental logging.
 //! - Serialization helpers (`secret_string`, `duration_seconds`) are private modules.
-//! - `ColorTheme` is the persisted representation; `Theme` is the runtime representation.
+//! - `ColorTheme` is the persisted representation; runtime theme expansion lives in the TUI crate.
 //! - `KEYRING_SERVICE` is the canonical service name for all keyring operations.
 
 mod auth;
@@ -31,4 +31,4 @@ pub use connection::{
 };
 pub use keybind::{KeybindAction, KeybindOverrides};
 pub use profile::ProfileConfig;
-pub use theme::{ColorTheme, Theme};
+pub use theme::ColorTheme;

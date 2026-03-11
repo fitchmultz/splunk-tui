@@ -19,9 +19,10 @@ use crate::focus::FocusManager;
 use crate::onboarding::checklist::{
     OnboardingChecklistState, OnboardingMilestone, OnboardingMilestones,
 };
+use crate::theme::Theme;
 use splunk_client::SearchMode;
 use splunk_config::{
-    ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults, Theme,
+    ColorTheme, KeybindOverrides, ListDefaults, ListType, PersistedState, SearchDefaults,
 };
 
 fn selected_list_state() -> ratatui::widgets::ListState {

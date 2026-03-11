@@ -22,75 +22,83 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<Role>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_roles(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_roles"),
+            |__token| async move {
+                endpoints::list_roles(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Create a new role with the specified parameters.
     pub async fn create_role(&self, params: &CreateRoleParams) -> Result<Role> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::create_role(
-                &self.http,
-                &self.base_url,
-                &__token,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("create_role"),
+            |__token| async move {
+                endpoints::create_role(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Modify an existing role.
     pub async fn modify_role(&self, name: &str, params: &ModifyRoleParams) -> Result<Role> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::modify_role(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("modify_role"),
+            |__token| async move {
+                endpoints::modify_role(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    params,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Delete a role by name.
     pub async fn delete_role(&self, name: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_role(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_role"),
+            |__token| async move {
+                endpoints::delete_role(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

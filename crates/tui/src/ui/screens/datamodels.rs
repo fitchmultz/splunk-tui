@@ -2,6 +2,7 @@
 //!
 //! Renders the list of Splunk data models.
 
+use crate::theme::Theme;
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
 use ratatui::{
@@ -10,7 +11,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 use splunk_client::models::DataModel;
-use splunk_config::Theme;
 
 /// Configuration for rendering the data models screen.
 pub struct DataModelsRenderConfig<'a> {

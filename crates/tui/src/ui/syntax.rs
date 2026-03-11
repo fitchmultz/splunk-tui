@@ -5,11 +5,11 @@
 //! This module includes both a regex-based highlighter (current default) and
 //! infrastructure for tree-sitter based highlighting when a grammar is available.
 
+use crate::theme::Theme;
 use ratatui::{
     style::{Modifier, Style},
     text::{Line, Span, Text},
 };
-use splunk_config::Theme;
 use std::sync::LazyLock;
 use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
 

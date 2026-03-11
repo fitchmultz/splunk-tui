@@ -11,8 +11,8 @@ use ratatui::{
 };
 
 use crate::app::App;
+use crate::theme::Theme;
 use splunk_client::models::Index;
-use splunk_config::Theme;
 
 /// Render the index details popup.
 ///

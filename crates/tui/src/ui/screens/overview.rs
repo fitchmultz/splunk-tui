@@ -3,6 +3,7 @@
 //! Renders a dashboard view of all Splunk resources with counts and status.
 //! This provides TUI parity with the CLI's list-all command.
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Constraint, Rect},
@@ -10,7 +11,6 @@ use ratatui::{
     text::Span,
     widgets::{Block, Borders, Cell, Row, Table},
 };
-use splunk_config::Theme;
 
 use crate::action::OverviewData;
 use crate::ui::theme::ThemeExt;

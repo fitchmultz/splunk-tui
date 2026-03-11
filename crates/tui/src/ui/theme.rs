@@ -1,10 +1,10 @@
 //! TUI-specific theme helpers and style builders.
 //!
-//! This module extends `splunk_config::Theme` with ergonomic helpers
+//! This module extends `crate::theme::Theme` with ergonomic helpers
 //! for building ratatui `Style` objects consistently across the TUI.
 
+use crate::theme::Theme;
 use ratatui::style::{Color, Modifier, Style};
-use splunk_config::Theme;
 
 /// Pattern indicators for accessibility (used with Monochrome theme or as additional cues).
 #[derive(Debug, Clone, Copy)]
@@ -273,7 +273,8 @@ pub mod helpers {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use splunk_config::{ColorTheme, Theme};
+    use crate::theme::Theme;
+    use splunk_config::ColorTheme;
 
     #[test]
     fn test_theme_ext_text() {

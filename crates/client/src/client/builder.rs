@@ -9,7 +9,7 @@
 //! # What this module does NOT handle:
 //! - Actual API calls (handled by [`SplunkClient`] methods in `mod.rs`)
 //! - Session token management (handled by [`SessionManager`] in `auth.rs`)
-//! - Retry logic for failed requests (handled by the `retry_call!` macro)
+//! - Auth-refresh execution policy (handled by `request_executor`)
 //!
 //! # Invariants
 //! - `base_url` and `auth_strategy` are required fields and must be provided before calling `build()`
@@ -404,6 +404,7 @@ impl SplunkClientBuilder {
                 self.session_ttl_seconds,
                 self.session_expiry_buffer_seconds,
             ),
+            request_timeout: self.timeout,
             max_retries: self.max_retries,
             session_ttl_seconds: self.session_ttl_seconds,
             metrics: self.metrics,

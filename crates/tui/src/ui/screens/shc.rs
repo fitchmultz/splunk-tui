@@ -12,13 +12,13 @@
 //! - Does NOT fetch data (handled by async tasks in side_effects)
 //! - Does NOT handle user input (handled by input module)
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
     widgets::{Block, Borders, Cell, List, ListItem, Row, Table, TableState},
 };
 use splunk_client::models::{ShcMember, ShcStatus};
-use splunk_config::Theme;
 
 use crate::app::state::ShcViewMode;
 use crate::ui::theme::ThemeExt;

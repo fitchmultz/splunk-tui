@@ -18,7 +18,7 @@ make --version
 ## 2) Install Dependencies
 
 ```bash
-make install
+make deps
 ```
 
 ## 3) Run Fast Local Gate

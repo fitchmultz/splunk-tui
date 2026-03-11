@@ -5,7 +5,8 @@
 //! Invariants/Assumptions: Contrast checks are deterministic and operate on normalized RGB mappings.
 
 use ratatui::style::Color;
-use splunk_config::{ColorTheme, Theme};
+use splunk_config::ColorTheme;
+use splunk_tui::theme::Theme;
 
 const MIN_TEXT_CONTRAST: f64 = 4.5;
 const MIN_HIGHLIGHT_CONTRAST: f64 = 3.0;

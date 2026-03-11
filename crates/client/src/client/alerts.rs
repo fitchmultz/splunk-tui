@@ -26,21 +26,23 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<FiredAlert>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_fired_alerts(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_fired_alerts"),
+            |__token| async move {
+                endpoints::list_fired_alerts(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get a specific fired alert by name.
@@ -51,19 +53,21 @@ impl SplunkClient {
     /// # Returns
     /// The `FiredAlert` if found, or `ClientError::NotFound` if it doesn't exist.
     pub async fn get_fired_alert(&self, name: &str) -> Result<FiredAlert> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_fired_alert(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_fired_alert"),
+            |__token| async move {
+                endpoints::get_fired_alert(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }

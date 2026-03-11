@@ -12,13 +12,13 @@
 //! - Does NOT fetch data (handled by async tasks in main.rs)
 //! - Does NOT handle user input (handled by input module)
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Rect},
     widgets::{Block, Borders, Cell, List, ListItem, Row, Table, TableState},
 };
 use splunk_client::models::{ClusterInfo, ClusterPeer};
-use splunk_config::Theme;
 
 use crate::app::state::ClusterViewMode;
 use crate::ui::theme::ThemeExt;

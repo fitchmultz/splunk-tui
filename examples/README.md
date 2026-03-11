@@ -25,10 +25,8 @@ Scripts use the same configuration as `splunk-cli`:
 1. **Environment variables** (recommended for CI/CD):
    ```bash
    export SPLUNK_BASE_URL="https://your-splunk:8089"
-   export SPLUNK_API_TOKEN="your-api-token"
-   # or
-   export SPLUNK_USERNAME="replace-with-your-username"
-   export SPLUNK_PASSWORD="replace-with-your-password"
+   # Load SPLUNK_API_TOKEN or SPLUNK_USERNAME/SPLUNK_PASSWORD from a local .env file,
+   # shell secret store, or CI secret injection.
    ```
 
 2. **Configuration file** (`~/.config/splunk-tui/config.json`):
@@ -57,7 +55,7 @@ cd /path/to/splunk-tui
 
 # 2. Set up your environment
 export SPLUNK_BASE_URL="https://localhost:8089"
-export SPLUNK_API_TOKEN="your-token"
+# Load SPLUNK_API_TOKEN from a local .env file or secret manager before running examples.
 
 # 3. Run an example
 ./examples/daily-ops/health-check.sh --help
@@ -272,7 +270,7 @@ Scripts check for required environment variables. Set them explicitly:
 
 ```bash
 export SPLUNK_BASE_URL="https://your-splunk:8089"
-export SPLUNK_API_TOKEN="your-api-token"
+# Load SPLUNK_API_TOKEN from a local .env file or secret manager before running scripts.
 ```
 
 Or use a configuration file:

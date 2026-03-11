@@ -2,11 +2,9 @@
 # Responsibilities: Keep dev-profile compilation settings predictable across contributors, including approved local build accelerators.
 # Scope: Applies to Cargo commands run from this workspace.
 # Usage: Override per-machine parallelism with `CARGO_JOBS` in the Makefile rather than hardcoding here.
-# Invariants/Assumptions: Avoid fixed global job counts so CI/e2e runs do not oversubscribe shared hosts.
+# Invariants/Assumptions: Avoid fixed global job counts so CI/e2e runs do not oversubscribe shared hosts; optional accelerators such as `sccache` are enabled by the Makefile, not required here.
 
 [build]
-rustc-wrapper = "sccache"
-
 # Optional local speedups:
 # - lld: configure target-specific linker flags in local machine overrides
 

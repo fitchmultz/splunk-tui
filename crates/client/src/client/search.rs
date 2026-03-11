@@ -218,21 +218,23 @@ impl SplunkClient {
         query: &str,
         options: &endpoints::search::CreateJobOptions,
     ) -> Result<String> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::search::create_job(
-                &self.http,
-                &self.base_url,
-                &__token,
-                query,
-                options,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("create_search_job"),
+            |__token| async move {
+                endpoints::search::create_job(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    query,
+                    options,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get results from a search job.
@@ -242,41 +244,45 @@ impl SplunkClient {
         count: usize,
         offset: usize,
     ) -> Result<SearchJobResults> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::search::get_results(
-                &self.http,
-                &self.base_url,
-                &__token,
-                sid,
-                Some(count),
-                Some(offset),
-                endpoints::search::OutputMode::Json,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_search_results"),
+            |__token| async move {
+                endpoints::search::get_results(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    sid,
+                    Some(count),
+                    Some(offset),
+                    endpoints::search::OutputMode::Json,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get the status of a search job.
     pub async fn get_job_status(&self, sid: &str) -> Result<SearchJobStatus> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::search::get_job_status(
-                &self.http,
-                &self.base_url,
-                &__token,
-                sid,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_job_status"),
+            |__token| async move {
+                endpoints::search::get_job_status(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    sid,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// List all saved searches.
@@ -285,21 +291,23 @@ impl SplunkClient {
         count: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<SavedSearch>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::list_saved_searches(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                offset,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("list_saved_searches"),
+            |__token| async move {
+                endpoints::list_saved_searches(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    offset,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Create a saved search.
@@ -307,39 +315,46 @@ impl SplunkClient {
         &self,
         params: crate::models::SavedSearchCreateParams,
     ) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::create_saved_search(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params.name,
-                &params.search,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("create_saved_search"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::create_saved_search(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params.name,
+                        &params.search,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Delete a saved search by name.
     pub async fn delete_saved_search(&self, name: &str) -> Result<()> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::delete_saved_search(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("delete_saved_search"),
+            |__token| async move {
+                endpoints::delete_saved_search(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get a single saved search by name.
@@ -350,20 +365,22 @@ impl SplunkClient {
     /// # Returns
     /// The `SavedSearch` if found, or `ClientError::NotFound` if it doesn't exist.
     pub async fn get_saved_search(&self, name: &str) -> Result<SavedSearch> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_saved_search(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_saved_search"),
+            |__token| async move {
+                endpoints::get_saved_search(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    name,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Update an existing saved search.
@@ -386,21 +403,26 @@ impl SplunkClient {
             description: params.description.as_deref(),
             disabled: params.disabled,
         };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::update_saved_search(
-                &self.http,
-                &self.base_url,
-                &__token,
-                name,
-                &endpoint_params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("update_saved_search"),
+            |__token| {
+                let endpoint_params = endpoint_params.clone();
+                async move {
+                    endpoints::update_saved_search(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        name,
+                        &endpoint_params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Validate SPL syntax without executing the search.
@@ -431,20 +453,22 @@ impl SplunkClient {
     /// # }
     /// ```
     pub async fn validate_spl(&self, search: &str) -> Result<ValidateSplResponse> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::search::validate_spl(
-                &self.http,
-                &self.base_url,
-                &__token,
-                search,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("validate_spl"),
+            |__token| async move {
+                endpoints::search::validate_spl(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    search,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }
 

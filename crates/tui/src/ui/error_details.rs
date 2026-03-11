@@ -22,7 +22,7 @@ use ratatui::{
 
 use crate::app::App;
 use crate::error_details::ErrorDetails;
-use splunk_config::Theme;
+use crate::theme::Theme;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()

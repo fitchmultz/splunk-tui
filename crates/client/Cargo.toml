@@ -16,6 +16,7 @@ splunk-config = { path = "../config" }
 
 # Async Runtime
 tokio = { workspace = true }
+futures = { workspace = true }
 directories = { workspace = true }
 
 # HTTP
@@ -24,6 +25,8 @@ reqwest = { workspace = true, features = ["multipart"] }
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+csv = { workspace = true }
 
 # Error Handling
 thiserror = { workspace = true }

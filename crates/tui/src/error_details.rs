@@ -404,9 +404,7 @@ mod tests {
             request_id: None,
         };
         let recovery = classify_auth_recovery(&error);
-        assert!(recovery.is_some());
-        let recovery = recovery.unwrap();
-        assert_eq!(recovery.kind, AuthRecoveryKind::InvalidCredentials);
+        assert!(recovery.is_none());
     }
 
     #[test]

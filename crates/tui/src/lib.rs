@@ -21,6 +21,8 @@ pub mod cli;
 pub mod error_details;
 pub mod export;
 pub mod focus;
+pub mod telemetry;
+pub mod theme;
 pub mod ui;
 pub mod ux_telemetry;
 

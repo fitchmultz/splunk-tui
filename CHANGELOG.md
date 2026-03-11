@@ -18,3 +18,4 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - CI live-test behavior now uses `CI_LIVE_TESTS_MODE` (default `skip`) for deterministic offline gates.
 - `docs/containers.md` exit-code mapping now matches `splunk-cli` contract.
 - Contributor docs expanded with explicit check/fix loops and resource controls.
+- Boundary cleanup stabilization moved telemetry bootstrap into the CLI/TUI binaries, made `sccache` optional, aligned the Rust 1.94.0 toolchain story, added shared diagnostics/multi-profile/export workflows, and replaced macro-based auth retry with the explicit request executor.

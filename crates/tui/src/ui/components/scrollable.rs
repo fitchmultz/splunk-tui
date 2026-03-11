@@ -23,12 +23,12 @@
 //! });
 //! ```
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::Rect,
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
-use splunk_config::Theme;
 use tui_scrollview::{ScrollView, ScrollViewState};
 
 use crate::ui::theme::ThemeExt;

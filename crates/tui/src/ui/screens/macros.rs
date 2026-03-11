@@ -16,7 +16,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
 
-use splunk_config::Theme;
+use crate::theme::Theme;
 
 use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::{render_empty_state, render_screen_state_custom};

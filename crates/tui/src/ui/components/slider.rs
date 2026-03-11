@@ -31,7 +31,7 @@ use ratatui::{
     widgets::Widget,
 };
 
-use splunk_config::Theme;
+use crate::theme::Theme;
 
 /// A slider component for selecting numeric values.
 #[derive(Debug, Clone)]

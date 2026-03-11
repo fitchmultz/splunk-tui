@@ -5,4 +5,4 @@
 avoid-breaking-exported-api = true
 
 # MSRV (should match rust-toolchain.toml)
-msrv = "1.84"
+msrv = "1.94"

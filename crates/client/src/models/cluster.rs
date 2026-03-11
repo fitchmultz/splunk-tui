@@ -151,21 +151,21 @@ pub struct ClusterPeer {
 }
 
 /// Parameters for setting maintenance mode.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct MaintenanceModeParams {
     /// Enable or disable maintenance mode.
     pub mode: bool,
 }
 
 /// Parameters for removing peers from the cluster.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct RemovePeersParams {
     /// Comma-separated list of peer GUIDs to remove.
     pub peers: String,
 }
 
 /// Parameters for decommissioning a peer.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct DecommissionPeerParams {
     /// Set to true to decommission the peer.
     pub decommission: bool,

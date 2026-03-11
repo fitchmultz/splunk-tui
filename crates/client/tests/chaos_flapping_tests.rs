@@ -34,7 +34,7 @@ async fn test_status_code_flapping_200_503() {
         .respond_with(move |_req: &wiremock::Request| {
             let count = count_clone.fetch_add(1, Ordering::SeqCst);
             // Alternate between 200 and 503
-            if count % 2 == 0 {
+            if count.is_multiple_of(2) {
                 ResponseTemplate::new(503).set_body_json(serde_json::json!({
                     "messages": [{"type": "ERROR", "text": "Service unavailable"}]
                 }))

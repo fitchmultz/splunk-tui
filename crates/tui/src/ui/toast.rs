@@ -4,6 +4,7 @@
 //! messages in the bottom-right corner of the screen. Each toast has a unique
 //! UUID, a severity level, and an automatic expiration time (TTL).
 
+use crate::theme::Theme;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -11,7 +12,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
-use splunk_config::Theme;
 use splunk_config::constants::{
     DEFAULT_MAX_TOASTS, DEFAULT_TOAST_HEIGHT, DEFAULT_TOAST_MAX_LINES, DEFAULT_TOAST_PADDING,
     DEFAULT_TOAST_TTL_LONG_SECS, DEFAULT_TOAST_TTL_SHORT_SECS, DEFAULT_TOAST_WIDTH,

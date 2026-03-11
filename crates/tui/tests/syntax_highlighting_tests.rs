@@ -3,7 +3,7 @@
 //! These tests verify both the regex-based `highlight_spl()` function and
 //! the tree-sitter `SyntaxHighlighter` infrastructure.
 
-use splunk_config::Theme;
+use splunk_tui::theme::Theme;
 use splunk_tui::ui::syntax::{SyntaxHighlighter, TokenType, highlight_spl};
 
 // =============================================================================

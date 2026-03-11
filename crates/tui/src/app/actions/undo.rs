@@ -51,12 +51,12 @@ impl App {
             }
             Action::ExecutePendingOperation { id } => {
                 // Find and execute the pending operation
-                if let Some(entry) = self.undo_buffer.peek_pending() {
-                    if entry.id == id {
-                        let operation = entry.operation.clone();
-                        self.execute_undoable_operation(operation);
-                        self.undo_buffer.mark_executed(id);
-                    }
+                if let Some(entry) = self.undo_buffer.peek_pending()
+                    && entry.id == id
+                {
+                    let operation = entry.operation.clone();
+                    self.execute_undoable_operation(operation);
+                    self.undo_buffer.mark_executed(id);
                 }
             }
             Action::OperationUndone { description } => {
@@ -448,10 +448,10 @@ impl App {
         if let Some(entry) = self.undo_buffer.peek_pending() {
             let remaining = entry.remaining_secs();
             // Find and update the undo toast using the tracked ID
-            if let Some(toast_id) = self.undo_toast_id {
-                if let Some(toast) = self.toasts.iter_mut().find(|t| t.id == toast_id) {
-                    toast.update_undo_countdown(remaining);
-                }
+            if let Some(toast_id) = self.undo_toast_id
+                && let Some(toast) = self.toasts.iter_mut().find(|t| t.id == toast_id)
+            {
+                toast.update_undo_countdown(remaining);
             }
         }
     }

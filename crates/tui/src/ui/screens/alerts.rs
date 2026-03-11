@@ -13,7 +13,7 @@ use crate::ui::theme::ThemeExt;
 use crate::ui::widgets::render_screen_state;
 use splunk_client::models::FiredAlert;
 
-use splunk_config::Theme;
+use crate::theme::Theme;
 
 /// Configuration for rendering the fired alerts screen.
 pub struct FiredAlertsRenderConfig<'a> {

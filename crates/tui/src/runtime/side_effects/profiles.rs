@@ -333,10 +333,10 @@ pub async fn handle_save_profile(
             .map_err(|e| e.to_string());
 
         // Handle rename if needed
-        if result.is_ok() {
-            if let Some(old_name) = original_name_clone.filter(|old| old != &name_clone) {
-                handle_profile_rename(&mut cm, &tx_clone, &old_name, &name_clone).await;
-            }
+        if result.is_ok()
+            && let Some(old_name) = original_name_clone.filter(|old| old != &name_clone)
+        {
+            handle_profile_rename(&mut cm, &tx_clone, &old_name, &name_clone).await;
         }
 
         // If this was from the tutorial, emit the tutorial action

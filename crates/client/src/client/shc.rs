@@ -19,70 +19,78 @@ use crate::models::{
 impl SplunkClient {
     /// Get SHC members.
     pub async fn get_shc_members(&self) -> Result<Vec<ShcMember>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_shc_members(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_shc_members"),
+            |__token| async move {
+                endpoints::get_shc_members(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get SHC captain information.
     pub async fn get_shc_captain(&self) -> Result<ShcCaptain> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_shc_captain(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_shc_captain"),
+            |__token| async move {
+                endpoints::get_shc_captain(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get SHC status.
     pub async fn get_shc_status(&self) -> Result<ShcStatus> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_shc_status(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_shc_status"),
+            |__token| async move {
+                endpoints::get_shc_status(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get SHC configuration.
     pub async fn get_shc_config(&self) -> Result<ShcConfig> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_shc_config(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_shc_config"),
+            |__token| async move {
+                endpoints::get_shc_config(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Add a member to the SHC.
@@ -90,20 +98,25 @@ impl SplunkClient {
         let params = AddShcMemberParams {
             target_uri: target_uri.to_string(),
         };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::add_shc_member(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("add_shc_member"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::add_shc_member(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Remove a member from the SHC.
@@ -111,39 +124,49 @@ impl SplunkClient {
         let params = RemoveShcMemberParams {
             member: member_guid.to_string(),
         };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::remove_shc_member(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("remove_shc_member"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::remove_shc_member(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Trigger a rolling restart of the SHC.
     pub async fn rolling_restart_shc(&self, force: bool) -> Result<ShcManagementResponse> {
         let params = RollingRestartParams { force };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::rolling_restart_shc(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("rolling_restart_shc"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::rolling_restart_shc(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 
     /// Set a specific member as captain.
@@ -151,19 +174,24 @@ impl SplunkClient {
         let params = SetCaptainParams {
             target_guid: target_guid.to_string(),
         };
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::set_shc_captain(
-                &self.http,
-                &self.base_url,
-                &__token,
-                &params,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("set_shc_captain"),
+            |__token| {
+                let params = params.clone();
+                async move {
+                    endpoints::set_shc_captain(
+                        &self.http,
+                        &self.base_url,
+                        &__token,
+                        &params,
+                        self.max_retries,
+                        self.metrics.as_ref(),
+                        self.circuit_breaker.as_deref(),
+                    )
+                    .await
+                }
+            },
         )
+        .await
     }
 }

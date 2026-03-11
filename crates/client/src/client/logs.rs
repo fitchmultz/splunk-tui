@@ -20,19 +20,23 @@ impl SplunkClient {
     /// from specific components (TuningParser, DateParserVerbose, Parser) and
     /// returns structured results about any issues found.
     pub async fn check_log_parsing_health(&self) -> Result<LogParsingHealth> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::check_log_parsing_health(
-                &self.http,
-                &self.base_url,
-                &__token,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation(
+                "check_log_parsing_health",
+            ),
+            |__token| async move {
+                endpoints::check_log_parsing_health(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 
     /// Get internal logs from Splunk.
@@ -41,20 +45,22 @@ impl SplunkClient {
         count: usize,
         earliest: Option<&str>,
     ) -> Result<Vec<LogEntry>> {
-        crate::retry_call!(
-            self,
-            __token,
-            endpoints::get_internal_logs(
-                &self.http,
-                &self.base_url,
-                &__token,
-                count,
-                earliest,
-                self.max_retries,
-                self.metrics.as_ref(),
-                self.circuit_breaker.as_deref(),
-            )
-            .await
+        self.execute_request(
+            crate::client::request_executor::RequestPolicy::for_operation("get_internal_logs"),
+            |__token| async move {
+                endpoints::get_internal_logs(
+                    &self.http,
+                    &self.base_url,
+                    &__token,
+                    count,
+                    earliest,
+                    self.max_retries,
+                    self.metrics.as_ref(),
+                    self.circuit_breaker.as_deref(),
+                )
+                .await
+            },
         )
+        .await
     }
 }
